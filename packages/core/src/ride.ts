@@ -11,7 +11,7 @@
    comes later lowers craving (Kober and others 2010); naming a feeling takes some of its charge (Lieberman and others
    2007); and each urge outlasted is the proof that builds the confidence for the next (Marlatt; Bandura). */
 import { eventsOf } from './legacy/core.js';
-import { lessonById } from './lessons';
+import { lessonById, lessonFor } from './lessons';
 import { urEvidence, urLikeOf, urRank, urTool, type UrMem, type UrState } from './sos';
 import type { DayEvent, DayKey, Days, Settings } from './types';
 
@@ -120,14 +120,18 @@ export const RIDE_WHY: Record<string, { t: string; l?: string }> = {
 
 /** Why it works, for the button on every move and tool: the one line, and the lesson behind it in brief (its answer
     and its studies), with the lesson itself to open for the whole story. Null for a tool with nothing to say. */
-export function rideScience(id: string): {
+export function rideScience(
+  id: string,
+  st?: Settings | null,
+): {
   t: string;
   lesson: { id: string; title: string; mins: number; ask: string; key: string } | null;
   proofs: { h: string; s: string }[];
 } | null {
   const w = RIDE_WHY[id];
   if (!w) return null;
-  const L = w.l ? lessonById(w.l) : null;
+  /* a lesson not written for this person's habit is not offered (habit.ts) */
+  const L = w.l ? lessonFor(w.l, st) : null;
   return {
     t: w.t,
     lesson: L ? { id: L.id, title: L.title, mins: L.mins || 3, ask: L.ask || '', key: L.key } : null,

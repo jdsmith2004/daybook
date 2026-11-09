@@ -2,9 +2,10 @@
    a slider low on the screen where the thumb is, with the number big in the open middle. Then one screen under the night
    sky: "Tap this when you put your phone down", and one big Goodnight button saves the check-in, puts the phone away (what
    "Putting my phone away" in the wind-down records: core sayGoodnight) and plays the going-to-bed moment
-   (components/goodnight.tsx). Above the button, folded rows: More (sleep last night in hours, kept in checkin.h, which the
-   Sunday sleep goal and the week read; whether you reached out; one line), the wind-down list, and the plan for a loud
-   night with SOS. "Save for now" under the button saves without the phone going away, for a check-in done early.
+   (components/goodnight.tsx). Before Goodnight, one more step: sleep last night in hours, kept in checkin.h, which the
+   Sunday sleep goal, the week and Pattern's hard-days card read (moved out of More on November 8, 2026, because few
+   people opened More and the card stayed empty). It is left out when Apple Health has the night (lib/health.ts). Above the button, folded rows: More (whether you reached out; one line),
+   the wind-down list, and the plan for a loud night with SOS. "Save for now" under the button saves without the phone going away, for a check-in done early.
    A day before today (`k`), or a check-in before Goodnight opens (core goodnightOpens), ends with Save instead.
    Answers are kept as a draft on this device until saved (lib/drafts), so closing halfway loses nothing. Opened from the
    Check-in stop in "Your day"; `k` picks the day (today when left out). */
@@ -17,6 +18,7 @@ import {
   fmtClock,
   gameCompute,
   goodnightOpens,
+  healthHasNight,
   rateKeys,
   ratingOf,
   rhythm,
@@ -49,6 +51,7 @@ import { loadDrafts, saveDraft } from '@/lib/drafts';
 import { close, closeAll } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
+import { useNights } from '@/lib/health';
 import { useStore } from '@/lib/store';
 import { WORDS } from '@/lib/words';
 import { font, useTheme } from '@/lib/theme';
@@ -61,8 +64,8 @@ const clockNear = (ms: number) => {
   if (h >= 22 || h < 5) return '22:00';
   return String(h).padStart(2, '0') + ':' + String(Math.floor(d.getMinutes() / 15) * 15).padStart(2, '0');
 };
-/* the three numbers, then Goodnight (or, for a day before today, Save) */
-const STEPS = [...ASKED, 'night'] as const;
+/* the three numbers and sleep, then Goodnight (or, for a day before today, Save) */
+const STEPS = [...ASKED, 'h', 'night'] as const;
 type Step = (typeof STEPS)[number] | 'end';
 const hoursText = (h: number) => (h % 1 ? h.toFixed(1) : String(h));
 /* a few words under each question */
@@ -81,6 +84,9 @@ export default function Checkin() {
   const k = (kp && kp <= tk ? kp : tk) as DayKey;
   const tonight = k === tk;
   const [form, setForm] = useState<CheckinForm>(() => checkinFormOf(snap.days, k));
+  /* with Apple Health connected, a night it has is not asked about (nothing from Health is copied into the check-in) */
+  const health = useNights();
+  const steps: readonly (typeof STEPS)[number][] = health.on && healthHasNight(health.nights, k) && form.h == null ? STEPS.filter((x) => x !== 'h') : STEPS;
   const [step, setStep] = useState<Step>('md');
   const [hist, setHist] = useState<Step[]>([]);
   /* which way the steps slide: forward from the right, Back from the left */
@@ -130,7 +136,7 @@ export default function Checkin() {
     setDir(1);
     setStep(next);
   };
-  const next = () => go(STEPS[STEPS.indexOf(step as (typeof STEPS)[number]) + 1] || 'night');
+  const next = () => go(steps[steps.indexOf(step as (typeof STEPS)[number]) + 1] || 'night');
   const back = () => {
     const h = hist.slice();
     const p = h.pop();
@@ -168,7 +174,7 @@ export default function Checkin() {
     setBed(b);
   };
 
-  const i = step === 'end' ? STEPS.length : STEPS.indexOf(step);
+  const i = step === 'end' ? steps.length : steps.indexOf(step);
   let body: React.ReactNode;
   let footer: React.ReactNode = null;
   let pin: React.ReactNode = null;
@@ -192,6 +198,43 @@ export default function Checkin() {
         </View>
         <Dock>
           <Slider key={step} label={R.name} value={v} lo={R.lo} hi={R.hi} readout={false} onChange={(n) => set({ ...form, [step]: n })} />
+          {v != null ? (
+            <Appear by={10} duration={240}>
+              <Button label="Next" onPress={next} />
+            </Appear>
+          ) : (
+            <View style={s.btnSpace} />
+          )}
+        </Dock>
+      </>
+    );
+    footer = <Link label="Skip this one" onPress={next} hidden={v != null} />;
+  } else if (step === 'h') {
+    const v = form.h ?? null;
+    body = (
+      <>
+        <T v="title" style={s.c} accessibilityRole="header">
+          {tonight ? 'How long did you sleep last night?' : 'How long did you sleep the night before?'}
+        </T>
+        <T style={s.c} tone="muted">
+          A guess is fine.
+        </T>
+        <View style={s.middle}>
+          <SliderValue big value={v} show={hoursText} caption="hours" hint="Slide below to answer" />
+        </View>
+        <Dock>
+          <Slider
+            key="h"
+            label="Hours of sleep"
+            value={v}
+            min={3}
+            max={12}
+            step={0.5}
+            show={hoursText}
+            unit="hours"
+            readout={false}
+            onChange={(n) => set({ ...form, h: n })}
+          />
           {v != null ? (
             <Appear by={10} duration={240}>
               <Button label="Next" onPress={next} />
@@ -228,7 +271,7 @@ export default function Checkin() {
         {/* the flame in the open middle, as big as the room the rows leave it */}
         <NightMiddle level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} asleep={false} />
         <Dock>
-          {form.md != null && form.md <= 3 ? <TalkDoor line="A heavy day is a state, not who you are. Talk it through before tonight." /> : null}
+          {form.md != null && form.md <= 3 ? <TalkDoor line="A heavy day is a state, not who you are. Walk it through before tonight." /> : null}
           {more}
           <WindFold open={fold === 'wind'} onToggle={() => toggle('wind')} />
           <LoudFold open={fold === 'loud'} onToggle={() => toggle('loud')} />
@@ -284,7 +327,7 @@ export default function Checkin() {
         </View>
         {form.md != null && form.md <= 3 ? (
           <Appear delay={640} style={{ alignSelf: 'stretch' }}>
-            <TalkDoor line="A heavy day is a state, not who you are. Talk it through before tonight." />
+            <TalkDoor line="A heavy day is a state, not who you are. Walk it through before tonight." />
           </Appear>
         ) : null}
         {wind && r ? (
@@ -307,7 +350,7 @@ export default function Checkin() {
     <SceneFrame
       title={step === 'night' && bedtime ? 'Good night' : 'Check-in'}
       sky={step === 'night' && bedtime ? 'night' : 'violet'}
-      dots={{ n: STEPS.length, i, label: step === 'end' ? 'All done' : 'Step ' + (i + 1) + ' of ' + STEPS.length }}
+      dots={{ n: steps.length, i, label: step === 'end' ? 'All done' : 'Step ' + (i + 1) + ' of ' + steps.length }}
       onBack={step !== 'end' && hist.length ? back : null}
       onClose={close}
       footer={footer}
@@ -319,7 +362,7 @@ export default function Checkin() {
   );
 }
 
-/** More: sleep last night, reached out, and one line. Folded on the Goodnight screen; open, with Save, for a day before
+/** More: reached out, and one line (sleep has its own step since November 8, 2026). Folded on the Goodnight screen; open, with Save, for a day before
     today (`fixed`). The line and its Save stay together above the keyboard. */
 function More({
   form,
@@ -338,24 +381,9 @@ function More({
   fixed: boolean;
   saveBtn: React.ReactNode;
 }) {
-  const said = [form.h != null ? 'Slept ' + hoursText(form.h) + ' h' : '', form.ro === 'Y' ? 'Reached out' : '', form.n.trim() ? 'A line' : '']
-    .filter(Boolean)
-    .join(' · ');
+  const said = [form.ro === 'Y' ? 'Reached out' : '', form.n.trim() ? 'A line' : ''].filter(Boolean).join(' · ');
   const inside = (
     <>
-      <T v="label">{tonight ? 'Sleep last night' : 'Sleep the night before'}</T>
-      <Slider
-        label="Hours of sleep"
-        value={form.h ?? null}
-        min={3}
-        max={12}
-        step={0.5}
-        show={hoursText}
-        unit="hours"
-        compact
-        hint="A guess is fine"
-        onChange={(n) => set({ ...form, h: n })}
-      />
       <YesNo
         label={tonight ? 'Reached out to someone today?' : 'Reached out to someone that day?'}
         value={form.ro}
@@ -376,7 +404,7 @@ function More({
   );
   if (fixed) return <View style={s.moreOpen}>{inside}</View>;
   return (
-    <Fold icon="pencil" title="More about today" sub={said || 'Sleep, reaching out, one line'} open={open} onToggle={onToggle}>
+    <Fold icon="pencil" title="More about today" sub={said || 'Reaching out, one line'} open={open} onToggle={onToggle}>
       {inside}
     </Fold>
   );

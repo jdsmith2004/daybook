@@ -34,6 +34,7 @@ export function SceneFrame({
   sheet,
   pinSheet,
   fixed,
+  backdrop,
   children,
 }: {
   title: string;
@@ -60,6 +61,8 @@ export function SceneFrame({
   /** the page does not scroll, so an up or down swipe belongs to what is on it (the SOS ride, which swipes like short
       videos: components/ride/swipe.tsx) */
   fixed?: boolean;
+  /** something drawn on the sky, behind the page (the walk's stars) */
+  backdrop?: ReactNode;
   children: ReactNode;
 }) {
   const c = useTheme();
@@ -81,6 +84,7 @@ export function SceneFrame({
   const body = (
     <View style={{ flex: 1 }}>
       <LinearGradient colors={[a, b]} style={StyleSheet.absoluteFill} />
+      {backdrop}
       <ScrollView
         ref={scroll}
         /* it starts under the clock, so a long page scrolls away beneath it and never through it. The fire's short pages let their

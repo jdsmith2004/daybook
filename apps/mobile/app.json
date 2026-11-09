@@ -45,6 +45,15 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "On the trail, Daybook can show you your own face for a moment during a hard craving. Nothing is recorded, saved or sent.",
+          "microphonePermission": "Daybook uses the microphone only when you record a voice note to yourself. The note stays on this phone.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#FFF8EB",
@@ -79,7 +88,15 @@
         }
       ],
       "expo-web-browser",
-      "expo-iap"
+      "expo-iap",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Daybook reads how long you slept, to show you how your nights and your hard days line up. It stays on this phone and is never sent anywhere.",
+          "NSHealthUpdateUsageDescription": false,
+          "background": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -185,6 +185,10 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   - User content: other user content also covers feedback (optional, not linked unless the person types an address;
     used for app functionality).
   - Tracking: **no**. Data used to track you: **none**.
+  - Apple Health (November 9, 2026): **no change to the label.** Daybook reads only sleep, read only, and the nights stay on
+    the phone, outside the log: never synced, backed up, counted or sent. Apple's label lists only data that leaves the
+    device. The App ID needs the HealthKit capability (EAS turns it on from the entitlement on the next build; if the
+    build says it is missing, tick HealthKit for `com.jdsmith2004.daybook` under Identifiers in the developer account).
 - **Notes for App Review:**
 
   > Daybook works without an account: SOS, logging, Rekindle, the plan and the tools never ask for one. An optional
@@ -197,6 +201,11 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   > account below, open More, Support Daybook (or Settings, Sync), and buy any tip with the sandbox account; sync then
   > turns on. Under the in-app tips, a second link opens the same three tips on our web page (Stripe), as allowed on the
   > United States storefront under guideline 3.1.1(a); Daybook is offered in the United States only.
+  >
+  > Apple Health: on iPhone, a person can let Daybook read sleep (read only, sleep only), from Settings, Apple Health, or
+  > the hard-days card on Pattern. It fills the check-in's sleep question and shows how their nights compare before days
+  > with and without a slip. The nights stay on the device: they are never sent to our server, synced, backed up or used
+  > for anything else. To see it, connect Apple Health in Settings with sleep data in the simulator's Health app.
   >
   > The app has no ads and no tracking. Reminders are local notifications made on the device, with plain words that do
   > not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html

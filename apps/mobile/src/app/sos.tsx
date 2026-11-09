@@ -8,7 +8,7 @@
    "It passed" in the corner ends it with the one celebration every urge ridden out gets (components/rode-out.tsx): the
    flame, confetti, how long it took, how many you have ridden out, which move helped most (one tap, and SOS leans on it
    next time), one line on why that move works with its lesson for later, and what set it off (one tap). More (next to it)
-   holds the bigger moves (step away, text someone, talk it through, and bed at night), every tool, and I slipped, which
+   holds the bigger moves (the trail, for a craving that keeps coming; step away, text someone, talk it through, and bed at night), every tool, and I slipped, which
    goes on to Rekindle (log.tsx). A tool picked there runs over SOS; when it is done, SOS asks one quiet question, "How is
    it now?": Better leads on to It passed, Still strong opens the tools again. The X on a tool comes back to the tools.
    The X here just closes. With ?practice=1 it is three moves, for a calm moment, and nothing is saved as an urge. */
@@ -379,11 +379,11 @@ export default function Sos() {
       </Pressable>
     </View>
   );
-  /* Talk it through at every hour (a slip that feels planned is most often planned at night), and Go to bed too at night */
+  /* the trail opens on Walk it through, which took the place of Talk it through (the owner, November 4, 2026); Go to bed at night */
   const big: [string, string, string][] = [
+    ['trail', 'compass', 'The trail'],
     ['pause', 'timer', 'Step away 10 min'],
     ['message', 'chat', 'Text someone'],
-    ['talk', 'ask', 'Talk it through'],
     ...(night ? ([['bed', 'moon', 'Go to bed']] as [string, string, string][]) : []),
   ];
   return (
@@ -463,10 +463,10 @@ export default function Sos() {
               key={bid}
               accessibilityRole="button"
               onPress={() => {
-                if (bid !== 'talk') return pickTool(bid);
+                if (bid !== 'talk' && bid !== 'trail') return pickTool(bid);
                 setMore(false);
                 buzz('tap');
-                router.push('/talk');
+                router.push('/trail?from=sos' as '/trail');
               }}
               style={({ pressed }) => [s.bigB, big.length > 3 && s.bigB2, { backgroundColor: c.bg, opacity: pressed ? 0.8 : 1 }]}>
               <Icon name={ic} size={20} color={c.accentText} />

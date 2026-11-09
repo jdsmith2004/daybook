@@ -100,9 +100,13 @@ describe('the long view, kindly', () => {
     expect(storyTrend([W(5), W(2, 6)]).line).toBe('A harder week, and you still rode out 6 urges. Hard weeks are part of every climb.');
     expect(storyTrend([W(5), W(0)]).line).toBe('A harder week, and you still showed up and logged it honestly. Hard weeks are part of every climb.');
   });
-  it('counts back up to eight weeks, from where the log starts', () => {
+  it('counts back up to eight weeks, from Day 1 once it has come', () => {
+    /* the log starts Thursday Oct 1 and Day 1 is a week later: the week of Oct 4 is all before Day 1, so it is left out (the owner, November 8, 2026) */
     const late = normSettings({ start: '2026-10-01' });
-    expect(storyWeeks({}, late, SUN, SUN).map((x) => x.sun)).toEqual(['2026-10-04', '2026-10-11', SUN]);
+    expect(late.day1).toBe('2026-10-08');
+    expect(storyWeeks({}, late, SUN, SUN).map((x) => x.sun)).toEqual(['2026-10-11', SUN]);
+    const w = storyWeeks({}, late, SUN, SUN)[0];
+    expect([w.days, w.noSlip]).toEqual([4, 4]);
     expect(storyWeeks({}, st, SUN, SUN)).toHaveLength(8);
   });
 });

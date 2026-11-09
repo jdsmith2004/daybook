@@ -14,7 +14,6 @@ import {
   addDays,
   gameCompute,
   isSunday,
-  LESSONS,
   saveSun,
   SRC,
   patSlipTrig,
@@ -44,6 +43,7 @@ import {
   type SunLast,
   type SunPick,
   type SunReview,
+  lessonFor,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -69,6 +69,7 @@ import { close, closeAll } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { play } from '@/lib/sound';
+import { useNights } from '@/lib/health';
 import { useStore } from '@/lib/store';
 import { font, MAX_WIDTH, toneOf, useTheme, type Sky } from '@/lib/theme';
 import { WORDS } from '@/lib/words';
@@ -133,10 +134,11 @@ export default function Review() {
   const [note, setNote] = useState(() => saved?.nt || '');
   /* the week's step, kept as the plan for the week (one tap on the last screen) */
   const [keep, setKeep] = useState(false);
+  const health = useNights();
   const S = useMemo(
-    () => (st ? story(snap.days, st, snap.reviews, sun, tk, Date.now(), gameCompute(snap.days, st, snap.reviews, tk).perDay) : null),
+    () => (st ? story(snap.days, st, snap.reviews, sun, tk, Date.now(), gameCompute(snap.days, st, snap.reviews, tk).perDay, health.nights) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [snap.days, st, sun, tk],
+    [snap.days, st, sun, tk, health.nights],
   );
   if (!st || !S) return null;
 
@@ -400,7 +402,7 @@ export default function Review() {
       );
     } else if (scr === 'deep') {
       const d = S.deep;
-      const l = (LESSONS as unknown as { id: string; title: string }[]).find((x) => x.id === d.l);
+      const l = lessonFor(d.l, st);
       main = (
         <>
           {eyebrow('One thing to know')}

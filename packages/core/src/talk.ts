@@ -514,6 +514,49 @@ export interface Talk {
   fw?: string;
   /** after a slip: what was going on just before it, the plan's "when ..." (slip.ts). Only when there is one. */
   ft?: TalkWhen;
+  /** a walk through the trail (walk.ts): what only a walk keeps. Only when it is one. */
+  wk?: WalkRec;
+}
+
+/* ---------- a walk's own part (walk.ts; kept here, since walk.ts reads the trail, which reads legacy/core.js) ---------- */
+export type WalkLine = 'once' | 'owed' | 'nobody' | 'blew' | 'focus' | 'tired' | 'last' | 'want';
+export type WalkNeed = 'stress' | 'bored' | 'lonely' | 'tired' | 'angry' | 'sad' | 'habit';
+export const WALK_LINE_IDS: WalkLine[] = ['owed', 'once', 'nobody', 'blew', 'focus', 'tired', 'last', 'want'];
+export const WALK_NEED_IDS: WalkNeed[] = ['stress', 'bored', 'lonely', 'tired', 'angry', 'sad', 'habit'];
+const WALK_PLACES = ['drift', 'spark', 'preview', 'case', 'steps'] as const;
+export interface WalkRec {
+  /** how strong before and after, 0 to 10 */
+  u0: number | null;
+  u1: number | null;
+  /** the line it said: one of the walk's lines, or the person's own words in lx */
+  ln: WalkLine | null;
+  lx?: string;
+  /** their own answer to it, and their explanation, in their words */
+  ax?: string;
+  ex?: string;
+  /** what is underneath, and the place on the trail it was found at */
+  nd: WalkNeed | null;
+  pl: (typeof WALK_PLACES)[number] | null;
+}
+/** a walk's own part of a talk-through, cleaned, or undefined when there is none */
+export function normWalk(x: unknown): WalkRec | undefined {
+  if (!x || typeof x !== 'object') return undefined;
+  const v = x as Record<string, unknown>;
+  const out: WalkRec = {
+    u0: score(v.u0),
+    u1: score(v.u1),
+    ln: WALK_LINE_IDS.indexOf(v.ln as WalkLine) >= 0 ? (v.ln as WalkLine) : null,
+    nd: WALK_NEED_IDS.indexOf(v.nd as WalkNeed) >= 0 ? (v.nd as WalkNeed) : null,
+    pl: WALK_PLACES.indexOf(v.pl as WalkRec['pl'] & string) >= 0 ? (v.pl as WalkRec['pl']) : null,
+  };
+  const own = (k: 'lx' | 'ax' | 'ex', max: number) => {
+    const t = typeof v[k] === 'string' ? (v[k] as string).replace(/\s+/g, ' ').trim().slice(0, max) : '';
+    if (t) out[k] = t;
+  };
+  own('lx', 80);
+  own('ax', 160);
+  own('ex', 240);
+  return out;
 }
 
 const SIGNS = TALK_SIGNS.map((x) => x[0]);
@@ -578,6 +621,8 @@ export function normTalk(x: unknown): Talk | null {
   if (v.pr === 1) out.pr = 1;
   if (typeof v.fw === 'string' && /^[A-Za-z][A-Za-z ]{0,23}$/.test(v.fw)) out.fw = v.fw;
   if (typeof v.ft === 'string' && Object.prototype.hasOwnProperty.call(TALK_WHEN, v.ft)) out.ft = v.ft as TalkWhen;
+  const wk = normWalk(v.wk);
+  if (wk) out.wk = wk;
   return out;
 }
 /** a day's talk-throughs, cleaned (used by normP in legacy/core.js) */

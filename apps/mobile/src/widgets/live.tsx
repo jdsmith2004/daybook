@@ -48,6 +48,8 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
     ) : (
       <Image systemName="flame.fill" size={size * 0.7} color={WARM} />
     );
+  /* a clean glyph for the small places, where the mascot would only blur: a flame, or a moon once it is asleep (no short time) */
+  const glyph = (size: number) => <Image systemName={props.short ? 'flame.fill' : 'moon.zzz.fill'} size={size} color={WARM} />;
   const text = (s: string, size: number, color: string, weight: 'bold' | 'semibold' = 'semibold') => (
     <Text modifiers={[font({ size, weight, design: 'rounded' }), foregroundStyle(color), lineLimit(1)]}>{s}</Text>
   );
@@ -67,14 +69,18 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
         countsDown={false}
         modifiers={[progressViewStyle('linear'), labelsHidden(), tint(WARM), scaleEffect({ x: 1, y: 2.2 })]}
       />
-      {flame(26)}
+      {glyph(18)}
     </HStack>
   );
-  /* the ring that fills around the flame, for the Dynamic Island */
+  /* the ring that fills around the flame, for the Dynamic Island (always on black there): its own countdown is drawn in black, so only the ring shows */
   const ring = (size: number) => (
     <ZStack modifiers={[frame({ width: size, height: size })]}>
-      <ProgressView timerInterval={span} countsDown={false} modifiers={[progressViewStyle('circular'), labelsHidden(), tint(WARM)]} />
-      {flame(size * 0.62)}
+      <ProgressView
+        timerInterval={span}
+        countsDown={false}
+        modifiers={[progressViewStyle('circular'), labelsHidden(), tint(WARM), foregroundStyle('#000000')]}
+      />
+      {glyph(size * 0.42)}
     </ZStack>
   );
   const ends = (size: number) => (
@@ -87,16 +93,14 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
   return {
     banner: (
       <VStack spacing={10} modifiers={[activityBackgroundTint(environment.isLuminanceReduced ? '#000000' : '#16123A'), padding({ all: 16 })]}>
-        <HStack>
-          {text(props.line, 15, SOFT)}
+        <HStack spacing={10}>
+          {flame(34)}
+          {text(props.line, 17, '#FFFFFF')}
           <Spacer />
+          {left(17, WARM)}
         </HStack>
         {ends(26)}
         {bar}
-        <HStack spacing={5}>
-          {left(17, '#FFFFFF')}
-          {text('left', 15, SOFT)}
-        </HStack>
       </VStack>
     ),
     compactLeading: ring(26),

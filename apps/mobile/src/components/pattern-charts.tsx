@@ -8,6 +8,7 @@
    - DaySky: the day from 6 AM as a sky going from dawn through dusk to midnight, with the entries standing in it
    - Mosaic: a block for each thing, sized by how often it comes up, with its words inside
    - Pairs: days with no slip beside slip days, a pair for each answer
+   - Moons: sleep before days with no slip beside sleep before slip days, each moon as big as the night
    - Ghost: any of these drawn empty, with no words, while the log has nothing for it yet
    Nothing stands in an empty track, except in a ghost, where the empty track is the point. They come in once, and with Reduce Motion on they are simply there. */
 import {
@@ -1046,6 +1047,60 @@ export function Pairs({ list, w, h }: { list: PatDiff[]; w: number; h: number })
           <Text style={[s.ax, { color: k.c.muted }]}>Slip days</Text>
         </View>
       </View>
+    </View>
+  );
+}
+
+/* ---------- sleep before slips: two moons ---------- */
+/** One moon for the nights before days with no slip, one for the nights before slip days, each as big as the hours slept: the
+    smaller moon is the shorter night, read at a glance. The hours stand under each. */
+export function Moons({ d, w, h }: { d: PatDiff; w: number; h: number }) {
+  const k = useInk();
+  const v = useGrow(80);
+  const LABEL = 64;
+  const top = Math.max(d.clean, d.slip) || 1;
+  const R = Math.max(12, Math.min(w / 4 - 16, (h - LABEL) / 2 - 8));
+  const moon = (which: 'clean' | 'slip') => {
+    const hours = which === 'clean' ? d.clean : d.slip;
+    /* the area follows the hours, so the radius follows their square root */
+    const r = R * Math.sqrt(hours / top);
+    const box = R * 2 + 16;
+    const id = 'moon-' + which;
+    return (
+      <View
+        key={which}
+        style={{ alignItems: 'center', flex: 1 }}
+        accessible
+        accessibilityLabel={(which === 'clean' ? 'Before days with no slip: ' : 'Before slip days: ') + fmtDiff(d, hours)}>
+        <View style={{ height: box, justifyContent: 'center' }}>
+          <Animated.View style={{ opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }] }}>
+            <Svg width={box} height={box} {...SVG_HIDE}>
+              <Defs>
+                <RadialGradient id={id + '-glow'} cx="50%" cy="50%" r="50%">
+                  <Stop offset="0.55" stopColor="#FFE9B0" stopOpacity="0.28" />
+                  <Stop offset="1" stopColor="#FFE9B0" stopOpacity="0" />
+                </RadialGradient>
+                <RadialGradient id={id} cx="40%" cy="35%" r="70%">
+                  <Stop offset="0" stopColor="#FFF8E4" />
+                  <Stop offset="1" stopColor={which === 'clean' ? '#F2D58C' : '#CFC8F2'} />
+                </RadialGradient>
+              </Defs>
+              <Circle cx={box / 2} cy={box / 2} r={Math.min(box / 2, r + 10)} fill={`url(#${id}-glow)`} />
+              <Circle cx={box / 2} cy={box / 2} r={r} fill={`url(#${id})`} />
+            </Svg>
+          </Animated.View>
+        </View>
+        <Text style={{ fontFamily: font.display, fontSize: 22, lineHeight: 30, color: k.c.ink }}>{fmtDiff(d, hours)}</Text>
+        <Text numberOfLines={2} style={[s.ax, { textAlign: 'center', color: k.c.muted }]}>
+          {which === 'clean' ? 'Before days with no slip' : 'Before slip days'}
+        </Text>
+      </View>
+    );
+  };
+  return (
+    <View style={{ width: w, height: h, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 }}>
+      {moon('clean')}
+      {moon('slip')}
     </View>
   );
 }

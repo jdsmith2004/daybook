@@ -15,6 +15,7 @@ import { urTool } from './sos';
 import { sunChange, sunLastGoal, sunWeek, type SunWeek } from './sunday';
 import { weekRead, WHEN_TRIG, type WeekKind, type WeekRead } from './sunday-read';
 import { plural } from './view';
+import type { Nights } from './health';
 import type { DayKey, Days, Reviews, Settings } from './types';
 
 const dateOf = (k: DayKey) => {
@@ -501,15 +502,24 @@ export interface Story {
   screens: StoryScreen[];
 }
 /** everything the walk through the week shows, and which screens it has: one is left out when there is nothing to show */
-export function story(days: Days, st: Settings, reviews: Reviews, sun: DayKey, tk: DayKey, now: number, perDay: Record<DayKey, number>): Story {
-  const w = sunWeek(days, st, sun, tk);
+export function story(
+  days: Days,
+  st: Settings,
+  reviews: Reviews,
+  sun: DayKey,
+  tk: DayKey,
+  now: number,
+  perDay: Record<DayKey, number>,
+  nights?: Nights | null,
+): Story {
+  const w = sunWeek(days, st, sun, tk, nights);
   const d = storyDays(days, st, sun, tk);
   const when = storyWhen(days, st, sun, tk);
   const trig = storyTrig(w, st);
   const help = storyHelp(w, st);
   const slips = storySlips(days, st, sun, tk);
   const base = storyBase(w);
-  const last = sunLastGoal(days, reviews, sun, tk);
+  const last = sunLastGoal(days, reviews, sun, tk, nights);
   const weeks = storyWeeks(days, st, sun, tk);
   const pts = weekKeys(sun).reduce((a, k) => a + (perDay[k] || 0), 0);
   const read = weekRead(days, st, sun, tk, w, weeks, when);

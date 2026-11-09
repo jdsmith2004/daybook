@@ -70,6 +70,7 @@ import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { useCameBack, useQuietAsks } from '@/lib/quiet-asks';
 import { useStore } from '@/lib/store';
+import { useNights } from '@/lib/health';
 import { LEAD_ROOM, NOTE_ROOM, useTodaySize } from '@/lib/today-size';
 import { useAccount, useSync } from '@/lib/sync';
 import { SyncStrip } from '@/components/sync-strip';
@@ -81,6 +82,7 @@ const LAUNCH = Date.now();
 export default function Today() {
   const c = useTheme();
   const { ready, snap, tk, now, apply, update, say } = useStore();
+  const { nights } = useNights();
   const st = snap.settings;
   const account = useAccount();
   const sync = useSync();
@@ -261,7 +263,7 @@ export default function Today() {
   const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
   const tip = !quiet && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
   /* one quiet line under the next step: the week's goal from Sunday (today's entries are in Today so far, under it) */
-  const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name)?.note;
+  const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name, nights)?.note;
   /* the quiet lines under the next step take their room from the sky */
   const slipLine = heroSlipLine(snap.days, st, tk, now);
   /* the day's next stop is the big card on the line (your-day.tsx); any other moment keeps its own card above the line */

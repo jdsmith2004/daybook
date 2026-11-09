@@ -37,6 +37,7 @@ import { Text } from '@/components/text';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
+import { useNights } from '@/lib/health';
 import { font, useTheme } from '@/lib/theme';
 
 /** the weeks so far, oldest first, and what to call one: "This week", "Last week" or its dates */
@@ -256,6 +257,7 @@ export function WeekDetail({ sun }: { sun: string }) {
   const c = useTheme();
   const { snap, tk, apply } = useStore();
   const st = snap.settings!;
+  const { nights } = useNights();
   const { weeks, name } = useWeeks();
   const i = weeks.findIndex((w) => w.sun === sun);
   const open = (x: string) => router.push({ pathname: '/review', params: { s: x } });
@@ -264,7 +266,7 @@ export function WeekDetail({ sun }: { sun: string }) {
     st,
     sun,
     tk,
-    sunWeek(snap.days, st, sun, tk),
+    sunWeek(snap.days, st, sun, tk, nights),
     i < 0 ? [] : weeks.slice(Math.max(0, i - 7), i + 1),
     storyWhen(snap.days, st, sun, tk),
   );
@@ -464,7 +466,8 @@ function Goal({ sun }: { sun: string }) {
   const r = snap.reviews[sunKey(sun)]!.sun!;
   const g = r.g!;
   const next = addDays(sun, 7);
-  const done = sunGoalCount(snap.days, g, next, tk);
+  const health = useNights();
+  const done = sunGoalCount(snap.days, g, next, tk, health.nights);
   const said = snap.reviews[sunKey(next)]?.sun?.last;
   const result = done != null ? (tk > sun ? sunGoalLine(g, done, tk > next) : '') : said ? SUN_LAST.find((x) => x[0] === said)![1] + '.' : '';
   return (

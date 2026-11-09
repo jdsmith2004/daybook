@@ -33,6 +33,7 @@ import type { CareDoor } from './talk';
 import { talkDueNow } from './talk-log';
 import { stepOffer } from './view';
 import { firstWeekDue } from './week';
+import type { Nights } from './health';
 import type { DayKey, Days, Reviews, Settings } from './types';
 
 export type MomentKind =
@@ -250,12 +251,12 @@ export interface StandRow {
   say: string;
 }
 /** the mode's one count (heroNumber), with the flame's form */
-export function standRow(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, form: string): StandRow | null {
+export function standRow(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, form: string, nights?: Nights | null): StandRow | null {
   const h = heroNumber(days, st, tk, now);
   if (!h) return null;
   const f = formWord(form);
   /* the week's goal, set on Sunday, while it can still be counted */
-  const g = isSunday(tk) ? null : sunGoalNow(days, reviews, tk);
+  const g = isSunday(tk) ? null : sunGoalNow(days, reviews, tk, nights);
   const goal = g && g.g.k && g.g.n && g.done != null ? g.done + ' of ' + g.g.n + ' ' + SUN_GOALS[g.g.k].unit + ' this week' : '';
   const note = goal;
   const row = (big: string, ...line: (string | null | undefined)[]): StandRow => {

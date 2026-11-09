@@ -66,6 +66,7 @@ import {
   Hillside,
   HoursKey,
   Mosaic,
+  Moons,
   Pairs,
   Room,
   WeekRow,
@@ -81,7 +82,8 @@ import { SundayCard } from '@/components/sunday-card';
 import { MonthCard, useLocked, useOpenMonths } from '@/components/support';
 import { Card, Icon, T } from '@/components/ui';
 import { WeeksPane } from '@/components/weeks-pane';
-import { useNights } from '@/lib/health';
+import { connectHealth, healthOffered, useNights } from '@/lib/health';
+import { Link } from '@/components/choices';
 import { useStore } from '@/lib/store';
 import { font, useTheme, palettes } from '@/lib/theme';
 
@@ -163,7 +165,7 @@ const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 const WEEK_ROW = 64;
 function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const c = useTheme();
-  const { snap, tk, now } = useStore();
+  const { snap, tk, now, say } = useStore();
   const st = snap.settings!;
   /* nights from Apple Health, once connected: sleep on the hard-days card then reads every known day, not only check-ins */
   const health = useNights();
@@ -424,19 +426,50 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       ),
     });
   else ghost('what', 'What sets it off?');
+  /* sleep is drawn as two moons; what else differs stands beside it as pairs */
+  const sleepLead = leads.list.find((d) => d.k === 'h');
+  const otherLeads = leads.list.filter((d) => d.k !== 'h');
+  /* the one ask for Apple Health: on this card, where sleep is read, on an iPhone, until it is connected */
+  const healthAsk =
+    healthOffered() && health.ready && !health.on ? (
+      <Link
+        label="Add your nights from Apple Health"
+        onPress={async () => {
+          if (!(await connectHealth(st.rollover))) say('Apple Health did not open. Try again in a moment.');
+        }}
+      />
+    ) : null;
   if (leads.list.length)
     cards.push({
       id: 'days',
       title: 'What is different on hard days?',
       head: widest?.label,
       say: widest ? <Say>{widest.line}</Say> : null,
-      chart: <Room>{(w, h) => <Pairs list={leads.list} w={w} h={h} />}</Room>,
-      foot: (
+      chart: (
+        <Room>
+          {(w, h) =>
+            sleepLead && otherLeads.length ? (
+              <View>
+                <Moons d={sleepLead} w={w} h={Math.round(h * 0.55)} />
+                <Pairs list={otherLeads} w={w} h={h - Math.round(h * 0.55)} />
+              </View>
+            ) : sleepLead ? (
+              <Moons d={sleepLead} w={w} h={h} />
+            ) : (
+              <Pairs list={leads.list} w={w} h={h} />
+            )
+          }
+        </Room>
+      ),
+      foot: healthAsk || (
         <T v="small" tone="muted">
-          Your whole log: {plural(leads.cleanN, 'check-in day')} with no slip and {leads.slipN} with one.
+          {leads.sleep && sleepLead
+            ? 'Your whole log: ' + plural(leads.sleep.cleanN, 'night') + ' before days with no slip, ' + leads.sleep.slipN + ' before slip days.'
+            : 'Your whole log: ' + plural(leads.cleanN, 'check-in day') + ' with no slip and ' + leads.slipN + ' with one.'}
         </T>
       ),
     });
+  else if (healthAsk) cards.push({ id: 'days', title: 'What is different on hard days?', ghost: true, chart: empty('days'), foot: healthAsk });
   else ghost('days', 'What is different on hard days?');
   if (works.length || ev.chose + ev.went)
     cards.push({

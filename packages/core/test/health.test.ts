@@ -4,6 +4,7 @@ import { addEvent } from '../src/mutate';
 import { healthHasNight, mergeNights, nightOf, nightsOf, nightsSince, normNights, sleepOn, type Nights, type SleepSample } from '../src/health';
 import { patLeads, patPeriod } from '../src/pattern-cards';
 import { saveCheckin, checkinFormOf } from '../src/day';
+import { sunGoalCount, sunWeek } from '../src/sunday';
 import type { DayKey, Days } from '../src/types';
 
 const t = (s: string) => new Date(s).getTime();
@@ -116,5 +117,19 @@ describe('sleep before slips, with Health connected', () => {
     const { d } = build(6);
     expect(patLeads(d, keys(d)).list).toEqual([]);
     expect(patLeads(d, keys(d), { nights: {}, st, tk: TK }).sleep).toBeUndefined();
+  });
+});
+
+describe('the Sunday sleep goal, with Health connected', () => {
+  it('counts a Health night when none was typed, and a typed night wins', () => {
+    const sun: DayKey = '2026-11-01';
+    const g = { t: 'Seven hours of sleep, 4 nights', k: 'sleep' as const, n: 4 };
+    let d: Days = {};
+    const mon = addDays(sun, -6);
+    d = saveCheckin(d, mon, { ...checkinFormOf(d, mon), h: 5 });
+    const nights: Nights = { [mon]: 8, [addDays(sun, -5)]: 7.5, [addDays(sun, -4)]: 6 };
+    expect(sunGoalCount(d, g, sun, sun)).toBe(0);
+    expect(sunGoalCount(d, g, sun, sun, nights)).toBe(1);
+    expect(sunWeek(d, normSettings({ start: '2026-10-01' }), sun, sun, nights).sleep).toEqual([5, 7.5, 6]);
   });
 });

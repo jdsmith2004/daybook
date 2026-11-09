@@ -70,6 +70,35 @@ need "less", not zero, and binge eating should never get an abstinence frame; no
 Effort: medium for the setup, words, Get help and the lesson filter (a display filter on the existing faith mechanism; nothing
 earned is read or written differently). High for any later change that touches points or the record.
 
+## The turn cards, redone (the owner, November 9, 2026: the flash cards were "really bad"; merged November 9, 2026 after the owner looked on the simulator)
+
+Every turned lesson has one turn card (core `lesson-turns.ts`, `flip`): the old thought on the front, another way to see it on the
+back. Pictures, before and after: `docs/shots/turn-card`.
+
+**What was weak.** The person did nothing but press Turn it over, so nothing made them think. The card was a school index card: ruled
+lines that did not line up with the words, a red margin rule, a stack under it and a lip, with a small label over each side ("You may
+think", "Look again"), which "The look" does not allow. The back was a pale sticky note with a green rule, which read as "right
+answer" and so as "you were wrong". The flame sat under it and said nothing, and half the card was empty lines.
+
+**What the research says** (a subagent's search, November 9, 2026). A guess about this very item, made before the answer, helps it stay
+(pretesting; St. Hilaire and others 2023, g = 0.54 for the item guessed). Rating how much you believe a thought, before and after, is
+how a thought record in CBT works. Telling people a belief they hold is wrong invites pushback, so nothing is marked right or wrong.
+A given reframe the person weighs works better than asking them to write one from nothing.
+
+**The new card** (medium effort, built):
+
+- The front is the old thought on white paper, set a little crooked, with a big coral quote mark: something said, not a label.
+- The flame asks, in its bubble: "How true does this feel to you?" Three answers in one row at the bottom: Very true, Partly, Not
+  really (`FLIP_FEEL`). There is no Turn it over button.
+- The answer turns the card: it lifts, turns over and lands straight, sun yellow (the answer is the sun, as everywhere in a lesson),
+  with a light tap, then the success buzz and the flame's pulse as it lands. Then the flame answers what was picked (Very true: "Most
+  people start right there. Now hold it next to this.").
+- After that a tap on the card turns it back to the old thought, and again, to compare. More and Next sit at the bottom.
+- With Reduce Motion on, the back simply shows.
+
+**Asked of the owner:** whether to add the second half of the thought record later: after the turn, "And now?" with the same three
+answers, and the flame showing the move ("Very true, then Partly"). It costs one more tap; left out for now to keep the card fast.
+
 ## The fire burns lower when you stop doing your part (the owner, November 8, 2026; merged November 9, 2026 after the owner looked on the simulator)
 
 The owner: when the person drifts, the flame burns lower, as if water were poured on it, and when they come back it flares up again; "make the

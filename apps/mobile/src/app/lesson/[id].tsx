@@ -1385,7 +1385,7 @@ const s = StyleSheet.create({
   },
   flipFront: { backgroundColor: PAPER },
   flipBack: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: SUN_CARD },
-  flipMark: { fontFamily: font.display, fontSize: 64, lineHeight: 52, height: 40, color: '#E8665A' },
+  flipMark: { fontFamily: font.display, fontSize: 64, lineHeight: 72, marginTop: -8, marginBottom: -24, color: '#E8665A' },
   flipT: { fontFamily: font.display, fontSize: 28, lineHeight: 34, color: PAPER_INK },
   flipSee: { color: SUN_INK },
   flipLong: { fontSize: 22, lineHeight: 28 },

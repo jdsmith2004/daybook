@@ -53,7 +53,8 @@ import {
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OwnAnswers } from '@/components/own-answers';
 import { Link } from '@/components/choices';
@@ -854,12 +855,15 @@ export function SettingsSections() {
 /** one part of Settings on its own page, titled with its name */
 export function SettingsPart({ id }: { id: PartId }) {
   const parts = useParts();
+  const { height } = useWindowDimensions();
+  const inset = useSafeAreaInsets();
   if (!parts) return <Redirect href="/" />;
   const p = parts[id];
   if (!p || !p.body) return <Redirect href="/settings" />;
+  /* a short page sits low, where the thumb is: the title at the top, what is changed just above the bottom edge */
   return (
     <Screen title={p.title} back>
-      <View style={s.page}>{p.body}</View>
+      <View style={[s.page, { minHeight: height - inset.top - inset.bottom - 200 }]}>{p.body}</View>
     </Screen>
   );
 }
@@ -941,8 +945,8 @@ function PullBody({ pull, hard, say }: { pull: PullPrefs; hard: string | null; s
 
 const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  group: { gap: 8 },
+  group: { gap: 8, marginTop: 8 },
   head: { paddingLeft: 16 },
-  page: { gap: 24 },
+  page: { gap: 24, justifyContent: 'flex-end' },
   act: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
 });

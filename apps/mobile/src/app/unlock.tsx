@@ -102,14 +102,14 @@ export default function Unlocked() {
         <Icon name="sparkle" size={16} color={night ? '#FFE27A' : c.accent} />
         <Text style={[s.ebT, { color: night ? '#FFE27A' : c.accent }]}>{w.eb}</Text>
       </View>
-      <T v="title" style={ink ? { color: ink } : undefined} accessibilityRole="header">
+      <T v="title" style={[s.mid0, ink ? { color: ink } : null]} accessibilityRole="header">
         {w.title}
       </T>
-      <T tone={night ? undefined : 'muted'} style={[{ marginTop: 8 }, soft ? { color: soft } : null]}>
+      <T tone={night ? undefined : 'muted'} style={[s.mid0, { marginTop: 8 }, soft ? { color: soft } : null]}>
         {w.line}
       </T>
       {id === 'person' ? (
-        <View style={{ gap: 10, marginTop: 14 }}>
+        <View style={s.name}>
           <Field
             label="Their name"
             maxLength={80}
@@ -155,6 +155,8 @@ export default function Unlocked() {
 const s = StyleSheet.create({
   eb: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 },
   ebT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
+  mid0: { textAlign: 'center' },
+  name: { gap: 10, marginTop: 14, alignSelf: 'stretch', width: '100%' },
   mid: { flex: 1, justifyContent: 'center', gap: 4 },
   c: { alignItems: 'center' },
   opt: { paddingVertical: 12 },

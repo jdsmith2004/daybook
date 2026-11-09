@@ -13,11 +13,21 @@ Core `unlock.ts` decides, `app/unlock.tsx` shows it, and the memory is on this d
   it is ever shared." The flame: "Name how the day felt, in one word or a few lines. Naming it takes some of its weight. Pull down
   on Today any time to write." **Write the first one** opens a new entry; quiet **Put it on my day** makes it an any-time stop.
   Picture: `docs/screen-time/unlock-journal.png`.
+- **Planning a slip?, the day after the first urge ridden out (from day 3).** It was never locked (care never is), so its small
+  word is "A tool for you". "You rode an urge out. Here is the tool for the night it starts earlier." The flame says a slip is often
+  planned long before it happens, and to tap Planning a slip? on Today when they notice it. **See how it works** opens it.
+- **The safe person, day 7, when none is named.** It left the setup the same day (the golden setup pages drop `person` by design;
+  the plan's summary in setup shows Safe person only when there is one). "Who could be your safe person?", the name box and
+  **Save** near the top for the keyboard, then the flame: "A week in, you know this is real. One person you could text on a hard
+  night makes the next one easier." Kept in My plan. Cost: a new person no longer gets the Day 1 "Tell them you started" card,
+  since there is no name on Day 1.
 - **The app that pulls you in, day 7, iPhone only** (Screen Time, below).
-- **Ideas for more, for the owner to pick (medium each):** the Sunday review explained on the first Saturday instead of in setup
-  (the `review` page); Reached out as a stop after the first week; Talk it through (Planning a slip?) shown after the first hard
-  night that was ridden out; the safe person asked after the first week instead of in setup (the `person` page). Moving a setup
-  page out is the owner's call: setup is where the plan is built, and a shorter setup may lose some of that.
+- **Reached out, day 10, when it is not on the day already.** "This habit grows in secret, and it shrinks when you are known."
+  **Put it on my day** turns the any-time stop on.
+- **The first Sunday review.** The first one due is its own Sunday card marked "Unlocked", opening a page that says what it is
+  ("what helped, what got you, and one small goal for the next"), then **Start my review**. Later Sundays are as before.
+- Each has its own sky (the journal night, Planning a slip? violet, the safe person coral, Reached out mint, the review sun).
+  Pictures: `docs/screen-time/unlock-*.png`. Built November 9, 2026, all on `claude/screen-time-f8b40b`, not merged.
 
 ## Screen Time: the app that pulls you in (the owner, November 8, 2026; approved November 9, 2026; being built on `claude/screen-time-f8b40b`)
 

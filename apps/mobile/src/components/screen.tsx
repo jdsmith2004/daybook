@@ -35,7 +35,10 @@ export function Screen({
   top,
   bare,
   backdrop,
+  icon,
 }: {
+  /** a small picture beside the title (a Settings page shows its row's icon) */
+  icon?: ReactNode;
   eyebrow?: string;
   title: string;
   /** something under the title, like the phase chip on Today */
@@ -126,9 +129,12 @@ export function Screen({
                     {eyebrow}
                   </T>
                 ) : null}
-                <T v="title" accessibilityRole="header">
-                  {title}
-                </T>
+                <View style={s.titleRow}>
+                  {icon}
+                  <T v="title" accessibilityRole="header" style={{ flexShrink: 1 }}>
+                    {title}
+                  </T>
+                </View>
               </View>
               {action}
             </View>
@@ -170,6 +176,7 @@ const s = StyleSheet.create({
   col: { width: '100%', maxWidth: MAX_WIDTH, gap: 16 },
   top: { alignSelf: 'stretch', marginHorizontal: -16 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   over: { position: 'absolute', left: 16, right: 16, alignItems: 'center' },
   bar: { position: 'absolute', top: 0, left: 0, right: 0 },
   back: {

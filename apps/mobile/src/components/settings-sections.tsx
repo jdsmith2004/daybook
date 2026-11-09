@@ -1,8 +1,10 @@
-/* Every setting, as short grouped lists by what the person came to do (the owner, November 9, 2026: "long and chaotic"; docs/plan.md,
-   "Settings, rebuilt"). Each row says how that part stands now and opens the part's own page (app/settings/[part].tsx). The More tab
-   and the Settings page both show the list. Ported from the legacy viewSettings. */
+/* Every setting (the owner, November 9, 2026: "long and chaotic"; docs/plan.md, "Settings, rebuilt"), in the grammar of a really
+   good settings page (components/settings-ui.tsx): a card at the top for where the log lives, then short groups by what the person
+   came to do, each row one line with how it stands now in gray, and each row opening its own page (app/settings/[part].tsx) built
+   from the same pieces. The More tab and the Settings page both show the list. Ported from the legacy viewSettings. */
 import {
   daysCsv,
+  diffDays,
   eventsCsv,
   fmtClock,
   fmtHour,
@@ -48,26 +50,24 @@ import {
   habitMedical,
   OB_HABIT,
   PULL_NAME,
-  pullLine,
 } from '@daybook/core';
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { BigFlame } from '@/components/big-flame';
 import { OwnAnswers } from '@/components/own-answers';
-import { Link } from '@/components/choices';
 import { DateStep } from '@/components/date-step';
 import { SYNC_NEED_SHORT } from '@/components/support';
 import { STORAGE_LINE } from '@/components/home-screen';
-import { OnOff, Stepper } from '@/components/form';
+import { Stepper } from '@/components/form';
 import { Screen } from '@/components/screen';
+import { SetCell, SetGroup, SetPick, SetRow, SetSwitch, useTone, type Tone } from '@/components/settings-ui';
 import { confirmUnlock, lockOffered } from '@/components/lock';
 import { SyncBody } from '@/components/sync-card';
 import { B } from '@/components/help-bits';
-import { LinkCard, Rows } from '@/components/link-card';
-import { Button, Chip, Icon, T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { pickBackupText, saveBackupFile } from '@/lib/backup';
 import { useNotes } from '@/lib/notes';
 import { BACKUP_FILES } from '@/lib/backup-files';
@@ -97,46 +97,9 @@ import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
 import { useSync } from '@/lib/sync';
 import { SAVE_FAILED, useStore } from '@/lib/store';
-import { useTheme } from '@/lib/theme';
+import { font, skies, useTheme } from '@/lib/theme';
 import { restoredWords, WORDS } from '@/lib/words';
 import { dropVoice, voiceOk } from '@/lib/voice';
-
-function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
-  return (
-    <View style={{ gap: 6 }}>
-      <T v="label">{label}</T>
-      {children}
-      {hint ? (
-        <T v="small" tone="muted">
-          {hint}
-        </T>
-      ) : null}
-    </View>
-  );
-}
-/** a plain line that does something, inside a row that opened: a save, a restore, a delete */
-function Act({ label, onPress, disabled, danger, icon }: { label: string; onPress: () => void; disabled?: boolean; danger?: boolean; icon?: string }) {
-  const c = useTheme();
-  const ink = danger ? c.danger : c.accentText;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [s.act, { opacity: disabled ? 0.5 : pressed ? 0.7 : 1 }]}>
-      {icon ? <Icon name={icon} size={18} color={ink} /> : null}
-      <T v="label" style={{ color: ink }}>
-        {label}
-      </T>
-    </Pressable>
-  );
-}
-const Chips = ({ children, label }: { children: ReactNode; label?: string }) => (
-  <View style={s.chips} accessibilityLabel={label}>
-    {children}
-  </View>
-);
 
 /* the words for each way of counting: only the one chosen shows */
 const COUNT_HOW = {
@@ -178,40 +141,45 @@ export type PartId =
   | 'sync'
   | 'copy'
   | 'wipe';
+
+/** the list, grouped by what the person came to do; each group's icons take one tone. Sync is the card at the top, and
+    Delete everything stands alone at the end. */
+const GROUPS: [string, Tone, PartId[]][] = [
+  ['Your quit', 'coral', ['habit', 'count', 'faith']],
+  ['Your days', 'sky', ['routine', 'bed', 'remind']],
+  ['When it hits', 'violet', ['sos', 'pull', 'answers']],
+  ['This phone', 'mint', ['look', 'lock', 'health', 'notes', 'copy']],
+];
+const ALL: PartId[] = ['sync', ...GROUPS.flatMap(([, , ids]) => ids), 'wipe'];
+const toneOf = (id: PartId): Tone => GROUPS.find(([, , ids]) => ids.includes(id))?.[1] ?? 'accent';
+
 /** the ids links used before the redesign (November 9, 2026), so an old link still opens the right page */
 const OLD: Record<string, PartId> = { sched: 'bed', data: 'copy' };
 export function partOf(asked?: string): PartId | null {
   const k = (asked || '').replace(/^s-/, '');
-  const id = OLD[k] || k;
-  return (GROUPS.some(([, ids]) => ids.includes(id as PartId)) ? id : null) as PartId | null;
+  const id = (OLD[k] || k) as PartId;
+  return ALL.includes(id) ? id : null;
 }
-
-/** the list, grouped by what the person came to do */
-const GROUPS: [string, PartId[]][] = [
-  ['Your days', ['routine', 'bed', 'remind']],
-  ['Your quit', ['habit', 'count', 'faith', 'answers']],
-  ['When it hits', ['sos', 'pull']],
-  ['This phone', ['look', 'lock', 'health', 'notes']],
-  ['Your log', ['sync', 'copy', 'wipe']],
-];
 
 interface Part {
   icon: string;
   title: string;
-  /** how it stands now, in a few words */
-  sub: string;
+  /** how it stands now, a word or two, in gray on the row */
+  value?: string;
   body?: ReactNode;
   /** a part that lives on a page of its own elsewhere */
   go?: () => void;
-  danger?: boolean;
 }
 
-/** "Lesson, check-in and wind-down" */
-const andList = (xs: string[]) => (xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1]);
+const ON_OFF = [
+  [true, 'On'],
+  [false, 'Off'],
+] as const;
 
 /** every part, with what it shows now; a part this phone does not offer is null */
 function useParts(): Partial<Record<PartId, Part | null>> | null {
   const { snap, tk, now, apply, replace, erase, say, hooks, current } = useStore();
+  const c = useTheme();
   const notes = useNotes();
   const sos = useSos();
   const sync = useSync();
@@ -289,11 +257,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
   const wind = minToClock((h * 60 + m - 60 + 1440) % 1440);
   /* the lesson reminder's time is not set by hand: it follows the last lesson (core lessonAt) */
   const la = lessonAt(snap.days, nlog, tk, now);
-  const lessonSub =
-    'Once a day, around ' +
-    fmtClock(la.at) +
-    (la.from === 'last' ? ', about when you did your last one.' : ', when you usually open Daybook.') +
-    ' Never once today’s is done.';
+  const lessonSub = 'Once a day, around ' + fmtClock(la.at) + (la.from === 'last' ? ', about when you did your last one.' : ', when you usually open Daybook.');
   /* the hard hours the log has found, for Screen Time */
   const hw = riskWindow(snap.days, st, tk);
   const pullHard = hw ? (hw.scope === 'weekdays' ? 'Weekdays, ' : hw.scope === 'weekends' ? 'Weekends, ' : 'Every day, ') + hw.label : null;
@@ -302,177 +266,44 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
   const routineOn = ROUTINE_SHOWN.filter((x: { k: string }) => st.routine[x.k]).length;
   const fa = (st.onb && st.onb.a && (st.onb.a.faith as string)) || '';
   const cr = (st.onb && st.onb.a && (st.onb.a.creed as string)) || '';
-  const themeWord = theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'Auto';
-  const remOn = [rem.lesson && 'lesson', rem.checkin && 'check-in', rem.wind && 'wind-down', rem.review && 'Sunday review', rem.risk && 'heads-ups'].filter(
-    Boolean,
-  ) as string[];
-  const remWords = andList(remOn);
+  const remN = [rem.lesson, rem.checkin, rem.wind, rem.review, rem.risk].filter(Boolean).length;
   /* the phone's own permission comes first: reminders chosen here send nothing while it is off */
-  const remLine =
-    notifyEnv && notifyEnv.offered && !notifyEnv.granted
-      ? 'Off · notifications are off on this phone'
-      : remOn.length
-        ? remWords.charAt(0).toUpperCase() + remWords.slice(1)
-        : 'Off';
+  const notifyOff = !!notifyEnv && notifyEnv.offered && !notifyEnv.granted;
   const wipeWhat = `every entry, check-in${voiceOk ? ', setting and voice note' : ' and setting'}`;
 
   return {
-    routine: {
-      icon: 'check',
-      title: 'Daily routine',
-      sub: routineOn + ' of ' + ROUTINE_SHOWN.length + ' parts on Today',
-      body: (
-        <>
-          <T v="small" tone="muted">
-            A part switched off leaves Today, and still earns its points if you do it. To skip one for a single day, do that from Today.
-          </T>
-          <View>
-            {ROUTINE_SHOWN.map((x) => (
-              <OnOff key={x.k} name={x.name} sub={x.sub} on={!!st.routine[x.k]} onPick={(on) => apply({ st: setRoutine(st, x.k, on) })} />
-            ))}
-          </View>
-          <T v="small" tone="muted">
-            <B>Check-in.</B> Skipping it never costs you a day.
-          </T>
-          <T v="small" tone="muted">
-            <B>Reached out.</B> It starts switched off. Turn it on whenever a text or call to a real person feels right.
-          </T>
-        </>
-      ),
-    },
+    sync:
+      sync.status.k === 'off'
+        ? null
+        : {
+            icon: 'up',
+            title: 'Sync between devices',
+            value: signedIn
+              ? sync.status.k === 'expired'
+                ? 'Sign in again to keep syncing.'
+                : sync.status.k === 'error'
+                  ? 'Not syncing right now. Your log is safe here.'
+                  : sync.status.k === 'need'
+                    ? SYNC_NEED_SHORT
+                    : 'Synced' + (sync.email ? ' as ' + sync.email : '') + '.'
+              : 'Saved on this phone. Sign in to sync.',
+            body: <SyncBody />,
+          },
 
-    bed: {
-      icon: 'moon',
-      title: 'Bedtime',
-      sub: 'Screens off at ' + so + ' · a new day at ' + (st.rollover === 0 ? 'midnight' : fmtHour(st.rollover)),
-      body: (
-        <>
-          <Field label="Screens off" hint="The wind-down opens an hour before. Tapping Good night before then counts as screens off on time.">
-            <Stepper
-              label="Each night by"
-              text={so}
-              unset={false}
-              less="15 minutes earlier"
-              more="15 minutes later"
-              onStep={(d) => apply({ st: setScreensOffTime(st, stepClock(st.screensOff, d * 15)) })}
-            />
-          </Field>
-          <Field label="A new day starts at" hint="Entries before this hour count toward the day before, so a 1 AM entry stays with that night.">
-            <Chips label="A new day starts at">
-              {[0, 1, 2, 3, 4, 5, 6].map((x) => (
-                <Chip key={x} label={x === 0 ? 'Midnight' : fmtHour(x)} on={x === st.rollover} onPress={() => apply({ st: setRollover(st, x) })} />
-              ))}
-            </Chips>
-          </Field>
-        </>
-      ),
-    },
-
-    remind: {
-      icon: 'timer',
-      title: 'Reminders',
-      sub: remindersOffered ? remLine : 'Phone alarms that keep the rhythm',
-      body: remindersOffered ? (
-        <>
-          <T v="small" tone="muted">
-            Up to three a day, and none about something you already did. The words never say what Daybook is for, because a reminder can show on a locked
-            screen. One that stops helping goes quiet, and Today says so.
-          </T>
-          <View>
-            <OnOff name="Today’s lesson" sub={lessonSub} on={rem.lesson} onPick={(on) => setRem({ lesson: on })} />
-            <OnOff name="Check in" sub={'Each evening at ' + fmtClock(rem.checkinAt)} on={rem.checkin} onPick={(on) => setRem({ checkin: on })} />
-            {rem.checkin ? (
-              <Stepper
-                label="Check-in reminder"
-                text={fmtClock(rem.checkinAt)}
-                unset={false}
-                less="15 minutes earlier"
-                more="15 minutes later"
-                onStep={(d) => setRem({ checkinAt: stepClock(rem.checkinAt, d * 15) })}
-              />
-            ) : null}
-            <OnOff name="Wind down" sub={'At ' + wind + ', an hour before screens-off at ' + so} on={rem.wind} onPick={(on) => setRem({ wind: on })} />
-            <OnOff
-              name="Sunday review"
-              sub={'Sundays at ' + fmtClock(REVIEW_AT) + ': two minutes to look back on the week and pick one small goal'}
-              on={rem.review}
-              onPick={(on) => setRem({ review: on })}
-            />
-            <OnOff
-              name="Heads-up before hard hours"
-              sub="A nudge 90 minutes before a time of day that is often hard, to talk it through. A plan you made for next time comes back at its hour."
-              on={rem.risk}
-              onPick={(on) => setRem({ risk: on })}
-            />
-            <OnOff
-              name="If you are away for a while"
-              sub="A few short notes that Daybook is still here, over a month. Then it stays quiet until you open it."
-              on={rem.back !== false}
-              onPick={(on) => setRem({ back: on })}
-            />
-          </View>
-          {rem.risk && !exact ? (
-            <Field label="Exact times" hint="Without it, this phone may send the heads-up up to an hour late. It opens the phone’s page to allow it.">
-              <Link label="Allow exact times" onPress={() => exactAlarmsAsk().then(setExact, () => undefined)} />
-            </Field>
-          ) : null}
-          {notifyEnv && notifyCanAsk(notifyEnv, notifyMem) ? (
-            <Field label="The ask on Today" hint="While notifications are off, a strip at the top of Today offers to turn them on.">
-              <Link
-                label={NOTIFY_WORDS.never}
-                onPress={() => {
-                  setNotifyMem(notifyNever);
-                  say('Daybook will not ask again on this phone. Reminders can still be turned on here.');
-                }}
-              />
-            </Field>
-          ) : null}
-        </>
-      ) : (
-        <>
-          <T>A web page cannot remind you once it is closed, so phone alarms are the reliable way. The lesson matters most; the others help if you like:</T>
-          <T>
-            • <B>{fmtClock(lessonLast(snap.days, tk) || '12:00')}:</B> “Lesson.” A few minutes, once a day.
-          </T>
-          <T>
-            • <B>{minToClock(18 * 60)}:</B> “Check in.” Under a minute.
-          </T>
-          <T>
-            • <B>{wind}:</B> “Wind down.” One hour before screens-off at {so}.
-          </T>
-          <T>
-            • <B>Sunday, {fmtClock(REVIEW_AT)}:</B> “Look back on my week.” A few minutes.
-          </T>
-          <T v="small" tone="muted">
-            Use your clock app. Name each alarm the way it is written above. In the Daybook app on a phone, Daybook can remind you itself.
-          </T>
-        </>
-      ),
-    },
-
-    /* what the person is quitting (core habit.ts): the words and the lessons follow it; nothing earned changes */
     habit: st.onb
       ? {
           icon: 'flame',
           title: 'What I am quitting',
-          sub: HABIT_NAME[habitOf(st)],
+          value: HABIT_NAME[habitOf(st)],
           body: (
-            <>
-              <Field
-                label="What do you want to quit?"
-                hint="Lessons written for porn stay out for another habit. Everything you finished, earned and logged stays.">
-                <Chips label="What I am quitting">
-                  {OB_HABIT.map(([v, l]) => (
-                    <Chip key={v} label={l} on={habitOf(st) === v} onPress={() => apply({ st: setHabit(st, v) })} />
-                  ))}
-                </Chips>
-              </Field>
-              {habitMedical(habitOf(st)) ? (
-                <T v="small" tone="muted">
-                  {habitMedical(habitOf(st))}
-                </T>
-              ) : null}
-            </>
+            <SetGroup
+              head="What do you want to quit?"
+              foot={
+                'Lessons written for porn stay out for another habit. Everything you finished, earned and logged stays.' +
+                (habitMedical(habitOf(st)) ? '\n\n' + habitMedical(habitOf(st)) : '')
+              }>
+              <SetPick options={OB_HABIT.map(([v, l]) => [v, l] as const)} value={habitOf(st)} onPick={(v) => apply({ st: setHabit(st, v) })} />
+            </SetGroup>
           ),
         }
       : null,
@@ -480,21 +311,12 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
     count: {
       icon: 'flag',
       title: 'Counting days',
-      sub:
-        st.cleanMode === 'gentle'
-          ? 'Gentle · a slip takes one day off'
-          : st.cleanMode === 'step'
-            ? 'Step down · longer stretches between slips'
-            : 'Strict · days in a row with no slip',
+      value: st.cleanMode === 'gentle' ? 'Gentle' : st.cleanMode === 'step' ? 'Step down' : 'Strict',
       body: (
         <>
-          <T v="small" tone="muted">
-            A day counts when no slip is logged on it. After two days in a row with Daybook not opened, the days after wait until you say how they went. They
-            never take anything away. This only changes how days are counted, never what you log.
-          </T>
-          <Field
-            label="Counting"
-            hint={
+          <SetGroup
+            head="How days count"
+            foot={
               <>
                 {COUNT_HOW[st.cleanMode === 'gentle' ? 'gentle' : st.cleanMode === 'step' ? 'step' : 'strict']}
                 {'\n\n'}
@@ -502,155 +324,274 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
                 switch.
               </>
             }>
-            <Chips label="Counting">
-              <Chip label="Gentle" on={st.cleanMode === 'gentle'} onPress={() => apply(setCountMode(st, 'gentle', tk))} />
-              <Chip label="Strict" on={st.cleanMode === 'strict'} onPress={() => apply(setCountMode(st, 'strict', tk))} />
-              <Chip label="Step down" on={st.cleanMode === 'step'} onPress={() => apply(setCountMode(st, 'step', tk))} />
-            </Chips>
-          </Field>
-          <Field label="Switching" hint="Daybook moves you between step down and counting days as your log changes, and tells you when it does.">
-            <Chips label="Switching">
-              <Chip label="Switch for me" on={st.cleanAuto !== false} onPress={() => apply(setCleanAuto(st, true))} />
-              <Chip label="Leave it" on={st.cleanAuto === false} onPress={() => apply(setCleanAuto(st, false))} />
-            </Chips>
-          </Field>
-          <View style={{ gap: 12 }}>
-            <DateStep label="Day 1 of quitting" value={st.day1} from={st.day1 || tk} onPick={(k) => apply(setDate(st, 'day1', k))} />
-            {st.day1 ? (
-              <Link label="No Day 1 yet, keep tracking" onPress={() => apply(setDate(st, 'day1', null))} />
-            ) : (
-              <T v="small" tone="muted">
-                No Day 1 is set. Pick a date above when you are ready.
-              </T>
-            )}
-            <DateStep label="Tracking starts" value={st.start} from={tk} onPick={(k) => apply(setDate(st, 'start', k))} />
-            <Link label="What tracking week, quitting and just tracking mean" onPress={() => router.push('/mode')} />
-          </View>
+            <SetPick
+              options={[
+                ['gentle', 'Gentle'],
+                ['strict', 'Strict'],
+                ['step', 'Step down'],
+              ]}
+              value={st.cleanMode === 'gentle' ? 'gentle' : st.cleanMode === 'step' ? 'step' : 'strict'}
+              onPick={(v) => apply(setCountMode(st, v, tk))}
+            />
+          </SetGroup>
+          <SetGroup foot="Daybook moves you between step down and counting days as your log changes, and tells you when it does.">
+            <SetSwitch label="Switch for me" on={st.cleanAuto !== false} onChange={(on) => apply(setCleanAuto(st, on))} />
+          </SetGroup>
+          <SetGroup
+            head="Dates"
+            foot="A day counts when no slip is logged on it. After two days in a row with Daybook not opened, the days after wait until you say how they went. They never take anything away.">
+            <SetCell>
+              <DateStep label="Day 1 of quitting" value={st.day1} from={st.day1 || tk} onPick={(k) => apply(setDate(st, 'day1', k))} />
+            </SetCell>
+            {st.day1 ? <SetRow label="No Day 1 yet, keep tracking" act="accent" onPress={() => apply(setDate(st, 'day1', null))} /> : null}
+            <SetCell>
+              <DateStep label="Tracking starts" value={st.start} from={tk} onPick={(k) => apply(setDate(st, 'start', k))} />
+            </SetCell>
+            <SetRow label="Tracking week, quitting and just tracking" onPress={() => router.push('/mode')} />
+          </SetGroup>
         </>
       ),
     },
 
-    /* the setup's faith answers (core faith.ts): whether lessons speak of God, and in which faith's words */
     faith: st.onb
       ? {
           icon: 'star',
           title: 'Faith in the lessons',
-          sub: fa === 'no' ? 'Off' : (OB_CREED.find((x) => x[0] === cr) || [null, 'On'])[1],
+          value: fa === 'no' ? 'Off' : (OB_CREED.find((x) => x[0] === cr) || [null, 'On'])[1],
           body: (
             <>
-              <Field label="Does faith play a part in this for you?" hint="Yes or Somewhat adds lessons that speak of God. Every tool stays the same.">
-                <Chips label="Faith">
-                  {(
-                    [
-                      ['big', 'Yes'],
-                      ['some', 'Somewhat'],
-                      ['no', 'No'],
-                    ] as ['big' | 'some' | 'no', string][]
-                  ).map(([v, l]) => (
-                    <Chip key={v} label={l} on={fa === v} onPress={() => apply({ st: setFaith(st, v) })} />
-                  ))}
-                </Chips>
-              </Field>
+              <SetGroup head="Does faith play a part in this for you?" foot="Yes or Somewhat adds lessons that speak of God. Every tool stays the same.">
+                <SetPick
+                  options={[
+                    ['big', 'Yes'],
+                    ['some', 'Somewhat'],
+                    ['no', 'No'],
+                  ]}
+                  value={(fa || null) as 'big' | 'some' | 'no' | null}
+                  onPick={(v) => v && apply({ st: setFaith(st, v) })}
+                />
+              </SetGroup>
               {fa === 'no' ? null : (
-                <Field label="Which faith is yours?" hint="The lessons that speak of God use its words.">
-                  <Chips label="Which faith">
-                    {OB_CREED.map(([v, l]) => (
-                      <Chip key={v} label={l} on={cr === v} onPress={() => apply({ st: setFaith(st, fa === 'some' ? 'some' : 'big', v) })} />
-                    ))}
-                  </Chips>
-                </Field>
+                <SetGroup head="Which faith is yours?" foot="The lessons that speak of God use its words.">
+                  <SetPick
+                    options={OB_CREED.map(([v, l]) => [v, l] as const)}
+                    value={(cr || null) as (typeof OB_CREED)[number][0] | null}
+                    onPick={(v) => v && apply({ st: setFaith(st, fa === 'some' ? 'some' : 'big', v) })}
+                  />
+                </SetGroup>
               )}
             </>
           ),
         }
       : null,
 
-    answers: {
-      icon: 'pencil',
-      title: 'Check-in answers',
-      sub: ownN ? ownN + ' you added' : 'None added yet',
-      body: <OwnAnswers />,
+    routine: {
+      icon: 'check',
+      title: 'Daily routine',
+      value: routineOn + ' of ' + ROUTINE_SHOWN.length,
+      body: (
+        <SetGroup
+          head="On Today"
+          foot="A part switched off leaves Today, and still earns its points if you do it. To skip one for a single day, do that from Today. Skipping the check-in never costs you a day.">
+          {ROUTINE_SHOWN.map((x) => (
+            <SetSwitch key={x.k} label={x.name} sub={x.sub} on={!!st.routine[x.k]} onChange={(on) => apply({ st: setRoutine(st, x.k, on) })} />
+          ))}
+        </SetGroup>
+      ),
+    },
+
+    bed: {
+      icon: 'moon',
+      title: 'Bedtime',
+      value: so,
+      body: (
+        <>
+          <SetGroup foot="The wind-down opens an hour before. Tapping Good night before then counts as screens off on time.">
+            <SetCell>
+              <Stepper
+                label="Screens off"
+                text={so}
+                unset={false}
+                less="15 minutes earlier"
+                more="15 minutes later"
+                onStep={(d) => apply({ st: setScreensOffTime(st, stepClock(st.screensOff, d * 15)) })}
+              />
+            </SetCell>
+          </SetGroup>
+          <SetGroup head="A new day starts at" foot="Entries before this hour count toward the day before, so a 1 AM entry stays with that night.">
+            <SetPick
+              options={[0, 1, 2, 3, 4, 5, 6].map((x) => [x, x === 0 ? 'Midnight' : fmtHour(x)] as const)}
+              value={st.rollover}
+              onPick={(x) => apply({ st: setRollover(st, x) })}
+            />
+          </SetGroup>
+        </>
+      ),
+    },
+
+    remind: {
+      icon: 'timer',
+      title: 'Reminders',
+      value: remindersOffered ? (notifyOff || !remN ? 'Off' : remN + ' on') : 'Alarms',
+      body: remindersOffered ? (
+        <>
+          {notifyOff ? (
+            <SetGroup foot="Notifications are off for Daybook on this phone, so none of these can come. Turning one on asks the phone first.">
+              <SetRow label="Notifications" value="Off" />
+            </SetGroup>
+          ) : null}
+          <SetGroup
+            head="Each day"
+            foot="Up to three a day, and none about something you already did. The words never say what Daybook is for, because a reminder can show on a locked screen.">
+            <SetSwitch label="Today’s lesson" sub={lessonSub} on={rem.lesson} onChange={(on) => setRem({ lesson: on })} />
+            <SetSwitch label="Check in" sub={'Each evening at ' + fmtClock(rem.checkinAt)} on={rem.checkin} onChange={(on) => setRem({ checkin: on })} />
+            {rem.checkin ? (
+              <SetCell>
+                <Stepper
+                  label="Check-in at"
+                  text={fmtClock(rem.checkinAt)}
+                  unset={false}
+                  less="15 minutes earlier"
+                  more="15 minutes later"
+                  onStep={(d) => setRem({ checkinAt: stepClock(rem.checkinAt, d * 15) })}
+                />
+              </SetCell>
+            ) : null}
+            <SetSwitch label="Wind down" sub={'At ' + wind + ', an hour before screens off'} on={rem.wind} onChange={(on) => setRem({ wind: on })} />
+          </SetGroup>
+          <SetGroup head="Now and then" foot="One that stops helping goes quiet, and Today says so.">
+            <SetSwitch
+              label="Sunday review"
+              sub={'Sundays at ' + fmtClock(REVIEW_AT) + ', to look back on the week'}
+              on={rem.review}
+              onChange={(on) => setRem({ review: on })}
+            />
+            <SetSwitch
+              label="Heads-up before hard hours"
+              sub="90 minutes before a time of day that is often hard"
+              on={rem.risk}
+              onChange={(on) => setRem({ risk: on })}
+            />
+            <SetSwitch
+              label="If you are away for a while"
+              sub="A few short notes over a month, then quiet"
+              on={rem.back !== false}
+              onChange={(on) => setRem({ back: on })}
+            />
+          </SetGroup>
+          {rem.risk && !exact ? (
+            <SetGroup foot="Without it, this phone may send the heads-up up to an hour late. It opens the phone’s page to allow it.">
+              <SetRow label="Allow exact times" act="accent" onPress={() => exactAlarmsAsk().then(setExact, () => undefined)} />
+            </SetGroup>
+          ) : null}
+          {notifyEnv && notifyCanAsk(notifyEnv, notifyMem) ? (
+            <SetGroup foot="While notifications are off, a strip at the top of Today offers to turn them on.">
+              <SetRow
+                label={NOTIFY_WORDS.never}
+                act="accent"
+                onPress={() => {
+                  setNotifyMem(notifyNever);
+                  say('Daybook will not ask again on this phone. Reminders can still be turned on here.');
+                }}
+              />
+            </SetGroup>
+          ) : null}
+        </>
+      ) : (
+        <SetGroup
+          head="Set them as phone alarms"
+          foot="A web page cannot remind you once it is closed. Use your clock app and name each alarm the way it is written here. In the Daybook app on a phone, Daybook can remind you itself.">
+          <SetRow label="Lesson" value={fmtClock(lessonLast(snap.days, tk) || '12:00')} />
+          <SetRow label="Check in" value={minToClock(18 * 60)} />
+          <SetRow label="Wind down" value={wind} />
+          <SetRow label="Look back on my week" value={'Sun ' + fmtClock(REVIEW_AT)} />
+        </SetGroup>
+      ),
     },
 
     sos: {
       icon: 'life',
       title: 'SOS',
-      sub: (pin ? pin.name + ' first' : 'The best fit first') + ' · breath sound ' + (sound ? 'on' : 'off'),
+      value: pin ? pin.name : 'Best fit',
       body: (
         <>
-          <Field
-            label="SOS suggests first"
-            hint={
+          <SetGroup
+            head="SOS suggests first"
+            foot={
               pin
                 ? 'SOS puts ' + pin.name + ' first every time. It still keeps track of what helps.'
                 : 'SOS learns which tools help you, and picks the best fit for the moment.'
             }>
-            <Chips label="SOS suggests first">
-              <Chip label="The best fit for the moment" on={!st.urPin} onPress={() => apply({ st: setUrPin(st, null) })} />
-              {TOOLS.map((x) => (
-                <Chip key={x.id} label={x.name} on={st.urPin === x.id} onPress={() => apply({ st: setUrPin(st, x.id) })} />
-              ))}
-            </Chips>
-          </Field>
+            <SetPick
+              options={[[null, 'The best fit for the moment'] as const, ...TOOLS.map((x) => [x.id, x.name] as const)]}
+              value={st.urPin || null}
+              onPick={(id) => apply({ st: setUrPin(st, id) })}
+            />
+          </SetGroup>
           {urOffOf(st).length ? (
-            <Field label="Not suggested" hint="You said Not for me to these. They stay in the SOS list. Tap one to have it suggested again.">
-              <Chips label="Not suggested">
-                {urOffOf(st).map((id) => (
-                  <Chip key={id} label={urTool(id)!.name + ' ×'} on onPress={() => apply({ st: setUrOff(st, id, false) })} />
-                ))}
-              </Chips>
-            </Field>
+            <SetGroup head="Not suggested" foot="You said Not for me to these. They stay in the SOS list.">
+              {urOffOf(st).map((id) => (
+                <SetRow
+                  key={id}
+                  label={urTool(id)!.name}
+                  right={<T style={{ color: c.accentText, fontFamily: font.bodySemi }}>Suggest again</T>}
+                  onPress={() => apply({ st: setUrOff(st, id, false) })}
+                />
+              ))}
+            </SetGroup>
           ) : null}
-          <Field label="Breath sound" hint="A soft tone on each breath, and a chime when a timer ends. Saved on this device.">
-            <Chips label="Breath sound">
-              <Chip
-                label="On"
-                on={sound}
-                onPress={() => {
-                  setSoundPref(true);
-                  play('on', true);
-                }}
-              />
-              <Chip label="Off" on={!sound} onPress={() => setSoundPref(false)} />
-            </Chips>
-          </Field>
+          <SetGroup foot="A soft tone on each breath, and a chime when a timer ends. Saved on this device.">
+            <SetSwitch
+              label="Breath sound"
+              on={sound}
+              onChange={(on) => {
+                setSoundPref(on);
+                if (on) play('on', true);
+              }}
+            />
+          </SetGroup>
         </>
       ),
     },
 
-    pull: pullOffered ? { icon: 'phone', title: PULL_NAME, sub: pullLine(pull), body: <PullBody pull={pull} hard={pullHard} say={say} /> } : null,
+    pull: pullOffered ? { icon: 'phone', title: PULL_NAME, value: pull.on ? 'On' : 'Off', body: <PullBody pull={pull} hard={pullHard} say={say} /> } : null,
+
+    answers: {
+      icon: 'pencil',
+      title: 'Check-in answers',
+      value: ownN ? String(ownN) : 'None',
+      body: <OwnAnswers />,
+    },
 
     look: {
       icon: 'sparkle',
       title: 'Appearance',
-      sub: themeWord + ' theme · celebrations ' + (st.celebrate ? 'on' : 'off'),
+      value: theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'Auto',
       body: (
         <>
-          <Field label="Theme" hint="Auto follows your phone.">
-            <Chips label="Theme">
-              {(
+          <SetGroup head="Theme" foot="Auto follows your phone.">
+            <SetPick
+              options={
                 [
                   ['auto', 'Auto'],
                   ['light', 'Light'],
                   ['dark', 'Dark'],
                 ] as [ThemePref, string][]
-              ).map(([v, l]) => (
-                <Chip key={v} label={l} on={theme === v} onPress={() => setThemePref(v)} />
-              ))}
-            </Chips>
-          </Field>
-          <Field
-            label="Celebrations"
-            hint="Confetti and pop-ups for level-ups and badges. Off gives a quiet message instead. If your phone is set to reduce motion, the movement is already off.">
-            <Chips label="Celebrations">
-              <Chip label="On" on={st.celebrate} onPress={() => apply({ st: setCelebrate(st, true) })} />
-              <Chip label="Off" on={!st.celebrate} onPress={() => apply({ st: setCelebrate(st, false) })} />
-            </Chips>
-          </Field>
-          <Act
-            label="Preview a celebration"
-            onPress={() => hooks.current.onCelebrate?.([{ type: 'level', level: gameCompute(snap.days, st, snap.reviews, tk).level, from: 0, evolve: false }])}
-          />
+              }
+              value={theme}
+              onPick={(v) => setThemePref(v)}
+            />
+          </SetGroup>
+          <SetGroup foot="Confetti and pop-ups for level-ups and badges. Off gives a quiet message instead. If your phone is set to reduce motion, the movement is already off.">
+            <SetSwitch label="Celebrations" on={st.celebrate} onChange={(on) => apply({ st: setCelebrate(st, on) })} />
+            <SetRow
+              label="Preview a celebration"
+              act="accent"
+              onPress={() =>
+                hooks.current.onCelebrate?.([{ type: 'level', level: gameCompute(snap.days, st, snap.reviews, tk).level, from: 0, evolve: false }])
+              }
+            />
+          </SetGroup>
         </>
       ),
     },
@@ -659,22 +600,19 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
       ? {
           icon: 'lock',
           title: 'App lock',
-          sub: lock ? 'On · Face ID or passcode to open' : 'Off',
+          value: lock ? 'On' : 'Off',
           body: (
-            <>
-              <T v="small" tone="muted">
-                Face ID, Touch ID or your phone’s passcode when Daybook opens, and again after a minute away. In the app switcher, your log is covered.
-              </T>
-              <OnOff
-                name="Lock Daybook"
+            <SetGroup foot="Face ID, Touch ID or your phone’s passcode when Daybook opens, and again after a minute away. In the app switcher, your log is covered.">
+              <SetSwitch
+                label="Lock Daybook"
                 on={!!lock}
-                onPick={async (on) => {
+                onChange={async (on) => {
                   const r = await confirmUnlock(on ? 'Turn on the lock' : 'Turn off the lock');
                   if (r.ok) setLockPref(on);
                   else if (r.why) say(r.why);
                 }}
               />
-            </>
+            </SetGroup>
           ),
         }
       : null,
@@ -683,22 +621,17 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
       ? {
           icon: 'heart',
           title: 'Apple Health',
-          sub: health.on ? (nightsN ? 'Reading sleep · ' + nightsN + (nightsN === 1 ? ' night' : ' nights') : 'Reading sleep · no nights yet') : 'Off',
+          value: health.on ? (nightsN === 1 ? '1 night' : nightsN + ' nights') : 'Off',
           body: (
-            <>
-              <T v="small" tone="muted">
-                Daybook reads how long you slept, from your watch or ring, so the check-in does not have to ask and Pattern can show how your nights and your
-                hard days line up. Only sleep. It stays on this phone: never synced, backed up or sent.
-              </T>
-              {health.on && !nightsN ? (
-                <T v="small" tone="muted">
-                  No nights yet. If you sleep with a watch or a ring, check in the Health app that Daybook can read Sleep.
-                </T>
-              ) : null}
-              <OnOff
-                name="Read my sleep"
+            <SetGroup
+              foot={
+                'Daybook reads how long you slept, from your watch or ring, so the check-in does not have to ask and Pattern can show how your nights and your hard days line up. Only sleep. It stays on this phone: never synced, backed up or sent.' +
+                (health.on && !nightsN ? '\n\nNo nights yet. If you sleep with a watch or a ring, check in the Health app that Daybook can read Sleep.' : '')
+              }>
+              <SetSwitch
+                label="Read my sleep"
                 on={health.on}
-                onPick={async (on) => {
+                onChange={async (on) => {
                   if (on === health.on) return;
                   if (on) {
                     if (!(await connectHealth(st.rollover))) say('Apple Health did not open. Try again in a moment.');
@@ -708,174 +641,177 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
                   }
                 }}
               />
-            </>
+            </SetGroup>
           ),
         }
       : null,
 
-    notes: notes.can
-      ? {
-          icon: 'pencil',
-          title: 'Obsidian',
-          sub: notes.on ? 'Syncing your journal with ' + notes.name : 'Off · sync your journal with your vault',
-          go: () => router.push('/notes'),
-        }
-      : null,
-
-    sync:
-      sync.status.k === 'off'
-        ? null
-        : {
-            icon: 'up',
-            title: 'Sync between devices',
-            sub: signedIn
-              ? sync.status.k === 'expired'
-                ? 'Sign in again to keep syncing'
-                : sync.status.k === 'error'
-                  ? 'Not syncing right now · your log is safe here'
-                  : sync.status.k === 'need'
-                    ? SYNC_NEED_SHORT
-                    : 'On' + (sync.email ? ' · ' + sync.email : '')
-              : 'Off · your log stays on this device',
-            body: <SyncBody />,
-          },
+    notes: notes.can ? { icon: 'pencil', title: 'Obsidian', value: notes.on ? 'On' : 'Off', go: () => router.push('/notes') } : null,
 
     copy: {
       icon: 'copy',
-      title: BACKUP_FILES ? 'Save or restore a copy' : 'Save a copy',
-      sub: BACKUP_FILES ? 'A spreadsheet, or a backup file' : 'Your log as a spreadsheet',
+      title: 'Save a copy',
       body: (
-        <>
-          <T v="small" tone="muted">
-            {signedIn && sync.status.k !== 'need'
+        <SetGroup
+          foot={
+            signedIn && sync.status.k !== 'need'
               ? 'Your log is saved on this device and in your account.'
-              : 'Your log is saved on this device only. Supporters with an account get a safe copy.' + (STORAGE_LINE ? ' ' + STORAGE_LINE : '')}
-          </T>
-          <View>
-            <Act label="Save days as a spreadsheet (CSV)" onPress={() => save('days')} />
-            <Act label="Save every entry with its time (CSV)" onPress={() => save('events')} />
-            {BACKUP_FILES ? (
-              <>
-                <Act label="Save a full backup (JSON)" onPress={() => save('json')} />
-                <Act label="Restore from a backup…" onPress={restore} disabled={busy} />
-              </>
-            ) : null}
-          </View>
-        </>
+              : 'Your log is saved on this device only. Supporters with an account get a safe copy.' + (STORAGE_LINE ? ' ' + STORAGE_LINE : '')
+          }>
+          <SetRow label="Days as a spreadsheet" value="CSV" onPress={() => save('days')} chevron={false} />
+          <SetRow label="Every entry with its time" value="CSV" onPress={() => save('events')} chevron={false} />
+          {BACKUP_FILES ? (
+            <>
+              <SetRow label="A full backup" value="JSON" onPress={() => save('json')} chevron={false} />
+              <SetRow label={busy ? 'Restoring…' : 'Restore from a backup'} act="accent" onPress={busy ? undefined : restore} />
+            </>
+          ) : null}
+        </SetGroup>
       ),
     },
 
     wipe: {
       icon: 'trash',
       title: 'Delete everything',
-      sub: signedIn ? 'On this device and in your account' : 'Every entry and setting on this device',
-      danger: true,
       body: (
-        <>
-          <T v="label">{signedIn ? `Delete ${wipeWhat}, on this device and in your account?` : `Delete ${wipeWhat}?`}</T>
-          <T v="small" tone="muted">
-            {signedIn
+        <SetGroup
+          head={signedIn ? `Delete ${wipeWhat}, on this device and in your account?` : `Delete ${wipeWhat}?`}
+          foot={
+            signedIn
               ? 'Your other devices clear it too when they next sync. Your account keeps a copy for 7 days, so it can be brought back until then.' +
                 (voiceOk ? ' The voice note is only on this phone and cannot be brought back.' : '')
-              : 'Your log is only on this device, so this cannot be undone.'}
-          </T>
-          <View style={{ gap: 8, marginTop: 8 }}>
-            <Button
-              kind="danger"
-              label={busy ? 'Deleting…' : 'Yes, delete everything'}
-              disabled={busy}
-              onPress={async () => {
-                setBusy(true);
-                const ok = !signedIn || (await sync.eraseAccount());
-                setBusy(false);
-                if (!ok) {
-                  say('Could not reach your account, so nothing was deleted. Check the connection and try again.');
-                  return;
-                }
-                await erase();
-                await sos.forget();
-                await forgetDrafts();
-                dropVoice();
-                say('Everything was deleted.');
-                router.replace('/');
-              }}
-            />
-            <View style={{ alignItems: 'center' }}>
-              <Link label="Keep my log" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
-            </View>
-          </View>
-        </>
+              : 'Your log is only on this device, so this cannot be undone.'
+          }>
+          <SetRow
+            label={busy ? 'Deleting…' : 'Yes, delete everything'}
+            act="danger"
+            onPress={
+              busy
+                ? undefined
+                : async () => {
+                    setBusy(true);
+                    const ok = !signedIn || (await sync.eraseAccount());
+                    setBusy(false);
+                    if (!ok) {
+                      say('Could not reach your account, so nothing was deleted. Check the connection and try again.');
+                      return;
+                    }
+                    await erase();
+                    await sos.forget();
+                    await forgetDrafts();
+                    dropVoice();
+                    say('Everything was deleted.');
+                    router.replace('/');
+                  }
+            }
+          />
+          <SetRow label="Keep my log" act="accent" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+        </SetGroup>
       ),
     },
   };
 }
 
-/** every setting as short grouped lists, one row a part, each row saying how it stands now; a row opens the part's own page */
-export function SettingsSections() {
+const openPart = (id: PartId) => router.push({ pathname: '/settings/[part]', params: { part: id } });
+
+/** the card at the top: the flame, the day and the level, and where the log is saved; it opens sync when sync is offered */
+function MeCard({ sync }: { sync: Part | null | undefined }) {
   const c = useTheme();
+  const { snap, tk } = useStore();
+  const st = snap.settings!;
+  const g = gameCompute(snap.days, st, snap.reviews, tk);
+  const day = diffDays(tk, st.day1 || st.start) + 1;
+  const inner = (
+    <View style={s.me}>
+      <View style={[s.avatar, { backgroundColor: skies.light.night[0] }]}>
+        <View style={{ marginBottom: -8 }}>
+          <BigFlame level={g.level.n} size={80} />
+        </View>
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <T style={[s.meT, { color: c.ink }]}>
+          {day > 0 ? 'Day ' + day + ' · ' : ''}
+          {g.level.name}
+        </T>
+        <T v="small" tone="muted">
+          {sync?.value || 'Saved on this phone.'}
+        </T>
+      </View>
+      {sync ? <Icon name="next" size={16} color={c.muted} /> : null}
+    </View>
+  );
+  return (
+    <View style={[s.card, { backgroundColor: c.surface }]}>
+      {sync ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={'Sync between devices. ' + (sync.value || '')}
+          onPress={() => openPart('sync')}
+          style={({ pressed }) => ({ backgroundColor: pressed ? c.surface2 : 'transparent' })}>
+          {inner}
+        </Pressable>
+      ) : (
+        inner
+      )}
+    </View>
+  );
+}
+
+/** every setting: the card for where the log lives, then the groups, then Delete everything on its own */
+export function SettingsSections() {
   const parts = useParts();
-  const { dirty } = useStore();
+  const { snap, tk, dirty } = useStore();
   const sync = useSync();
-  if (!parts) return <Redirect href="/" />;
+  if (!parts || !snap.settings) return <Redirect href="/" />;
   const signedIn = sync.status.k !== 'off' && sync.status.k !== 'out';
   const unsynced = Object.keys(dirty).length;
   return (
-    <>
-      {GROUPS.map(([name, ids]) => {
+    <View style={{ gap: 28 }}>
+      <MeCard sync={parts.sync} />
+      {GROUPS.map(([name, tone, ids]) => {
         const shown = ids.filter((id) => parts[id]);
         if (!shown.length) return null;
         return (
-          <View key={name} style={s.group}>
-            <T v="label" tone="muted" accessibilityRole="header" style={s.head}>
-              {name}
-            </T>
-            <Rows>
-              {shown.map((id) => {
-                const p = parts[id]!;
-                return (
-                  <LinkCard
-                    key={id}
-                    icon={p.icon}
-                    title={p.title}
-                    sub={p.sub}
-                    ink={p.danger ? c.danger : undefined}
-                    onPress={p.go || (() => router.push({ pathname: '/settings/[part]', params: { part: id } }))}
-                  />
-                );
-              })}
-            </Rows>
-          </View>
+          <SetGroup key={name} head={name}>
+            {shown.map((id) => {
+              const p = parts[id]!;
+              return <SetRow key={id} icon={p.icon} tone={tone} label={p.title} value={p.value} chevron onPress={p.go || (() => openPart(id))} />;
+            })}
+          </SetGroup>
         );
       })}
-
-      <T v="small" tone="muted" style={{ textAlign: 'center' }}>
-        Daybook is a self-tracking tool. It is not medical care.
-      </T>
-      <T v="small" tone="muted" style={{ textAlign: 'center' }}>
-        Daybook {Constants.expoConfig?.version ?? ''}
-        {signedIn && unsynced ? ` · ${unsynced} change${unsynced === 1 ? '' : 's'} not synced yet` : ''}
-      </T>
-    </>
+      <SetGroup>
+        <SetRow label="Delete everything" act="danger" onPress={() => openPart('wipe')} />
+      </SetGroup>
+      <View style={s.foot}>
+        <View style={{ height: 44, justifyContent: 'flex-end' }}>
+          <BigFlame level={gameCompute(snap.days, snap.settings, snap.reviews, tk).level.n} size={40} noLand />
+        </View>
+        <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+          Daybook {Constants.expoConfig?.version ?? ''} · a self-tracking tool, not medical care
+          {signedIn && unsynced ? `\n${unsynced} change${unsynced === 1 ? '' : 's'} not synced yet` : ''}
+        </T>
+      </View>
+    </View>
   );
 }
 
-/** one part of Settings on its own page, titled with its name */
+/** one part of Settings on its own page, titled with its name and its icon in its group's tone */
 export function SettingsPart({ id }: { id: PartId }) {
   const parts = useParts();
-  const { height } = useWindowDimensions();
-  const inset = useSafeAreaInsets();
+  const tint = useTone(toneOf(id));
   if (!parts) return <Redirect href="/" />;
   const p = parts[id];
   if (!p || !p.body) return <Redirect href="/settings" />;
-  /* a short page sits low, where the thumb is: the title at the top, what is changed just above the bottom edge */
   return (
-    <Screen title={p.title} back="Settings">
-      <View style={[s.page, { minHeight: height - inset.top - inset.bottom - 200 }]}>{p.body}</View>
+    <Screen title={p.title} back="Settings" icon={id === 'wipe' || id === 'sync' ? undefined : <Icon name={p.icon} size={30} color={tint} />}>
+      <View style={{ gap: 28 }}>{p.body}</View>
     </Screen>
   );
 }
-/* Screen Time (iPhone only; core pull.ts). Apple's own list picks the apps and Daybook never learns which;
-   every choice here undoes at once, with no wait and no lock. */
+
+/* Screen Time (iPhone only; core pull.ts). Apple's own list picks the apps and Daybook never learns which; every choice here undoes
+   at once, with no wait and no lock. */
 function PullBody({ pull, hard, say }: { pull: PullPrefs; hard: string | null; say: (m: string) => void }) {
   const start = async () => {
     const r = await pullStart().catch(() => 'closed' as const);
@@ -884,76 +820,61 @@ function PullBody({ pull, hard, say }: { pull: PullPrefs; hard: string | null; s
   };
   if (!pull.on)
     return (
-      <>
-        <T v="small" tone="muted">
-          Pick the apps that pull you in. When one has you too long, I will say so, and in your hard hours I will say it louder. Nothing about your apps leaves
-          this phone.
-        </T>
-        <Button label="Choose the apps" onPress={start} />
-      </>
+      <SetGroup foot="Pick the apps that pull you in. When one has you too long, I will say so, and in your hard hours I will say it louder. Apple keeps the list, and nothing about your apps leaves this phone.">
+        <SetRow label="Choose the apps" act="accent" onPress={start} />
+      </SetGroup>
     );
   const hours = (n: number) => (n === 0 ? 'Off' : n === 1 ? '1 hour' : n + ' hours');
   return (
     <>
-      <Act icon="phone" label="Change the apps" onPress={() => Pull?.pick()} />
-      <Field label="After long use" hint="One note a day, to today’s lesson when it is not done.">
-        <Chips label="After long use">
-          {PULL_LONG.map((n) => (
-            <Chip key={n} role="radio" label={hours(n)} on={pull.long === n} onPress={() => setPullPrefs({ long: n })} />
-          ))}
-        </Chips>
-      </Field>
-      <OnOff
-        name="In my hard hours"
-        sub={hard ? hard + ': a note at 10 minutes, and at 20.' : 'Your hard hours show here once your log finds them.'}
-        on={pull.hard}
-        onPick={(on) => setPullPrefs({ hard: on })}
-      />
-      {pull.hard ? (
-        <OnOff
-          name="Pause it if I keep going"
-          sub="After the two notes, the apps rest until your hard hours end. A short wait opens them for a few minutes."
-          on={pull.pause}
-          onPick={(on) => setPullPrefs({ pause: on })}
-        />
-      ) : null}
+      <SetGroup foot="Apple keeps the list, and nothing about your apps leaves this phone.">
+        <SetRow label="Change the apps" onPress={() => Pull?.pick()} />
+      </SetGroup>
+      <SetGroup head="A note after long use" foot="One note a day, to today’s lesson when it is not done.">
+        <SetPick options={PULL_LONG.map((n) => [n, hours(n)] as const)} value={pull.long} onPick={(n) => setPullPrefs({ long: n })} />
+      </SetGroup>
+      <SetGroup
+        head="In my hard hours"
+        foot={
+          (hard ? hard + ': a note at 10 minutes, and at 20.' : 'Your hard hours show here once your log finds them.') +
+          (pull.hard ? ' The pause rests the apps until your hard hours end; a short wait opens them for a few minutes.' : '')
+        }>
+        <SetSwitch label="Notes" on={pull.hard} onChange={(on) => setPullPrefs({ hard: on })} />
+        {pull.hard ? <SetSwitch label="Pause it if I keep going" on={pull.pause} onChange={(on) => setPullPrefs({ pause: on })} /> : null}
+      </SetGroup>
       {pull.hard && pull.pause ? (
         <>
-          <Field label="The wait">
-            <Chips label="The wait">
-              {PULL_WAIT.map((n) => (
-                <Chip key={n} role="radio" label={n === 60 ? '1 minute' : n + ' seconds'} on={pull.wait === n} onPress={() => setPullPrefs({ wait: n })} />
-              ))}
-            </Chips>
-          </Field>
-          <Field label="Then open for">
-            <Chips label="Then open for">
-              {PULL_OPEN.map((n) => (
-                <Chip key={n} role="radio" label={n + ' minutes'} on={pull.open === n} onPress={() => setPullPrefs({ open: n })} />
-              ))}
-            </Chips>
-          </Field>
+          <SetGroup head="The wait">
+            <SetPick
+              options={PULL_WAIT.map((n) => [n, n === 60 ? '1 minute' : n + ' seconds'] as const)}
+              value={pull.wait}
+              onPick={(n) => setPullPrefs({ wait: n })}
+            />
+          </SetGroup>
+          <SetGroup head="Then open for">
+            <SetPick options={PULL_OPEN.map((n) => [n, n + ' minutes'] as const)} value={pull.open} onPick={(n) => setPullPrefs({ open: n })} />
+          </SetGroup>
         </>
       ) : null}
-      <Act
-        label="Lift every pause now"
-        onPress={() => {
-          Pull?.lift();
-          say('Every pause is lifted.');
-        }}
-      />
-      <Act label="Turn it all off" onPress={() => pullStop()} />
-      <T v="small" tone="muted">
-        Apple keeps the list of apps, and nothing about them leaves this phone. You can also turn this off in Settings, Screen Time.
-      </T>
+      <SetGroup foot="You can also turn this off in the phone’s Settings, under Screen Time.">
+        <SetRow
+          label="Lift every pause now"
+          act="accent"
+          onPress={() => {
+            Pull?.lift();
+            say('Every pause is lifted.');
+          }}
+        />
+        <SetRow label="Turn Screen Time off" act="danger" onPress={() => pullStop()} />
+      </SetGroup>
     </>
   );
 }
 
 const s = StyleSheet.create({
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  group: { gap: 8, marginTop: 8 },
-  head: { paddingLeft: 16 },
-  page: { gap: 24, justifyContent: 'flex-end' },
-  act: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
+  card: { borderRadius: 26, overflow: 'hidden' },
+  me: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, paddingRight: 16 },
+  meT: { fontFamily: font.displayBold, fontSize: 20, lineHeight: 25 },
+  avatar: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden' },
+  foot: { alignItems: 'center', gap: 4 },
 });

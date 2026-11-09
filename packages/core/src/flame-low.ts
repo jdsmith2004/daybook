@@ -98,25 +98,30 @@ export const RELIT = 'You lit your fire again';
    One map for every part of the drawing, so the fire, the body and the face dim together: each color moves toward a deep ember (red kept,
    green and blue let go), by the same share on the phone (a color matrix over the fire, components/fire-layer.native.tsx) as in the drawn
    layers (lowXml). */
-const KEEP = [0.8, 0.36, 0.24];
+/* an ember: darker, its yellow gone to a burnt orange and its orange to a deep red, a little of the green carried into the red so it reads warm,
+   not as a bright red (first tried as red, green and blue simply scaled: on the phone that read as an angry red) */
+const EMBER = [0.62, 0.08, 0, 0.05, 0.3, 0, 0, 0, 0.22];
 
-/** the scale of red, green and blue at a low */
-export function lowScale(low: number): [number, number, number] {
+/** the 3 by 3 color map at a low: from none at 0 to the ember at 1 */
+export function lowScale(low: number): number[] {
   'worklet';
   const k = Math.max(0, Math.min(1, low));
-  return [1 - (1 - KEEP[0]) * k, 1 - (1 - KEEP[1]) * k, 1 - (1 - KEEP[2]) * k];
+  const out: number[] = [];
+  for (let i = 0; i < 9; i++) out.push((i % 4 === 0 ? 1 : 0) * (1 - k) + EMBER[i] * k);
+  return out;
 }
 /** the same as a 4 by 5 color matrix (Skia's, and SVG's feColorMatrix) */
 export function lowMatrix(low: number): number[] {
   'worklet';
-  const [r, g, b] = lowScale(low);
-  return [r, 0, 0, 0, 0, 0, g, 0, 0, 0, 0, 0, b, 0, 0, 0, 0, 0, 1, 0];
+  const m = lowScale(low);
+  return [m[0], m[1], m[2], 0, 0, m[3], m[4], m[5], 0, 0, m[6], m[7], m[8], 0, 0, 0, 0, 0, 1, 0];
 }
 /** one #RRGGBB color at a low */
 export function lowHex(hex: string, low: number): string {
-  const s = lowScale(low);
+  const m = lowScale(low);
   const n = parseInt(hex.slice(1), 16);
-  const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v, i) => Math.round(v * s[i]));
+  const x = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  const c = [0, 1, 2].map((r) => Math.max(0, Math.min(255, Math.round(m[r * 3] * x[0] + m[r * 3 + 1] * x[1] + m[r * 3 + 2] * x[2]))));
   return (
     '#' +
     c

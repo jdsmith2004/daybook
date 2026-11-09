@@ -108,6 +108,20 @@ the owner's answer.
 - The move: `WrittenMove` in `components/ride/moves.tsx`, the four pages as planned. The hold uses `WavyRing` (still while
   holding, crawling once it fills), ticks as it fills and a firm buzz at the end. A screen reader's tap says no at once.
 - Not done yet: the link in the Why it works sheet (it is only on the last page), and the swipe.
+
+**Swipe and Every tool (the owner, November 9, 2026, after trying it on the iPhone: "needs to be added to the tools list, I
+accidentally left it and could not get it back; I want the tools to be more like swiping, and obvious it is swiping, like Insta").**
+
+- Every tool under More now opens with a group of its own, "Stand on faith", holding It is written, for people who said faith
+  plays a part. A tap puts it next in the ride at once (`jump` in `sos.tsx`, `lead` in `ToolGrid`). It stays a ride move, so
+  there is still no new count and the privacy page does not change.
+- The ride swipes like short videos (`components/ride/swipe.tsx`): up for the next move, down for the one before, as it was
+  (swiped back, Next walks forward through the moves already shown before a new one is picked). The page follows the finger;
+  a fifth of the page or a flick carries it off and the next one comes up from below. With nothing before it, a pull down gives
+  a little and springs back. The shapes board keeps its own drag (the swipe waits for 14 points of upright movement).
+- To make it obvious: until the person has swiped three times (`UrMem.swiped`), from the second move on the page lifts twice
+  by itself after two seconds, the way short-video apps teach it, and the line under the move's name says "Swipe up for the
+  next one" in place of Why it works. Reduced motion skips the lifts. Next, the dots and the heart stay as they were.
 - Pictures from the web build: `docs/written-review/3-built-web-a.png`, `4-built-web-b.png` and `5-built-plain-and-night.png`.
 
 ### More of Matthew 5 (the owner, November 8, 2026: "missing substance", more from Matthew 5)

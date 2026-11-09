@@ -50,6 +50,7 @@ import { BigOption, Link } from '@/components/choices';
 import { RideBar } from '@/components/ride/bar';
 import { MOVE_ICON, MOVE_NAME, MOVES, moveTint } from '@/components/ride/moves';
 import { ScienceSheet } from '@/components/ride/science';
+import { RideSwipe } from '@/components/ride/swipe';
 import { RodeOut, type Rode } from '@/components/rode-out';
 import { Dock, Finish, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
@@ -92,6 +93,9 @@ export default function Sos() {
 
   /* the ride: every move shown in this SOS, oldest first; the last one is showing */
   const [seq, setSeq] = useState<string[]>([]);
+  /* swiped down: how many moves back from the newest one the ride is showing, and where the page came in from */
+  const [back, setBack] = useState(0);
+  const [from, setFrom] = useState<-1 | 0 | 1>(0);
   const [won, setWon] = useState<Rode | null>(() => (SHOTS && wq === '1' ? SHOT_WON : null));
   const [more, setMore] = useState(false);
   const [sci, setSci] = useState(false);
@@ -298,19 +302,44 @@ export default function Sos() {
   }
 
   /* ---------- the ride: one move after another, until it passes ---------- */
-  const id = seq[seq.length - 1];
+  const at = Math.max(0, seq.length - 1 - back);
+  const id = seq[at];
   const Move = MOVES[id] || MOVES.breathe;
   const n = seq.length;
-  /* done: it counts as used; passed over with Next: it comes round a little later from now on (sos.ts urNote) */
+  /* done: it counts as used; passed over with Next: it comes round a little later from now on (sos.ts urNote). Swiped back
+     to an earlier move, Next goes forward again through the ones already shown before it asks for a new one. */
   const next = (done: boolean) => {
     const u = done ? { ...ur, used: ur.used.concat(id) } : ur;
     if (done) setUr(u);
-    else if (!practice) sos.setMem((m) => urNote(m, id, null));
+    else if (!practice && !back) sos.setMem((m) => urNote(m, id, null));
     buzz('tap');
+    setFrom(1);
+    if (back) return setBack(back - 1);
     if (practice && n >= PRACTICE_N) return setSeq(seq.concat('end'));
     const nx = rideNext(u, snap.days, st, tk, Date.now(), sos.mem, can, seq, lead.current);
     lead.current = null;
     setSeq(seq.concat(nx));
+  };
+  /* swiped down: the move before, as it was */
+  const prev = () => {
+    if (at < 1) return;
+    setFrom(-1);
+    setBack(back + 1);
+  };
+  /* swiped up: the next move, and one more swipe learned (until then the page shows how, core UrMem.swiped) */
+  const swiped = Number(sos.mem.swiped) || 0;
+  const hint = swiped < 3 && at >= 1;
+  const swipeNext = () => {
+    if (swiped < 3) sos.setMem((m) => ({ ...m, swiped: Math.min(3, (Number(m.swiped) || 0) + 1) }));
+    next(false);
+  };
+  /* a ride move picked from More (It is written): it comes next, now */
+  const jump = (mv: string) => {
+    setMore(false);
+    buzz('tap');
+    setFrom(1);
+    setBack(0);
+    if (seq[seq.length - 1] !== mv) setSeq(seq.concat(mv));
   };
   /* the heart: this one helps. It comes round sooner, in this SOS and the next ones (sos.ts urRank) */
   const liked = urLikeOf(st, id) > 0;
@@ -352,7 +381,7 @@ export default function Sos() {
   return (
     <SceneFrame title={title} sky={sky} onClose={close} topRight={top}>
       <RideBar t0={ur.t0} mark={practice ? null : mark} on={front && !more && !sci} color={moveTint(c, id)} />
-      <Stage key={n + '-' + id} dir={n > 1 ? 1 : 0}>
+      <RideSwipe key={at + '-' + id} from={from} canBack={at > 0} hint={hint} on={front && !more && !sci} onNext={swipeNext} onBack={prev}>
         <Move
           on={front && !more && !sci}
           onDone={() => next(true)}
@@ -366,33 +395,38 @@ export default function Sos() {
           felt={feltLine && Date.now() - ur.t0 >= FELT_AFTER ? feltLine : null}
           level={level}
         />
-      </Stage>
+      </RideSwipe>
       <Dock>
         <View style={s.ctl}>
           <Round icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
           <Pressable
             style={s.mid}
             accessibilityRole="button"
-            accessibilityLabel={'Move ' + n + ': ' + moveName(id) + '. Why it works.'}
+            accessibilityLabel={'Move ' + (at + 1) + ': ' + moveName(id) + '. Why it works.'}
             onPress={() => {
               buzz('tap');
               setSci(true);
             }}>
             <View style={s.dots}>
-              {seq.slice(-7).map((x, j, l) => (
-                <View
-                  key={n - l.length + j}
-                  style={[s.dot, j === l.length - 1 ? { width: 22, backgroundColor: moveTint(c, x) } : { backgroundColor: c.ink + '40' }]}
-                />
-              ))}
+              {seq.slice(Math.max(0, n - 7)).map((x, j, l) => {
+                const k = n - l.length + j;
+                return <View key={k} style={[s.dot, k === at ? { width: 22, backgroundColor: moveTint(c, x) } : { backgroundColor: c.ink + '40' }]} />;
+              })}
             </View>
             <Text style={[s.segT, { color: c.ink }]} numberOfLines={1}>
               {moveName(id)}
             </Text>
-            <View style={s.why}>
-              <Icon name="book" size={13} color={c.muted} />
-              <Text style={[s.whyT, { color: c.muted }]}>Why it works</Text>
-            </View>
+            {hint ? (
+              <View style={s.why}>
+                <Icon name="up" size={13} color={c.muted} />
+                <Text style={[s.whyT, { color: c.muted }]}>Swipe up for the next one</Text>
+              </View>
+            ) : (
+              <View style={s.why}>
+                <Icon name="book" size={13} color={c.muted} />
+                <Text style={[s.whyT, { color: c.muted }]}>Why it works</Text>
+              </View>
+            )}
           </Pressable>
           <Round icon="next" label="Next move" onPress={() => next(false)} />
         </View>
@@ -418,7 +452,26 @@ export default function Sos() {
           ))}
         </View>
         <Text style={[s.moreH, { color: c.ink }]}>Every tool</Text>
-        <ToolGrid days={snap.days} tags={tags} fresh={false} night={night} onPick={pickTool} />
+        <ToolGrid
+          days={snap.days}
+          tags={tags}
+          fresh={false}
+          night={night}
+          onPick={pickTool}
+          lead={
+            faith
+              ? {
+                  id: 'written',
+                  name: moveName('written'),
+                  desc: (faithVoice(st) || 'plain') === 'plain' ? 'Say no, and stand firm' : 'Answer it like He did',
+                  ic: 'shield',
+                  tone: 'sun',
+                  group: 'Stand on faith',
+                }
+              : undefined
+          }
+          onLead={jump}
+        />
         <Pressable accessibilityRole="button" onPress={() => save('slipped')} style={s.slip} hitSlop={8}>
           <Icon name="leaf" size={16} color={c.slipText} />
           <Text style={[s.slipT, { color: c.slipText }]}>I slipped. A slip is data, not a reset.</Text>

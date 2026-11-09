@@ -38,6 +38,7 @@ const TOOL_SHAPES: Record<string, { kind: ShapeKind; turn: number }> = {
   halt: { kind: 'gem', turn: 0 },
   message: { kind: 'heart', turn: 0 },
   reasons: { kind: 'cookie12', turn: -4 },
+  written: { kind: 'pentagon', turn: 0 },
 };
 
 /** a tool's icon on its own soft shape (the Tools grid, the SOS button) */
@@ -62,18 +63,42 @@ export function ToolGrid({
   tags,
   fresh = true,
   night,
+  lead,
+  onLead,
 }: {
   days: Days;
   onPick: (id: string) => void;
   tags?: Record<string, string>;
   fresh?: boolean;
   night?: boolean;
+  /** one ride move shown first, in a group of its own (SOS: It is written, for people who said faith plays a part) */
+  lead?: { id: string; name: string; desc: string; ic: string; tone: string; group: string };
+  onLead?: (id: string) => void;
 }) {
   const c = useTheme();
   const tried = urTried(days);
   const any = fresh && TOOLS.some((t) => tried[t.id]);
+  const [lSoft, lInk] = lead ? toolTone(c, lead.tone) : ['', ''];
   return (
     <View style={{ alignSelf: 'stretch', gap: 14 }}>
+      {lead ? (
+        <View style={{ gap: 8 }}>
+          <T v="eyebrow" tone="muted" accessibilityRole="header">
+            {lead.group}
+          </T>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={lead.name + '. ' + lead.desc}
+            onPress={() => onLead?.(lead.id)}
+            style={({ pressed }) => [s.tool, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
+            <ToolShape id={lead.id} ic={lead.ic} size={46} iconSize={22} color={lSoft} ink={lInk} />
+            <View style={{ flex: 1 }}>
+              <Text style={[s.name, { color: c.ink }]}>{lead.name}</Text>
+              <Text style={[s.desc, { color: c.muted }]}>{lead.desc}</Text>
+            </View>
+          </Pressable>
+        </View>
+      ) : null}
       {TOOL_GROUPS.map(([g, name]) => (
         <View key={g} style={{ gap: 8 }}>
           <T v="eyebrow" tone="muted" accessibilityRole="header">

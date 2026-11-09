@@ -26,6 +26,7 @@ The owner's answers (November 8, 2026):
 What the critics raised that is not a seam (kept as is, by earlier choices): Today and Learn open on a picture while Pattern and More open on
 a big title (each screen's layout comes from its job); each SOS tool ends its own way (built tool by tool with the owner); the setup's SOS
 pill and urge row (care in reach before setup); points on a slip day for logging it honestly.
+
 ## Your nights from Apple Health (the owner, November 8, 2026; planned, not built)
 
 **The ask.** Read Apple Health (Apple Watch) and maybe Oura, so body signals can show how the person was doing before a slip

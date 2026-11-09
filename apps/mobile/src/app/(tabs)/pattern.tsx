@@ -81,6 +81,7 @@ import { SundayCard } from '@/components/sunday-card';
 import { MonthCard, useLocked, useOpenMonths } from '@/components/support';
 import { Card, Icon, T } from '@/components/ui';
 import { WeeksPane } from '@/components/weeks-pane';
+import { useNights } from '@/lib/health';
 import { useStore } from '@/lib/store';
 import { font, useTheme, palettes } from '@/lib/theme';
 
@@ -164,6 +165,8 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const c = useTheme();
   const { snap, tk, now } = useStore();
   const st = snap.settings!;
+  /* nights from Apple Health, once connected: sleep on the hard-days card then reads every known day, not only check-ins */
+  const health = useNights();
   const [range, setRange] = useState<PatRange>('30');
   const [index, setIndex] = useState(0);
   const [deckY, setDeckY] = useState(0);
@@ -196,7 +199,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const slipTrig = patSlipTrig(snap.days, st, tk);
   const needs = patNeeds(snap.days, keys);
   /* slip days are few, so this one reads the whole log whatever the range */
-  const leads = patLeads(snap.days, allPer.keys);
+  const leads = patLeads(snap.days, allPer.keys, health.on ? { nights: health.nights, st, tk } : null);
   const ins = patInsights(g, ride, when, trig.list);
   const works = urWorks(snap.days, tk);
   const ev = talkEvidence(snap.days);

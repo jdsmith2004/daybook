@@ -60,6 +60,7 @@ export * from './calendar';
 export * from './hero';
 export * from './week';
 export * from './away';
+export * from './health';
 export * from './back';
 export * from './night-win';
 export * from './pulse';

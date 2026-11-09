@@ -80,6 +80,17 @@ describe('the habit', () => {
     expect(core.safetyFor(1, ['x', 'y'], 'alcohol')[0]).toBe('No alcohol in the house');
     expect(core.OB_REPLY.habit.alcohol).toBeTruthy();
   });
+  it('what set it off: each habit sees its own answers first, and none of another habit', () => {
+    const ids = (habit?: string, sel?: string) => core.optList('trig', null, { all: true, habit, sel }).list.map((x) => x[0]);
+    expect(ids()).toEqual(['late', 'lonely', 'bored', 'stress', 'tired', 'scroll', 'other']);
+    expect(ids('porn')).toEqual(ids());
+    expect(ids('alcohol')).toEqual(['social', 'unwind', 'late', 'lonely', 'bored', 'stress', 'tired', 'other']);
+    expect(ids('gambling')).toEqual(['money', 'game', 'late', 'lonely', 'bored', 'stress', 'tired', 'scroll', 'other']);
+    expect(ids('other')).toEqual(ids());
+    /* an answer picked before a habit change stays */
+    expect(ids('porn', 'money')).toContain('money');
+    expect(core.trigText('social', null)).toBe('Around people drinking');
+  });
   it('Settings changes it, and only once setup has run', () => {
     const st = withA({ habit: 'porn' });
     expect(core.habitOf(core.setHabit(st, 'gambling'))).toBe('gambling');

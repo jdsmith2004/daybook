@@ -38,6 +38,7 @@ import {
   lookBackGave,
   lookUndo,
   moveEvent,
+  habitOf,
   optList,
   OPT_MAX,
   patchEvent,
@@ -640,7 +641,7 @@ export default function Log() {
     footer = <Link label="Skip" tone="muted" onPress={() => go('slBefore')} />;
   } else if (step === 'slBefore') {
     /* 3. just before: the situation, one tap (the same answers as after an urge, so they are counted together) */
-    const L = optList('trig', st.opts, { time: ev?.time || null, sel: ev?.trigger || null, all: allOpts, notSure: true });
+    const L = optList('trig', st.opts, { time: ev?.time || null, sel: ev?.trigger || null, all: allOpts, notSure: true, habit: habitOf(st) });
     const full = st.opts.trig.filter((x) => !x.off).length >= OPT_MAX;
     sky = slNight ? 'night' : 'sky';
     title = 'Rekindle';

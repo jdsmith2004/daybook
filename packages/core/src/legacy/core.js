@@ -15,7 +15,10 @@ import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown } from '../away';
    logic: data model, counting, run saves, step down, points, badges, quests, rhythm
    ------------------------------------------------------------------------------------------------ */
 /* ===== LOGIC: pure functions, no DOM, no storage ===== */
-const TRIGGERS=[['late','Late night / in bed'],['lonely','Lonely or low'],['bored','Bored or idle'],['stress','Stressed or anxious'],['tired','Tired'],['scroll','After scrolling or gaming'],['other','Other']];
+const TRIGGERS=[['late','Late night / in bed'],['lonely','Lonely or low'],['bored','Bored or idle'],['stress','Stressed or anxious'],['tired','Tired'],['scroll','After scrolling or gaming'],
+ ['social','Around people drinking'],['unwind','Winding down after work'],['money','Money on hand or payday'],['game','A game on, or a betting ad'],['other','Other']];
+/* answers for one habit only (habit.ts, November 9, 2026): shown first for that habit and left out for the others; scroll is left out for alcohol */
+const TRIG_HABIT={social:'alcohol',unwind:'alcohol',money:'gambling',game:'gambling'},TRIG_SKIP={alcohol:['scroll']};
 /* what I did: Daybook's own tools first (the pause, breathing, and the rest), then everyday things. More than one can be picked. */
 const DIDS=[['pause','10-minute pause'],['breathe','Breathed'],['move','Walked or moved'],['reach','Texted or called someone'],['hobby','Hobby or project'],['left','Left the room'],
  ['curious','Got curious about it'],['ground','Did 5-4-3-2-1'],['halt','Asked what I needed'],['reasons','Read my reasons'],['surprise','A random calm move'],['thought','Named the thought'],['forward','Played it forward'],['bed','Went to bed'],['else','Something else'],['none','Nothing']];
@@ -91,8 +94,11 @@ function trigFits(id,time){
 function optList(kind,opts,o){
  o=o||{};
  const base=kind==='did'?DIDS:TRIGGERS,tail=kind==='did'?['else','none']:['other'];
- const head=base.filter(x=>tail.indexOf(x[0])<0),end=base.filter(x=>tail.indexOf(x[0])>=0);
- const sel=Array.isArray(o.sel)?o.sel:(o.sel?[o.sel]:[]);
+ const sel=Array.isArray(o.sel)?o.sel:(o.sel?[o.sel]:[]),hb=o.habit||'porn';
+ /* the habit's own answers first; another habit's, and the ones that do not fit this habit, only when already picked */
+ const forHabit=x=>kind==='did'||sel.indexOf(x[0])>=0||(TRIG_HABIT[x[0]]?TRIG_HABIT[x[0]]===hb:((TRIG_SKIP[hb]||[]).indexOf(x[0])<0));
+ const all0=base.filter(x=>tail.indexOf(x[0])<0).filter(forHabit),end=base.filter(x=>tail.indexOf(x[0])>=0);
+ const head=all0.filter(x=>TRIG_HABIT[x[0]]===hb).concat(all0.filter(x=>TRIG_HABIT[x[0]]!==hb));
  const fits=x=>o.all||sel.indexOf(x[0])>=0||(kind==='did'?DID_MORE.indexOf(x[0])<0:trigFits(x[0],o.time));
  const shown=head.filter(fits);
  const mine=((opts&&opts[kind])||[]).filter(x=>!x.off||sel.indexOf(x.id)>=0).map(x=>[x.id,x.t]);

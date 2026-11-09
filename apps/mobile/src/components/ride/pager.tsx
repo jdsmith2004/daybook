@@ -19,6 +19,7 @@ export function RidePager({
   hint,
   on,
   onLand,
+  onNear,
   render,
 }: {
   /** how many pages there are (the moves shown so far and the one waiting after them) */
@@ -31,6 +32,8 @@ export function RidePager({
   on: boolean;
   /** the person swiped to page i */
   onLand: (i: number) => void;
+  /** the page mostly in view changed while scrolling (before it lands), for the caption to follow at once */
+  onNear?: (i: number) => void;
   render: (i: number) => ReactNode;
 }) {
   const still = useReducedMotion();
@@ -38,6 +41,9 @@ export function RidePager({
   const [h, setH] = useState(0);
   const seen = useRef(at);
   const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* where the scroll starts; after that only scrollTo moves it (a changing contentOffset would jump, not glide) */
+  const [first] = useState(at);
+  const near = useRef(at);
 
   /* a move done, Next, or a tool picked: glide to the page the ride is on now */
   useEffect(() => {
@@ -75,10 +81,17 @@ export function RidePager({
     if (!h || Math.abs(vy) > 0.05) return;
     land(y);
   };
-  /* the web has no end-of-momentum event: it lands once the scroll has been still for a moment */
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (!WEB) return;
     const y = e.nativeEvent.contentOffset.y;
+    if (h) {
+      const n = Math.max(0, Math.min(count - 1, Math.round(y / h)));
+      if (n !== near.current) {
+        near.current = n;
+        onNear?.(n);
+      }
+    }
+    /* the web has no end-of-momentum event: it lands once the scroll has been still for a moment */
+    if (!WEB) return;
     if (settle.current) clearTimeout(settle.current);
     settle.current = setTimeout(() => land(y), 140);
   };
@@ -95,7 +108,7 @@ export function RidePager({
           scrollEnabled={on}
           showsVerticalScrollIndicator={false}
           decelerationRate="fast"
-          contentOffset={{ x: 0, y: at * h }}
+          contentOffset={{ x: 0, y: first * h }}
           scrollEventThrottle={32}
           onScroll={onScroll}
           onScrollEndDrag={(e) => (WEB ? undefined : end(e.nativeEvent.contentOffset.y, e.nativeEvent.velocity?.y ?? 0))}

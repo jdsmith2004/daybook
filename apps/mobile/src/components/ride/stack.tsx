@@ -387,11 +387,16 @@ export function StackMove({ on, onDone }: MoveProps) {
     setDrag(null);
     setHover(null);
   };
-  const begin = (x: number, y: number) => {
+  /** the tray slot a touch at (x, y) picks up, or -1 when it is not on a shape (then the ride takes the swipe) */
+  const slotAt = (x: number, y: number) => {
     const G = geo.current;
-    if (overRef.current || !G.cell || y < G.trayY - G.cell * 0.4) return;
+    if (overRef.current || !G.cell || y < G.trayY - G.cell * 0.4) return -1;
     const slot = Math.floor((x - G.bx) / G.slotW);
-    if (slot < 0 || slot > 2 || !gRef.current.tray[slot]) return;
+    return slot < 0 || slot > 2 || !gRef.current.tray[slot] ? -1 : slot;
+  };
+  const begin = (x: number, y: number) => {
+    const slot = slotAt(x, y);
+    if (slot < 0) return;
     dragRef.current = slot;
     const h0 = home(slot);
     dx.value = h0.x;
@@ -453,8 +458,14 @@ export function StackMove({ on, onDone }: MoveProps) {
     () =>
       Gesture.Pan()
         .runOnJS(true)
-        .minDistance(0)
-        .onBegin((e) => begin(e.x, e.y))
+        /* only a touch on a shape in the tray is the game's; any other drag is a swipe of the ride */
+        .manualActivation(true)
+        .onTouchesDown((e, mgr) => {
+          const t = e.allTouches[0];
+          if (t && slotAt(t.x, t.y) >= 0) mgr.activate();
+          else mgr.fail();
+        })
+        .onStart((e) => begin(e.x, e.y))
         .onUpdate((e) => move(e.x, e.y))
         .onFinalize(() => end()),
     // eslint-disable-next-line react-hooks/exhaustive-deps

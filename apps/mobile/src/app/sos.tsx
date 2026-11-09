@@ -95,6 +95,8 @@ export default function Sos() {
   const [seq, setSeq] = useState<string[]>([]);
   /* swiped down: how many moves back from the newest one the ride is showing */
   const [back, setBack] = useState(0);
+  /* the page mostly in view while a swipe glides, so the name under it changes at once, not when it lands */
+  const [near, setNear] = useState<number | null>(null);
   const [won, setWon] = useState<Rode | null>(() => (SHOTS && wq === '1' ? SHOT_WON : null));
   const [more, setMore] = useState(false);
   const [sci, setSci] = useState(false);
@@ -393,6 +395,7 @@ export default function Sos() {
           hint={hint && at >= 1}
           on={live}
           onLand={landed}
+          onNear={setNear}
           render={(i) => {
             if (pages[i] === 'end') return null;
             /* every page keeps one copy as it comes into view and leaves it (one key), so landing never swaps it for a fresh
@@ -438,7 +441,7 @@ export default function Sos() {
               setSci(true);
             }}>
             <Text style={[s.segT, { color: c.ink }]} numberOfLines={1}>
-              {moveName(id)}
+              {moveName(near !== null && pages[near] && pages[near] !== 'end' ? pages[near] : id)}
             </Text>
             <View style={s.why}>
               <Icon name={hint ? 'up' : 'book'} size={13} color={c.muted} />
@@ -589,7 +592,7 @@ function Bare({
         accessibilityRole="button"
         accessibilityLabel={label}
         onPress={onPress}
-        hitSlop={8}
+        hitSlop={16}
         style={({ pressed }) => [s.bare, { opacity: pressed ? 0.8 : 1 }]}>
         <Reanimated.View style={[s.loud, { backgroundColor: c.accent }, bobS]}>
           <Icon name={icon} size={26} color="#FFFFFF" />

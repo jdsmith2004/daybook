@@ -153,6 +153,10 @@ it does not let me swipe up").**
   each page keeps one copy as it comes into view and leaves it, so landing never swaps in a fresh one, and going back finds a
   move where it was left. A move's clock starts only when it is first in view (`useStartWhen`). Next is always a filled round,
   and bobs only while the person is learning to swipe.
+- Then (the owner: "the box game does not let me swipe down"; "the down arrow should do the swipe animation"; "the bottom
+  left takes too long to update"): in Fit the shapes only a touch on a shape in the tray is the game's, so any other drag
+  swipes the ride. Next glides like a swipe (the scroll is no longer reset to the new page at the same moment), with a
+  bigger room to tap. The name at the bottom left follows the page mostly in view while it glides, not after it lands.
 
 ### More of Matthew 5 (the owner, November 8, 2026: "missing substance", more from Matthew 5)
 

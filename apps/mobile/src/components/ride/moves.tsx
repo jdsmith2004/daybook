@@ -113,7 +113,7 @@ export function SqueezeMove({ on, onDone }: MoveProps) {
   /* a firm knock on each second of the squeeze, and a soft one when it is time to let go */
   const beat = all ? -1 : i * 10 + (hold ? left : 0);
   useEffect(() => {
-    if (beat < 0) return;
+    if (beat < 0 || !on) return;
     buzz(hold ? 'tick' : 'land');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [beat]);

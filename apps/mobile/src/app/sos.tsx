@@ -43,6 +43,7 @@ import {
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Reanimated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BigOption, Link } from '@/components/choices';
@@ -56,6 +57,7 @@ import { Text } from '@/components/text';
 import { ToolGrid } from '@/components/tool-grid';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useReducedMotion } from '@/lib/motion';
 import { close, closeAll } from '@/lib/nav';
 import { count } from '@/lib/pulse';
 import { setupKeep } from '@/lib/setup-keep';
@@ -325,7 +327,7 @@ export default function Sos() {
   };
   /* swiped up: the next move, and one more swipe learned (until then the page shows how, core UrMem.swiped) */
   const swiped = Number(sos.mem.swiped) || 0;
-  const hint = swiped < 3 && at >= 1;
+  const hint = swiped < 3;
   /* landed on page i by a swipe: down to one before, or up to the next (one more swipe learned) */
   const landed = (i: number) => {
     if (i < at) {
@@ -388,9 +390,8 @@ export default function Sos() {
         <RidePager
           count={pages.length}
           at={at}
-          hint={hint}
+          hint={hint && at >= 1}
           on={live}
-          tint={moveTint(c, id)}
           onLand={landed}
           render={(i) =>
             i === at ? (
@@ -409,12 +410,19 @@ export default function Sos() {
                   level={level}
                 />
               </View>
-            ) : (
-              <Cover key={'cover' + i} id={pages[i]} name={pages[i] === 'end' ? '' : moveName(pages[i])} />
+            ) : pages[i] === 'end' ? null : (
+              /* the move above or below, drawn as it starts but held still, so a swipe shows the real next page and letting go
+                 only starts it (nothing in it runs, speaks or buzzes until then) */
+              <View key={'still' + i} style={s.page} pointerEvents="none" importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+                {(() => {
+                  const M = MOVES[pages[i]] || MOVES.breathe;
+                  return <M on={false} onDone={() => undefined} onFeel={() => undefined} onTool={() => undefined} felt={null} level={level} />;
+                })()}
+              </View>
             )
           }
         />
-        {/* the name and Why it works low on the left, like a caption; the heart and Next in a rail on the right */}
+        {/* the name and Why it works low on the left, like a caption; the heart and Next beside it on the right, in the same slim row */}
         <View style={s.foot} pointerEvents="box-none">
           <Pressable
             style={s.cap}
@@ -434,7 +442,7 @@ export default function Sos() {
           </Pressable>
           <View style={s.rail}>
             <Bare icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
-            <Bare icon="down" label="Next move" onPress={() => next(false)} />
+            <Bare icon="down" label="Next move" loud={hint} onPress={() => next(false)} />
           </View>
         </View>
       </View>
@@ -545,27 +553,29 @@ function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }
   );
 }
 
-/** a move waiting above or below the one in view: its shape and name, still, until it is landed on (nothing in it runs) */
-function Cover({ id, name }: { id: string; name: string }) {
-  const c = useTheme();
-  if (!name) return null;
-  return (
-    <View style={[s.page, s.cover]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-      <T v="title" style={s.c}>
-        {name}
-      </T>
-      <Shape kind="cookie9" size={180} color={moveTint(c, id) + '33'}>
-        <View>
-          <Icon name={MOVE_ICON[id] || urTool(id)?.ic || 'check'} size={64} color={c.ink} />
-        </View>
-      </Shape>
-    </View>
-  );
-}
-
 /** a bare icon in the ride's rail, like a feed's: no button around it; `on` colors it (the heart, once this move helps) */
-function Bare({ icon, label, onPress, on }: { icon: string; label: string; onPress: () => void; on?: boolean }) {
+function Bare({ icon, label, onPress, on, loud }: { icon: string; label: string; onPress: () => void; on?: boolean; loud?: boolean }) {
   const c = useTheme();
+  const still = useReducedMotion();
+  /* while the ride is new: a filled round that bobs down, toward the next move waiting below */
+  const bob = useSharedValue(0);
+  useEffect(() => {
+    bob.value = loud && !still ? withRepeat(withSequence(withTiming(5, { duration: 520 }), withTiming(0, { duration: 520 })), -1) : withTiming(0);
+  }, [loud, still, bob]);
+  const bobS = useAnimatedStyle(() => ({ transform: [{ translateY: bob.value }] }));
+  if (loud)
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        onPress={onPress}
+        hitSlop={8}
+        style={({ pressed }) => [s.bare, { opacity: pressed ? 0.8 : 1 }]}>
+        <Reanimated.View style={[s.loud, { backgroundColor: c.accent }, bobS]}>
+          <Icon name={icon} size={26} color="#FFFFFF" />
+        </Reanimated.View>
+      </Pressable>
+    );
   return (
     <Pressable
       accessibilityRole="button"
@@ -583,9 +593,8 @@ function Bare({ icon, label, onPress, on }: { icon: string; label: string; onPre
 const PRACTICE_N = 3;
 /** the record of how it felt after slips is never shown before this far into an SOS */
 const FELT_AFTER = 30000;
-/** the room each ride page leaves: under it for the caption, and down its right side for the rail and the side dots */
+/** the room each ride page leaves under it, for one slim row: the name on the left, the heart and Next on the right */
 const CAP = 58;
-const RAIL = 40;
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
@@ -593,12 +602,12 @@ const s = StyleSheet.create({
   passedT: { fontFamily: font.bodyBold, fontSize: 15 },
   ride: { flex: 1, alignSelf: 'stretch' },
   /* each page leaves room at the bottom for the caption and the rail, so its own answers sit just above them */
-  page: { flex: 1, alignItems: 'center', gap: 14, paddingBottom: CAP, paddingRight: RAIL },
-  cover: { justifyContent: 'center', gap: 28 },
+  page: { flex: 1, alignItems: 'center', gap: 14, paddingBottom: CAP },
   foot: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
   cap: { flex: 1, gap: 3, paddingBottom: 6, minHeight: 44, justifyContent: 'flex-end' },
-  rail: { gap: 18, alignItems: 'center', marginRight: -8 },
-  bare: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  rail: { flexDirection: 'row', gap: 6, alignItems: 'center', marginRight: -8, paddingBottom: 6 },
+  bare: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  loud: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   segT: { fontFamily: font.bodySemi, fontSize: 15 },
   why: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   whyT: { fontFamily: font.bodySemi, fontSize: 13 },

@@ -138,6 +138,14 @@ it does not let me swipe up").**
   is kept under the moves any more. The heart and Next are bare icons in a thin gutter on the right, the page leaving sinks
   back, dims and drifts slower as the next one comes over it, and a column of dots down the right edge has a bright mark, in
   the move's color, that slides with the finger (`Page` and `SideDots` in `pager.tsx`). Reduced motion keeps the pages flat.
+- Then (the owner: "it is glitching; I do not like it cutting out space to the right; find a different way for them to know
+  about the swipe"; "I swipe and it shows the same tool, then I let go and it switched; the down arrow should be more
+  noticeable at first"): the sinking page and the side dots are gone (the leaving page showed through under the header), and
+  nothing takes the right side. The heart and Next sit in the one slim row with the name. The page above and below is the
+  real move drawn still (`on` false, so nothing in it runs, speaks or buzzes), so a swipe shows exactly what comes and letting
+  go only starts it. On the phone the page is chosen by the drag itself: an eighth of a page or any flick moves on. Until the
+  person has swiped three times, Next is a filled round that bobs down, and the line under the name says "Swipe up for the
+  next one"; from the second move the page also lifts twice to show the next one below.
 
 ### More of Matthew 5 (the owner, November 8, 2026: "missing substance", more from Matthew 5)
 

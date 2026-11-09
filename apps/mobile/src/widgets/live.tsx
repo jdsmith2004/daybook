@@ -1,17 +1,19 @@
 /* The Live Activity on iPhone (core live-activity.ts): the flame on the Lock Screen and in the Dynamic Island, in the hard hours and
    at night. The look follows the flight, ride and delivery cards the owner held up (November 9, 2026): the start and end times big at
    the two ends, a thick bar between them that iPhone fills on its own as the time passes, the flame waiting at its end, and a live
-   countdown under it. In the Dynamic Island, a ring that fills around the flame and the live time left beside it, read as one thing.
+   countdown under it. In the Dynamic Island, the flame and the live time left beside it, read as one thing (Uber's way; a ring drew its own digits).
    One small flame picture, the same everywhere (lib/flame-widget), and few layers: a Live Activity has little memory.
    This function runs on its own inside the widget (expo-widgets): every color and size is written inside it. Nothing in it says
    what Daybook is for. */
-import { HStack, Image, ProgressView, Spacer, Text, VStack, ZStack } from '@expo/ui/swift-ui';
+import { HStack, Image, ProgressView, Spacer, Text, VStack } from '@expo/ui/swift-ui';
 import {
   activityBackgroundTint,
   aspectRatio,
   font,
   foregroundStyle,
   frame,
+  backgroundOverlay,
+  clipShape,
   labelsHidden,
   lineLimit,
   monospacedDigit,
@@ -41,6 +43,7 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
   'widget';
   const WARM = '#FFB347';
   const SOFT = '#B9B2E0';
+  const NIGHT = '#16123A';
   const span = { lower: new Date(props.a), upper: new Date(props.b) };
   const flame = (size: number) =>
     props.img ? (
@@ -49,7 +52,11 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
       <Image systemName="flame.fill" size={size * 0.7} color={WARM} />
     );
   /* a clean glyph for the small places, where the mascot would only blur: a flame, or a moon once it is asleep (no short time) */
-  const glyph = (size: number) => <Image systemName={props.short ? 'flame.fill' : 'moon.zzz.fill'} size={size} color={WARM} />;
+  const glyph = (size: number, color = WARM) => <Image systemName={props.short ? 'flame.fill' : 'moon.zzz.fill'} size={size} color={color} />;
+  /* the end of the bar: a warm round badge with the flame in it, like the pin at the end of a ride */
+  const badge = (size: number) => (
+    <VStack modifiers={[frame({ width: size, height: size }), backgroundOverlay({ color: WARM }), clipShape('circle')]}>{glyph(size * 0.55, NIGHT)}</VStack>
+  );
   const text = (s: string, size: number, color: string, weight: 'bold' | 'semibold' = 'semibold') => (
     <Text modifiers={[font({ size, weight, design: 'rounded' }), foregroundStyle(color), lineLimit(1)]}>{s}</Text>
   );
@@ -69,50 +76,58 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
         countsDown={false}
         modifiers={[progressViewStyle('linear'), labelsHidden(), tint(WARM), scaleEffect({ x: 1, y: 2.2 })]}
       />
-      {glyph(18)}
+      {badge(24)}
     </HStack>
   );
-  /* the ring that fills around the flame, for the Dynamic Island (always on black there): its own countdown is drawn in black, so only the ring shows */
-  const ring = (size: number) => (
-    <ZStack modifiers={[frame({ width: size, height: size })]}>
-      <ProgressView
-        timerInterval={span}
-        countsDown={false}
-        modifiers={[progressViewStyle('circular'), labelsHidden(), tint(WARM), foregroundStyle('#000000')]}
-      />
-      {glyph(size * 0.42)}
-    </ZStack>
-  );
-  const ends = (size: number) => (
+  /* under the bar: where it started, the time left, where it ends */
+  const foot = (size: number) => (
     <HStack>
-      {text(props.left, size, '#FFFFFF', 'bold')}
+      {text(props.left, size, SOFT)}
       <Spacer />
-      {text(props.right, size, WARM, 'bold')}
+      <HStack spacing={4}>
+        {left(size, '#FFFFFF')}
+        {text('left', size, SOFT)}
+      </HStack>
+      <Spacer />
+      {text(props.right, size, WARM)}
     </HStack>
+  );
+  /* the words: whose it is (the owner: "we don't know which app it is"), what it is, and when */
+  const words = (big: number) => (
+    <VStack alignment="leading" spacing={2}>
+      <HStack spacing={4}>
+        {glyph(11, SOFT)}
+        {text('Daybook', 13, SOFT)}
+      </HStack>
+      {text(props.line, big, '#FFFFFF', 'bold')}
+      {props.sub ? text(props.sub, 15, WARM) : null}
+    </VStack>
   );
   return {
+    /* after the ride card: the words on the left, the mascot big on the right as the picture, then the bar and its times */
     banner: (
-      <VStack spacing={10} modifiers={[activityBackgroundTint(environment.isLuminanceReduced ? '#000000' : '#16123A'), padding({ all: 16 })]}>
-        <HStack spacing={10}>
-          {flame(34)}
-          {text(props.line, 17, '#FFFFFF')}
+      <VStack spacing={12} modifiers={[activityBackgroundTint(environment.isLuminanceReduced ? '#000000' : NIGHT), padding({ all: 16 })]}>
+        <HStack spacing={12}>
+          {words(24)}
           <Spacer />
-          {left(17, WARM)}
+          {flame(62)}
         </HStack>
-        {ends(26)}
-        {bar}
+        <VStack spacing={6}>
+          {bar}
+          {foot(13)}
+        </VStack>
       </VStack>
     ),
-    compactLeading: ring(26),
+    /* the mascot says whose it is; the time left beside it */
+    compactLeading: <VStack modifiers={[padding({ leading: 2 })]}>{flame(24)}</VStack>,
     compactTrailing: <VStack modifiers={[frame({ maxWidth: 64 })]}>{left(15, WARM)}</VStack>,
-    minimal: ring(24),
-    expandedLeading: <VStack modifiers={[padding({ leading: 4 })]}>{ring(34)}</VStack>,
-    expandedCenter: text(props.line, 15, SOFT),
-    expandedTrailing: <VStack modifiers={[padding({ trailing: 4 })]}>{left(18, WARM)}</VStack>,
+    minimal: flame(22),
+    expandedLeading: <VStack modifiers={[padding({ leading: 8, top: 4 })]}>{words(20)}</VStack>,
+    expandedTrailing: <VStack modifiers={[padding({ trailing: 8, top: 4 })]}>{flame(50)}</VStack>,
     expandedBottom: (
-      <VStack spacing={10} modifiers={[padding({ horizontal: 4, top: 6, bottom: 4 })]}>
-        {ends(20)}
+      <VStack spacing={6} modifiers={[padding({ horizontal: 8, top: 6, bottom: 6 })]}>
         {bar}
+        {foot(13)}
       </VStack>
     ),
   };

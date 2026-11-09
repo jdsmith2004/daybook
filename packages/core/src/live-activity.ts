@@ -48,7 +48,7 @@ export interface LiveBar {
 
 /** the words, kept short and plain: nothing says what Daybook is for */
 export const LIVE_WORDS = {
-  hard: 'Your flame is with you',
+  hard: 'Stay strong',
   hardSub: (endHour: number) => 'Till ' + riskStartLabel(endHour),
   wind: 'Wind down',
   windSub: (off: string) => 'Screens off at ' + fmtClock(off),

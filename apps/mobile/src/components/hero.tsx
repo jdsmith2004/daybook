@@ -83,6 +83,18 @@ export function skyInk(level: number) {
   };
 }
 
+/** the words under the sky while the fire burns low, or the day before it does */
+function LowLines({ w, ink, warm }: { w: { h: string; p: string; fix: string }; ink: string; warm: string }) {
+  return (
+    <View style={s.low} accessible accessibilityLabel={`${w.h}. ${w.p} ${w.fix}`}>
+      <Text style={[s.lowH, { color: ink }]}>{w.h}</Text>
+      <Text style={[s.lowP, { color: ink }]}>
+        {w.p} <Text style={{ color: warm }}>{w.fix}</Text>
+      </Text>
+    </View>
+  );
+}
+
 /* ---------- the flame in its own sky ---------- */
 /* a few stars, placed by hand so the sky looks the same every time: [left %, top px, size] */
 const STARS: [number, number, number][] = [
@@ -382,16 +394,9 @@ function Sky({
         </View>
       </View>
       {/* burning low: one firm line under the sky, clear of the flame, read before the next step */}
-      {words ? (
-        <View style={s.low} accessible accessibilityLabel={words.h + '. ' + words.p}>
-          <Text style={[s.lowH, { color: c.ink }]}>{words.h}</Text>
-          <Text style={[s.lowP, { color: c.muted }]}>{words.p}</Text>
-        </View>
-      ) : fl.warn && !relit ? (
-        /* the day before it burns lower: one quieter line, while the flame still burns fully */
-        <View style={s.low} accessible accessibilityLabel={LOW_WARN}>
-          <Text style={[s.lowW, { color: c.ink }]}>{LOW_WARN}</Text>
-        </View>
+      {words || (fl.warn && !relit) ? (
+        /* big and few: what is happening, then what it cost, and in the one warm color the way to light it again */
+        <LowLines w={words ?? LOW_WARN} ink={c.ink} warm={c.sunText} />
       ) : null}
     </>
   );
@@ -414,10 +419,9 @@ const s = StyleSheet.create({
   lvT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'right' },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 6 },
   /* under the sky, off the flame */
-  low: { paddingHorizontal: 20, paddingTop: 14, gap: 2 },
-  lowH: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },
-  lowW: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
-  lowP: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
+  low: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 4, gap: 4 },
+  lowH: { fontFamily: font.display, fontSize: 28, lineHeight: 33 },
+  lowP: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 23 },
   /* just over the level it belongs to, clear of the flame's face */
   grew: {
     position: 'absolute',

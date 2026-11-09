@@ -25,6 +25,7 @@ have to reach people before they act (each the recommended option):
   down to embers (day 5). The 7 and 30 day notes keep their words ("Everything is kept"). Words only, no picture (the owner, October 25). Never
   after a slip or a heavy week (the tender words stay), and nothing on the lock screen says what Daybook is for.
 - **Pace by the day:** first 2, 3 and 5 days. The owner found it too slow (November 9, 2026): now one day with nothing done is a warning, two burn lower, three or more are down to embers. While it burns low the face is sad; the words say why and what lights it again; the color drains to ash, not red. The screen-time animation dimming went to the screen-time session.
+- **Notes like Duolingo's (November 9, 2026):** while the fire is low the come-back notes run on days 2, 3, 5, 7, 14 and 30 in the flame's voice, the last a back-off ("I will stop these for now"); an 8 PM last call the evening before it burns lower. The words on Today are big: a 28pt line, then the cost, with the way back in the one warm color.
 - **A widget later,** as its own piece: a home-screen and lock-screen widget showing the flame as it burns now (a native widget extension and a
   new App Store build).
 

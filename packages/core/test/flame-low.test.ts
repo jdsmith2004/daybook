@@ -70,12 +70,13 @@ describe('the words', () => {
     expect(core.lowWords({ step: 0, low: 0, idle: 1, was: 0, warn: false })).toBeNull();
     expect(core.lowWords({ step: 1, low: 0.4, idle: 2, was: 1, warn: false })!.h).toBe('You are dimming your fire');
     /* it says why, and what lights it again */
-    expect(core.lowWords({ step: 3, low: 1, idle: 6, was: 3, warn: false })!.p).toBe(
-      'Because nothing was done for 6 days. Do one thing today, like the lesson below, and it lights again.',
-    );
+    expect(core.lowWords({ step: 3, low: 1, idle: 6, was: 3, warn: false })).toMatchObject({
+      p: '6 days with nothing done.',
+      fix: 'One lesson today lights it again.',
+    });
     for (const step of [1, 2, 3] as const) {
       const w = core.lowWords({ step, low: 1, idle: 5, was: step, warn: false })!;
-      expect(w.h + w.p).not.toMatch(/n't|addict|failure|weak|lazy/i);
+      expect(w.h + w.p + w.fix).not.toMatch(/n't|addict|failure|weak|lazy/i);
     }
   });
 

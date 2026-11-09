@@ -71,25 +71,46 @@ export function fireLow(days: Days, st: Settings | null, tk: DayKey, nowMs: numb
   return { step: before, low: LOW_OF[before], idle, was: before, warn: !fresh && idle === LOW_AT[0] - 1 };
 }
 
-/** the words on Today while it burns low: firm and plain, about the next choice */
-export function lowWords(f: FireLow): { h: string; p: string } | null {
+/** the words on Today while it burns low: a big line for what is happening, then what it cost and the one thing that lights it again, firm
+    and plain, about the next choice. Big and few, after Duolingo's lapsed screens: the flame carries the feeling, the words say why. */
+export function lowWords(f: FireLow): { h: string; p: string; fix: string } | null {
   if (!f.step) return null;
-  /* why it is low, and the one thing that lights it again, right above the next step */
-  const why = 'Because nothing was done for ' + f.idle + ' days. Do one thing today, like the lesson below, and it lights again.';
-  if (f.step === 1) return { h: 'You are dimming your fire', p: why };
-  if (f.step === 2) return { h: 'Your fire is smouldering', p: why };
-  return { h: 'Your fire is down to embers', p: why };
+  const p = f.idle + ' days with nothing done.';
+  const fix = 'One lesson today lights it again.';
+  if (f.step === 1) return { h: 'You are dimming your fire', p, fix };
+  if (f.step === 2) return { h: 'Your fire is smouldering', p, fix };
+  return { h: 'Your fire is down to embers', p, fix };
 }
-/** the quieter line on Today the day before it burns lower */
-export const LOW_WARN = 'Nothing done yesterday. Do one thing today, or your fire burns lower tomorrow.';
+/** the words on Today the day before it burns lower, while the flame still burns fully */
+export const LOW_WARN = { h: 'Your fire burns lower tomorrow', p: 'Nothing done yesterday.', fix: 'One lesson today keeps it burning.' };
 /** the day's reminder, the day before it burns lower */
 export const LOW_WARN_NOTE = { t: 'Your fire burns lower tomorrow 🔥', b: 'Do one thing today to keep it burning. Today’s lesson takes a few minutes.' };
-/** the come-back notes while it burns low, by how low (never after a slip, never saying what Daybook is for) */
-export const LOW_NOTES: Record<1 | 2 | 3, { t: string; b: string }> = {
-  1: { t: 'Your fire is burning lower 🔥', b: 'You are dimming it. A few minutes today keeps it burning.' },
-  2: { t: 'Your fire is smouldering', b: 'It goes lower every day you leave it. One thing today lights it again.' },
-  3: { t: 'Your fire is down to embers', b: 'One ember still glows. One thing today lights it again.' },
+/** the evening note, a last call, on a day the fire is about to burn lower and nothing is done yet (Duolingo's streak saver) */
+export const LOW_SAVE: Record<'warn' | 'dim', { t: string; b: string }> = {
+  warn: { t: 'Last call for your fire 🔥', b: 'Nothing done yesterday or today. One lesson before bed keeps it burning.' },
+  dim: { t: 'Embers tomorrow 🔥', b: 'Your fire is already dimming. One lesson tonight keeps it from going down to embers.' },
 };
+/** the days after the app was last open that a come-back note comes while the fire burns low: often at first, then spaced out, after
+    Duolingo's run, and the last says it goes quiet */
+export const LOW_BACK_DAYS = [2, 3, 5, 7, 14, 30] as const;
+/** a come-back note while it burns low, in the flame's own voice: how low it is and the one thing that lights it, about the fire and the
+    next choice, never about who the person is. before: how low it was at the note before. (Never after a slip or a hard week: nudges.ts
+    sends the tender notes then.) */
+export function lowBack(day: number, f: FireLow, before: LowStep): { t: string; b: string } {
+  const n = f.idle + ' days';
+  if (day <= 3) {
+    if (f.step < 3) return { t: 'Your fire is burning lower 🔥', b: n + ' with nothing done. One lesson today keeps it burning.' };
+    if (before === 3) return { t: 'Still down to embers 🔥', b: n + ' with nothing done. One lesson lights me again.' };
+    return { t: 'Down to embers 🔥', b: 'It is your flame. ' + n + ' with nothing done, and I am down to embers. One lesson lights me again.' };
+  }
+  if (day <= 5) return { t: 'One ember left 🕯️', b: n + ' now. One ember is still glowing. A few minutes today lights me again.' };
+  if (day <= 7) return { t: 'A week of embers 🕯️', b: 'One ember is still glowing. Today’s lesson takes a few minutes and lights it again.' };
+  if (day <= 14) return { t: 'Your flame here 👋', b: 'Two weeks, and one ember still glows. Everything you built is kept. One lesson lights it again.' };
+  return {
+    t: 'I will stop these for now 🌙',
+    b: 'These reminders do not seem to be helping, so I will go quiet. Your ember stays lit, and everything you built is kept.',
+  };
+}
 
 /** the small words over the next step while it burns low */
 export const LOW_LEAD = 'This lights your fire again';

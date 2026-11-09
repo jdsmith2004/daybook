@@ -89,7 +89,7 @@ export function SetRow({
           ) : null}
         </View>
         {value ? (
-          <T style={[s.label, { color: c.muted, flexShrink: 1, textAlign: 'right' }]} numberOfLines={1}>
+          <T style={[s.label, { color: c.muted, flexShrink: 1, maxWidth: '50%', textAlign: 'right' }]} numberOfLines={1}>
             {value}
           </T>
         ) : null}

@@ -357,7 +357,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
       ? {
           icon: 'star',
           title: 'Faith in the lessons',
-          value: fa === 'no' ? 'Off' : (OB_CREED.find((x) => x[0] === cr) || [null, 'On'])[1],
+          value: fa === 'no' ? 'Off' : cr === 'lds' ? 'Latter-day Saint' : cr === 'christian' ? 'Christian' : 'On',
           body: (
             <>
               <SetGroup head="Does faith play a part in this for you?" foot="Yes or Somewhat adds lessons that speak of God. Every tool stays the same.">

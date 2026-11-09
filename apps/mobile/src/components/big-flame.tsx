@@ -4,10 +4,14 @@
    place every time. The picture's own sky and stars are left out: it sits in a sky that is painted around it (the top of
    Today, the round sky at the end of a lesson), whose stars stay small however close the figure is drawn. It moves like
    the flame everywhere else (components/flame.tsx: the face and the body hold still and the fire licks), each tap makes
-   the fire leap and sends one bloom through it, and it is still under Reduce Motion. */
-import { emblemLayers, fireOf, formOfLevel, gradOf, type EmblemLayers, type Fire } from '@daybook/core';
+   the fire leap and sends one bloom through it, and it is still under Reduce Motion.
+   Burning low (core flame-low.ts, `low`): the fire, the body and the face sink toward an ember together, the glow fades, it sputters and smokes.
+   With `douse` it is first seen burning fully and then goes down, as if water were poured on it; when `low` comes back to 0 it is lit again: the
+   heart catches, the fire climbs back and leaps, sparks fly and the smoke clears. Under Reduce Motion it is simply drawn as low as it burns. */
+import { emblemLayers, fireOf, formOfLevel, gradOf, lowXml, type EmblemLayers, type Fire } from '@daybook/core';
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
+import Reanimated, { Easing as REasing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
 
 import { FireLayer } from '@/components/fire-layer';
@@ -25,6 +29,22 @@ const RING =
 const FULL_K = 0.48;
 /** where the figure's middle sits in the box when it is brought in close (as a share of its height) */
 const MID_Y = 0.55;
+
+/** the douse: how long it burns fully first, and how long it takes to go down */
+export const DOUSE_WAIT = 450;
+export const DOUSE_MS = 2200;
+/** lit again: the moment the heart catches, and how long the fire takes to climb back */
+export const RELIGHT_CATCH = 380;
+export const RELIGHT_MS = 1100;
+
+/** a drawing in an ember's colors, with its own names for its gradients (on the web two drawings on one page share one list of names) */
+const ember = (xml: string) =>
+  xml
+    ? lowXml(xml, 1)
+        .replace(/id="([^"]+)"/g, 'id="$1lo"')
+        .replace(/url\(#([^)]+)\)/g, 'url(#$1lo)')
+        .replace(/href="#([^"]+)"/g, 'href="#$1lo"')
+    : '';
 
 /** where the graduate's cap sits, as a share of the box from the top, for the forms whose head is not where the torch's is: on the head and clear of the eyes */
 const CAP_TOP: Record<number, number> = { 5: 0.4, 6: 0.31, 7: 0.175, 8: 0.08, 9: 0.13, 10: 0.155, 11: 0.13 };
@@ -81,6 +101,9 @@ export const BigFlame = memo(function BigFlame({
   pulse = 0,
   label,
   noLand,
+  low,
+  douse,
+  smoke,
 }: {
   level: number;
   size: number;
@@ -88,6 +111,12 @@ export const BigFlame = memo(function BigFlame({
   label?: string;
   /** on a sky that is not its own (a lesson): without the drawing's own hills, which would not match */
   noLand?: boolean;
+  /** how low the fire burns (core fireLow), 0 to 1; left out where it never burns low */
+  low?: number;
+  /** seen burning fully first, then going down */
+  douse?: boolean;
+  /** the smoke's color, for the sky behind it */
+  smoke?: string;
 }) {
   const still = useReducedMotion();
   const { snap } = useStore();
@@ -97,6 +126,27 @@ export const BigFlame = memo(function BigFlame({
   const bloom = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;
   const [ms, dim] = GLOW[glowKind(formOfLevel(level))];
+  /* how low it burns, shared by the fire (on the UI thread) and the layers around it */
+  const lv = useSharedValue(douse && !still ? 0 : (low ?? 0));
+  const burst = useSharedValue(0);
+  useEffect(() => {
+    if (low == null) return;
+    if (still) {
+      lv.value = low;
+      return;
+    }
+    if (low > lv.value) lv.value = withDelay(DOUSE_WAIT, withTiming(low, { duration: DOUSE_MS, easing: REasing.out(REasing.quad) }));
+    else if (low < lv.value) {
+      /* lit again */
+      lv.value = withDelay(RELIGHT_CATCH, withTiming(low, { duration: RELIGHT_MS, easing: REasing.out(REasing.cubic) }));
+      burst.value = 0;
+      burst.value = withDelay(RELIGHT_CATCH, withTiming(1, { duration: 1500, easing: REasing.linear }));
+    }
+  }, [low, still, lv, burst]);
+  const dimmed = useAnimatedStyle(() => ({ opacity: lv.value }));
+  const glowLow = useAnimatedStyle(() => ({ opacity: 1 - 0.8 * lv.value }));
+  const lowOn = low != null;
+  const lowFig = useMemo(() => (lowOn && b ? { still: ember(b.layers.still), side: ember(b.layers.side), fig: ember(b.layers.fig) } : null), [lowOn, b]);
   useEffect(() => {
     if (still) {
       breath.setValue(0);
@@ -165,9 +215,11 @@ export const BigFlame = memo(function BigFlame({
       <View style={place} pointerEvents="none">
         <SvgXml xml={layers.back} width={S} height={S} style={StyleSheet.absoluteFill} />
         {layers.glow ? (
-          <Animated.View style={[StyleSheet.absoluteFill, glow]}>
-            <SvgXml xml={layers.glow} width={S} height={S} />
-          </Animated.View>
+          <Reanimated.View style={[StyleSheet.absoluteFill, glowLow]}>
+            <Animated.View style={[StyleSheet.absoluteFill, glow]}>
+              <SvgXml xml={layers.glow} width={S} height={S} />
+            </Animated.View>
+          </Reanimated.View>
         ) : null}
         <Animated.View
           style={{
@@ -183,11 +235,31 @@ export const BigFlame = memo(function BigFlame({
           <>
             {layers.side ? <SvgXml xml={layers.side} width={S} height={S} style={StyleSheet.absoluteFill} /> : null}
             <SvgXml xml={layers.fig} width={S} height={S} style={StyleSheet.absoluteFill} />
+            {/* burning low: the same drawing in an ember's colors over it, as strong as it burns low (the map is linear, so this is exact) */}
+            {lowFig ? (
+              <Reanimated.View style={[StyleSheet.absoluteFill, dimmed]} pointerEvents="none">
+                {lowFig.side ? <SvgXml xml={lowFig.side} width={S} height={S} style={StyleSheet.absoluteFill} /> : null}
+                <SvgXml xml={lowFig.fig} width={S} height={S} style={StyleSheet.absoluteFill} />
+              </Reanimated.View>
+            ) : null}
           </>
         ) : (
           <Animated.View style={[StyleSheet.absoluteFill, fig]}>
-            <FireLayer fire={fire} unit={S / 120} leap={pulse} />
+            <FireLayer
+              fire={fire}
+              unit={S / 120}
+              leap={pulse}
+              low={low != null ? lv : undefined}
+              burst={low != null ? burst : undefined}
+              fine={zoom > 1 ? 1.5 / zoom : 1}
+              smoke={smoke}
+            />
             <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, S / 120)} />
+            {lowFig ? (
+              <Reanimated.View style={[StyleSheet.absoluteFill, dimmed]} pointerEvents="none">
+                <SvgXml xml={stillIn(lowFig.still, fire)} {...stillBox(fire, S / 120)} />
+              </Reanimated.View>
+            ) : null}
           </Animated.View>
         )}
         {layers.front ? <SvgXml xml={layers.front} width={S} height={S} style={StyleSheet.absoluteFill} /> : null}

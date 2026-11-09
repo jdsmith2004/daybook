@@ -1,0 +1,111 @@
+/* Unlocked (core unlock.ts; the owner, November 9, 2026): a part that waited out of the setup, opened on its own page once the
+   person has used the app a while. The flame pops in on its burst, says what the part is for, and the one thing to do sits
+   low. Opening the page is enough to put Today's card away; the part then lives where it always lives.
+
+   - the journal: on the night sky, like the journal itself. Write the first one opens a new entry; a quiet link puts it on the
+     day as an any-time stop.
+   - the apps that pull you in (Screen Time, iPhone only, core pull.ts): the two ways low (nudges by default, the pause only
+     by choice), and Choose the apps opens Apple's ask, then Apple's own list. It is all in More, too. */
+import { gameCompute, setRoutine, UNLOCK_WORDS, type UnlockId } from '@daybook/core';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { Link } from '@/components/choices';
+import { Answer, AnswerText } from '@/components/lesson-parts';
+import { Bubble } from '@/components/lesson-flame';
+import { Dock, Finish, SceneFrame } from '@/components/scene';
+import { Button, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
+import { close } from '@/lib/nav';
+import { pullStart, setPullPrefs } from '@/lib/pull';
+import { useStore } from '@/lib/store';
+import { PAPER_INK } from '@/lib/lesson-look';
+import { font, nightInk } from '@/lib/theme';
+import { useUnlockMark } from '@/lib/unlock';
+
+const WAYS: [boolean, string, string][] = [
+  [false, 'Nudge me', 'A note after two hours, and in your hard hours'],
+  [true, 'Nudge me, then pause it', 'If I nudge twice in your hard hours, the app rests until they end'],
+];
+
+export default function Unlocked() {
+  const { id: raw } = useLocalSearchParams<{ id?: string }>();
+  const id: UnlockId = raw === 'pull' ? 'pull' : 'journal';
+  const w = UNLOCK_WORDS[id];
+  const { snap, tk, apply, say } = useStore();
+  const mark = useUnlockMark();
+  const st = snap.settings;
+  const level = st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1;
+  const night = id === 'journal';
+  const ink = night ? nightInk.ink : undefined;
+  const soft = night ? nightInk.muted : undefined;
+  const [pause, setPause] = useState(false);
+  const asking = useRef(false);
+
+  useEffect(() => {
+    buzz('lit');
+    mark.opened(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const write = () => router.replace({ pathname: '/journal', params: { new: '1' } });
+  const onDay = () => {
+    if (st) apply({ st: setRoutine(st, 'journal', true) });
+    say('It is on your day now.');
+    close();
+  };
+  const choose = async () => {
+    if (asking.current) return;
+    asking.current = true;
+    const ok = await pullStart().catch(() => false);
+    asking.current = false;
+    if (!ok) return;
+    setPullPrefs({ pause });
+    buzz('lit');
+    say('I am watching for it now.');
+    close();
+  };
+
+  return (
+    <SceneFrame title="" sky={night ? 'night' : 'sky'} onClose={() => close()}>
+      <T v="title" style={ink ? { color: ink } : undefined} accessibilityRole="header">
+        {w.title}
+      </T>
+      <T tone={night ? undefined : 'muted'} style={[{ marginTop: 8 }, soft ? { color: soft } : null]}>
+        {w.line}
+      </T>
+      <View style={s.mid}>
+        <Bubble text={w.say} style={{ alignSelf: 'center', maxWidth: 320 }} />
+        <Finish level={level} alive always least={0.6} size={190} zoom={1.25} />
+      </View>
+      <Dock>
+        {id === 'pull' ? (
+          <View style={{ gap: 8 }}>
+            {WAYS.map(([v, t, sub]) => (
+              <Answer key={t} sel={pause === v} right={pause === v} onPress={() => setPause(v)} style={s.opt}>
+                <View style={{ gap: 2 }}>
+                  <AnswerText right={pause === v}>{t}</AnswerText>
+                  <Text style={[s.sub, { color: pause === v ? '#FFFFFF' : PAPER_INK }]}>{sub}</Text>
+                </View>
+              </Answer>
+            ))}
+          </View>
+        ) : null}
+        <Button label={w.btn} onPress={id === 'pull' ? choose : write} kind={night ? 'warm' : 'primary'} />
+        {id === 'journal' ? (
+          <View style={s.c}>
+            <Link label="Put it on my day" onPress={onDay} color={nightInk.ink} />
+          </View>
+        ) : null}
+      </Dock>
+    </SceneFrame>
+  );
+}
+
+const s = StyleSheet.create({
+  mid: { flex: 1, justifyContent: 'center', gap: 4 },
+  c: { alignItems: 'center' },
+  opt: { paddingVertical: 12 },
+  sub: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
+});

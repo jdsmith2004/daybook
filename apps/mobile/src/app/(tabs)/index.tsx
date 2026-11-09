@@ -70,6 +70,7 @@ import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { useCameBack, useQuietAsks } from '@/lib/quiet-asks';
 import { useStore } from '@/lib/store';
+import { useUnlock } from '@/lib/unlock';
 import { LEAD_ROOM, NOTE_ROOM, useTodaySize } from '@/lib/today-size';
 import { useAccount, useSync } from '@/lib/sync';
 import { SyncStrip } from '@/components/sync-strip';
@@ -246,6 +247,8 @@ export default function Today() {
   const scrolled = useRef(0);
   const sizeFor = useTodaySize();
   const lead = useSosLeadOn();
+  /* a part unlocked (core unlock.ts; its card keeps it as seen, moment-card.tsx) */
+  const unlock = useUnlock();
 
   if (!st || !g) return <Welcome />;
   const pick = pickMoment(snap.days, st, snap.reviews, tk, now, {
@@ -256,6 +259,7 @@ export default function Today() {
     account: !!account,
     comebackSeen: typeof sos.mem.cbSeen === 'string' ? (sos.mem.cbSeen as string) : null,
     recheck: bpsDue(snap.days, st, tk, sos.mem, { now, sos: urLastAt(sos.mem) }),
+    unlock,
   });
   /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */
   const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);

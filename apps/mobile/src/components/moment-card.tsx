@@ -1,13 +1,14 @@
 /* The one next step on Today (core pickMoment, moment.ts), under the flame in the same card (hero.tsx): whatever the
    moment is, it is the only thing asking for a tap. Most moments are one band in the colors of their moment (the day's
-   next stop, the Sunday review, the first week, a first pattern, days away), the whole band one
+   next stop, the Sunday review, the first week, a first pattern, days away, a part unlocked), the whole band one
    button (Your day, below, names the rest of the day). The day of a slip keeps its full card, with its words of care; the
    comeback shows its three flames, one line, and leads on to the next step; the moments with their own choices (a talk-through, a counting note,
    a word about reminders, Day 1) keep their cards. Under it, one quiet line names the next moment when
    two overlap. */
-import { comebackNow, type Moment, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
+import { comebackNow, type Moment, type UnlockId, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { NudgeCard } from '@/components/nudge-card';
@@ -22,6 +23,7 @@ import { lookOf, openStop } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
 import { openCare } from '@/lib/nav';
 import { useSos } from '@/lib/sos';
+import { useUnlockMark } from '@/lib/unlock';
 import { font, nightInk, skies, useTheme } from '@/lib/theme';
 
 export function MomentCard({ pick, snap, tk, now }: { pick: MomentPick; snap: Snapshot; tk: string; now: number }) {
@@ -77,9 +79,22 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
       return <Band m={m} onPress={() => router.push('/back')} />;
     case 'recheck':
       return <Band m={m} onPress={() => router.push('/recheck')} />;
+    case 'unlock':
+      return <UnlockBand m={m} />;
     default:
       return null;
   }
+}
+
+/* a part unlocked: the first day it is the card is kept, so the next one waits its days (core unlock.ts) */
+function UnlockBand({ m }: { m: Moment }) {
+  const mark = useUnlockMark();
+  const id = m.v as UnlockId;
+  useEffect(() => {
+    mark.shown(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+  return <Band m={m} onPress={() => router.push({ pathname: '/unlock', params: { id } })} />;
 }
 
 /* the band's button stays short; the longer action is said in its label for screen readers */

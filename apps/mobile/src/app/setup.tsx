@@ -97,7 +97,6 @@ import { buzz } from '@/lib/feel';
 import { askStoreReview } from '@/lib/review';
 import { close } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
-import { getPullPrefs, pullOffered, pullStart, setPullPrefs } from '@/lib/pull';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { countSetup } from '@/lib/pulse';
 import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
@@ -146,16 +145,12 @@ export default function Setup() {
   }, []);
   const rem = useReminderPrefs();
   const [remAt, setRemAt] = useState(rem.checkinAt);
-  /* the Screen Time page: nudges by default, the pause only by choice */
-  const [pullPause, setPullPause] = useState(false);
   /* the reminder page shows on a phone, and on a walk-through only while the check-in reminder is off */
   /* the account page shows to a new person while this build has accounts and they are not signed in; once they are, it
      drops out of the list and the setup moves on by itself */
   const env = {
     notify: remindersOffered && !(f.redo && rem.checkin),
     account: !f.redo && sync.status.k === 'out',
-    /* Screen Time, on an iPhone build that has it, until apps were picked on this phone */
-    pull: pullOffered && getPullPrefs().asked !== 'picked',
   };
   const [breathed, setBreathed] = useState(false);
   /* the hold finished: the flame in the plan lights, and the setup moves on a moment later */
@@ -1070,56 +1065,6 @@ export default function Setup() {
         <View key="f" style={[s.footOne, { gap: 6 }]}>
           <Next key="n" label="Remind me" onPress={yes} off={false} />
           <Ghost label="Not now" onPress={notNow} />
-        </View>
-      );
-      break;
-    }
-    case 'pull': {
-      /* the apps that pull the person in (core pull.ts): the question at the top, the flame big, the two ways low, and Choose
-         the apps at the bottom (Apple's Screen Time ask, then Apple's own list). Skip records the choice, so it is asked again
-         only on a walk-through. */
-      const choose = async () => {
-        if (busy() || asking.current) return;
-        asking.current = true;
-        const ok = await pullStart().catch(() => false);
-        asking.current = false;
-        if (ok) {
-          setPullPrefs({ pause: pullPause });
-          buzz('lit');
-          go(1);
-        }
-      };
-      const skip = () => {
-        if (busy() || asking.current) return;
-        setPullPrefs({ asked: 'skipped' });
-        go(1);
-      };
-      const ways: [boolean, string, string][] = [
-        [false, 'Nudge me', 'A note after two hours, and in your hard hours'],
-        [true, 'Nudge me, then pause it', 'If I nudge twice in your hard hours, the app rests until they end'],
-      ];
-      body = (
-        <>
-          <Head h="Which app pulls you in?" />
-          <Talk text={voice} want={want} />
-          <View style={{ gap: 8 }}>
-            {ways.map(([v, t, sub]) => (
-              <Opt key={t} on={pullPause === v} onPress={() => setPullPause(v)}>
-                {(on) => (
-                  <View style={{ gap: 2 }}>
-                    <AnswerText right={on}>{t}</AnswerText>
-                    <Text style={[s.optSub, { color: on ? '#FFFFFF' : PAPER_INK }]}>{sub}</Text>
-                  </View>
-                )}
-              </Opt>
-            ))}
-          </View>
-        </>
-      );
-      foot = (
-        <View key="f" style={[s.footOne, { gap: 6 }]}>
-          <Next key="n" label="Choose the apps" onPress={choose} off={false} />
-          <Ghost label="Skip this one" onPress={skip} />
         </View>
       );
       break;

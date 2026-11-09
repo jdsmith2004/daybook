@@ -218,6 +218,7 @@ function Shell() {
             'whats-new',
             'feedback',
             'pause',
+            'unlock',
           ].map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
           ))}

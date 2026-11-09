@@ -72,9 +72,9 @@ export function fireLow(days: Days, st: Settings | null, tk: DayKey, nowMs: numb
 export function lowWords(f: FireLow): { h: string; p: string } | null {
   if (!f.step) return null;
   const days = f.idle + ' days with nothing done';
-  if (f.step === 1) return { h: 'You are dimming your fire', p: days + '. One thing today keeps it burning.' };
-  if (f.step === 2) return { h: 'Your fire is smouldering', p: days + '. It goes lower every day you leave it.' };
-  return { h: 'Your fire is down to embers', p: days + '. One ember is still glowing. One thing today lights it again.' };
+  if (f.step === 1) return { h: 'You are dimming your fire', p: days };
+  if (f.step === 2) return { h: 'Your fire is smouldering', p: days + '. It goes lower each day.' };
+  return { h: 'Your fire is down to embers', p: days + '. One ember still glows.' };
 }
 /** the small words over the next step while it burns low */
 export const LOW_LEAD = 'This lights your fire again';
@@ -85,7 +85,7 @@ export const RELIT = 'You lit your fire again';
    One map for every part of the drawing, so the fire, the body and the face dim together: each color moves toward a deep ember (red kept,
    green and blue let go), by the same share on the phone (a color matrix over the fire, components/fire-layer.native.tsx) as in the drawn
    layers (lowXml). */
-const KEEP = [0.6, 0.3, 0.24];
+const KEEP = [0.8, 0.36, 0.24];
 
 /** the scale of red, green and blue at a low */
 export function lowScale(low: number): [number, number, number] {
@@ -135,7 +135,7 @@ export function smokeAt(i: number, t: number, low: number, x0: number, y0: numbe
   const rise = 34 * size * p;
   const sway = Math.sin(p * 5.1 + i * 1.9) * 3.2 * size * p + Math.sin(t * 0.7 + i) * 1.2 * size * p;
   const r = size * (1.6 + 5.4 * p);
-  const a = shown * Math.min(1, low * 1.4) * 0.34 * Math.sin(Math.PI * Math.min(1, p * 1.1)) * (1 - 0.35 * p);
+  const a = shown * Math.min(1, low * 1.4) * 0.46 * Math.sin(Math.PI * Math.min(1, p * 1.1)) * (1 - 0.35 * p);
   return [x0 + sway, y0 - rise, r, a];
 }
 /** how hard a fire burning low is burning at a moment: it sputters, dips and catches, and never quite settles */

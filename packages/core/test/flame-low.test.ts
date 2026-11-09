@@ -70,13 +70,19 @@ describe('the words', () => {
   it('are firm and plain, about the next choice', () => {
     expect(core.lowWords({ step: 0, low: 0, idle: 1, was: 0 })).toBeNull();
     expect(core.lowWords({ step: 1, low: 0.4, idle: 2, was: 1 })!.h).toBe('You are dimming your fire');
-    expect(core.lowWords({ step: 3, low: 1, idle: 6, was: 3 })!.p).toMatch(/^6 days with nothing done\. One ember is still glowing/);
+    expect(core.lowWords({ step: 3, low: 1, idle: 6, was: 3 })!.p).toBe('6 days with nothing done. One ember still glows.');
     for (const step of [1, 2, 3] as const) {
       const w = core.lowWords({ step, low: 1, idle: 5, was: step })!;
       expect(w.h + w.p).not.toMatch(/n't|addict|failure|weak|lazy/i);
     }
   });
 
+  it('the step open now on Your day says it lights the fire again, and only while it burns low', () => {
+    const later = new Date(2026, 9, 20, 11, 0).getTime();
+    const open = (d: Days) => core.stopTiles(d, st, tk, later).tiles.find((t) => t.state === 'now' || t.state === 'due');
+    expect(open(lessons(['2026-10-12']))!.eyebrow).toBe(core.LOW_LEAD);
+    expect(open(lessons(['2026-10-19']))!.eyebrow).not.toBe(core.LOW_LEAD);
+  });
   it('the next step says it lights the fire again', () => {
     const d = lessons(['2026-10-12']);
     const s = { ...st, onboarded: true } as typeof st;
@@ -88,8 +94,8 @@ describe('the words', () => {
 describe('the colors of a fire burning low', () => {
   it('leave a fire burning fully as it is and move every color toward a deep ember', () => {
     expect(core.lowHex('#FFEA55', 0)).toBe('#FFEA55');
-    expect(core.lowHex('#FFEA55', 1)).toBe('#994614');
-    expect(core.lowXml('<stop stop-color="#FFF"/><path fill="white"/>', 1)).toBe('<stop stop-color="#994D3D"/><path fill="#994D3D"/>');
+    expect(core.lowHex('#FFEA55', 1)).toBe('#CC5414');
+    expect(core.lowXml('<stop stop-color="#FFF"/><path fill="white"/>', 1)).toBe('<stop stop-color="#CC5C3D"/><path fill="#CC5C3D"/>');
     expect(core.lowMatrix(0)).toEqual([1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
   });
 

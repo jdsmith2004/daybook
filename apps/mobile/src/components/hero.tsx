@@ -357,7 +357,7 @@ function Sky({
       </Pressable>
       {/* burning low: one firm line at the top of the sky, read before anything else */}
       {words ? (
-        <View style={[s.low, { top: inset.top + 12 }]} pointerEvents="none" accessible accessibilityLabel={words.h + '. ' + words.p}>
+        <View style={[s.low, { top: inset.top + 62 }]} pointerEvents="none" accessible accessibilityLabel={words.h + '. ' + words.p}>
           <Text maxFontSizeMultiplier={ON_ART} style={[s.lowH, { color: ink }]}>
             {words.h}
           </Text>
@@ -406,8 +406,8 @@ const s = StyleSheet.create({
   small: { flexShrink: 1, fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
   lvT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'right' },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 6 },
-  /* clear of the small buttons in the corners */
-  low: { position: 'absolute', left: 64, right: 64, alignItems: 'center', gap: 2 },
+  /* under the small buttons in the corners, over the flame's sky */
+  low: { position: 'absolute', left: 16, right: 16, alignItems: 'center', gap: 2 },
   lowH: { fontFamily: font.display, fontSize: 20, lineHeight: 25, textAlign: 'center' },
   lowP: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, textAlign: 'center' },
   /* just over the level it belongs to, clear of the flame's face */

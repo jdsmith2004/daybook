@@ -27,6 +27,7 @@ import {
   type RhythmStop,
 } from './legacy/core.js';
 import { lessonOpen } from './accounts';
+import { fireLow, LOW_LEAD } from './flame-low';
 import { lessonNo, lessonStop, lessonWalk, lmin, reviewPick } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
@@ -397,6 +398,8 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number, j
   const night = r.stops.find((x) => x.k === 'night');
   const slipNight = !!night && !!night.started && sumDay(days[tk]).slipped > 0;
   all.splice(at < 0 ? all.length : at, 0, ...anyTimeTiles(days, st, tk, journal, slipNight));
+  /* while the fire burns low, the step that is open now says what it does (flame-low.ts) */
+  if (fireLow(days, st, tk, nowMs).step) for (const t of all) if (t.k === r.cur && !t.done && (t.state === 'now' || t.state === 'due')) t.eyebrow = LOW_LEAD;
   return { tiles: all, cur: r.cur, done: all.filter((t) => t.done).length };
 }
 /** the order of the line on Today: what is done, then the big card, then what is still open, so the next step is never pushed down

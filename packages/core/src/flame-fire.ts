@@ -435,7 +435,7 @@ const W4 = 4.3;
 const W5 = 9.7;
 
 /** how far a fire burning as low as it goes pulls its tips back toward where it holds, as a share of the way */
-export const FIRE_PULL = 0.5;
+export const FIRE_PULL = 0.32;
 
 /** an outline's control points at a moment (t in seconds). amp: how hard the fire is burning, 1 at rest and FIRE_LEAP at the top of a tap.
     low: how low it burns (flame-low.ts), 0 burning fully and 1 down to embers: the tips draw back toward the body. */

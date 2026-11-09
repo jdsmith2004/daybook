@@ -379,7 +379,7 @@ export default function Sos() {
     ...(night ? ([['bed', 'moon', 'Go to bed']] as [string, string, string][]) : []),
   ];
   return (
-    <SceneFrame title={title} sky={sky} onClose={close} topRight={top}>
+    <SceneFrame title={title} sky={sky} onClose={close} topRight={top} fixed>
       <RideBar t0={ur.t0} mark={practice ? null : mark} on={front && !more && !sci} color={moveTint(c, id)} />
       <RideSwipe key={at + '-' + id} from={from} canBack={at > 0} hint={hint} on={front && !more && !sci} onNext={swipeNext} onBack={prev}>
         <Move

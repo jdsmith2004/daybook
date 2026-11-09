@@ -33,6 +33,7 @@ export function SceneFrame({
   pin,
   sheet,
   pinSheet,
+  fixed,
   children,
 }: {
   title: string;
@@ -56,6 +57,9 @@ export function SceneFrame({
   sheet?: ReactNode;
   /** the sheet stays put at the bottom while the card above it scrolls (a long list over the main button) */
   pinSheet?: boolean;
+  /** the page does not scroll, so an up or down swipe belongs to what is on it (the SOS ride, which swipes like short
+      videos: components/ride/swipe.tsx) */
+  fixed?: boolean;
   children: ReactNode;
 }) {
   const c = useTheme();
@@ -86,6 +90,7 @@ export function SceneFrame({
         onContentSizeChange={fit.onContentSizeChange}
         contentContainerStyle={[s.scroll, { paddingTop: 10, paddingBottom: sheet ? (pinSheet ? 12 : 0) : held ? 12 : inset.bottom + (SHORT ? 10 : 24) }]}
         automaticallyAdjustKeyboardInsets
+        scrollEnabled={!fixed}
         keyboardShouldPersistTaps="handled">
         <FitProvider value={fit.ctx}>
           <KeyboardRoom scroll={scroll}>

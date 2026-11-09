@@ -71,3 +71,4 @@ export * from './recheck';
 export * from './celebrate';
 export * from './take-back';
 export * from './whats-new';
+export * from './live-activity';

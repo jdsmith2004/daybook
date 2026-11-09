@@ -97,8 +97,8 @@ function Reminders() {
 /* the flame on the Home Screen and the Lock Screen (lib/flame-widget.ios.ts): kept as it burns, and the first time it is on a screen,
    its points (core WIDGET_PTS), once and for good */
 function FlameWidgetKeeper() {
-  const { ready, snap, tk, update, say } = useStore();
-  return useFlameWidget(snap, tk, ready, () => {
+  const { ready, snap, tk, now, update, say } = useStore();
+  return useFlameWidget(snap, tk, ready, now, () => {
     if (snap.settings?.widget) return;
     update((s) => (s.settings && !s.settings.widget ? { ...s, settings: { ...s.settings, widget: tk } } : s));
     say('Your flame is on your screen. +' + WIDGET_PTS + ' points');

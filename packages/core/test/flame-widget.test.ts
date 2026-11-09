@@ -26,7 +26,8 @@ describe('the widget', () => {
   });
 
   it('never says what Daybook is for, and shows no count', () => {
-    for (const line of Object.values(core.WIDGET_LINE)) expect(line).not.toMatch(/\d|porn|habit|slip|clean|sober|addict|urge/i);
+    for (const line of [...Object.values(core.WIDGET_LINE), ...Object.values(core.WIDGET_NEXT)])
+      expect(line).not.toMatch(/\d|porn|habit|slip|clean|sober|addict|urge/i);
   });
 
   it('putting it on a screen earns points once, kept for good', () => {

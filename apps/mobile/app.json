@@ -90,7 +90,7 @@
               "displayName": "Your flame",
               "description": "Your flame as it burns now.",
               "ios": {
-                "supportedFamilies": ["systemSmall", "accessoryCircular"],
+                "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge", "accessoryCircular"],
                 "initialLayout": "./src/widgets/flame.tsx"
               },
               "android": null

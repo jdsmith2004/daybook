@@ -22,6 +22,8 @@ export interface WidgetEntry {
   low: number;
   /** the line under the flame: short, about the fire, never about what Daybook is for */
   line: string;
+  /** the second line the bigger widgets show: what to do next */
+  next: string;
 }
 
 /** the line under the flame for each state */
@@ -30,6 +32,14 @@ export const WIDGET_LINE: Record<WidgetState, string> = {
   warn: 'Burns lower tomorrow',
   dim: 'Your fire is dimming',
   embers: 'Down to embers',
+};
+
+/** the second line on the bigger widgets: the next choice, never a count */
+export const WIDGET_NEXT: Record<WidgetState, string> = {
+  lit: 'Every step today feeds it.',
+  warn: 'One lesson today keeps it burning.',
+  dim: 'One lesson today lights it again.',
+  embers: 'One lesson today lights it again.',
 };
 
 /** the days ahead the widget is told about: past this it is as low as it goes */
@@ -44,7 +54,7 @@ export function widgetTimeline(days: Days, st: Settings | null, tk: DayKey, nowM
     const f = fireLow(days, st, k, at);
     const state = stateOf(f);
     if (out.length && out[out.length - 1].state === state) return;
-    out.push({ at, state, low: f.step ? LOW_OF[f.step] : 0, line: WIDGET_LINE[state] });
+    out.push({ at, state, low: f.step ? LOW_OF[f.step] : 0, line: WIDGET_LINE[state], next: WIDGET_NEXT[state] });
   };
   push(nowMs, tk);
   for (let i = 1; i <= WIDGET_DAYS; i++) {

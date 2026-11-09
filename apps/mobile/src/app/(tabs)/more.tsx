@@ -28,8 +28,9 @@ export default function More() {
   const shown = shownBadges(g.badges, st);
   const got = shown.filter((b) => badgeDone(b, st)).length;
   const ink = skyInk(g.level.n);
-  const DOOR = 148;
-  const FLAME = Math.min(236, Math.round(width * 0.6));
+  /* the whole flame stands in the door, logs and all: never cut by its edge (the owner, November 9, 2026) */
+  const DOOR = 216;
+  const FLAME = Math.min(224, Math.round(width * 0.58));
   return (
     <Screen title="More">
       <Pressable
@@ -40,7 +41,7 @@ export default function More() {
           router.push('/miles');
         }}
         style={({ pressed }) => [s.door, { opacity: pressed ? 0.9 : 1 }]}>
-        <FlameSky level={g.level.n} height={DOOR} flame={FLAME} foot={(DOOR - FLAME) / 2} right={-16} tappable={false}>
+        <FlameSky level={g.level.n} height={DOOR} flame={FLAME} foot={2} right={-24} tappable={false}>
           <View style={s.doorWords} pointerEvents="none">
             <View style={s.doorHead}>
               <T v="h2" style={{ color: ink.ink }}>

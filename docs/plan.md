@@ -48,6 +48,12 @@ Steps, each with its effort level:
 5. (low) Words outside Settings that name a section: the app, privacy.html, support.html, docs/launch.md.
 6. (medium) Craft checklist on pictures, web export, a release build on the simulator for the owner, then merge on the owner's word.
 
+**Where it stands (November 9, 2026, on medium):** steps 1, 2, 3 and 6 are built and on `claude/settings-overhaul`: the owner chose
+grouped rows with their own pages, "Screen Time", and Settings staying at the bottom of More. Old links (`s-sched`, `s-data`) open the
+new pages, so step 4 is done but for nothing; step 5 (low) is left: "under My own answers" in entry.tsx and log.tsx, the help pages,
+privacy.html, support.html and docs/launch.md still use the old names. A release build is on the "Daybook Settings" simulator for the
+owner's look. Not merged.
+
 ## Unlocked: parts that open as the person uses the app (the owner, November 9, 2026; built on `claude/screen-time-f8b40b`)
 
 "We don't waterboard them with features." Setup stays short and ends with the account ask; a part that is not needed on the first

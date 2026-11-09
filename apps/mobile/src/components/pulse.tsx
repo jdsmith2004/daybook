@@ -3,24 +3,18 @@
    - PulseRows, on More: the counts (on or off) and Ideas and feedback; Stats too, once this device has opened it as the owner */
 import { router } from 'expo-router';
 
-import { LinkCard } from '@/components/link-card';
+import { SetRow } from '@/components/settings-ui';
 import { pulseOffered, usePulse, useStatsSeen } from '@/lib/pulse';
 
 export function PulseRows() {
   const s = usePulse();
   const stats = useStatsSeen();
   if (!pulseOffered) return null;
-  const sub = s?.on === false ? 'Off. Nothing is sent.' : 'On. Never your words or your log.';
   return (
     <>
-      <LinkCard icon="chart" title="Anonymous counts" sub={sub} onPress={() => router.push('/counts')} />
-      <LinkCard
-        icon="chat"
-        title="Ideas and feedback"
-        sub="Any idea or change, straight to the person who builds Daybook"
-        onPress={() => router.push('/feedback')}
-      />
-      {stats ? <LinkCard icon="chart" title="Stats" sub="The owner's view" onPress={() => router.push('/stats')} /> : null}
+      <SetRow icon="chat" tone="accent" label="Ideas and feedback" onPress={() => router.push('/feedback')} />
+      <SetRow icon="chart" tone="accent" label="Anonymous counts" value={s?.on === false ? 'Off' : 'On'} onPress={() => router.push('/counts')} />
+      {stats ? <SetRow icon="chart" tone="accent" label="Stats" value="Owner" onPress={() => router.push('/stats')} /> : null}
     </>
   );
 }

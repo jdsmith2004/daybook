@@ -9,10 +9,10 @@ import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
-export type Tone = 'coral' | 'sky' | 'violet' | 'mint' | 'accent';
+export type Tone = 'coral' | 'sky' | 'violet' | 'mint' | 'sun' | 'accent';
 export function useTone(t: Tone = 'accent') {
   const c = useTheme();
-  return { coral: c.coralText, sky: c.skyText, violet: c.violetText, mint: c.mintText, accent: c.accentText }[t];
+  return { coral: c.coralText, sky: c.skyText, violet: c.violetText, mint: c.mintText, sun: c.sunText, accent: c.accentText }[t];
 }
 
 /** a rounded white group, with a heading over it and a short note under it. Each row draws the line under it; the group's edge

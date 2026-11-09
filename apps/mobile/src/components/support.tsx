@@ -34,6 +34,7 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { LinkCard } from '@/components/link-card';
+import { SetRow } from '@/components/settings-ui';
 import { SHOTS_ANDROID } from '@/shots/boot';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { useSos } from '@/lib/sos';
@@ -104,12 +105,12 @@ export function TipRow() {
   const offer = usePatOffer();
   if (!TIP_ON) return null;
   if (patActive(snap.settings?.pat))
-    return <LinkCard icon="heart" tone="sun" title={PAT_WORDS.rowHave.title} sub={PAT_WORDS.rowHave.sub} onPress={openPattern} />;
+    return <SetRow icon="heart" tone="sun" label={PAT_WORDS.rowHave.title} sub={PAT_WORDS.rowHave.sub} onPress={openPattern} />;
   const w = isSupporter(snap.settings) ? TIP_WORDS.rowThanks : TIP_WORDS.row;
   return (
     <>
-      {offer ? <LinkCard icon="chart" tone="accent" title={PAT_WORDS.row.title} sub={offer} onPress={openPattern} /> : null}
-      <LinkCard icon="heart" tone="sun" title={w.title} sub={w.sub} onPress={openTip} />
+      {offer ? <SetRow icon="chart" tone="accent" label={PAT_WORDS.row.title} sub={offer} onPress={openPattern} /> : null}
+      <SetRow icon="heart" tone="sun" label={w.title} sub={w.sub} onPress={openTip} />
     </>
   );
 }

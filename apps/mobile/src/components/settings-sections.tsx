@@ -4,7 +4,6 @@
    from the same pieces. The More tab and the Settings page both show the list. Ported from the legacy viewSettings. */
 import {
   daysCsv,
-  diffDays,
   eventsCsv,
   fmtClock,
   fmtHour,
@@ -54,7 +53,7 @@ import {
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { BigFlame } from '@/components/big-flame';
 import { OwnAnswers } from '@/components/own-answers';
@@ -97,7 +96,7 @@ import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
 import { useSync } from '@/lib/sync';
 import { SAVE_FAILED, useStore } from '@/lib/store';
-import { font, skies, useTheme } from '@/lib/theme';
+import { font, useTheme } from '@/lib/theme';
 import { restoredWords, WORDS } from '@/lib/words';
 import { dropVoice, voiceOk } from '@/lib/voice';
 
@@ -142,15 +141,15 @@ export type PartId =
   | 'copy'
   | 'wipe';
 
-/** the list, grouped by what the person came to do; each group's icons take one tone. Sync is the card at the top, and
-    Delete everything stands alone at the end. */
+/** the list, grouped by what the person came to do; each group's icons take one tone. Delete everything stands alone at the end. */
 const GROUPS: [string, Tone, PartId[]][] = [
   ['Your quit', 'coral', ['habit', 'count', 'faith']],
   ['Your days', 'sky', ['routine', 'bed', 'remind']],
   ['When it hits', 'violet', ['sos', 'pull', 'answers']],
-  ['This phone', 'mint', ['look', 'lock', 'health', 'notes', 'copy']],
+  ['This phone', 'mint', ['look', 'lock', 'health', 'notes']],
+  ['Your log', 'accent', ['sync', 'copy']],
 ];
-const ALL: PartId[] = ['sync', ...GROUPS.flatMap(([, , ids]) => ids), 'wipe'];
+const ALL: PartId[] = [...GROUPS.flatMap(([, , ids]) => ids), 'wipe'];
 const toneOf = (id: PartId): Tone => GROUPS.find(([, , ids]) => ids.includes(id))?.[1] ?? 'accent';
 
 /** the ids links used before the redesign (November 9, 2026), so an old link still opens the right page */
@@ -280,13 +279,13 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
             title: 'Sync between devices',
             value: signedIn
               ? sync.status.k === 'expired'
-                ? 'Sign in again to keep syncing.'
+                ? 'Sign in again'
                 : sync.status.k === 'error'
-                  ? 'Not syncing right now. Your log is safe here.'
+                  ? 'Not syncing'
                   : sync.status.k === 'need'
                     ? SYNC_NEED_SHORT
-                    : 'Synced' + (sync.email ? ' as ' + sync.email : '') + '.'
-              : 'Saved on this phone. Sign in to sync.',
+                    : 'On'
+              : 'Off',
             body: <SyncBody />,
           },
 
@@ -714,51 +713,9 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
 
 const openPart = (id: PartId) => router.push({ pathname: '/settings/[part]', params: { part: id } });
 
-/** the card at the top: the flame, the day and the level, and where the log is saved; it opens sync when sync is offered */
-function MeCard({ sync }: { sync: Part | null | undefined }) {
-  const c = useTheme();
-  const { snap, tk } = useStore();
-  const st = snap.settings!;
-  const g = gameCompute(snap.days, st, snap.reviews, tk);
-  const day = diffDays(tk, st.day1 || st.start) + 1;
-  const inner = (
-    <View style={s.me}>
-      <View style={[s.avatar, { backgroundColor: skies.light.night[0] }]}>
-        <View style={{ marginBottom: -8 }}>
-          <BigFlame level={g.level.n} size={80} />
-        </View>
-      </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <T style={[s.meT, { color: c.ink }]}>
-          {day > 0 ? 'Day ' + day + ' · ' : ''}
-          {g.level.name}
-        </T>
-        <T v="small" tone="muted">
-          {sync?.value || 'Saved on this phone.'}
-        </T>
-      </View>
-      {sync ? <Icon name="next" size={16} color={c.muted} /> : null}
-    </View>
-  );
-  return (
-    <View style={[s.card, { backgroundColor: c.surface }]}>
-      {sync ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={'Sync between devices. ' + (sync.value || '')}
-          onPress={() => openPart('sync')}
-          style={({ pressed }) => ({ backgroundColor: pressed ? c.surface2 : 'transparent' })}>
-          {inner}
-        </Pressable>
-      ) : (
-        inner
-      )}
-    </View>
-  );
-}
-
-/** every setting: the card for where the log lives, then the groups, then Delete everything on its own */
-export function SettingsSections() {
+/** every setting, as groups, then Delete everything on its own. More puts its own groups in the same list: `lead` before the
+    settings (the journal, the plan, help, the tip) and `foot` after Delete everything (the 988 line). */
+export function SettingsSections({ lead, foot }: { lead?: ReactNode; foot?: ReactNode }) {
   const parts = useParts();
   const { snap, tk, dirty } = useStore();
   const sync = useSync();
@@ -767,7 +724,7 @@ export function SettingsSections() {
   const unsynced = Object.keys(dirty).length;
   return (
     <View style={{ gap: 28 }}>
-      <MeCard sync={parts.sync} />
+      {lead}
       {GROUPS.map(([name, tone, ids]) => {
         const shown = ids.filter((id) => parts[id]);
         if (!shown.length) return null;
@@ -783,6 +740,7 @@ export function SettingsSections() {
       <SetGroup>
         <SetRow label="Delete everything" act="danger" onPress={() => openPart('wipe')} />
       </SetGroup>
+      {foot}
       <View style={s.foot}>
         <View style={{ height: 44, justifyContent: 'flex-end' }}>
           <BigFlame level={gameCompute(snap.days, snap.settings, snap.reviews, tk).level.n} size={40} noLand />
@@ -872,9 +830,5 @@ function PullBody({ pull, hard, say }: { pull: PullPrefs; hard: string | null; s
 }
 
 const s = StyleSheet.create({
-  card: { borderRadius: 26, overflow: 'hidden' },
-  me: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, paddingRight: 16 },
-  meT: { fontFamily: font.displayBold, fontSize: 20, lineHeight: 25 },
-  avatar: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden' },
   foot: { alignItems: 'center', gap: 4 },
 });

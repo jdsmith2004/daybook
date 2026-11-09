@@ -90,7 +90,7 @@ import { useCareSettings, useStore } from '@/lib/store';
 import { font } from '@/lib/theme';
 
 /** the parts, in order (the dots count ten: a part can have a second beat) */
-type Part = 'open' | 'strength' | 'hold' | 'body' | 'bad' | 'line' | 'answer' | 'need' | 'stage' | 'ride' | 'guide' | 'explain' | 'after' | 'plan' | 'seal';
+type Part = 'open' | 'strength' | 'hold' | 'body' | 'bad' | 'line' | 'answer' | 'need' | 'stage' | 'ride' | 'guide' | 'explain' | 'after' | 'plan';
 const DOT: Record<Part, number> = {
   open: 0,
   strength: 1,
@@ -106,9 +106,8 @@ const DOT: Record<Part, number> = {
   explain: 7,
   after: 8,
   plan: 9,
-  seal: 9,
 };
-const ORDER: Part[] = ['open', 'strength', 'hold', 'body', 'bad', 'line', 'answer', 'need', 'stage', 'ride', 'guide', 'explain', 'after', 'plan', 'seal'];
+const ORDER: Part[] = ['open', 'strength', 'hold', 'body', 'bad', 'line', 'answer', 'need', 'stage', 'ride', 'guide', 'explain', 'after', 'plan'];
 const CUE_MS = (TRAIL_GUIDE_SECS * 1000) / 8;
 
 export function Walk({
@@ -752,7 +751,15 @@ export function Walk({
           </Text>
         </Rise>
       );
-      middle = <Coach level={level} say={WALK_COACH.plan.say} beat="plan" pulse={moves.length + (mo ? 1 : 0) + (moveOwn.trim() ? 1 : 0)} />;
+      /* once ready, the flame says the plan back as an if-then, with their own answer to the line */
+      const card = walkPlanCard({ mo, at: moAt, moves, own: moveOwn, line: heard, answer });
+      const said =
+        card.when +
+        ': ' +
+        card.then.map((t) => (/^I\b/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1))).join(', ') +
+        '.' +
+        (card.says && card.answer ? ' If it says “' + card.says.replace(/[.!?]$/, '') + '”, you answer “' + card.answer.replace(/[.!?]$/, '') + '.”' : '');
+      middle = <Coach level={level} say={ready ? said : WALK_COACH.plan.say} beat="plan" pulse={moves.length + (mo ? 1 : 0) + (moveOwn.trim() ? 1 : 0)} />;
       dock = (
         <>
           <Text style={s.ask}>When</Text>
@@ -786,64 +793,22 @@ export function Walk({
               setMoves((l) => (l.indexOf(k) >= 0 ? l.filter((x) => x !== k) : l.concat(k)));
             }}
           />
-          <Button label="Next" disabled={!ready} onPress={() => go('seal')} />
+          {remindersOffered && moAt && ready ? (
+            <Chips
+              label="Reminder"
+              multi
+              opts={[{ id: 'r', label: 'Remind me at ' + talkClock(moAt) }]}
+              on={remind ? ['r'] : []}
+              onPick={() => setRemind(!remind)}
+            />
+          ) : null}
+          <Button label="Save my plan" disabled={!ready} onPress={() => finish(true)} />
           <View style={s.center}>
             <Link label="No plan this time" tone="muted" onPress={() => finish(false)} />
           </View>
         </>
       );
     }
-  }
-
-  /* ---------- 10b. the plan written out: the moment, the moves, and their answer to the line, pictured once ---------- */
-  if (part === 'seal') {
-    const card = walkPlanCard({ mo, at: moAt, moves, own: moveOwn, line: heard, answer });
-    words = (
-      <Rise>
-        <Text style={s.over}>Your plan</Text>
-        <Text style={s.title} accessibilityRole="header">
-          {card.when}
-        </Text>
-      </Rise>
-    );
-    middle = (
-      <>
-        <Coach level={level} say={WALK_COACH.seal.say} beat="seal" />
-        <View
-          style={s.plan}
-          accessible
-          accessibilityLabel={
-            'Then I will ' + card.then.join(', ') + (card.says ? '. If it says ' + card.says + ', I answer ' + (card.answer || 'that it is a thought') : '')
-          }>
-          <Text style={s.planK}>Then I will</Text>
-          {card.then.map((t, i) => (
-            <Text key={i} style={s.planT}>
-              {t}
-            </Text>
-          ))}
-          {card.says ? (
-            <>
-              <Text style={[s.planK, { marginTop: 12 }]}>{'If it says “' + card.says.replace(/[.!?]$/, '') + '”'}</Text>
-              <Text style={s.planT}>{card.answer ? 'I answer: “' + card.answer + '”' : 'I know it is a thought, not a fact.'}</Text>
-            </>
-          ) : null}
-        </View>
-      </>
-    );
-    dock = (
-      <>
-        {remindersOffered && moAt ? (
-          <Chips
-            label="Reminder"
-            multi
-            opts={[{ id: 'r', label: 'Remind me at ' + talkClock(moAt) }]}
-            on={remind ? ['r'] : []}
-            onPick={() => setRemind(!remind)}
-          />
-        ) : null}
-        <Button label="Save my plan" onPress={() => finish(true)} />
-      </>
-    );
   }
 
   return (
@@ -1200,9 +1165,6 @@ const s = StyleSheet.create({
   cue: { fontFamily: font.display, fontSize: 28, lineHeight: 35, color: TW.ink },
   note: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 21, color: TW.warm, textAlign: 'center' },
   ask: { fontFamily: font.bodySemi, fontSize: 15, color: TW.muted },
-  plan: { alignSelf: 'stretch', marginTop: 14, padding: 16, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.07)' },
-  planK: { fontFamily: font.bodySemi, fontSize: 13, color: TW.muted },
-  planT: { fontFamily: font.bodySemi, fontSize: 17, color: TW.ink, marginTop: 4 },
   box: {
     marginTop: 16,
     minHeight: 88,

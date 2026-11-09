@@ -65,7 +65,7 @@ export const WALK_SRC: Record<string, [string, string]> = {
     'https://doi.org/10.1016/S0065-2601(06)38002-1',
   ],
 };
-export type WalkBeat = 'open' | 'hold' | 'body' | 'alarm' | 'defuse' | 'ride' | 'chain' | 'plan' | 'seal';
+export type WalkBeat = 'open' | 'hold' | 'body' | 'alarm' | 'defuse' | 'ride' | 'chain' | 'plan';
 /** for each teaching beat: what the flame says first (short, for a person in a craving), and why it works, with the papers */
 export const WALK_COACH: Record<WalkBeat, { say: string; why: string; src: string[] }> = {
   open: {
@@ -105,12 +105,7 @@ export const WALK_COACH: Record<WalkBeat, { say: string; why: string; src: strin
   },
   plan: {
     say: 'Plans that work name one moment and one move. Pick what has held for you.',
-    why: 'An if-then plan (“when this comes, I will …”) made people much more likely to follow through, across 94 studies. The more exact the moment, the better it works.',
-    src: ['gollwitzer'],
-  },
-  seal: {
-    say: 'Picture that moment once, then picture yourself doing this.',
-    why: 'Picturing the moment and the move ties them together, so the moment itself starts the plan. Plans for a thought work too: “when it says this, I answer that.”',
+    why: 'An if-then plan (“when this comes, I will …”) made people much more likely to follow through, across 94 studies. The more exact the moment, the better it works, and a plan for a thought works too: “when it says this, I answer that.”',
     src: ['gollwitzer'],
   },
 };

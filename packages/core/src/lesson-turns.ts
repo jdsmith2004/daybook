@@ -6,7 +6,7 @@
    The shape, in order (q: in Quick too):
      hook   (q)  a moment the person knows, and what the flame asks
      ask         a question only they can answer; open unless it names a best answer
-     flip   (q)  the turn: "You may think" on the front, "Look again" on the back, turned over with a tap
+     flip   (q)  the turn: the old thought on the front; the flame asks how true it feels (FLIP_FEEL), and the answer turns it to the new way to see it
      deep        one or more cards behind the turn: a fact, a picture, a number, or a line back to an earlier lesson (back)
      mine   (q)  a true line from their own log (lessonMine), or what to watch for when there is none
      move   (q)  what to do, up to three short lines
@@ -69,6 +69,16 @@ export interface Turn {
 }
 /** the parts of a God lesson that change with its voice: each one given here replaces the Latter-day Saint part whole */
 export type VoicePart = Partial<Pick<Turn, 'hook' | 'ask1' | 'flip' | 'deep' | 'mine' | 'move' | 'check' | 'scope' | 'src' | 'close'>>;
+/** the turn card's gut check (the owner asked for better flash cards, November 9, 2026). Before the card turns, the flame asks how true
+    the old thought feels, and the person answers in one tap: a guess made before the answer is seen helps it stay (pretesting), and a
+    rating of the thought is how a thought record in therapy starts. No answer is wrong, so none turns green; the flame answers each
+    one, and the card turns over on the tap. */
+export const FLIP_ASK = 'How true does this feel to you?';
+export const FLIP_FEEL: readonly { o: string; say: string }[] = [
+  { o: 'Very true', say: 'Most people start right there. Now hold it next to this.' },
+  { o: 'Partly', say: 'Then part of you already doubts it. This is that part.' },
+  { o: 'Not really', say: 'Good. Keep this one for the night it feels truer.' },
+];
 /** a turn in one voice */
 export const turnIn = (T: Turn, voice: FaithVoice | null): Turn => (voice && voice !== 'lds' && T.vo && T.vo[voice] ? { ...T, ...T.vo[voice] } : T);
 

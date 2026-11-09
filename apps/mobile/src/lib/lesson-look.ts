@@ -195,6 +195,9 @@ function sun(key: string, scheme: 'light' | 'dark'): Look {
 }
 
 const NUMBER = '#FFCF52';
+/** the back of a turn card: the new way to see it, in sun yellow with its own deep ink */
+export const SUN_CARD = NUMBER;
+export const SUN_INK = ON_SUN;
 function violet(key: string, scheme: 'light' | 'dark'): Look {
   const fill = scheme === 'dark' ? '#4A33C2' : '#6246EA';
   return {

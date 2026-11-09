@@ -223,6 +223,15 @@ see other apps: the section is hidden there.
 
 ### The entitlement: what the owner does (Account Holder, signed in to developer.apple.com)
 
+**Changed by Apple (found November 9, 2026):** developer.apple.com/contact/request/family-controls-distribution is now one
+button, Get Entitlement, for the whole team (2G4K7PN999), with Apple's terms for the framework above it; no app description and
+no request per bundle ID. The owner presses it (it accepts Apple's terms, so Claude does not). After that, the TestFlight build
+with Screen Time is the App Store workflow (Actions, App Store, Run workflow) with **Screen Time** ticked: it builds the EAS
+profile `production-pull` (production plus `DAYBOOK_PULL=1`), and EAS turns on Family Controls and the App Group for the four
+bundle IDs and makes their profiles. If EAS cannot make the three new profiles without asking (the workflow runs
+`--non-interactive`), run `npx eas-cli build --platform ios --profile production-pull` once in `apps/mobile` on a Mac and answer
+its questions; after that the workflow can do it. The older steps below are kept in case Apple brings the written request back.
+
 1. Certificates, Identifiers and Profiles: create the App Group `group.com.jdsmith2004.daybook`, and App IDs for
    `com.jdsmith2004.daybook.ActivityMonitor`, `.ShieldAction` and `.ShieldConfiguration` (the main app's ID exists).
 2. Open developer.apple.com/contact/request/family-controls-distribution and send one request for each of the four bundle IDs

@@ -20,13 +20,19 @@ private let selectionKey = "pull.selection"
 private let restKey = "pull.rest"
 private let ignoredKey = "pull.ignored"
 private let wantKey = "pull.want"
-/// what the schedules were last set from, so they are set again only when it changes: restarting a schedule ends it, and ending the
-/// hard hours' schedule would lift a pause that is running
+/// what each schedule was last set from, by its name, so one is set again only when it changes: restarting a schedule ends its
+/// interval, and Apple counts use only from the restart
 private let schedKey = "pull.sched"
+/// ms when each schedule was last started, by its name (the monitor ignores a threshold that comes sooner than its minutes after)
+private let startedKey = "pull.started"
+/// ms when Open it for a few minutes started, and those minutes (the monitor reads them)
+private let openAtKey = "pull.openAt"
+private let openMinsKey = "pull.openMins"
 /// the minutes of use in the hard hours for the two notes and the pause (core PULL_HARD_AT)
 private let hardAt = [10, 20, 30]
-/// Apple's shortest schedule (core PULL_MIN_SCHEDULE), plus a minute so it is never too short
-private let openSchedule: TimeInterval = 16 * 60
+/// pull.open's length: more than Apple's shortest schedule (core PULL_MIN_SCHEDULE, 15 minutes), started now, never backdated
+/// (the same as the monitor's Pull.openSpan)
+private let openSchedule: TimeInterval = 20 * 60
 
 public final class DaybookPullModule: Module {
   private var picking: Promise?
@@ -45,20 +51,26 @@ public final class DaybookPullModule: Module {
 
     /// Apple's Screen Time ask (Face ID or the passcode); whether it was given
     AsyncFunction("authorize") { () async -> Bool in
-      if #available(iOS 16.0, *) {
-        do {
-          try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
-        } catch {
-          return false
-        }
-        return AuthorizationCenter.shared.authorizationStatus == .approved
+      /* no throw is a yes: the status Apple publishes catches up later, so it is not read here */
+      do {
+        try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
+        return true
+      } catch {
+        return false
       }
-      return false
     }
 
-    /// whether access is still given (it can be taken back in Settings at any time, and the status can lag: read it fresh)
-    AsyncFunction("allowed") { () -> Bool in
-      AuthorizationCenter.shared.authorizationStatus == .approved
+    /// whether access was taken back (Settings, Screen Time). Only a plain no counts: the status loads late after a launch and
+    /// reads "not determined" until it does, which must never turn it off.
+    AsyncFunction("allowed") { () async -> Bool in
+      var st = AuthorizationCenter.shared.authorizationStatus
+      var tries = 0
+      while st == .notDetermined && tries < 15 {
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        st = AuthorizationCenter.shared.authorizationStatus
+        tries += 1
+      }
+      return st != .denied
     }
 
     /// Apple's app list, starting from what was picked; how many apps, kinds and sites are picked, or null when it was closed
@@ -103,8 +115,10 @@ public final class DaybookPullModule: Module {
         self.stopAll(forget: false)
         return
       }
-      /* the pause turned off while it runs: lifted now */
-      if (p["pause"] as? Bool) != true { self.liftAll() }
+      /* the pause turned off while it runs, or one whose end has passed (the monitor's end was missed: the phone was off, or the
+         extension did not run): lifted now */
+      let rest = self.defaults?.double(forKey: restKey) ?? 0
+      if (p["pause"] as? Bool) != true || (rest > 0 && rest <= self.nowMs) { self.liftAll() }
       self.schedule(b, prefs: p)
     }
 
@@ -119,10 +133,13 @@ public final class DaybookPullModule: Module {
       let resting = (self.defaults?.double(forKey: restKey) ?? 0) > self.nowMs
       self.clearShield()
       guard resting else { return }
+      /* stamped before the old one stops: its end then reads as a restart, not as time up (the monitor) */
+      self.defaults?.set(self.nowMs, forKey: openAtKey)
+      self.defaults?.set(Double(max(1, minutes)), forKey: openMinsKey)
       let center = DeviceActivityCenter()
       center.stopMonitoring([DeviceActivityName("pull.open")])
       let cal = Calendar.current
-      let from = Date().addingTimeInterval(-60)
+      let from = Date()
       let parts: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute, .second]
       let schedule = DeviceActivitySchedule(
         intervalStart: cal.dateComponents(parts, from: from),
@@ -134,6 +151,7 @@ public final class DaybookPullModule: Module {
         threshold: DateComponents(minute: max(1, minutes)))
       do {
         try center.startMonitoring(DeviceActivityName("pull.open"), during: schedule, events: [DeviceActivityEvent.Name("open"): event])
+        self.stamp("pull.open")
       } catch {
         /* Apple would not watch the minutes: the pause comes back at once rather than never */
         self.shield(s)
@@ -161,50 +179,88 @@ public final class DaybookPullModule: Module {
 
   // MARK: Apple's schedules
 
+  /// one schedule per piece, each set again only when what it is set from changes (restarting a schedule ends it, and Apple counts
+  /// use only from then): pull.long, and pull.hard.<weekday>.<hour> for each window (two hours, across midnight when it must).
+  /// A window no longer wanted is stopped, except while it runs: its end lifts the pause, and the next write stops it.
   private func schedule(_ b: [String: Any], prefs p: [String: Any]) {
     guard let s = selection() else { return }
     let long = (p["long"] as? Int) ?? 0
     let hard = (p["hard"] as? Bool) != false
-    let pause = (p["pause"] as? Bool) == true
-    let windows = ((b["windows"] as? [[String: Any]]) ?? []).compactMap { w -> (Int, Int)? in
-      guard let wd = w["weekday"] as? Int, let h = w["start"] as? Int, (1...7).contains(wd), (0...23).contains(h) else { return nil }
-      return (wd, h)
+    var windows: [(Int, Int)] = []
+    for w in (b["windows"] as? [[String: Any]]) ?? [] {
+      guard let wd = w["weekday"] as? Int, let h = w["start"] as? Int, (1...7).contains(wd), (0...23).contains(h) else { continue }
+      if !windows.contains(where: { $0 == (wd, h) }) { windows.append((wd, h)) }
     }
     /* a hash that stays the same from launch to launch (String's own does not) */
     let sel = defaults?.data(forKey: selectionKey).map { $0.reduce(5381) { ($0 &* 33) &+ Int($1) } } ?? 0
-    let key = "\(long)|\(hard)|\(pause)|\(windows.map { "\($0.0)@\($0.1)" }.joined(separator: ","))|\(sel)"
-    if defaults?.string(forKey: schedKey) == key { return }
-    let center = DeviceActivityCenter()
-    center.stopMonitoring([DeviceActivityName("pull.long")] + (1...7).map { DeviceActivityName("pull.hard.\($0)") })
     let ev = { (m: DateComponents) in
       DeviceActivityEvent(applications: s.applicationTokens, categories: s.categoryTokens, webDomains: s.webDomainTokens, threshold: m)
     }
-    var ok = true
+    var want: [String: (key: String, during: DeviceActivitySchedule, events: [DeviceActivityEvent.Name: DeviceActivityEvent])] = [:]
     if long > 0 {
-      let day = DeviceActivitySchedule(
-        intervalStart: DateComponents(hour: 0, minute: 0), intervalEnd: DateComponents(hour: 23, minute: 59), repeats: true)
-      do {
-        try center.startMonitoring(
-          DeviceActivityName("pull.long"), during: day, events: [DeviceActivityEvent.Name("long"): ev(DateComponents(hour: long))])
-      } catch { ok = false }
+      want["pull.long"] = (
+        "\(long)|\(sel)",
+        DeviceActivitySchedule(intervalStart: DateComponents(hour: 0, minute: 0), intervalEnd: DateComponents(hour: 23, minute: 59), repeats: true),
+        [DeviceActivityEvent.Name("long"): ev(DateComponents(hour: long))]
+      )
     }
     if hard {
       for (wd, h) in windows {
-        let endH = (h + 2) % 24
-        let endWd = h + 2 >= 24 ? wd % 7 + 1 : wd
-        let w = DeviceActivitySchedule(
-          intervalStart: DateComponents(hour: h, minute: 0, weekday: wd),
-          intervalEnd: DateComponents(hour: endH, minute: 0, weekday: endWd),
-          repeats: true)
         var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
         for (i, m) in hardAt.enumerated() { events[DeviceActivityEvent.Name(String(i + 1))] = ev(DateComponents(minute: m)) }
-        do {
-          try center.startMonitoring(DeviceActivityName("pull.hard.\(wd)"), during: w, events: events)
-        } catch { ok = false }
+        want["pull.hard.\(wd).\(h)"] = (
+          "\(sel)",
+          DeviceActivitySchedule(
+            intervalStart: DateComponents(hour: h, minute: 0, weekday: wd),
+            intervalEnd: DateComponents(hour: (h + 2) % 24, minute: 0, weekday: h + 2 >= 24 ? wd % 7 + 1 : wd),
+            repeats: true),
+          events
+        )
       }
     }
-    /* kept only once Apple took every schedule, so a failure is tried again on the next open */
-    if ok { defaults?.set(key, forKey: schedKey) } else { defaults?.removeObject(forKey: schedKey) }
+    var keys = (defaults?.dictionary(forKey: schedKey) as? [String: String]) ?? [:]
+    let center = DeviceActivityCenter()
+    for name in Array(keys.keys) where want[name] == nil {
+      if let (wd, h) = Self.hardParts(name), Self.inWindow(weekday: wd, hour: h) { continue }
+      center.stopMonitoring([DeviceActivityName(name)])
+      keys[name] = nil
+    }
+    for (name, w) in want where keys[name] != w.key {
+      do {
+        try center.startMonitoring(DeviceActivityName(name), during: w.during, events: w.events)
+        keys[name] = w.key
+        stamp(name)
+      } catch {
+        /* tried again on the next write */
+        keys[name] = nil
+      }
+    }
+    defaults?.set(keys, forKey: schedKey)
+  }
+
+  /// when the app started a schedule, for the monitor
+  private func stamp(_ name: String) {
+    var started = (defaults?.dictionary(forKey: startedKey) as? [String: Double]) ?? [:]
+    started[name] = nowMs
+    defaults?.set(started, forKey: startedKey)
+  }
+
+  /// "pull.hard.<weekday>.<hour>" (the monitor's Pull.hardParts)
+  private static func hardParts(_ name: String) -> (Int, Int)? {
+    let p = name.split(separator: ".")
+    guard p.count == 4, p[0] == "pull", p[1] == "hard", let wd = Int(p[2]), let h = Int(p[3]) else { return nil }
+    return (wd, h)
+  }
+
+  /// whether that weekday's window is running now (the monitor's Pull.window)
+  private static func inWindow(weekday wd: Int, hour h: Int) -> Bool {
+    let cal = Calendar.current
+    let now = Date()
+    guard var start = cal.date(bySettingHour: h, minute: 0, second: 0, of: now) else { return false }
+    if start > now { start = cal.date(byAdding: .day, value: -1, to: start) ?? start }
+    let endDay = h + 2 >= 24 ? (cal.date(byAdding: .day, value: 1, to: start) ?? start) : start
+    guard let end = cal.date(bySettingHour: (h + 2) % 24, minute: 0, second: 0, of: endDay) else { return false }
+    return cal.component(.weekday, from: start) == wd && now < end
   }
 
   // MARK: the pause
@@ -234,6 +290,7 @@ public final class DaybookPullModule: Module {
     DeviceActivityCenter().stopMonitoring()
     store.clearAllSettings()
     defaults?.removeObject(forKey: schedKey)
+    defaults?.removeObject(forKey: startedKey)
     if forget {
       defaults?.removeObject(forKey: selectionKey)
       defaults?.removeObject(forKey: ignoredKey)

@@ -21,6 +21,14 @@ enum Pull {
   static let wantKey = "pull.want"
   /// the notes already posted, kind to the log day or window they were for (one of each, no repeats)
   static let postedKey = "pull.posted"
+  /// ms when the app last started each schedule, by its name. Apple counts use only from then, and a threshold can come early
+  /// right after a start (iOS 17 to 26), so one that comes sooner than its minutes after this is ignored.
+  static let startedKey = "pull.started"
+  /// ms when Open it for a few minutes started pull.open, and those minutes
+  static let openAtKey = "pull.openAt"
+  static let openMinsKey = "pull.openMins"
+  /// pull.open lasts this long (the app's openSchedule)
+  static let openSpan: Double = 20 * 60_000
   static let store = ManagedSettingsStore(named: ManagedSettingsStore.Name("daybook.pull"))
 
   static var defaults: UserDefaults? { UserDefaults(suiteName: group) }
@@ -110,4 +118,32 @@ enum Pull {
   }
 
   static var resting: Bool { ((defaults?.double(forKey: restKey)) ?? 0) > nowMs }
+
+  /// ms when the app last started this schedule, or 0
+  static func started(_ name: String) -> Double {
+    ((defaults?.dictionary(forKey: startedKey) as? [String: Double]) ?? [:])[name] ?? 0
+  }
+
+  /// whether a threshold of `minutes` of use is real: that many minutes have passed since `from` ms (less half a minute)
+  static func enoughSince(_ from: Double, minutes: Double) -> Bool {
+    nowMs - from >= (minutes - 0.5) * 60_000
+  }
+
+  /// "pull.hard.<weekday>.<hour>": the window's weekday (1 Sunday) and starting hour
+  static func hardParts(_ name: String) -> (Int, Int)? {
+    let p = name.split(separator: ".")
+    guard p.count == 4, p[0] == "pull", p[1] == "hard", let wd = Int(p[2]), let h = Int(p[3]) else { return nil }
+    return (wd, h)
+  }
+
+  /// the window starting at hour `h`: its latest start not in the future, and its end at the clock's h+2 (so a night the clocks
+  /// change ends when Apple's schedule does)
+  static func window(hour h: Int, at now: Date = Date()) -> (start: Date, end: Date)? {
+    let cal = Calendar.current
+    guard var start = cal.date(bySettingHour: h, minute: 0, second: 0, of: now) else { return nil }
+    if start > now { start = cal.date(byAdding: .day, value: -1, to: start) ?? start }
+    let endDay = h + 2 >= 24 ? (cal.date(byAdding: .day, value: 1, to: start) ?? start) : start
+    guard let end = cal.date(bySettingHour: (h + 2) % 24, minute: 0, second: 0, of: endDay) else { return nil }
+    return (start, end)
+  }
 }

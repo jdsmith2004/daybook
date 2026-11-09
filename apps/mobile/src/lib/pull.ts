@@ -23,7 +23,7 @@ import { useAccount } from '@/lib/sync';
 export interface PullModule {
   /** Apple's Screen Time ask (Face ID or the passcode); whether it was given */
   authorize(): Promise<boolean>;
-  /** whether access is still given (it can be taken back in Settings at any time) */
+  /** false only when access was taken back (Settings, Screen Time); true while Apple's status is still loading */
   allowed(): Promise<boolean>;
   /** Apple's app list; how many apps and kinds are picked, or null when it was closed */
   pick(): Promise<number | null>;
@@ -138,8 +138,9 @@ export function PullKeeper() {
     if (!real) return;
     const back = async () => {
       if (real.takeWant()) router.navigate('/pause');
-      /* access taken back in Settings lifts everything Apple-side by itself; More then shows it off */
-      if (getPullPrefs().on && !(await real.allowed().catch(() => true))) setPullPrefs({ on: false });
+      /* access taken back in Settings: More shows it off, and the schedules and any pause are stopped too. allowed() is false
+         only for a plain no, never while Apple's status is still loading after a launch. */
+      if (getPullPrefs().on && !(await real.allowed().catch(() => true))) await pullStop().catch(() => undefined);
     };
     back();
     const sub = AppState.addEventListener('change', (a) => a === 'active' && back());

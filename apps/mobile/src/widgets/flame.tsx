@@ -1,5 +1,5 @@
 /* The flame on the Home Screen and the Lock Screen (core flame-widget.ts; the owner, November 9, 2026): the flame as it burns now,
-   drawn by the app into the shared folder (lib/flame-widget.ts), and one short line under it; the medium and large ones add the next
+   standing over its campfire under a night sky (core campfire.ts, the look the owner picked), drawn by the app into the shared folder (lib/flame-widget.ts), and one short line under it; the medium and large ones add the next
    choice in the warm color. A tap opens Today.
    This function runs on its own inside the widget (expo-widgets): nothing from outside it is there, so every color and size is
    written inside it. Never a count, and nothing that says what Daybook is for: a Home Screen is seen by others. */
@@ -30,7 +30,13 @@ export type FlameWidgetProps = {
 
 const FlameWidget = (props: FlameWidgetProps, environment: WidgetEnvironment) => {
   'widget';
-  const night = props.sky || '#1E1846';
+  /* the night over the campfire, warm at the ground (core CAMPFIRE_SKY, written here because this runs on its own) */
+  const night = {
+    type: 'linearGradient' as const,
+    colors: ['#120E30', '#221A4E', '#4A2346', '#8A3A2A'],
+    startPoint: { x: 0.5, y: 0 },
+    endPoint: { x: 0.5, y: 1 },
+  };
   const picture = props.img ? (
     <Image uiImage={props.img} modifiers={[resizable(), aspectRatio({ contentMode: 'fit' })]} />
   ) : (

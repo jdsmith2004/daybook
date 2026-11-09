@@ -2,6 +2,7 @@
    at night. The look follows the flight, ride and delivery cards the owner held up (November 9, 2026): the start and end times big at
    the two ends, a thick bar between them that iPhone fills on its own as the time passes, the flame waiting at its end, and a live
    countdown under it. In the Dynamic Island, the flame and the live time left beside it, read as one thing (Uber's way; a ring drew its own digits).
+   The card is the widget's campfire night, and the picture is the flame standing in its fire, cut in close (core campfire.ts).
    One small flame picture, the same everywhere (lib/flame-widget), and few layers: a Live Activity has little memory.
    This function runs on its own inside the widget (expo-widgets): every color and size is written inside it. Nothing in it says
    what Daybook is for. */
@@ -9,6 +10,7 @@ import { HStack, Image, Link, ProgressView, Spacer, Text, VStack } from '@expo/u
 import {
   activityBackgroundTint,
   aspectRatio,
+  background,
   font,
   foregroundStyle,
   frame,
@@ -46,6 +48,19 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
   const SOFT = '#B9B2E0';
   const NIGHT = '#16123A';
   const span = { lower: new Date(props.a), upper: new Date(props.b) };
+  /* the card is the widget's night over the campfire (core CAMPFIRE_SKY); plain black while the Lock Screen is dimmed */
+  const card = environment.isLuminanceReduced
+    ? [activityBackgroundTint('#000000'), padding({ all: 16 })]
+    : [
+        activityBackgroundTint(NIGHT),
+        padding({ all: 16 }),
+        background({
+          type: 'linearGradient' as const,
+          colors: ['#120E30', '#221A4E', '#4A2346', '#8A3A2A'],
+          startPoint: { x: 0.5, y: 0 },
+          endPoint: { x: 0.5, y: 1 },
+        }),
+      ];
   const flame = (size: number) =>
     props.img ? (
       <Image uiImage={props.img} modifiers={[resizable(), aspectRatio({ contentMode: 'fit' }), frame({ width: size, height: size })]} />
@@ -142,7 +157,7 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
   );
   if (asleep)
     return {
-      banner: <VStack modifiers={[activityBackgroundTint(environment.isLuminanceReduced ? '#000000' : NIGHT), padding({ all: 16 })]}>{rest(24, 56)}</VStack>,
+      banner: <VStack modifiers={card}>{rest(24, 64)}</VStack>,
       compactLeading: <VStack modifiers={[padding({ leading: 2 })]}>{flame(24)}</VStack>,
       compactTrailing: glyph(15),
       minimal: flame(22),
@@ -158,11 +173,11 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
   return {
     /* after the ride card: the words on the left, the mascot big on the right as the picture, then the bar and its times */
     banner: (
-      <VStack spacing={12} modifiers={[activityBackgroundTint(environment.isLuminanceReduced ? '#000000' : NIGHT), padding({ all: 16 })]}>
+      <VStack spacing={12} modifiers={card}>
         <HStack spacing={12}>
           {words(24)}
           <Spacer />
-          {flame(62)}
+          {flame(72)}
         </HStack>
         <VStack spacing={6}>
           {bar}

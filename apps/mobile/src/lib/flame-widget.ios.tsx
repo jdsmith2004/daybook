@@ -8,7 +8,19 @@
    And it keeps the Live Activity (core livePlan, widgets/live.tsx) in step: started when the app opens in the hard hours or before
    screens off (a tapped heads-up opens the app), changed to the flame asleep after Goodnight, ended when its time is up. iPhone only
    lets an app start one while it is open, so that is when this runs. */
-import { emblemXml, figAsleep, gameCompute, livePlan, lowXml, sadXml, widgetTimeline, type Snapshot, type WidgetEntry } from '@daybook/core';
+import {
+  campfireXml,
+  emblemLayers,
+  emblemXml,
+  figAsleep,
+  gameCompute,
+  livePlan,
+  lowXml,
+  sadXml,
+  widgetTimeline,
+  type Snapshot,
+  type WidgetEntry,
+} from '@daybook/core';
 import { Directory, File } from 'expo-file-system';
 import { widgetsDirectory } from 'expo-widgets';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -26,17 +38,23 @@ const SKY = '#1E1846';
 
 /** low is how low it burns (0 to 1), or ASLEEP for the flame with its eyes closed, for the night */
 const ASLEEP = -1;
-const xmlOf = (level: number, low: number) =>
-  low === ASLEEP ? figAsleep(emblemXml(level)) : low > 0 ? lowXml(sadXml(emblemXml(level)), low) : emblemXml(level);
+/** the person's own form standing over its campfire (core campfire.ts; the owner picked it, November 9, 2026): the fire burns as low as
+    the flame, its face sad then, and asleep it rests by a fire burned down. small: cut in close, for the Live Activity */
+const xmlOf = (level: number, low: number, small = false) => {
+  const fig = emblemLayers(level, false)?.fig;
+  if (!fig) return low === ASLEEP ? figAsleep(emblemXml(level)) : low > 0 ? lowXml(sadXml(emblemXml(level)), low) : emblemXml(level);
+  if (low === ASLEEP) return campfireXml(figAsleep(fig), { lit: 0.5, close: small });
+  return lowXml(campfireXml(low > 0 ? sadXml(fig) : fig, { lit: 1 - low, stars: !small, close: small }), low);
+};
 /** the small size the Live Activity's pictures are drawn at: iPhone shows a gray box in place of a picture too big for one */
 const LIVE_PX = 60;
 /** the picture's name carries the level and how low, so the widget never shows one it kept from before; small ones end in -s */
-const nameOf = (level: number, low: number, small = false) => `flame-${level}-${low === ASLEEP ? 'asleep' : Math.round(low * 100)}${small ? '-s' : ''}.png`;
+const nameOf = (level: number, low: number, small = false) => `flame-c-${level}-${low === ASLEEP ? 'asleep' : Math.round(low * 100)}${small ? '-s' : ''}.png`;
 type Pic = { name: string; xml: string; px: number };
 /** the pictures a timeline needs: each way it burns for the widget, and the flame as it burns now and asleep, small, for the Live Activity */
 const picsOf = (level: number, entries: WidgetEntry[]): Pic[] => [
   ...[...new Set(entries.map((e) => e.low))].map((low) => ({ name: nameOf(level, low), xml: xmlOf(level, low), px: PX })),
-  ...[entries[0].low, ASLEEP].map((low) => ({ name: nameOf(level, low, true), xml: xmlOf(level, low), px: LIVE_PX })),
+  ...[entries[0].low, ASLEEP].map((low) => ({ name: nameOf(level, low, true), xml: xmlOf(level, low, true), px: LIVE_PX })),
 ];
 /** the Live Activity showing now, and which plan it is for (kept across launches) */
 const liveNote = () => new File(folder(), 'live.json');

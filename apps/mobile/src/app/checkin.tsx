@@ -2,9 +2,10 @@
    a slider low on the screen where the thumb is, with the number big in the open middle. Then one screen under the night
    sky: "Tap this when you put your phone down", and one big Goodnight button saves the check-in, puts the phone away (what
    "Putting my phone away" in the wind-down records: core sayGoodnight) and plays the going-to-bed moment
-   (components/goodnight.tsx). Above the button, folded rows: More (sleep last night in hours, kept in checkin.h, which the
-   Sunday sleep goal and the week read; whether you reached out; one line), the wind-down list, and the plan for a loud
-   night with SOS. "Save for now" under the button saves without the phone going away, for a check-in done early.
+   (components/goodnight.tsx). Before Goodnight, one more step: sleep last night in hours (kept in checkin.h, which the
+   Sunday sleep goal, the week and Pattern's hard-days card read; moved out of More on November 8, 2026, because few
+   people opened More and the card stayed empty). Above the button, folded rows: More (whether you reached out; one line),
+   the wind-down list, and the plan for a loud night with SOS. "Save for now" under the button saves without the phone going away, for a check-in done early.
    A day before today (`k`), or a check-in before Goodnight opens (core goodnightOpens), ends with Save instead.
    Answers are kept as a draft on this device until saved (lib/drafts), so closing halfway loses nothing. Opened from the
    Check-in stop in "Your day"; `k` picks the day (today when left out). */
@@ -61,8 +62,8 @@ const clockNear = (ms: number) => {
   if (h >= 22 || h < 5) return '22:00';
   return String(h).padStart(2, '0') + ':' + String(Math.floor(d.getMinutes() / 15) * 15).padStart(2, '0');
 };
-/* the three numbers, then Goodnight (or, for a day before today, Save) */
-const STEPS = [...ASKED, 'night'] as const;
+/* the three numbers and sleep, then Goodnight (or, for a day before today, Save) */
+const STEPS = [...ASKED, 'h', 'night'] as const;
 type Step = (typeof STEPS)[number] | 'end';
 const hoursText = (h: number) => (h % 1 ? h.toFixed(1) : String(h));
 /* a few words under each question */
@@ -203,6 +204,43 @@ export default function Checkin() {
       </>
     );
     footer = <Link label="Skip this one" onPress={next} hidden={v != null} />;
+  } else if (step === 'h') {
+    const v = form.h ?? null;
+    body = (
+      <>
+        <T v="title" style={s.c} accessibilityRole="header">
+          {tonight ? 'How long did you sleep last night?' : 'How long did you sleep the night before?'}
+        </T>
+        <T style={s.c} tone="muted">
+          A guess is fine.
+        </T>
+        <View style={s.middle}>
+          <SliderValue big value={v} show={hoursText} caption="hours" hint="Slide below to answer" />
+        </View>
+        <Dock>
+          <Slider
+            key="h"
+            label="Hours of sleep"
+            value={v}
+            min={3}
+            max={12}
+            step={0.5}
+            show={hoursText}
+            unit="hours"
+            readout={false}
+            onChange={(n) => set({ ...form, h: n })}
+          />
+          {v != null ? (
+            <Appear by={10} duration={240}>
+              <Button label="Next" onPress={next} />
+            </Appear>
+          ) : (
+            <View style={s.btnSpace} />
+          )}
+        </Dock>
+      </>
+    );
+    footer = <Link label="Skip this one" onPress={next} hidden={v != null} />;
   } else if (step === 'night') {
     const r = rhythm(snap.days, st, tk, now);
     const toggle = (f: 'more' | 'wind' | 'loud') => setFold(fold === f ? null : f);
@@ -319,7 +357,7 @@ export default function Checkin() {
   );
 }
 
-/** More: sleep last night, reached out, and one line. Folded on the Goodnight screen; open, with Save, for a day before
+/** More: reached out, and one line (sleep has its own step since November 8, 2026). Folded on the Goodnight screen; open, with Save, for a day before
     today (`fixed`). The line and its Save stay together above the keyboard. */
 function More({
   form,
@@ -338,24 +376,9 @@ function More({
   fixed: boolean;
   saveBtn: React.ReactNode;
 }) {
-  const said = [form.h != null ? 'Slept ' + hoursText(form.h) + ' h' : '', form.ro === 'Y' ? 'Reached out' : '', form.n.trim() ? 'A line' : '']
-    .filter(Boolean)
-    .join(' · ');
+  const said = [form.ro === 'Y' ? 'Reached out' : '', form.n.trim() ? 'A line' : ''].filter(Boolean).join(' · ');
   const inside = (
     <>
-      <T v="label">{tonight ? 'Sleep last night' : 'Sleep the night before'}</T>
-      <Slider
-        label="Hours of sleep"
-        value={form.h ?? null}
-        min={3}
-        max={12}
-        step={0.5}
-        show={hoursText}
-        unit="hours"
-        compact
-        hint="A guess is fine"
-        onChange={(n) => set({ ...form, h: n })}
-      />
       <YesNo
         label={tonight ? 'Reached out to someone today?' : 'Reached out to someone that day?'}
         value={form.ro}
@@ -376,7 +399,7 @@ function More({
   );
   if (fixed) return <View style={s.moreOpen}>{inside}</View>;
   return (
-    <Fold icon="pencil" title="More about today" sub={said || 'Sleep, reaching out, one line'} open={open} onToggle={onToggle}>
+    <Fold icon="pencil" title="More about today" sub={said || 'Reaching out, one line'} open={open} onToggle={onToggle}>
       {inside}
     </Fold>
   );

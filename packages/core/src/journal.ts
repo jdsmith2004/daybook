@@ -32,6 +32,7 @@ import { logRateKeys, rateKeys, ratingOf, type RateKey } from './day';
 import { todayMeasure } from './graduate';
 import { logStart } from './log-start';
 import { rkComebackCount } from './rekindle';
+import { sunOf, sunRange } from './sunday';
 import { urStats } from './sos';
 import { phaseLabel } from './view';
 import { TOOLS } from './legacy/core.js';
@@ -80,27 +81,33 @@ export function dayRow(days: Days, st: Settings, key: DayKey, tk: DayKey, L: Run
   };
 }
 
-/** the days, newest first, in weeks: 28 at first, or all of them */
+/** the days, newest first, in weeks: 28 at first, or all of them. The weeks are the ones Weeks and the Sunday review use, Monday to
+    Sunday, named the same way ("This week", "Last week", "Oct 12 to 18"), so a week is one thing everywhere on Pattern. */
 export function daysList(days: Days, st: Settings, tk: DayKey, all: boolean) {
   const first = minKey(logStart(days, st), tk);
   const total = diffDays(tk, first) + 1;
   const limit = all ? total : Math.min(total, 28);
   const L = runLedger(days, st, tk);
-  const weeks: { wk: number; title: string; count: string; rows: ReturnType<typeof dayRow>[] }[] = [];
+  const cur = sunOf(tk);
+  const name = (sun: DayKey) => (sun === cur ? 'This week' : sun === addDays(cur, -7) ? 'Last week' : sunRange(sun));
+  const weeks: { wk: string; title: string; count: string; rows: ReturnType<typeof dayRow>[] }[] = [];
+  const tally: { checkins: number; events: number }[] = [];
   for (let i = 0; i < limit; i++) {
     const key = addDays(tk, -i);
-    const wk = weekOf(key, st);
-    if (!weeks.length || weeks[weeks.length - 1].wk !== wk) {
-      const w = weekStats(days, st, wk);
-      weeks.push({
-        wk,
-        title: wk < 0 ? 'Before my start date' : 'Week ' + (wk + 1) + ' · ' + rangeLabel(w.lo, w.hi),
-        count: `${w.checkins} check-in${w.checkins === 1 ? '' : 's'} · ${w.events} ${w.events === 1 ? 'entry' : 'entries'}`,
-        rows: [],
-      });
+    const sun = sunOf(key);
+    if (!weeks.length || weeks[weeks.length - 1].wk !== sun) {
+      weeks.push({ wk: sun, title: name(sun), count: '', rows: [] });
+      tally.push({ checkins: 0, events: 0 });
     }
+    const sd = sumDay(days[key]);
+    tally[tally.length - 1].checkins += sd.checked ? 1 : 0;
+    tally[tally.length - 1].events += sd.n;
     weeks[weeks.length - 1].rows.push(dayRow(days, st, key, tk, L));
   }
+  weeks.forEach((w, i) => {
+    const t = tally[i];
+    w.count = `${t.checkins} check-in${t.checkins === 1 ? '' : 's'} · ${t.events} ${t.events === 1 ? 'entry' : 'entries'}`;
+  });
   return { weeks, more: total - limit };
 }
 
@@ -135,7 +142,10 @@ export function myNumbers(days: Days, st: Settings, tk: DayKey, nowMs: number) {
     {
       l: 'Urges ridden out',
       b: String(n('rode')),
-      s: n('urges') ? `${n('rode')} of ${n('urges')} urges. Paused 10 min ${pct(m.pauseRate)} of the time.` : 'Shows up after your first check-in',
+      /* the pause share only once a pause has been used: "0% of the time" read as a failure */
+      s: n('urges')
+        ? `${n('rode')} of ${n('urges')} urges.` + (m.pauseRate ? ` Paused 10 min ${pct(m.pauseRate)} of the time.` : '')
+        : 'Shows up after your first check-in',
     },
     { l: 'Check-ins done', b: String(n('checkins')), s: `of ${n('days')} day${n('days') === 1 ? '' : 's'} so far` },
     third,

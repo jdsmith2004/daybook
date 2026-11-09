@@ -229,11 +229,7 @@ export function Ground({ finish, level }: ToolProps) {
           ))}
         </View>
         <T v="small" tone="muted" style={s.c} accessibilityLiveRegion="polite">
-          {all
-            ? i === GROUND.length - 1
-              ? 'All found.'
-              : 'All ' + g[0] + ' found. On to the next.'
-            : n + ' of ' + g[0] + '. Tap a shape each time you find one.'}
+          {all ? (i === GROUND.length - 1 ? 'All found.' : 'All ' + g[0] + ' found. On to the next.') : n ? '' : 'Tap a shape each time you find one.'}
         </T>
       </Dock>
     </Stage>

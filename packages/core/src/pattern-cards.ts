@@ -170,9 +170,13 @@ export function patDoing(days: Days, per: PatPeriod, st: Settings): PatDoing {
     let n = 0;
     return ks.map((k) => (n += noSlipOn(days, st, tk, k) ? 1 : 0));
   };
-  const now = sum(per.recent);
+  /* the days are counted from Day 1, as Days and Today count them (the owner, November 8, 2026) */
+  const from = st.day1 && st.day1 <= tk ? st.day1 : null;
+  const counted = (ks: DayKey[]) => (from ? ks.filter((k) => k >= from) : ks);
+  const recent = counted(per.recent);
+  const now = sum(recent);
   const n = now.length;
-  const then = per.then && per.then.length === n ? sum(per.then) : null;
+  const then = per.then && counted(per.then).length === n ? sum(counted(per.then)) : null;
   const c = n ? now[n - 1] : 0;
   const t = then ? then[n - 1] : 0;
   const days_ = n === 7 || n === 30 ? 'the last ' + n + ' days' : 'your ' + n + ' days so far';
@@ -181,7 +185,7 @@ export function patDoing(days: Days, per: PatPeriod, st: Settings): PatDoing {
   const first = !per.then ? 'Day 1' : n === 7 ? '7 days ago' : n === 30 ? (per.than === 'in your first month' ? 'Day 1' : '30 days ago') : 'Day 1';
   const base = { now, then, than: per.than, first };
   /* days away that Daybook does not know are not slips, so they never read as a fall */
-  const unknown = per.recent.filter((k) => !dayKnown(days, st, k, tk)).length;
+  const unknown = recent.filter((k) => !dayKnown(days, st, k, tk)).length;
   if (unknown) {
     const few = c * 4 < n;
     return {
@@ -203,7 +207,7 @@ export function patDoing(days: Days, per: PatPeriod, st: Settings): PatDoing {
   if (c >= t + move) return { ...base, kind: 'better', head: 'Getting better', line: what + ', up from ' + t + ' ' + per.than + '.' };
   /* a person with few or no days like that hears what they did do: a count of nothing is not a finding, and it would take their hope for no gain */
   if (c * 4 < n) {
-    const rode = per.recent.reduce((a, k) => a + sumDay(days[k]).rode, 0);
+    const rode = recent.reduce((a, k) => a + sumDay(days[k]).rode, 0);
     return {
       ...base,
       kind: 'steady',

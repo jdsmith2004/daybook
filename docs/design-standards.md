@@ -37,6 +37,9 @@ parts a machine can check; the rest is the checklist in docs/craft-checklist.md,
 - **Space:** 4, 8, 12, 16, 24, 32. Related things 4 to 8 apart, sections 24 or more, one left edge 16 from the screen.
 - **Sameness is a smell.** Three screens side by side should not look like one template with new words: a screen's layout comes
   from its one job. Today is a sky; Your day is a line through the day; Milestones is the flame; SOS is one living thing.
+- **A slip's color (the owner, November 8, 2026).** A slip is amber everywhere (the "I slipped" choices, a day's page, the charts, the
+  Sunday review), except where orange already means a day with no slip: the Days month, the Days log and Weeks, where a slip is calm
+  violet so it never reads as one more good day.
 - **Spirit is not optional.** Clearing clutter must never leave a tidy page with no soul. Keep the skies, the flame, the shapes,
   the squiggle, the motion and the warm words, and where a page has room, make the flame bigger, not smaller.
 

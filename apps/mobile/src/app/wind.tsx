@@ -34,7 +34,9 @@ export default function Wind() {
       opens={goodnightOpens(st, clockOf(now))}
       onGoodnight={() => setBed(goodnight(null))}
       rowAbove={
-        ci ? <NightRow icon="pencil" title="Check in first?" sub="Three quick numbers, then Goodnight" onPress={() => router.replace('/checkin')} /> : null
+        ci ? (
+          <NightRow icon="pencil" title="Check in first?" sub="Three quick numbers and your sleep, then Goodnight" onPress={() => router.replace('/checkin')} />
+        ) : null
       }
     />
   );

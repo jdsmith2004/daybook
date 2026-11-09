@@ -368,5 +368,5 @@ export function patNowLine(g: PatGaps, tk: DayKey, last: DayKey | null): string 
   const ago = last ? diffDays(tk, last) : null;
   if (ago === 0 || !g.now) return 'Your last slip was today. The next stretch starts now.';
   if (ago === 1) return 'Your last slip was yesterday. Today is day 1 of the next stretch.';
-  return 'Now: ' + plural(g.now, 'clean day') + ' since your last slip, and counting.';
+  return 'Now: ' + plural(g.now, 'day') + ' in a row with no slip, and counting.';
 }

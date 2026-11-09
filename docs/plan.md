@@ -146,6 +146,9 @@ it does not let me swipe up").**
   go only starts it. On the phone the page is chosen by the drag itself: an eighth of a page or any flick moves on. Until the
   person has swiped three times, Next is a filled round that bobs down, and the line under the name says "Swipe up for the
   next one"; from the second move the page also lifts twice to show the next one below.
+- Then (the owner, with two pictures of a move stopped halfway under the next one: "really glitchy"): on the phone the
+  scroll view snaps to whole pages itself (`snapToInterval`, one page per swipe), so a swipe can never come to rest between
+  two moves; a flick or a short drag moves on, a tiny drag springs back.
 
 ### More of Matthew 5 (the owner, November 8, 2026: "missing substance", more from Matthew 5)
 

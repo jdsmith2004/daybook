@@ -69,19 +69,11 @@ export function RidePager({
     seen.current = i;
     onLand(i);
   };
-  /* on the phone the page is chosen here, not by the scroll view's own paging (which needs half a page or a hard flick):
-     an eighth of a page, or any flick, is enough, the way short-video apps feel */
-  const from = useRef(0);
-  const end = (v: number, vy: number) => {
-    if (!h) return;
-    const d = v - from.current;
-    const base = seen.current;
-    const to = Math.max(0, Math.min(count - 1, d > h / 8 || vy > 0.35 ? base + 1 : d < -h / 8 || vy < -0.35 ? base - 1 : base));
-    ref.current?.scrollTo({ y: to * h, animated: !still });
-    if (to !== base) {
-      seen.current = to;
-      onLand(to);
-    }
+  /* on the phone the scroll view snaps to whole pages itself (snapToInterval), one page per swipe, so it can never come to
+     rest between two moves; a flick or a short drag is enough. A slow drag let go with no flick has no glide, so it lands here. */
+  const end = (y: number, vy: number) => {
+    if (!h || Math.abs(vy) > 0.05) return;
+    land(y);
   };
   /* the web has no end-of-momentum event: it lands once the scroll has been still for a moment */
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -97,15 +89,17 @@ export function RidePager({
         <ScrollView
           ref={ref}
           pagingEnabled={WEB}
+          snapToInterval={WEB ? undefined : h}
+          snapToAlignment="start"
+          disableIntervalMomentum
           scrollEnabled={on}
           showsVerticalScrollIndicator={false}
           decelerationRate="fast"
           contentOffset={{ x: 0, y: at * h }}
           scrollEventThrottle={32}
           onScroll={onScroll}
-          onScrollBeginDrag={(e) => (from.current = e.nativeEvent.contentOffset.y)}
           onScrollEndDrag={(e) => (WEB ? undefined : end(e.nativeEvent.contentOffset.y, e.nativeEvent.velocity?.y ?? 0))}
-          onMomentumScrollEnd={(e) => (WEB ? land(e.nativeEvent.contentOffset.y) : undefined)}
+          onMomentumScrollEnd={(e) => land(e.nativeEvent.contentOffset.y)}
           style={s.box}>
           {Array.from({ length: count }, (_, i) => (
             <View key={i} style={{ height: h }}>

@@ -1,5 +1,68 @@
 # What is planned next
 
+## What are you quitting: porn, gambling or another habit (the owner, November 8, 2026; built on `claude/habit-choice-ac4418`, not merged)
+
+**The ask.** Let a person pick what they are quitting in setup: porn (still the main one, and the marketing stays about porn),
+gambling, or another habit. The owner's call: build it now, kept simple. The words switch, the lessons not written for the
+habit leave, the care tools stay for everyone, and lessons for other habits come later. Helps the person: someone fighting
+gambling gets Daybook's whole toolkit instead of being turned away. Helps Daybook: a second audience with the same app, and a
+first look at whether other habits are worth lessons of their own.
+
+**How porn-specific the app is (counted November 8, 2026).** The switch is cheap; the words are the work.
+
+- Lessons (the live `Turn` text, 49 plus 12 God lessons): 18 say nothing of porn, 21 need a word or one card changed, 8 rest
+  on a porn example or study (l4, l10, l11, l22, l34, l36, l42, l46), and 2 are about porn and sex alone (l47, l48). Of the
+  God lessons, 6 are neutral and 6 name porn. The research behind them is mostly cross-habit already: about 11 alcohol or AA
+  sources and 9 smoking ones, against 16 porn or sexual ones. The old lesson text in `core.js`, `lessons-more.ts` and
+  `lesson-beats.ts` BOOK is no longer shown.
+- Setup: about 30 lines (the questions, the Brief Pornography Screen and its kind word, the loop and curve pages, the goal).
+- SOS, tools, reminders, badges: no porn words at all. About 30 lines assume a phone in bed at night, which fits gambling.
+- Get help: SAA, SLAA, SA, Stop It Now, the adult-content filter steps, two scripts and a therapist check.
+- Public pages: about 160 lines (about.html, 12 guide pages, llms.txt). The store subtitle is "Quit porn, live your potential".
+  These stay about porn, by the owner's choice.
+
+**What the science carries to (research, November 8, 2026).** The tools Daybook is built on (relapse prevention, if-then
+plans, self-monitoring, shame-free lapses, identity change) carry over to gambling well; abstinence is the clinical norm there.
+Gambling carries the highest suicide risk on the list (lifetime ideation about 32%, Kristensen 2024), so its crisis line sits
+first in Get help, and money tools matter (blocks, the bank, self-exclusion). Alcohol and daily drugs can bring dangerous
+withdrawal, so "another habit" says to see a doctor before stopping, in setup and in Get help, and the "no withdrawal" line
+from the porn trial is shown for porn only. Nicotine and cannabis fit well and are safe to stop. Phone, gaming and shopping
+need "less", not zero, and binge eating should never get an abstinence frame; none of these is named.
+
+**What was built.**
+
+- Core `habit.ts`: `habitOf` (porn when nothing is kept), the setup choices, `habitSay` for fixed phrases ("Quit porn",
+  "struggling with porn", "compulsive porn use"), the safety net's device steps per habit, and the doctor line. The answer
+  lives in `settings.onb.a.habit` like the faith answer; `normOnb` keeps only the three values, so old saves read as porn
+  and nothing needs mapping in `normSettings`.
+- Setup asks "What do you want to quit?" right after How it works. The questions after it name the habit; the five porn
+  statements and their kind word are skipped for another habit; the goal says "Quit gambling" or "Quit this habit".
+- Settings has "What I am quitting" beside Faith.
+- Lessons: `PORN_ONLY` (16 lessons and 9 God lessons whose live words name porn or sex, or rest on a porn study) leave the
+  path, Learn, the checkpoints and every lesson link for another habit, the way the faith lessons leave for a No. 33 lessons
+  stay. A lesson finished before stays finished, counted and worth its points; a test checks that points, level and badges
+  match. A test also fails if a lesson off the list names porn or sex. Two steps of the path empty out for another habit
+  (Make it right, Keep a daily practice) and are passed by.
+- Get help: the National Problem Gambling Helpline (1-800-MY-RESET, NCPG since January 2026; 1-800-GAMBLER is no longer the
+  national number), Gamblers Anonymous and Gam-Anon, BetBlocker, Gamban, a bank block, state self-exclusion; for another habit
+  AA, NA, Marijuana Anonymous, Nicotine Anonymous and the doctor line. The porn groups and filters show for porn only.
+- The five questions a month on (the Brief Pornography Screen) are for porn only; answers kept from before stay on Pattern.
+- Found on the way: the faith picked in setup (`creed`) was never kept, so everyone heard the plain voice until Settings. It
+  is in `OB_KEYS` now.
+
+**Left for later.**
+
+- Gambling lessons (high): chasing losses, near misses and "due" thinking, money access, debt and shame about money, a big win
+  as a risk, telling someone. Then gambling versions of the 21 one-card lessons, as a `vo`-style overlay per habit
+  (lesson-turns.ts already does this for the faith voices). Roughly 2 to 3 sessions for the first 8 gambling lessons.
+- A gambling check in place of the Brief Pornography Screen (for example the 3-question Brief Biosocial Gambling Screen).
+- An anonymous count of which habit people pick (`habit_gambling`, `habit_other`): a new count needs the owner's yes and the
+  privacy page.
+- Named habits beyond gambling (nicotine, cannabis, alcohol with its screen), once "another habit" shows who comes.
+
+Effort: medium for the setup, words, Get help and the lesson filter (a display filter on the existing faith mechanism; nothing
+earned is read or written differently). High for any later change that touches points or the record.
+
 ## Solid analytics: what people do, and whether reminders work (the owner, November 4, 2026; merged November 4, 2026 after the owner's privacy choices)
 
 **The ask.** "I want to see what they do when they use it, if notifications have effects etc... just have solid analytics so we

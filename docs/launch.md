@@ -185,16 +185,19 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   - User content: other user content also covers feedback (optional, not linked unless the person types an address;
     used for app functionality).
   - **What Daybook learns (the owner, November 9, 2026; core `events.ts`, privacy page "What Daybook learns").** Sent from
-    everyone who has not turned it off in More, so do not mark any of it optional. Every type below is **Data Not Linked to
-    You**, used for **Analytics** only, **not** used for tracking. Add these before a build with `EXPO_PUBLIC_EVENTS_URL` goes
-    to review:
-    - Identifiers: **Device ID** (the random install id; not the advertising id, never tied to the account).
-    - Usage Data: **Product Interaction** (opens, screens, setup, lessons, tools, reminders, the asks).
-    - Health and Fitness: **Health** (urges and slips logged, their strength and triggers, the check-in's numbers, the five
-      questions' scores). Never Apple Health's data.
-    - Sensitive Info: **Sensitive Info** (the faith setting and the habit being changed).
-    - Purchases: **Purchase History** (which tip or Daybook Pattern product was bought).
-    - Diagnostics: **Other Diagnostic Data** (which part of the app had an error).
+    everyone who has not turned it off in More, so nothing is "optional". Apple asks "linked to the user?" once for each data
+    type, not for each purpose: a type already linked because accounts keep it stays linked, and only gains Analytics. Make
+    these exact answers in App Store Connect, App Privacy, Edit, before the build with `EXPO_PUBLIC_EVENTS_URL` goes to review:
+    - Identifiers, **Device ID** (new): purposes Analytics; linked to the user: **No**; tracking: **No**. (The random install
+      id. Leave User ID as it is.)
+    - Usage Data, **Product Interaction** (already there): purposes Analytics; linked: **No**; tracking: **No**. (Screens, setup,
+      lessons, tools, charts, reminders, the asks.)
+    - Diagnostics, **Other Diagnostic Data** (new): purposes Analytics; linked: **No**; tracking: **No**. (Which part had an error.)
+    - Health and Fitness, **Health** (already there for accounts): add the purpose **Analytics**; linked stays **Yes**; tracking
+      **No**. (Urges, slips, their strength and triggers, the check-in's numbers, the five questions.)
+    - Sensitive Info (already there for accounts): add **Analytics**; linked stays **Yes**; tracking **No**. (Faith, the habit.)
+    - Purchases, **Purchase History** (already there): add **Analytics**; linked stays **Yes**; tracking **No**.
+    - Then Publish. Nothing here is Apple Health data, and the label says nothing about HealthKit.
   - Tracking: **no**. Data used to track you: **none**.
   - Apple Health (November 9, 2026): **no change to the label.** Daybook reads only sleep, read only, and the nights stay on
     the phone, outside the log: never synced, backed up, counted or sent. Apple's label lists only data that leaves the

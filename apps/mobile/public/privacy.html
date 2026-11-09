@@ -126,16 +126,17 @@
         <p>
           How it works: every few hours, and as you leave the app, your phone sends a short list of what happened, each as a fixed name with fixed values, the
           number of days since Daybook was installed on this phone, and the hour of the day (never the minute or the date). The phone keeps a random number for
-          this install, so the list from one phone can be read together (for example, whether people who finish a lesson slip less the next week). That number
-          is made on your phone, is never part of your log, your account or a backup, and is replaced when you turn this off, use Delete everything, or install
-          Daybook again. Your internet address is never kept. The lists are stored with Amazon Web Services in the United States, encrypted, readable only by
-          the person who builds Daybook, and deleted after 2 years.
+          this install, so the list from one phone can be read together and in order (for example, whether an urge passed after a tool, or whether people who
+          finish a lesson slip less the next week). That number is made on your phone, is never part of your log, your account or a backup, and is replaced when
+          you turn this off, use Delete everything, or install Daybook again. Your internet address is never kept. The lists are stored with Amazon Web Services
+          in the United States, encrypted, readable only by the person who builds Daybook, and deleted after 2 years.
         </p>
         <p>Every name that can be sent, and what it means:</p>
         <ul>
           <li>
-            <code>open</code>, <code>leave</code>, <code>screen</code>, <code>error</code>: Daybook was opened (and whether it started fresh), left (and how
-            long it was open), a screen was opened (by its name), or something went wrong (which part).
+            <code>open</code>, <code>leave</code>, <code>screen</code>, <code>screen_left</code>, <code>sheet</code>, <code>error</code>: Daybook was opened
+            (and whether it started fresh), left (how long it was open, and from which screen), a screen was opened or left (and how long it was on), a card or
+            link on a screen was opened (which one), or something went wrong (which part).
           </li>
           <li>
             <code>day</code>: once a day, where things stand: the counting mode, the count, no-slip days in the last 28, level, points, badges, the flame's
@@ -166,6 +167,9 @@
             the five questions were answered (the five scores), the Sunday review was finished, Goodnight was said.
           </li>
           <li>
+            <code>chart_seen</code>, <code>chart_tap</code>: a chart was shown (which one, for how long, and whether it was locked), or its numbers were opened.
+          </li>
+          <li>
             <code>level_up</code>, <code>form</code>, <code>flame_low</code>, <code>flame_lit</code>, <code>badge</code>: a new level, a new flame form, the
             flame burning low or lit again, a badge earned.
           </li>
@@ -182,11 +186,12 @@
         <p>
           The values are only numbers, yes or no, or names from Daybook's own lists: <code>cold</code>, <code>secs</code>, <code>route</code>, <code>err</code>,
           <code>page</code>, <code>ix</code>, <code>lesson</code>, <code>beat</code>, <code>from</code>, <code>outcome</code>, <code>str</code>,
-          <code>str2</code>, <code>tool</code>, <code>trigger</code>, <code>hrs</code>, <code>step</code>, <code>mood</code>, <code>sleep</code>,
-          <code>q1</code> to <code>q5</code>, <code>lvl</code>, <code>kind</code>, <code>what</code>, <code>tier</code>, <code>how</code>, <code>mode</code>,
-          <code>count</code>, <code>ns28</code>, <code>pts</code>, <code>badges</code>, <code>low</code>, <code>backs</code>, <code>rem</code>,
-          <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>, <code>faith</code>, <code>habit</code>, <code>lang</code>,
-          <code>os</code>. Anything that is not on those lists is dropped on your phone, and refused by the server.
+          <code>str2</code>, <code>tool</code>, <code>helped</code>, <code>chart</code>, <code>locked</code>, <code>trigger</code>, <code>hrs</code>,
+          <code>step</code>, <code>mood</code>, <code>sleep</code>, <code>q1</code> to <code>q5</code>, <code>lvl</code>, <code>kind</code>, <code>what</code>,
+          <code>tier</code>, <code>how</code>, <code>mode</code>, <code>count</code>, <code>ns28</code>, <code>pts</code>, <code>badges</code>,
+          <code>low</code>, <code>backs</code>, <code>rem</code>, <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>,
+          <code>faith</code>, <code>habit</code>, <code>lang</code>, <code>os</code>. Anything that is not on those lists is dropped on your phone, and refused
+          by the server.
         </p>
         <p>
           Never sent: your journal, notes, voice notes, Obsidian folder, plan, reasons, Talk it through, or anything else you write; your name, email, account

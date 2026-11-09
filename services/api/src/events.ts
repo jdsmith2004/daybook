@@ -30,7 +30,7 @@ const json = (statusCode: number, body: unknown): Res => ({
 /** the lines for one batch: newline-separated JSON, one event each, props as a JSON string (Athena reads them with
     json_extract) */
 export function eventLines(day: string, b: NonNullable<ReturnType<typeof eventsClean>>): string {
-  return b.e.map((e) => JSON.stringify({ day, i: b.i, pf: b.p, v: b.v, n: e.n, d: e.d, h: e.h, p: JSON.stringify(e.p || {}) })).join('\n') + '\n';
+  return b.e.map((e) => JSON.stringify({ day, i: b.i, pf: b.p, v: b.v, k: e.k, n: e.n, d: e.d, h: e.h, p: JSON.stringify(e.p || {}) })).join('\n') + '\n';
 }
 
 export function makeEventsHandler(sink: Sink, cap: Cap, clock: () => number = Date.now) {

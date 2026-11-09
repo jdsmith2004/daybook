@@ -29,8 +29,8 @@ const batch = {
   p: 'ios',
   v: '1.4.0',
   e: [
-    { n: 'urge', d: 3, h: 22, p: { str: 8, trigger: 'lonely', note: 'my words' } },
-    { n: 'open', d: 3, h: 22 },
+    { k: 4, n: 'urge', d: 3, h: 22, p: { str: 8, trigger: 'lonely', note: 'my words' } },
+    { k: 5, n: 'open', d: 3, h: 22 },
   ],
 };
 
@@ -45,8 +45,8 @@ describe('events', () => {
       .split('\n')
       .map((l) => JSON.parse(l));
     expect(rows).toEqual([
-      { day: '2026-11-09', i: HEX, pf: 'ios', v: '1.4.0', n: 'urge', d: 3, h: 22, p: '{"str":8,"trigger":"lonely"}' },
-      { day: '2026-11-09', i: HEX, pf: 'ios', v: '1.4.0', n: 'open', d: 3, h: 22, p: '{}' },
+      { day: '2026-11-09', i: HEX, pf: 'ios', v: '1.4.0', k: 4, n: 'urge', d: 3, h: 22, p: '{"str":8,"trigger":"lonely"}' },
+      { day: '2026-11-09', i: HEX, pf: 'ios', v: '1.4.0', k: 5, n: 'open', d: 3, h: 22, p: '{}' },
     ]);
     expect(lines.join('')).not.toMatch(/203\.0|iPhone15|my words/);
   });
@@ -55,7 +55,7 @@ describe('events', () => {
     const { h, lines } = make();
     expect((await h(post('{nope'))).statusCode).toBe(400);
     expect((await h(post({ ...batch, i: 'me@example.com' }))).statusCode).toBe(400);
-    expect((await h(post({ ...batch, e: [{ n: 'zzz', d: 0, h: 0 }] }))).statusCode).toBe(400);
+    expect((await h(post({ ...batch, e: [{ k: 0, n: 'zzz', d: 0, h: 0 }] }))).statusCode).toBe(400);
     expect((await h(post('x'.repeat(EV_BODY + 1)))).statusCode).toBe(413);
     expect((await h(post(batch, 'GET'))).statusCode).toBe(405);
     expect(lines).toEqual([]);

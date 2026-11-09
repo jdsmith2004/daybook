@@ -10,7 +10,7 @@ describe('events', () => {
   it('keeps the name, the days since install and the hour, never the time', () => {
     let s = fresh();
     s = evAdd(s, 'sos_open', '2026-11-12', 23.9, { from: 'today' });
-    expect(s.q).toEqual([{ n: 'sos_open', d: 3, h: 23, p: { from: 'today' } }]);
+    expect(s.q).toEqual([{ k: 0, n: 'sos_open', d: 3, h: 23, p: { from: 'today' } }]);
   });
 
   it('drops a name not on the list', () => {
@@ -48,7 +48,7 @@ describe('events', () => {
     s = evAdd(s, 'open', D0, 11);
     s = evSent(s, upTo);
     expect(s.q.length).toBe(EV_KEEP - EV_BATCH + 1);
-    expect(s.q[s.q.length - 1].n).toBe('open');
+    expect(s.q[s.q.length - 1]).toMatchObject({ n: 'open', k: EV_KEEP + 5 });
     /* sent twice: nothing more comes off */
     expect(evSent(s, upTo)).toBe(s);
   });
@@ -65,36 +65,46 @@ describe('events', () => {
         id: HEX,
         first: D0,
         q: [
+          { k: 0, n: 'open', d: 1, h: 5 },
+          { k: 1, n: 'x', d: 1, h: 5 },
+          { k: 2, n: 'urge', d: 1, h: 40 },
           { n: 'open', d: 1, h: 5 },
-          { n: 'x', d: 1, h: 5 },
-          { n: 'urge', d: 1, h: 40 },
         ],
       },
       D0,
       HEX,
     );
-    expect(s.q).toEqual([{ n: 'open', d: 1, h: 5 }]);
+    expect(s.q).toEqual([{ k: 0, n: 'open', d: 1, h: 5 }]);
   });
 });
 
 describe('the server check', () => {
   it('takes a good batch and cleans it', () => {
-    const b = eventsClean({ i: HEX, p: 'android', v: '1.4.0', e: [{ n: 'urge', d: 2, h: 22, p: { str: 8, trigger: 'lonely', words: 'x' } }] });
-    expect(b).toEqual({ i: HEX, p: 'android', v: '1.4.0', e: [{ n: 'urge', d: 2, h: 22, p: { str: 8, trigger: 'lonely' } }] });
+    const b = eventsClean({ i: HEX, p: 'android', v: '1.4.0', e: [{ k: 7, n: 'urge', d: 2, h: 22, p: { str: 8, trigger: 'lonely', words: 'x' } }] });
+    expect(b).toEqual({ i: HEX, p: 'android', v: '1.4.0', e: [{ k: 7, n: 'urge', d: 2, h: 22, p: { str: 8, trigger: 'lonely' } }] });
   });
 
   it('refuses a batch with no id, a bad id, no platform or nothing left', () => {
-    const e = [{ n: 'open', d: 0, h: 1 }];
+    const e = [{ k: 0, n: 'open', d: 0, h: 1 }];
     expect(eventsClean({ p: 'ios', v: '1', e })).toBeNull();
     expect(eventsClean({ i: 'someone@example.com', p: 'ios', v: '1', e })).toBeNull();
     expect(eventsClean({ i: HEX, p: 'mac', v: '1', e })).toBeNull();
-    expect(eventsClean({ i: HEX, p: 'ios', v: '1', e: [{ n: 'zzz', d: 0, h: 1 }] })).toBeNull();
+    expect(eventsClean({ i: HEX, p: 'ios', v: '1', e: [{ k: 0, n: 'zzz', d: 0, h: 1 }] })).toBeNull();
   });
 
   it('takes at most one batch of events', () => {
-    const e = Array.from({ length: EV_BATCH + 50 }, () => ({ n: 'open', d: 0, h: 1 }));
+    const e = Array.from({ length: EV_BATCH + 50 }, (_, k) => ({ k, n: 'open', d: 0, h: 1 }));
     expect(eventsClean({ i: HEX, p: 'ios', v: '1', e })!.e.length).toBe(EV_BATCH);
   });
+});
+
+it('numbers each event in order, so what came next can be read', () => {
+  let s = fresh();
+  for (const n of ['tool_done', 'urge', 'open'] as const) s = evAdd(s, n, D0, 9);
+  expect(s.q.map((e) => e.k)).toEqual([0, 1, 2]);
+  s = evSent(s, 2);
+  s = evAdd(s, 'leave', D0, 9);
+  expect(s.q.map((e) => e.k)).toEqual([2, 3]);
 });
 
 describe('bands', () => {

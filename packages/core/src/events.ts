@@ -24,8 +24,12 @@ import type { DayKey } from './types';
 export const EV_NAMES = {
   /* the app */
   open: 'Opened Daybook (cold: started fresh)',
-  leave: 'Left Daybook (secs: how long it was open)',
+  leave: 'Left Daybook (secs: how long it was open, route: the screen it was left from)',
   screen: 'Opened a screen (route)',
+  screen_left: 'Left a screen for another (route, secs: how long it was on)',
+  chart_seen: 'A chart was shown (chart, secs: how long, locked)',
+  chart_tap: 'Opened the numbers or more of a chart (chart)',
+  sheet: 'Opened a card, link or sheet on a screen (route, what: which)',
   error: 'Something went wrong (err: which part)',
   day: 'Once a day, where things stand (mode, count, no-slip days, level, points, badges, flame form, burning low, comebacks, reminders, account, sync, supporter, Apple Health connected, faith, habit, language, OS version)',
   /* setup */
@@ -43,7 +47,7 @@ export const EV_NAMES = {
   sos_open: 'Opened SOS (from: where)',
   sos_end: 'SOS ended (outcome, secs, str: urge strength before, str2: after)',
   tool_open: 'Opened a tool (tool)',
-  tool_done: 'Finished a tool (tool, secs)',
+  tool_done: 'Finished a tool (tool, secs, helped: whether it helped, where asked)',
   talk_done: 'Finished Talk it through (secs)',
   /* the log */
   urge: 'Logged an urge (str, trigger, outcome)',
@@ -129,6 +133,25 @@ export const EV_ROUTES = [
   'other',
 ] as const;
 
+/** the charts: Pattern's cards, and the charts on the week, the month, the Sunday review, miles and points */
+export const EV_CHARTS = [
+  'apart',
+  'felt',
+  'ride',
+  'named',
+  'when',
+  'what',
+  'days',
+  'helps',
+  'week',
+  'month',
+  'sunday',
+  'miles',
+  'points',
+  'growth',
+  'other',
+] as const;
+
 /** every prop key, and the values it may take */
 export const EV_PROPS: Record<string, Prop> = {
   cold: bool,
@@ -156,7 +179,10 @@ export const EV_PROPS: Record<string, Prop> = {
   q5: int(0, 10),
   lvl: int(0, 1000),
   kind: one(() => NUDGE_KINDS),
-  what: one(() => ['tip', 'pattern', 'account', 'rate', 'other']),
+  what: one(() => ['tip', 'pattern', 'account', 'rate', 'sos', 'happened', 'planning', 'lesson', 'checkin', 'plan', 'journal', 'rekindle', 'idea', 'other']),
+  chart: one(() => EV_CHARTS),
+  locked: bool,
+  helped: bool,
   tier: one(() => [...TIP_TIER_IDS, 'pattern_month', 'pattern_life', 'pattern_life_more', 'web', 'other']),
   how: one(() => ['apple', 'email', 'other']),
   /* the day's snapshot */
@@ -220,8 +246,9 @@ export function evProps(x: unknown): EvProps {
 }
 
 /* ---------- on the device ---------- */
-/** one event: name, days since install, local hour, props */
+/** one event: its place in this phone's stream (so what came next can be read), name, days since install, local hour, props */
 export interface Ev {
+  k: number;
   n: EvName;
   d: number;
   h: number;
@@ -266,11 +293,12 @@ export function evNorm(x: unknown, today: DayKey, hex: string): EvState {
 function evOne(x: unknown): Ev | null {
   const e = x as Partial<Ev> | null;
   if (!e || typeof e !== 'object' || typeof e.n !== 'string' || !(e.n in EV_NAMES)) return null;
+  const k = typeof e.k === 'number' && Number.isInteger(e.k) && e.k >= 0 && e.k < 1e9 ? e.k : null;
   const d = typeof e.d === 'number' && Number.isFinite(e.d) ? Math.max(0, Math.min(100000, Math.round(e.d))) : null;
   const h = typeof e.h === 'number' && Number.isInteger(e.h) && e.h >= 0 && e.h <= 23 ? e.h : null;
-  if (d == null || h == null) return null;
+  if (k == null || d == null || h == null) return null;
   const p = evProps(e.p);
-  return Object.keys(p).length ? { n: e.n as EvName, d, h, p } : { n: e.n as EvName, d, h };
+  return Object.keys(p).length ? { k, n: e.n as EvName, d, h, p } : { k, n: e.n as EvName, d, h };
 }
 
 function daysBetween(a: DayKey, b: DayKey): number {
@@ -280,7 +308,7 @@ function daysBetween(a: DayKey, b: DayKey): number {
 
 /** add an event. today: the Daybook day; hour: the local hour (0 to 23). A name not on the list is dropped. */
 export function evAdd(s: EvState, n: EvName, today: DayKey, hour: number, p?: Record<string, unknown>): EvState {
-  const e = evOne({ n, d: Math.max(0, daysBetween(s.first, today)), h: Math.floor(hour), p });
+  const e = evOne({ k: s.at + s.q.length, n, d: Math.max(0, daysBetween(s.first, today)), h: Math.floor(hour), p });
   if (!e) return s;
   const drop = Math.max(0, s.q.length - EV_KEEP + 1);
   return { ...s, q: [...s.q.slice(drop), e], at: s.at + drop };

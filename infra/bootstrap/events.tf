@@ -230,6 +230,11 @@ resource "aws_glue_catalog_table" "events" {
       type = "string"
     }
     columns {
+      name    = "k"
+      type    = "bigint"
+      comment = "the event's place in this phone's stream: what came next"
+    }
+    columns {
       name = "n"
       type = "string"
     }

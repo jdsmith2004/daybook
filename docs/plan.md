@@ -138,12 +138,39 @@ as now. The check is in code: anything not on the list is dropped on the phone a
 
 ### Still to do (medium effort)
 
-- Each event at its place in the app (setup, lessons, SOS and tools, the log, check-in, the flame, reminders, asks), and the
-  once-a-day `day` snapshot.
+- Each event at its place in the app (every screen's open and leave through the router, setup, lessons, SOS and tools, the
+  log, check-in, Pattern's charts as each card comes into view, the flame, reminders, asks), and the once-a-day `day` snapshot.
 - The quiet notice: one line on Today for people who had Daybook before, once, never in the hours after an SOS or a slip, with
   a link to More, Anonymous data; and one line on setup's last page for new people.
-- `scripts/stats-events.mjs` in the Stats workflow (Athena: the funnel, retention by install week, lessons against slips the
-  next week, SOS by tool, reminders, the days to a first tip, the five questions over the weeks).
+- `scripts/stats-events.sql` and `.mjs` in the Stats workflow, one query for each question in the table above.
+
+### What the owner wants to learn, and the events that answer it (the owner, November 9, 2026)
+
+"Which screens we lose people on, what screens or tools are people using that help, that don't help, are graphs used, which
+tabs are and aren't used." Every event carries `k`, its place in that phone's stream, so "what came next" is exact.
+
+| Question                                            | How it is read                                                                                                                                                                           |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Where do people leave for good?                     | Each install's last `screen` (and `leave`'s route) on the last day it was seen, for installs not seen for 14 days: the top screens people quit from, against how many reach that screen. |
+| Where does setup lose people?                       | `setup_page` reached, page by page, with `setup_skip` and how long each page took.                                                                                                       |
+| Which screens and tabs are used, and which are not? | Installs that opened each route in their first week, and in a later week; routes no one opened; `screen_left` seconds per route.                                                         |
+| Are the graphs looked at?                           | `chart_seen` per chart (people, seconds, locked or not) and `chart_tap`; charts no one looks at are cut or redrawn.                                                                      |
+| Which tools help?                                   | After `tool_done`, the next `sos_end` outcome or `urge` outcome in the same stream (passed or slipped), per tool; and `helped` where the tool asks. Against SOS with no tool.            |
+| Do lessons help?                                    | Slips in the 7 days after each lesson, for those who took it against those at the same day count who did not.                                                                            |
+| Do reminders help?                                  | `nudge`, `nudge_tap`, `nudge_did` per kind, and opens the next day.                                                                                                                      |
+| Who stays?                                          | Installs by week of install still opening on day 1, 7, 30, 90, and what the ones who stayed did in week one.                                                                             |
+| Is Daybook working?                                 | The five questions over the weeks, slips per week by weeks of use, comebacks after a slip.                                                                                               |
+| What earns?                                         | Asks shown, tapped, bought, and the days to a first tip; which moment's ask lands.                                                                                                       |
+
+### How the owner gets it back
+
+The same way as today: `gh workflow run stats.yml` (or Actions, Stats, Run workflow), no sign-in. The workflow takes the stats
+role, runs a fixed set of Athena queries (`scripts/stats-events.sql`, one per question above) and writes the answers as tables
+into the run's summary page, beside the counts, with a short "What this suggests" list that speaks only once a number rests
+on 10 or more people. Each run scans a few MB now, so it costs a fraction of a cent; the workgroup stops any query at 1 GB (5
+cents). The raw events can also be asked anything in the Athena console (workgroup `daybook-events`, table
+`daybook_events.events`), and I can write a new query for any new question. A web dashboard is possible later (it would need
+a sign-in and a server read path), but a report in GitHub keeps the data off any public page and costs nothing.
 
 ### The steps, with the effort each needs
 

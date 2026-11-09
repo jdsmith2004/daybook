@@ -1,6 +1,6 @@
 # What is planned next
 
-## The turn cards, redone (the owner, November 9, 2026: the flash cards were "really bad"; built on `claude/flashcards`, not merged)
+## The turn cards, redone (the owner, November 9, 2026: the flash cards were "really bad"; merged November 9, 2026 after the owner looked on the simulator)
 
 Every turned lesson has one turn card (core `lesson-turns.ts`, `flip`): the old thought on the front, another way to see it on the
 back. Pictures, before and after: `docs/shots/turn-card`.

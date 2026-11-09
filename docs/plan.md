@@ -1,5 +1,119 @@
 # What is planned next
 
+## Much more analytics, anonymous, never the journal (the owner, November 9, 2026; planned, waiting on the owner's answers, to be built on `claude/analytics`)
+
+**The ask.** "I want to store as much user information as possible, we'll keep it anonymous but we need to add a ton of
+analytics so we can use that data to improve the app so we need to switch that rule completely and just let them know it's
+completely anonymous and we don't view their journal or notes or anything."
+
+Helps the person: Daybook learns which lessons, tools and reminders really lead to fewer slips and faster comebacks, and
+makes those better. Helps Daybook: real funnels, retention by cohort, and which asks turn into tips, so effort goes where it
+pays.
+
+### What changes
+
+Today there are only totals per day (core `pulse.ts`): no id, so no one's path can be followed, and the questions that
+matter most cannot be answered ("do people who finish lesson 14 slip less the next week?", "does SOS breathing beat the
+walk for the same person?", "who tips, after how many days?"). The new piece is an **event stream**: each phone has a
+random install id, and sends a list of events with fixed names and fixed values. The totals stay as they are.
+
+### What is collected (every name and value from a fixed list in core `events.ts`, like `PULSE_KEYS` now)
+
+Each event: its name, the install id, days since install, the local hour of the day (0 to 23, never minutes), the app
+version and platform. The server stamps the UTC day it arrived. No time zone and no exact time are sent.
+
+- **The app:** opened (cold or warm), left, session length in bands, each tab and screen by route name (never a route's
+  parameters), the What's new page, errors caught by the app (the error's code, never its message).
+- **Setup:** each page reached, the choice picked on each choice page (its id, never typed words), skipped, finished, the
+  account ask and its answer.
+- **Lessons:** opened, each beat reached, finished, time spent in bands, the answer chosen on a choice question (its index),
+  left early and where.
+- **SOS and the tools:** opened, which tool, how long in bands, how it ended (passed, slipped, closed), the urge strength
+  before and after where asked (1 to 10).
+- **The log:** an urge logged (strength, the triggers picked from Daybook's own list, a custom trigger only as "other", how it
+  ended), a slip logged (hours since the last slip, in bands), Already happened, Planning a slip, each Rekindle step.
+- **The count and the flame:** once a day a snapshot: counting mode, the count in bands, no-slip days in the last 28, level,
+  points in bands, badges, the flame's form, whether it is burning low, comebacks. Level ups, new forms, lit again.
+- **The check-in and the monthly five questions:** done, and the numbers picked (scales only). The five questions are the
+  closest thing Daybook has to "is it working", so they matter most.
+- **Reminders:** each kind arrived, opened from it, what it was for done that day, reminders allowed.
+- **Money and accounts:** each ask shown, opened, the product chosen, a tip or Pattern bought (which product, never an
+  amount typed or a receipt), an account made (yes or no, never the account), sync on.
+- **The person, once a day:** counting mode, reminders on, Apple Health connected (yes or no only), the language, the OS's
+  major version.
+
+### What never leaves the phone
+
+The journal, notes, voice notes, the Obsidian folder, the plan's words, Talk it through, reasons, if-then lines, any custom
+trigger or any other typed text; names, email, the account id, Apple's id, a push token; Apple Health's nights (Apple's rules
+forbid using Health data this way, and the privacy page promised it); exact times; location, contacts, the device model or
+any advertising id; the internet address (it arrives with any request, and is never stored). Feedback stays its own channel
+as now. The check is in code: anything not on the list is dropped on the phone and refused by the server (`eventsClean`).
+
+### How the anonymity holds, and where it falls short
+
+- The install id is 16 random bytes made on the phone the first time. It is kept apart from the log: never synced, never in
+  a backup, an export or Obsidian, never sent with a sync request. Delete everything and turning it off make a new one, and
+  so does deleting the app.
+- The events go to their own function, with its own role, to their own store. That role cannot read the records table, and
+  the sync function cannot read the events. No access logs are kept, and the function logs nothing about a request.
+- **Where it falls short, plainly:**
+  1. It is **pseudonymous, not anonymous**. One id ties one phone's whole path together. With few people, someone who knows a
+     person's habits ("started on November 3, Android, Spanish") could pick their path out. Only the owner can read it.
+  2. Every request carries the phone's internet address. It is not kept, but AWS sees it on the way in.
+  3. A phone with an account sends sync requests and events from the same address at about the same time. With no logs
+     there is nothing to join, but someone with the owner's AWS keys could turn logs on and join them. The promise is that
+     Daybook never does; the design keeps it from happening by accident.
+  4. In law (Europe's GDPR, Washington's My Health My Data Act and similar state laws), an install id plus what a person does
+     about a sexual habit is **personal health data**, not anonymous data. Those laws want a yes before it is collected.
+     "Completely anonymous" would not be true, and saying it on the privacy page is the kind of claim the FTC acts on.
+- The Live Activities work sends hard-hour start times and a push token: those never travel with the install id and are
+  never kept in the events store, or the two could be joined.
+
+### The server (`services/api`, `infra/`), pay-per-use
+
+- `POST /events` on a new function, `daybook-events`: checks each batch with core `eventsClean`, a body under 64 KB, a ceiling
+  of batches a day (the bill stays bounded whatever anyone sends), then puts the events on an Amazon Data Firehose stream.
+- Firehose writes them to a new S3 bucket, `daybook-events`, in files by day, gzipped. Athena reads them with plain SQL
+  (a Glue table over the bucket). Files expire after the time the owner picks.
+- **Made in `infra/bootstrap` (the owner runs it once):** the events function's role (Firehose put on that one stream, its
+  own logs), Firehose's role (write to that one bucket), the Stats role widened to run Athena on that bucket only, and the
+  deploy role allowed to manage the stream, the bucket, the Glue table and the Athena workgroup. **Made in `infra/app`:** the
+  function, its route (no sign-in, like `/pulse`), the stream, the bucket, the table and the workgroup.
+- **The cost, before relying on it.** At about 1,000 people a day: under $1 a month (Firehose about 1 cent, S3 a few cents,
+  API Gateway about 10 cents, Athena a few cents a month for the Stats runs, Lambda inside the free tier). At 10,000 a day:
+  about $3 to $5 a month, which reaches the $5 budget alert. Nothing is charged while no one sends.
+- **The report:** the Stats workflow gains `scripts/stats-events.mjs`: the setup funnel, retention by week of install (day 1,
+  7, 30), lesson by lesson finish rates, slips in the 7 days after each lesson against people who did not take it, SOS outcome
+  by tool, reminders opened and acted on, the days to a first tip, and the five questions over the weeks.
+
+### The words and the rules
+
+- CLAUDE.md's privacy rule becomes the owner's new one: analytics are wanted and broad; anonymous means never tied to a name,
+  email or account; the journal, notes and typed words never leave the phone; a new event goes on the list and the privacy
+  page in the same change.
+- `apps/mobile/public/privacy.html`: "The short version" says it plainly; a new "What Daybook learns" section lists every event
+  and value and every thing that never leaves; "no device ID" goes; the install id, its limits and the off switch are said.
+- **The App Store label** (docs/launch.md, before the next build): all under Data Not Linked to You, used for analytics, Tracking:
+  No. Identifiers, Device ID (the install id). Usage Data, Product Interaction. Health and Fitness, Health (urges, slips, the
+  check-in, the five questions). Purchases, Purchase History (if tips are counted). Diagnostics, Other (if errors are sent).
+  Sensitive Info only if the habit or faith is sent.
+- **A plain notice to people who were promised the opposite.** Once, after the update, on Today, never in the hours after an
+  SOS or a slip: what changed, in a few lines, with the choice. They were told "no device ID", so they are asked, not told.
+- **The off switch in More stays.** It stops the events and the counts, deletes what is waiting, and drops the install id.
+
+### The steps, with the effort each needs
+
+1. Core `events.ts`: the list, the install id, the queue, `eventsClean`, and tests (high).
+2. The server function and its tests (high).
+3. `infra/bootstrap` roles and `infra/app` pieces (high), then the owner applies bootstrap.
+4. The privacy page, CLAUDE.md, the label in docs/launch.md (high).
+5. The app: the send, the More switch, the ask in setup and the one-time notice (high for the send; medium for the screens).
+6. The events at each place in the app (medium).
+7. The Stats report (medium).
+
+Not merged before the owner has seen it.
+
 ## The turn cards, redone (the owner, November 9, 2026: the flash cards were "really bad"; merged November 9, 2026 after the owner looked on the simulator)
 
 Every turned lesson has one turn card (core `lesson-turns.ts`, `flip`): the old thought on the front, another way to see it on the

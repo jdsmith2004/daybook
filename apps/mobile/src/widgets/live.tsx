@@ -24,6 +24,8 @@ import {
   progressViewStyle,
   resizable,
   scaleEffect,
+  shadow,
+  shapes,
   tint,
 } from '@expo/ui/swift-ui/modifiers';
 import { createLiveActivity, type LiveActivityEnvironment } from 'expo-widgets';
@@ -131,18 +133,23 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
   /* asleep after Goodnight (no short time): no bar and no clock, only the flame resting, and SOS one tap away (the owner, November 9,
      2026: "when I go to sleep I want an SOS button") */
   const asleep = !props.short;
+  /* SOS as it looks in the app (theme sos, sosLow, sosInk): a red button, deepening at its foot, with the life ring and the word in
+     white, and a shadow under it so it reads as something to press (the owner, November 9, 2026) */
   const sos = (
     <Link destination="daybook://sos">
-      <Text
+      <HStack
+        spacing={6}
         modifiers={[
-          font({ size: 15, weight: 'bold', design: 'rounded' }),
-          foregroundStyle(NIGHT),
-          padding({ horizontal: 18, vertical: 8 }),
-          backgroundOverlay({ color: WARM }),
-          clipShape('capsule'),
+          padding({ horizontal: 16, vertical: 9 }),
+          background(
+            { type: 'linearGradient' as const, colors: ['#D83A2E', '#B92B21'], startPoint: { x: 0.5, y: 0 }, endPoint: { x: 0.5, y: 1 } },
+            shapes.capsule(),
+          ),
+          shadow({ radius: 4, y: 2, color: '#8E1F17' }),
         ]}>
-        SOS
-      </Text>
+        <Image systemName="lifepreserver.fill" size={15} color="#FFFFFF" />
+        <Text modifiers={[font({ size: 16, weight: 'bold', design: 'rounded' }), foregroundStyle('#FFFFFF')]}>SOS</Text>
+      </HStack>
     </Link>
   );
   const rest = (big: number, img: number) => (

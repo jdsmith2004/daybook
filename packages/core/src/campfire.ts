@@ -72,10 +72,10 @@ export function campfireXml(fig: string, opts: CampfireOpts = {}): string {
     '<radialGradient id="cfspk" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFD27A" stop-opacity=".7"/><stop offset="1" stop-color="#FFB347" stop-opacity="0"/></radialGradient>';
   let o = `<defs>${defs}</defs>`;
   if (opts.stars) for (const [x, y, r] of STARS) o += `<circle cx="${x}" cy="${y}" r="${r}" fill="#FFFFFF" opacity=".7"/>`;
-  /* the light the fire throws, behind everything */
+  /* the light the fire throws, behind everything, centered on the flame (the owner: "the circle is not centered around the avatar") */
   /* cut in close, it stays inside the picture, so no square edge shows on the card */
   const gr = opts.close ? 34 + 4 * lit : 48 + 10 * lit;
-  o += `<circle cx="${cx}" cy="${opts.close ? 66 : 72}" r="${n1(gr)}" fill="url(#cfglow)" opacity="${n1(0.55 + 0.45 * lit)}"/>`;
+  o += `<circle cx="${cx}" cy="62" r="${n1(gr)}" fill="url(#cfglow)" opacity="${n1(0.55 + 0.45 * lit)}"/>`;
   /* the flames licking up around the logs, behind the figure */
   for (const [dx, hh, wd, g] of LICKS) {
     const x = cx + dx * size;

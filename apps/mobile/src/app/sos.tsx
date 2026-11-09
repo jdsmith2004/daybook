@@ -8,7 +8,7 @@
    "It passed" in the corner ends it with the one celebration every urge ridden out gets (components/rode-out.tsx): the
    flame, confetti, how long it took, how many you have ridden out, which move helped most (one tap, and SOS leans on it
    next time), one line on why that move works with its lesson for later, and what set it off (one tap). More (next to it)
-   holds the bigger moves (step away, text someone, talk it through, and bed at night), every tool, and I slipped, which
+   holds the bigger moves (the trail, for a craving that keeps coming; step away, text someone, talk it through, and bed at night), every tool, and I slipped, which
    goes on to Rekindle (log.tsx). A tool picked there runs over SOS; when it is done, SOS asks one quiet question, "How is
    it now?": Better leads on to It passed, Still strong opens the tools again. The X on a tool comes back to the tools.
    The X here just closes. With ?practice=1 it is three moves, for a calm moment, and nothing is saved as an urge. */
@@ -16,13 +16,14 @@ import {
   addEvent,
   blankP,
   changeDay,
+  faithVoice,
   famOfWord,
   feelTrigOf,
   gameCompute,
+  godOn,
   newUrge,
   rateUrTool,
   RIDE_MOVES,
-  rideMark,
   rideNext,
   slipFeltLine,
   urEntry,
@@ -36,17 +37,19 @@ import {
   urTool,
   urWon,
   withDay,
+  writtenWords,
   type UrState,
 } from '@daybook/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Reanimated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BigOption, Link } from '@/components/choices';
-import { RideBar } from '@/components/ride/bar';
 import { MOVE_ICON, MOVE_NAME, MOVES, moveTint } from '@/components/ride/moves';
 import { ScienceSheet } from '@/components/ride/science';
+import { RidePager } from '@/components/ride/pager';
 import { RodeOut, type Rode } from '@/components/rode-out';
 import { Dock, Finish, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Shape } from '@/components/shapes';
@@ -54,6 +57,7 @@ import { Text } from '@/components/text';
 import { ToolGrid } from '@/components/tool-grid';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useReducedMotion } from '@/lib/motion';
 import { close, closeAll } from '@/lib/nav';
 import { count } from '@/lib/pulse';
 import { setupKeep } from '@/lib/setup-keep';
@@ -89,6 +93,10 @@ export default function Sos() {
 
   /* the ride: every move shown in this SOS, oldest first; the last one is showing */
   const [seq, setSeq] = useState<string[]>([]);
+  /* swiped down: how many moves back from the newest one the ride is showing */
+  const [back, setBack] = useState(0);
+  /* the page mostly in view while a swipe glides, so the name under it changes at once, not when it lands */
+  const [near, setNear] = useState<number | null>(null);
   const [won, setWon] = useState<Rode | null>(() => (SHOTS && wq === '1' ? SHOT_WON : null));
   const [more, setMore] = useState(false);
   const [sci, setSci] = useState(false);
@@ -125,12 +133,24 @@ export default function Sos() {
 
   /* My reasons is a move only when there are words of your own (a note, a reason or a voice note) */
   const words = !!(snap.settings && urFromYou(st, 0)) || !!voice.uri;
-  const can = useMemo(() => ({ words }), [words]);
+  /* It is written, for people who said faith plays a part (core written.ts) */
+  const faith = godOn(st);
+  const can = useMemo(() => ({ words, faith }), [words, faith]);
+  const moveName = (x: string) => (x === 'written' ? writtenWords(faithVoice(st) || 'plain').name : MOVE_NAME[x] || urTool(x)?.name || x);
   /* the first move, once there is an urge: always the sun */
   useEffect(() => {
     if (!ur || seq.length) return;
     setSeq([rideNext(ur, snap.days, st, tk, Date.now(), sos.mem, can, [])]);
   }, [ur, seq.length, snap.days, st, tk, sos.mem, can]);
+
+  /* the move waiting below the newest one, picked once per page so it holds still while it is swiped up into view (a
+     practice ride ends after its few moves) */
+  const peek = useMemo(
+    () =>
+      !ur || !seq.length ? null : practice && seq.length >= PRACTICE_N ? 'end' : rideNext(ur, snap.days, st, tk, Date.now(), sos.mem, can, seq, lead.current),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [seq, can],
+  );
 
   /* back from a tool's X: the tools open again, to pick another (docs/design-standards.md, "The X goes one step back") */
   useEffect(() => {
@@ -144,7 +164,6 @@ export default function Sos() {
   /* how it felt after the last slips, in their own record (core slipFeltLine), for the hour after: never in a practice
      ride, and never in the first 30 seconds */
   const feltLine = useMemo(() => (practice ? null : slipFeltLine(snap.days)), [practice, snap.days]);
-  const mark = useMemo(() => rideMark(snap.days), [snap.days]);
 
   const level = Math.max(1, g.level.n);
   const title = practice ? 'Practice' : 'SOS';
@@ -211,7 +230,6 @@ export default function Sos() {
     const rec = urEvidence(snap.days);
     return (
       <SceneFrame title={title} sky={sky} onClose={close}>
-        <RideBar t0={ur.t0} mark={mark} on={front && !more} color={c.mint} />
         <Stage key={better ? 'better' : 'ask'} dir={better ? 1 : 0}>
           {better ? (
             <>
@@ -292,19 +310,44 @@ export default function Sos() {
   }
 
   /* ---------- the ride: one move after another, until it passes ---------- */
-  const id = seq[seq.length - 1];
+  const at = Math.max(0, seq.length - 1 - back);
+  const id = seq[at];
   const Move = MOVES[id] || MOVES.breathe;
   const n = seq.length;
-  /* done: it counts as used; passed over with Next: it comes round a little later from now on (sos.ts urNote) */
+  /* done: it counts as used; passed over with Next: it comes round a little later from now on (sos.ts urNote). Swiped back
+     to an earlier move, Next goes forward again through the ones already shown before it asks for a new one. */
   const next = (done: boolean) => {
     const u = done ? { ...ur, used: ur.used.concat(id) } : ur;
     if (done) setUr(u);
-    else if (!practice) sos.setMem((m) => urNote(m, id, null));
+    else if (!practice && !back) sos.setMem((m) => urNote(m, id, null));
     buzz('tap');
+    if (back) return setBack(back - 1);
     if (practice && n >= PRACTICE_N) return setSeq(seq.concat('end'));
-    const nx = rideNext(u, snap.days, st, tk, Date.now(), sos.mem, can, seq, lead.current);
+    const nx = peek && peek !== 'end' && !lead.current ? peek : rideNext(u, snap.days, st, tk, Date.now(), sos.mem, can, seq, lead.current);
     lead.current = null;
     setSeq(seq.concat(nx));
+  };
+  /* swiped up: the next move, and one more swipe learned (until then the page shows how, core UrMem.swiped) */
+  const swiped = Number(sos.mem.swiped) || 0;
+  const hint = swiped < 3;
+  /* landed on page i by a swipe: down to one before, or up to the next (one more swipe learned) */
+  const landed = (i: number) => {
+    if (i < at) {
+      buzz('tap');
+      return setBack(n - 1 - i);
+    }
+    if (swiped < 3) sos.setMem((m) => ({ ...m, swiped: Math.min(3, (Number(m.swiped) || 0) + 1) }));
+    next(false);
+  };
+  /* the pages: every move shown so far, and the one waiting below */
+  const pages = peek ? seq.concat(peek) : seq;
+  const live = front && !more && !sci;
+  /* a ride move picked from More (It is written): it comes next, now */
+  const jump = (mv: string) => {
+    setMore(false);
+    buzz('tap');
+    setBack(0);
+    if (seq[seq.length - 1] !== mv) setSeq(seq.concat(mv));
   };
   /* the heart: this one helps. It comes round sooner, in this SOS and the next ones (sos.ts urRank) */
   const liked = urLikeOf(st, id) > 0;
@@ -336,60 +379,81 @@ export default function Sos() {
       </Pressable>
     </View>
   );
-  /* Talk it through at every hour (a slip that feels planned is most often planned at night), and Go to bed too at night */
+  /* the trail opens on Walk it through, which took the place of Talk it through (the owner, November 4, 2026); Go to bed at night */
   const big: [string, string, string][] = [
+    ['trail', 'compass', 'The trail'],
     ['pause', 'timer', 'Step away 10 min'],
     ['message', 'chat', 'Text someone'],
-    ['talk', 'ask', 'Talk it through'],
     ...(night ? ([['bed', 'moon', 'Go to bed']] as [string, string, string][]) : []),
   ];
   return (
-    <SceneFrame title={title} sky={sky} onClose={close} topRight={top}>
-      <RideBar t0={ur.t0} mark={practice ? null : mark} on={front && !more && !sci} color={moveTint(c, id)} />
-      <Stage key={n + '-' + id} dir={n > 1 ? 1 : 0}>
-        <Move
-          on={front && !more && !sci}
-          onDone={() => next(true)}
-          onFeel={(f) => {
-            /* a feeling names the trigger only when it plainly is one (core feelTrigOf: never shame as stress) */
-            const trig = f.trig ? feelTrigOf(famOfWord(f.w)) : null;
-            if (trig && !ur.trigger) setUr({ ...ur, trigger: trig });
-            lead.current = f.lead && RIDE_MOVES.indexOf(f.lead) >= 0 ? f.lead : null;
+    <SceneFrame title={title} sky={sky} onClose={close} topRight={top} fixed>
+      <View style={s.ride}>
+        <RidePager
+          count={pages.length}
+          at={at}
+          hint={hint && at >= 1}
+          on={live}
+          onLand={landed}
+          onNear={setNear}
+          render={(i) => {
+            if (pages[i] === 'end') return null;
+            /* every page keeps one copy as it comes into view and leaves it (one key), so landing never swaps it for a fresh
+               one; the page above and below is held still (nothing in it runs, speaks or buzzes) until it is landed on */
+            const here = i === at;
+            const M = here ? Move : MOVES[pages[i]] || MOVES.breathe;
+            return (
+              <View
+                key={'p' + i}
+                style={s.page}
+                pointerEvents={here ? 'auto' : 'none'}
+                importantForAccessibility={here ? 'auto' : 'no-hide-descendants'}
+                accessibilityElementsHidden={!here}>
+                <M
+                  on={here && live}
+                  onDone={here ? () => next(true) : () => undefined}
+                  onFeel={
+                    here
+                      ? (f) => {
+                          /* a feeling names the trigger only when it plainly is one (core feelTrigOf: never shame as stress) */
+                          const trig = f.trig ? feelTrigOf(famOfWord(f.w)) : null;
+                          if (trig && !ur.trigger) setUr({ ...ur, trigger: trig });
+                          lead.current = f.lead && RIDE_MOVES.indexOf(f.lead) >= 0 ? f.lead : null;
+                        }
+                      : () => undefined
+                  }
+                  onTool={here ? pickTool : () => undefined}
+                  felt={here && feltLine && Date.now() - ur.t0 >= FELT_AFTER ? feltLine : null}
+                  level={level}
+                />
+              </View>
+            );
           }}
-          onTool={pickTool}
-          felt={feltLine && Date.now() - ur.t0 >= FELT_AFTER ? feltLine : null}
         />
-      </Stage>
-      <Dock>
-        <View style={s.ctl}>
-          <Round icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
+        {/* the name and Why it works low on the left, like a caption; the heart and Next beside it on the right, in the same slim row */}
+        <View style={s.foot} pointerEvents="box-none">
           <Pressable
-            style={s.mid}
+            style={s.cap}
             accessibilityRole="button"
-            accessibilityLabel={'Move ' + n + ': ' + moveName(id) + '. Why it works.'}
+            accessibilityLabel={'Move ' + (at + 1) + ': ' + moveName(id) + '. Why it works.'}
             onPress={() => {
               buzz('tap');
               setSci(true);
             }}>
-            <View style={s.dots}>
-              {seq.slice(-7).map((x, j, l) => (
-                <View
-                  key={n - l.length + j}
-                  style={[s.dot, j === l.length - 1 ? { width: 22, backgroundColor: moveTint(c, x) } : { backgroundColor: c.ink + '40' }]}
-                />
-              ))}
-            </View>
             <Text style={[s.segT, { color: c.ink }]} numberOfLines={1}>
-              {moveName(id)}
+              {moveName(near !== null && pages[near] && pages[near] !== 'end' ? pages[near] : id)}
             </Text>
             <View style={s.why}>
-              <Icon name="book" size={13} color={c.muted} />
-              <Text style={[s.whyT, { color: c.muted }]}>Why it works</Text>
+              <Icon name={hint ? 'up' : 'book'} size={13} color={c.muted} />
+              <Text style={[s.whyT, { color: c.muted }]}>{hint ? 'Swipe up for the next one' : 'Why it works'}</Text>
             </View>
           </Pressable>
-          <Round icon="next" label="Next move" onPress={() => next(false)} />
+          <View style={s.rail}>
+            <Bare icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
+            <Bare icon="down" label="Next move" fill loud={hint} onPress={() => next(false)} />
+          </View>
         </View>
-      </Dock>
+      </View>
       <ScienceSheet id={id} name={moveName(id)} open={sci} night={night} onClose={() => setSci(false)} />
       <More open={more} night={night} onClose={() => setMore(false)}>
         <Text style={[s.moreH, { color: c.ink }]}>Something bigger</Text>
@@ -399,10 +463,10 @@ export default function Sos() {
               key={bid}
               accessibilityRole="button"
               onPress={() => {
-                if (bid !== 'talk') return pickTool(bid);
+                if (bid !== 'talk' && bid !== 'trail') return pickTool(bid);
                 setMore(false);
                 buzz('tap');
-                router.push('/talk');
+                router.push('/trail?from=sos' as '/trail');
               }}
               style={({ pressed }) => [s.bigB, big.length > 3 && s.bigB2, { backgroundColor: c.bg, opacity: pressed ? 0.8 : 1 }]}>
               <Icon name={ic} size={20} color={c.accentText} />
@@ -411,7 +475,26 @@ export default function Sos() {
           ))}
         </View>
         <Text style={[s.moreH, { color: c.ink }]}>Every tool</Text>
-        <ToolGrid days={snap.days} tags={tags} fresh={false} night={night} onPick={pickTool} />
+        <ToolGrid
+          days={snap.days}
+          tags={tags}
+          fresh={false}
+          night={night}
+          onPick={pickTool}
+          lead={
+            faith
+              ? {
+                  id: 'written',
+                  name: moveName('written'),
+                  desc: (faithVoice(st) || 'plain') === 'plain' ? 'Say no, and stand firm' : 'Answer it like He did',
+                  ic: 'shield',
+                  tone: 'sun',
+                  group: 'Stand on faith',
+                }
+              : undefined
+          }
+          onLead={jump}
+        />
         <Pressable accessibilityRole="button" onPress={() => save('slipped')} style={s.slip} hitSlop={8}>
           <Icon name="leaf" size={16} color={c.slipText} />
           <Text style={[s.slipT, { color: c.slipText }]}>I slipped. A slip is data, not a reset.</Text>
@@ -448,8 +531,6 @@ function More({ open, night, onClose, children }: { open: boolean; night: boolea
   );
 }
 
-const moveName = (x: string) => MOVE_NAME[x] || urTool(x)?.name || x;
-
 /* ---------- the end of a practice ride ---------- */
 function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }) {
   const { tk, update } = useStore();
@@ -480,18 +561,53 @@ function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }
   );
 }
 
-/** a round button at the side of the ride's controls; `on` fills it (the heart, once this move helps) */
-function Round({ icon, label, onPress, on }: { icon: string; label: string; onPress: () => void; on?: boolean }) {
+/** a bare icon in the ride's rail, like a feed's: no button around it; `on` colors it (the heart, once this move helps) */
+function Bare({
+  icon,
+  label,
+  onPress,
+  on,
+  fill,
+  loud,
+}: {
+  icon: string;
+  label: string;
+  onPress: () => void;
+  on?: boolean;
+  /** a filled round, easy to see (Next) */
+  fill?: boolean;
+  /** bob down, toward the next move waiting below (while the ride is new) */
+  loud?: boolean;
+}) {
   const c = useTheme();
+  const still = useReducedMotion();
+  const bob = useSharedValue(0);
+  useEffect(() => {
+    bob.value = loud && !still ? withRepeat(withSequence(withTiming(5, { duration: 520 }), withTiming(0, { duration: 520 })), -1) : withTiming(0);
+  }, [loud, still, bob]);
+  const bobS = useAnimatedStyle(() => ({ transform: [{ translateY: bob.value }] }));
+  if (fill)
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        onPress={onPress}
+        hitSlop={16}
+        style={({ pressed }) => [s.bare, { opacity: pressed ? 0.8 : 1 }]}>
+        <Reanimated.View style={[s.loud, { backgroundColor: c.accent }, bobS]}>
+          <Icon name={icon} size={26} color="#FFFFFF" />
+        </Reanimated.View>
+      </Pressable>
+    );
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={on === undefined ? undefined : { selected: on }}
       onPress={onPress}
-      hitSlop={6}
-      style={({ pressed }) => [s.round, { backgroundColor: on ? c.coral : c.scBtn, opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.94 : 1 }] }]}>
-      <Icon name={icon} size={22} color={on ? '#FFFFFF' : c.ink} />
+      hitSlop={8}
+      style={({ pressed }) => [s.bare, { opacity: pressed ? 0.6 : 1, transform: [{ scale: pressed ? 0.9 : 1 }] }]}>
+      <Icon name={icon} size={30} color={on ? c.coral : c.ink} />
     </Pressable>
   );
 }
@@ -500,16 +616,21 @@ function Round({ icon, label, onPress, on }: { icon: string; label: string; onPr
 const PRACTICE_N = 3;
 /** the record of how it felt after slips is never shown before this far into an SOS */
 const FELT_AFTER = 30000;
+/** the room each ride page leaves under it, for one slim row: the name on the left, the heart and Next on the right */
+const CAP = 58;
 
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
   passed: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 36, paddingLeft: 11, paddingRight: 13, borderRadius: 18 },
   passedT: { fontFamily: font.bodyBold, fontSize: 15 },
-  ctl: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  round: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  mid: { flex: 1, gap: 7, alignItems: 'center' },
-  dots: { flexDirection: 'row', gap: 5, alignItems: 'center', height: 6 },
-  dot: { width: 6, height: 6, borderRadius: 3 },
+  ride: { flex: 1, alignSelf: 'stretch' },
+  /* each page leaves room at the bottom for the caption and the rail, so its own answers sit just above them */
+  page: { flex: 1, alignItems: 'center', gap: 14, paddingBottom: CAP },
+  foot: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
+  cap: { flex: 1, gap: 3, paddingBottom: 6, minHeight: 44, justifyContent: 'flex-end' },
+  rail: { flexDirection: 'row', gap: 6, alignItems: 'center', marginRight: -8, paddingBottom: 6 },
+  bare: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  loud: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   segT: { fontFamily: font.bodySemi, fontSize: 15 },
   why: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   whyT: { fontFamily: font.bodySemi, fontSize: 13 },

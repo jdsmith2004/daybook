@@ -12,6 +12,7 @@ import {
   gameCompute,
   isKey,
   moveEvent,
+  habitOf,
   optList,
   OPT_MAX,
   patchEvent,
@@ -119,7 +120,7 @@ export default function Entry() {
   const patch = (p: Parameters<typeof patchEvent>[3]) => update((s0) => ({ ...s0, days: patchEvent(s0.days, date, e.id, p) }));
   const op = st.opts;
   const picker = (kind: 'trig' | 'did', cur: string | string[] | null, onPick: (v: string) => void) => {
-    const L = optList(kind, op, { time: e.time, sel: cur, all });
+    const L = optList(kind, op, { time: e.time, sel: cur, all, habit: habitOf(st) });
     const full = op[kind].filter((x) => !x.off).length >= OPT_MAX;
     return (
       <View style={{ gap: 8 }}>

@@ -249,6 +249,294 @@ its questions; after that the workflow can do it. The older steps below are kept
 3. Keep the confirmation. No answer in about two weeks: open a Developer Support case (Entitlements) with the request details.
 4. When approved, tell Claude: it turns on Family Controls (Distribution) for each ID, and EAS rebuilds the profiles.
 
+## It is written: a faith move in SOS, from the owner's bishop (the owner, November 8, 2026: "Let's do the Matthew 4 through 11"; built on `written-sos` with the recommended answers, not merged until the owner has seen it on the simulator)
+
+The bishop's note said "Matthew 1-11": Matthew 4:1-11, where Jesus is tempted three times in the wilderness and answers each
+time with "It is written" (Deuteronomy 8:3, 6:16 and 6:13). The owner's sketch: "Are you facing a temptation?", then "No,
+Satan can't get me" (standing firm), then the three scriptures. Mockups: `docs/written-review/1-the-move.png` (the move,
+Latter-day Saint voice, day and night) and `docs/written-review/2-swipe-and-plain.png` (the swipe question and the plain voice).
+
+### Why it helps
+
+It turns a temptation from a verdict into a pattern. Jesus was tempted too, so being tempted is not sin and says nothing
+about who the person is (Hebrews 4:15). The three temptations are the three things an urge still says: _you need this, you
+have earned it_ (the bread), _just a look, nothing bad will happen_ (the temple top: testing it), and _this will make it all
+better_ (the kingdoms: the promise of everything). Seeing the pull as one of three known moves is the calm noticing of the
+craving-help blend: the attack has a pattern, you are not evil, notice it and answer it. Saying the answer out loud is the
+same skill the ride already teaches (naming takes charge; a practiced response cuts craving, Lopez, Ochsner and Kober 2022),
+and the end is Matthew 4:11: then it left, and help came. That is the ride's own promise (urges rise, peak and pass) in His
+words, and for someone of faith it is the identity the app is for: a child of God who stands, not an addict who fights.
+No program is named anywhere.
+
+For Daybook: faith people are a large share of those who quit this habit for good, the owner's own church is the place
+Daybook can spread by word of mouth (a bishop handing it on), and a move that feels made for them is a reason to tell others.
+It stays free, like every care tool.
+
+### The design
+
+- **A move in the ride, not a separate tool.** SOS is already one stream of moves (core `ride.ts`), so "It is written" is a
+  ninth move (`written`, kind `mind`), shown only to people who answered Yes or Somewhat to faith (lessons `godOn`). It is
+  also in Every tool under More, for them only. For faith people it comes second, right after the breath, in their first
+  SOS rides; after that it takes its turn like the others (the heart brings it sooner, Next later). This changes the rule in
+  `faith.ts` that every care tool is the same for everyone: the tools stay the same, and faith people get one more.
+- **Four pages, each running by itself** (the move's own steps bar, Next and the heart underneath as on every move):
+  1. **Name it.** "Are you facing a temptation?" "Jesus was tempted too, three times. Being tempted is not sin." One big
+     answer low: _Yes, I am_ (Stand like He did). Next under it is the way past, as always.
+  2. **Stand firm.** "Say no to it" / "Press and hold. Mean it." A big sun with _No_ in it; holding fills the squiggle ring
+     (about two seconds, a haptic that builds, one firm buzz at the end). When it fills, the line appears: _No. You cannot
+     have me. I am a child of God._ James 4:7 sits quietly under it: "Resist the devil, and he will flee from you."
+  3. **The three.** One page each: the pull on top, struck through (_"You need this. You have earned it."_), one line on what
+     He faced, then His answer big on the sun card, starting _It is written_, with its reference (Matthew 4:4, 4:7, 4:10).
+     "Read it out loud, slowly." A squiggle line fills as it is read (like Your words, about 14 seconds), then the next.
+  4. **Then it left.** Matthew 4:11 on the card: "Then the devil leaveth him, and, behold, angels came and ministered unto
+     him." "It leaves, and help comes. It did for Him, and it will for you." A quiet link reads the whole chapter in the
+     person's own scripture app. Then the ride goes on.
+- **The three voices** (faith.ts `faithVoice`):
+  - `lds`: the King James words (the Church's Bible), "child of God", and the link opens Gospel Library. "Why it works" adds
+    Helaman 5:12 in plain words (built on the rock of the Redeemer, the devil's storm has no power to drag you down), as the
+    God lessons put the Book of Mormon in plain words.
+  - `christian`: the same Bible words and pages, with the link to the Bible app (bible.com, which opens YouVersion when it
+    is there) and 1 Corinthians 10:13 in Why it works (a way to escape).
+  - `plain` (another faith): the same three pulls and the same shape, named _Stand firm_, with plain answers that speak of
+    God and quote no Scripture: "I am fed by more than this." / "I do not need to test it. I already know where it goes, and
+    God is with me here." / "God is enough for me, and what this promises it never gives." No link.
+  - No to faith: the move is not there.
+- **The scripture app link.** Gospel Library takes a universal link that opens the app when it is installed and the page
+  otherwise: `https://www.churchofjesuschrist.org/study/scriptures/nt/matt/4?lang=eng&id=p1-p11#p1` (the Church's deep
+  linking page; the app claims `/study/*` on iOS and is an App Link on Android). For other Christians,
+  `https://www.bible.com/bible/1/MAT.4.1-11.KJV` (KJV is version 1; bible.com opens YouVersion when it is there). Neither needs
+  an Info.plist entry. The catch: with no app installed, both open a browser, and a browser in the middle of an urge is the
+  riskiest place Daybook could send someone. So the words are always shown in Daybook in full, the link is a quiet one on
+  the last page only (never the way through), and it also sits in Why it works for a calm moment.
+- **Words in the app.** All quoted Scripture is the King James Bible (public domain, and the Church's English Bible). Book of
+  Mormon lines are put in plain words, as the God lessons do. The words follow the app's rules: no contractions, so the
+  owner's line becomes "cannot".
+
+### Swiping between moves (the owner's reels idea)
+
+SOS today: each move fills the screen and flows into the next by itself; under it sit the heart, the move's name with dots,
+and a round Next. So the stream is already there; what is missing is that it does not _look_ like there is more, and Next
+is a small button. The proposal (recommended, option A in `2-swipe-and-plain.png`): a swipe up anywhere outside a move's own
+drag area goes to the next move, the page sliding up with the next rising under it, and a swipe down goes back one (new: today
+a passed-over move cannot be brought back). The first time, the page lifts a little on its own to show the next move's name
+peeking at the bottom. Next, the dots and the heart stay for anyone who does not swipe and for screen readers. Fit the shapes
+and the feelings field take drags of their own, so on those two the swipe works only on the controls strip. The other
+choices were sideways like stories (B: its bars at the top would read as a set to finish, and the ride has no end) and
+leaving it as it is.
+
+### The steps, with the effort each needs (on a feature branch, shown on the simulator before any merge)
+
+1. **Core (medium).** `written` in `RIDE_MOVES`, `RIDE_KIND` and the tools list (`urTool`), shown only when `godOn` (a `faith`
+   flag in `RideCan`, and the tool grid filtered the same way), and its early place for faith people in `rideNext`. The words
+   for the three voices in a new `written.ts` (pulls, answers, references, links), the Scripture checked word for word against
+   the King James text. faith.ts's comment says the new rule. Unit tests: never shown on No or a skipped answer, second after
+   the breath in the first rides, its words for each voice.
+2. **The move (medium).** `WrittenMove` in `components/ride/moves.tsx`: the four pages, the hold ring with `WavyRing` and
+   `SQUIGGLE`, haptics, Reduce Motion (the ring fills as a plain line; the words keep the beat), night colors, screen reader
+   lines, and the quiet link through `Linking.openURL`. Its science sheet and its lesson link (a God lesson on temptation if one
+   fits, or a new one later).
+3. **The swipe (medium),** only if the owner says yes: a pan gesture on the ride's Stage (react-native-gesture-handler, with
+   Reanimated), the peek, the one-time lift, swipe down to go back, and the two moves that keep their own drags.
+4. **Check (medium).** format, typecheck, tests, `npx expo export --platform web`, the craft checklist on pictures, and the
+   iPhone release build on the simulator for the owner, light, dark and Reduce Motion.
+
+### Built on `written-sos` (November 8, 2026), with the recommended answers
+
+The owner said go ahead before answering the questions, so the build takes each recommendation; every one is a small change
+if the owner chooses another. Steps 1 and 2 are done, and step 4 on the web. A release build is installed on its own simulator ("Daybook Written") with a
+made-up Latter-day Saint person, ready for the owner to try; it was not yet walked through there. Step 3 (the swipe) waits for
+the owner's answer.
+
+- Core: `written.ts` holds the words for the three voices and the two links. `ride.ts` has `RIDE_FAITH` (kept out of
+  `RIDE_MOVES`), a `faith` flag in `RideCan`, its weight (the heart raises it, Next lowers it), its place right after the
+  breath while fewer than five urges have been ridden out (unless Next passed it twice), and its Why it works, which opens the
+  God lesson Tempted is not fallen (g8). `rateUrTool` takes it, so the heart works. Tests in `ride.test.ts`.
+- It is a ride move only, not one of the legacy `TOOLS`. So it is not in Every tool under More, and the tool lists,
+  the anonymous counts (no new `PULSE_KEYS`, so the privacy page does not change) and the golden records stay as they were.
+  Being in Every tool would mean adding it to `TOOLS`, with a new count on the privacy page. That can come later if wanted.
+- The move: `WrittenMove` in `components/ride/moves.tsx`, the four pages as planned. The hold uses `WavyRing` (still while
+  holding, crawling once it fills), ticks as it fills and a firm buzz at the end. A screen reader's tap says no at once.
+- Not done yet: the link in the Why it works sheet (it is only on the last page), and the swipe.
+
+**Swipe and Every tool (the owner, November 9, 2026, after trying it on the iPhone: "needs to be added to the tools list, I
+accidentally left it and could not get it back; I want the tools to be more like swiping, and obvious it is swiping, like Insta").**
+
+- Every tool under More now opens with a group of its own, "Stand on faith", holding It is written, for people who said faith
+  plays a part. A tap puts it next in the ride at once (`jump` in `sos.tsx`, `lead` in `ToolGrid`). It stays a ride move, so
+  there is still no new count and the privacy page does not change.
+- The ride swipes like short videos (`components/ride/swipe.tsx`): up for the next move, down for the one before, as it was
+  (swiped back, Next walks forward through the moves already shown before a new one is picked). The page follows the finger;
+  a fifth of the page or a flick carries it off and the next one comes up from below. With nothing before it, a pull down gives
+  a little and springs back. The shapes board keeps its own drag (the swipe waits for 14 points of upright movement).
+- To make it obvious: until the person has swiped three times (`UrMem.swiped`), from the second move on the page lifts twice
+  by itself after two seconds, the way short-video apps teach it, and the line under the move's name says "Swipe up for the
+  next one" in place of Why it works. Reduced motion skips the lifts. Next, the dots and the heart stay as they were.
+- Pictures from the web build: `docs/written-review/3-built-web-a.png`, `4-built-web-b.png` and `5-built-plain-and-night.png`.
+
+**Like Reels (the owner, November 9, 2026, with a picture of Instagram's Reels: "the arrow and heart should be on the right
+like Insta, and it blocks off the whole bottom bar; remove the timer bar on the top, you keep adding it back; the swipe sucks,
+it does not let me swipe up").**
+
+- The ride is a native paging scroll view (`components/ride/pager.tsx`), not a hand-made drag: the next move is already
+  waiting under the page as a still cover (its name and its shape), so a swipe shows it rising, with the phone's own momentum,
+  and a trackpad scroll in the simulator works too. Nothing in a cover runs until it is landed on. The first lesson lifts the
+  page to show the cover below.
+- No timer bar at the top of the ride or of How is it now (never put it back). No bottom bar: the move's name and Why it works
+  sit low on the left like a caption, and the heart and Next (a down arrow) stand in a rail on the right.
+- Then (the owner: "why is there a bar at the bottom; add a cleaner animation or visual indicator of swiping"): no band
+  is kept under the moves any more. The heart and Next are bare icons in a thin gutter on the right, the page leaving sinks
+  back, dims and drifts slower as the next one comes over it, and a column of dots down the right edge has a bright mark, in
+  the move's color, that slides with the finger (`Page` and `SideDots` in `pager.tsx`). Reduced motion keeps the pages flat.
+- Then (the owner: "it is glitching; I do not like it cutting out space to the right; find a different way for them to know
+  about the swipe"; "I swipe and it shows the same tool, then I let go and it switched; the down arrow should be more
+  noticeable at first"): the sinking page and the side dots are gone (the leaving page showed through under the header), and
+  nothing takes the right side. The heart and Next sit in the one slim row with the name. The page above and below is the
+  real move drawn still (`on` false, so nothing in it runs, speaks or buzzes), so a swipe shows exactly what comes and letting
+  go only starts it. On the phone the page is chosen by the drag itself: an eighth of a page or any flick moves on. Until the
+  person has swiped three times, Next is a filled round that bobs down, and the line under the name says "Swipe up for the
+  next one"; from the second move the page also lifts twice to show the next one below.
+- Then (the owner, with two pictures of a move stopped halfway under the next one: "really glitchy"): on the phone the
+  scroll view snaps to whole pages itself (`snapToInterval`, one page per swipe), so a swipe can never come to rest between
+  two moves; a flick or a short drag moves on, a tiny drag springs back.
+- Then (the owner: "I swipe down and it looks good, then it glitches and reloads the page"; "the down arrow easier to see"):
+  each page keeps one copy as it comes into view and leaves it, so landing never swaps in a fresh one, and going back finds a
+  move where it was left. A move's clock starts only when it is first in view (`useStartWhen`). Next is always a filled round,
+  and bobs only while the person is learning to swipe.
+- Then (the owner: "the box game does not let me swipe down"; "the down arrow should do the swipe animation"; "the bottom
+  left takes too long to update"): in Fit the shapes only a touch on a shape in the tray is the game's, so any other drag
+  swipes the ride. Next glides like a swipe (the scroll is no longer reset to the new page at the same moment), with a
+  bigger room to tap. The name at the bottom left follows the page mostly in view while it glides, not after it lands.
+
+### More of Matthew 5 (the owner, November 8, 2026: "missing substance", more from Matthew 5)
+
+After "Then it left", three pages from the Sermon on the Mount, which He taught soon after, in mint so the two chapters read
+apart (their own three marks):
+
+- **It starts in the heart.** "He taught that it begins with a look, before anything is done. So it is won there too, right
+  now." Matthew 5:8, "Blessed are the pure in heart: for they shall see God." Read out loud. 5:28 itself is not quoted: in
+  the middle of an urge it would read as "you already did it", which works against hope.
+- **Cast it from you.** Matthew 5:29, "If thy right eye offend thee, pluck it out, and cast it from thee", with "He did not
+  mean an eye. He meant: cut off what feeds it, and do it now." Then one real thing, one tap (core `WRITTEN_CAST`): close
+  what was open, leave this room, go where people are, or put the phone down after this. "Do it now", and I did it. This is
+  the practice the move was missing: an action that takes away what the urge needs.
+- **You are the light.** Matthew 5:14 and 16 with the person's own flame, big and alive (a tap makes it leap), and Matthew 5
+  in Gospel Library or the Bible app. It ends the move on who the person is.
+
+The plain voice keeps the same three pages without verses ("A clean heart sees God more clearly", "Cut off what feeds it",
+"You are a light"). Picture: `docs/written-review/6-matthew-5.png`.
+
+### Questions for the owner
+
+1. **Who gets it?** (a) Yes or Somewhat to faith, in the three voices, with no Scripture in the plain one (recommended);
+   (b) Latter-day Saints and other Christians only; (c) everyone, with God left out for No. This is the first care tool that
+   is not the same for everyone.
+2. **The words for standing firm.** (a) "No. You cannot have me. I am a child of God." (recommended: it keeps your line and
+   ends on who the person is, and if a slip comes later it does not read as a promise that failed); (b) your words as they
+   are, "No. Satan cannot get me."; (c) His own words, "Get thee hence, Satan."
+3. **Swipe like reels?** (a) Swipe up with a peek, Next kept (recommended); (b) sideways like stories; (c) leave the ride
+   as it is.
+4. **The scripture app.** (a) A quiet link on the last page and in Why it works (recommended); (b) only in Why it works,
+   never in the middle of an urge; (c) a button through the move that opens the app.
+
+## What are you quitting: porn, alcohol, gambling or another habit (the owner, November 8 and 9, 2026; merged November 9, 2026 after the owner looked on the simulator)
+
+**The ask.** Let a person pick what they are quitting in setup: porn (still the main one, and the marketing stays about porn),
+gambling, or another habit. The owner's call: build it now, kept simple. The words switch, the lessons not written for the
+habit leave, the care tools stay for everyone, and lessons for other habits come later. Helps the person: someone fighting
+gambling gets Daybook's whole toolkit instead of being turned away. Helps Daybook: a second audience with the same app, and a
+first look at whether other habits are worth lessons of their own.
+
+**How porn-specific the app is (counted November 8, 2026).** The switch is cheap; the words are the work.
+
+- Lessons (the live `Turn` text, 49 plus 12 God lessons): 18 say nothing of porn, 21 need a word or one card changed, 8 rest
+  on a porn example or study (l4, l10, l11, l22, l34, l36, l42, l46), and 2 are about porn and sex alone (l47, l48). Of the
+  God lessons, 6 are neutral and 6 name porn. The research behind them is mostly cross-habit already: about 11 alcohol or AA
+  sources and 9 smoking ones, against 16 porn or sexual ones. The old lesson text in `core.js`, `lessons-more.ts` and
+  `lesson-beats.ts` BOOK is no longer shown.
+- Setup: about 30 lines (the questions, the Brief Pornography Screen and its kind word, the loop and curve pages, the goal).
+- SOS, tools, reminders, badges: no porn words at all. About 30 lines assume a phone in bed at night, which fits gambling.
+- Get help: SAA, SLAA, SA, Stop It Now, the adult-content filter steps, two scripts and a therapist check.
+- Public pages: about 160 lines (about.html, 12 guide pages, llms.txt). The store subtitle is "Quit porn, live your potential".
+  These stay about porn, by the owner's choice.
+
+**What the science carries to (research, November 8, 2026).** The tools Daybook is built on (relapse prevention, if-then
+plans, self-monitoring, shame-free lapses, identity change) carry over to gambling well; abstinence is the clinical norm there.
+Gambling carries the highest suicide risk on the list (lifetime ideation about 32%, Kristensen 2024), so its crisis line sits
+first in Get help, and money tools matter (blocks, the bank, self-exclusion). Alcohol and daily drugs can bring dangerous
+withdrawal, so "another habit" says to see a doctor before stopping, in setup and in Get help, and the "no withdrawal" line
+from the porn trial is shown for porn only. Nicotine and cannabis fit well and are safe to stop. Phone, gaming and shopping
+need "less", not zero, and binge eating should never get an abstinence frame; none of these is named.
+
+**What was built.**
+
+- Core `habit.ts`: `habitOf` (porn when nothing is kept), the setup choices, `habitSay` for fixed phrases ("Quit porn",
+  "struggling with porn", "compulsive porn use"), the safety net's device steps per habit, and the doctor line. The answer
+  lives in `settings.onb.a.habit` like the faith answer; `normOnb` keeps only the three values, so old saves read as porn
+  and nothing needs mapping in `normSettings`.
+- Setup asks "What do you want to quit?" right after How it works. The questions after it name the habit; the five porn
+  statements and their kind word are skipped for another habit; the goal says "Quit gambling" or "Quit this habit".
+- Settings has "What I am quitting" beside Faith.
+- Lessons: `PORN_ONLY` (16 lessons and 9 God lessons whose live words name porn or sex, or rest on a porn study) leave the
+  path, Learn, the checkpoints and every lesson link for another habit, the way the faith lessons leave for a No. 33 lessons
+  stay. A lesson finished before stays finished, counted and worth its points; a test checks that points, level and badges
+  match. A test also fails if a lesson off the list names porn or sex. Two steps of the path empty out for another habit
+  (Make it right, Keep a daily practice) and are passed by.
+- Get help: the National Problem Gambling Helpline (1-800-MY-RESET, NCPG since January 2026; 1-800-GAMBLER is no longer the
+  national number), Gamblers Anonymous and Gam-Anon, BetBlocker, Gamban, a bank block, state self-exclusion; for another habit
+  AA, NA, Marijuana Anonymous, Nicotine Anonymous and the doctor line. The porn groups and filters show for porn only.
+- The five questions a month on (the Brief Pornography Screen) are for porn only; answers kept from before stay on Pattern.
+- Alcohol (the owner, November 9, 2026) is its own choice: "Quit drinking", "struggling with drinking", "Drink" in the loop.
+  Stopping heavy drinking all at once can bring seizures, so the doctor line (`ALCOHOL_MEDICAL`) is the flame's first words on
+  the years question, and it sits in Settings and in Get help beside SAMHSA. Its groups are AA and Al-Anon; its safety net and
+  phone page are about distance from a drink (none at home, the drink picked before going out, no delivery apps). It gets the
+  same 33 lessons as gambling. "Another habit" keeps its doctor line for drugs.
+- Found on the way: the faith picked in setup (`creed`) was never kept, so everyone heard the plain voice until Settings. It
+  is in `OB_KEYS` now.
+
+**Left for later.**
+
+- Alcohol lessons: drinking is mostly social, so a script for turning down a drink, a lesson on the evening routine it
+  filled, and sleep in the first weeks. The 33 kept lessons already lean on alcohol and AA research for much of their science.
+- Gambling lessons (high): chasing losses, near misses and "due" thinking, money access, debt and shame about money, a big win
+  as a risk, telling someone. Then gambling versions of the 21 one-card lessons, as a `vo`-style overlay per habit
+  (lesson-turns.ts already does this for the faith voices). Roughly 2 to 3 sessions for the first 8 gambling lessons.
+- A gambling check in place of the Brief Pornography Screen (for example the 3-question Brief Biosocial Gambling Screen).
+- An anonymous count of which habit people pick (`habit_gambling`, `habit_other`): a new count needs the owner's yes and the
+  privacy page.
+- Named habits beyond gambling (nicotine, cannabis, alcohol with its screen), once "another habit" shows who comes.
+
+Effort: medium for the setup, words, Get help and the lesson filter (a display filter on the existing faith mechanism; nothing
+earned is read or written differently). High for any later change that touches points or the record.
+
+## The turn cards, redone (the owner, November 9, 2026: the flash cards were "really bad"; merged November 9, 2026 after the owner looked on the simulator)
+
+Every turned lesson has one turn card (core `lesson-turns.ts`, `flip`): the old thought on the front, another way to see it on the
+back. Pictures, before and after: `docs/shots/turn-card`.
+
+**What was weak.** The person did nothing but press Turn it over, so nothing made them think. The card was a school index card: ruled
+lines that did not line up with the words, a red margin rule, a stack under it and a lip, with a small label over each side ("You may
+think", "Look again"), which "The look" does not allow. The back was a pale sticky note with a green rule, which read as "right
+answer" and so as "you were wrong". The flame sat under it and said nothing, and half the card was empty lines.
+
+**What the research says** (a subagent's search, November 9, 2026). A guess about this very item, made before the answer, helps it stay
+(pretesting; St. Hilaire and others 2023, g = 0.54 for the item guessed). Rating how much you believe a thought, before and after, is
+how a thought record in CBT works. Telling people a belief they hold is wrong invites pushback, so nothing is marked right or wrong.
+A given reframe the person weighs works better than asking them to write one from nothing.
+
+**The new card** (medium effort, built):
+
+- The front is the old thought on white paper, set a little crooked, with a big coral quote mark: something said, not a label.
+- The flame asks, in its bubble: "How true does this feel to you?" Three answers in one row at the bottom: Very true, Partly, Not
+  really (`FLIP_FEEL`). There is no Turn it over button.
+- The answer turns the card: it lifts, turns over and lands straight, sun yellow (the answer is the sun, as everywhere in a lesson),
+  with a light tap, then the success buzz and the flame's pulse as it lands. Then the flame answers what was picked (Very true: "Most
+  people start right there. Now hold it next to this.").
+- After that a tap on the card turns it back to the old thought, and again, to compare. More and Next sit at the bottom.
+- With Reduce Motion on, the back simply shows.
+
+**Asked of the owner:** whether to add the second half of the thought record later: after the turn, "And now?" with the same three
+answers, and the flame showing the move ("Very true, then Partly"). It costs one more tap; left out for now to keep the card fast.
+
 ## The fire burns lower when you stop doing your part (the owner, November 8, 2026; merged November 9, 2026 after the owner looked on the simulator)
 
 The owner: when the person drifts, the flame burns lower, as if water were poured on it, and when they come back it flares up again; "make the

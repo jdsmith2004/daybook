@@ -7,6 +7,7 @@
 import { diffDays, isKey } from './legacy/core.js';
 import { tipCalm, tipQuiet, type TipNear } from './support';
 import type { DayKey, Days, Settings } from './types';
+import { habitOf } from './habit';
 
 export const BPS_EVERY = 30;
 export const BPS_WAIT = 7;
@@ -33,6 +34,8 @@ export function bpsScores(st: Settings | null | undefined, mem: BpsMem): BpsScor
 
 /** whether a check is due now. near: the time and the last SOS. */
 export function bpsDue(days: Days, st: Settings, tk: DayKey, mem: BpsMem, near: TipNear | null = null): boolean {
+  /* the five questions are the Brief Pornography Screen: for porn only */
+  if (habitOf(st) !== 'porn') return false;
   const list = bpsScores(st, mem);
   const from = list.length ? list[list.length - 1].d : st.start;
   if (diffDays(tk, from) < BPS_EVERY) return false;

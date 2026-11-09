@@ -73,28 +73,30 @@ export function TalkCard({ snap, now }: { snap: Snapshot; now: number }) {
   );
 }
 
-/** the way in: "Planning a slip?" (compact for the check-in, where it carries its own line) */
+/** the way in: Walk it through, on the trail, which took the place of Planning a slip (the check-in carries its own line) */
 export function TalkDoor({ line, onOpen }: { line?: string; onOpen?: () => void }) {
   const c = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={'Planning a slip? Talk it through. ' + (line || '')}
+      accessibilityLabel={'Walk it through. ' + (line || DOOR_LINE)}
       onPress={() => {
         buzz('tap');
         if (onOpen) onOpen();
-        else router.push('/talk');
+        else router.push('/trail');
       }}
       style={({ pressed }) => [s.door, { backgroundColor: c.violetSoft, opacity: pressed ? 0.8 : 1 }]}>
       <Icon name="chat" size={22} color={c.violetText} />
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={[s.doorT, { color: c.violetText }]}>Planning a slip?</Text>
-        <Text style={[s.doorS, { color: c.ink }]}>{line || 'When it feels planned, owed or certain, or you have stopped caring. Talk it through first.'}</Text>
+        <Text style={[s.doorT, { color: c.violetText }]}>Walk it through</Text>
+        <Text style={[s.doorS, { color: c.ink }]}>{line || DOOR_LINE}</Text>
       </View>
       <Icon name="next" size={20} color={c.violetText} />
     </Pressable>
   );
 }
+
+const DOOR_LINE = 'When it keeps coming back, feels owed, or you are planning it. Step by step, in about four minutes.';
 
 const s = StyleSheet.create({
   door: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 60, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 20 },

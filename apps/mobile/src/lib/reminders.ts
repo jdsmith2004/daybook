@@ -5,7 +5,7 @@
    Today (or the screen it is for: the lesson reminder opens today's lesson). On Android each kind has its own channel, so one can be quieted without the others.
    Each note has its own title (core NUDGE_WORDS) and no picture: on iPhone a picture shows beside the app icon, and the
    flame picture looked like the icon twice. Android shows the fixed small and large icons from app.json. */
-import type { Nudge, NudgeKind } from '@daybook/core';
+import type { Nudge, NudgeKind, TrailNote } from '@daybook/core';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { Linking, Platform } from 'react-native';
@@ -21,6 +21,8 @@ const CHANNELS: { id: string; name: string; kinds: NudgeKind[]; low?: boolean }[
   { id: 'sunday', name: 'Sunday review', kinds: ['sunday'] },
   { id: 'follow-ups', name: 'Follow-ups', kinds: ['back'], low: true },
 ];
+/* the trail's notes, while a stretch is open (core trailNotes) */
+const TRAIL_CHANNEL = 'trail';
 const channelOf = (k: NudgeKind) => (CHANNELS.find((c) => c.kinds.includes(k)) || CHANNELS[0]).id;
 let channelsMade = false;
 async function makeChannels() {
@@ -30,6 +32,7 @@ async function makeChannels() {
       name: c.name,
       importance: c.low ? Notifications.AndroidImportance.LOW : Notifications.AndroidImportance.DEFAULT,
     });
+  await Notifications.setNotificationChannelAsync(TRAIL_CHANNEL, { name: 'When it keeps coming', importance: Notifications.AndroidImportance.DEFAULT });
   channelsMade = true;
 }
 
@@ -65,7 +68,7 @@ export function scheduleNudges(plan: Nudge[]): Promise<void> {
 }
 async function replaceSchedule(plan: Nudge[]): Promise<void> {
   for (const n of await Notifications.getAllScheduledNotificationsAsync())
-    if (n.identifier !== TALK) await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    if (n.identifier !== TALK && !n.identifier.startsWith(TRAIL)) await Notifications.cancelScheduledNotificationAsync(n.identifier);
   if (!plan.length || !(await Notifications.getPermissionsAsync()).granted) return;
   await makeChannels();
   const now = Date.now();
@@ -130,11 +133,60 @@ export async function cancelTalk(): Promise<void> {
   await Notifications.cancelScheduledNotificationAsync(TALK).catch(() => undefined);
 }
 
+const TRAIL = 'trail-';
+/** the buttons on a trail note: each does the move. Not today and Show me where I am open the trail; Not for an hour and
+    Leave me be today do their work without opening the app. */
+export type TrailAnswer = 'open' | 'door' | 'where' | 'later' | 'off';
+let trailCategory: Promise<unknown> | null = null;
+function makeTrailCategory() {
+  trailCategory ??= Notifications.setNotificationCategoryAsync('trail', [
+    { identifier: 'door', buttonTitle: 'Not today', options: { opensAppToForeground: true } },
+    { identifier: 'where', buttonTitle: 'Show me where I am', options: { opensAppToForeground: true } },
+    { identifier: 'later', buttonTitle: 'Not for an hour', options: { opensAppToForeground: false } },
+    { identifier: 'off', buttonTitle: 'Leave me be today', options: { opensAppToForeground: false } },
+  ]).catch(() => (trailCategory = null));
+  return trailCategory;
+}
+/* each scheduling of the trail's notes waits for the one before it, like the reminders */
+let trailing: Promise<void> = Promise.resolve();
+/** the trail's notes from core trailNotes, in place of the ones scheduled before: none clears them. Never asks for permission. */
+export function scheduleTrail(notes: TrailNote[]): Promise<void> {
+  const run = trailing.then(async () => {
+    for (const n of await Notifications.getAllScheduledNotificationsAsync())
+      if (n.identifier.startsWith(TRAIL)) await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    if (!notes.length || !(await Notifications.getPermissionsAsync()).granted) return;
+    await makeChannels();
+    await makeTrailCategory();
+    const now = Date.now();
+    for (const n of notes) {
+      if (n.at <= now) continue;
+      await Notifications.scheduleNotificationAsync({
+        identifier: n.id,
+        content: { title: n.title, body: n.body, categoryIdentifier: 'trail', data: { url: '/trail', trail: true } },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.at, channelId: TRAIL_CHANNEL },
+      });
+    }
+  });
+  trailing = run.catch(() => undefined);
+  return run;
+}
+
 /** a tap on a reminder opens its screen (Today unless it says otherwise), whether the app was open or not. onTap hears
     which one, so the phone can tell which reminders help (core nudgeLearn). */
-export function listenForTaps(onTap: (id: string) => void = () => undefined): () => void {
+export function listenForTaps(onTap: (id: string) => void = () => undefined, onTrail: (a: TrailAnswer) => void = () => undefined): () => void {
   const go = (r: Notifications.NotificationResponse | null | undefined) => {
-    if (!r || r.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+    if (!r) return;
+    /* a trail note: its answer, and the trail opened where the button says */
+    if (r.notification.request.content.data?.trail) {
+      const a = r.actionIdentifier;
+      const ans: TrailAnswer = a === 'door' || a === 'where' || a === 'later' || a === 'off' ? a : 'open';
+      onTrail(ans);
+      if (ans === 'door') router.navigate('/trail?at=case' as '/');
+      else if (ans === 'where' || ans === 'open') router.navigate('/trail' as '/');
+      Notifications.clearLastNotificationResponse();
+      return;
+    }
+    if (r.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
     const id = r.notification.request.content.data?.id;
     if (typeof id === 'string') onTap(id);
     const url = r.notification.request.content.data?.url;

@@ -5,7 +5,7 @@ import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
-import { nudgeCounts, nudgeKeep, nudgeKey, nudgeLearn, nudgePlan, nudgeTapKind } from '@daybook/core';
+import { nudgeCounts, nudgeKeep, nudgeKey, nudgeLearn, nudgePlan, nudgeTapKind, trailLater, trailLeave, trailNoteKeep, trailNotes } from '@daybook/core';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useNavigationContainerRef, useSegments, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -23,7 +23,7 @@ import { forgetDrafts } from '@/lib/drafts';
 import { keepRootState, SHEETS, type NavState } from '@/lib/nav';
 import { NoteCopy } from '@/lib/notes';
 import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
-import { listenForTaps, onPermission, remindersAllowed, remindersOffered, scheduleNudges } from '@/lib/reminders';
+import { listenForTaps, onPermission, remindersAllowed, remindersOffered, scheduleNudges, scheduleTrail } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
 import { HealthKeeper } from '@/lib/health';
@@ -81,17 +81,48 @@ function Reminders() {
     setNudgeLog((l) => nudgeKeep(l, plan, Date.now()));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
+  const sos = useSos();
   useEffect(
     () =>
-      listenForTaps((id) => {
-        const k = nudgeTapKind(id);
-        if (k) count('nt_' + k + '_tap');
-        setNudgeLog((l) => ({ ...l, taps: [...l.taps, id] }));
-      }),
+      listenForTaps(
+        (id) => {
+          const k = nudgeTapKind(id);
+          if (k) count('nt_' + k + '_tap');
+          setNudgeLog((l) => ({ ...l, taps: [...l.taps, id] }));
+        },
+        /* a trail note's quiet buttons: the next note an hour on, or none until morning */
+        (a) => {
+          if (a === 'later') sos.setMem((m) => trailLater(m, Date.now()));
+          if (a === 'off') sos.setMem((m) => trailLeave(m, Date.now()));
+        },
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
   /* turned on from the ask on Today or Settings: the come-back notes join the plan at once */
   useEffect(() => onPermission(() => remindersAllowed().then(setAllowed, () => undefined)), []);
+  return null;
+}
+
+/* The trail's notes while a battle goes on (core trailNotes): two at a time, an hour apart, never at night, resting after a
+   slip. They are made again when the stretch changes (the trail opened or left), the log changes, a note is answered, or
+   the app opens, so two left unanswered are the last until the person comes back. */
+function TrailNotes() {
+  const { ready, snap } = useStore();
+  const sos = useSos();
+  const [openAt, setOpenAt] = useState(() => Date.now());
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (a) => a === 'active' && setOpenAt(Date.now()));
+    return () => sub.remove();
+  }, []);
+  const notes = useMemo(() => (ready ? trailNotes(sos.mem, snap.days, Math.max(openAt, Date.now() - 60000)) : []), [ready, sos.mem, snap.days, openAt]);
+  const key = notes.map((n) => n.at).join(',');
+  useEffect(() => {
+    if (!ready || !remindersOffered) return;
+    scheduleTrail(notes).catch(() => undefined);
+    sos.setMem((m) => trailNoteKeep(m, notes, Date.now()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, ready]);
   return null;
 }
 
@@ -106,7 +137,7 @@ function NavKeeper() {
    ((tabs)/_layout.tsx), and any other page, reached by a link, a notification or a typed address, goes back to it. SOS stays open, with
    what it opens (its tools, Talk it through, I slipped into Rekindle, the bedtime tool's good night), because care is never locked
    (CLAUDE.md); so do the setup itself, signing in, saying what would help, and the privacy page. When SOS closes, the setup comes back. */
-const OPEN_BEFORE_SETUP = new Set(['(tabs)', 'setup', 'sos', 'tool', 'talk', 'log', 'night', 'account', 'feedback', 'privacy', 'shots', '+not-found']);
+const OPEN_BEFORE_SETUP = new Set(['(tabs)', 'setup', 'sos', 'tool', 'talk', 'trail', 'log', 'night', 'account', 'feedback', 'privacy', 'shots', '+not-found']);
 function SetupGate() {
   const { ready, snap } = useStore();
   const top = useSegments()[0] as string | undefined;
@@ -195,6 +226,7 @@ function Shell() {
       <StatusBar style={c.scheme === 'dark' ? 'light' : 'dark'} />
       <WebChrome bg={c.bg} />
       <Reminders />
+      <TrailNotes />
       <NoteCopy />
       <NavKeeper />
       <HealthKeeper rollover={snap.settings?.rollover ?? 4} />
@@ -210,6 +242,7 @@ function Shell() {
             'log',
             'checkin',
             'talk',
+            'trail',
             'review',
             'wind',
             'night',

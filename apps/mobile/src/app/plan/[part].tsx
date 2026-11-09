@@ -22,6 +22,8 @@ import {
   slipSteps,
   toggleHelpStep,
   toggleSafety,
+  habitOf,
+  safetyFor,
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
@@ -476,7 +478,7 @@ function Ready() {
   return (
     <>
       <PageSec icon="check" title="Safety net" aside={`${m.safety} of ${SAFETY.length} done`} sub="Small setups that make the hard hours easier.">
-        {SAFETY.map(([label, w], i) => (
+        {SAFETY.map((row, i) => [i, ...safetyFor(i, row, habitOf(st))] as const).map(([i, label, w]) => (
           <Check key={i} label={label} why={why ? w : undefined} on={!!st.safety[i]} onPress={() => apply((cur) => toggleSafety(cur, i))} />
         ))}
         <WhyLink on={why} onPress={() => setWhy(!why)} />

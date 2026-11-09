@@ -128,9 +128,9 @@ resource "aws_cloudfront_distribution" "web" {
     response_headers_policy_id = aws_cloudfront_response_headers_policy.web.id
   }
 
-  # the pulse (opt-in counts and feedback), the same way, when it is on
+  # the pulse (counts and feedback) and the events, the same way, when each is on
   dynamic "ordered_cache_behavior" {
-    for_each = var.pulse ? ["/pulse", "/pulse/*"] : []
+    for_each = concat(var.pulse ? ["/pulse", "/pulse/*"] : [], var.events ? ["/events"] : [])
     content {
       path_pattern               = ordered_cache_behavior.value
       target_origin_id           = "api"

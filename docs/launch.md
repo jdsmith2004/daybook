@@ -184,6 +184,17 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
     not linked: no new category. A tip itself is never counted, so Purchases stays only the supporter record above.
   - User content: other user content also covers feedback (optional, not linked unless the person types an address;
     used for app functionality).
+  - **What Daybook learns (the owner, November 9, 2026; core `events.ts`, privacy page "What Daybook learns").** Sent from
+    everyone who has not turned it off in More, so do not mark any of it optional. Every type below is **Data Not Linked to
+    You**, used for **Analytics** only, **not** used for tracking. Add these before a build with `EXPO_PUBLIC_EVENTS_URL` goes
+    to review:
+    - Identifiers: **Device ID** (the random install id; not the advertising id, never tied to the account).
+    - Usage Data: **Product Interaction** (opens, screens, setup, lessons, tools, reminders, the asks).
+    - Health and Fitness: **Health** (urges and slips logged, their strength and triggers, the check-in's numbers, the five
+      questions' scores). Never Apple Health's data.
+    - Sensitive Info: **Sensitive Info** (the faith setting and the habit being changed).
+    - Purchases: **Purchase History** (which tip or Daybook Pattern product was bought).
+    - Diagnostics: **Other Diagnostic Data** (which part of the app had an error).
   - Tracking: **no**. Data used to track you: **none**.
   - Apple Health (November 9, 2026): **no change to the label.** Daybook reads only sleep, read only, and the nights stay on
     the phone, outside the log: never synced, backed up, counted or sent. Apple's label lists only data that leaves the

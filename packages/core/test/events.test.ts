@@ -105,3 +105,18 @@ describe('bands', () => {
     expect([null, 3, 30, 100, 200, 1000].map(evHrsBand)).toEqual(['first', 'h0_24', 'd1_3', 'd4_7', 'd8_30', 'd31']);
   });
 });
+
+describe('the privacy page', () => {
+  it('names every event, every value key, and the values of the fixed lists', async () => {
+    const { readFileSync } = await import('node:fs');
+    const html = readFileSync(new URL('../../../apps/mobile/public/privacy.html', import.meta.url), 'utf8');
+    const learns = html.slice(html.indexOf('id="learns"'), html.indexOf('id="counts"'));
+    for (const n of Object.keys(EV_NAMES)) expect(learns.includes('<code>' + n + '</code>'), n).toBe(true);
+    for (const k of Object.keys(EV_PROPS)) {
+      const named = learns.includes('<code>' + k + '</code>') || (/^q[1-5]$/.test(k) && learns.includes('<code>q1</code> to <code>q5</code>'));
+      expect(named, k).toBe(true);
+    }
+    expect(learns).toMatch(/lesson, checkin, wind, sunday, risk, back, plan/);
+    expect(learns).not.toMatch(/completely anonymous/i);
+  });
+});

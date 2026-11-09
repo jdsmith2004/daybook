@@ -123,6 +123,15 @@ resource "aws_apigatewayv2_stage" "default" {
       throttling_rate_limit  = 10
     }
   }
+  # what Daybook learns: a phone sends a batch every few hours
+  dynamic "route_settings" {
+    for_each = var.events ? ["POST /events"] : []
+    content {
+      route_key              = route_settings.value
+      throttling_burst_limit = 40
+      throttling_rate_limit  = 20
+    }
+  }
   # the open tip door gets a low ceiling too: a person claims a tip once
   route_settings {
     route_key              = "POST /sync/claim"
@@ -138,7 +147,7 @@ resource "aws_apigatewayv2_stage" "default" {
       throttling_rate_limit  = 5
     }
   }
-  depends_on = [aws_apigatewayv2_route.pulse_open, aws_apigatewayv2_route.claim_open, aws_apigatewayv2_route.apple_open]
+  depends_on = [aws_apigatewayv2_route.pulse_open, aws_apigatewayv2_route.events, aws_apigatewayv2_route.claim_open, aws_apigatewayv2_route.apple_open]
 }
 
 resource "aws_lambda_permission" "api" {

@@ -11,6 +11,7 @@
  *   4. a monthly budget alert, and IAM Access Analyzer (free), which flags any role or bucket that trusts someone outside
  *      this account
  *   5. the feedback topic: each note sent from the app's feedback page is emailed to you (feedback_email, or alert_email)
+ *   6. the events store (events.tf): the bucket, the Firehose stream, the Athena table and the events function's role
  */
 data "aws_caller_identity" "me" {}
 data "aws_partition" "p" {}
@@ -380,13 +381,13 @@ resource "aws_iam_role_policy" "deploy" {
         Sid      = "ReadTheSyncRole"
         Effect   = "Allow"
         Action   = ["iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies"]
-        Resource = [aws_iam_role.sync.arn, aws_iam_role.signup.arn, aws_iam_role.pulse.arn, aws_iam_role.apple_auth.arn]
+        Resource = [aws_iam_role.sync.arn, aws_iam_role.signup.arn, aws_iam_role.pulse.arn, aws_iam_role.apple_auth.arn, aws_iam_role.events.arn]
       },
       {
         Sid       = "PassTheSyncRoleToLambdaOnly"
         Effect    = "Allow"
         Action    = ["iam:PassRole"]
-        Resource  = [aws_iam_role.sync.arn, aws_iam_role.signup.arn, aws_iam_role.pulse.arn, aws_iam_role.apple_auth.arn]
+        Resource  = [aws_iam_role.sync.arn, aws_iam_role.signup.arn, aws_iam_role.pulse.arn, aws_iam_role.apple_auth.arn, aws_iam_role.events.arn]
         Condition = { StringEquals = { "iam:PassedToService" = "lambda.amazonaws.com" } }
       },
       {

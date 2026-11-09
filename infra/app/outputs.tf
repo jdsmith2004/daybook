@@ -13,6 +13,11 @@ output "pulse_url" {
   value = var.pulse ? "${local.web_origin}/pulse" : ""
 }
 
+/* what Daybook learns, through the app's own address; empty while the events are off, so the app sends nothing */
+output "events_url" {
+  value = var.events ? "${local.web_origin}/events" : ""
+}
+
 /* the API Gateway address itself, for testing */
 output "api_url" {
   value = aws_apigatewayv2_api.api.api_endpoint

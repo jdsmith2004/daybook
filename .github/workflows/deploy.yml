@@ -73,6 +73,7 @@ jobs:
             services/api/dist/sync.zip
             services/api/dist/signup.zip
             services/api/dist/pulse.zip
+            services/api/dist/events.zip
             services/api/dist/apple-auth.zip
           retention-days: 3
 
@@ -93,6 +94,8 @@ jobs:
       # Sign in with Apple (docs/plan.md, "Sign in with Apple"): repository variables, none of them secret. The key itself is
       # only ever in Parameter Store, put there by the owner
       TF_VAR_apple_sign_in: ${{ vars.APPLE_SIGN_IN || 'false' }}
+      # what Daybook learns (docs/plan.md): on only once the owner has applied infra/bootstrap, which makes its store and role
+      TF_VAR_events: ${{ vars.EVENTS || 'false' }}
       TF_VAR_apple_services_id: ${{ vars.APPLE_SERVICES_ID }}
       TF_VAR_apple_team_id: ${{ vars.APPLE_TEAM_ID }}
       TF_VAR_apple_key_id: ${{ vars.APPLE_KEY_ID }}
@@ -100,6 +103,7 @@ jobs:
     outputs:
       sync_url: ${{ steps.out.outputs.sync_url }}
       pulse_url: ${{ steps.out.outputs.pulse_url }}
+      events_url: ${{ steps.out.outputs.events_url }}
       apple: ${{ steps.out.outputs.apple }}
       apple_services_id: ${{ steps.out.outputs.apple_services_id }}
       auth_domain: ${{ steps.out.outputs.auth_domain }}
@@ -139,7 +143,7 @@ jobs:
         name: Outputs
         working-directory: infra/app
         run: |
-          for k in sync_url pulse_url auth_domain client_id web_url web_bucket distribution_id apple apple_services_id; do
+          for k in sync_url pulse_url events_url auth_domain client_id web_url web_bucket distribution_id apple apple_services_id; do
             echo "$k=$(terraform output -raw $k)" >> "$GITHUB_OUTPUT"
           done
 
@@ -150,6 +154,7 @@ jobs:
     env:
       EXPO_PUBLIC_SYNC_URL: ${{ needs.infra.outputs.sync_url }}
       EXPO_PUBLIC_PULSE_URL: ${{ needs.infra.outputs.pulse_url }}
+      EXPO_PUBLIC_EVENTS_URL: ${{ needs.infra.outputs.events_url }}
       EXPO_PUBLIC_AUTH_DOMAIN: ${{ needs.infra.outputs.auth_domain }}
       EXPO_PUBLIC_CLIENT_ID: ${{ needs.infra.outputs.client_id }}
       EXPO_PUBLIC_WEB_URL: ${{ needs.infra.outputs.web_url }}
@@ -184,6 +189,7 @@ jobs:
       WEB_URL: ${{ needs.infra.outputs.web_url }}
       SYNC_URL: ${{ needs.infra.outputs.sync_url }}
       PULSE_URL: ${{ needs.infra.outputs.pulse_url }}
+      EVENTS_URL: ${{ needs.infra.outputs.events_url }}
       AUTH_DOMAIN: ${{ needs.infra.outputs.auth_domain }}
       CLIENT_ID: ${{ needs.infra.outputs.client_id }}
       APPLE: ${{ needs.infra.outputs.apple }}
@@ -222,6 +228,7 @@ jobs:
             echo '```'
             echo "EXPO_PUBLIC_SYNC_URL=$SYNC_URL"
             echo "EXPO_PUBLIC_PULSE_URL=$PULSE_URL"
+            echo "EXPO_PUBLIC_EVENTS_URL=$EVENTS_URL"
             echo "EXPO_PUBLIC_AUTH_DOMAIN=$AUTH_DOMAIN"
             echo "EXPO_PUBLIC_CLIENT_ID=$CLIENT_ID"
             echo "EXPO_PUBLIC_APPLE=$APPLE"

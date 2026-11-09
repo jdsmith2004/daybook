@@ -95,3 +95,15 @@ variable "apple_key_id" {
   type        = string
   default     = ""
 }
+
+variable "events" {
+  description = "true: what Daybook learns (infra/app/events.tf). Needs the daybook-app-events role and the daybook-events stream, which infra/bootstrap makes: turn this on only after the owner has applied the bootstrap stack."
+  type        = bool
+  default     = false
+}
+
+variable "events_zip" {
+  description = "The built events Lambda (npm run build -w @daybook/api)."
+  type        = string
+  default     = "../../services/api/dist/events.zip"
+}

@@ -67,7 +67,7 @@ function drawing(fire: Fire, pad: { up: number; side: number }, smoke: string) {
     defs +=
       `<filter id="${id}low" color-interpolation-filters="sRGB"><feColorMatrix data-low="1" type="matrix" values="${lowMatrix(0).join(' ')}"/></filter>` +
       `<radialGradient id="${id}sm"><stop offset="0" stop-color="${smoke}" stop-opacity="1"/><stop offset="1" stop-color="${smoke}" stop-opacity="0"/></radialGradient>` +
-      `<radialGradient id="${id}ht"><stop offset="0" stop-color="#FF6A1F" stop-opacity="1"/><stop offset="1" stop-color="#FF6A1F" stop-opacity="0"/></radialGradient>`;
+      `<radialGradient id="${id}ht"><stop offset="0" stop-color="#FFB347" stop-opacity="1"/><stop offset="0.25" stop-color="#FF6A1F" stop-opacity="0.85"/><stop offset="1" stop-color="#FF6A1F" stop-opacity="0"/></radialGradient>`;
     over += `<circle data-h="1" fill="url(#${id}ht)" opacity="0"/>`;
     for (let i = 0; i < SMOKE_N; i++) over += `<circle data-s="1" fill="url(#${id}sm)" opacity="0"/>`;
     SPARKS.forEach((_, i) => (over += `<circle data-k="1" fill="${i % 3 ? '#FFD45A' : '#FFF3B0'}" opacity="0"/>`));
@@ -145,8 +145,8 @@ export function FireLayer({
       if (heart) {
         heart.setAttribute('cx', String(fire.heart.x));
         heart.setAttribute('cy', String(fire.heart.y));
-        heart.setAttribute('r', (6 * fine).toFixed(2));
-        heart.setAttribute('opacity', (l > 0.05 ? Math.min(1, l * 1.2) * (0.42 + 0.22 * Math.sin(t * 1.7)) : 0).toFixed(3));
+        heart.setAttribute('r', (12 * fine).toFixed(2));
+        heart.setAttribute('opacity', (l > 0.05 ? Math.min(1, l * 1.2) * (0.75 + 0.25 * Math.sin(t * 1.7)) : 0).toFixed(3));
       }
       const x0 = fire.tip.x + (fire.heart.x - fire.tip.x) * l * 0.5;
       const y0 = fire.tip.y + (fire.heart.y - fire.tip.y) * l * 0.5;

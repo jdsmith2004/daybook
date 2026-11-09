@@ -159,12 +159,20 @@ export function FireLayer({
       if (l > 0.002) c.restore();
       /* the one ember that always glows in its heart, breathing slowly */
       if (l > 0.05) {
+        const on = Math.min(1, l * 1.2) * (0.75 + 0.25 * Math.sin(now * 1.7));
         const hp = Skia.Paint();
         hp.setAntiAlias(true);
         hp.setColor(Skia.Color('#FF6A1F'));
-        hp.setAlphaf(Math.min(1, l * 1.2) * (0.42 + 0.22 * Math.sin(now * 1.7)));
-        hp.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 2.6 * fine, true));
-        c.drawCircle(fire.heart.x, fire.heart.y, 3.4 * fine, hp);
+        hp.setAlphaf(0.8 * on);
+        hp.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 6 * fine, true));
+        c.drawCircle(fire.heart.x, fire.heart.y, 8 * fine, hp);
+        /* its hot core */
+        const core = Skia.Paint();
+        core.setAntiAlias(true);
+        core.setColor(Skia.Color('#FFB347'));
+        core.setAlphaf(0.9 * on);
+        core.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, 1.6 * fine, true));
+        c.drawCircle(fire.heart.x, fire.heart.y, 2.8 * fine, core);
       }
       /* smoke from the top of the fire, as low as it is burning */
       if (l > 0.02) {

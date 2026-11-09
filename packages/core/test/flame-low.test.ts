@@ -92,10 +92,10 @@ describe('the words', () => {
 });
 
 describe('the colors of a fire burning low', () => {
-  it('leave a fire burning fully as it is and move every color toward a deep ember', () => {
+  it('leave a fire burning fully as it is and drain every color toward ash', () => {
     expect(core.lowHex('#FFEA55', 0)).toBe('#FFEA55');
-    expect(core.lowHex('#FFEA55', 1)).toBe('#B15313');
-    expect(core.lowXml('<stop stop-color="#FFF"/><path fill="white"/>', 1)).toBe('<stop stop-color="#B35938"/><path fill="#B35938"/>');
+    expect(core.lowHex('#FFEA55', 1)).toBe('#7C685C');
+    expect(core.lowXml('<stop stop-color="#FFF"/><path fill="white"/>', 1)).toBe('<stop stop-color="#8F7D78"/><path fill="#8F7D78"/>');
     expect(core.lowMatrix(0)).toEqual([1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
   });
 

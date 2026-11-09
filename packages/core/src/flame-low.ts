@@ -95,12 +95,12 @@ export const LOW_LEAD = 'This lights your fire again';
 export const RELIT = 'You lit your fire again';
 
 /* ---------- the colors of a fire burning low ----------
-   One map for every part of the drawing, so the fire, the body and the face dim together: each color moves toward a deep ember (red kept,
-   green and blue let go), by the same share on the phone (a color matrix over the fire, components/fire-layer.native.tsx) as in the drawn
+   One map for every part of the drawing, so the fire, the body and the face dim together: each color drains toward a dark ash, the same
+   share on the phone (a color matrix over the fire, components/fire-layer.native.tsx) as in the drawn
    layers (lowXml). */
-/* an ember: darker, its yellow gone to a burnt orange and its orange to a deep red, a little of the green carried into the red so it reads warm,
-   not as a bright red (first tried as red, green and blue simply scaled: on the phone that read as an angry red) */
-const EMBER = [0.62, 0.08, 0, 0.05, 0.3, 0, 0, 0, 0.22];
+/* a fire with water on it: its color drained to a dark, warm ash, so it reads as less fire, with only the heart's ember still glowing orange.
+   (Tried first as a darker red, then a burnt orange: on the phone both read as a red fire, not a fire going out; the owner, November 9, 2026.) */
+const EMBER = [0.24, 0.24, 0.08, 0.19, 0.2, 0.1, 0.16, 0.17, 0.14];
 
 /** the 3 by 3 color map at a low: from none at 0 to the ember at 1 */
 export function lowScale(low: number): number[] {

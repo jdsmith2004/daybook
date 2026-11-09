@@ -247,153 +247,153 @@ function Sky({
     return () => clearTimeout(t);
   }, [relit]);
   return (
-    <View style={[s.sky, { height: SCENE_H }]}>
-      {/* the card's sky lines up with the drawing's own, so the drawing melts into it */}
-      <LinearGradient
-        colors={sc.sky}
-        locations={sc.at.map((o) => Math.max(0, FLAME_TOP + o * FLAME) / SCENE_H) as [number, number, number]}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* the sky itself (stars and hills) opens Milestones: every form the flame grows into */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Milestones: every form your flame grows into"
-        onPress={() => {
-          buzz('tap');
-          router.push('/miles');
-        }}
-        style={StyleSheet.absoluteFill}>
-        {sc.stars
-          ? STARS.map(([x, y, r], i) => (
-              <Animated.View
-                key={i}
-                style={[
-                  s.star,
-                  {
-                    left: `${x}%`,
-                    top: (y * SCENE_H) / STAR_SKY,
-                    width: r,
-                    height: r,
-                    borderRadius: r / 2,
-                    opacity: reduce ? 0.8 : tw[i % 3].interpolate({ inputRange: [0, 1], outputRange: i % 2 ? [0.95, 0.3] : [0.3, 0.95] }),
-                  },
-                ]}
-              />
-            ))
-          : null}
-        {/* the drawing's own hills, carried on across the card at the drawing's scale, so its hills fade into the same ones */}
-        {sc.land ? (
-          <SvgXml
-            xml={`<svg viewBox="${60 - 400} ${(-FLAME_TOP * 120) / FLAME} 800 ${(SCENE_H * 120) / FLAME}" preserveAspectRatio="xMidYMin slice">${sc.land}</svg>`}
-            style={StyleSheet.absoluteFill}
-            width="100%"
-            height={SCENE_H}
-            pointerEvents="none"
-          />
-        ) : null}
-      </Pressable>
-      <View style={[s.flame, { top: FLAME_TOP }]} pointerEvents="box-none">
+    <>
+      <View style={[s.sky, { height: SCENE_H }]}>
+        {/* the card's sky lines up with the drawing's own, so the drawing melts into it */}
+        <LinearGradient
+          colors={sc.sky}
+          locations={sc.at.map((o) => Math.max(0, FLAME_TOP + o * FLAME) / SCENE_H) as [number, number, number]}
+          style={StyleSheet.absoluteFill}
+        />
+        {/* the sky itself (stars and hills) opens Milestones: every form the flame grows into */}
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${title}. Your flame, level ${lvl.n}.${words ? ' ' + words.h + '.' : ''} Tap to say hi.`}
-          onPress={hello}>
-          <BigFlame level={lvl.n} size={FLAME} pulse={pulse} low={shown} douse={douse} smoke={light ? '#C9C2DA' : '#6B6577'} />
-        </Pressable>
-      </View>
-      {lead ? (
-        <View style={[s.lead, { top: inset.top + 10 }]} pointerEvents="box-none">
-          {lead}
-        </View>
-      ) : null}
-      {action ? (
-        <View style={[s.action, { top: inset.top + 10 }]} pointerEvents="box-none">
-          {action}
-        </View>
-      ) : null}
-      {h ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={h.say + ' Opens your days.'}
-          onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'days' } })}
-          style={({ pressed }) => [s.num, pressed && { opacity: 0.8 }]}>
-          <Text maxFontSizeMultiplier={ON_ART} style={[s.eb, { color: soft }]}>
-            {h.eb}
-          </Text>
-          {/* the words beside the number wrap to a second line on a narrow phone, so they never run under the level */}
-          <View style={s.nRow}>
-            <Text maxFontSizeMultiplier={ON_ART} numberOfLines={1} style={[s.n, { color: ink }]}>
-              {h.n}
-            </Text>
-            {h.unit ? (
-              <Text maxFontSizeMultiplier={ON_ART} style={[s.unit, { color: soft }]}>
-                {h.unit}
-              </Text>
-            ) : null}
-          </View>
-          {h.chip ? (
-            <View style={s.chip}>
-              {h.star ? <Icon name="star" size={13} color={soft} /> : null}
-              <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft }]}>
-                {h.chip}
-              </Text>
-            </View>
+          accessibilityLabel="Milestones: every form your flame grows into"
+          onPress={() => {
+            buzz('tap');
+            router.push('/miles');
+          }}
+          style={StyleSheet.absoluteFill}>
+          {sc.stars
+            ? STARS.map(([x, y, r], i) => (
+                <Animated.View
+                  key={i}
+                  style={[
+                    s.star,
+                    {
+                      left: `${x}%`,
+                      top: (y * SCENE_H) / STAR_SKY,
+                      width: r,
+                      height: r,
+                      borderRadius: r / 2,
+                      opacity: reduce ? 0.8 : tw[i % 3].interpolate({ inputRange: [0, 1], outputRange: i % 2 ? [0.95, 0.3] : [0.3, 0.95] }),
+                    },
+                  ]}
+                />
+              ))
+            : null}
+          {/* the drawing's own hills, carried on across the card at the drawing's scale, so its hills fade into the same ones */}
+          {sc.land ? (
+            <SvgXml
+              xml={`<svg viewBox="${60 - 400} ${(-FLAME_TOP * 120) / FLAME} 800 ${(SCENE_H * 120) / FLAME}" preserveAspectRatio="xMidYMin slice">${sc.land}</svg>`}
+              style={StyleSheet.absoluteFill}
+              width="100%"
+              height={SCENE_H}
+              pointerEvents="none"
+            />
           ) : null}
         </Pressable>
-      ) : null}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Level ${lvl.n}, ${lvl.name}. ${g.pts} points.${lvl.next ? ` The bar along the bottom is your level: ${lvl.toNext} points to level ${lvl.n + 1}.` : ''} Tap to see how points work.`}
-        onPress={() => router.push('/points')}
-        style={({ pressed }) => [s.lv, pressed && { opacity: 0.8 }]}>
-        <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
-          Level {lvl.n} · {lvl.name} ›
-        </Text>
-        {/* what the bar along the bottom is: the level, not the number on the left (the owner, October 23, 2026) */}
-        {lvl.next ? (
-          <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft, textAlign: 'right' }]}>
-            {lvl.toNext} {lvl.toNext === 1 ? 'point' : 'points'} to Level {lvl.n + 1}
-          </Text>
+        <View style={[s.flame, { top: FLAME_TOP }]} pointerEvents="box-none">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${title}. Your flame, level ${lvl.n}.${words ? ' ' + words.h + '.' : ''} Tap to say hi.`}
+            onPress={hello}>
+            <BigFlame level={lvl.n} size={FLAME} pulse={pulse} low={shown} douse={douse} smoke={light ? '#C9C2DA' : '#6B6577'} />
+          </Pressable>
+        </View>
+        {lead ? (
+          <View style={[s.lead, { top: inset.top + 10 }]} pointerEvents="box-none">
+            {lead}
+          </View>
         ) : null}
-      </Pressable>
-      {/* burning low: one firm line at the top of the sky, read before anything else */}
+        {action ? (
+          <View style={[s.action, { top: inset.top + 10 }]} pointerEvents="box-none">
+            {action}
+          </View>
+        ) : null}
+        {h ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={h.say + ' Opens your days.'}
+            onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'days' } })}
+            style={({ pressed }) => [s.num, pressed && { opacity: 0.8 }]}>
+            <Text maxFontSizeMultiplier={ON_ART} style={[s.eb, { color: soft }]}>
+              {h.eb}
+            </Text>
+            {/* the words beside the number wrap to a second line on a narrow phone, so they never run under the level */}
+            <View style={s.nRow}>
+              <Text maxFontSizeMultiplier={ON_ART} numberOfLines={1} style={[s.n, { color: ink }]}>
+                {h.n}
+              </Text>
+              {h.unit ? (
+                <Text maxFontSizeMultiplier={ON_ART} style={[s.unit, { color: soft }]}>
+                  {h.unit}
+                </Text>
+              ) : null}
+            </View>
+            {h.chip ? (
+              <View style={s.chip}>
+                {h.star ? <Icon name="star" size={13} color={soft} /> : null}
+                <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft }]}>
+                  {h.chip}
+                </Text>
+              </View>
+            ) : null}
+          </Pressable>
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Level ${lvl.n}, ${lvl.name}. ${g.pts} points.${lvl.next ? ` The bar along the bottom is your level: ${lvl.toNext} points to level ${lvl.n + 1}.` : ''} Tap to see how points work.`}
+          onPress={() => router.push('/points')}
+          style={({ pressed }) => [s.lv, pressed && { opacity: 0.8 }]}>
+          <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
+            Level {lvl.n} · {lvl.name} ›
+          </Text>
+          {/* what the bar along the bottom is: the level, not the number on the left (the owner, October 23, 2026) */}
+          {lvl.next ? (
+            <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft, textAlign: 'right' }]}>
+              {lvl.toNext} {lvl.toNext === 1 ? 'point' : 'points'} to Level {lvl.n + 1}
+            </Text>
+          ) : null}
+        </Pressable>
+        {relit ? (
+          <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
+            <Icon name="flame" size={13} color={ink} />
+            <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: ink }]}>
+              {RELIT}
+            </Text>
+          </View>
+        ) : grew ? (
+          <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
+            <Icon name="star" size={13} color={ink} />
+            <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: ink }]}>
+              Your flame grew
+            </Text>
+          </View>
+        ) : null}
+        <View style={[s.bar, { backgroundColor: light ? 'rgba(255,255,255,0.14)' : 'rgba(31,26,74,0.14)' }]} pointerEvents="none">
+          <Animated.View
+            style={{
+              width: bar.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'], extrapolate: 'clamp' }),
+              height: '100%',
+              backgroundColor: c.sun,
+            }}
+          />
+        </View>
+      </View>
+      {/* burning low: one firm line under the sky, clear of the flame, read before the next step */}
       {words ? (
-        <View style={[s.low, { top: inset.top + 62 }]} pointerEvents="none" accessible accessibilityLabel={words.h + '. ' + words.p}>
-          <Text maxFontSizeMultiplier={ON_ART} style={[s.lowH, { color: ink }]}>
-            {words.h}
-          </Text>
-          <Text maxFontSizeMultiplier={ON_ART} style={[s.lowP, { color: soft }]}>
-            {words.p}
-          </Text>
+        <View style={s.low} accessible accessibilityLabel={words.h + '. ' + words.p}>
+          <Text style={[s.lowH, { color: c.ink }]}>{words.h}</Text>
+          <Text style={[s.lowP, { color: c.muted }]}>{words.p}</Text>
         </View>
       ) : fl.warn && !relit ? (
         /* the day before it burns lower: one quieter line, while the flame still burns fully */
-        <View style={[s.low, { top: inset.top + 62 }]} pointerEvents="none" accessible accessibilityLabel={LOW_WARN}>
-          <Text maxFontSizeMultiplier={ON_ART} style={[s.lowW, { color: ink }]}>
-            {LOW_WARN}
-          </Text>
+        <View style={s.low} accessible accessibilityLabel={LOW_WARN}>
+          <Text style={[s.lowW, { color: c.ink }]}>{LOW_WARN}</Text>
         </View>
       ) : null}
-      {relit ? (
-        <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
-          <Icon name="flame" size={13} color={ink} />
-          <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: ink }]}>
-            {RELIT}
-          </Text>
-        </View>
-      ) : grew ? (
-        <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
-          <Icon name="star" size={13} color={ink} />
-          <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: ink }]}>
-            Your flame grew
-          </Text>
-        </View>
-      ) : null}
-      <View style={[s.bar, { backgroundColor: light ? 'rgba(255,255,255,0.14)' : 'rgba(31,26,74,0.14)' }]} pointerEvents="none">
-        <Animated.View
-          style={{ width: bar.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'], extrapolate: 'clamp' }), height: '100%', backgroundColor: c.sun }}
-        />
-      </View>
-    </View>
+    </>
   );
 }
 
@@ -413,11 +413,11 @@ const s = StyleSheet.create({
   small: { flexShrink: 1, fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
   lvT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'right' },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 6 },
-  /* under the small buttons in the corners, over the flame's sky */
-  low: { position: 'absolute', left: 16, right: 16, alignItems: 'center', gap: 2 },
-  lowH: { fontFamily: font.display, fontSize: 20, lineHeight: 25, textAlign: 'center' },
-  lowW: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'center' },
-  lowP: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, textAlign: 'center' },
+  /* under the sky, off the flame */
+  low: { paddingHorizontal: 20, paddingTop: 14, gap: 2 },
+  lowH: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },
+  lowW: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  lowP: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
   /* just over the level it belongs to, clear of the flame's face */
   grew: {
     position: 'absolute',

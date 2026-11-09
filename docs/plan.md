@@ -128,6 +128,17 @@ Daybook on the phone and opened daily, which is where the tip asks and Pattern s
 5. App Review notes and a short video for the reviewer (the reviewer's simulator cannot run it). (low)
 6. The owner tries it for a few days on their phone; then 1.4 with the entitlement.
 
+**Built on `claude/screen-time-f8b40b` (November 9, 2026, the medium steps):** core `pull.ts` and its tests (the hard hours as
+Apple schedules, one a weekday; the quiet after a slip until the next 8 AM at least three hours on; the notes, the shield and
+the wait screen's words; which note goes for which threshold; the person's own plan quoted); the setup page after reminders
+(`setup_pull`); Apps that pull you in in More (long use Off, 1, 2 or 3 hours; the hard hours; the pause, off by default; the
+wait 10, 30 or 60 seconds; open for 3, 5 or 10 minutes; Lift every pause now; Turn it all off); the wait screen `/pause`; and
+the privacy page line. The phone side talks to a native module `DaybookPull` (`lib/pull.ts`) that is not written yet; until it
+is, a stand-in shows the screens in development or with `EXPO_PUBLIC_PULL_PREVIEW=1`, and a store build shows nothing of this.
+**Left, at high effort:** step 1 (the native module and the three extensions, on the owner's iPhone) and step 3 (the bridge:
+writing `pullBridge` on every open, the monitor posting `pullNoteFor`'s note, the pause and its open time, an ignored note
+reported as drift to the flame). Not merged: it waits on those and on the owner's look.
+
 **Cost:** no money (the Apple account is already paid; nothing on AWS). Time: about steps 1 to 4, a few sessions.
 
 **Android and the web.** Later, and smaller: Android can read usage with Usage Access (`UsageStatsManager`) for the same nudges,

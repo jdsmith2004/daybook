@@ -103,9 +103,9 @@ export interface UnlockWords {
   /** Today's card: the small words over it, and its title */
   eb: string;
   h: string;
-  /** the page: the title, the line under it, what the flame says, and the main button */
+  /** the page: the title, the line under it (none when the flame says enough), what the flame says, and the main button */
   title: string;
-  line: string;
+  line?: string;
   say: string;
   btn: string;
 }
@@ -139,7 +139,6 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
     eb: 'Unlocked',
     h: 'The app that pulls you in',
     title: 'Which app pulls you in?',
-    line: 'Nothing about your apps ever leaves this phone.',
     say: 'When it has you too long, I will say so. In your hard hours, I will say it louder.',
     btn: 'Choose the apps',
   },

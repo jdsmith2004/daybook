@@ -83,7 +83,7 @@ import {
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useNotifyEnv } from '@/lib/notify-env';
 import { allowReminders, exactAlarmsAsk, exactAlarmsOk, remindersOffered } from '@/lib/reminders';
-import { Pull, pullOffered, pullStart, pullStop, setPullPrefs, usePullPrefs } from '@/lib/pull';
+import { Pull, PULL_DENIED, pullOffered, pullStart, pullStop, setPullPrefs, usePullPrefs } from '@/lib/pull';
 import { connectHealth, forgetHealth, healthOffered, useNights } from '@/lib/health';
 import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
@@ -806,7 +806,9 @@ export function SettingsSections({ open: asked, onOpenLayout }: { open?: string;
    every choice here undoes at once, with no wait and no lock. */
 function PullBody({ pull, hard, say }: { pull: PullPrefs; hard: string | null; say: (m: string) => void }) {
   const start = async () => {
-    if (!(await pullStart())) say('Nothing was picked, so nothing changed.');
+    const r = await pullStart().catch(() => 'closed' as const);
+    if (r === 'denied') say(PULL_DENIED);
+    else if (r === 'closed') say('Nothing was picked, so nothing changed.');
   };
   if (!pull.on)
     return (

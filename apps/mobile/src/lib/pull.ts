@@ -96,17 +96,20 @@ export const usePullPrefs = () =>
     () => prefs,
   );
 
-/** the ask, then Apple's list: true when apps were picked and it is on. The notes need the phone's permission for notifications,
-    so it is asked here too, as the reminders ask it (the person can still say no: the pause works without notes). */
-export async function pullStart(): Promise<boolean> {
-  if (!Pull) return false;
-  if (!(await Pull.authorize())) return false;
-  const n = await Pull.pick();
-  if (!n) return false;
+/** the ask, then Apple's list: 'on' when apps were picked and it is on, 'denied' when Screen Time said no, 'closed' when the list
+    was closed with nothing picked. The notes need the phone's permission for notifications, so it is asked here too, as the
+    reminders ask it (the person can still say no: the pause works without notes). */
+export async function pullStart(): Promise<'on' | 'denied' | 'closed'> {
+  if (!Pull) return 'closed';
+  if (!(await Pull.authorize().catch(() => false))) return 'denied';
+  const n = await Pull.pick().catch(() => null);
+  if (!n) return 'closed';
   setPullPrefs({ on: true, asked: 'picked' });
   if (real) await allowReminders().catch(() => false);
-  return true;
+  return 'on';
 }
+/** what the flame says when Screen Time said no */
+export const PULL_DENIED = 'Screen Time said no, so nothing changed. Try again whenever you want, and choose Continue when it asks.';
 /** turn it all off: nothing watched, nothing paused */
 export async function pullStop() {
   setPullPrefs({ on: false });

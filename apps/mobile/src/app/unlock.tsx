@@ -18,7 +18,7 @@ import { Dock, Finish, SceneFrame } from '@/components/scene';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
-import { pullStart, setPullPrefs } from '@/lib/pull';
+import { PULL_DENIED, pullStart, setPullPrefs } from '@/lib/pull';
 import { useStore } from '@/lib/store';
 import { PAPER_INK } from '@/lib/lesson-look';
 import { font, nightInk, useTheme, type Sky } from '@/lib/theme';
@@ -87,9 +87,10 @@ export default function Unlocked() {
   const choose = async () => {
     if (asking.current) return;
     asking.current = true;
-    const ok = await pullStart().catch(() => false);
+    const r = await pullStart().catch(() => 'closed' as const);
     asking.current = false;
-    if (!ok) return;
+    if (r === 'denied') say(PULL_DENIED);
+    if (r !== 'on') return;
     setPullPrefs({ pause });
     buzz('lit');
     say('I am watching for it now.');
@@ -105,9 +106,11 @@ export default function Unlocked() {
       <T v="title" style={[s.mid0, ink ? { color: ink } : null]} accessibilityRole="header">
         {w.title}
       </T>
-      <T tone={night ? undefined : 'muted'} style={[s.mid0, { marginTop: 8 }, soft ? { color: soft } : null]}>
-        {w.line}
-      </T>
+      {w.line ? (
+        <T tone={night ? undefined : 'muted'} style={[s.mid0, { marginTop: 8 }, soft ? { color: soft } : null]}>
+          {w.line}
+        </T>
+      ) : null}
       {id === 'person' ? (
         <View style={s.name}>
           <Field

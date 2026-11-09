@@ -22,6 +22,7 @@
    days-away row, the reminders) comes in as `dev`. Checked by test/moment.test.ts. */
 import { diffDays, runLedger, sumDay } from './legacy/core.js';
 import { GRAD_DAYS, GRAD_WINDOW, todayMeasure } from './graduate';
+import { fireLow, LOW_LEAD } from './flame-low';
 import { heroNumber } from './hero';
 import { formWord } from './levels';
 import { openTile, stopTiles, type StopGo } from './day';
@@ -35,6 +36,7 @@ import { talkDueNow } from './talk-log';
 import { stepOffer } from './view';
 import { UNLOCK_WORDS, type UnlockId } from './unlock';
 import { firstWeekDue } from './week';
+import type { Nights } from './health';
 import type { DayKey, Days, Reviews, Settings } from './types';
 
 export type MomentKind =
@@ -242,7 +244,8 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
 /** the one card, the one waiting behind it, and the rest of the day */
 export function pickMoment(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, dev: MomentDev = {}): MomentPick {
   const all = moments(days, st, reviews, tk, now, dev);
-  const card = all[0];
+  /* while the fire burns low, the next thing to do says what it does (flame-low.ts) */
+  const card = all[0] && all[0].btn && all[0].k !== 'pause' && fireLow(days, st, tk, now).step ? { ...all[0], eb: LOW_LEAD } : all[0];
   const second = all[1];
   const more = second && second.k !== 'calm' && second.k !== 'done' ? second : null;
   /* no "Then: …" line under the card: Your day already lists the rest (the owner, October 23, 2026) */
@@ -263,12 +266,12 @@ export interface StandRow {
   say: string;
 }
 /** the mode's one count (heroNumber), with the flame's form */
-export function standRow(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, form: string): StandRow | null {
+export function standRow(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, form: string, nights?: Nights | null): StandRow | null {
   const h = heroNumber(days, st, tk, now);
   if (!h) return null;
   const f = formWord(form);
   /* the week's goal, set on Sunday, while it can still be counted */
-  const g = isSunday(tk) ? null : sunGoalNow(days, reviews, tk);
+  const g = isSunday(tk) ? null : sunGoalNow(days, reviews, tk, nights);
   const goal = g && g.g.k && g.g.n && g.done != null ? g.done + ' of ' + g.g.n + ' ' + SUN_GOALS[g.g.k].unit + ' this week' : '';
   const note = goal;
   const row = (big: string, ...line: (string | null | undefined)[]): StandRow => {

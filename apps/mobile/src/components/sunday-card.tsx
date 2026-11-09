@@ -8,9 +8,11 @@ import { StyleSheet, View } from 'react-native';
 
 import { Icon, T } from '@/components/ui';
 import { toneOf, useTheme } from '@/lib/theme';
+import { useNights } from '@/lib/health';
 
 export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
   const c = useTheme();
+  const { nights } = useNights();
   const st = snap.settings;
   if (!st) return null;
   /* on Sunday, once the review is done, the goal just set is for the week ahead */
@@ -32,7 +34,7 @@ export function SundayCard({ snap, tk }: { snap: Snapshot; tk: string }) {
         </View>
       </View>
     );
-  const now = sunGoalNow(snap.days, snap.reviews, tk);
+  const now = sunGoalNow(snap.days, snap.reviews, tk, nights);
   const plan = sunPlanNow(snap.reviews, tk);
   const extras = plan ? (
     <>

@@ -197,6 +197,52 @@ see other apps: the section is hidden there.
 3. Keep the confirmation. No answer in about two weeks: open a Developer Support case (Entitlements) with the request details.
 4. When approved, tell Claude: it turns on Family Controls (Distribution) for each ID, and EAS rebuilds the profiles.
 
+## The fire burns lower when you stop doing your part (the owner, November 8, 2026; merged November 9, 2026 after the owner looked on the simulator)
+
+The owner: when the person drifts, the flame burns lower, as if water were poured on it, and when they come back it flares up again; "make the
+animation look really good". It is the first piece of "Hope is not softness: there are stakes" (CLAUDE.md). Effort: medium (screens, words, a small
+rule that never touches what was earned).
+
+The owner's calls, November 8 (each the recommended option):
+
+- **Drifting is days with no part done:** nothing that earns points (a lesson, a check-in, an urge ridden out, an honest log, a calm move...), no tool,
+  talk-through or feeling named. Opening the app is not doing your part. A slip logged honestly is, so honesty never dims the fire.
+- **Never fully out.** Two whole days with nothing done: "You are dimming your fire". Three or four: "Your fire is smouldering ... It goes lower
+  each day." Five or more: "Your fire is down to embers ... One ember still glows." Today does not count until it is over.
+- **One action, full re-light,** with the big moment.
+- **The words:** one firm line at the top of the sky, and the step open now on Your day says "This lights your fire again".
+
+The owner's second round, the same day, after "most of the time when they're logging into the app ... they're doing something", so the stakes
+have to reach people before they act (each the recommended option):
+
+- **A warning the day before it dims** (nothing done yesterday, nothing yet today): one quieter line on Today, "Nothing done yesterday. Do one
+  thing today, or your fire burns lower tomorrow.", while the flame still burns fully, and the day's lesson note (or its first note) says "Your
+  fire burns lower tomorrow".
+- **The come-back notes:** the first (2 days after the app was last open) says how low the fire burns by then, and a new one comes on the day it is
+  down to embers (day 5). The 7 and 30 day notes keep their words ("Everything is kept"). Words only, no picture (the owner, October 25). Never
+  after a slip or a heavy week (the tender words stay), and nothing on the lock screen says what Daybook is for.
+- **Pace by the day:** first 2, 3 and 5 days. The owner found it too slow (November 9, 2026): now one day with nothing done is a warning, two burn lower, three or more are down to embers. While it burns low the face is sad; the words say why and what lights it again; the color drains to ash, not red. The screen-time animation dimming went to the screen-time session.
+- **Notes like Duolingo's (November 9, 2026):** while the fire is low the come-back notes run on days 2, 3, 5, 7, 14 and 30 in the flame's voice, the last a back-off ("I will stop these for now"); an 8 PM last call the evening before it burns lower. The words on Today are big: a 28pt line, then the cost, with the way back in the one warm color.
+- **A widget later,** as its own piece: a home-screen and lock-screen widget showing the flame as it burns now (a native widget extension and a
+  new App Store build).
+
+Hard lines kept: only the glow changes (level, form, points, badges and the count never move; core `fireLow` reads the log and writes nothing),
+never in the 72 hours after a slip, and the words are about the next choice, never about who the person is.
+
+The look (core `flame-low.ts`, components `big-flame.tsx`, `fire-layer(.native).tsx`, `hero.tsx`): the fire, the body and the face sink together
+toward a deep ember (one color map, the same on the phone's Skia layer and the drawn layers); the tips draw back toward the body; it sputters (a
+slow sag with a quick drop and catch); smoke rises from the top, more and thicker the lower it burns, lighter on a night sky; one ember breathes in
+its heart; the glow fades. The first time Today is seen that day it burns fully for half a second and then goes down over two seconds, with four
+fading ticks and a soft knock. When the person does something and comes back to Today, it is lit again in front of them: a soft knock, the heart
+catches with a light one, the fire climbs back and leaps with a firm one, sparks fly out of the heart, the smoke clears, the bloom and ring go
+through it, and the success knock; "You lit your fire again" for a few seconds. Reduce Motion: drawn as low as it burns, re-lit at once with one
+knock.
+
+Does it help Daybook earn or grow: it gives a reason to come back daily, which is what every ask and every rating rides on; nothing is locked.
+
+Merged November 9, 2026, after the owner looked on the simulator. Left for later: the widget, and the dimming on the Screen Time wait screen
+(the Screen Time session).
+
 ## The editor's pass: the whole journey as one app (November 3, 2026; built on `claude/editor-pass-f4b474`, not merged)
 
 Today, Pattern, Days, Weeks and the lessons were each redesigned alone this week. This pass looked at them together. The tool for it stays:
@@ -330,6 +376,13 @@ Meanwhile, one cheap step helps everyone now: move "sleep last night" out of the
 one quick choice, so the card fills for people with no watch too.
 
 ### The steps, with the effort each needs
+
+**Status (November 9, 2026):** every step is built on `claude/health-sync-710277`, not merged until the owner has seen it.
+Seen on the simulator (a release build with a made-up log): Apple's sheet asks for Sleep only, read only, with Daybook's
+words; Settings shows "Apple Health · On · 61 nights of sleep"; the hard-days card draws two moons (7.4 h before days with no
+slip, 5.7 h before slip days) with the nights counted under them. Not checked against nights a real watch recorded, and the
+check-in leaving out its sleep step was checked only by its rule, not tapped through. The App Store label does not change (the
+nights never leave the phone); docs/launch.md has the review note.
 
 1. Sleep as a quick choice in the check-in, out of More (medium: a screen and its words). Can be done now, alone.
 2. Core: a device-only `nights` store, the rule that a typed night wins, and `patLeads` reading both (high: data, and it must

@@ -15,6 +15,7 @@ import { logStart } from './log-start';
 import { talksOf } from './talk';
 import { urTool } from './sos';
 import { plural } from './view';
+import { sleepOn, type Nights } from './health';
 import type { Day, DayKey, Days, Review, Reviews, Settings } from './types';
 
 /* ---------- the record ---------- */
@@ -104,7 +105,10 @@ export function sunRange(sun: DayKey): string {
 
 /* ---------- small goals the log can count ---------- */
 const ci = (d: Day | undefined) => (d && d.checkin) || null;
-export const SUN_GOALS: Record<SunGoalKind, { unit: 'nights' | 'days'; n: number; t: (st: Settings) => string; did: (d: Day | undefined) => boolean }> = {
+export const SUN_GOALS: Record<
+  SunGoalKind,
+  { unit: 'nights' | 'days'; n: number; t: (st: Settings) => string; did: (d: Day | undefined, night?: number | null) => boolean }
+> = {
   phone: {
     unit: 'nights',
     n: 5,
@@ -112,7 +116,8 @@ export const SUN_GOALS: Record<SunGoalKind, { unit: 'nights' | 'days'; n: number
     did: (d) => !!(d && d.p && d.p.po) || ci(d)?.so === 'Y',
   },
   wind: { unit: 'nights', n: 4, t: () => 'Wind down before bed', did: (d) => !!(d && d.p && d.p.wd) },
-  sleep: { unit: 'nights', n: 4, t: () => 'Seven hours of sleep', did: (d) => (ci(d)?.h ?? 0) >= 7 },
+  /* typed sleep wins; a night from Apple Health (kept on the phone, never in the log) fills one that was not typed */
+  sleep: { unit: 'nights', n: 4, t: () => 'Seven hours of sleep', did: (d, night) => (ci(d)?.h ?? night ?? 0) >= 7 },
   checkin: { unit: 'days', n: 5, t: () => 'Check in', did: (d) => !!ci(d)?.done },
   reach: { unit: 'days', n: 2, t: () => 'Reach out to someone', did: (d) => !!(d && d.p && d.p.r) || ci(d)?.ro === 'Y' },
   lesson: { unit: 'days', n: 3, t: () => 'Read a lesson', did: (d) => !!(d && d.p && d.p.ls.length + d.p.lv.length) },
@@ -120,10 +125,10 @@ export const SUN_GOALS: Record<SunGoalKind, { unit: 'nights' | 'days'; n: number
 /** a countable goal, as one line: "Phone away by 11:00 PM, 5 nights" */
 export const sunGoalOf = (k: SunGoalKind, st: Settings, n = SUN_GOALS[k].n): SunGoal => ({ t: SUN_GOALS[k].t(st) + ', ' + n + ' ' + SUN_GOALS[k].unit, k, n });
 /** how many of the goal's nights or days happened from Monday to Sunday of the week that ends on sun (up to today) */
-export function sunGoalCount(days: Days, g: SunGoal, sun: DayKey, tk: DayKey): number | null {
+export function sunGoalCount(days: Days, g: SunGoal, sun: DayKey, tk: DayKey, nights?: Nights | null): number | null {
   if (!g.k) return null;
   let n = 0;
-  for (let k = addDays(sun, -6); k <= sun && k <= tk; k = addDays(k, 1)) if (SUN_GOALS[g.k].did(days[k])) n++;
+  for (let k = addDays(sun, -6); k <= sun && k <= tk; k = addDays(k, 1)) if (SUN_GOALS[g.k].did(days[k], nights?.[k])) n++;
   return n;
 }
 
@@ -152,7 +157,7 @@ export interface SunWeek {
   did: Record<string, number>;
   tools: Record<string, { n: number; w: number }>;
 }
-export function sunWeek(days: Days, st: Settings, sun: DayKey, tk: DayKey): SunWeek {
+export function sunWeek(days: Days, st: Settings, sun: DayKey, tk: DayKey, nights?: Nights | null): SunWeek {
   const from = logStart(days, st);
   const w: SunWeek = {
     sun,
@@ -185,13 +190,13 @@ export function sunWeek(days: Days, st: Settings, sun: DayKey, tk: DayKey): SunW
     if (!s.slipped) w.noSlip++;
     if (ci(d)?.done) w.checkins++;
     if (ci(d)?.so === 'N') w.screensLate++;
-    const h = ci(d)?.h;
-    if (typeof h === 'number') w.sleep.push(h);
+    const h = sleepOn(days, nights, k);
+    if (h != null) w.sleep.push(h);
     if (d && d.p && d.p.hw != null) w.held++;
     if (SUN_GOALS.phone.did(d)) w.phone++;
     if (SUN_GOALS.reach.did(d)) w.reach++;
     if (SUN_GOALS.lesson.did(d)) w.lessons++;
-    if (SUN_GOALS.sleep.did(d)) w.sleep7++;
+    if (SUN_GOALS.sleep.did(d, nights?.[k])) w.sleep7++;
     const wd = dateOf(k).getDay();
     for (const e of d ? d.events : []) {
       const slip = e.outcome === 'slipped';
@@ -328,11 +333,11 @@ export function sunDue(reviews: Reviews, st: Settings, tk: DayKey): { sun: DayKe
   return null;
 }
 /** the goal for the week tk is in: set in the review of the Sunday before */
-export function sunGoalNow(days: Days, reviews: Reviews, tk: DayKey): { g: SunGoal; sun: DayKey; done: number | null } | null {
+export function sunGoalNow(days: Days, reviews: Reviews, tk: DayKey, nights?: Nights | null): { g: SunGoal; sun: DayKey; done: number | null } | null {
   const sun = sunOf(tk);
   const r = reviews[sunKey(addDays(sun, -7))]?.sun;
   if (!r || !r.g) return null;
-  return { g: r.g, sun, done: sunGoalCount(days, r.g, sun, tk) };
+  return { g: r.g, sun, done: sunGoalCount(days, r.g, sun, tk, nights) };
 }
 /** this week's plan from last Sunday's review: the goal, the if-then plan, the hard days and the note, for Today and SOS.
     nt shows from Wednesday on; hard is true on one of the hard days. */
@@ -361,10 +366,10 @@ export function sunPlanSay(reviews: Reviews, st: Settings, tk: DayKey, made?: Su
   return w && t ? 'When ' + w + ', I will ' + t.charAt(0).toLowerCase() + t.slice(1) + (/[.!]$/.test(t) ? '' : '.') : null;
 }
 /** last week's goal, looked back on in this week's review: what it was, and how it went */
-export function sunLastGoal(days: Days, reviews: Reviews, sun: DayKey, tk: DayKey) {
+export function sunLastGoal(days: Days, reviews: Reviews, sun: DayKey, tk: DayKey, nights?: Nights | null) {
   const r = reviews[sunKey(addDays(sun, -7))]?.sun;
   if (!r || !r.g) return null;
-  const done = sunGoalCount(days, r.g, sun, tk);
+  const done = sunGoalCount(days, r.g, sun, tk, nights);
   return { g: r.g, done, met: done != null && r.g.n != null && done >= r.g.n };
 }
 /** "4 of 5 nights", and a kind word on it */

@@ -2,9 +2,9 @@
    a slider low on the screen where the thumb is, with the number big in the open middle. Then one screen under the night
    sky: "Tap this when you put your phone down", and one big Goodnight button saves the check-in, puts the phone away (what
    "Putting my phone away" in the wind-down records: core sayGoodnight) and plays the going-to-bed moment
-   (components/goodnight.tsx). Before Goodnight, one more step: sleep last night in hours (kept in checkin.h, which the
-   Sunday sleep goal, the week and Pattern's hard-days card read; moved out of More on November 8, 2026, because few
-   people opened More and the card stayed empty). Above the button, folded rows: More (whether you reached out; one line),
+   (components/goodnight.tsx). Before Goodnight, one more step: sleep last night in hours, kept in checkin.h, which the
+   Sunday sleep goal, the week and Pattern's hard-days card read (moved out of More on November 8, 2026, because few
+   people opened More and the card stayed empty). It is left out when Apple Health has the night (lib/health.ts). Above the button, folded rows: More (whether you reached out; one line),
    the wind-down list, and the plan for a loud night with SOS. "Save for now" under the button saves without the phone going away, for a check-in done early.
    A day before today (`k`), or a check-in before Goodnight opens (core goodnightOpens), ends with Save instead.
    Answers are kept as a draft on this device until saved (lib/drafts), so closing halfway loses nothing. Opened from the
@@ -18,6 +18,7 @@ import {
   fmtClock,
   gameCompute,
   goodnightOpens,
+  healthHasNight,
   rateKeys,
   ratingOf,
   rhythm,
@@ -50,6 +51,7 @@ import { loadDrafts, saveDraft } from '@/lib/drafts';
 import { close, closeAll } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
+import { useNights } from '@/lib/health';
 import { useStore } from '@/lib/store';
 import { WORDS } from '@/lib/words';
 import { font, useTheme } from '@/lib/theme';
@@ -82,6 +84,9 @@ export default function Checkin() {
   const k = (kp && kp <= tk ? kp : tk) as DayKey;
   const tonight = k === tk;
   const [form, setForm] = useState<CheckinForm>(() => checkinFormOf(snap.days, k));
+  /* with Apple Health connected, a night it has is not asked about (nothing from Health is copied into the check-in) */
+  const health = useNights();
+  const steps: readonly (typeof STEPS)[number][] = health.on && healthHasNight(health.nights, k) && form.h == null ? STEPS.filter((x) => x !== 'h') : STEPS;
   const [step, setStep] = useState<Step>('md');
   const [hist, setHist] = useState<Step[]>([]);
   /* which way the steps slide: forward from the right, Back from the left */
@@ -131,7 +136,7 @@ export default function Checkin() {
     setDir(1);
     setStep(next);
   };
-  const next = () => go(STEPS[STEPS.indexOf(step as (typeof STEPS)[number]) + 1] || 'night');
+  const next = () => go(steps[steps.indexOf(step as (typeof STEPS)[number]) + 1] || 'night');
   const back = () => {
     const h = hist.slice();
     const p = h.pop();
@@ -169,7 +174,7 @@ export default function Checkin() {
     setBed(b);
   };
 
-  const i = step === 'end' ? STEPS.length : STEPS.indexOf(step);
+  const i = step === 'end' ? steps.length : steps.indexOf(step);
   let body: React.ReactNode;
   let footer: React.ReactNode = null;
   let pin: React.ReactNode = null;
@@ -345,7 +350,7 @@ export default function Checkin() {
     <SceneFrame
       title={step === 'night' && bedtime ? 'Good night' : 'Check-in'}
       sky={step === 'night' && bedtime ? 'night' : 'violet'}
-      dots={{ n: STEPS.length, i, label: step === 'end' ? 'All done' : 'Step ' + (i + 1) + ' of ' + STEPS.length }}
+      dots={{ n: steps.length, i, label: step === 'end' ? 'All done' : 'Step ' + (i + 1) + ' of ' + steps.length }}
       onBack={step !== 'end' && hist.length ? back : null}
       onClose={close}
       footer={footer}

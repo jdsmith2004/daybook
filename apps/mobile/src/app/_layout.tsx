@@ -26,6 +26,7 @@ import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { listenForTaps, onPermission, remindersAllowed, remindersOffered, scheduleNudges } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
+import { HealthKeeper } from '@/lib/health';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
 import { SyncProvider, useAccount } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
@@ -195,6 +196,7 @@ function Shell() {
       <Reminders />
       <NoteCopy />
       <NavKeeper />
+      <HealthKeeper rollover={snap.settings?.rollover ?? 4} />
       <SetupGate />
       <LockGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>

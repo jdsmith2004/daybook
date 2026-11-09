@@ -1,6 +1,7 @@
 /* The log, kept on this device first. Every record (the settings, each day, each weekly review, each journal entry) is its own entry in storage,
    so a long history never hits a size limit, and each change is remembered as "not synced yet" for when sync is turned on. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { forgetHealth } from './health';
 import {
   allDirty,
   checkNew,
@@ -437,6 +438,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const erase = useCallback(async () => {
     const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(P));
     await AsyncStorage.multiRemove(keys);
+    /* the nights read from Apple Health live outside the log, so they go here too */
+    await forgetHealth();
     snapRef.current = empty();
     setSnap(empty());
     dirtyRef.current = {};

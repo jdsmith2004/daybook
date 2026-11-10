@@ -24,7 +24,7 @@
   },
   "never": ["Time to decide"],
   "visits": [
-    { "day": "2026-10-19", "open": "22:20", "what": "the night of a slip, in the hard hours", "before": [{ "slip": "21:50" }], "expect": "Your hard hours" },
+    { "day": "2026-10-19", "open": "22:20", "what": "the night of a slip, in the hard hours", "before": [{ "slip": "21:50" }], "expect": "Hard hours" },
     {
       "day": "2026-10-20",
       "open": "08:15",

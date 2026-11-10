@@ -20,11 +20,11 @@
     {
       "day": "2026-10-17",
       "open": "22:30",
-      "what": "an urge ridden out late, with the day's lesson not done yet: the lesson stays the next step (lessons first, October 23)",
+      "what": "an urge ridden out late, with the day's lesson not done yet: once the night opens the wind-down leads and the lesson says Still open (the owner, October 31)",
       "before": [{ "rode": "21:40", "trigger": "Bored" }],
-      "expect": "Lesson \\d+ of \\d+"
+      "expect": "Time to wind down"
     },
-    { "day": "2026-10-18", "open": "11:00", "what": "Sunday", "expect": "Your Sunday review" },
+    { "day": "2026-10-18", "open": "11:00", "what": "Sunday", "expect": "Your (first )?Sunday review" },
     { "day": "2026-10-19", "open": "09:00", "what": "Monday, last week still open", "expect": "review is still open" },
     {
       "day": "2026-10-20",

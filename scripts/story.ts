@@ -73,6 +73,8 @@ type Store = Record<string, string>;
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const app = join(root, 'apps/mobile');
+/** What's new was seen for this version, so Today opens on Today (as in journey.ts) */
+const version: string = JSON.parse(readFileSync(join(app, 'app.json'), 'utf8')).expo.version;
 const build = join(app, 'dist-story');
 const out = join(root, 'story-shots');
 const args = process.argv.slice(2);
@@ -254,11 +256,14 @@ for (const f of files) {
     const errs: string[] = [];
     page.on('pageerror', (e) => errs.push(String(e).split('\n')[0]));
     await page.clock.install({ time: at(v.day, v.open, roll) });
-    await page.addInitScript((seed: Store) => {
-      if (sessionStorage.getItem('story:seeded')) return;
-      sessionStorage.setItem('story:seeded', '1');
-      for (const [k, val] of Object.entries(seed)) localStorage.setItem(k, val);
-    }, s);
+    await page.addInitScript(
+      (seed: Store) => {
+        if (sessionStorage.getItem('story:seeded')) return;
+        sessionStorage.setItem('story:seeded', '1');
+        for (const [k, val] of Object.entries(seed)) localStorage.setItem(k, val);
+      },
+      { ...s, 'daybook.seenVersion': version },
+    );
     const why: string[] = [];
     let text = '';
     let popped: string[] = [];

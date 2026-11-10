@@ -30,9 +30,26 @@ export const WHATS_NEW: { v: string; items: NewItem[] }[] = [
     v: '1.3.3',
     items: [
       {
+        t: 'Your flame on your Home Screen',
+        line: 'Add the Daybook widget and your flame burns there as it does in the app, even while Daybook stays closed.',
+        art: 'flame',
+        ios: true,
+      },
+      {
+        t: 'Walk it through',
+        line: 'Thinking about a slip? A short walk takes you through the pull, step by step, until it is quieter.',
+        art: 'plan',
+      },
+      {
         t: 'Helping Daybook get better',
         line: 'Daybook now learns how the app is used, anonymously. Never your journal, notes or words. More, Anonymous data, turns it off.',
         art: 'chart',
+      },
+      {
+        t: 'Your sleep beside your days',
+        line: 'Let Daybook read your sleep from Apple Health, and Pattern shows how your nights and your hard days line up.',
+        art: 'when',
+        ios: true,
       },
     ],
   },

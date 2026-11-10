@@ -1,6 +1,6 @@
 # What is planned next
 
-## Much more analytics, anonymous, never the journal (the owner, November 9, 2026; built on `claude/analytics`, not merged)
+## Much more analytics, anonymous, never the journal (the owner, November 9, 2026; merged November 10, 2026 on the owner's word)
 
 **The ask.** "I want to store as much user information as possible, we'll keep it anonymous but we need to add a ton of
 analytics so we can use that data to improve the app so we need to switch that rule completely and just let them know it's

@@ -31,11 +31,11 @@ export default function Privacy() {
       </T>
       <SheetH title="Removing it" />
       <T>
-        Delete everything (in Settings) clears your log, and your account keeps a copy for a week in case it was a mistake. Delete my account (in Settings ›
-        Sync) removes your account, that copy and your sign-in for good.
+        Delete everything (in More) clears your log, and your account keeps a copy for a week in case it was a mistake. Delete my account (in More, Sync between
+        devices) removes your account, that copy and your sign-in for good.
       </T>
       <Rows>
-        <LinkCard icon="sliders" title="Open Settings" onPress={() => router.push({ pathname: '/settings', params: { open: 's-sync' } })} />
+        <LinkCard icon="sliders" title="Sync between devices" onPress={() => router.push({ pathname: '/settings', params: { open: 's-sync' } })} />
         <LinkCard icon="shield" title="Read the full privacy policy" onPress={() => Linking.openURL(SITE_PAGES.privacy).catch(() => undefined)} />
         <LinkCard icon="book" title="Terms of use" onPress={() => Linking.openURL(SITE_PAGES.terms).catch(() => undefined)} />
       </Rows>

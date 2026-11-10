@@ -138,7 +138,7 @@ export default function Entry() {
             onSave={(text) => {
               const r = addOption(st, kind, text);
               if (!r.id) {
-                say(text.trim() ? 'That list is full. Remove one in Settings, under My own answers, first.' : WORDS.needWords);
+                say(text.trim() ? 'That list is full. Remove one in More, under Check-in answers, first.' : WORDS.needWords);
                 return;
               }
               const nid = r.id;

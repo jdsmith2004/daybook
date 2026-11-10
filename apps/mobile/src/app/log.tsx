@@ -288,7 +288,7 @@ export default function Log() {
   const saveOwn = (text: string) => {
     const r = addOption(st, 'trig', text);
     if (!r.id) {
-      say(text.trim() ? 'That list is full. Remove one in Settings, under My own answers, first.' : 'Type a few words first.');
+      say(text.trim() ? 'That list is full. Remove one in More, under Check-in answers, first.' : 'Type a few words first.');
       return;
     }
     const id = r.id;

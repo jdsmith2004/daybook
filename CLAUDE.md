@@ -90,11 +90,12 @@ need, without letting the screen turn into a list of features.
 - **Lessons inspire hope; that is their main goal.** A lesson must be wholesome, true to its spirit, motivating and hopeful,
   written plainly and surely. The quality of the lesson matters far more than checking its sources: do not spend effort
   validating sources, and do not rewrite, flag or ask about the "Behind this" notes. That work is not wanted.
-- **Never start a build without the owner's explicit yes, every time (the owner, November 11, 2026, after a Screen Time
-  build was started without asking).** No EAS build (`eas build`, local or on Expo's servers, any profile), no App Store or
-  Play workflow run, no TestFlight or store submission, unless the owner has said yes to that exact build in the chat. A task
-  that says "make a TestFlight build" is not that yes: ask first, say which profile and what it uses (a build credit), and
-  wait. This includes runs that only set up credentials or might queue a build. Approval for one build never covers another.
+- **Never use one of the 15 monthly EAS builds without the owner's explicit yes (the owner, November 11, 2026, after a
+  Screen Time build was started without asking).** Anything that runs on Expo's servers and counts against the free plan's 15
+  iOS builds a month (`eas build` without `--local`, the App Store or Play workflow) needs the owner's yes for that exact build
+  in the chat, every time: say which profile and that it uses one of the 15, then wait. A task that says "make a TestFlight
+  build" is not that yes, and one yes covers one build. Builds that use none of the 15 need no permission: local builds
+  (`expo run:ios`, Xcode, the simulator, `eas build --local`) and setting up credentials when no build can be queued.
 - **Working style.** Work on your own and ask only about design changes or real uncertainty. When `npm run typecheck` and
   `npm test` pass, merge to `main` (deploying as below); GitHub keeps everything, so a change can always be rolled back.
   Effort levels save usage: every plan marks each step with the Opus effort level it needs (high for sync, accounts,

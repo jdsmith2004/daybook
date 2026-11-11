@@ -77,6 +77,12 @@ need, without letting the screen turn into a list of features.
   moments of earned value (a level, a milestone, the first week), make the middle tip the obvious choice, keep paying to
   one tap, and make the free side feel generous, since generous treatment is what brings tips and good ratings. When
   building any feature, ask whether it helps the person and whether it helps Daybook earn or grow, and say so in plans.
+- **The store listing never names porn (Apple rejected 1.3.3 under Guideline 1.1 for it, November 11, 2026).** No App
+  Store or Play text (name, subtitle, description, promo text, What's New, keywords) and no store screenshot uses "porn",
+  "pornography", "pornfree", "NoFap", "sex" or any other explicit word. Speak of quitting a habit, urges, slips, self-control
+  and being free. The app itself, the website and posts may still say porn plainly. Before every store submission, check
+  the listing text and every screenshot for these words (the `store-assets` pictures included) and fix them first: repeat
+  rejections bring extended review and put the developer account at risk.
 - **Never link to the code.** The owner worked and paid for this codebase and does not want it handed to anyone to copy
   (the owner, October 23, 2026, and upset that a "See the code" link was put on the website). No page, app screen, store
   listing or message ever links to the repository, says the code is public, or invites people to read it. Privacy is

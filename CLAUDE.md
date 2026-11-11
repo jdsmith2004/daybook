@@ -211,3 +211,12 @@ cd apps/mobile && npx expo start
 - **AWS:** deploys use GitHub OpenID Connect (no stored keys). The deploy role can never make, change or take on an IAM role, and cannot invoke the sync function: any role the app needs is made in `infra/bootstrap` (run by the owner), never in `infra/app`. Keep everything pay-per-use; the budget alert is $5 a month.
 - **Git:** commit as the owner's personal GitHub noreply address (set with `git config user.email` in this repository), never a personal or work email. This computer may be signed in to a work GitHub account by default.
 - Before calling a change done: `npm run format`, `npm run typecheck`, `npm test`, and for app changes `npx expo export --platform web` and a look at the result, against docs/craft-checklist.md.
+- **QA the experience before calling anything done, without being asked (the owner, November 11, 2026: "if you didn't qa
+  means other chats aren't doing qa either and missing the experience part").** Passing tests is not QA. Walk the whole flow
+  as the person would, on the web and the simulator (and the phone when only the phone can run it), from the moment it first
+  appears to the way out, and look at a picture of every screen and every note. For each one ask: is it clear on first sight
+  with nothing to read twice, is it easy to use one-handed, does it come up at a good moment and cleanly, does it feel alive
+  and made with care, does it move the person toward seeing themselves as free, and could it annoy them enough to delete the
+  app (too many notes, a nag, a trap, a guilt trip, something broken). Also read the code for what only a device shows (stuck
+  states, double notes, a way out that fails). Fix what you find, then say in the report what you checked and what you could
+  not check.

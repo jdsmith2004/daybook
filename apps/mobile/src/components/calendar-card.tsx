@@ -153,7 +153,7 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
                   <LinearGradient colors={SLIP} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[s.run, s.slipRun]} />
                 </View>
               ))}
-              {row.map((d, i) => (d ? <Day key={d.k} d={d} /> : <View key={'b' + w + '-' + i} style={s.box} />))}
+              {row.map((d, i) => (d ? <Day key={d.k} d={d} end={runs(row, true).some(([, b]) => b === i)} /> : <View key={'b' + w + '-' + i} style={s.box} />))}
             </View>
           ))}
         </View>
@@ -191,12 +191,14 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
 }
 
 /* one day, drawn by how it went; today's number is bolder */
-function Day({ d }: { d: CalDay }) {
+function Day({ d, end }: { d: CalDay; end?: boolean }) {
   const open = d.kind !== 'ahead' && d.kind !== 'before';
   const label = calLabel(d.k) + ': ' + WORD[d.kind] + (d.slips > 1 ? ', ' + d.slips + ' slips' : '') + (d.today ? ', today so far' : '');
-  /* more than one slip: the count sits in the day's lower right corner, inside the pill */
-  const many = d.slips > 1 ? <Text style={[s.many, { color: NIGHT.ink }]}>×{d.slips}</Text> : null;
-  const num = (color: string) => <Text style={[s.num, d.today && s.today, { color }]}>{d.d}</Text>;
+  /* more than one slip: the count sits in the day's lower right corner, inside the pill; on the pill's round end it moves in,
+     and the number steps left to make room, so the count never crosses the edge */
+  const tuck = end && d.slips > 1;
+  const many = d.slips > 1 ? <Text style={[s.many, tuck && s.manyEnd, { color: NIGHT.ink }]}>×{d.slips}</Text> : null;
+  const num = (color: string) => <Text style={[s.num, d.today && s.today, tuck && s.numEnd, { color }]}>{d.d}</Text>;
   let inner;
   if (d.kind === 'ok') inner = num(ON_RUN);
   else if (isSlip(d.kind)) inner = num(ON_SLIP);
@@ -257,7 +259,9 @@ const s = StyleSheet.create({
   today: { fontFamily: font.display, fontSize: 17 },
   back: { position: 'absolute', bottom: 8, width: 14, height: 2, borderRadius: 1, backgroundColor: GOLD },
   swBack: { position: 'relative', bottom: 0 },
-  many: { position: 'absolute', bottom: 11, right: 8, fontFamily: font.bodySemi, fontSize: 11, lineHeight: 13 },
+  many: { position: 'absolute', bottom: 9, right: 2, fontFamily: font.bodySemi, fontSize: 11, lineHeight: 13 },
+  manyEnd: { bottom: 10, right: 9 },
+  numEnd: { marginRight: 9 },
   round: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   open: { borderWidth: 1.5, backgroundColor: 'transparent' },
   dash: { borderStyle: 'dashed', borderColor: 'rgba(207,200,242,0.35)' },

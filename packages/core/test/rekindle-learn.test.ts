@@ -48,7 +48,7 @@ describe('the comebacks', () => {
   it('looks only up to the slip it is about', () => {
     const days = log(['2026-09-05', '2026-09-10', '2026-09-20']);
     expect(rkComebacks(days, st, '2026-09-10').runs).toEqual([4, 4]);
-    expect(rkComebackLine(rkComebacks(days, st, '2026-09-10'))).toBe('You have come back once before, and more clean days followed. This is the same move.');
+    expect(rkComebackLine(rkComebacks(days, st, '2026-09-10'))).toBe('You have come back once before, and more free days followed. This is the same move.');
   });
   it('keeps the last eight', () => {
     const ks = Array.from({ length: 12 }, (_, i) => '2026-09-' + String(2 + i * 2).padStart(2, '0'));

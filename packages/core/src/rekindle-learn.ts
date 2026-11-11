@@ -105,7 +105,7 @@ export const RK_LEARN: RkLearnCard[] = [
     k: 'shame',
     for: ['shame', 'angry'],
     title: 'You did something. You are not something.',
-    body: 'Guilt says “I did a bad thing.” Shame says “I am bad.” Research finds that guilt tends to lead people to make things right, while shame leads to hiding. In a study of people in recovery, those who showed more shame were more likely to relapse. So keep it about the action. The action was one evening. You are the whole climb.',
+    body: 'Guilt says “I did a bad thing.” Shame says “I am bad.” Research finds that guilt tends to lead people to make things right, while shame leads to hiding. In a study of people in recovery, those who showed more shame were more likely to slip again. So keep it about the action. The action was one evening. You are the whole climb.',
     short: 'Keep it about the action, not about who you are.',
     src: ['tangney', 'tracy'],
   },
@@ -194,7 +194,7 @@ export function rkComebackLine(cb: RkComebacks): string {
     'You have come back ' +
     times +
     ' before, and ' +
-    (cb.before === 1 ? 'more clean days followed' : 'each time, more clean days followed') +
+    (cb.before === 1 ? 'more free days followed' : 'each time, more free days followed') +
     '. This is the same move.'
   );
 }

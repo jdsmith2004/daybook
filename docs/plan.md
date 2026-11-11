@@ -529,6 +529,16 @@ see other apps: the section is hidden there.
   room"), so it earns its points, feeds the flame and counts as the person's part (lifting the drift). At most one an hour, or
   none when an urge was ridden out in the last hour. No count or event is sent for it. It is the person's own tap on Daybook's
   screen, carrying no app and no usage number, so it goes in the log (and sync) like any urge; flagged to the owner.
+- **QA, November 11, 2026** (the web walk with the stand-in, a read of the native code, a simulator compile). Fixed:
+  a pause that outlived a reinstall (the choices on the phone say off, Apple still holds the shield, and nothing in Daybook could
+  lift it) is now cleared on open; the pause comes once a window and never at or past the window's end (a second or late
+  threshold paused again in the minutes opened, or with no end left to lift it); turning the hard hours' notes off lifts a pause;
+  Change the apps sets the schedules and a running pause on the new apps at once (it waited up to 15 minutes); every change runs
+  on one queue (two writes at once restarted a schedule); a note Apple did not take is tried again; the shield's "Resting until"
+  reads the pause's own end (it named the wrong night after midnight); the access check waits for the saved choices; the wait
+  screen's flame is bigger; Settings speaks of the pause only when it is on. Left for the phone: whether Apple's thresholds
+  come on time, a window across midnight, `pull.open`'s one-off schedule, a tap on a note opening the wait screen from a cold
+  start, and Focus modes holding the notes (Time Sensitive needs its own capability in the portal: ask first).
 - **The owner's test:** `docs/screen-time/test-on-iphone.md`. **App Review notes and the recording:** `docs/screen-time/review-notes.md`.
 - **Ship:** after the owner says yes on the phone, merge to main, make `production-pull` the App Store workflow's default (or
   tick Screen Time), and submit the next version with the review notes. Not before Apple answers on 1.3.3.

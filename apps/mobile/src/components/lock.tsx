@@ -21,7 +21,9 @@ export async function confirmUnlock(prompt: string): Promise<{ ok: boolean; why?
     if (r.success) return { ok: true };
     if (r.error === 'not_enrolled' || r.error === 'passcode_not_set' || r.error === 'not_available')
       return { ok: false, why: 'Set a passcode, Face ID or Touch ID on this phone first.' };
-    return { ok: false };
+    /* a cancel needs no words; anything else says the lock did not change, so the switch never fails in silence */
+    if (r.error === 'user_cancel' || r.error === 'system_cancel' || r.error === 'app_cancel') return { ok: false };
+    return { ok: false, why: 'Daybook could not check that it is you, so the lock did not change.' };
   } catch {
     return { ok: false, why: 'This phone cannot lock Daybook.' };
   }

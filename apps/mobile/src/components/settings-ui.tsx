@@ -1,12 +1,13 @@
 /* The pieces Settings is built from, in the grammar of the best settings pages (the owner, November 9, 2026: "make it like a
    really good settings page"): rounded white groups on the paper, a heading in the display face over a group and a short note
-   under it, one-line rows with the value in gray on the right, round checks for a choice, and the phone's own switch for on and
-   off. Color is rare: each group's icons take one tone, purple marks what is chosen, red is only for deleting. */
-import type { ReactNode } from 'react';
-import { Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
+   under it, one-line rows with the value in gray on the right, round checks for a choice, and a switch for on and off (drawn
+   here, not the phone's own: on iOS 26 React Native's UISwitch sits high and to the right of its row). Color is rare: each group's icons take one tone, purple marks what is chosen, red is only for deleting. */
+import { useEffect, useRef, type ReactNode } from 'react';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
 export type Tone = 'coral' | 'sky' | 'violet' | 'mint' | 'sun' | 'accent';
@@ -150,27 +151,52 @@ export function SetPick<V extends string | number | null>({
   );
 }
 
-/** on or off, with the phone's own switch */
+/** on or off: a switch the size of the phone's own, centred on its row */
 export function SetSwitch({ label, sub, on, onChange }: { label: string; sub?: string; on: boolean; onChange: (on: boolean) => void }) {
+  return <SetRow label={label} sub={sub} chevron={false} right={<Toggle on={on} label={label} onChange={onChange} />} />;
+}
+
+const TW = 51;
+const TH = 31;
+const KNOB = 27;
+function Toggle({ on, label, onChange }: { on: boolean; label: string; onChange: (on: boolean) => void }) {
   const c = useTheme();
+  const still = useReducedMotion();
+  const x = useRef(new Animated.Value(on ? 1 : 0)).current;
+  useEffect(() => {
+    if (still) x.setValue(on ? 1 : 0);
+    else Animated.spring(x, { toValue: on ? 1 : 0, useNativeDriver: false, speed: 22, bounciness: 4 }).start();
+  }, [on, still, x]);
   return (
-    <SetRow
-      label={label}
-      sub={sub}
-      chevron={false}
-      right={
-        <Switch
-          value={on}
-          onValueChange={onChange}
-          accessibilityLabel={label}
-          trackColor={{ false: c.line, true: c.accent }}
-          thumbColor={Platform.OS === 'ios' ? undefined : '#FFFFFF'}
-          ios_backgroundColor={c.line}
-        />
-      }
-    />
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      accessibilityState={{ checked: on }}
+      hitSlop={10}
+      onPress={() => {
+        buzz('tap');
+        onChange(!on);
+      }}>
+      <Animated.View style={[t.track, { backgroundColor: x.interpolate({ inputRange: [0, 1], outputRange: [c.line, c.accent] }) }]}>
+        <Animated.View style={[t.knob, { transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [2, TW - KNOB - 2] }) }] }]} />
+      </Animated.View>
+    </Pressable>
   );
 }
+const t = StyleSheet.create({
+  track: { width: TW, height: TH, borderRadius: TH / 2, justifyContent: 'center' },
+  knob: {
+    width: KNOB,
+    height: KNOB,
+    borderRadius: KNOB / 2,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+});
 
 /** something that is not a row (a stepper, a date) inside a group, with the row's padding and line */
 export function SetCell({ children }: { children: ReactNode }) {

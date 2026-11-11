@@ -601,7 +601,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
           title: 'App lock',
           value: lock ? 'On' : 'Off',
           body: (
-            <SetGroup foot="Face ID, Touch ID or your phone’s passcode when Daybook opens, and again after a minute away. In the app switcher, your log is covered.">
+            <SetGroup foot="With the lock on, Daybook asks for Face ID, Touch ID or your passcode each time it opens, and again when you come back after more than a minute away. A shorter trip away does not lock it. In the app switcher, your log is covered. It locks Daybook only: not its reminders or the widget on your Home Screen.">
               <SetSwitch
                 label="Lock Daybook"
                 on={!!lock}

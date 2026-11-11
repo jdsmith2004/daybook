@@ -117,7 +117,7 @@ export default function PullPause() {
         <Bubble text={w.say} style={{ marginBottom: 12, alignSelf: 'center', maxWidth: 300 }} />
         <View style={s.c} accessible accessibilityRole="timer" accessibilityLabel={over ? 'The wait is over' : left + ' seconds'}>
           <WavyRing size={ring} p={p} color={c.sun} track="rgba(255,255,255,0.14)" speed={reduce ? 0 : undefined}>
-            <BigFlame level={level} size={ring * 0.7} pulse={pulse} noLand low={low} douse={!quiet} smoke="#6B6577" label={w.title} />
+            <BigFlame level={level} size={ring * 0.86} pulse={pulse} noLand low={low} douse={!quiet} smoke="#6B6577" label={w.title} />
           </WavyRing>
           <Text style={[s.left, { color: over ? nightInk.muted : c.sun }]}>{over ? ' ' : String(left)}</Text>
           <T v="small" style={{ color: nightInk.muted }}>

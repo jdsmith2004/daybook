@@ -172,6 +172,55 @@ four beats and the Sunday review's first card. It waits until the numbers say wh
 4. **The accountability partner.** (a) Wait until about 50 people use Daybook each week or someone asks (recommended). (b) Build "share a
    win" now.
 
+### The 80 ideas, looked at through this goal (the owner, November 11, 2026: "your ideas are good", with #42 kept)
+
+The manager chat's list of 80 ideas (ship-blockers, QA, analytics, care, notifications, haptics, design, growth, money, working with
+Claude) was looked at with one question: does it help the person see themselves as someone free of this? Anything not named here does
+not touch identity either way and keeps the manager's order.
+
+**Protect what was earned, first.** For someone trying to see themselves as free, losing their record is the worst thing the app can do.
+In the rival research, the angriest reviews were about a phone switch or a bug wiping a long count, more than about slips. So #1 (sync on
+cellular data) stays first, and #7 (a 1.2.x save opening cleanly in 1.3.3) and #16 (the sync fuzz test: nothing earned is lost) move up
+beside it.
+
+**Dropped:**
+
+- **#36 Group challenges.** Flames side by side turn the change into a contest, and shame shows up fast.
+- **#45 A dimming home-screen icon.** Anyone can see the home screen, and iOS shows a system alert on every icon change.
+- **#44 The StandBy night light.** It keeps the phone by the bed in the hard hours, the very thing the lessons and plans tell people to
+  move away from.
+
+**Kept by the owner's choice: #42, a Live Activity during an urge.** The owner: "this is a good idea". Its lock-screen words stay private
+(no habit, no urge, no count), it never brings back the timer bar SOS dropped, and it ends when the urge is ridden out or logged.
+
+**Moved up:**
+
+- **#30 "Future you" notes.** The person's own voice, recorded on a good day, saying who they are, played during an urge. It is the
+  strongest identity tool on the list, stronger than anything Daybook can say for them. Voice notes already exist and stay on the phone.
+- **#35 Graduation.** The moment the app says "you are someone who is free of this", for good. Its words say who they have become, not
+  "90 days complete".
+- **#33 Lessons for alcohol and gambling.** Those people get fewer lessons, so they get less of the change in thinking.
+
+**Changed:**
+
+- **#26 Screen Time.** Every time the person puts the phone down is proof, and Screen Time is how it gets recorded (the "phone put down"
+  in the record of proof). The shield shows it ("You put it down 6 times"), not "This is when it gets you".
+- **#19, #22, #24 Analytics.** The weekly report leads with the two north-star numbers (how free people rate themselves, and urges ridden
+  out against slips); retention comes second. The funnel ends at the first comeback after a slip, the moment rivals lose people. The
+  first A/B test is Rekindle's first line, judged by whether people log again within 24 to 72 hours.
+- **#20 Measuring notifications.** Also measure harm: does a note at night come before a slip within the hour?
+- **#9, #52, #74 The critic and the chat brief.** Every critic pass and every new chat's brief asks one question: does this screen treat
+  the person as an addict or a score, or as someone becoming free?
+- **#8 The release checklist.** It runs the two word tests: nothing on the lock screen names the habit or a count, and no "clean",
+  "addict" or "relapse" in the app's own voice.
+- **#73 The church group plan.** Codes a leader buys, and the leader never sees anything about anyone.
+- **#60, #61 The store listing.** It leads with becoming free ("Become someone who is free of it"), which also keeps it inside Apple's rule.
+
+**Later, not cut:** #31 Voice SOS (private only if what people say never leaves the phone), #50 fire sounds, #37 Apple Watch and #38 Siri
+(the Siri phrase must not say what the app is for, since others can hear it).
+
+**Already in this plan:** #28 (waits), #34 (step 6), #40 and #41 (step 3), #43 (built: the flame widget dims), #46 (kept as built).
+
 ### Building chats
 
 Each is its own session on its own branch, on Opus unless said, at the effort marked. 1, 3 and 5 touch different files and can run at

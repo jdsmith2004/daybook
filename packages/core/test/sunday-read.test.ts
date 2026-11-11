@@ -124,7 +124,7 @@ describe('the kind of week, named honestly', () => {
     const fresh = normSettings({ start: MON });
     const y = read(log([[day(1), 'rode', '15:00']]), SUN, fresh);
     expect(y.read.first).toBe(true);
-    expect(y.read.held).toBe('Your first week, and it is free of the habit.');
+    expect(y.read.held).toBe('Your first week, free of it.');
   });
   it('a first week with slips most days is the start of the pattern, not a verdict', () => {
     const fresh = normSettings({ start: MON });

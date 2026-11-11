@@ -1,5 +1,185 @@
 # What is planned next
 
+## Becoming free: the whole app around one change of identity (the owner, November 11, 2026; planned, not built)
+
+The owner asked for one plan that judges every moment by one question: does this help the person see themselves as someone who is free of
+this, for good? This is the plan. It was made from the real app (`npm run journey`, November 11), the code (every notification, Live
+Activity, widget and word), the first two weeks of usage, and five pieces of research. The research notes, with sources, are in the side
+session notes folder for this group (`identity-research.md`, `slip-spiral-research.md`, `notifications-research.md`,
+`rivals-identity-research.md`, `identity-map-notifications-words.md`, `usage-nov-11.md`, `journey-words.md`).
+
+### What is true now
+
+Daybook is closer to this goal than the idea list assumed. Much of it is built, but it sits in the wrong places.
+
+- **The proof already exists, two taps deep.** Milestones (More, Milestones) has "Who you are becoming": "You are someone who rides out
+  urges. 4 times", "...tells the truth, even about a slip", "...comes back after a hard night", "...has days free of it" (core
+  `miles.ts`). It sits under the level, the points and a progress bar. Today has the person's own setup line ("I am someone who keeps my
+  word to myself. You rode out an urge yesterday at 9:40 PM. 4 times now.") below the plan card, below the fold. The hero shows "Level 17 ·
+  Torch, 35 points to Level 18". So the first thing a person reads about themselves is a score, and the identity is the last.
+- **SOS opens straight into "Breathe out, 1 of 3".** Right for the first seconds of an urge. Nothing in it reminds the person that they
+  have done this before, which is the strongest thing they could hear at that moment.
+- **Rekindle opens on "Your fire did not go out."** It leads with hope, as it should. But the same page carries the toast "Saved · Slipped
+  at 10:00 AM +5". A point score in the minute after a slip is a game voice at the most tender moment.
+- **The lock screen never names the habit.** No notification, widget, Live Activity or icon says porn, slip, urge or the habit's name. Two
+  things still leak: the lesson note "Day {run} ☀️ / {run} days of showing up" puts a count on the lock screen, and Screen Time's "This is
+  when it gets you, and you are on it again" reads as a struggle to anyone looking over a shoulder.
+- **Reminders already learn.** Five types (lesson, check-in, wind-down, Sunday, heads-up) pick the words that work and step down to every
+  other day, then pause, after three misses. At most 2 notes a day plus one heads-up, an hour apart, kinder after a slip, no dimming notes
+  for 72 hours after one. The come-back run stops itself ("I will stop these for now"). What does not learn yet: come-back, plan, Talk it
+  through, Trail and Screen Time notes.
+- **Words.** The app's own voice already says "slip", "no slip" and "A slip is data, not a reset." "Addict" appears only as a belief a
+  lesson turns over. Left over: "clean" in five places ("Your first week, and it is clean.", "Today can still be clean."), the welcome's
+  "Quit porn, one honest day at a time." (a task, not who the person is becoming), and a setup picture of a streak "dropping to zero".
+- **Group challenges and a dimming home-screen icon do not exist.** There is nothing to drop. They stay out (below).
+
+**The usage, honestly.** About 8 phones in two weeks (4 first downloads from the App Store), 3 of 8 back the next day, 1 past a week, none
+past 30 days. Reminders were allowed on 1 of 23 phone-days. One slip and no urges logged. This is too few people to read a pattern, and the
+event stream (live November 10) cannot be read from the workflow log yet: `stats.yml` writes it only to the job summary. Two things stand
+out anyway: almost nobody has reminders on, so better words reach almost nobody until the ask works; and nobody has stayed long enough to
+meet the parts this plan is about, so the first week matters most.
+
+### What the research says, in short
+
+- **Identity follows behavior.** People come to believe they are someone who can, by watching themselves do it (Bem; Bandura: mastery is
+  the strongest source of self-efficacy). Self-efficacy predicts staying quit well (Gwaltney 2009, strong). A non-smoker identity predicts
+  abstinence early (Tombor 2015, moderate, correlational). Word tricks alone ("be a voter" vs "vote") did not replicate. So: build identity
+  from the person's own record, said as fact ("You have ridden out 4"), never from a slogan ("You are clean").
+- **After a slip, the danger is giving up, not guilt.** In real-time studies, the first lapse's guilt did not predict relapse; giving up,
+  lost confidence and stress in the next hours did (Shiffman 1996, Kirchner 2012). "This can change" protected people after setbacks
+  (Burnette and Finkel 2012, RCT). Self-compassion helps only with a step forward beside it; forgiving yourself alone can lower the drive
+  to change (Wohl). Shame raises use over hours to days (Luoma 2019). For porn, feeling "addicted" tracks moral conflict more than use
+  (Grubbs). So: one event, the next hour is open, one move; never "addict", "relapse", "reset", "back to zero"; and the deeper look
+  (what it gave, what it cost) comes later, from a little distance.
+- **Notifications help a little, fade, and harm when they flood.** Two a day is where the trials settled (HeartSteps, Bidargaddi). Rotate
+  words and never repeat within about two weeks (Duolingo). Nothing at night unless the person asked. Gain framing is at least as good as
+  loss framing; stakes work only with a doable act beside them. Every system that works protects the channel and stops a type nobody opens.
+- **Rivals build a counter, not a person.** Quittr ("Days Clean", a dependency score, a camera on your face asking for your excuse; now off
+  the App Store after a breach of intimate data), Brainbuddy and Fortify reset to zero, and their worst reviews are about resets and about
+  money asked right after a confession. I Am Sober's one-line reset that keeps the total on screen is praised. Duolingo's flame belongs to
+  the counter; Daybook's flame belongs to the person. Nobody builds identity from the person's own record, and nobody has real care after a
+  slip. That is Daybook's ground.
+
+### The plan
+
+Every step says what it does for the person and for Daybook, and its effort.
+
+**1. Proof where it counts (effort: medium).** The record of proof is `miles.ts`; this step moves it to the three moments that decide
+who a person thinks they are.
+
+- **Today.** The hero's second line becomes one proof line, picked fresh each day from `miles.ts` ("4 urges ridden out", "14 days free of
+  it", "1 comeback"), in place of "35 points to Level 18". The flame, its form and its level stay in the hero (the flame is the heart);
+  points and the bar to the next level live on the level page, one tap on the flame. "Who you are becoming" moves up to sit right under the
+  hero, with the person's own setup line and the newest proof under it.
+- **SOS, opening.** Over the first breath, one small line for the first few seconds: "You have ridden this out 4 times." It fades as the
+  breath starts. Never on a first-ever SOS (nothing to prove yet; it shows nothing), never a slip count, never a number of days.
+- **SOS, ending.** `RodeOut` already counts the urges ridden out. Its headline names what this one proved, from the record: the first ever
+  ("You rode it out. Now you know you can."), the fifth, one at the hour that is usually hardest, one in the days after a slip ("Two days
+  after a slip, and you rode it out. That is a comeback."). One line, the flame big.
+- For the person: the strongest evidence they have, shown when they need it. For Daybook: a reason to open SOS again and to stay through
+  the first week, which is where people are lost now.
+
+**2. Rekindle and the morning after (effort: medium for words and screens; high for anything touching points or runs).**
+
+- The "+5" leaves the slip toast. The points are still earned (honesty points stay); they show later, on the level page and the Sunday
+  review, never in the hour after a slip.
+- The first words name the slip as one event and the person as unchanged, with the next hour open: "One slip. You are still someone who
+  rides out urges: 4 times." Then the hold, as now. The run's words stay as built ("Your 9 days built a fire that holds its heat.").
+- The one question Rekindle asks now stays one tap, about the situation ("What was going on?"), never about guilt or why. The plan for
+  next time stays a plan already made (as built).
+- **What it gave, and what it cost** comes the next morning, in the sunrise check, as two taps: what it gave (relief, sleep, escape, a
+  break from feeling low, nothing really) and what it cost (the evening, sleep, trust, the way I feel now). Said from a little distance
+  ("Looking back at last night, what did it give you?"). The answers go into the person's pattern, and the Sunday review shows them beside
+  the urges ridden out. Never asked within the first hour, never after 10 PM.
+- For the person: the spiral is broken where it starts (giving up in the first hours), and the honest look happens when it can teach.
+  For Daybook: this is the moment every rival fails, and the one people will tell others about.
+
+**3. Notifications: fewer, private, built from the record (effort: medium; the permission ask medium).**
+
+- **The ask first.** Reminders are on for almost nobody. Setup asks once; ask instead at the moment the value is plain: after the first
+  urge ridden out ("Want a heads-up before your hard hours?") and on the last setup page with a picture of the note as it will look on the
+  lock screen. Never in the hours after a slip or an SOS.
+- **Nothing on the lock screen gives the person away.** The lesson note's "Day {run}" and "{run} days of showing up" lose the count. Screen
+  Time's lock-screen words lose "This is when it gets you". A rule test in core fails on any notification, widget or Live Activity text that
+  names the habit, a slip, an urge, a count of days or the words "clean" or "addict".
+- **The pair.** A morning note that names one piece of proof and the day's lesson ("4 urges ridden out. Today's lesson takes three
+  minutes."), and the evening note (the existing check-in or wind-down) that asks one honest tap. These replace notes, they are not added:
+  the cap of 2 a day stays.
+- **Words from the record.** Every learning note gets variants built from the person's own proof, rotated so none repeats within 14 days.
+- **Stakes when drifting** stay as built (the flame burns lower, firm words, never after a slip).
+- **Types a person never opens switch themselves off:** come-back, plan, Talk it through and Trail join the learning (pause after 5 sends
+  in a row with no open, one try after 14 days, then off with a quiet line on Today that turns it back on).
+- **Night.** Nothing from 10 PM to 7 AM unless the person set a hard hour or a wind-down there.
+- For the person: notes that remind them who they are, never who they were, and never on show. For Daybook: a channel that keeps working
+  instead of being turned off; the ask is what makes any of it reach people.
+
+**4. The north star: are people becoming free? (effort: high: new analytics and the privacy page).**
+
+- **One question, once a month:** "How much do you see yourself as someone free of this?" 0 to 10, a slider (`SliderValue big`), with the
+  person's proof shown beside it (so the answer is drawn from evidence, not mood). Asked on the last setup page (the starting point), then
+  with the monthly five questions (`recheck.ts`, same moment and quiet rules), never within 72 hours after a slip or an SOS. The person sees
+  their own line move on Weeks.
+- **The measure Daybook steers by:** the monthly answer, and urges ridden out against slips over the last 30 days. Both as anonymous event
+  values on the fixed list (`EV_NAMES`, `EV_PROPS`: the 0 to 10 number and two counts, never words), and on the privacy page and the App
+  Store label in the same change.
+- **Read the stream.** `stats.yml` prints the event-stream summary to the log as well as the job summary, so it can be read without a
+  browser (effort: low).
+- For the person: a moment, once a month, to notice the change in themselves. For Daybook: the one number that says whether the app works,
+  for the owner, for the listing ("people rate themselves freer each month"), and for every later choice.
+
+**5. The words pass (effort: low, mechanical; medium for the welcome).**
+
+- "Clean" goes from the app's own voice (`sunday-read.ts`, `trail.ts`, `rekindle-learn.ts`; a scripture line keeps its own words).
+  "Free", "no slip" and "someone who" take its place.
+- "Addict" stays only where a lesson quotes it as the belief it turns over.
+- The welcome says who the person is becoming: "Get free of porn, one honest day at a time." (with the habit's own word for alcohol and
+  gambling, through `habitSay`).
+- The setup picture of a streak "dropping to zero" shows the other side: a count that holds what was earned.
+- A craft test lists the banned words for the app's voice, so they do not come back.
+
+**6. The first 30 days as the arc of a new identity (effort: medium; planned after 1 to 4 land, and after the first month's numbers).**
+
+The lessons already teach. This gives the first month a shape the person can feel: week 1 "You can ride one out" (the first proof, the
+tools), week 2 "You know your hard hours" (the pattern), week 3 "You come back" (slips and comebacks, before most people meet one), week 4
+"You are someone who is free of this, more days than not" (the identity question's first month, and the first big goal, only now and only
+after a week with no slip, as CLAUDE.md asks). Each week ends with one proof line in the Sunday review. No new screens: the lesson order,
+four beats and the Sunday review's first card. It waits until the numbers say where people actually stop.
+
+### What stays out
+
+- **Group challenges** and any open group or chat. The rivals' reviews show what they cost (toxicity, dead groups, bans), and identity in a
+  private app is built from the record.
+- **A dimming home-screen icon.** It would put the person's struggle on the home screen for anyone to see, and iOS asks the person to
+  confirm every icon change with a system alert. The flame widget already dims, where the person chose to put it.
+- **The accountability partner,** for now. Kept as an idea, only as wins the person chooses to send (never the log, never a slip). With 8
+  people, nobody has asked; it waits until about 50 people use Daybook every week or someone asks for it.
+
+### Questions for the owner (each with a recommendation)
+
+1. **Today's hero: points or proof?** (a) The hero's second line is one proof line; points and the bar move to the level page, one tap on
+   the flame (recommended). (b) Keep level and points in the hero, and move "Who you are becoming" up under it. (c) Leave Today as it is.
+2. **The monthly question.** (a) One 0 to 10 slider, at the end of setup and then with the monthly five questions, never within 72 hours
+   of a slip or an SOS, with the person's proof beside it (recommended). (b) Its own monthly card on Today. (c) Do not ask; steer only by
+   urges ridden out against slips.
+3. **"What it gave, what it cost": when?** (a) The next morning, in the sunrise check, two taps (recommended). (b) Inside Rekindle, right
+   away. (c) In the Sunday review.
+4. **The accountability partner.** (a) Wait until about 50 people use Daybook each week or someone asks (recommended). (b) Build "share a
+   win" now.
+
+### Building chats
+
+Each is its own session on its own branch, on Opus unless said, at the effort marked. 1, 3 and 5 touch different files and can run at
+the same time; 2 waits for 1 (both touch `RodeOut` and Today's proof); 4 needs the owner's answer on the question.
+
+1. **Daybook: Proof where it counts** (Opus, medium): step 1.
+2. **Daybook: Rekindle and the morning after** (Opus, medium; high for the points move): step 2.
+3. **Daybook: Fewer, private notes** (Opus, medium): step 3.
+4. **Daybook: The north star** (Opus, high): step 4.
+5. **Daybook: The words pass** (Sonnet, low): step 5.
+6. **Daybook: The first 30 days** (Opus, medium), later: step 6.
+
+Each one is built on its branch, looked at on the web and on the simulator, and shown to the owner before it is merged.
+
 ## Much more analytics, anonymous, never the journal (the owner, November 9, 2026; merged November 10, 2026 on the owner's word)
 
 **The ask.** "I want to store as much user information as possible, we'll keep it anonymous but we need to add a ton of

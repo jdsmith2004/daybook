@@ -99,7 +99,7 @@ function DayRow({ r, snap, today, violet, dark, first }: { r: Row; snap: Snapsho
 const s = StyleSheet.create({
   log: { gap: 24 },
   weekHead: { gap: 2, marginBottom: 4 },
-  lit: { marginHorizontal: -16, paddingHorizontal: 16 },
+  lit: { marginHorizontal: -8, paddingHorizontal: 8, borderRadius: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingVertical: 8 },
   date: { width: 36, alignItems: 'center' },
   dateBig: { fontFamily: font.display, fontSize: 22, lineHeight: 26 },

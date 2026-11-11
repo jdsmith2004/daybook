@@ -632,7 +632,7 @@ const s = StyleSheet.create({
   page: { flex: 1, alignItems: 'center', gap: 14, paddingBottom: CAP },
   foot: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
   cap: { flex: 1, gap: 3, paddingBottom: 6, minHeight: 44, justifyContent: 'flex-end' },
-  rail: { flexDirection: 'row', gap: 6, alignItems: 'center', marginRight: -8, paddingBottom: 6 },
+  rail: { flexDirection: 'row', gap: 6, alignItems: 'center', paddingBottom: 6 },
   bare: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   loud: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   segT: { fontFamily: font.bodySemi, fontSize: 15 },

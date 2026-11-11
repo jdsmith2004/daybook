@@ -194,17 +194,9 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
 function Day({ d }: { d: CalDay }) {
   const open = d.kind !== 'ahead' && d.kind !== 'before';
   const label = calLabel(d.k) + ': ' + WORD[d.kind] + (d.slips > 1 ? ', ' + d.slips + ' slips' : '') + (d.today ? ', today so far' : '');
-  /* more than one slip: the count sits under the number, inside the pill */
+  /* more than one slip: the count sits in the day's lower right corner, inside the pill */
   const many = d.slips > 1 ? <Text style={[s.many, { color: NIGHT.ink }]}>×{d.slips}</Text> : null;
-  const num = (color: string) =>
-    many ? (
-      <View style={s.stack}>
-        <Text style={[s.num, s.numTight, d.today && s.today, { color }]}>{d.d}</Text>
-        {many}
-      </View>
-    ) : (
-      <Text style={[s.num, d.today && s.today, { color }]}>{d.d}</Text>
-    );
+  const num = (color: string) => <Text style={[s.num, d.today && s.today, { color }]}>{d.d}</Text>;
   let inner;
   if (d.kind === 'ok') inner = num(ON_RUN);
   else if (isSlip(d.kind)) inner = num(ON_SLIP);
@@ -225,6 +217,7 @@ function Day({ d }: { d: CalDay }) {
       onPress={() => router.push({ pathname: '/day/[date]', params: { date: d.k } })}
       style={({ pressed }) => [s.box, pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] }]}>
       {inner}
+      {many}
       {d.kind === 'saved' ? <View style={s.back} /> : null}
     </Pressable>
   );
@@ -264,9 +257,7 @@ const s = StyleSheet.create({
   today: { fontFamily: font.display, fontSize: 17 },
   back: { position: 'absolute', bottom: 8, width: 14, height: 2, borderRadius: 1, backgroundColor: GOLD },
   swBack: { position: 'relative', bottom: 0 },
-  stack: { alignItems: 'center' },
-  numTight: { lineHeight: 18 },
-  many: { fontFamily: font.bodySemi, fontSize: 11, lineHeight: 13 },
+  many: { position: 'absolute', bottom: 11, right: 8, fontFamily: font.bodySemi, fontSize: 11, lineHeight: 13 },
   round: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   open: { borderWidth: 1.5, backgroundColor: 'transparent' },
   dash: { borderStyle: 'dashed', borderColor: 'rgba(207,200,242,0.35)' },

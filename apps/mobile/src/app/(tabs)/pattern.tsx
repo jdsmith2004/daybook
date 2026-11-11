@@ -207,6 +207,8 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   /* slip days are few, so this one reads the whole log whatever the range */
   const leads = patLeads(snap.days, allPer.keys, health.on ? { nights: health.nights, st, tk } : null);
   const ins = patInsights(g, ride, when, trig.list);
+  /* someone who has logged but not enough yet is told it is coming, not asked to start */
+  const logged = keys.some((k) => (snap.days[k]?.events || []).length > 0);
   const works = urWorks(snap.days, tk);
   const ev = talkEvidence(snap.days);
   const nums = myNumbers(snap.days, st, tk, now);
@@ -586,7 +588,9 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
           </View>
         ) : (
           <T>
-            Log urges and slips with a time and a reason, and this page starts to answer: when, what sets it off, and whether slips are getting further apart.
+            {logged
+              ? 'A few more urges or slips with a time and a reason, and this page starts to answer: when, what sets it off, and whether slips are getting further apart.'
+              : 'Log urges and slips with a time and a reason, and this page starts to answer: when, what sets it off, and whether slips are getting further apart.'}
           </T>
         )}
       </Card>

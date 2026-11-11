@@ -76,15 +76,21 @@ who a person thinks they are.
 - **SOS, ending.** `RodeOut` already counts the urges ridden out. Its headline names what this one proved, from the record: the first ever
   ("You rode it out. Now you know you can."), the fifth, one at the hour that is usually hardest, one in the days after a slip ("Two days
   after a slip, and you rode it out. That is a comeback."). One line, the flame big.
+- **The tip card waits after every care tool.** Today showed "Unlock the extras with a $5 tip" straight after Talk it through. The quiet
+  hours that follow an SOS or a slip cover Talk it through and Walk it through too.
 - For the person: the strongest evidence they have, shown when they need it. For Daybook: a reason to open SOS again and to stay through
   the first week, which is where people are lost now.
 
 **2. Rekindle and the morning after (effort: medium for words and screens; high for anything touching points or runs).**
 
-- The "+5" leaves the slip toast. The points are still earned (honesty points stay); they show later, on the level page and the Sunday
-  review, never in the hour after a slip.
+- No point numbers in the hours after a slip: the "+5" beside "Slipped at 10:00 AM", the "+10 points" under "You came back." and the "+30
+  points" on the slip day's page all go. The points are still earned (honesty points stay); they show on the level page and the Sunday
+  review. The page after the hold says what is kept as who the person is, not as a score: today it reads "Level 17, 655 points and 4 urges
+  ridden out: all still yours"; it becomes "4 urges ridden out, 13 days free of it. All still yours." with the flame big.
 - The first words name the slip as one event and the person as unchanged, with the next hour open: "One slip. You are still someone who
   rides out urges: 4 times." Then the hold, as now. The run's words stay as built ("Your 9 days built a fire that holds its heat.").
+- **Check first:** the morning after a slip, a seeded Today read "No slip / 11 days in a row / 8 hours since your last slip". It may be
+  the test seed; the chat checks `runLedger` (core `hero.ts`) before anything else.
 - The one question Rekindle asks now stays one tap, about the situation ("What was going on?"), never about guilt or why. The plan for
   next time stays a plan already made (as built).
 - **What it gave, and what it cost** comes the next morning, in the sunrise check, as two taps: what it gave (relief, sleep, escape, a

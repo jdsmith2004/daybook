@@ -102,9 +102,9 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 ## 6. The listing (Claude drafts, you or Claude in Chrome paste)
 
 - **Name:** Daybook: Master Yourself
-- **Subtitle:** Quit porn, live your potential
+- **Subtitle:** Break a habit. Stay free.
 - **Category:** Health & Fitness. Second: Lifestyle.
-- **Keywords:** `addiction,pornfree,recovery,urges,relapse,habit,tracker,clean,sober,journal,accountability,sobriety`
+- **Keywords:** `habit,quit,urges,recovery,relapse,self control,addiction,tracker,clean,sober,journal,accountability`
   (no other app's name or trademark, by the store's rules)
 - **Promotional text:** Free, with no ads and no tracking. Care is free for everyone. A slip is data, not a reset.
 - **What's New in This Version** (only once a version has been released before; a first version has no such box):
@@ -115,8 +115,8 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 
 - **Description:**
 
-  > Daybook is a private, honest companion for quitting porn, or another habit, for good. Log urges and slips in a
-  > few taps, learn your pattern, and keep going after a hard day. A slip is data, not a reset: what you build stays yours.
+  > Daybook is a private, honest companion for quitting a habit for good, whether it is something you watch, drink, bet
+  > on or do. Log urges and slips in a few taps, learn your pattern, and keep going after a hard day. A slip is data, not a reset: what you build stays yours.
   >
   > What is inside
   > • SOS: one guided ride that keeps going until the urge passes, with the reason behind every move.
@@ -411,7 +411,7 @@ they would be Play in-app products, and that is a separate piece of work.
 6. **The listing and the forms (Claude drafts, you or Claude in Chrome paste).** Main store listing, plus every page in
    Policy, App content:
    - **App name:** Daybook: Master Yourself
-   - **Short description** (80 letters at most): Private help to quit porn. Log urges and slips, and keep going.
+   - **Short description** (80 letters at most): Private help to quit a habit. Log urges and slips, keep going.
    - **Full description:** the iPhone description from step 6, with the last part changed to: "Free for everyone. Daybook
      is free, with nothing to unlock." (no tips on Android).
    - **Graphics:** the app icon at 512 × 512 (from `apps/mobile/assets/images/icon.png`), the feature graphic

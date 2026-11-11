@@ -96,6 +96,12 @@ need, without letting the screen turn into a list of features.
   data and anything that can lose what a person earned; medium for screens, words and small rules; low for mechanical
   changes). The owner sets the effort, and the session does every step marked for that level, in order, then stops and
   says which level to switch to for what is left. It never starts a step marked for another level.
+  **Cheaper models wherever they do as well (the owner, October 22 and November 11, 2026).** Before each step, ask whether a
+  smaller model could do it just as well; if so, hand it off with a complete brief. Subagents: research, mapping code,
+  summaries, screenshot critics, scans and mechanical edits go to Sonnet; quick lookups go to Haiku. Opus (or Fable) keeps
+  design decisions, putting findings together, and code that can lose data or post publicly. Sessions: a session whose job
+  is research, a plan or a read-only check starts on Sonnet; Opus is for design, building and risky code. Every brief for a
+  new session says which model and effort it should run on.
   Plans, reviews and mockups go in the chat (pictures as image files) and in docs/plan.md, never in a claude.ai Artifact.
   The old review artifacts are retired: never edit or republish them. (The rule is there so work lands in the code, not
   in a hosted page. Claude Design is allowed for trying out a look, by the owner's choice; the app's code stays the real thing.)

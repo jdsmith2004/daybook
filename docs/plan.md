@@ -1,6 +1,6 @@
 # What is planned next
 
-## Becoming free: the whole app around one change of identity (the owner, November 11, 2026; planned, not built)
+## Becoming free: the whole app around one change of identity (the owner, November 11, 2026; approved November 11, 2026, being built)
 
 The owner asked for one plan that judges every moment by one question: does this help the person see themselves as someone who is free of
 this, for good? This is the plan. It was made from the real app (`npm run journey`, November 11), the code (every notification, Live
@@ -160,7 +160,7 @@ four beats and the Sunday review's first card. It waits until the numbers say wh
 - **The accountability partner,** for now. Kept as an idea, only as wins the person chooses to send (never the log, never a slip). With 8
   people, nobody has asked; it waits until about 50 people use Daybook every week or someone asks for it.
 
-### Questions for the owner (each with a recommendation)
+### Questions for the owner (each with a recommendation; the owner, November 11, 2026: "Yes, all four", each the recommended option)
 
 1. **Today's hero: points or proof?** (a) The hero's second line is one proof line; points and the bar move to the level page, one tap on
    the flame (recommended). (b) Keep level and points in the hero, and move "Who you are becoming" up under it. (c) Leave Today as it is.

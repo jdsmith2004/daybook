@@ -137,6 +137,8 @@ export function SceneFrame({
       </ScrollView>
       {held ? (
         <View style={[s.pinned, { paddingBottom: inset.bottom + (SHORT ? 10 : 24) }]}>
+          {/* a page that scrolls under the button fades out into the sky above it, never a hard cut through a row */}
+          <LinearGradient pointerEvents="none" colors={[mix(a, b, 0.88) + '00', mix(a, b, 0.88)]} style={s.fade} />
           <View style={s.pinCol}>{held}</View>
         </View>
       ) : null}
@@ -154,6 +156,22 @@ export function SceneFrame({
     </NightContext.Provider>
   ) : (
     body
+  );
+}
+
+/** a color between two #rrggbb colors, t of the way from a to b (the sky near the pinned button) */
+function mix(a: string, b: string, t: number) {
+  const ch = (h: string, i: number) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
+  if (!/^#[0-9a-f]{6}$/i.test(a) || !/^#[0-9a-f]{6}$/i.test(b)) return b.slice(0, 7);
+  return (
+    '#' +
+    [0, 1, 2]
+      .map((i) =>
+        Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t)
+          .toString(16)
+          .padStart(2, '0'),
+      )
+      .join('')
   );
 }
 
@@ -381,6 +399,7 @@ function Sheet({ bottom, children }: { bottom: number; children: ReactNode }) {
 const s = StyleSheet.create({
   scroll: { flexGrow: 1, paddingHorizontal: 16, alignItems: 'center', overflow: 'hidden' },
   pinned: { paddingHorizontal: 16, alignItems: 'center' },
+  fade: { position: 'absolute', left: 0, right: 0, top: -28, height: 28 },
   pinCol: { width: '100%', maxWidth: MAX_WIDTH, gap: 10, paddingTop: 6 },
   col: { width: '100%', maxWidth: MAX_WIDTH, flexGrow: 1, gap: 14 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },

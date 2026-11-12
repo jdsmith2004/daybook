@@ -42,6 +42,7 @@ import { Screen } from '@/components/screen';
 import { TextInput } from '@/components/text';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { FutureList } from '@/components/future-list';
+import { Packed } from '@/components/packed';
 import { chapterPalette, CHAPTERS, partOf } from '@/lib/plan-look';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
@@ -255,11 +256,11 @@ function IfThenForm({
         style={input}
       />
       {when0 ? null : (
-        <View style={s.ideas}>
+        <Packed>
           {WHEN_IDEAS.map((x) => (
             <Chip key={x} label={x} on={when.trim() === x} onPress={() => setWhen(x)} />
           ))}
-        </View>
+        </Packed>
       )}
       <KeepAbove style={{ gap: 8 }}>
         <T v="label">Then I will</T>
@@ -514,7 +515,6 @@ const s = StyleSheet.create({
   reason: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 23 },
   num: { fontFamily: font.displayBold, fontSize: 17, lineHeight: 23, minWidth: 16 },
   in: { fontFamily: font.body, fontSize: 17, lineHeight: 23, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, minHeight: 44 },
-  ideas: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   idea: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingVertical: 6 },
   formRow: { flexDirection: 'row', gap: 8 },
   remove: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44 },

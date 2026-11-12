@@ -133,7 +133,11 @@ prove the screen is generic, out of step with the other tabs, or against "The lo
    Already happened and Rekindle; Pattern, Days, Weeks and a day; More, the Sunday review, What's new, the tip page). Give each the prompt
    below with its picture paths. Each critic also gets two pictures from another group (Today and Pattern are good anchors), so it can
    judge "one app". A changed screen alone needs one critic, with Today and one sibling tab as anchors.
-3. **The main session judges.** A criticism counts only when it names the picture, the thing on it and the rule or the other screen it
+3. **Every critic also asks the identity question (the goal, November 11, 2026).** Daybook's goal is a lasting change of identity, from "I
+   am a porn addict" to "I am someone who is free". Of every picture, in a release of every screen and not only the changed ones, ask:
+   _does this screen treat the person as an addict or a score, or as someone becoming free?_ Name the words, number or shape that does
+   the first (a count to protect, a label for the person, a reward that feels like a game) and what would carry the second.
+4. **The main session judges.** A criticism counts only when it names the picture, the thing on it and the rule or the other screen it
    breaks. Fix what is clearly a seam; a design choice goes to the owner with a recommendation. Spirit outranks tidiness: a fix that
    shrinks the flame, drains a sky or cuts a warm word is wrong, whatever a critic says.
 
@@ -149,7 +153,8 @@ The prompt (paste it with the paths filled in):
 > top). Words: no contractions, no hedging, no shame, no line that explains what the screen already shows. Show it, do not say it: name every sentence a shape could carry, every empty state that asks the person to log something instead of drawing its chart empty, and every count told in a sentence instead of its marks. No vague taste ("feels
 > cluttered", "could be cleaner") and no praise. Do not ask for the flame to be smaller, a sky removed or a care tool hidden: those are
 > the app's soul and the rules protect them. If a picture is clean, say "nothing concrete". End with up to 3 seams across the pictures:
-> the same job done two different ways.
+> the same job done two different ways. Also, for every picture, one line: does it treat the person as an addict or a score, or as someone
+> becoming free? Name the words, number or shape, and what would change it.
 
 ## Sources
 

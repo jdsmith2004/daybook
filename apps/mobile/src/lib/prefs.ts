@@ -118,6 +118,11 @@ export function setNudgeLog(f: (l: NudgeLog) => NudgeLog) {
   const { ready: _r, ...keep } = nudges;
   AsyncStorage.setItem(NKEY, JSON.stringify(keep)).catch(() => undefined);
 }
+/** the log as it is now, outside a screen (lib/reminders.ts) */
+export const getNudgeLog = (): NudgeLog => {
+  const { ready: _r, ...cur } = nudges;
+  return cur;
+};
 export const useNudgeLog = () =>
   useSyncExternalStore(
     sub,

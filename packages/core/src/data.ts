@@ -150,6 +150,21 @@ export interface SyncRecord {
   id: RecordId;
   u: number;
   data: Settings | Day | Review | JEntry | null; // null: deleted
+  /** on a deleted day: the marks of the entries it held when it was emptied (mutate.ts goneMark), so a copy of that day
+      changed on another device keeps the entries it added and loses only these (sync.ts mergeRemote, the server's
+      joinStored). A deletion without them (everything erased, or an older app) removes the day as it is. */
+  gone?: string[];
+  /** the change time of the account's copy this one was made from, when the device knows it (sync.ts baseAfter). When the
+      account still holds that very copy, nothing else was saved meanwhile, and this one stands as sent; otherwise the
+      account joins the two, so neither side's entries or earned things are lost. */
+  b?: number;
+}
+
+/** the marks a deleted day carries, cleaned: strings only, the newest 100 (as Day.gone) */
+export function cleanGone(g: unknown): string[] | undefined {
+  if (!Array.isArray(g)) return undefined;
+  const out = g.filter((x): x is string => typeof x === 'string' && /^g[0-9a-z]{1,8}$/.test(x)).slice(-100);
+  return out.length ? out : undefined;
 }
 
 export function parseId(id: string): { kind: 'settings' } | { kind: 'days' | 'reviews' | 'journal'; key: string } | null {
@@ -171,9 +186,14 @@ export function normRecord(r: unknown): SyncRecord | null {
   if (typeof o.id !== 'string' || typeof o.u !== 'number' || !Number.isFinite(o.u)) return null;
   const p = parseId(o.id);
   if (!p) return null;
-  if (o.data == null) return { id: o.id as RecordId, u: o.u, data: null };
-  if (p.kind === 'settings') return { id: 'settings', u: o.u, data: { ...normSettings(o.data), u: o.u } };
-  if (p.kind === 'days') return { id: o.id as RecordId, u: o.u, data: { ...normDay(o.data, p.key), u: o.u } };
+  const rb = (o as { b?: unknown }).b;
+  const b = typeof rb === 'number' && Number.isFinite(rb) && rb >= 0 && (p.kind === 'settings' || p.kind === 'days') ? { b: rb } : {};
+  if (o.data == null) {
+    const gone = p.kind === 'days' ? cleanGone((o as { gone?: unknown }).gone) : undefined;
+    return gone ? { id: o.id as RecordId, u: o.u, data: null, gone, ...b } : { id: o.id as RecordId, u: o.u, data: null, ...b };
+  }
+  if (p.kind === 'settings') return { id: 'settings', u: o.u, data: { ...normSettings(o.data), u: o.u }, ...b };
+  if (p.kind === 'days') return { id: o.id as RecordId, u: o.u, data: { ...normDay(o.data, p.key), u: o.u }, ...b };
   if (p.kind === 'journal') {
     const e = normJEntry(o.data, p.key);
     return e ? { id: o.id as RecordId, u: o.u, data: { ...e, u: o.u } } : null;

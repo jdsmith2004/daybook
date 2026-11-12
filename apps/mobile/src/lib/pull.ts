@@ -72,7 +72,8 @@ const KEY = 'daybook.pull';
 let prefs: PullPrefs = normPull(null);
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((f) => f());
-AsyncStorage.getItem(KEY)
+/** settles once the saved choices are read (or found missing): nothing is decided from the defaults before then */
+const ready: Promise<void> = AsyncStorage.getItem(KEY)
   .then((v) => {
     if (!v) return;
     prefs = normPull(JSON.parse(v));
@@ -145,9 +146,22 @@ export function PullKeeper() {
          only for a plain no, never while Apple's status is still loading after a launch. */
       if (getPullPrefs().on && !(await real.allowed().catch(() => true))) await pullStop().catch(() => undefined);
     };
-    back();
+    /* the first check waits for the saved choices (and a moment for the screens to be ready to open the wait screen). Off with
+       anything Apple still holds (a pause or schedules that outlived a reinstall, or a stop that did not finish): all of it is
+       cleared, so no pause can be left with no way in Daybook to lift it. */
+    let gone = false;
+    ready.then(() =>
+      setTimeout(() => {
+        if (gone) return;
+        if (!getPullPrefs().on) real.stop().catch(() => undefined);
+        back();
+      }, 600),
+    );
     const sub = AppState.addEventListener('change', (a) => a === 'active' && back());
-    return () => sub.remove();
+    return () => {
+      gone = true;
+      sub.remove();
+    };
   }, []);
   return null;
 }

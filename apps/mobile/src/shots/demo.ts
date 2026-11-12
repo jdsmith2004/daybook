@@ -15,17 +15,21 @@ const day = (s: string, n: number) => {
 /** the device's storage as the app would find it (key to JSON text), for the demo person, seen at the moment at (ms).
     theme: the app's theme choice */
 export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'light'): Record<string, string> {
-  const start = '2026-09-08';
-  /* ?demo=hard: a person on step down whose days are about half slips, to see how a hard month looks */
-  const hard = typeof window !== 'undefined' && !!window.location && new URLSearchParams(window.location.search).get('demo') === 'hard';
+  /* ?demo=hard: a person on step down whose days are about half slips, to see how a hard month looks. ?demo=grad: the same
+     person, started in July, graduated on October 4 (the graduation page and the flame in its cap) */
+  const q = typeof window !== 'undefined' && !!window.location ? new URLSearchParams(window.location.search).get('demo') : null;
+  const hard = q === 'hard';
+  const grad = q === 'grad';
+  const start = grad ? '2026-06-25' : '2026-09-08';
   const st = {
     ...defaultSettings(start),
-    day1: '2026-09-08',
+    day1: start,
     becoming: 'I am free of this.',
     reasons: ['Being fully present with the people I love', 'Clear mornings and steady energy'],
     menu: ['A brisk two-minute walk', 'Cold water on my face', 'Text a friend', 'Ten pushups'],
     u: 1792194562327,
     ...(hard ? { cleanMode: 'step', stepAt: start } : {}),
+    ...(grad ? { gradAt: '2026-10-04' } : {}),
   };
   const o: Record<string, unknown> = { 'daybook:settings': st };
   const lessons = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l13', 'l14'];

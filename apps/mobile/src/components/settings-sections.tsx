@@ -790,14 +790,14 @@ function PullBody({ pull, hard, say }: { pull: PullPrefs; hard: string | null; s
       <SetGroup foot="Apple keeps the list, and nothing about your apps leaves this phone.">
         <SetRow label="Change the apps" onPress={() => Pull?.pick()} />
       </SetGroup>
-      <SetGroup head="A note after long use" foot="One note a day, to today’s lesson when it is not done.">
+      <SetGroup head="A note after long use" foot="One note a day. When today’s lesson is not done, a tap takes you to it.">
         <SetPick options={PULL_LONG.map((n) => [n, hours(n)] as const)} value={pull.long} onPick={(n) => setPullPrefs({ long: n })} />
       </SetGroup>
       <SetGroup
         head="In my hard hours"
         foot={
           (hard ? hard + ': a note at 10 minutes, and at 20.' : 'Your hard hours show here once your log finds them.') +
-          (pull.hard ? ' The pause rests the apps until your hard hours end; a short wait opens them for a few minutes.' : '')
+          (hard && pull.hard && pull.pause ? ' At 30, the pause rests the apps until your hard hours end; a short wait opens them for a few minutes.' : '')
         }>
         <SetSwitch label="Notes" on={pull.hard} onChange={(on) => setPullPrefs({ hard: on })} />
         {pull.hard ? <SetSwitch label="Pause it if I keep going" on={pull.pause} onChange={(on) => setPullPrefs({ pause: on })} /> : null}

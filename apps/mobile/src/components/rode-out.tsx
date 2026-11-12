@@ -19,6 +19,7 @@ import {
   urTool,
   type DayKey,
   lessonFor,
+  noneTail,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -29,6 +30,7 @@ import { Appear } from '@/components/appear';
 import { Confetti } from '@/components/celebrate';
 import { FutureInvite, useFutureInvite } from '@/components/future-invite';
 import { MOVE_ICON, MOVE_NAME } from '@/components/ride/moves';
+import { Packed } from '@/components/packed';
 import { Finish, SceneFrame } from '@/components/scene';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
@@ -162,7 +164,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
           {won.moves.length ? (
             <>
               <Text style={[s.q, { color: c.ink }]}>What helped most?</Text>
-              <View style={s.wrap} accessibilityRole="radiogroup">
+              <Packed accessibilityRole="radiogroup">
                 {won.moves.map((x) => {
                   const on = helped === x;
                   return (
@@ -177,14 +179,14 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
                     </Pressable>
                   );
                 })}
-              </View>
+              </Packed>
             </>
           ) : (
             <>
               <Text style={[s.q, { color: c.ink }]}>
                 What helped? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
               </Text>
-              <View style={s.wrap}>
+              <Packed last={noneTail(dids.map((d) => d[1]))}>
                 {dids.map(([v, label]) => {
                   const on = did.indexOf(v) >= 0;
                   return (
@@ -199,7 +201,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
                     </Pressable>
                   );
                 })}
-              </View>
+              </Packed>
             </>
           )}
           {why ? (
@@ -218,7 +220,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
           <Text style={[s.q, { color: c.ink }]}>
             What set it off? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
           </Text>
-          <View style={s.wrap}>
+          <Packed last={noneTail(trigs.map((t) => t[1]))}>
             {trigs.map(([v, label]) => {
               const on = trig === v;
               return (
@@ -232,7 +234,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
                 </Pressable>
               );
             })}
-          </View>
+          </Packed>
         </Appear>
         {invite ? (
           <Appear delay={1150} by={16} duration={380} style={{ alignSelf: 'stretch' }}>
@@ -267,7 +269,6 @@ const s = StyleSheet.create({
   card: { alignSelf: 'stretch', gap: 12, padding: 16, borderRadius: 20 },
   q: { fontFamily: font.display, fontSize: 17, lineHeight: 22 },
   opt: { fontFamily: font.body, fontSize: 13 },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pick: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16, borderRadius: 22 },
   pickT: { fontFamily: font.bodySemi, fontSize: 15 },
   lesson: { fontFamily: font.bodySemi, fontSize: 13 },

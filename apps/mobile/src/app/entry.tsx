@@ -27,6 +27,7 @@ import {
   whenStart,
   type Outcome,
   type When,
+  noneTail,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
@@ -40,6 +41,7 @@ import { Dock } from '@/components/scene';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { WhenPill, WhenSheet } from '@/components/when';
+import { Packed } from '@/components/packed';
 import { buzz } from '@/lib/feel';
 import { openCare } from '@/lib/nav';
 import { useStore } from '@/lib/store';
@@ -124,13 +126,14 @@ export default function Entry() {
     const full = op[kind].filter((x) => !x.off).length >= OPT_MAX;
     return (
       <View style={{ gap: 8 }}>
-        <View style={s.chips}>
+        {/* "Nothing", "Show all" and "+ Add your own" stay at the end */}
+        <Packed last={noneTail(L.list.map((x) => x[1])) + (L.hidden && !all ? 1 : 0) + (adding === kind || full ? 0 : 1)}>
           {L.list.map(([v, label]) => (
             <Chip key={v} label={label} on={Array.isArray(cur) ? cur.indexOf(v) >= 0 : cur === v} onPress={() => onPick(v)} />
           ))}
           {L.hidden && !all ? <Chip label="Show all" on={false} onPress={() => setAll(true)} /> : null}
           {adding === kind || full ? null : <Chip label="+ Add your own" on={false} onPress={() => setAdding(kind)} />}
-        </View>
+        </Packed>
         {adding === kind ? (
           <AddOwn
             kind={kind}

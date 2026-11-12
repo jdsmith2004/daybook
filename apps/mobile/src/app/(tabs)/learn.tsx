@@ -37,6 +37,7 @@ import {
   urTags,
   urTried,
   weekGame,
+  lessonTo,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -54,6 +55,7 @@ import { ToolGrid } from '@/components/tool-grid';
 import { LinkCard, Rows } from '@/components/link-card';
 import { PauseBanner } from '@/components/today-log';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
+import { Packed } from '@/components/packed';
 import { useCountFocus } from '@/lib/pulse';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
@@ -355,7 +357,7 @@ function LessonsPane({
           onToggle={() => setFaith(!faith)}>
           <View>
             {LESSONS.filter((L) => L.f).map((L) => (
-              <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={L.tag} />
+              <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={lessonTo(L, st).tag} />
             ))}
           </View>
         </Collapse>
@@ -365,7 +367,9 @@ function LessonsPane({
       <Collapse title="Two more programs" sub="Not on the twelve steps. Here whenever you want them." icon="book" open={more} onToggle={() => setMore(!more)}>
         <View>
           {OFF_PATH.map(lessonById).map((L) =>
-            L ? <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={L.tag} /> : null,
+            L ? (
+              <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={lessonTo(L, st).tag} />
+            ) : null,
           )}
         </View>
       </Collapse>
@@ -486,7 +490,7 @@ function ToolsPane() {
             ? 'SOS puts ' + pinT.name + ' first every time. It still keeps track of what helps.'
             : 'SOS learns which tools help you, and picks the best fit for the moment.'}
         </T>
-        <View style={s.chips}>
+        <Packed>
           {[['', 'The best fit for the moment'] as [string, string]].concat(TOOLS.map((x) => [x.id, x.name] as [string, string])).map(([id, name]) => (
             <Chip
               key={id || 'best'}
@@ -498,7 +502,7 @@ function ToolsPane() {
               }}
             />
           ))}
-        </View>
+        </Packed>
       </Collapse>
       <Rows>
         <LinkCard
@@ -518,7 +522,6 @@ const s = StyleSheet.create({
   due: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'center', minHeight: 44, paddingHorizontal: 16, borderRadius: 22 },
   dueT: { fontFamily: font.bodySemi, fontSize: 15 },
   lockLine: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 20 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 8, borderTopWidth: 1 },
   lrIc: { width: 24, alignItems: 'center' },
 });

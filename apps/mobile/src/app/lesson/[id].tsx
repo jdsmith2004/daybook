@@ -31,6 +31,7 @@ import {
   type Lesson,
   lessonBeats,
   lessonById,
+  lessonTo,
   lessonVoiced,
   faithVoice,
   lessonDoneOn,
@@ -124,9 +125,9 @@ export default function LessonScreen() {
   const base = useTheme();
   const inset = useSafeAreaInsets();
   const st = snap.settings;
-  /* a God lesson speaks in the voice of this person's faith (core lessonVoiced) */
+  /* a God lesson speaks in the voice of this person's faith, and a lesson written for porn in the words of their habit (core lessonTo) */
   const found = lessonById(id);
-  const L = found && lessonVoiced(found, faithVoice(st));
+  const L = found && lessonTo(found, st);
   /* back from a tool or a page the practice step sent the person to: straight to the result, nothing is replayed */
   const [stage, setStage] = useState<Stage>(at === 'practiced' ? 'practiced' : 'cover');
   const [i, setI] = useState(0);

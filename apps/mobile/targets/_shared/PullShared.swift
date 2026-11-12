@@ -80,21 +80,50 @@ enum Pull {
     return nil
   }
 
-  /// posts one of the bridge's notes, once per `once` key (a log day or a window). Only the screen to open travels with it:
-  /// no id, so nothing about it is ever counted.
-  static func post(_ b: [String: Any], kind: String, once: String) {
-    guard let notes = b["notes"] as? [String: Any], let n = notes[kind] as? [String: Any] else { return }
+  /// marks `kind` as done for `once` (a log day or a window); false when it was done already. Thresholds can fire twice.
+  static func mark(_ kind: String, once: String) -> Bool {
     var posted = (defaults?.dictionary(forKey: postedKey) as? [String: String]) ?? [:]
-    if posted[kind] == once { return }
+    if posted[kind] == once { return false }
     posted[kind] = once
     defaults?.set(posted, forKey: postedKey)
+    return true
+  }
+
+  static func unmark(_ kind: String) {
+    var posted = (defaults?.dictionary(forKey: postedKey) as? [String: String]) ?? [:]
+    posted[kind] = nil
+    defaults?.set(posted, forKey: postedKey)
+  }
+
+  /// posts one of the bridge's notes, once per `once` key (a log day or a window). Only the screen to open travels with it:
+  /// no id, so nothing about it is ever counted. It waits (up to 2 seconds) for Apple to take the note, since the extension can be
+  /// put away the moment it returns; a note Apple refused is not marked, so the next threshold can try again.
+  static func post(_ b: [String: Any], kind: String, once: String) {
+    guard let notes = b["notes"] as? [String: Any], let n = notes[kind] as? [String: Any] else { return }
+    if !mark(kind, once: once) { return }
     let c = UNMutableNotificationContent()
     c.title = (n["t"] as? String) ?? ""
     c.body = (n["b"] as? String) ?? ""
     c.sound = .default
     if let url = n["url"] as? String { c.userInfo = ["url": url] }
     let r = UNNotificationRequest(identifier: "daybook.pull." + kind + "." + once, content: c, trigger: nil)
-    UNUserNotificationCenter.current().add(r)
+    let done = DispatchSemaphore(value: 0)
+    UNUserNotificationCenter.current().add(r) { err in
+      if err != nil { unmark(kind) }
+      done.signal()
+    }
+    _ = done.wait(timeout: .now() + 2)
+  }
+
+  /// "Resting until 11 PM" from the pause's own end (the bridge's words can name the wrong night just after midnight)
+  static func restingTitle() -> String? {
+    let rest = (defaults?.double(forKey: restKey)) ?? 0
+    guard rest > nowMs else { return nil }
+    let f = DateFormatter()
+    f.locale = Locale(identifier: "en_US_POSIX")
+    let d = Date(timeIntervalSince1970: rest / 1000)
+    f.dateFormat = Calendar.current.component(.minute, from: d) == 0 ? "h a" : "h:mm a"
+    return "Resting until " + f.string(from: d)
   }
 
   /// rest the picked apps (the pause), until `until` ms

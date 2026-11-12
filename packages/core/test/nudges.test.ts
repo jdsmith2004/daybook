@@ -423,11 +423,14 @@ describe('words that learn', () => {
       );
     const none = { run: 0, lvl: 1, form: null };
     expect([...ids(none, 12)]).toEqual([undefined]);
-    expect(ids({ ...none, run: 5 }, 12).has('run')).toBe(true);
+    /* a long run alone fits no wording: no count of days on a locked screen */
+    expect([...ids({ ...none, run: 40 }, 12)]).toEqual([undefined]);
+    expect(ids({ ...none, proof: { rode: 4, lessons: 5, ci: 3 } }, 12).has('rode')).toBe(true);
+    expect(ids({ ...none, proof: { rode: 1 } }, 12).has('rode')).toBe(false);
     expect(ids(none, 8).has('am')).toBe(true);
     expect(ids(none, 19).has('pm')).toBe(true);
-    const run = core.NUDGE_WORDS.pick.lesson.findIndex((w) => w.when === 'run');
-    expect(core.wordsOf('lesson.' + run, st, { ...none, run: 12 }).t).toBe('Day 12 ☀️');
+    const rode = core.NUDGE_WORDS.pick.lesson.findIndex((w) => w.when === 'rode');
+    expect(core.wordsOf('lesson.' + rode, st, { ...none, proof: { rode: 4 } }).t).toBe('Rode it out 4 times 🔥');
     const form = core.NUDGE_WORDS.pick.lesson.findIndex((w) => w.when === 'form');
     expect(core.wordsOf('lesson.' + form, st, { ...none, form: { pts: 20, name: 'a Campfire' } }).t).toBe('20 points until a Campfire 🌱');
   });
@@ -703,5 +706,95 @@ describe('the anonymous counts of reminders', () => {
     expect(core.nudgeTapKind('back-7')).toBe('back');
     expect(core.nudgeTapKind('talk')).toBeNull();
     for (const k of core.NUDGE_KINDS) expect(core.pulseKeys().has('nt_' + k + '_tap')).toBe(true);
+  });
+});
+
+describe('becoming free: notes built from the record (docs/plan.md, "Becoming free", 3)', () => {
+  const proof = { run: 0, lvl: 1, form: null, proof: { rode: 4, lessons: 6, ci: 5 } };
+  it('the morning lesson note leads with the person’s own proof, and none repeats within two weeks', () => {
+    const picks = Array.from({ length: 15 }, (_, i) => core.addDays(tk, i)).reduce<{ w?: string; d: string }[]>(
+      (acc, d) => [...acc, { w: core.pickWords('lesson', log0, d, proof, 8, acc), d }],
+      [],
+    );
+    expect(core.NUDGE_WORDS.pick.lesson[Number(picks[0].w!.split('.')[1])].when).toMatch(/rode|lessons|ci/);
+    expect(new Set(picks.map((p) => p.w)).size).toBe(15);
+    expect(core.wordsOf(picks[0].w!, st, proof).b + core.wordsOf(picks[0].w!, st, proof).t).toMatch(/4|6|5/);
+  });
+  it('the evening check-in asks one honest tap, in wordings enough for two weeks', () => {
+    const picks = Array.from({ length: 15 }, (_, i) => core.addDays(tk, i)).reduce<{ w?: string; d: string }[]>(
+      (acc, d) => [...acc, { w: core.pickWords('checkin', log0, d, proof, 19, acc), d }],
+      [],
+    );
+    expect(new Set(picks.map((p) => p.w)).size).toBe(15);
+    expect(JSON.stringify(core.NUDGE_WORDS.pick.checkin)).toMatch(/One honest tap/);
+  });
+  it('the proof comes from the record', () => {
+    let d = core.addEvent({}, '2026-10-10', 'rode', '21:00', {}, 1).days;
+    d = core.addEvent(d, '2026-10-11', 'rode', '21:00', {}, 1).days;
+    d = checkedIn(d, '2026-10-12', '2026-10-12T19:00');
+    expect(core.nudgeProof(d)).toMatchObject({ rode: 2, ci: 1 });
+  });
+});
+
+describe('the night: nothing from 10 PM to 7 AM unless the person set a time there', () => {
+  it('a heads-up that would come at night comes at 9:30 PM the evening before, or not at all in the early morning', () => {
+    expect(new Date(core.riskNoteAt(at('2026-10-14T20:00'))!).getHours()).toBe(18);
+    const late = new Date(core.riskNoteAt(at('2026-10-15T00:30'))!);
+    expect([late.getDate(), late.getHours(), late.getMinutes()]).toEqual([14, 21, 30]);
+    const small = new Date(core.riskNoteAt(at('2026-10-15T02:00'))!);
+    expect([small.getDate(), small.getHours()]).toEqual([14, 21]);
+    expect(core.riskNoteAt(at('2026-10-15T07:30'))).toBeNull();
+  });
+  it('a check-in the person set late still comes; nothing Daybook picks does', () => {
+    const p = plan({}, { ...ci, checkinAt: '22:45' }, at('2026-10-14T09:00'));
+    expect(p.some((n) => n.k === 'checkin' && new Date(n.at).getHours() === 22)).toBe(true);
+    for (const n of p.filter((n) => n.k !== 'checkin' && n.k !== 'wind')) {
+      const h = new Date(n.at).getHours();
+      expect(h >= 7 && h < 22).toBe(true);
+    }
+  });
+});
+
+describe('the come-back, plan, Talk it through and trail notes learn whether they are opened', () => {
+  const T0 = at('2026-10-14T12:00');
+  const H = 3600_000;
+  const sent = (log: NudgeLog, i: number) => core.nudgeExt(log, 'talk', [{ id: 'talk@' + i, at: T0 + i * 24 * H }], T0 + i * 24 * H - 1);
+  /** five talk reminders, each judged the next day with no open */
+  const ignored = (n: number, log = log0, from = 0) => {
+    let l = log;
+    for (let i = from; i < from + n; i++) l = core.nudgeLearn(sent(l, i), {}, st, {}, T0 + i * 24 * H + 5 * H, true);
+    return l;
+  };
+  it('five sent with no open pause it; fourteen days on, one more try; not opened, it is off, with a line on Today for a week', () => {
+    expect(core.nudgeQuietLeft(ignored(4), 'talk', T0 + 5 * 24 * H)).toBe(Infinity);
+    const p = ignored(5);
+    expect(p.q.talk).toMatchObject({ s: 1 });
+    expect(core.nudgeQuietLeft(p, 'talk', T0 + 10 * 24 * H)).toBe(0);
+    expect(core.nudgeQuietLeft(p, 'talk', T0 + 20 * 24 * H)).toBe(1);
+    const off = ignored(1, p, 20);
+    expect(off.q.talk).toMatchObject({ s: 2 });
+    expect(core.nudgeQuietLeft(off, 'talk', T0 + 40 * 24 * H)).toBe(0);
+    const card = core.nudgeCard({}, st, ci, off, '2026-11-04', T0 + 22 * 24 * H);
+    expect(card).toMatchObject({ k: 'off', kind: 'talk', yes: 'Turn back on' });
+    expect(core.nudgeCard({}, st, ci, off, '2026-11-20', T0 + 30 * 24 * H)?.k).not.toBe('off');
+    expect(core.nudgeQuietLeft(core.nudgeQuietOn(off, 'talk'), 'talk', T0)).toBe(Infinity);
+  });
+  it('one opened sets it right again', () => {
+    let l = ignored(4);
+    l = sent(l, 4);
+    l = core.nudgeLearn({ ...l, opens: [T0 + 4 * 24 * H + 30 * 60000] }, {}, st, {}, T0 + 4 * 24 * H + 5 * H, true);
+    expect(l.q.talk).toEqual({ m: 0, s: 0, at: null });
+  });
+  it('a paused come-back run sends none, and on its try only the first', () => {
+    const q = (s: 0 | 1, atv: number) => ({ ...log0, q: { back: { m: 0, s, at: atv } } });
+    const backs = (l: NudgeLog) => plan(here, ci, T0, l).filter((n) => n.id.startsWith('back-'));
+    expect(backs(log0).length).toBeGreaterThan(1);
+    expect(backs(q(1, T0 - 2 * 24 * H))).toEqual([]);
+    expect(backs(q(1, T0 - 15 * 24 * H)).length).toBe(1);
+  });
+  it('a stored log is read safely', () => {
+    const l = core.normNudgeLog({ q: { back: { m: 2, s: 7 }, x: 1 }, ext: [{ id: 'talk@1', k: 'talk', at: 1 }, { id: 3 }] });
+    expect(l.q).toEqual({ back: { m: 2, s: 0, at: null } });
+    expect(l.ext).toEqual([{ id: 'talk@1', k: 'talk', at: 1 }]);
   });
 });

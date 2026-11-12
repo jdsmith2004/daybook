@@ -42,6 +42,7 @@ import { Shape, type ShapeKind } from '@/components/shapes';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
 import { useSendText } from '@/components/safe-text';
+import { Packed } from '@/components/packed';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
@@ -255,10 +256,7 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
         <T v="label" style={{ alignSelf: 'flex-start', marginTop: 6 }}>
           If the thoughts get loud in bed
         </T>
-        <View
-          style={[s.wrap, { justifyContent: 'flex-start', alignSelf: 'stretch' }]}
-          accessibilityRole="radiogroup"
-          accessibilityLabel="If the thoughts get loud in bed">
+        <Packed accessibilityRole="radiogroup" accessibilityLabel="If the thoughts get loud in bed">
           {plans.map(([id, t]) => (
             <Chip
               key={id}
@@ -272,7 +270,7 @@ export function Bed({ finish, combo, now }: ToolProps & { now: number }) {
               }}
             />
           ))}
-        </View>
+        </Packed>
         <Appear key={cur[0]} by={4} duration={200} style={[s.planLine, { backgroundColor: c.violetSoft }]}>
           <T tone="violetText" accessibilityLiveRegion="polite">
             {cur[2]}
@@ -758,7 +756,6 @@ const s = StyleSheet.create({
   },
   c: { textAlign: 'center' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   tileT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22 },
   list: { alignSelf: 'stretch', gap: 8 },
   two: { flexDirection: 'row', gap: 8, alignSelf: 'stretch' },

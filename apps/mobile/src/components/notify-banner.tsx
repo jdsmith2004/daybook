@@ -5,13 +5,14 @@
    (core nudges.ts, "Lessons first"), and when nothing at all is on it is turned back on (the check-in and the wind-down
    stay a choice in Settings); "Open settings" opens the phone's page for
    Daybook when the phone has said no. The X hides it until tomorrow. */
-import { notifyAsk, notifyQuiet, nudgeResume } from '@daybook/core';
+import { careLastAt, notifyAsk, notifyQuiet, nudgeResume } from '@daybook/core';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
 import { useNotifyEnv } from '@/lib/notify-env';
+import { useSos } from '@/lib/sos';
 import { setNotifyMem, setNudgeLog, setReminderPrefs, useNotifyMem, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, openPhoneSettings } from '@/lib/reminders';
 import { useStore } from '@/lib/store';
@@ -23,11 +24,12 @@ export const bell = (ink: string) =>
 
 export function NotifyBanner() {
   const c = useTheme();
-  const { snap, tk, say } = useStore();
+  const { snap, tk, say, now } = useStore();
+  const sos = useSos();
   const env = useNotifyEnv();
   const mem = useNotifyMem();
   const rem = useReminderPrefs();
-  const ask = env ? notifyAsk(env, mem, snap.days, snap.settings, tk) : null;
+  const ask = env ? notifyAsk(env, mem, snap.days, snap.settings, tk, { at: careLastAt(sos.mem), now }) : null;
   if (!ask) return null;
 
   const yes = async () => {
@@ -38,12 +40,16 @@ export function NotifyBanner() {
       say(WORDS.remindersOff);
       return;
     }
-    if (!(rem.lesson || rem.checkin || rem.wind || rem.review)) {
+    /* after a ride, the ask was for the heads-up before hard hours: it is on, and starts every day */
+    if (ask.ride && !rem.risk) {
+      setReminderPrefs({ ...rem, risk: true, lesson: rem.lesson || !(rem.checkin || rem.wind || rem.review) });
+      setNudgeLog((l) => nudgeResume(nudgeResume(l, 'risk'), 'lesson'));
+    } else if (!(rem.lesson || rem.checkin || rem.wind || rem.review)) {
       setReminderPrefs({ ...rem, lesson: true });
       /* turned on fresh, so it starts every day (core nudges.ts) */
       setNudgeLog((l) => nudgeResume(l, 'lesson'));
     }
-    say('Reminders are on. One short note a day.');
+    say(ask.ride ? 'On. A heads-up comes before your hard hours.' : 'Reminders are on. One short note a day.');
   };
 
   /* the first sentence is the headline, so it reads at a glance */

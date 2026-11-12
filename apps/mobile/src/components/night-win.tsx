@@ -10,6 +10,7 @@ import { Field, Link } from '@/components/choices';
 import { KeepAbove } from '@/components/keyboard';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
+import { Packed } from '@/components/packed';
 import { buzz } from '@/lib/feel';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
@@ -85,7 +86,7 @@ export function NightWinCard({ snap, tk }: { snap: Snapshot; tk: string }) {
           <T v="small" tone="muted">
             What helped? Pick one, and it starts a note that SOS shows you first next time.
           </T>
-          <View style={s.chips}>
+          <Packed last={1}>
             {win.helped.map((h) => (
               <Pill key={h.id} icon={h.ic} label={h.name} tone={c.mintText} onPress={() => setDraft(winNote(win, h.id))} />
             ))}
@@ -95,7 +96,7 @@ export function NightWinCard({ snap, tk }: { snap: Snapshot; tk: string }) {
               tone={c.accentText}
               onPress={() => setDraft(winNote(win, null))}
             />
-          </View>
+          </Packed>
         </View>
       ) : ask ? (
         <View style={{ alignItems: 'flex-start', marginLeft: 32 }}>
@@ -128,7 +129,6 @@ const s = StyleSheet.create({
   line: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 21 },
   x: { padding: 4, alignSelf: 'flex-start' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 12, borderRadius: 999 },
   pillT: { fontFamily: font.bodySemi, fontSize: 15 },
 });

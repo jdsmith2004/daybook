@@ -7,6 +7,7 @@ import {
   normPull,
   PULL_DEFAULTS,
   pullBridge,
+  pullDownEvent,
   pullDrift,
   pullLine,
   pullNoteFor,
@@ -17,7 +18,7 @@ import {
   pullShield,
   pullWindows,
 } from '../src/pull';
-import { lowWords } from '../src/flame-low';
+import { lowWords, partDone } from '../src/flame-low';
 import type { Days, Settings } from '../src/types';
 
 const st = { ...defaultSettings('2026-10-01'), rollover: 4 } as Settings;
@@ -162,5 +163,27 @@ describe('the notes ignored', () => {
   });
   it('says why in plain words', () => {
     expect(lowWords(pullDrift(f0, night, {}, st, k, night + 60_000))?.p).toBe('You stayed on it through your hard hours.');
+  });
+});
+
+describe('Put it down', () => {
+  it('logs an urge ridden out on the log day, after scrolling, by leaving the room', () => {
+    const now = at('2026-10-14T01:30:00');
+    const e = pullDownEvent({}, st, now)!;
+    expect(e).toEqual({ key: '2026-10-13', time: '01:30', fields: { trigger: 'scroll', did: ['left'] } });
+    const r = addEvent({}, e.key, 'rode', e.time, e.fields);
+    expect(partDone(r.days, st, e.key)).toBe(true);
+  });
+  it('logs nothing again within the hour, or after an urge just ridden out elsewhere', () => {
+    const now = at('2026-10-13T22:00:00');
+    const e = pullDownEvent({}, st, now)!;
+    const days = addEvent({}, e.key, 'rode', e.time, e.fields).days;
+    expect(pullDownEvent(days, st, now + 30 * 60000)).toBeNull();
+    expect(pullDownEvent(days, st, now + 61 * 60000)).not.toBeNull();
+  });
+  it('a slip in the hour does not stop it', () => {
+    const now = at('2026-10-13T22:00:00');
+    const days = addEvent({}, '2026-10-13', 'slipped', '21:40').days;
+    expect(pullDownEvent(days, st, now)).not.toBeNull();
   });
 });

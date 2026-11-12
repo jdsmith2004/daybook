@@ -2,6 +2,7 @@
 legacy/
 packages/core/src/legacy/
 packages/core/test/fixtures/
+packages/core/test/upgrade/
 
 # Made by tools, not by hand.
 package-lock.json

@@ -39,6 +39,7 @@ export * from './proof';
 export * from './journal';
 export * from './journal-entries';
 export * from './journal-notes';
+export * from './scripture';
 export * from './journal-notes-in';
 export * from './markdown';
 export * from './data';

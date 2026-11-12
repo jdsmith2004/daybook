@@ -6,6 +6,7 @@
 import { addDays, eventsOf, gameCompute, runLedger } from './legacy/core.js';
 import { noSlipDays } from './graduate';
 import { rkComebackCount } from './rekindle';
+import { firstMorning, freeNights, morningsSet, nightTold } from './morning-set';
 import { hardHeld, riskWindow } from './risk';
 import type { DayKey, Days, Reviews, Settings } from './types';
 
@@ -29,7 +30,26 @@ export interface EffortCounts {
   free7: number;
 }
 
-/** the effort lines, strongest first. No "in a row": a run that breaks on one skipped morning is the all-or-nothing count
+/** the effort record from the morning set (core morning-set.ts): mornings set ever and in the last 7, and the last 7 nights the
+    morning tap called free (night k is told on k + 1, so the last night is tk - 1). Nights the lock held come from the night wait
+    (Screen Time), which is not built yet: 0 until it is. Null while there is nothing in it. */
+export function effortCounts(days: Days, tk: DayKey): EffortCounts | null {
+  const first = firstMorning(days, tk);
+  const e: EffortCounts = {
+    mornings: first ? morningsSet(days, first, tk) : 0,
+    mornings7: morningsSet(days, addDays(tk, -6), tk),
+    lockHeld: 0,
+    /* on the morning after "It happened", the free nights wait a day: "Free 1 of the last 7" would read as a score of the
+       others, and the hours after a slip are for coming back (CLAUDE.md). The mornings set lead instead */
+    free7: nightTold(days, addDays(tk, -1)) === 'slip' ? 0 : freeNights(days, addDays(tk, -7), addDays(tk, -1)).free,
+  };
+  return e.mornings || e.mornings7 || e.free7 ? e : null;
+}
+
+/** the hero's lines sit under the level, in a corner 40% wide: each fits on one line at this many characters */
+export const PROOF_MAX = 20;
+
+/** the effort lines, strongest first. The week is the last 7 ("of 7" for short). No "in a row": a run that breaks on one skipped morning is the all-or-nothing count
     CLAUDE.md rules out, so the window is the last 7 and the totals only go up */
 export function effortProofs(e: EffortCounts | null | undefined): string[] {
   if (!e) return [];
@@ -39,9 +59,9 @@ export function effortProofs(e: EffortCounts | null | undefined): string[] {
   const held = n(e.lockHeld);
   const free7 = Math.min(7, n(e.free7));
   return [
-    free7 ? 'Free ' + free7 + ' of the last 7 nights' : '',
-    held ? 'Your lock held ' + times(held, 'night', 'nights') : '',
-    m7 >= 3 ? m7 + ' of the last 7 mornings set' : m ? times(m, 'morning', 'mornings') + ' set' : '',
+    free7 ? 'Free ' + free7 + ' of 7 nights' : '',
+    held ? 'Lock held ' + times(held, 'night', 'nights') : '',
+    m7 >= 3 ? m7 + ' of 7 mornings set' : m ? times(m, 'morning', 'mornings') + ' set' : '',
   ].filter(Boolean);
 }
 
@@ -61,7 +81,7 @@ export function heroProofs(days: Days, st: Settings, reviews: Reviews, tk: DayKe
     rode ? times(rode, 'urge', 'urges') + ' ridden out' : '',
     free >= 2 ? free + ' days free of it' : '',
     comebacks ? times(comebacks, 'comeback', 'comebacks') : '',
-    held ? 'Hard hours held ' + times(held, 'time', 'times') : '',
+    held ? 'Hard hours held: ' + held : '',
     lessons ? times(lessons, 'lesson', 'lessons') + ' learned' : '',
     checkins ? times(checkins, 'honest check-in', 'honest check-ins') : '',
   ].filter(Boolean);

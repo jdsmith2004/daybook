@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       screen_time:
-        description: 'Screen Time (Apps that pull you in). Only once Apple has approved Family Controls for all four bundle IDs (docs/plan.md).'
+        description: 'Screen Time. Family Controls (Distribution) is on for all four App IDs (November 11, 2026; docs/plan.md).'
         type: boolean
         default: false
 
@@ -54,7 +54,9 @@ jobs:
         run: |
           # production-pull is production plus DAYBOOK_PULL=1 (app.config.js): the entitlement, the App Group and the three extensions
           profile=production
-          if [ "$SCREEN_TIME" = "true" ]; then profile=production-pull; fi
+          # Family Controls (Distribution) is turned on by hand in Apple's portal: EAS's own capability sync asks for the
+          # Development one and Apple refuses it, so it is skipped for this profile
+          if [ "$SCREEN_TIME" = "true" ]; then profile=production-pull; export EXPO_NO_CAPABILITY_SYNC=1; fi
           echo "Profile: $profile"
           npx --yes eas-cli@24.10.0 build --platform ios --profile "$profile" --non-interactive --no-wait --json > "$RUNNER_TEMP/build.json"
           id=$(jq -r '.[0].id' "$RUNNER_TEMP/build.json")

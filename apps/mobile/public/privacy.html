@@ -159,9 +159,10 @@
             part).
           </li>
           <li>
-            <code>day</code>: once a day, where things stand: the counting mode, the count, no-slip days in the last 28, level, points, badges, the flame's
-            form, whether it burns low, whether reminders are allowed, whether there is an account, sync or a tip, whether Apple Health is connected (never what
-            it holds), your faith setting, which habit, the phone's language and its system version.
+            <code>day</code>: once a day, where things stand: the counting mode, the count, no-slip days in the last 28, how many urges were ridden out and how
+            many slips in the last 30 days (two counts, never when or what), level, points, badges, the flame's form, whether it burns low, whether reminders
+            are allowed, whether there is an account, sync or a tip, whether Apple Health is connected (never what it holds), your faith setting, which habit,
+            the phone's language and its system version.
           </li>
           <li>
             <code>setup_page</code>, <code>setup_pick</code>, <code>setup_skip</code>, <code>setup_done</code>: a setup page was reached, a choice picked on it
@@ -178,13 +179,18 @@
             a tool was opened or finished, Talk it through was finished (never what was said).
           </li>
           <li>
-            <code>urge</code>, <code>slip</code>, <code>happened</code>, <code>planning</code>, <code>rekindle</code>: an urge was logged (its strength, which
-            of Daybook's own triggers was picked, a trigger you wrote yourself only as "other", and how it ended), a slip was logged (which trigger, and about
-            how long since the one before), Already happened or Planning a slip was used, a Rekindle step was done.
+            <code>urge</code>, <code>slip</code>, <code>happened</code>, <code>planning</code>, <code>rekindle</code>, <code>comeback</code>: an urge was logged
+            (its strength, which of Daybook's own triggers was picked, a trigger you wrote yourself only as "other", and how it ended), a slip was logged (which
+            trigger, about how long since the one before, and, if a reminder came in the hour before it, that reminder's kind and the hour it came, never the
+            minute), Already happened or Planning a slip was used, a Rekindle step was done, all three flames were lit after a slip.
           </li>
           <li>
             <code>checkin</code>, <code>recheck</code>, <code>sunday</code>, <code>wind</code>: a check-in was saved (the mood, sleep and urge numbers picked),
             the five questions were answered (the five scores), the Sunday review was finished, Goodnight was said.
+          </li>
+          <li>
+            <code>free</code>: once a month, and once at the end of setup, "How much do you see yourself as someone free of this?" was answered: the number
+            picked from 0 to 10, with how many urges were ridden out and how many slips in the last 30 days, as two counts. Never any words.
           </li>
           <li><code>chart_seen</code>: a chart was shown (which one, for how long, and whether it was locked).</li>
           <li>
@@ -192,20 +198,26 @@
             flame burning low or lit again, a badge earned.
           </li>
           <li>
-            <code>nudge</code>, <code>nudge_tap</code>, <code>nudge_did</code>: a reminder of a kind (lesson, checkin, wind, sunday, risk, back, plan) arrived,
-            Daybook was opened from it, or what it was for was done that day.
+            <code>nudge</code>, <code>nudge_tap</code>, <code>nudge_did</code>: a reminder of a kind (lesson, checkin, wind, sunday, risk, back, plan) arrived
+            (and the hour it came), Daybook was opened from it (and the hour it came), or what it was for was done that day.
           </li>
           <li>
             <code>ask</code>, <code>ask_tap</code>, <code>bought</code>, <code>account</code>, <code>sync_on</code>, <code>feedback</code>: an ask (for a tip,
             Daybook Pattern, an account or a rating) was shown or tapped, a tip or Daybook Pattern was bought (which one, never a card or a receipt), an account
             was made (with Apple or email, never the account), sync was turned on, feedback was sent (never its words here).
           </li>
+          <li>
+            <code>ab</code>: Daybook tries two wordings of a line to learn which helps more, and this says which one was shown: the line's name (rk_first,
+            Rekindle's first line) and a or b. Which one a phone sees is picked from its random number above, never from anything about you, and is the same
+            every time. With this turned off, you always see the wording Daybook had before.
+          </li>
         </ul>
         <p>
           The values are only numbers, yes or no, or names from Daybook's own lists: <code>cold</code>, <code>secs</code>, <code>route</code>, <code>err</code>,
           <code>page</code>, <code>ix</code>, <code>lesson</code>, <code>beat</code>, <code>from</code>, <code>outcome</code>, <code>str</code>,
           <code>tool</code>, <code>chart</code>, <code>locked</code>, <code>trigger</code>, <code>hrs</code>, <code>step</code>, <code>mood</code>,
-          <code>sleep</code>, <code>q1</code> to <code>q5</code>, <code>lvl</code>, <code>kind</code>, <code>what</code>, <code>tier</code>, <code>how</code>,
+          <code>sleep</code>, <code>q1</code> to <code>q5</code>, <code>free</code>, <code>rode30</code>, <code>slips30</code>, <code>lvl</code>,
+          <code>kind</code>, <code>nh</code>, <code>after</code>, <code>test</code>, <code>arm</code>, <code>what</code>, <code>tier</code>, <code>how</code>,
           <code>mode</code>, <code>count</code>, <code>ns28</code>, <code>pts</code>, <code>badges</code>, <code>low</code>, <code>rem</code>,
           <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>, <code>faith</code>, <code>habit</code>, <code>lang</code>,
           <code>os</code>. Anything that is not on those lists is dropped on your phone, and refused by the server.
@@ -247,7 +259,7 @@
           </li>
           <li><code>sos_rode</code>, <code>sos_slip</code>: SOS ended with It passed, or with I slipped.</li>
           <li>
-            <code>lesson_open</code>: a lesson was opened. <code>ld_</code> and the lesson's number (l1 to l49; never the faith lessons): which lesson was
+            <code>lesson_open</code>: a lesson was opened. <code>ld_</code> and the lesson's number (l1 to l53; never the faith lessons): which lesson was
             finished.
           </li>
           <li>
@@ -268,7 +280,7 @@
           </li>
           <li>
             <code>setup_</code> and a setup page's name (hello, how, habit, aim, years, freq, mins, faith, creed, b0, b1, b2, b3, b4, heard, costs, guess,
-            hours, when, wave, breathe, loop, tour, curve, tried, tries, slip, goal, reasons, ifthen, so, becoming, review, remind, account), and
+            hours, when, wave, breathe, loop, tour, curve, tried, tries, slip, goal, reasons, ifthen, so, becoming, review, remind, star, account), and
             <code>setup_done</code>: how far setup got, sent once for each page.
           </li>
         </ul>

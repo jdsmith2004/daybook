@@ -220,6 +220,11 @@ export interface Settings {
   pat?: PatRec | null;
   /** the answer to "Do you like Daybook so far?" at the end of setup, and the day (see like.ts). Optional. */
   likeAsk?: { a: 'yes' | 'no'; d: DayKey } | null;
+  /** "How much do you see yourself as someone free of this?", 0 to 10, once a month, oldest first (north.ts). Synced with the
+      rest. Optional, so older records need no change. */
+  free?: { d: DayKey; s: number }[];
+  /** the day that question was last closed or skipped unanswered (north.ts freeLater). Optional. */
+  freeNo?: DayKey | null;
   u: number;
 }
 

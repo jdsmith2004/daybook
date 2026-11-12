@@ -191,10 +191,14 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
     - Identifiers, **Device ID** (new): purposes Analytics; linked to the user: **No**; tracking: **No**. (The random install
       id. Leave User ID as it is.)
     - Usage Data, **Product Interaction** (already there): purposes Analytics; linked: **No**; tracking: **No**. (Screens, setup,
-      lessons, tools, charts, reminders, the asks.)
+      lessons, tools, charts, reminders, the asks; since November 12, 2026 also the hour a reminder came, which wording of a
+      tested line was shown (`ab`), and a comeback after a slip: the same type, so the label needs no new answer.)
     - Diagnostics, **Other Diagnostic Data** (new): purposes Analytics; linked: **No**; tracking: **No**. (Which part had an error.)
     - Health and Fitness, **Health** (already there for accounts): add the purpose **Analytics**; linked stays **Yes**; tracking
-      **No**. (Urges, slips, their strength and triggers, the check-in's numbers, the five questions.)
+      **No**. (Urges, slips, their strength and triggers, the check-in's numbers, the five questions, and since November 11, 2026
+      the monthly "How free of this do you see yourself?" number with urges ridden out and slips in the last 30 days as counts,
+      and since November 12, 2026 whether a slip came within the hour after a reminder (the reminder's kind and hour): the same
+      Health type, so the label needs no new answer.)
     - Sensitive Info (already there for accounts): add **Analytics**; linked stays **Yes**; tracking **No**. (Faith, the habit.)
     - Purchases, **Purchase History** (already there): add **Analytics**; linked stays **Yes**; tracking **No**.
     - Then Publish. Nothing here is Apple Health data, and the label says nothing about HealthKit.

@@ -1,12 +1,14 @@
 /* Pattern > Weeks: seeing, week after week, that you are changing. The weeks are the Sunday review's, Monday to Sunday (core
    sunday.ts), so both always say the same thing. On top, the days with no slip in each finished week as one line, with what
    changed since the first week (or, when that is not up, the no-slip days kept, which never drop); under it every week newest
-   first, its days as a strip (warm light no slip, calm violet a slip: the Days colors). A tap opens the week on its own page
+   first, its days as a strip (warm light no slip, calm violet a slip: the Days colors). Between them, the north star's line (core
+   north.ts): how free of this the person sees themselves, each month, 0 to 10. A tap opens the week on its own page
    (app/weekly/[sun].tsx, WeekDetail below): the review's own sentence for it (weekRead), its seven days, the counts, the
    average ratings, what it shows, its Sunday review, and an older review's answers. A hard week is said plainly and held. */
 import {
   addDays,
   fmtDate,
+  freeList,
   REVIEW_QS,
   setDay1,
   storyDays,
@@ -97,6 +99,7 @@ export function WeeksPane() {
         )}
       </View>
       {done.length > 1 ? <WeeksLine weeks={done} /> : null}
+      <FreeLine />
       <View>
         {[...weeks].reverse().map((w, i) => (
           <Pressable
@@ -124,18 +127,97 @@ export function WeeksPane() {
 
 /* ---------- the finished weeks as one line on a scale of 0 to 7 days at the side; a dot touched says its week's days and
    dates ---------- */
+function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
+  return (
+    <ScaleLine
+      id="weeksFill"
+      max={7}
+      label={'Days with no slip each week: ' + weeks.map((x) => x.noSlip).join(', ')}
+      from={fmtDate(addDays(weeks[0].sun, -6), { month: 'short', day: 'numeric' })}
+      to="Last week"
+      pts={weeks.map((x) => ({
+        v: x.noSlip,
+        tip: x.noSlip + (x.noSlip === 1 ? ' day' : ' days'),
+        when: sunRange(x.sun),
+        a11y: `${sunRange(x.sun)}: ${x.noSlip} of 7 days with no slip`,
+      }))}
+    />
+  );
+}
+
+/* ---------- the north star (core north.ts): "How much do you see yourself as someone free of this?", each month's answer as
+   one line on a scale of 0 to 10, drawn like the weeks. With no answer yet, the chart is drawn empty under its title. ---------- */
+function FreeLine() {
+  const c = useTheme();
+  const { snap } = useStore();
+  const list = freeList(snap.settings);
+  const first = list[0];
+  const last = list[list.length - 1];
+  const when = (d: string) => fmtDate(d, { month: 'short', day: 'numeric' });
+  return (
+    <View style={{ gap: 4 }}>
+      <T v="small" tone="muted">
+        How free of this you see yourself
+      </T>
+      {last ? (
+        <>
+          <Text style={[s.head, { color: c.ink }]} accessibilityLabel={list.length > 1 ? `${first.s} to ${last.s} of 10` : `${last.s} of 10`}>
+            {list.length > 1 ? `${first.s} → ${last.s}` : `${last.s} of 10`}
+          </Text>
+          <T tone="muted">{list.length > 1 ? 'From your first answer to your last.' : 'Your starting point. You answer again once a month.'}</T>
+        </>
+      ) : null}
+      <ScaleLine
+        id="freeFill"
+        max={10}
+        ticks={[0, 5, 10]}
+        label={list.length ? 'How free of this you see yourself, each month: ' + list.map((x) => x.s).join(', ') + ' of 10' : 'No answers yet'}
+        from={first ? when(first.d) : ''}
+        to={last && last !== first ? when(last.d) : ''}
+        pts={list.map((x) => ({ v: x.s, tip: x.s + ' of 10', when: when(x.d), a11y: `${when(x.d)}: ${x.s} of 10` }))}
+      />
+    </View>
+  );
+}
+
+/* ---------- one line on a scale at the side (0 to max), the Weeks way: a soft fill under it, a dashed top, a dot for each point,
+   the newest a little bigger; a dot touched says its number and when. No points: the scale drawn empty. ---------- */
 const LINE_H = 176;
 const GUTTER = 22;
-function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
+interface LinePt {
+  v: number;
+  tip: string;
+  when: string;
+  a11y: string;
+}
+function ScaleLine({
+  id,
+  pts: vals,
+  max,
+  ticks,
+  label,
+  from,
+  to,
+}: {
+  id: string;
+  pts: LinePt[];
+  max: number;
+  ticks?: number[];
+  label: string;
+  from: string;
+  to: string;
+}) {
   const c = useTheme();
   const [w, setW] = useState(0);
   const [pick, setPick] = useState<number | null>(null);
-  const y7 = 10;
+  const yTop = 10;
   const y0 = LINE_H - 10;
   const x0 = GUTTER + 10;
   const x1 = w - 10;
-  const yOf = (n: number) => y0 - (n / 7) * (y0 - y7);
-  const pts = weeks.map((x, i): [number, number] => [x0 + (i / (weeks.length - 1)) * (x1 - x0), yOf(x.noSlip)]);
+  const yOf = (n: number) => y0 - (n / max) * (y0 - yTop);
+  /* one point sits at the right, where "now" is */
+  const xOf = (i: number) => (vals.length > 1 ? x0 + (i / (vals.length - 1)) * (x1 - x0) : x1);
+  const pts = vals.map((x, i): [number, number] => [xOf(i), yOf(x.v)]);
   let d = '';
   pts.forEach(([x, y], i) => {
     if (!i) d = `M${x} ${y}`;
@@ -145,26 +227,27 @@ function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
       d += ` C${mx} ${py} ${mx} ${y} ${x} ${y}`;
     }
   });
-  const area = d + ` L${pts[pts.length - 1][0]} ${y0} L${pts[0][0]} ${y0} Z`;
-  const hit = Math.max(28, Math.min(44, (x1 - x0) / (weeks.length - 1)));
-  const tip = pick == null ? null : { x: pts[pick][0], y: pts[pick][1], wk: weeks[pick] };
+  const area = pts.length > 1 ? d + ` L${pts[pts.length - 1][0]} ${y0} L${pts[0][0]} ${y0} Z` : '';
+  const hit = Math.max(28, Math.min(44, pts.length > 1 ? (x1 - x0) / (pts.length - 1) : 44));
+  const tip = pick == null || !pts[pick] ? null : { x: pts[pick][0], y: pts[pick][1], p: vals[pick] };
   const TIP_W = 116;
+  const axis = ticks ?? Array.from({ length: max + 1 }, (_, n) => n);
   return (
-    <View style={{ gap: 4 }} accessibilityLabel={'Days with no slip each week: ' + weeks.map((x) => x.noSlip).join(', ')}>
+    <View style={{ gap: 4 }} accessibilityLabel={label}>
       <View style={{ height: LINE_H }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
         {w ? (
           <>
             <Svg width={w} height={LINE_H} style={StyleSheet.absoluteFill}>
               <Defs>
-                <LinearGradient id="weeksFill" x1="0" y1="0" x2="0" y2="1">
+                <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
                   <Stop offset="0" stopColor={RUN[0]} stopOpacity={0.28} />
                   <Stop offset="1" stopColor={RUN[0]} stopOpacity={0} />
                 </LinearGradient>
               </Defs>
-              <Path d={`M${x0} ${y7} L${x1} ${y7}`} stroke={c.line} strokeWidth={1} strokeDasharray="4 5" />
+              <Path d={`M${x0} ${yTop} L${x1} ${yTop}`} stroke={c.line} strokeWidth={1} strokeDasharray="4 5" />
               <Path d={`M${x0} ${y0} L${x1} ${y0}`} stroke={c.line} strokeWidth={1} />
-              <Path d={area} fill="url(#weeksFill)" />
-              <Path d={d} stroke={RUN[0]} strokeWidth={3} fill="none" strokeLinecap="round" />
+              {area ? <Path d={area} fill={`url(#${id})`} /> : null}
+              {pts.length > 1 ? <Path d={d} stroke={RUN[0]} strokeWidth={3} fill="none" strokeLinecap="round" /> : null}
               {pts.map(([x, y], i) => (
                 <Circle
                   key={i}
@@ -177,7 +260,7 @@ function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
                 />
               ))}
             </Svg>
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
+            {axis.map((n) => (
               <T key={n} v="small" tone="muted" style={[s.axis, { top: yOf(n) - 9 }]}>
                 {n}
               </T>
@@ -186,7 +269,7 @@ function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
               <Pressable
                 key={i}
                 accessibilityRole="button"
-                accessibilityLabel={`${sunRange(weeks[i].sun)}: ${weeks[i].noSlip} of 7 days with no slip`}
+                accessibilityLabel={vals[i].a11y}
                 onPress={() => {
                   buzz('tick');
                   setPick(pick === i ? null : i);
@@ -202,23 +285,23 @@ function WeeksLine({ weeks }: { weeks: StoryWeek[] }) {
                   { backgroundColor: c.ink, width: TIP_W, left: Math.max(0, Math.min(w - TIP_W, tip.x - TIP_W / 2)) },
                   tip.y > 66 ? { top: tip.y - 60 } : { top: tip.y + 14 },
                 ]}>
-                <Text style={[s.tipNum, { color: c.bg }]}>
-                  {tip.wk.noSlip} {tip.wk.noSlip === 1 ? 'day' : 'days'}
-                </Text>
-                <Text style={[s.tipWhen, { color: c.bg }]}>{sunRange(tip.wk.sun)}</Text>
+                <Text style={[s.tipNum, { color: c.bg }]}>{tip.p.tip}</Text>
+                <Text style={[s.tipWhen, { color: c.bg }]}>{tip.p.when}</Text>
               </View>
             ) : null}
           </>
         ) : null}
       </View>
-      <View style={[s.between, { paddingLeft: GUTTER }]}>
-        <T v="small" tone="muted">
-          {fmtDate(addDays(weeks[0].sun, -6), { month: 'short', day: 'numeric' })}
-        </T>
-        <T v="small" tone="muted">
-          Last week
-        </T>
-      </View>
+      {from || to ? (
+        <View style={[s.between, { paddingLeft: GUTTER }]}>
+          <T v="small" tone="muted">
+            {from}
+          </T>
+          <T v="small" tone="muted">
+            {to}
+          </T>
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -29,6 +29,10 @@
    is the sunrise check. Ported from the legacy SCENES.checkin. */
 import {
   addEvent,
+  eventsOf,
+  rkFirstInTest,
+  rkFirstLine,
+  whenMs,
   addOption,
   clockOf,
   didIds,
@@ -88,7 +92,7 @@ import {
   lessonFor,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
@@ -110,7 +114,7 @@ import { Shape, type ShapeKind } from '@/components/shapes';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { count } from '@/lib/pulse';
-import { track } from '@/lib/events';
+import { armFor, track, trackAb, trackSlip } from '@/lib/events';
 import { close, closeAll, openCare } from '@/lib/nav';
 import { WhenPill, WhenSheet } from '@/components/when';
 import { useSos } from '@/lib/sos';
@@ -222,6 +226,21 @@ export default function Log() {
   const [allOpts, setAllOpts] = useState(false);
 
   const g = useMemo(() => (st ? gameCompute(snap.days, st, snap.reviews, tk) : null), [snap, st, tk]);
+  /* the word test on Rekindle's first line (core ab.ts): the arm from the install id, and the urges ridden out before this
+     slip, fixed when the hold opens so the line does not change under the person */
+  const [rkTest] = useState(() => ({
+    arm: armFor('rk_first'),
+    rode: eventsOf(snap.days).filter((e) => e.outcome === 'rode' && e.id !== params.evId).length,
+  }));
+  const abSent = useRef<string | null>(null);
+  const onHold = step === 'slHold' && !lit && !!evId;
+  useEffect(() => {
+    const held = evId ? snap.days[date]?.events.find((x) => x.id === evId) : null;
+    if (!onHold || !held || held.sp || !rkTest.arm || !rkFirstInTest(rkTest.rode) || abSent.current === evId) return;
+    abSent.current = evId;
+    trackAb('rk_first', rkTest.arm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onHold, evId]);
   if (!st || !g) return <Redirect href="/" />;
   const ev: DayEvent | null = (evId && snap.days[date]?.events.find((x) => x.id === evId)) || null;
   const gain = Math.max(0, g.pts - pts0);
@@ -274,7 +293,8 @@ export default function Log() {
     setOutcome(v);
     if (made) {
       count(v === 'slipped' ? 'slip_logged' : 'urge_logged');
-      track(v === 'slipped' ? 'slip' : 'urge', v === 'slipped' ? {} : { outcome: 'rode' });
+      if (v === 'slipped') trackSlip({}, whenMs(when));
+      else track('urge', { outcome: 'rode' });
       if (from === 'hero') track('happened');
     }
     buzz('save');
@@ -491,7 +511,8 @@ export default function Log() {
     /* 1. press and hold to rekindle: the only way on. Once it is held, the fire, the heading and one line on what the slip
        did not take (core rkLitLine); the page stays that short on purpose (the owner, October 25, 2026). The saved pill
        keeps its place once lit, so nothing on the page jumps at the moment it catches. */
-    const w = rkHoldWords(lit, !!ev?.sp, rkRunBefore(snap.days, st, tk, date));
+    const w0 = rkHoldWords(lit, !!ev?.sp, rkRunBefore(snap.days, st, tk, date));
+    const w = lit || ev?.sp ? w0 : { ...w0, h: rkFirstLine(rkTest.arm, rkTest.rode) };
     sky = 'ember';
     title = 'Rekindle';
     dots = slDots();

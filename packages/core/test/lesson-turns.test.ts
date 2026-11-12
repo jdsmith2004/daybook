@@ -2,6 +2,7 @@
    over, builds only on lessons already behind it, and its own-log line is true and plain. */
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
+import { HABIT_ONLY, HABIT_TURNS } from '../src/lesson-habit';
 import type { Days } from '../src/types';
 
 const CONTRACTION = /\b\w+(?:n['’]t|['’](?:re|ve|ll|d|m))\b|\b(?:it|that|there|here|what|who|he|she|let)['’]s\b/i;
@@ -9,7 +10,7 @@ const turned = core.LESSONS.filter((L) => L.v === 3);
 
 describe('turned lessons', () => {
   it('replace the old lesson in place: same id, same section, same place', () => {
-    expect(turned.length).toBe(Object.keys(core.TURNS).length + Object.keys(core.GOD).length);
+    expect(turned.length).toBe(Object.keys(core.TURNS).length + Object.keys(core.GOD).length + Object.keys(HABIT_TURNS).length);
     Object.keys(core.TURNS).forEach((id) => {
       const L = core.lessonById(id)!;
       expect(L.v, id).toBe(3);
@@ -26,9 +27,12 @@ describe('turned lessons', () => {
   });
   it('a card that builds on an earlier lesson names one already behind it on the path', () => {
     /* the path with the God lessons on it, which holds every other lesson in the same order */
-    const path = core.lessonPathFor(core.normSettings({ ...core.defaultSettings('2026-10-01'), onb: { n: 1, at: 1, a: { faith: 'big' }, hist: [] } }));
+    const pathOf = (habit: string) =>
+      core.lessonPathFor(core.normSettings({ ...core.defaultSettings('2026-10-01'), onb: { n: 1, at: 1, a: { faith: 'big', habit }, hist: [] } }));
+    /* a lesson of one habit only is checked on that habit's path */
     turned.forEach((L) =>
       L.cards.forEach((c) => {
+        const path = pathOf(HABIT_ONLY[L.id] ? HABIT_ONLY[L.id].h : 'porn');
         if (!c.back) return;
         const B = core.lessonById(c.back);
         expect(B, L.id + ' back ' + c.back).toBeTruthy();

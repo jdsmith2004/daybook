@@ -8,6 +8,7 @@ import { DateStep } from '@/components/date-step';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Button, Card, Chip, T } from '@/components/ui';
 import { Dock } from '@/components/scene';
+import { Packed } from '@/components/packed';
 import { useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
@@ -60,11 +61,11 @@ export default function Mode() {
       <Dock>
         {acts.length || showDate ? <SheetH title="Change it" /> : null}
         {acts.length ? (
-          <View style={s.acts}>
+          <Packed>
             {acts.map(([label, v]) => (
               <Chip key={v} label={label} on={false} onPress={() => change(setDay1(st, v, tk))} />
             ))}
-          </View>
+          </Packed>
         ) : null}
         {showDate ? (
           <DateStep
@@ -83,5 +84,4 @@ export default function Mode() {
 
 const s = StyleSheet.create({
   li: { gap: 4, paddingVertical: 12 },
-  acts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

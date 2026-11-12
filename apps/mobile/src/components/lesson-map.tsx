@@ -24,6 +24,7 @@ import {
   type LessonMap,
   type MapLand,
   type MapStone,
+  lessonTo,
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from 'expo-router';
@@ -487,7 +488,7 @@ export function StoneCard({
       <Text style={[s_.cardT, { color: ink }]} accessibilityRole="header">
         {L.title}
       </Text>
-      <Text style={[s_.cardP, { color: ink }]}>{L.tag}</Text>
+      <Text style={[s_.cardP, { color: ink }]}>{lessonTo(L, stg).tag}</Text>
       {ahead ? <Text style={[s_.cardP, { color: ink, marginTop: 6, fontFamily: font.bodyBold }]}>Opens after lesson {no - 1}.</Text> : null}
       {locked && !ahead ? (
         <Text style={[s_.cardP, { color: ink, marginTop: 6 }]}>A free account opens the other {waiting} lessons, and keeps your progress safe.</Text>

@@ -35,6 +35,30 @@ const batch = {
 };
 
 describe('events', () => {
+  it('takes the word test, the comeback, and a slip after a reminder (November 12, 2026), with only their listed values', async () => {
+    const { h, lines } = make();
+    const e = [
+      { k: 1, n: 'ab', d: 9, h: 23, p: { test: 'rk_first', arm: 'b' } },
+      { k: 2, n: 'ab', d: 9, h: 23, p: { test: 'made_up', arm: 'c' } },
+      { k: 3, n: 'slip', d: 9, h: 23, p: { after: 'wind', nh: 22, note: 'my words' } },
+      { k: 4, n: 'nudge', d: 9, h: 23, p: { kind: 'wind', nh: 22 } },
+      { k: 5, n: 'comeback', d: 11, h: 8 },
+    ];
+    expect((await h(post({ ...batch, e }))).statusCode).toBe(200);
+    const rows = lines
+      .join('')
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    expect(rows.map((r) => [r.n, r.p])).toEqual([
+      ['ab', '{"test":"rk_first","arm":"b"}'],
+      ['ab', '{}'],
+      ['slip', '{"after":"wind","nh":22}'],
+      ['nudge', '{"kind":"wind","nh":22}'],
+      ['comeback', '{}'],
+    ]);
+  });
+
   it('keeps one line for each checked event, and nothing about who or where', async () => {
     const { h, lines } = make();
     const r = await h(post(batch));

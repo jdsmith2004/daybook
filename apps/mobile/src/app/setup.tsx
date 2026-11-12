@@ -377,7 +377,10 @@ export default function Setup() {
         </>
       ) : (
         <>
-          <Head h="Quit porn, one honest day at a time." sub="A plan built from your answers, a short lesson a day, and help when urges hit." />
+          <Head
+            h={habitSay('Get free of porn, one honest day at a time.', habit)}
+            sub="A plan built from your answers, a short lesson a day, and help when urges hit."
+          />
           {/* the first thing a new person sees: the flame, big and alive, saying hello. It is the same one they will watch grow. */}
           <Talk text={voice} want={want} />
           {/* someone opening Daybook in the middle of an urge gets help before any question */}

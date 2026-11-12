@@ -59,3 +59,27 @@ describe('the look', () => {
     expect(off).toEqual([]);
   });
 });
+
+/* the app's own voice never calls a person "clean", an "addict" or a "relapse": the goal is someone who is free. Lessons quote
+   those words as the belief they turn over, and scripture is left as written, so those files are not read. */
+describe('the words', () => {
+  const coreDir = join(src, '../../../packages/core/src');
+  const VOICE = ['nudges.ts', 'notify.ts', 'trail.ts', 'sunday-read.ts', 'rekindle-learn.ts', 'hero.ts', 'flame-low.ts'];
+  const BAD = /\b(clean|addicts?|relapse[sd]?|relapsing)\b/i;
+  const strings = (text: string) => {
+    const bare = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    return bare.match(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g) || [];
+  };
+  const voice = [
+    ...code.filter((f) => !/^(lib|shots)\//.test(f.name)).map((f) => ({ name: f.name, text: f.text })),
+    ...VOICE.map((n) => ({ name: 'core/' + n, text: readFileSync(join(coreDir, n), 'utf8') })),
+  ];
+  it('no "clean", "addict" or "relapse" in the app’s own voice', () => {
+    const hits = voice.flatMap((f) =>
+      strings(f.text)
+        .filter((s) => /\s/.test(s) && BAD.test(s.replace(/(Sex|Love) Addicts Anonymous/g, '')))
+        .map((s) => f.name + ': ' + s.slice(0, 80)),
+    );
+    expect(hits).toEqual([]);
+  });
+});

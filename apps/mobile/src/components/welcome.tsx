@@ -109,7 +109,7 @@ export function Welcome() {
       }>
       <ErasedNote />
       <T style={lessonText.h} accessibilityRole="header">
-        {started ? 'Your plan is waiting.' : 'Quit porn, one honest day at a time.'}
+        {started ? 'Your plan is waiting.' : 'Get free of porn, one honest day at a time.'}
       </T>
       <Bubble
         text={

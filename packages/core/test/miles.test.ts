@@ -93,6 +93,8 @@ it('who you are, in numbers: only what was done, said as who the person is, and 
   const lines = core.identityLines(days, st, {}, tk);
   expect(lines.map((x) => x.n)).toEqual(['1 time', '1 slip, every one logged', '1 comeback']);
   for (const x of lines) expect(x.who).toMatch(/^You are someone who /);
+  /* the times they put it down (Screen Time, kept on the phone) */
+  expect(core.identityLines({}, st, {}, tk, 6)).toEqual([{ ic: 'phone', who: 'You are someone who puts it down.', n: '6 times' }]);
   /* the hours given back: nine finished days with no slip since Day 1, at the setup's pace */
   const h = core.hoursBack(days, st, tk);
   const H = core.obHours(st.onb.a)!;

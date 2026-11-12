@@ -28,7 +28,7 @@ export function heroProofs(days: Days, st: Settings, reviews: Reviews, tk: DayKe
     free >= 2 ? free + ' days free of it' : '',
     comebacks ? times(comebacks, 'comeback', 'comebacks') : '',
     held ? 'Hard hours held ' + times(held, 'time', 'times') : '',
-    longest >= 2 ? 'Longest run: ' + longest + ' days' : '',
+    longest >= 2 && longest !== free ? 'Longest run: ' + longest + ' days' : '',
     lessons ? times(lessons, 'lesson', 'lessons') + ' learned' : '',
     checkins ? times(checkins, 'honest check-in', 'honest check-ins') : '',
   ].filter(Boolean);

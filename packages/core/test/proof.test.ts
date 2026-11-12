@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import type { Days, Outcome, Settings } from '../src/types';
 
-const st: Settings = { ...core.normSettings({}), start: '2026-10-01' };
+const st: Settings = { ...core.normSettings({}), start: '2026-10-01', day1: '2026-10-01' };
 const tk = '2026-10-21';
 
 function log(list: [string, Outcome, string | null][]): { days: Days; ids: string[] } {
@@ -19,7 +19,7 @@ function log(list: [string, Outcome, string | null][]): { days: Days; ids: strin
 
 describe('heroProof', () => {
   it('is null with nothing on the record', () => {
-    expect(core.heroProof({}, st, {}, tk)).toBeNull();
+    expect(core.heroProof({}, { ...st, day1: tk }, {}, tk)).toBeNull();
   });
   it('names urges ridden out, never a slip', () => {
     const { days } = log([

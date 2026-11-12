@@ -29,7 +29,7 @@ describe('heroProof', () => {
     ]);
     const all = core.heroProofs(days, st, {}, tk);
     expect(all).toContain('2 urges ridden out');
-    all.forEach((l) => expect(l).not.toMatch(/slip/i));
+    all.forEach((l) => expect(l).not.toMatch(/slip|longest|run/i));
   });
   it('turns over day by day, and holds within a day', () => {
     const { days } = log([

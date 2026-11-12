@@ -3,7 +3,7 @@
    done (the counts under "Who you are becoming", miles.ts) is shown at the three moments that decide who they think they are:
    Today's hero, the first breath of an SOS, and the page after an urge ridden out. Every line is a fact from the log, said as
    who the person is, never a score, never a slip count, never a number of days in a run. Every count only goes up. */
-import { addDays, computeMetrics, eventsOf, gameCompute, runLedger } from './legacy/core.js';
+import { addDays, eventsOf, gameCompute, runLedger } from './legacy/core.js';
 import { rkComebackCount } from './rekindle';
 import { hardHeld, riskWindow } from './risk';
 import type { DayKey, Days, Reviews, Settings } from './types';
@@ -13,7 +13,8 @@ const num = (v: unknown) => (typeof v === 'number' ? v : 0);
 /** the days since 1970 for a log day, so the hero's line turns over once a day */
 const dayNo = (k: DayKey) => Math.round(Date.parse(k + 'T12:00:00Z') / 86400e3);
 
-/** every short proof the hero can show today, in a fixed order: each once its count is there */
+/** every short proof the hero can show today, in a fixed order: each once its count is there. Never the longest run: the number
+    on the left of the hero already shows the best (core heroNumber) */
 export function heroProofs(days: Days, st: Settings, reviews: Reviews, tk: DayKey): string[] {
   const S = gameCompute(days, st, reviews, tk).S;
   const rode = num(S.rode);
@@ -22,13 +23,11 @@ export function heroProofs(days: Days, st: Settings, reviews: Reviews, tk: DayKe
   const comebacks = rkComebackCount(days, st, tk);
   const held = hardHeld(days);
   const free = runLedger(days, st, tk, 'strict', true).clean;
-  const longest = computeMetrics(days, st, tk).longest;
   return [
     rode ? times(rode, 'urge', 'urges') + ' ridden out' : '',
     free >= 2 ? free + ' days free of it' : '',
     comebacks ? times(comebacks, 'comeback', 'comebacks') : '',
     held ? 'Hard hours held ' + times(held, 'time', 'times') : '',
-    longest >= 2 && longest !== free ? 'Longest run: ' + longest + ' days' : '',
     lessons ? times(lessons, 'lesson', 'lessons') + ' learned' : '',
     checkins ? times(checkins, 'honest check-in', 'honest check-ins') : '',
   ].filter(Boolean);

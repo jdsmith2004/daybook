@@ -18,6 +18,10 @@ describe('when it opens', () => {
     expect(core.morningDue({}, st, tk, at(21, 3, 59))).toBe(false);
     expect(core.morningDue({}, st, tk, at(21, 13, 59))).toBe(true);
     expect(core.morningDue({}, st, tk, at(21, 14))).toBe(false);
+    /* before the new day starts it is still last night's log day */
+    const late = core.normSettings({ ...st, rollover: 6 });
+    expect(core.morningDue({}, late, tk, at(21, 5))).toBe(false);
+    expect(core.morningDue({}, late, tk, at(21, 6))).toBe(true);
     /* not on the setup day, and not before setup */
     expect(core.morningDue({}, st, st.start, at(7, 8))).toBe(false);
     expect(core.morningDue({}, null, tk, at(21, 8))).toBe(false);

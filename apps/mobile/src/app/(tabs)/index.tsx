@@ -82,6 +82,9 @@ import { font, useTheme } from '@/lib/theme';
 /** when this copy of the app started (the first sync after it is what lets Today mark the day opened) */
 const LAUNCH = Date.now();
 
+/** the day the morning set was last opened from Today in this run of the app */
+let morningOpened = '';
+
 export default function Today() {
   const c = useTheme();
   const { ready, snap, tk, now, apply, update, say } = useStore();
@@ -167,11 +170,13 @@ export default function Today() {
   useEffect(() => {
     if (!ready || !morningNow || !focused || backNow || gradNow || celebrating) return;
     const t = setTimeout(() => {
-      if (!focusRef.current || sheetOnTop()) return;
+      if (!focusRef.current || sheetOnTop() || morningOpened === tk) return;
+      /* once per day in this run of the app: a page left by a back press does not come straight back (the X skips it for good) */
+      morningOpened = tk;
       router.push('/morning');
     }, 400);
     return () => clearTimeout(t);
-  }, [ready, morningNow, focused, backNow, gradNow, celebrating]);
+  }, [ready, morningNow, focused, backNow, gradNow, celebrating, tk]);
   useEffect(() => {
     if (!firstOpen || !ready) return;
     if (firstOpen.k < tk || sosUsed || feelQuiet || cameBack || celebrating || celebrationSheetAt() >= firstOpen.at) {

@@ -69,7 +69,8 @@ export function nightSlips(days: Days, st: Settings, k: DayKey): DayEvent[] {
 export function morningDue(days: Days, st: Settings | null, tk: DayKey, now: number): boolean {
   if (!st || !st.start || tk <= st.start) return false;
   const h = new Date(now).getHours();
-  if (h < MORNING_FROM || h >= MORNING_TO) return false;
+  /* before the new day starts (the rollover hour), it is still last night's log day */
+  if (h < Math.max(MORNING_FROM, st.rollover) || h >= MORNING_TO) return false;
   const ms = morningOf(days[tk]);
   return !ms || (!ms.set && !ms.x);
 }

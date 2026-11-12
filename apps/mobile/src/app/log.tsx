@@ -60,7 +60,7 @@ import {
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
@@ -69,7 +69,6 @@ import { FitArt } from '@/components/fit';
 import { Flame } from '@/components/flame';
 import { Hearth, HoldButton, useHearthHold } from '@/components/hearth';
 import { Dock, Middle, SceneFrame } from '@/components/scene';
-import { HelpFoot } from '@/components/help-foot';
 import { RodeOut } from '@/components/rode-out';
 import { SosPill } from '@/components/sos-pill';
 import { Button, Icon, T } from '@/components/ui';
@@ -385,16 +384,22 @@ export default function Log() {
             <Appear delay={1300} by={10} style={s.done}>
               <Button label="Done" kind="warm" onPress={closeAll} />
               {lesson ? (
-                <Link
-                  label={lesson.title}
-                  tone="muted"
-                  onPress={() => {
-                    track('rekindle', { step: 'learn' });
-                    router.push({ pathname: '/lesson/[id]', params: { id: lesson.id, at: 'care' } });
-                  }}
-                />
+                <View style={s.more}>
+                  <Link
+                    label={'Lesson: ' + lesson.title}
+                    tone="muted"
+                    onPress={() => {
+                      track('rekindle', { step: 'learn' });
+                      router.push({ pathname: '/lesson/[id]', params: { id: lesson.id, at: 'care' } });
+                    }}
+                  />
+                </View>
               ) : null}
-              {close988 ? <HelpFoot /> : null}
+              {close988 ? (
+                <View style={s.more}>
+                  <Link label="Need someone right now? Call or text 988" tone="muted" onPress={() => Linking.openURL('tel:988')} />
+                </View>
+              ) : null}
             </Appear>
           ) : (
             <HoldButton hold={hold} />
@@ -457,6 +462,7 @@ const s = StyleSheet.create({
   gapLine: { alignSelf: 'stretch', minHeight: 64 },
   btnSpace: { height: 52 },
   done: { alignSelf: 'stretch', gap: 12 },
+  more: { alignItems: 'center' },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },
   ck: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

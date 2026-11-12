@@ -405,3 +405,8 @@ export function scrGospelLibrary(volume: string, key: string, verses: number[] =
   const b = v[v.length - 1];
   return `${base}&id=${b > a ? `p${a}-p${b}` : `p${a}`}#p${a}`;
 }
+
+/** It is written's two chapters, opened on their verses in the library when it is on (written.ts link and link5) */
+export const SCR_WRITTEN = { link: { key: 'Matthew 4', v: '1-11' }, link5: { key: 'Matthew 5', v: '1-16' } } as const;
+/** its link's words in the library: "Read Matthew 4", the app's name left off */
+export const scrWrittenLabel = (label: string) => label.replace(/ in (Gospel Library|your Bible app)$/, '');

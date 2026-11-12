@@ -21,6 +21,8 @@ import {
   FWD_B,
   FWD_TOMORROW,
   GROUND,
+  scrWrittenLabel,
+  SCR_WRITTEN,
   THOUGHTS,
   urFromYou,
   WRITTEN_CAST,
@@ -28,6 +30,7 @@ import {
   type UrMem,
   type WrittenWords,
 } from '@daybook/core';
+import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
@@ -47,6 +50,7 @@ import { BigPlay } from '@/components/voice-note';
 import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
+import { useScripture } from '@/lib/scripture';
 import { useSos } from '@/lib/sos';
 import { useCareSettings } from '@/lib/store';
 import { font, useTheme, type Palette } from '@/lib/theme';
@@ -455,6 +459,7 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
   const c = useTheme();
   const st = useCareSettings();
   const w = writtenWords(faithVoice(st) || 'plain');
+  const lib = useScripture();
   const [pg, setPg] = useState(0);
   const [cast, setCast] = useState<string | null>(null);
   const [pulse, setPulse] = useState(0);
@@ -494,6 +499,8 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
   if (pg === 1) return <WrittenStand w={w} on={on} onFull={() => setTimeout(() => setPg(2), 2600)} />;
   const card = pull || page!;
   const link = pg === 5 ? w.link : pg === 8 ? w.link5 : null;
+  /* with the scripture library on, the chapter opens in Daybook on the verses the page quoted */
+  const inLib = lib.on ? (pg === 5 ? SCR_WRITTEN.link : pg === 8 ? SCR_WRITTEN.link5 : null) : null;
   /* Matthew 4 is the first three marks, Matthew 5 the next three */
   const four = pg <= 5;
   return (
@@ -576,7 +583,11 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
         )
       ) : link ? (
         <View style={s.quiet}>
-          <Link label={link.label} tone="muted" onPress={() => Linking.openURL(link.url).catch(() => undefined)} />
+          <Link
+            label={inLib ? scrWrittenLabel(link.label) : link.label}
+            tone="muted"
+            onPress={() => (inLib ? router.push({ pathname: '/scripture/read', params: inLib }) : Linking.openURL(link.url).catch(() => undefined))}
+          />
         </View>
       ) : pg === 5 || pg === 8 ? null : (
         <View style={[s.line, { gap: 8 }]}>

@@ -29,6 +29,11 @@ enum Pull {
   static let openMinsKey = "pull.openMins"
   /// pull.open lasts this long (the app's openSchedule)
   static let openSpan: Double = 20 * 60_000
+  /// the times the person put it down (the shield's Close, the wait screen's Put it down), and ms of the last one counted
+  static let downsKey = "pull.downs"
+  static let downAtKey = "pull.downAt"
+  /// minutes after one put-down before another counts (core PULL_COUNT_GAP)
+  static let downGap: Double = 10
   static let store = ManagedSettingsStore(named: ManagedSettingsStore.Name("daybook.pull"))
 
   static var defaults: UserDefaults? { UserDefaults(suiteName: group) }
@@ -103,7 +108,9 @@ enum Pull {
     if !mark(kind, once: once) { return }
     let c = UNMutableNotificationContent()
     c.title = (n["t"] as? String) ?? ""
-    c.body = (n["b"] as? String) ?? ""
+    /* once they have put it down, the count, as it stands now (the shield's Close adds to it while Daybook is shut) */
+    let d = downs
+    if d > 0, let w = n["bDowns"] as? String { c.body = fill(w, d) } else { c.body = (n["b"] as? String) ?? "" }
     c.sound = .default
     if let url = n["url"] as? String { c.userInfo = ["url": url] }
     let r = UNNotificationRequest(identifier: "daybook.pull." + kind + "." + once, content: c, trigger: nil)
@@ -113,6 +120,23 @@ enum Pull {
       done.signal()
     }
     _ = done.wait(timeout: .now() + 2)
+  }
+
+  /// the times the person put it down, on this phone only
+  static var downs: Int { defaults?.integer(forKey: downsKey) ?? 0 }
+
+  /// one more put-down, unless one was counted in the last downGap minutes (core pullCounts)
+  static func countDown() {
+    let last = defaults?.double(forKey: downAtKey) ?? 0
+    let now = nowMs
+    if last > 0 && now >= last && now - last < downGap * 60_000 { return }
+    defaults?.set(downs + 1, forKey: downsKey)
+    defaults?.set(now, forKey: downAtKey)
+  }
+
+  /// core pullDownsFill: {n} as "once" or "6 times", {next} as the count plus one
+  static func fill(_ s: String, _ n: Int) -> String {
+    s.replacingOccurrences(of: "{n}", with: n == 1 ? "once" : "\(n) times").replacingOccurrences(of: "{next}", with: String(n + 1))
   }
 
   /// "Resting until 11 PM" from the pause's own end (the bridge's words can name the wrong night just after midnight)

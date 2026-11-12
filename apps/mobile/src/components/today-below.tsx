@@ -13,16 +13,18 @@ import { Text } from '@/components/text';
 import { TonightCard } from '@/components/tonight-card';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { usePullDowns } from '@/lib/pull';
 import { font, useTheme } from '@/lib/theme';
 
 export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now: number }) {
   const c = useTheme();
+  const downs = usePullDowns();
   const st = snap.settings!;
   const evs = sortedEvents(snap.days[tk], st.rollover);
   const lines = planTonight(snap.days, st, tk);
   const all = (st.plan || []).filter((p) => !planBlank(p) && String(p.then || '').trim()).length;
   const be = String(st.becoming || '').trim();
-  const proof = rodeProof(snap.days, st, tk) || newest(snap, tk);
+  const proof = rodeProof(snap.days, st, tk) || newest(snap, tk, downs);
   return (
     <View style={s.all}>
       <Pressable
@@ -84,8 +86,8 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
 
 /** with no urge ridden out in two weeks, the first thing the record says about who the person is. Never the slips line: no slip
     count sits on Today */
-function newest(snap: Snapshot, tk: DayKey): { t: string; n: string } | null {
-  const l = identityLines(snap.days, snap.settings!, snap.reviews, tk).filter((x) => x.ic !== 'leaf')[0];
+function newest(snap: Snapshot, tk: DayKey, downs: number): { t: string; n: string } | null {
+  const l = identityLines(snap.days, snap.settings!, snap.reviews, tk, downs).filter((x) => x.ic !== 'leaf')[0];
   return l ? { t: l.who, n: l.n + '.' } : null;
 }
 

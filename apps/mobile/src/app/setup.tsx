@@ -113,6 +113,7 @@ import { close } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { track } from '@/lib/events';
+import { usePullDowns } from '@/lib/pull';
 import { countSetup } from '@/lib/pulse';
 import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
@@ -134,6 +135,7 @@ export default function Setup() {
   const [pulse, setPulse] = useState(0);
   const win = useWindowDimensions();
   const { snap, tk, replace, say, current, apply } = useStore();
+  const downs = usePullDowns();
   const sync = useSync();
   const st = snap.settings;
   const [f, setF] = useState<Flow>(() => {
@@ -1100,7 +1102,7 @@ export default function Setup() {
       /* the north star's starting point (core north.ts): the question at the top, the person's own proof under it (none yet
          for someone new), the number huge in the open middle, the slider under the thumb, Next at the bottom. Skip waits a week. */
       const v = typeof a.free === 'number' ? a.free : null;
-      const proof = st ? freeProof(snap.days, st, snap.reviews, tk) : [];
+      const proof = st ? freeProof(snap.days, st, snap.reviews, tk, 2, downs) : [];
       body = (
         <>
           <Head h={FREE_Q} />

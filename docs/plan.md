@@ -295,8 +295,9 @@ who a person thinks they are.
 
 - **Today.** The hero's second line becomes one proof line, picked fresh each day from `miles.ts` ("4 urges ridden out", "14 days free of
   it", "1 comeback"), in place of "35 points to Level 18". The flame, its form and its level stay in the hero (the flame is the heart);
-  points and the bar to the next level live on the level page, one tap on the flame. "Who you are becoming" moves up to sit right under the
-  hero, with the person's own setup line and the newest proof under it.
+  points and the bar to the next level live on the level page, one tap on the flame. "Who you are becoming" sits after the day's steps (built that way on purpose, November 12, 2026: above them the
+  34pt sentence pushes the lesson below the fold, and the next step must stay obvious), with the person's own setup line and the newest
+  proof under it.
 - **SOS, opening.** Over the first breath, one small line for the first few seconds: "You have ridden this out 4 times." It fades as the
   breath starts. Never on a first-ever SOS (nothing to prove yet; it shows nothing), never a slip count, never a number of days.
 - **SOS, ending.** `RodeOut` already counts the urges ridden out. Its headline names what this one proved, from the record: the first ever
@@ -6467,3 +6468,56 @@ then each week as a row with its strip). Pictures: docs/weeks-redesign/e, f, g.
 last week (or, when that is not up, the no-slip days kept), the finished weeks as one line, and every week newest first as a
 row with its days as a strip. A tap opens the week's own page (app/weekly/[sun].tsx) with everything the old Weeks had. Checked
 on the web (dark and light) and on an iPhone 17 Pro simulator, release build. Pictures: docs/weeks-redesign/g-ios-\*.png.
+
+## Future you notes (#30, the owner, November 11, 2026)
+
+On a good day the person leaves one short note, in their own voice or written, for the self who will face the next urge. In an
+urge, SOS offers it as the page right after the first breath: one tap to hear it, never played by itself. The notes never leave
+the phone.
+
+**What the research supports** (a Sonnet research pass; nothing here is a trial of this exact feature, so it is measured, not
+claimed):
+
+- Notes made calm and used hot answer the hot-cold empathy gap: smokers who were not craving underrated what holding out would
+  take once they were (Sayette and Loewenstein 2008). The hot self discounts calm advice more as the urge builds, so the note
+  comes early, before the peak.
+- Spoken to "you", a note borrows the calm of distanced self-talk (Kross 2014, replicated on EEG). Self-talk in sport: d = 0.48
+  across 32 studies (Hatzigeorgiadis 2011).
+- "What will the urge say, and what is your answer?" is an if-then plan (Gollwitzer and Sheeran 2006, d = 0.65; later bias-
+  corrected estimates 0.15 to 0.35; alcohol g = 0.31).
+- Picturing a specific good future lowers impulsive choice (episodic future thinking, g about 0.44 to 0.52); grim pictures do not.
+  So the questions point at what is good.
+- Letters to the future self: the original delinquency result did not replicate (2020, two preregistered studies); writing to a
+  far self raised exercise once (Rutchick 2018). Weak, so the feature does not lean on it.
+- Own voice: no study shows a recording of your own voice beats your own words written. So writing is an equal choice, and the
+  web, which has no private place for a recording, writes.
+- Identity nouns ("be a voter") are contested; the notes do not lean on them.
+
+**The owner's answers (all four recommended):** the second page of the ride; invited after a win (the ridden-out page, a new level
+or form), at most every couple of days while there is no note and then about once a week; up to five kept, the newest offered
+first and then they take turns; one question at a time, in turn: "What does today feel like, free of it?", "What will the urge
+say, and what is your answer?", "Who are you becoming?", each with a one-line example in the right tone.
+
+**Built:**
+
+- Core `future.ts`: the notes (newest first, at most `FUTURE_MAX` 5), which one SOS offers (`futurePick`: the newest until it has
+  been offered once, then the one offered longest ago), when a win invites one (`futureAsk`: never in the hours after a slip,
+  the same quiet as the tip), the questions, and "From you, 3 days ago". `ride.ts`: `RIDE_FUTURE` comes right after the breath
+  when there is a note (faith's early page moves one later). Tests in `future.test.ts`.
+- `app/future.tsx`: a page like the feedback page, the sun sky and the person's flame: the question at the top, the flame saying
+  "The next time it gets hard, this is the first voice you hear. Yours.", Record low, "Write it instead" under it. Up to 45
+  seconds; hear it back; nothing is kept until Keep it.
+- SOS's page (`FutureMove`): "You left yourself a note", "From you, 3 days ago. Tap to hear it.", one big play button. A written
+  note reads like Your words.
+- The invitation (`future-invite.tsx`): one quiet row on the ridden-out page and in the level or form sheet, where the tip ask
+  goes when there is none.
+- My plan, Notes for hard moments: the written calm-day note as before, then the notes, each to hear or read and remove, and
+  Leave a new note. The voice note from before becomes the first note, once.
+- On the phone only: the list in AsyncStorage (`daybook.future.v1`), each recording a file beside the old voice note's. Never
+  synced, never in the safe copy or an export. Delete everything removes them.
+- Analytics: `future_kept` and `future_heard` (only `note`: voice or written), and `future` as an ask. On the privacy page.
+
+**To measure:** how many leave a note after the invitation, how many play it in SOS, and whether rides that play it pass more
+often than rides that do not.
+
+Pictures: `docs/future-you/` (the page on the web, a written note in SOS on the web, a recorded note in SOS on an iPhone 17 Pro simulator, release build).

@@ -11,7 +11,10 @@ import {
   pullDrift,
   pullLine,
   pullNoteFor,
+  pullCounts,
+  pullDownsFill,
   pullNudges,
+  PULL_COUNT_GAP,
   pullPauseWords,
   pullPlanLine,
   pullQuietUntil,
@@ -89,7 +92,7 @@ describe('the words', () => {
     const n = pullNudges({ lessonUrl: '/lesson/l4', long: 2 });
     const p = [true, false].map((quiet) => pullPauseWords({ quiet, open: 3, plan: null }));
     const s = [true, false].map((quiet) => pullShield({ until: '1 AM', plan: null, quiet }));
-    return [...Object.values(n).flatMap((x) => [x.t, x.b]), ...p.flatMap((x) => Object.values(x)), ...s.flatMap((x) => Object.values(x))];
+    return [...Object.values(n).flatMap((x) => [x.t, x.b, x.bDowns ?? '']), ...p.flatMap((x) => Object.values(x)), ...s.flatMap((x) => Object.values(x))];
   };
   it('has no contractions, and never names the habit or an app on a locked screen', () => {
     for (const w of all()) {
@@ -103,6 +106,22 @@ describe('the words', () => {
     expect(n.long.b).toMatch(/dimming your fire/);
     expect(n.quiet.b).not.toMatch(/dimming|choice/);
     expect(pullPauseWords({ quiet: true, open: 3, plan: null }).line).not.toMatch(/fire|choice/);
+  });
+  it('says the put-downs as the next choice, never as who the person is', () => {
+    const n = pullNudges({ lessonUrl: '/', long: 2 });
+    expect(n.hard1.b).not.toMatch(/gets you/);
+    expect(pullDownsFill(n.hard1.bDowns!, 6)).toBe(
+      'You have put it down 6 times. You are dimming your fire now. Make it 7: stand up and walk to another room.',
+    );
+    expect(pullDownsFill(pullShield({ until: '1 AM', plan: null, quiet: false }).subDowns, 1)).toBe('You have put it down once. Close it, and that makes 2.');
+    expect(pullPauseWords({ quiet: false, open: 3, plan: null, downs: 7 }).thanks).toBe('That makes 7. One more win in your log.');
+    expect(pullPauseWords({ quiet: true, open: 3, plan: null, downs: 7 }).thanks).not.toMatch(/7/);
+  });
+  it('counts a put-down at most once in ten minutes', () => {
+    const t = at('2026-10-12T22:00');
+    expect(pullCounts(0, t)).toBe(true);
+    expect(pullCounts(t, t + 9 * 60000)).toBe(false);
+    expect(pullCounts(t, t + PULL_COUNT_GAP * 60000)).toBe(true);
   });
   it('counts the hours and the minutes it says', () => {
     expect(pullNudges({ lessonUrl: '/', long: 1 }).long.t).toBe('🔥 An hour in');

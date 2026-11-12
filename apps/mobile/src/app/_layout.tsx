@@ -322,6 +322,7 @@ function Shell() {
             'back',
             'whats-new',
             'feedback',
+            'future',
             'pause',
             'unlock',
           ].map((name) => (

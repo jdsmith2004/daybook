@@ -66,7 +66,7 @@ import { setupKeep } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, NightContext, useSkyTheme, useTheme } from '@/lib/theme';
-import { useVoice } from '@/lib/voice';
+import { useFuture } from '@/lib/future';
 
 /* the screenshot studio (EXPO_PUBLIC_SHOTS=1, dev only) can open SOS on its finish, a ride that passed (?won=1) */
 const SHOTS = process.env.EXPO_PUBLIC_SHOTS === '1';
@@ -80,7 +80,7 @@ export default function Sos() {
   const c = useSkyTheme(sky);
   const sos = useSos();
   const st = useCareSettings();
-  const voice = useVoice();
+  const future = useFuture();
   const { practice: pq, won: wq } = useLocalSearchParams<{ practice?: string; won?: string }>();
   const [practice] = useState(() => pq === '1');
   /* a practice ride is not counted as an SOS */
@@ -140,11 +140,13 @@ export default function Sos() {
   const ur = practice ? pu : sos.ur;
   const setUr = practice ? setPu : sos.set;
 
-  /* My reasons is a move only when there are words of your own (a note, a reason or a voice note) */
-  const words = !!(snap.settings && urFromYou(st, 0)) || !!voice.uri;
+  /* My reasons is a move only when there are words of your own (a note or a reason) */
+  const words = !!(snap.settings && urFromYou(st, 0));
+  /* Future you: a note from a good day comes right after the first breath (core ride.ts RIDE_FUTURE); not in a practice ride */
+  const hasFuture = !practice && future.notes.length > 0;
   /* It is written, for people who said faith plays a part (core written.ts) */
   const faith = godOn(st);
-  const can = useMemo(() => ({ words, faith }), [words, faith]);
+  const can = useMemo(() => ({ words, faith, future: hasFuture }), [words, faith, hasFuture]);
   const moveName = (x: string) => (x === 'written' ? writtenWords(faithVoice(st) || 'plain').name : MOVE_NAME[x] || urTool(x)?.name || x);
   /* the first move, once there is an urge: always the sun */
   useEffect(() => {

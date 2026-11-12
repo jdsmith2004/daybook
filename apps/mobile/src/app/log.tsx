@@ -79,7 +79,7 @@ import { close, closeAll } from '@/lib/nav';
 import { WhenPill, WhenSheet } from '@/components/when';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
-import { font, useTheme, type Sky } from '@/lib/theme';
+import { font, nightInk, useTheme, type Sky } from '@/lib/theme';
 
 type Step = 'q1' | 'won' | 'slHold';
 
@@ -384,21 +384,28 @@ export default function Log() {
             <Appear delay={1300} by={10} style={s.done}>
               <Button label="Done" kind="warm" onPress={closeAll} />
               {lesson ? (
-                <View style={s.more}>
-                  <Link
-                    label={'Lesson: ' + lesson.title}
-                    tone="muted"
-                    onPress={() => {
-                      track('rekindle', { step: 'learn' });
-                      router.push({ pathname: '/lesson/[id]', params: { id: lesson.id, at: 'care' } });
-                    }}
-                  />
-                </View>
+                <QuietButton
+                  icon="book"
+                  label={lesson.title}
+                  a11y={'Lesson: ' + lesson.title}
+                  onPress={() => {
+                    track('rekindle', { step: 'learn' });
+                    router.push({ pathname: '/lesson/[id]', params: { id: lesson.id, at: 'care' } });
+                  }}
+                />
               ) : null}
               {close988 ? (
-                <View style={s.more}>
-                  <Link label="Need someone right now? Call or text 988" tone="muted" onPress={() => Linking.openURL('tel:988')} />
-                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Call or text 988, the Suicide and Crisis Lifeline"
+                  onPress={() => Linking.openURL('tel:988')}
+                  hitSlop={6}
+                  style={({ pressed }) => [s.help, { opacity: pressed ? 0.6 : 1 }]}>
+                  <Icon name="phone" size={16} color={nightInk.muted} />
+                  <Text style={[s.helpT, { color: nightInk.muted }]}>
+                    Need someone right now? <Text style={{ fontFamily: font.bodyBold, fontSize: 13, color: nightInk.ink }}>Call or text 988</Text>
+                  </Text>
+                </Pressable>
               ) : null}
             </Appear>
           ) : (
@@ -452,6 +459,22 @@ function SavedPill({ text, onUndo }: { text: string; onUndo?: () => void }) {
   );
 }
 
+/* the quiet choice under the main button on the fire's sky: a soft fill, never a second bright button and never an underlined link */
+function QuietButton({ icon, label, a11y, onPress }: { icon: string; label: string; a11y?: string; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={a11y || label}
+      onPress={onPress}
+      style={({ pressed }) => [s.quiet, { backgroundColor: nightInk.btn, opacity: pressed ? 0.75 : 1 }]}>
+      <Icon name={icon} size={18} color={nightInk.ink} />
+      <Text style={[s.quietT, { color: nightInk.ink }]} numberOfLines={1}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const s = StyleSheet.create({
   h: { textAlign: 'center' },
   plan: { alignSelf: 'stretch' },
@@ -462,7 +485,10 @@ const s = StyleSheet.create({
   gapLine: { alignSelf: 'stretch', minHeight: 64 },
   btnSpace: { height: 52 },
   done: { alignSelf: 'stretch', gap: 12 },
-  more: { alignItems: 'center' },
+  quiet: { minHeight: 50, borderRadius: 999, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  quietT: { fontFamily: font.bodySemi, fontSize: 15, flexShrink: 1 },
+  help: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44 },
+  helpT: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },
   ck: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

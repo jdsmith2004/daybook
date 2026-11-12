@@ -6,6 +6,11 @@ import { forgetEvents } from '@/lib/events';
 import {
   allDirty,
   checkNew,
+  baseAfter,
+  cleanTombs,
+  keepBase,
+  keepTombs,
+  withTombs,
   defaultSettings,
   LADDER_V,
   clearAcked,
@@ -45,6 +50,10 @@ const P = 'daybook:';
 /** said when a change could not be written to the phone's storage */
 export const SAVE_FAILED = 'That change shows here but could not be saved on this phone. Try again in a moment. ' + STUCK_LINE;
 const DIRTY = P + 'dirty';
+/* the marks of days emptied here whose deletion has not reached the account yet (core sync.ts tombsAfter) */
+const TOMB = P + 'tomb';
+/* what each change waiting to be sent was made from: record id -> the change time of the account's copy (core baseAfter) */
+const BASE = P + 'base';
 /* this phone's own log, kept for PREV_DAYS after it was replaced by the account's (the first sign-in's "Use my account's
    log here"), so that choice can be undone. Outside the P keys, so nothing that reads or clears the log touches it. */
 const PREV = 'daybook~prev:';
@@ -52,11 +61,12 @@ const PREV_AT = 'daybook~prev';
 export const PREV_DAYS = 7;
 const empty = (): Snapshot => ({ settings: null, days: {}, reviews: {}, journal: {} });
 
-async function load(): Promise<{ snap: Snapshot; dirty: Record<string, number> }> {
+async function load(): Promise<{ snap: Snapshot; dirty: Record<string, number>; base: Record<string, number> }> {
   const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith(P));
   const pairs = keys.length ? await AsyncStorage.multiGet(keys) : [];
   const snap = empty();
   let dirty: Record<string, number> = {};
+  const base: Record<string, number> = {};
   for (const [k, raw] of pairs) {
     if (raw == null) continue;
     let v: unknown;
@@ -67,7 +77,12 @@ async function load(): Promise<{ snap: Snapshot; dirty: Record<string, number> }
     }
     const id = k.slice(P.length);
     if (k === DIRTY) dirty = v && typeof v === 'object' ? (v as Record<string, number>) : {};
-    else if (id === 'settings') snap.settings = normSettings(v);
+    else if (k === TOMB) {
+      const t = cleanTombs(v);
+      if (t) snap.tomb = t;
+    } else if (k === BASE) {
+      if (v && typeof v === 'object') for (const [id, u] of Object.entries(v)) if (typeof u === 'number' && Number.isFinite(u)) base[id] = u;
+    } else if (id === 'settings') snap.settings = normSettings(v);
     else if (id.startsWith('days/') && isKey(id.slice(5))) snap.days[id.slice(5)] = normDay(v, id.slice(5));
     else if (id.startsWith('reviews/') && isReviewKey(id.slice(8))) snap.reviews[id.slice(8)] = normReview(v, id.slice(8));
     else if (id.startsWith('journal/') && isJnId(id.slice(8))) {
@@ -75,7 +90,7 @@ async function load(): Promise<{ snap: Snapshot; dirty: Record<string, number> }
       if (e) snap.journal![e.id] = e;
     }
   }
-  return { snap, dirty };
+  return { snap, dirty, base };
 }
 
 function recordOf(snap: Snapshot, id: RecordId) {
@@ -108,7 +123,7 @@ interface StoreValue {
   /** erase everything on this device */
   erase: () => Promise<void>;
   /** for sync: the log and the dirty list right now */
-  current: () => { snap: Snapshot; dirty: Record<string, number> };
+  current: () => { snap: Snapshot; dirty: Record<string, number>; base: Record<string, number> };
   /** for sync: records from the account, merged into the log as it is now (last change wins). Gives back how many changed. */
   mergeFromAccount: (recs: SyncRecord[]) => Promise<number>;
   /** for sync: the account now has these records; each leaves the dirty list unless it changed again meanwhile */
@@ -174,6 +189,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const freshRef = useRef<{ t: number; f: FreshSeen }[]>([]);
   const snapRef = useRef(snap);
   const dirtyRef = useRef(dirty);
+  /* what each waiting change was made from (core baseAfter); only sync reads it */
+  const baseRef = useRef<Record<string, number>>({});
   /* the latest change time this copy has had for each record id, so writing the dirty list keeps marks only another copy
      (a second browser tab) made (core mergeDirty) */
   const seenRef = useRef<Record<string, number>>({});
@@ -185,11 +202,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     load()
-      .then(({ snap: s, dirty: d }) => {
+      .then(({ snap: s, dirty: d, base: b }) => {
         /* the refs first: the first screen's effects run before this provider's own, and a change they make (graduation,
            the start moving) reads the loaded snapshot, not the empty one */
         snapRef.current = s;
         dirtyRef.current = d;
+        baseRef.current = keepBase(b, d);
         seenRef.current = { ...d };
         setSnap(s);
         setDirty(d);
@@ -269,6 +287,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       dirtyRef.current = d;
       setDirty(d);
+      if (ids.some((id) => id.startsWith('days/'))) sets.push([TOMB, JSON.stringify(next.tomb || {})]);
+      sets.push([BASE, JSON.stringify(baseRef.current)]);
       sets.push(await dirtyEntry());
       await AsyncStorage.multiSet(sets);
       if (dels.length) await AsyncStorage.multiRemove(dels);
@@ -403,6 +423,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           hooks.current.onTakeBack?.(back.badges, back.level);
         }
       }
+      /* a day emptied here keeps the marks of what it held until its deletion reaches the account, and a day logged on
+         again keeps them, so another device's copy never brings a deleted entry back or takes a new one away */
+      next = withTombs(cur, next);
       const ids: RecordId[] = [];
       if (next.settings !== cur.settings) ids.push('settings');
       for (const k of new Set([...Object.keys(cur.days), ...Object.keys(next.days)])) if (cur.days[k] !== next.days[k]) ids.push(`days/${k}`);
@@ -411,6 +434,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (ja !== jb) for (const k of new Set([...Object.keys(ja), ...Object.keys(jb)])) if (ja[k] !== jb[k]) ids.push(`journal/${k}`);
       snapRef.current = next;
       setSnap(next);
+      /* what these changes were made from, kept before persist marks them waiting */
+      if (ids.length) baseRef.current = baseAfter(cur, ids, dirtyRef.current, baseRef.current);
       if (ids.length) persist(next, ids).catch(() => say(SAVE_FAILED));
       /* what this change earned (legacy winNote): the points gained on the changed days; a slip logged is said quietly. noWin: putting
          an entry back as it was earned nothing new. */
@@ -446,6 +471,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     snapRef.current = empty();
     setSnap(empty());
     dirtyRef.current = {};
+    baseRef.current = {};
     setDirty({});
   }, []);
 
@@ -457,7 +483,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     [writeDirty],
   );
-  const current = useCallback(() => ({ snap: snapRef.current, dirty: dirtyRef.current }), []);
+  const current = useCallback(() => ({ snap: snapRef.current, dirty: dirtyRef.current, base: baseRef.current }), []);
   /* writes records that came from the account: saved here, but not marked as changed here */
   const writeQuiet = useCallback(async (next: Snapshot, ids: RecordId[]) => {
     const sets: [string, string][] = [];
@@ -467,12 +493,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (r) sets.push([P + id, JSON.stringify(r)]);
       else dels.push(P + id);
     }
+    if (ids.some((id) => id.startsWith('days/'))) sets.push([TOMB, JSON.stringify(next.tomb || {})]);
     if (sets.length) await AsyncStorage.multiSet(sets);
     if (dels.length) await AsyncStorage.multiRemove(dels);
   }, []);
   const mergeFromAccount = useCallback(
     async (recs: SyncRecord[]) => {
-      const m = mergeRemote(snapRef.current, dirtyRef.current, recs);
+      const m = mergeRemote(snapRef.current, dirtyRef.current, recs, baseRef.current);
+      if (JSON.stringify(m.base) !== JSON.stringify(baseRef.current)) {
+        baseRef.current = m.base;
+        await AsyncStorage.setItem(BASE, JSON.stringify(m.base));
+      }
       if (!m.changed.length) return 0;
       snapRef.current = m.snap;
       setSnap(m.snap);
@@ -485,7 +516,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     [writeQuiet, saveDirty, writeDirty],
   );
-  const ackPushed = useCallback(async (acked: Record<string, number>) => saveDirty(clearAcked(dirtyRef.current, acked)), [saveDirty]);
+  const ackPushed = useCallback(
+    async (acked: Record<string, number>) => {
+      const d = clearAcked(dirtyRef.current, acked);
+      const b = keepBase(baseRef.current, d);
+      if (b !== baseRef.current) {
+        baseRef.current = b;
+        await AsyncStorage.setItem(BASE, JSON.stringify(b));
+      }
+      /* a deleted day the account now has needs its marks no longer */
+      const t = keepTombs(snapRef.current.tomb, d);
+      if (t !== snapRef.current.tomb) {
+        const next = { ...snapRef.current, tomb: t };
+        snapRef.current = next;
+        setSnap(next);
+        await AsyncStorage.setItem(TOMB, JSON.stringify(t || {}));
+      }
+      await saveDirty(d);
+    },
+    [saveDirty],
+  );
   const markAllDirty = useCallback(async () => saveDirty(allDirty(snapRef.current, dirtyRef.current)), [saveDirty]);
   const restamp = useCallback(
     async (ids: string[], u: number) => {
@@ -548,6 +598,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (stale.length) await AsyncStorage.multiRemove(stale);
       /* this device now holds the account's log as it is: nothing here, in any tab, is waiting to be sent */
       dirtyRef.current = {};
+      baseRef.current = {};
       setDirty({});
       await AsyncStorage.setItem(DIRTY, '{}');
     },

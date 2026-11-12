@@ -545,7 +545,7 @@ export default function TalkIt() {
                 <T v="label" style={s.c}>
                   What is in that {n}?
                 </T>
-                <ChipWrap>
+                <ChipWrap last={1}>
                   {whys.map((r) => (
                     <AnswerChip key={r} label={r} tone="mint" on={talk.why.indexOf(r) >= 0} onPress={() => set({ why: toggle(talk.why, r) })} />
                   ))}

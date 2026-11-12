@@ -39,6 +39,7 @@ import { Button, T } from '@/components/ui';
 import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
 import { useSos } from '@/lib/sos';
+import { usePullDowns } from '@/lib/pull';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -49,6 +50,7 @@ const TONES = ['mint', 'sky', 'violet'];
 export default function Recheck() {
   const c = useTheme();
   const { snap, tk, apply } = useStore();
+  const downs = usePullDowns();
   const sos = useSos();
   const params = useLocalSearchParams<{ only?: string }>();
   /* what this visit asks, decided once: the five (unless the card was for the one question alone), and the north star when due */
@@ -127,7 +129,7 @@ export default function Recheck() {
   }
   /* the north star: the question at the top, the proof under it, the number huge in the middle, the slider and Save low */
   if (onFree) {
-    const proof = snap.settings ? freeProof(snap.days, snap.settings, snap.reviews, tk) : [];
+    const proof = snap.settings ? freeProof(snap.days, snap.settings, snap.reviews, tk, 2, downs) : [];
     return (
       <SheetFrame title="One question">
         <T v="title" accessibilityRole="header">

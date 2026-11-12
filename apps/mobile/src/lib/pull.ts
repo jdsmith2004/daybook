@@ -41,6 +41,10 @@ export interface PullModule {
   ignoredAt(): number | null;
   /** whether a pause's button asked for Daybook just now, taken once */
   takeWant(): boolean;
+  /** the times the person put it down (the shield's Close and the wait screen's Put it down), on this phone only */
+  downs(): number;
+  /** Put it down on the wait screen: one more (at most one in core PULL_COUNT_GAP minutes); the count after it */
+  countDown(): number;
 }
 interface PullNative extends PullModule {
   on: boolean;
@@ -50,6 +54,7 @@ const native = Platform.OS === 'ios' ? requireOptionalNativeModule<PullNative>('
 const real: PullModule | null = native?.on ? native : null;
 const preview = (Platform.OS === 'ios' && __DEV__) || process.env.EXPO_PUBLIC_PULL_PREVIEW === '1';
 let fakeCount = 0;
+let fakeDowns = 0;
 /* the stand-in: says yes to the ask and picks two apps, so the screens can be walked */
 const fake: PullModule = {
   authorize: async () => true,
@@ -62,6 +67,8 @@ const fake: PullModule = {
   stop: async () => void (fakeCount = 0),
   ignoredAt: () => null,
   takeWant: () => false,
+  downs: () => fakeDowns,
+  countDown: () => ++fakeDowns,
 };
 export const Pull: PullModule | null = real ?? (preview ? fake : null);
 /** whether this build offers it at all: an iPhone with the module (or the stand-in) */
@@ -122,6 +129,29 @@ export async function pullWrite(b: PullBridge) {
   await Pull.write(JSON.stringify(b));
 }
 
+/* the times the person put it down, read fresh each time the app comes back (the shield's Close adds to it while Daybook is shut) */
+let downs = 0;
+const readDowns = () => {
+  const n = Pull?.downs() ?? 0;
+  if (n !== downs) {
+    downs = n;
+    emit();
+  }
+};
+/** Put it down on the wait screen: one more, and the count after it */
+export function pullCountDown(): number {
+  const n = Pull?.countDown() ?? 0;
+  readDowns();
+  return n;
+}
+/** the times the person put it down (core identityLines: "You are someone who puts it down."), 0 without Screen Time */
+export const usePullDowns = () =>
+  useSyncExternalStore(
+    sub,
+    () => downs,
+    () => downs,
+  );
+
 /** when the hard hours' notes were ignored, read fresh (core pullDrift) */
 export const pullIgnoredAt = (): number | null => (real ? real.ignoredAt() : null);
 
@@ -141,6 +171,7 @@ export function PullKeeper() {
   useEffect(() => {
     if (!real) return;
     const back = async () => {
+      readDowns();
       if (real.takeWant()) router.navigate('/pause');
       /* access taken back in Settings: More shows it off, and the schedules and any pause are stopped too. allowed() is false
          only for a plain no, never while Apple's status is still loading after a launch. */

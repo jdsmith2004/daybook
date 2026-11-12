@@ -73,7 +73,7 @@ const SHOTS = process.env.EXPO_PUBLIC_SHOTS === '1';
 const SHOT_WON: Rode = { key: '2026-10-16', id: 'shot', mins: 8, moves: ['breathe', 'move', 'ground'], gain: 15, sos: true };
 
 export default function Sos() {
-  const { snap, tk, now, update, apply } = useStore();
+  const { snap, tk, now, update, apply, ready } = useStore();
   /* late at night the screens go dark */
   const night = urNight(new Date(now).getHours());
   const sky = night ? 'night' : 'violet';
@@ -132,8 +132,10 @@ export default function Sos() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   /* the proof over the first breath (core sosProof): how many times this person has ridden one out before this SOS. None on a
-     first one, and none in a practice ride */
-  const [proof] = useState(() => (practice ? null : sosProof(snap.days, tk)));
+     first one, and none in a practice ride. Taken once, as soon as the log has loaded */
+  const proofAt = useRef<string | null | undefined>(undefined);
+  if (proofAt.current === undefined && (ready || practice)) proofAt.current = practice ? null : sosProof(snap.days, tk);
+  const proof = proofAt.current ?? null;
   const [pu, setPu] = useState<UrState>(() => newUrge(Date.now(), 0));
   const ur = practice ? pu : sos.ur;
   const setUr = practice ? setPu : sos.set;
@@ -624,18 +626,28 @@ function Bare({
 /** the one small line over the first breath: it comes in softly, stays for a few seconds and fades as the breath gets going.
     It is read by a screen reader once. Nothing to tap. */
 function ProofFade({ text, color }: { text: string; color: string }) {
-  const o = useSharedValue(0);
+  const reduce = useReducedMotion();
+  const o = useSharedValue(reduce ? 1 : 0);
+  const [gone, setGone] = useState(false);
   useEffect(() => {
+    /* under Reduce Motion it simply shows, and leaves after the same time (an animation would jump straight to its end) */
+    if (reduce) {
+      const t = setTimeout(() => setGone(true), PROOF_MS + 500);
+      return () => clearTimeout(t);
+    }
     o.value = withSequence(withTiming(1, { duration: 500 }), withDelay(PROOF_MS, withTiming(0, { duration: 1400 })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const st = useAnimatedStyle(() => ({ opacity: o.value }));
+  if (gone) return null;
   return (
     <Reanimated.View style={[s.proof, st]} pointerEvents="none" accessibilityLiveRegion="polite">
       <Text style={[s.proofT, { color }]}>{text}</Text>
     </Reanimated.View>
   );
 }
+/** where the proof sits: just under the breath's words (components/orb.tsx, WORDS) */
+const PROOF_TOP = 112;
 /** how long the proof stays before it fades */
 const PROOF_MS = 3800;
 
@@ -651,8 +663,8 @@ const s = StyleSheet.create({
   passed: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 36, paddingLeft: 11, paddingRight: 13, borderRadius: 18 },
   passedT: { fontFamily: font.bodyBold, fontSize: 15 },
   ride: { flex: 1, alignSelf: 'stretch' },
-  /* over the first breath's words, small and centered */
-  proof: { position: 'absolute', left: 0, right: 0, top: 0, alignItems: 'center' },
+  /* under the first breath's words, in the open sky over the sun, small and centered */
+  proof: { position: 'absolute', left: 0, right: 0, top: PROOF_TOP, alignItems: 'center' },
   proofT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'center' },
   /* each page leaves room at the bottom for the caption and the rail, so its own answers sit just above them */
   page: { flex: 1, alignItems: 'center', gap: 14, paddingBottom: CAP },

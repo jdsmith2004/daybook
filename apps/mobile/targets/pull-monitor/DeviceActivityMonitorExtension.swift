@@ -1,18 +1,38 @@
 // The monitor (Apple's DeviceActivity): Apple wakes it when a schedule starts or ends, or when the picked apps pass a threshold.
 // It is told only that, never the numbers or the app. The schedules are set by the main app (DaybookPullModule):
 //   pull.long             every day, one event "long" at the person's hours of use (1, 2 or 3)
-//   pull.hard.<wd>.<h>    a hard-hours window: weekday (1 Sunday), starting hour; events "1", "2" at 10 and 20 minutes of use, "3" at 30
-//   pull.open             the few minutes open after the wait, event "open" at those minutes of use
-// Thresholds are known to fire early, right after a schedule starts (iOS 17 to 26), so one that comes sooner than its minutes after
-// both the window's start and the app's start of that schedule is ignored. Stopping a schedule also ends its interval here, so an
-// end that comes before its time is ignored too. Nothing here is irreversible: a pause ends with its window, the app lifts a stale
-// one when it opens, and the person can lift it in Daybook or in Settings at any time.
+//   pull.night.a / .b     the night, from the morning's time to 23:59 and from midnight to 6 AM (two, so nothing rests on an
+//                         interval across midnight); events "1", "2" at 10 and 20 minutes of use, "3" at 30 (the notes ignored)
+//   pull.open             the few minutes open after the short wait, event "open" at those minutes of use
+//   pull.relock           10 minutes after adult sites opened from the long wait: the filter is back
+// Every start and end runs Pull.guardNow, which sets the shield and the adult filter from the clock and the App Group, so a
+// callback that comes late, twice or not at all is caught up by the next one (or by the app on its next open). Thresholds are
+// known to fire early right after a schedule starts (iOS 17 to 26), so one that comes sooner than its minutes after both the
+// part's start and the app's start of that schedule is ignored. Nothing here is irreversible: the person can lift every wait in
+// Daybook or in Settings at any time.
 import DeviceActivity
 import FamilyControls
 import Foundation
 import ManagedSettings
 
 class DeviceActivityMonitorExtension: DeviceActivityMonitor {
+  override func intervalDidStart(for activity: DeviceActivityName) {
+    super.intervalDidStart(for: activity)
+    Pull.guardNow()
+  }
+
+  override func intervalDidEnd(for activity: DeviceActivityName) {
+    super.intervalDidEnd(for: activity)
+    if activity.rawValue == "pull.open" {
+      /* its time is up even if the minutes of use were not: the wait is back. An end sooner than that is the app starting a new
+         one (a second Open), not the end. */
+      let at = Pull.defaults?.double(forKey: Pull.openAtKey) ?? 0
+      if Pull.nowMs < at + Pull.openSpan - 60_000 { return }
+      Pull.defaults?.set(0.0, forKey: Pull.openKey)
+    }
+    Pull.guardNow()
+  }
+
   override func eventDidReachThreshold(_ event: DeviceActivityEvent.Name, activity: DeviceActivityName) {
     super.eventDidReachThreshold(event, activity: activity)
     guard let b = Pull.bridge() else { return }
@@ -28,45 +48,26 @@ class DeviceActivityMonitorExtension: DeviceActivityMonitor {
       return
     }
     if name == "pull.open" {
-      /* the minutes open are used up: the pause comes back while tonight's hard hours last */
+      /* the minutes open are used up: the wait is back */
       let at = Pull.defaults?.double(forKey: Pull.openAtKey) ?? 0
       let mins = Pull.defaults?.double(forKey: Pull.openMinsKey) ?? 3
       if !Pull.enoughSince(max(at, since), minutes: mins) { return }
-      if Pull.resting, let s = Pull.selection() { Pull.shield(s) }
+      Pull.defaults?.set(0.0, forKey: Pull.openKey)
+      Pull.guardNow(b)
       return
     }
-    guard let (_, h) = Pull.hardParts(name), let w = Pull.window(hour: h) else { return }
+    guard Pull.isNight(name), Pull.inNight(b), let start = Pull.partStart(name, b) else { return }
     let mins = e == "1" ? 10.0 : e == "2" ? 20.0 : 30.0
-    if !Pull.enoughSince(max(since, w.start.timeIntervalSince1970 * 1000), minutes: mins) { return }
-    let once = String(Int(w.start.timeIntervalSince1970))
+    if !Pull.enoughSince(max(since, start.timeIntervalSince1970 * 1000), minutes: mins) { return }
+    /* each note at most once a night, across both parts of it */
+    let once = Pull.nightOf()
     if e == "1" || e == "2" {
       if let k = Pull.noteFor(b, kind: e) { Pull.post(b, kind: k, once: once) }
       return
     }
-    /* 30 minutes of use inside the hard hours, after both notes: once a window (a threshold can fire twice, and must not pause
-       again in the minutes opened after the wait, or after Lift every pause now), and never at or past the window's end (a late
-       callback would pause with no end left to lift it) */
-    let p = Pull.prefs(b)
-    if (p["hard"] as? Bool) == false { return }
-    if Pull.nowMs >= w.end.timeIntervalSince1970 * 1000 - 60_000 { return }
-    if !Pull.mark("pause", once: once) { return }
-    if !Pull.quiet(b) { Pull.defaults?.set(Pull.nowMs, forKey: Pull.ignoredKey) }
-    if (p["pause"] as? Bool) == true { Pull.rest(until: w.end.timeIntervalSince1970 * 1000) }
-  }
-
-  override func intervalDidEnd(for activity: DeviceActivityName) {
-    super.intervalDidEnd(for: activity)
-    let name = activity.rawValue
-    if Pull.hardParts(name) != nil {
-      /* the hard hours are over: the pause ends with them. Stopping a schedule also ends it, so only when the pause's end is here. */
-      let rest = Pull.defaults?.double(forKey: Pull.restKey) ?? 0
-      if rest > 0 && Pull.nowMs >= rest - 60_000 { Pull.lift() }
-    } else if name == "pull.open" {
-      /* its time is up even if the minutes of use were not: the pause comes back while the hard hours last. An end sooner than that
-         is the app starting a new one (a second Open), not the end. */
-      let at = Pull.defaults?.double(forKey: Pull.openAtKey) ?? 0
-      if Pull.nowMs < at + Pull.openSpan - 60_000 { return }
-      if Pull.resting, let s = Pull.selection() { Pull.shield(s) }
-    }
+    /* 30 minutes of use in the night, after both notes: the fire burns lower (core pullDrift), never in the quiet after a slip */
+    if (Pull.prefs(b)["hard"] as? Bool) == false || Pull.quiet(b) { return }
+    if !Pull.mark("ignored", once: once) { return }
+    Pull.defaults?.set(Pull.nowMs, forKey: Pull.ignoredKey)
   }
 }

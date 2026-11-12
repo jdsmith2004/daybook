@@ -38,11 +38,27 @@ import {
   lessonLast,
   OB_CREED,
   setFaith,
+  NIGHT_TIMES,
+  PULL_LIFT,
   PULL_LONG,
+  PULL_NIGHT_END,
   PULL_OPEN,
   PULL_WAIT,
-  riskWindow,
+  PULL_WEB_OPEN,
+  pullEarly,
+  pullEarlier,
+  pullInNight,
+  pullNightStart,
+  pullQuietUntil,
+  pullSettle,
+  pullShown,
+  pullWaitLabel,
+  tonightOf,
+  keyOfDate,
+  clockOf,
+  type Days,
   type PullPrefs,
+  type Settings,
   setHabit,
   habitOf,
   HABIT_NAME,
@@ -90,7 +106,7 @@ import {
 } from '@/lib/prefs';
 import { useNotifyEnv } from '@/lib/notify-env';
 import { allowReminders, exactAlarmsAsk, exactAlarmsOk, remindersOffered } from '@/lib/reminders';
-import { Pull, PULL_DENIED, pullOffered, pullStart, pullStop, setPullPrefs, usePullPrefs } from '@/lib/pull';
+import { Pull, PULL_DENIED, pullLiftAll, pullOffered, pullPick, pullSet, pullStart, pullStop, setPullPrefs, usePullPrefs } from '@/lib/pull';
 import { connectHealth, forgetHealth, healthOffered, useNights } from '@/lib/health';
 import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
@@ -258,9 +274,6 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
   /* the lesson reminder's time is not set by hand: it follows the last lesson (core lessonAt) */
   const la = lessonAt(snap.days, nlog, tk, now);
   const lessonSub = 'Once a day, around ' + fmtClock(la.at) + (la.from === 'last' ? ', about when you did your last one.' : ', when you usually open Daybook.');
-  /* the hard hours the log has found, for Screen Time */
-  const hw = riskWindow(snap.days, st, tk);
-  const pullHard = hw ? (hw.scope === 'weekdays' ? 'Weekdays, ' : hw.scope === 'weekends' ? 'Weekends, ' : 'Every day, ') + hw.label : null;
 
   const ownN = st.opts.trig.filter((o) => !o.off).length + st.opts.did.filter((o) => !o.off).length;
   const routineOn = ROUTINE_SHOWN.filter((x: { k: string }) => st.routine[x.k]).length;
@@ -554,7 +567,9 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
       ),
     },
 
-    pull: pullOffered ? { icon: 'phone', title: PULL_NAME, value: pull.on ? 'On' : 'Off', body: <PullBody pull={pull} hard={pullHard} say={say} /> } : null,
+    pull: pullOffered
+      ? { icon: 'phone', title: PULL_NAME, value: pull.on ? 'On' : 'Off', body: <PullBody pull={pull} days={snap.days} st={st} now={now} say={say} /> }
+      : null,
 
     answers: {
       icon: 'pencil',
@@ -770,9 +785,10 @@ export function SettingsPart({ id }: { id: PartId }) {
   );
 }
 
-/* Screen Time (iPhone only; core pull.ts). Apple's own list picks the apps and Daybook never learns which; every choice here undoes
-   at once, with no wait and no lock. */
-function PullBody({ pull, hard, say }: { pull: PullPrefs; hard: string | null; say: (m: string) => void }) {
+/* Screen Time (iPhone only; core pull.ts). Apple's own list picks the apps and Daybook never learns which. A stricter choice works
+   at once; a looser one made outside the morning waits for 6 AM and says so (loosen slowly, tighten at once). Lift every wait now
+   and Turn Screen Time off are always instant, as is Settings, Screen Time on the phone. */
+function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; st: Settings; now: number; say: (m: string) => void }) {
   const start = async () => {
     const r = await pullStart().catch(() => 'closed' as const);
     if (r === 'denied') say(PULL_DENIED);
@@ -780,52 +796,98 @@ function PullBody({ pull, hard, say }: { pull: PullPrefs; hard: string | null; s
   };
   if (!pull.on)
     return (
-      <SetGroup foot="Pick the apps that pull you in. When one has you too long, I will say so, and in your hard hours I will say it louder. Apple keeps the list, and nothing about your apps leaves this phone.">
+      <SetGroup foot="Pick the apps that pull you in. Each one waits a few seconds before it opens, and at night adult sites wait longer. Apple keeps the list, and nothing about your apps leaves this phone.">
         <SetRow label="Choose the apps" act="accent" onPress={start} />
       </SetGroup>
     );
+  const t = Date.now();
+  const p = pullSettle(pull, t);
+  const shown = pullShown(p);
+  const waits = p.later ? fmtClock(PULL_NIGHT_END) : null;
+  const held = (k: keyof PullPrefs) => !!p.later && k in p.later.p;
+  /* a choice from here: when it waits for the morning, the flame says so */
+  const set = (c: Partial<PullPrefs>) => {
+    const at = pullSet(c);
+    if (at) say('Looser settings start in the morning. This one starts at ' + fmtClock(PULL_NIGHT_END) + '.');
+  };
+  const porn = habitOf(st) === 'porn';
+  const from = pullNightStart(days, st, p, t);
+  const night = pullInNight(t, from);
+  const quiet = (pullQuietUntil(days, st, now) ?? 0) > now;
+  const span = fmtClock(from) + ' to ' + fmtClock(PULL_NIGHT_END);
+  /* by day, tonight can start earlier than the morning said (never later: that is the morning's choice) */
+  const morning = tonightOf(days, st, keyOfDate(new Date(t))).at;
+  const earlier = NIGHT_TIMES.filter((x) => pullEarlier(morning, x) === x).slice(-3);
   const hours = (n: number) => (n === 0 ? 'Off' : n === 1 ? '1 hour' : n + ' hours');
+  const mins = (n: number) => n + ' minutes';
+  const foot = (k: keyof PullPrefs, base?: string) => (held(k) ? (base ? base + ' ' : '') + 'Your change starts at ' + waits + '.' : base);
   return (
     <>
       <SetGroup foot="Apple keeps the list, and nothing about your apps leaves this phone.">
-        <SetRow label="Change the apps" onPress={() => Pull?.pick()} />
+        <SetRow
+          label="Change the apps"
+          onPress={async () => {
+            const at = await pullPick();
+            if (at) say('The apps you took out still wait until ' + fmtClock(PULL_NIGHT_END) + '. Looser settings start in the morning.');
+          }}
+        />
       </SetGroup>
-      <SetGroup head="A note after long use" foot="One note a day. When today’s lesson is not done, a tap takes you to it.">
-        <SetPick options={PULL_LONG.map((n) => [n, hours(n)] as const)} value={pull.long} onPick={(n) => setPullPrefs({ long: n })} />
+      <SetGroup head="A short wait before them" foot={foot('feeds', 'All day, each time you open one.')}>
+        <SetSwitch label="Wait first" on={shown.feeds} onChange={(on) => set({ feeds: on })} />
       </SetGroup>
-      <SetGroup
-        head="In my hard hours"
-        foot={
-          (hard ? hard + ': a note at 10 minutes, and at 20.' : 'Your hard hours show here once your log finds them.') +
-          (hard && pull.hard && pull.pause ? ' At 30, the pause rests the apps until your hard hours end; a short wait opens them for a few minutes.' : '')
-        }>
-        <SetSwitch label="Notes" on={pull.hard} onChange={(on) => setPullPrefs({ hard: on })} />
-        {pull.hard ? <SetSwitch label="Pause it if I keep going" on={pull.pause} onChange={(on) => setPullPrefs({ pause: on })} /> : null}
-      </SetGroup>
-      {pull.hard && pull.pause ? (
+      {shown.feeds ? (
         <>
-          <SetGroup head="The wait">
-            <SetPick
-              options={PULL_WAIT.map((n) => [n, n === 60 ? '1 minute' : n + ' seconds'] as const)}
-              value={pull.wait}
-              onPick={(n) => setPullPrefs({ wait: n })}
-            />
+          <SetGroup head="The wait" foot={foot('wait')}>
+            <SetPick options={PULL_WAIT.map((n) => [n, pullWaitLabel(n)] as const)} value={shown.wait} onPick={(n) => set({ wait: n })} />
           </SetGroup>
-          <SetGroup head="Then open for">
-            <SetPick options={PULL_OPEN.map((n) => [n, n + ' minutes'] as const)} value={pull.open} onPick={(n) => setPullPrefs({ open: n })} />
+          <SetGroup head="Then open for" foot={foot('open', 'Minutes of use, then the wait is back.')}>
+            <SetPick options={PULL_OPEN.map((n) => [n, mins(n)] as const)} value={shown.open} onPick={(n) => set({ open: n })} />
           </SetGroup>
         </>
       ) : null}
-      <SetGroup foot="You can also turn this off in the phone’s Settings, under Screen Time.">
+      <SetGroup head={'Tonight, ' + span} foot={night ? undefined : 'Set each morning. You can start it earlier tonight.'}>
+        {porn ? <SetSwitch label="Adult sites wait" on={shown.adult} onChange={(on) => set({ adult: on })} /> : null}
+        <SetSwitch label="Notes at 10 and 20 minutes" on={p.hard} onChange={(on) => setPullPrefs({ hard: on })} />
+      </SetGroup>
+      {!night && earlier.length ? (
+        <SetGroup head="Start tonight at">
+          <SetPick
+            options={[...earlier, morning].map((x) => [x, fmtClock(x)] as const)}
+            value={from}
+            onPick={(x) => setPullPrefs({ early: pullEarly(p, days, st, x, Date.now()).early })}
+          />
+        </SetGroup>
+      ) : null}
+      {porn && shown.adult ? (
+        <SetGroup
+          head="Before adult sites open"
+          foot={foot(
+            'lift',
+            'Apple’s adult filter, in Safari and other browsers. After the wait they open for ' + PULL_WEB_OPEN + ' minutes, then it is back.',
+          )}>
+          <SetPick options={PULL_LIFT.map((n) => [n, mins(n)] as const)} value={shown.lift} onPick={(n) => set({ lift: n })} />
+          {night && p.adult ? (
+            <SetRow label={'Start the ' + p.lift + '-minute wait'} onPress={() => router.push({ pathname: '/pause', params: { w: 'long' } })} />
+          ) : null}
+        </SetGroup>
+      ) : null}
+      <SetGroup head="A note after long use" foot="One note a day. When today’s lesson is not done, a tap takes you to it.">
+        <SetPick options={PULL_LONG.map((n) => [n, hours(n)] as const)} value={p.long} onPick={(n) => setPullPrefs({ long: n })} />
+      </SetGroup>
+      <SetGroup
+        foot={
+          (night && !quiet ? 'Tonight, lifting every wait counts as a night you went through. ' : '') +
+          'You can also turn this off in the phone’s Settings, under Screen Time.'
+        }>
         <SetRow
-          label="Lift every pause now"
+          label="Lift every wait now"
           act="accent"
-          onPress={() => {
-            Pull?.lift();
-            say('Every pause is lifted.');
+          onPress={async () => {
+            const until = await pullLiftAll(days, st);
+            say('Every wait is lifted until ' + fmtClock(clockOf(until)) + '.');
           }}
         />
-        <SetRow label="Turn Screen Time off" act="danger" onPress={() => pullStop()} />
+        <SetRow label="Turn Screen Time off" act="danger" onPress={() => pullStop(night)} />
       </SetGroup>
     </>
   );

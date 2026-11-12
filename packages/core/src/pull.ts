@@ -429,13 +429,22 @@ export function pullPauseWords(o: {
     hold: long ? 'It keeps counting if you leave.' : 'Breathe while it runs.',
     down: 'Put it down and go to bed',
     open: long ? 'Open them for ' + PULL_WEB_OPEN + ' minutes' : 'Open it for ' + o.open + ' minutes',
-    stake: long && !o.quiet ? 'Open it, and tonight goes in the week as a night you went through.' : null,
+    stake: long && !o.quiet ? 'Open them, and tonight goes in the week as a night you went through.' : null,
     thanks: o.quiet
       ? 'That was the strong choice. It is in your log as a win.'
       : n >= 2
         ? 'That makes ' + n + '. One more win in your log.'
         : 'One more win in your log. That is what someone free does.',
   };
+}
+
+/** what the flame says on setup's Screen Time page (setup.ts, the night page): what waits, and that it lifts whenever they want */
+export function pullSetupSay(o: { porn: boolean; at: Clock }): string {
+  return (
+    'It usually starts with scrolling. Each feed will wait ten seconds before it opens' +
+    (o.porn ? ', and from ' + fmtClock(o.at) + ' adult sites wait fifteen minutes.' : '.') +
+    ' You can lift it whenever you want.'
+  );
 }
 
 /* ---------- Put it down: evidence, not just a way out ---------- */

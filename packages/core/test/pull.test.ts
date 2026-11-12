@@ -242,7 +242,7 @@ describe('the words', () => {
   });
   it('the long wait says the stake before the choice, and never in the quiet after a slip', () => {
     expect(pullPauseWords({ mode: 'long', quiet: false, open: 3, plan: null, tonight: t }).stake).toBe(
-      'Open it, and tonight goes in the week as a night you went through.',
+      'Open them, and tonight goes in the week as a night you went through.',
     );
     expect(pullPauseWords({ mode: 'long', quiet: true, open: 3, plan: null, tonight: t }).stake).toBeNull();
     expect(pullPauseWords({ mode: 'night', quiet: false, open: 3, plan: null, tonight: t }).stake).toBeNull();

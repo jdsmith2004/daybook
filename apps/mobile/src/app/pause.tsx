@@ -1,55 +1,91 @@
-/* The wait before an app that is resting in the hard hours (Screen Time, core pull.ts; the owner, November 9, 2026). Apple's
-   shield is a still picture and cannot count down, so its button and the hard-hours notes bring the person here: the night sky,
-   the flame big in the middle with the squiggle filling around it for the wait (10, 30 or 60 seconds, set in More), and the
-   words plain. Put it down is the main button. Only once the wait is over does a quiet link open the apps for a few minutes;
-   then the pause comes back, with the wait again. In the hours after a slip the words carry no stakes, and the wait is the same.
+/* The wait (Screen Time, core pull.ts; the owner, November 9 and 11, 2026). Apple's shield is a still picture and cannot count down,
+   so its button and the night's notes bring the person here. Three waits, one screen:
 
-   The flame burns low here (the owner, November 9, 2026: "it should show it dimming in the screen time animation as well"):
-   reaching this screen means the notes were ignored, so it is seen burning fully, then goes down to PAUSE_LOW with its smoke, as on
-   Today (big-flame.tsx, core flame-low.ts). Put it down lights it again in front of the person, with the same knocks as Today,
-   before going home; opening the apps leaves it low. In the hours after a slip it never dims: the job then is to bring them back. */
-import { addEvent, gameCompute, pullDownEvent, pullPauseWords, pullPlanLine, pullQuietUntil } from '@daybook/core';
-import { router } from 'expo-router';
+   - By day, the short wait before a picked app (10, 30 or 60 seconds): the flame big in the ring, Put it down, and once the wait
+     is over a quiet link opens the app for a few minutes. Nothing dims: opening a feed at noon is not the fight.
+   - In the night, the same short wait, but it shows the morning (docs/plan.md, "The morning, not the moment", step 2): "You set
+     this up this morning.", the person's reason quoted with when they chose it, their future-you note if they made one, and Put
+     it down and go to bed. The flame burns low here, as before: it is seen burning fully, then goes down with its smoke, and Put
+     it down lights it again in front of them.
+   - `?w=long`, the long wait before adult sites (5, 15 or 30 minutes, from More in the night). It keeps counting if the person
+     leaves, and the stake is said before the choice, never after: "Open it, and tonight goes in the week as a night you went
+     through." Once over, Open them for 10 minutes; then Apple's filter is back.
+
+   No argument and no lecture: the research says the message does little; the wait and the way out do the work. In the hours after
+   a slip there are no stakes and nothing dims; the wait is the same. */
+import {
+  addEvent,
+  gameCompute,
+  PULL_WEB_OPEN,
+  pullDownEvent,
+  pullInNight,
+  pullNightOf,
+  pullNightStart,
+  pullPauseWords,
+  pullPlanLine,
+  pullQuietUntil,
+  pullSettle,
+  tonightOf,
+} from '@daybook/core';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { Link } from '@/components/choices';
 import { BigFlame, DOUSE_MS, DOUSE_WAIT, RELIGHT_CATCH, RELIGHT_MS } from '@/components/big-flame';
+import { FutureNoteCard, useHasFutureNote } from '@/components/future-note';
 import { Bubble } from '@/components/lesson-flame';
 import { Dock, Middle, SceneFrame } from '@/components/scene';
 import { useClock, WavyRing } from '@/components/shapes';
 import { Button, T } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
 import { close } from '@/lib/nav';
-import { Pull, pullCountDown, usePullPrefs } from '@/lib/pull';
+import { Pull, pullCountDown, pullLongEnd, pullLongStart, usePullPrefs } from '@/lib/pull';
 import { useStore } from '@/lib/store';
 import { font, nightInk, useTheme } from '@/lib/theme';
 import { useReducedMotion } from '@/lib/motion';
 
-/** how low the fire burns on the wait: between Today's first two steps, smoke clearly rising */
+/** how low the fire burns on the night's wait: between Today's first two steps, smoke clearly rising */
 const PAUSE_LOW = 0.6;
 
+/** "14:05" for the long wait, "7" for the short one */
+const leftLabel = (s: number, long: boolean) => (long ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s));
+
 export default function PullPause() {
+  const { w: which } = useLocalSearchParams<{ w?: string }>();
   const { snap, tk, now, say, update } = useStore();
   const c = useTheme();
-  const prefs = usePullPrefs();
+  const saved = usePullPrefs();
+  const prefs = pullSettle(saved, Date.now());
   const reduce = useReducedMotion();
+  const note = useHasFutureNote();
   const { height } = useWindowDimensions();
-  /* small enough that Open it for a few minutes still fits under Put it down, with the person's own plan in the bubble */
-  const ring = Math.min(280, Math.round(height * 0.26));
   const st = snap.settings;
+  /* the mode is fixed when the screen opens, so a wait running across the night's start does not change under the person */
+  const [mode] = useState<'day' | 'night' | 'long'>(() =>
+    which === 'long' ? 'long' : st && pullInNight(Date.now(), pullNightStart(snap.days, st, saved, Date.now())) ? 'night' : 'day',
+  );
+  const dark = mode !== 'day';
+  const long = mode === 'long';
+  /* small enough that the reason, a future-you note and Open it all fit under the flame on a small phone */
+  const ring = Math.min(280, Math.round(height * (dark && note ? 0.2 : 0.26)));
   const level = st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1;
   const quiet = !!st && (pullQuietUntil(snap.days, st, now) ?? 0) > now;
   const plan = st ? pullPlanLine(st) : null;
-  const w = pullPauseWords({ quiet, open: prefs.open, plan });
+  const t = st ? tonightOf(snap.days, st, pullNightOf(Date.now())) : null;
+  const tonight = t ? { r: t.r, rAt: t.rAt, today: t.today } : null;
+  const w = pullPauseWords({ mode, quiet, open: prefs.open, plan, tonight });
   /* the count after this put-down, for the thanks */
   const downs = useRef(0);
-  /* the wait runs from the moment this opens, on the smooth clock (the motion never ticks; the number may) */
-  const t = useClock(true);
-  const p = Math.min(1, t / prefs.wait);
+  /* the short wait runs from the moment this opens; the long one from when it first started, so leaving does not start it again */
+  const [from] = useState(() => (long ? pullLongStart() : Date.now()));
+  useClock(true);
+  const total = long ? prefs.lift * 60 : prefs.wait;
+  const gone = (Date.now() - from) / 1000;
+  const p = Math.min(1, gone / total);
   const over = p >= 1;
-  const left = Math.max(0, Math.ceil(prefs.wait - t));
+  const left = Math.max(0, Math.ceil(total - gone));
   const [pulse, setPulse] = useState(0);
   useEffect(() => {
     if (over) {
@@ -57,11 +93,12 @@ export default function PullPause() {
       setPulse((x) => x + 1);
     }
   }, [over]);
-  /* how low it burns here: down once the screen opens, and lit again by Put it down */
-  const [low, setLow] = useState(quiet ? 0 : PAUSE_LOW);
+  /* how low it burns here: down once the night's screen opens, and lit again by Put it down; never by day or after a slip */
+  const dims = dark && !quiet;
+  const [low, setLow] = useState(dims ? PAUSE_LOW : 0);
   const leaving = useRef(false);
   useEffect(() => {
-    if (quiet || reduce) return;
+    if (!dims || reduce) return;
     /* the water going on: a few ticks that fade as it goes down (hero.tsx) */
     const ts = [0, 260, 600, 1100, DOUSE_MS - 200].map((ms, i) =>
       setTimeout(() => (i < 4 ? buzz('tick') : knock(Haptics.ImpactFeedbackStyle.Soft)), DOUSE_WAIT + ms),
@@ -70,21 +107,24 @@ export default function PullPause() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const home = () => {
-    say(pullPauseWords({ quiet, open: prefs.open, plan, downs: downs.current }).thanks);
+    say(pullPauseWords({ mode, quiet, open: prefs.open, plan, tonight, downs: downs.current }).thanks);
     router.replace('/');
   };
   const down = () => {
     if (leaving.current) return;
     leaving.current = true;
+    if (long) pullLongEnd();
     /* one more time they put it down: the count the shield and the notes say, kept on this phone */
     downs.current = pullCountDown();
-    /* putting it down is evidence: an urge ridden out in the log (core pullDownEvent), so it earns its points and feeds the
-       flame. No count or event is sent for it: it starts from Screen Time, whose data never leaves the phone. */
-    update((s) => {
-      const e = s.settings && pullDownEvent(s.days, s.settings, Date.now());
-      return e ? { ...s, days: addEvent(s.days, e.key, 'rode', e.time, e.fields).days } : s;
-    });
-    if (quiet || reduce || low === 0) {
+    /* in the night, putting it down is evidence: an urge ridden out in the log (core pullDownEvent), so it earns its points and
+       feeds the flame. By day it is counted, not logged: closing a feed at noon is not an urge ridden out. No count or event is
+       sent for it: it starts from Screen Time, whose data never leaves the phone. */
+    if (dark)
+      update((s) => {
+        const e = s.settings && pullDownEvent(s.days, s.settings, Date.now());
+        return e ? { ...s, days: addEvent(s.days, e.key, 'rode', e.time, e.fields).days } : s;
+      });
+    if (!dims || reduce || low === 0) {
       buzz('lit');
       if (low) setLow(0);
       return home();
@@ -109,31 +149,48 @@ export default function PullPause() {
     );
   };
   const open = async () => {
-    await Pull?.openFor(prefs.open);
+    if (long) {
+      pullLongEnd();
+      await Pull?.openWeb(PULL_WEB_OPEN);
+    } else await Pull?.openFor(prefs.open);
     close();
   };
+  const ink = dark ? nightInk.ink : c.ink;
+  const soft = dark ? nightInk.muted : c.muted;
+  /* the reason is the person's own words: when it is there, the flame does not talk over it */
+  const bubble = !(dark && (tonight?.r || note));
   return (
-    <SceneFrame title="" sky="night" onClose={() => close()}>
-      <T v="title" style={{ color: nightInk.ink }} accessibilityRole="header">
+    <SceneFrame title="" sky={dark ? 'night' : 'sky'} onClose={() => close()}>
+      <T v="title" style={{ color: ink }} accessibilityRole="header">
         {w.title}
       </T>
-      <T style={{ color: nightInk.muted, marginTop: 8 }}>{w.line}</T>
+      <T style={{ color: soft, marginTop: 8 }}>{w.line}</T>
       <Middle>
-        <Bubble text={w.say} style={{ marginBottom: 12, alignSelf: 'center', maxWidth: 300 }} />
-        <View style={s.c} accessible accessibilityRole="timer" accessibilityLabel={over ? 'The wait is over' : left + ' seconds'}>
-          <WavyRing size={ring} p={p} color={c.sun} track="rgba(255,255,255,0.14)" speed={reduce ? 0 : undefined}>
-            <BigFlame level={level} size={ring * 0.86} pulse={pulse} noLand low={low} douse={!quiet} smoke="#6B6577" label={w.title} />
+        {bubble ? <Bubble text={w.say} style={{ marginBottom: 12, alignSelf: 'center', maxWidth: 300 }} /> : null}
+        <View
+          style={s.c}
+          accessible
+          accessibilityRole="timer"
+          accessibilityLabel={over ? 'The wait is over' : long ? Math.ceil(left / 60) + ' minutes' : left + ' seconds'}>
+          <WavyRing size={ring} p={p} color={c.sun} track={dark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)'} speed={reduce ? 0 : undefined}>
+            <BigFlame level={level} size={ring * 0.86} pulse={pulse} noLand low={low} douse={dims} smoke="#6B6577" label={w.title} />
           </WavyRing>
-          <Text style={[s.left, { color: over ? nightInk.muted : c.sun }]}>{over ? ' ' : String(left)}</Text>
-          <T v="small" style={{ color: nightInk.muted }}>
+          <Text style={[s.left, { color: over ? soft : dark ? c.sun : c.ink }]}>{over ? ' ' : leftLabel(left, long)}</Text>
+          <T v="small" style={{ color: soft }}>
             {over ? ' ' : w.hold}
           </T>
         </View>
+        {dark ? (
+          <View style={s.note}>
+            <FutureNoteCard on size={72} />
+          </View>
+        ) : null}
       </Middle>
       <Dock>
+        {w.stake ? <T style={[s.stake, { color: soft }]}>{w.stake}</T> : null}
         <Button label={w.down} onPress={down} kind="warm" />
         <View style={s.c}>
-          <Link label={w.open} onPress={open} hidden={!over} color={nightInk.ink} />
+          <Link label={w.open} onPress={open} hidden={!over} color={ink} />
         </View>
       </Dock>
     </SceneFrame>
@@ -142,5 +199,7 @@ export default function PullPause() {
 
 const s = StyleSheet.create({
   c: { alignItems: 'center', gap: 8 },
-  left: { fontFamily: font.display, fontSize: 38, lineHeight: 44, marginTop: 8 },
+  note: { marginTop: 16, alignSelf: 'stretch', alignItems: 'center' },
+  stake: { textAlign: 'center', marginBottom: 4 },
+  left: { fontFamily: font.display, fontSize: 38, lineHeight: 44, marginTop: 8, fontVariant: ['tabular-nums'] },
 });

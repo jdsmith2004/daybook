@@ -83,7 +83,7 @@ export function obSuggest(a: SetupAnswers): string {
     (a clean run is a hard first goal then, and Daybook moves them to counting days once their stretches get long); anything
     less, or no answer, starts gentle, where a slip takes one day off (the owner, October 30, 2026). Strict puts the count to 0
     on a slip, so it is only ever a choice the person makes, in Settings. */
-export const obMode = (a: SetupAnswers): CountMode => (a.freq === 'f3' || a.freq === 'f4' ? 'step' : 'gentle');
+export const obMode = (a: SetupAnswers): CountMode => (obMostDays(a) ? 'step' : 'gentle');
 /** the counting the plan gives: a new person gets obMode. A walk-through keeps the counting the person has: after setup, only
     the log (switching, both ways) and the person in Settings move it, so a walk-through never undoes a choice made there. */
 export const obPlanMode = (a: SetupAnswers, st: Settings | null): CountMode => (st ? st.cleanMode : obMode(a));
@@ -177,6 +177,7 @@ export function obThenPick(a: SetupAnswers, st: Settings | null, redo: boolean, 
 export type PageKind =
   | 'hello'
   | 'account'
+  | 'night'
   | 'how'
   | 'tiles'
   | 'years'
@@ -228,7 +229,11 @@ export interface ObEnv {
   account?: boolean;
   /** true when the north star is asked here: no answer yet, and not in the hours after a slip or an SOS (north.ts freeAtSetup) */
   free?: boolean;
+  /** true when this iPhone build has Screen Time and no apps are picked yet (pull.ts) */
+  pull?: boolean;
 }
+/** said most days (or more): step-down counting, and Screen Time's waits offered at the end of setup, not unlocked on day 7 */
+export const obMostDays = (a: SetupAnswers): boolean => a.freq === 'f3' || a.freq === 'f4';
 /** the three acts of the setup: id, name, tone and icon. Every page points at its act with `s`. */
 export const OB_SECS: [string, string, string, string][] = [
   ['you', 'You', 'violet', 'compass'],
@@ -394,6 +399,9 @@ export const OB_PAGES: ObPage[] = [
   { id: 'review', s: 'plan', k: 'review' },
   /* when to check in, with the phone's one permission prompt (nudges.ts); only where the device can notify */
   { id: 'remind', s: 'plan', k: 'remind', need: (_a, env) => !!env.notify },
+  /* Screen Time's waits, for people who said most days (docs/plan.md, "The morning, not the moment", step 2): the night is met
+     with defenses set now, not with willpower then. Skip records the choice; it is in More any time. */
+  { id: 'night', s: 'plan', k: 'night', need: (a, env) => !!env.pull && obMostDays(a) },
   /* the north star's starting point (north.ts): how much the person sees themselves as free of this, 0 to 10, on the page before
      the account ask, which stays last */
   { id: 'star', s: 'plan', k: 'star', need: (_a, env) => !!env.free },

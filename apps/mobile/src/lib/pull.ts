@@ -9,7 +9,21 @@
 
    PullKeeper (in the root layout) writes core pullBridge for the extensions each time the app opens or comes back, and whenever the
    log or the choices change; notices access taken back in Settings; and opens the wait screen when a pause's button asked for it. */
-import { normPull, pullBridge, type PullBridge, type PullPrefs } from '@daybook/core';
+import {
+  normPull,
+  pullBridge,
+  pullChange,
+  pullInNight,
+  pullLiftUntil,
+  pullLooseAt,
+  pullNightStart,
+  pullSettle,
+  type Days,
+  type PullBridge,
+  type PullNights,
+  type PullPrefs,
+  type Settings,
+} from '@daybook/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requireOptionalNativeModule } from 'expo';
 import { router } from 'expo-router';
@@ -25,19 +39,28 @@ export interface PullModule {
   authorize(): Promise<boolean>;
   /** false only when access was taken back (Settings, Screen Time); true while Apple's status is still loading */
   allowed(): Promise<boolean>;
-  /** Apple's app list; how many apps and kinds are picked, or null when it was closed */
-  pick(): Promise<number | null>;
+  /** Apple's app list; how many apps and kinds are picked, or null when it was closed. `laterAt` (core pullLooseAt): a pick that
+      leaves an app out keeps it in until then; null when it all works now */
+  pick(laterAt: number | null): Promise<number | null>;
   /** how many are picked now */
   picked(): Promise<number>;
+  /** ms when a smaller pick starts, or null when none waits */
+  pickWaits(): number | null;
   /** hands the extensions what they need (core pullBridge, as JSON) and sets the watching to match */
   write(bridge: string): Promise<void>;
-  /** lifts every pause at once */
-  lift(): Promise<void>;
-  /** lifts the pause for this many minutes of use, then it comes back */
+  /** Lift every wait now: nothing held until `until` ms (core pullLiftUntil) */
+  lift(until: number): Promise<void>;
+  /** after the short wait: the apps open for this many minutes of use, then the wait is back */
   openFor(minutes: number): Promise<void>;
+  /** after the long wait: adult sites open for this many minutes, then the filter is back; the night counts as gone through */
+  openWeb(minutes: number): Promise<void>;
+  /** tonight counts as a night the person went through */
+  through(): void;
+  /** the nights, on this phone only (core pullNightHeld) */
+  nights(): PullNights;
   /** stops everything: no watching, no pause, nothing picked */
   stop(): Promise<void>;
-  /** when the hard hours' notes were ignored (core pullDrift), or null */
+  /** when the night's notes were ignored (core pullDrift), or null */
   ignoredAt(): number | null;
   /** whether a pause's button asked for Daybook just now, taken once */
   takeWant(): boolean;
@@ -61,9 +84,13 @@ const fake: PullModule = {
   allowed: async () => true,
   pick: async () => (fakeCount = 2),
   picked: async () => fakeCount,
+  pickWaits: () => null,
   write: async () => undefined,
   lift: async () => undefined,
   openFor: async () => undefined,
+  openWeb: async () => undefined,
+  through: () => undefined,
+  nights: () => ({}),
   stop: async () => void (fakeCount = 0),
   ignoredAt: () => null,
   takeWant: () => false,
@@ -87,12 +114,29 @@ const ready: Promise<void> = AsyncStorage.getItem(KEY)
     emit();
   })
   .catch(() => undefined);
-export function setPullPrefs(p: Partial<PullPrefs>) {
-  prefs = normPull({ ...prefs, ...p });
+function save(p: PullPrefs) {
+  prefs = normPull(p);
   emit();
   AsyncStorage.setItem(KEY, JSON.stringify(prefs)).catch(() => undefined);
 }
+/** a change as it is, with no waiting: Screen Time on or off, the setup page seen. Choices from More go through pullSet. */
+export function setPullPrefs(p: Partial<PullPrefs>) {
+  save({ ...prefs, ...p });
+}
+/** a choice from More (core pullChange): a stricter one works now, a looser one waits for the morning. When it waits, the ms it
+    starts, for the flame to say so. */
+export function pullSet(p: Partial<PullPrefs>): number | null {
+  const r = pullChange(prefs, p, Date.now());
+  save(r.prefs);
+  return r.held;
+}
+/** the choices as saved (with any looser ones still waiting in `later`) */
 export const getPullPrefs = () => prefs;
+/** looser choices whose morning has come are kept as the choices (the extensions apply them on time from the bridge anyway) */
+function settle() {
+  const p = pullSettle(prefs, Date.now());
+  if (p !== prefs) save(p);
+}
 const sub = (f: () => void) => {
   subs.add(f);
   return () => subs.delete(f);
@@ -110,7 +154,7 @@ export const usePullPrefs = () =>
 export async function pullStart(): Promise<'on' | 'denied' | 'closed'> {
   if (!Pull) return 'closed';
   if (!(await Pull.authorize().catch(() => false))) return 'denied';
-  const n = await Pull.pick().catch(() => null);
+  const n = await Pull.pick(null).catch(() => null);
   if (!n) return 'closed';
   setPullPrefs({ on: true, asked: 'picked' });
   if (real) await allowReminders().catch(() => false);
@@ -118,10 +162,54 @@ export async function pullStart(): Promise<'on' | 'denied' | 'closed'> {
 }
 /** what the flame says when Screen Time said no */
 export const PULL_DENIED = 'Screen Time said no, so nothing changed. Try again whenever you want, and choose Continue when it asks.';
-/** turn it all off: nothing watched, nothing paused */
-export async function pullStop() {
+/** Change the apps: a pick that leaves an app out, outside the morning, keeps it in until 6 AM. When it waits, the ms it starts. */
+export async function pullPick(): Promise<number | null> {
+  if (!Pull) return null;
+  await Pull.pick(pullLooseAt(Date.now())).catch(() => null);
+  return Pull.pickWaits();
+}
+/** whether it is the night now, by the morning's time (core pullInNight) */
+export const pullNightNow = (days: Days, st: Settings | null, now = Date.now()) => !!st && pullInNight(now, pullNightStart(days, st, prefs, now));
+/** turn it all off: nothing watched, nothing held. In the night, it counts as a night the person went through. Instant, always. */
+export async function pullStop(night = false) {
+  if (night && prefs.on) Pull?.through();
   setPullPrefs({ on: false });
   await Pull?.stop();
+}
+/** Lift every wait now (instant, as promised): until tonight starts by day, until 6 AM in the night, when it counts as a night the
+    person went through. Its end, as ms. */
+export async function pullLiftAll(days: Days, st: Settings): Promise<number> {
+  const now = Date.now();
+  const from = pullNightStart(days, st, prefs, now);
+  const until = pullLiftUntil(now, from);
+  if (pullInNight(now, from)) Pull?.through();
+  await Pull?.lift(until);
+  return until;
+}
+/** the nights, on this phone only (core pullNightHeld: 'held' or 'through'), for the effort record */
+export const pullNights = (): PullNights => (real ? real.nights() : {});
+
+/* the long wait before adult sites (/pause?w=long): when it started, kept so that leaving and coming back does not start it again.
+   On this phone only. */
+const LONG_KEY = 'daybook.pull.long';
+let longAt = 0;
+AsyncStorage.getItem(LONG_KEY)
+  .then((v) => {
+    if (v && !longAt) longAt = +v || 0;
+  })
+  .catch(() => undefined);
+/** when the long wait started, starting it now if it is not running (or one from an earlier night was left) */
+export function pullLongStart(now = Date.now()): number {
+  if (!longAt || now - longAt > 6 * 3600_000 || longAt > now) {
+    longAt = now;
+    AsyncStorage.setItem(LONG_KEY, String(now)).catch(() => undefined);
+  }
+  return longAt;
+}
+/** the long wait ends: put down, or opened */
+export function pullLongEnd() {
+  longAt = 0;
+  AsyncStorage.removeItem(LONG_KEY).catch(() => undefined);
 }
 /** what the extensions read, written on every open and every change */
 export async function pullWrite(b: PullBridge) {
@@ -152,7 +240,7 @@ export const usePullDowns = () =>
     () => downs,
   );
 
-/** when the hard hours' notes were ignored, read fresh (core pullDrift) */
+/** when the night's notes were ignored, read fresh (core pullDrift) */
 export const pullIgnoredAt = (): number | null => (real ? real.ignoredAt() : null);
 
 /** keeps the extensions' copy of the bridge fresh, and listens for what they leave for the app (see the top of this file) */
@@ -165,13 +253,15 @@ export function PullKeeper() {
   const minute = Math.floor(now / 60_000);
   useEffect(() => {
     if (!real || !st) return;
-    pullWrite(pullBridge(snap.days, st, prefs, Date.now(), account)).catch(() => undefined);
+    settle();
+    pullWrite(pullBridge(snap.days, st, getPullPrefs(), Date.now(), account)).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snap.days, st, prefs, account, Math.floor(minute / 15)]);
   useEffect(() => {
     if (!real) return;
     const back = async () => {
       readDowns();
+      settle();
       if (real.takeWant()) router.navigate('/pause');
       /* access taken back in Settings: More shows it off, and the schedules and any pause are stopped too. allowed() is false
          only for a plain no, never while Apple's status is still loading after a launch. */

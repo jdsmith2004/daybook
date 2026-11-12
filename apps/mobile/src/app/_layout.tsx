@@ -139,11 +139,20 @@ function Reminders() {
    its points (core WIDGET_PTS), once and for good */
 function FlameWidgetKeeper() {
   const { ready, snap, tk, now, update, say } = useStore();
-  return useFlameWidget(snap, tk, ready, now, () => {
-    if (snap.settings?.widget) return;
-    update((s) => (s.settings && !s.settings.widget ? { ...s, settings: { ...s.settings, widget: tk } } : s));
-    say('Your flame is on your screen. +' + WIDGET_PTS + ' points');
-  });
+  /* while SOS is open, the Live Activity is the ride (core livePlan) */
+  const sos = useSos();
+  return useFlameWidget(
+    snap,
+    tk,
+    ready,
+    now,
+    () => {
+      if (snap.settings?.widget) return;
+      update((s) => (s.settings && !s.settings.widget ? { ...s, settings: { ...s.settings, widget: tk } } : s));
+      say('Your flame is on your screen. +' + WIDGET_PTS + ' points');
+    },
+    sos.ur?.t0 ?? null,
+  );
 }
 
 /* The trail's notes while a battle goes on (core trailNotes): two at a time, an hour apart, never at night, resting after a

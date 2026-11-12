@@ -7,7 +7,8 @@
    It also asks the phone whether the widget is on a screen, and the first time it is, the points are earned (core WIDGET_PTS).
    And it keeps the Live Activity (core livePlan, widgets/live.tsx) in step: started when the app opens in the hard hours or before
    screens off (a tapped heads-up opens the app), changed to the flame asleep after Goodnight, ended when its time is up. iPhone only
-   lets an app start one while it is open, so that is when this runs. */
+   lets an app start one while it is open, so that is when this runs. While SOS is open (sosAt), it is the ride instead: the flame burning
+   bright and how long the person has held on, from the moment SOS opens until it passed, a slip, or SOS closes. */
 import {
   campfireXml,
   emblemLayers,
@@ -15,6 +16,7 @@ import {
   figAsleep,
   gameCompute,
   livePlan,
+  LIVE_WORDS,
   lowXml,
   sadXml,
   widgetTimeline,
@@ -54,7 +56,7 @@ type Pic = { name: string; xml: string; px: number };
 /** the pictures a timeline needs: each way it burns for the widget, and the flame as it burns now and asleep, small, for the Live Activity */
 const picsOf = (level: number, entries: WidgetEntry[]): Pic[] => [
   ...[...new Set(entries.map((e) => e.low))].map((low) => ({ name: nameOf(level, low), xml: xmlOf(level, low), px: PX })),
-  ...[entries[0].low, ASLEEP].map((low) => ({ name: nameOf(level, low, true), xml: xmlOf(level, low, true), px: LIVE_PX })),
+  ...[...new Set([entries[0].low, 0, ASLEEP])].map((low) => ({ name: nameOf(level, low, true), xml: xmlOf(level, low, true), px: LIVE_PX })),
 ];
 /** the Live Activity showing now, and which plan it is for (kept across launches) */
 const liveNote = () => new File(folder(), 'live.json');
@@ -94,8 +96,20 @@ function Painter({ xml, px, onDone }: { xml: string; px: number; onDone: (png: s
   );
 }
 
-type LiveWant = { key: string; img: string; line: string; sub: string; short: string; a: number; b: number; left: string; right: string };
-const LIVE_FIELDS = ['img', 'line', 'sub', 'short', 'a', 'b', 'left', 'right'] as const;
+type LiveWant = {
+  key: string;
+  kind: string;
+  img: string;
+  line: string;
+  sub: string;
+  short: string;
+  a: number;
+  b: number;
+  left: string;
+  right: string;
+  back: string;
+};
+const LIVE_FIELDS = ['kind', 'img', 'line', 'sub', 'short', 'a', 'b', 'left', 'right', 'back'] as const;
 /** one change at a time, so two quick changes never cross */
 let liveQueue: Promise<unknown> = Promise.resolve();
 /** makes the Live Activity match what should show: updated when it is the same plan, started fresh for a new one, ended when none */
@@ -110,7 +124,18 @@ async function syncLive(want: LiveWant | null, url: string, to: number) {
   const all = FlameLive.getInstances();
   const mine = was && all.find((a) => a.getId() === was!.id);
   const props = want
-    ? { img: new File(folder(), want.img).uri, line: want.line, sub: want.sub, short: want.short, a: want.a, b: want.b, left: want.left, right: want.right }
+    ? {
+        kind: want.kind,
+        back: want.back,
+        img: want.img ? new File(folder(), want.img).uri : '',
+        line: want.line,
+        sub: want.sub,
+        short: want.short,
+        a: want.a,
+        b: want.b,
+        left: want.left,
+        right: want.right,
+      }
     : null;
   if (want && props && mine && was!.key === want.key) {
     if (LIVE_FIELDS.some((f) => was![f] !== want[f])) await mine.update(props, new Date(to));
@@ -129,7 +154,7 @@ async function syncLive(want: LiveWant | null, url: string, to: number) {
 
 /** keeps the widget showing the flame as it burns, and calls onPlaced once it is first seen on a screen. Gives back the drawing that
     has to be on the screen (off its edge) while a picture is made */
-export function useFlameWidget(snap: Snapshot, tk: string, ready: boolean, now: number, onPlaced: () => void): ReactNode {
+export function useFlameWidget(snap: Snapshot, tk: string, ready: boolean, now: number, onPlaced: () => void, sosAt: number | null = null): ReactNode {
   const placed = useRef(onPlaced);
   placed.current = onPlaced;
   const earned = !!snap.settings?.widget;
@@ -171,12 +196,17 @@ export function useFlameWidget(snap: Snapshot, tk: string, ready: boolean, now: 
   }, [job, missing]);
   /* the Live Activity: the plan for now, against what is showing */
   const drawnAll = !!job && !missing.length;
-  const plan = ready ? livePlan(snap.days, snap.settings, tk, now) : null;
+  /* the ride is timed from when SOS began, so it is asked for at once, not on the next tick of now */
+  const plan = ready ? livePlan(snap.days, snap.settings, tk, sosAt != null ? Math.max(now, Date.now()) : now, sosAt) : null;
+  /* before setup there are no pictures yet: the ride shows the plain flame glyph */
   const want =
-    plan && job
+    plan && (job || plan.kind === 'ride')
       ? {
           key: plan.key,
-          img: nameOf(job.level, plan.asleep ? ASLEEP : job.entries[0].low, true),
+          kind: plan.kind,
+          back: plan.kind === 'ride' ? LIVE_WORDS.rideBack : '',
+          /* holding on, the flame burns bright */
+          img: job ? nameOf(job.level, plan.asleep ? ASLEEP : plan.kind === 'ride' ? 0 : job.entries[0].low, true) : '',
           line: plan.line,
           sub: plan.sub,
           short: plan.short,
@@ -187,12 +217,12 @@ export function useFlameWidget(snap: Snapshot, tk: string, ready: boolean, now: 
   useEffect(() => {
     /* only once the log is read and the pictures are drawn: before that, nothing is known, and ending it then made it flicker away
        each time the app opened (a tap on it opens the app) */
-    if (!ready || !drawnAll) return;
+    if (!ready || !(drawnAll || !snap.settings)) return;
     const url = plan?.url ?? '/';
     const to = plan?.to ?? 0;
     liveQueue = liveQueue.then(() => syncLive(want, url, to)).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, wantKey, drawnAll]);
+  }, [ready, wantKey, drawnAll, !snap.settings]);
   /* on a screen yet? asked each time the app comes back, until it is */
   useEffect(() => {
     if (!ready || earned || !WidgetCheck) return;

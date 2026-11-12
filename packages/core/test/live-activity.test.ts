@@ -40,9 +40,43 @@ describe('the night', () => {
   });
 });
 
+describe('the ride', () => {
+  it('shows from the moment SOS opens, counting up, and comes before the others', () => {
+    const t0 = at(20, 30);
+    const p = core.livePlan(hard, st, tk, at(20, 35), t0)!;
+    expect(p).toMatchObject({ kind: 'ride', key: 'ride-' + t0, url: '/sos', line: 'Holding on', sub: 'Since 8:30 PM', to: t0 + core.LIVE_RIDE_MAX });
+    expect(p.bar.a).toBe(t0);
+  });
+
+  it('works before setup, and lets go after its limit or once SOS is closed', () => {
+    const t0 = at(14);
+    expect(core.livePlan({}, null, tk, at(14, 5), t0)?.kind).toBe('ride');
+    expect(core.livePlan({}, null, tk, t0 + core.LIVE_RIDE_MAX, t0)).toBeNull();
+    expect(core.livePlan({}, st, tk, at(14, 5), null)).toBeNull();
+    /* back to the hard hours when SOS closes in them */
+    expect(core.livePlan(hard, st, tk, at(21), null)?.kind).toBe('hard');
+  });
+});
+
 describe('the words', () => {
-  it('never say what Daybook is for, or ask for help', () => {
-    const all = [core.LIVE_WORDS.hard, core.LIVE_WORDS.wind, core.LIVE_WORDS.asleep, core.LIVE_WORDS.hardSub(22)];
-    for (const w of all) expect(w).not.toMatch(/porn|habit|slip|clean|sober|addict|urge|help|sos|craving|n't/i);
+  /* everything a Live Activity can put on the Lock Screen or in the Dynamic Island */
+  const t0 = at(20, 30);
+  const all = [
+    core.LIVE_WORDS.hard,
+    core.LIVE_WORDS.wind,
+    core.LIVE_WORDS.asleep,
+    core.LIVE_WORDS.hardSub(22),
+    core.LIVE_WORDS.windSub('23:00'),
+    core.LIVE_WORDS.ride,
+    core.LIVE_WORDS.rideSub(t0),
+    core.LIVE_WORDS.rideBack,
+    ...[core.livePlan(hard, st, tk, at(20, 35), t0), core.livePlan(hard, st, tk, at(21)), core.livePlan({}, st, tk, at(22, 40))].flatMap((p) => [
+      p!.line,
+      p!.sub,
+      p!.short,
+    ]),
+  ];
+  it('never name the habit, the urge, a slip or a count of days, or ask for help', () => {
+    for (const w of all) expect(w).not.toMatch(/porn|habit|slip|clean|sober|addict|urge|help|sos|craving|relapse|gambl|drink|alcohol|\bdays?\b|n't/i);
   });
 });

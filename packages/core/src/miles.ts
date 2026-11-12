@@ -219,6 +219,22 @@ export function recordLines(days: Days, st: Settings, tk: DayKey): IdLine[] {
   ].filter((x): x is IdLine => !!x);
 }
 
+/** graduation's words (graduate.ts, the app's graduated.tsx): who the person became, from their own record, under "You are free
+    of it." The urges ridden out, the comebacks after a hard night, and the days free of it in all. Every count only goes up, so
+    the award page says the same or more each time it opens, long after the day it was earned. A line shows once its count is one
+    or more; the days line is always there, since graduating takes ninety of them. */
+export function gradRecord(days: Days, st: Settings, reviews: Reviews, tk: DayKey): string[] {
+  const rode0 = gameCompute(days, st, reviews, tk).S.rode;
+  const rode = typeof rode0 === 'number' ? rode0 : 0;
+  const back = rkComebackCount(days, st, tk);
+  const free = runLedger(days, st, tk, 'strict', true).clean;
+  return [
+    rode ? (rode === 1 ? 'You rode out an urge, and it passed.' : 'You rode out ' + rode.toLocaleString('en-US') + ' urges.') : null,
+    back ? (back === 1 ? 'You came back after a hard night.' : 'You came back ' + back + ' times after a hard night.') : null,
+    free.toLocaleString('en-US') + (free === 1 ? ' day' : ' days') + ' free of it, all on your record.',
+  ].filter((x): x is string => !!x);
+}
+
 /** the hours given back so far: the days with no slip since Day 1, at the pace the person told the setup (obHours).
     null without a Day 1, without those answers, or before the first hour. It only goes up: a slip takes nothing back. */
 export function hoursBack(days: Days, st: Settings, tk: DayKey): number | null {

@@ -43,6 +43,7 @@ import {
   sunriseDue,
   lookBackDue,
   type LookBack,
+  morningDue,
 } from '@daybook/core';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -84,6 +85,9 @@ import { font, useTheme } from '@/lib/theme';
 
 /** when this copy of the app started (the first sync after it is what lets Today mark the day opened) */
 const LAUNCH = Date.now();
+
+/** the day the morning set was last opened from Today in this run of the app */
+let morningOpened = '';
 
 export default function Today() {
   const c = useTheme();
@@ -163,6 +167,20 @@ export default function Today() {
   const backNow = !!due && askAgain;
   const cameBack = useCameBack();
   const feelQuiet = !!st && dayFeelQuiet(snap.days, st, tk, now);
+  /* the morning set (core morning-set.ts, app/morning.tsx): in the morning, until set or closed today, over Today only, once the
+     log has settled and nothing else is opening (Welcome back, graduation). Not on the day the person came back, when enough has
+     opened already, and not while SOS is open. It comes before "How are you feeling today?", which it answers. */
+  const morningNow = !!st && !syncing && !cameBack && !sos.ur && !sos.timer && morningDue(snap.days, st, tk, now);
+  useEffect(() => {
+    if (!ready || !morningNow || !focused || backNow || gradNow || celebrating) return;
+    const t = setTimeout(() => {
+      if (!focusRef.current || sheetOnTop() || morningOpened === tk) return;
+      /* once per day in this run of the app: a page left by a back press does not come straight back (the X skips it for good) */
+      morningOpened = tk;
+      router.push('/morning');
+    }, 400);
+    return () => clearTimeout(t);
+  }, [ready, morningNow, focused, backNow, gradNow, celebrating, tk]);
   /* the day after a slip: what it gave, what it cost (core look-back.ts), asked once, over Today, in place of the day's question */
   const lbDue = st && !syncing ? lookBackDue(snap.days, st, tk, now) : null;
   const lbShown = typeof sos.mem.lookBack === 'string' ? (sos.mem.lookBack as string) : null;
@@ -170,7 +188,7 @@ export default function Today() {
   const [look, setLook] = useState<LookBack | null>(null);
   useEffect(() => {
     if (!ready || !lbDue || !lbWaits || look) return;
-    if (!focused || backNow || gradNow || celebrating || sosUsed || askFeel) return;
+    if (!focused || backNow || gradNow || celebrating || sosUsed || askFeel || morningNow) return;
     const t = setTimeout(() => {
       if (!focusRef.current || sheetOnTop()) return;
       sos.setMem((m) => ({ ...m, lookBack: lbDue.ev.id }));
@@ -178,7 +196,7 @@ export default function Today() {
     }, 900);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, lbDue?.ev.id, lbWaits, look, focused, backNow, gradNow, celebrating, sosUsed, askFeel]);
+  }, [ready, lbDue?.ev.id, lbWaits, look, focused, backNow, gradNow, celebrating, sosUsed, askFeel, morningNow]);
   useEffect(() => {
     if (celebrating && look) setLook(null);
   }, [celebrating, look]);
@@ -194,14 +212,14 @@ export default function Today() {
       spendFirstOpen();
       return;
     }
-    if (!focused || backNow || gradNow) return;
+    if (!focused || backNow || gradNow || morningNow) return;
     const t = setTimeout(() => {
       if (!focusRef.current || sheetOnTop()) return;
       spendFirstOpen();
       setAskFeel(true);
     }, 700);
     return () => clearTimeout(t);
-  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack, celebrating, lbWaits]);
+  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack, celebrating, lbWaits, morningNow]);
 
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
   useEffect(() => {

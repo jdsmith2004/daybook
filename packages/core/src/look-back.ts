@@ -81,7 +81,9 @@ export function lookBackDue(days: Days, st: Settings | null, tk: DayKey, now: nu
   const slips = sortedEvents(days[k], st.rollover).filter((e) => e.outcome === 'slipped');
   const ev = slips[slips.length - 1];
   if (!ev || ev.gv || ev.cs) return null;
-  if (!ev.time || (ev as DayEvent & { mn?: true }).mn) return null;
+  if (!ev.time || ev.mn) return null;
+  /* a morning set today is the morning: it asks about last night itself, so this waits for the Sunday review */
+  if (days[tk]?.p?.ms) return null;
   if (st.cleanMode === 'step' || roughPatch(days, st, tk)) return null;
   if (now - evMs(k, ev.time, st.rollover) < LOOK_MIN_HOURS * 3600_000) return null;
   if (dayFeelQuiet(days, st, tk, now)) return null;

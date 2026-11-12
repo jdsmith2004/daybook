@@ -196,13 +196,21 @@ describe('two devices of one person', () => {
     };
     a.change((s) => ({ ...s, settings: st(90) }), 90);
     a.change(
-      (s) => ({ ...s, days: core.saveTalk(core.addEvent(s.days, k, 'slipped', '23:00', { id: 's9', trigger: 'lonely', fa: 'flat' }, 100).days, k, plan, 150) }),
+      (s) => ({
+        ...s,
+        days: core.setMorningFeel(
+          core.saveTalk(core.addEvent(s.days, k, 'slipped', '23:00', { id: 's9', trigger: 'lonely', fa: 'flat', mn: true }, 100).days, k, plan, 150),
+          k,
+          3,
+          150,
+        ),
+      }),
       150,
     );
     await a.sync();
     serverNow += 1000;
     await old.sync();
-    /* the older version reads the day through its own normDay, which has never heard of fa, pr or ft */
+    /* the older version reads the day through its own normDay, which has never heard of fa, pr or ft, the morning set (ms) or mn */
     const seen = old.snap.days[k];
     old.snap = {
       ...old.snap,
@@ -210,8 +218,8 @@ describe('two devices of one person', () => {
         ...old.snap.days,
         [k]: {
           ...seen,
-          events: seen.events.map(({ fa: _fa, fb: _fb, ...e }) => e),
-          p: seen.p && { ...seen.p, tt: seen.p.tt?.map(({ pr: _pr, ft: _ft, fw: _fw, ...t }) => t) },
+          events: seen.events.map(({ fa: _fa, fb: _fb, mn: _mn, ...e }) => e),
+          p: seen.p && (({ ms: _ms, ...p }) => ({ ...p, tt: p.tt?.map(({ pr: _pr, ft: _ft, fw: _fw, ...t }) => t) }))(seen.p),
         },
       },
     };
@@ -225,12 +233,15 @@ describe('two devices of one person', () => {
     expect(day.events.map((e) => e.outcome).sort()).toEqual(['rode', 'slipped']);
     expect(day.events.find((e) => e.id === 's9')).toMatchObject({ fa: 'flat', trigger: 'lonely' });
     expect(core.talksOf(a.snap.days)[0].talk).toMatchObject({ pr: 1, ft: 'lonely' });
+    expect(day.events.find((e) => e.id === 's9')?.mn).toBe(true);
+    expect(core.morningOf(day)?.f).toBe(3);
     /* the mended day went back to the account, so a third device gets all of it */
     expect(a.dirty).toEqual({});
     serverNow += 1000;
     await c.sync();
     expect(c.snap.days[k].events.find((e) => e.id === 's9')?.fa).toBe('flat');
     expect(core.talksOf(c.snap.days)[0].talk.ft).toBe('lonely');
+    expect(core.morningOf(c.snap.days[k])?.f).toBe(3);
     expect(c.snap.days[k].events.length).toBe(2);
   });
 

@@ -76,14 +76,37 @@ describe('sync', () => {
 
   it('an older copy of a day that holds an entry the account does not is joined, not dropped', async () => {
     await call(ev('POST', { body: { records: [day('2026-10-14', 700)] } }));
-    /* another device logged on that day before it pulled the newer copy */
-    const older = await call(ev('POST', { body: { records: [day('2026-10-14', 650)] } }));
+    /* another device (a new app: it sends b, 0 for a day new there) logged on that day before it pulled the newer copy */
+    const older = await call(ev('POST', { body: { records: [{ ...day('2026-10-14', 650), b: 0 }] } }));
     expect(older.body.saved).toEqual(['days/2026-10-14']);
     const got = await call(ev('GET', { query: { since: '0' } }));
     const r = got.body.records[0];
     expect(r.data.events.map((e: { id: string }) => e.id).sort()).toEqual(['e650', 'e700']);
     /* past both, so each device takes the joined copy on its next pull */
     expect(r.u).toBe(701);
+  });
+
+  it('an older app (no b) keeps the newer-wins rule, so its cleared check-in and its Undo stay as it sent them', async () => {
+    /* the day with a check-in, then the same older app clears it: a join would bring the check-in back */
+    await call(ev('POST', { body: { records: [day('2026-10-14', 700, { checkin: { mood: 3 } })] } }));
+    const cleared = await call(ev('POST', { body: { records: [day('2026-10-14', 800)] } }));
+    expect(cleared.body.saved).toEqual(['days/2026-10-14']);
+    const got = await call(ev('GET', { query: { since: '0' } }));
+    expect(got.body.records[0].data.checkin).toBeNull();
+    expect(got.body.records[0].data.events.map((e: { id: string }) => e.id)).toEqual(['e800']);
+    /* settings: an Undo that takes back a badge, sent by an older app, is not joined back in */
+    await call(
+      ev('POST', {
+        body: { records: [{ id: 'settings', u: 900, data: { start: '2026-10-01', seen: { badges: ['first'], quests: [], level: 3, full: null } } }] },
+      }),
+    );
+    await call(
+      ev('POST', { body: { records: [{ id: 'settings', u: 950, data: { start: '2026-10-01', seen: { badges: [], quests: [], level: 1, full: null } } }] } }),
+    );
+    const st = (await call(ev('GET', { query: { since: '0' } }))).body.records.find((r: { id: string }) => r.id === 'settings');
+    expect(st.u).toBe(950);
+    expect(st.data.seen.badges).toEqual([]);
+    expect(st.data.seen.level).toBe(1);
   });
 
   it('never lets one person see another person’s records', async () => {
@@ -228,7 +251,16 @@ describe('sync', () => {
       return put(u, r, was);
     };
     handler = makeHandler(failing, () => now);
-    const p = await call(ev('POST', { body: { records: [day('2026-10-13', 500), day('2026-10-14', 500)] } }));
+    const p = await call(
+      ev('POST', {
+        body: {
+          records: [
+            { ...day('2026-10-13', 500), b: 0 },
+            { ...day('2026-10-14', 500), b: 0 },
+          ],
+        },
+      }),
+    );
     expect(p.status).toBe(200);
     expect(p.body.saved).toEqual(['days/2026-10-14']);
     expect(p.body.bad).toEqual([{ id: 'days/2026-10-13', why: 'could not save, try again' }]);

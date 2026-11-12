@@ -202,6 +202,9 @@ The morning self's choices become the night's defenses. Built on the Screen Time
 
 ### Steps, with the effort each needs
 
+Steps 1 and 2 are built (November 12, 2026, the owner saw it on the simulator): core `morning-set.ts`, app `app/morning.tsx`. The hooks the
+other parts use (tonight's time and reason, mornings set, free nights, last night's slip) are listed at the top of `morning-set.ts`.
+
 1. **High.** Core `morning-set.ts`: when it shows, the last-night answer saved as a slip on the night before with no time (it feeds the
    count, points, `runLedger` and the hero: golden fixtures checked), the reason, the night time and the optional morning feel saved to the day; `partDone` counts it.
 2. **Medium.** The two morning pages (`SceneFrame`, `Dock`, the dawn sky, the flame big) and the morning note pointing to them.
@@ -310,6 +313,12 @@ who a person thinks they are.
 
 **2. Rekindle and the morning after (effort: medium for words and screens; high for anything touching points or runs).**
 
+- **Rethought, November 12, 2026.** The owner: "i think the light the fire is good we should just let them stop there and then if they
+  want to do more we give them something but put some time and thought into how we should do this bc it def needs work". So Rekindle ends
+  at lighting the fire again: the hold is the whole required step, and the person may stop there. Anything more (the one question, the
+  plan for next time, what it gave and what it cost) is offered after it, never required, and its shape is being redesigned by "Daybook:
+  Rekindle and the morning after" before that branch merges. The points rule below still holds.
+
 - No point numbers in the hours after a slip: the "+5" beside "Slipped at 10:00 AM", the "+10 points" under "You came back." and the "+30
   points" on the slip day's page all go. The points are still earned (honesty points stay); they show on the level page and the Sunday
   review. The page after the hold says what is kept as who the person is, not as a score: today it reads "Level 17, 655 points and 4 urges
@@ -326,6 +335,31 @@ who a person thinks they are.
   the urges ridden out. Never asked within the first hour, never after 10 PM.
 - For the person: the spiral is broken where it starts (giving up in the first hours), and the honest look happens when it can teach.
   For Daybook: this is the moment every rival fails, and the one people will tell others about.
+- **Rethought (the owner, November 12, 2026, after using it: "on rekindle i don't really like this flow like i don't feel like it
+  really helps and our newer features make up for it i think the light the fire is good we should just let them stop there and then if
+  they want to do more we give them something").** Research: `rekindle-redesign-research-brief.md` and `rekindle-redesign-apps.md` in
+  the side session notes (no trial tests a short ending against a long flow after a lapse; single-session work, autonomy and choice
+  research favour one complete thing with no required next step; the riskiest hours are about giving up, which the fire answers).
+  - **Lighting the fire is the ending.** Every way in (Already happened, SOS "I went ahead", the pause, the entry sheet, the morning's
+    "Look back on it") lands on the hold, as now, with the word test's first words. Once lit: "This is a slip, and you can recover from
+    it.", what is kept ("4 urges ridden out, 13 days free of it. All still yours."), the flame big, and **Done**. Nothing moves on by
+    itself; Done and the X both close. SOS stays in the corner for a pull that is not over.
+  - **One quiet "more", by choice** (a link under Done, never a second big button). Recommended: "What was going on?": one tap on the
+    situation, answered on the same page by what it shows in the person's own pattern and the defense that covers it ("Late in bed
+    with your phone came before 3 of your last 4. Tonight's wait starts at 10:30 PM."). It is the one thing only this moment can
+    catch: the morning set and the Sunday review do not ask the situation, and it is what the Pattern, the hard hours, the heads-ups and
+    the night wait are built from, so it is what makes the next slip less likely.
+  - **Goes:** "How do you feel now?" and its answers, the go-ahead number, the plan page and "Choose another", and the finish page
+    ("You came back."). The plan for next time is the morning set's job now (the morning self sets the night). The small step for the
+    next hour stays on Today, where it was already offered and earns its points (rkOf m1); the sunrise check and the comeback flames
+    stay. Old answers (fa, plans) stay on the record and keep showing where they did.
+  - **Kept from step 2 as built:** no point number in the hours after a slip, the kept-as-who-you-are line, the word test on the first
+    words, `countFrom` in the seeds, and no-slip days counting finished days.
+  - **Questions for the owner** (each with a recommendation): (1) the one "more": "What was going on?" (recommended), a one-minute
+    ride-it-out practice, a plan for next time, or nothing. (2) The morning card "what it gave, what it cost": drop it and let the
+    Sunday review ask once a week (recommended), keep it on mornings with no morning set, or put it inside the morning set. (3) The 988
+    line, which today shows only after "Like giving up": on the lit page after a second slip in a week or in a rough stretch
+    (recommended), always on the lit page, or only in More.
 - **Built (November 11, 2026, branch `claude/rekindle-morning-after`, to be shown on the simulator before it merges).** The check
   first: `runLedger` is right. A log with no `countFrom` (the journey's seed, the store pictures' demo) has the slip fall under the old
   rule, which held the run while it could be saved; every phone has `countFrom` from its first open (core `keepCounts`), so the seeds

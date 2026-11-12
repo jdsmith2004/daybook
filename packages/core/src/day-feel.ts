@@ -60,6 +60,8 @@ export function dayFeelSet(prev: Day | undefined | null, tk: DayKey, n: number, 
 export function dayFeelDue(days: Days, st: Settings | null, tk: DayKey): boolean {
   if (!st) return false;
   if (dayFeelOf(days[tk])) return false;
+  /* the morning set asked about this morning already (morning-set.ts), so the day does not ask again */
+  if (days[tk]?.p?.ms) return false;
   if (sumDay(days[tk]).slipped) return false;
   if (rkActive(days, st, tk) || sunriseDue(days, st, tk)) return false;
   return true;

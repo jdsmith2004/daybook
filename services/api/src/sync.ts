@@ -156,6 +156,10 @@ const stampedAt = (r: StoredRecord, u: number): StoredRecord => ({ ...r, u, d: r
     not joined back in. */
 export async function saveJoined(store: Store, user: string, r: StoredRecord, b: number | null = null): Promise<boolean> {
   if (r.id !== 'settings' && !r.id.startsWith('days/')) return store.putIfNewer(user, r);
+  /* an older app sends no b: it never learned to send a cleared check-in or an Undo as made on top of the kept copy, so
+     joining would bring those back. It keeps the rule it was built for: the newer change wins. (A new app sends b, 0 for a
+     record new on that device.) */
+  if (b == null) return store.putIfNewer(user, r);
   for (let i = 0; i < 4; i++) {
     const cur = await store.getRecord(user, r.id);
     /* made on top of the kept copy, it is the newer change whatever the clocks say (a phone whose clock is behind can stamp

@@ -71,6 +71,8 @@ import {
   recordLesson,
   type Settings,
   srcNote,
+  lessonDue,
+  morningDue,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
@@ -122,6 +124,10 @@ export default function LessonScreen() {
   const { id, at } = useLocalSearchParams<{ id: string; at?: string }>();
   const { snap, tk, update, apply, say } = useStore();
   const account = useAccount();
+  /* fixed when the page opens: whether this is today's lesson and the morning set has not been done yet */
+  const [morningFirst] = useState(() =>
+    snap.settings && morningDue(snap.days, snap.settings, tk, Date.now()) ? lessonDue(snap.days, snap.settings, tk, account) : null,
+  );
   const base = useTheme();
   const inset = useSafeAreaInsets();
   const st = snap.settings;
@@ -207,6 +213,9 @@ export default function LessonScreen() {
         <T v="title">That lesson is not here</T>
       </Shell>
     );
+  /* the morning set comes before today's lesson (core morning-set.ts): today's new lesson, opened while the morning set is
+     due (from the morning note, or Learn), opens the morning set first, and the morning set opens this lesson after it */
+  if (!at && morningFirst === id) return <Redirect href={{ pathname: '/morning', params: { then: id } }} />;
   const n = lessonNo(L, st);
   const w = lessonWalk(snap.days, st);
   const done = w.done;

@@ -8,6 +8,7 @@ import {
   checkNew,
   baseAfter,
   cleanTombs,
+  ackBase,
   keepBase,
   keepTombs,
   withTombs,
@@ -502,15 +503,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const mergeFromAccount = useCallback(
     async (recs: SyncRecord[]) => {
       const m = mergeRemote(snapRef.current, dirtyRef.current, recs, baseRef.current);
-      if (JSON.stringify(m.base) !== JSON.stringify(baseRef.current)) {
-        baseRef.current = m.base;
-        await AsyncStorage.setItem(BASE, JSON.stringify(m.base));
+      /* everything in memory changes before any wait (the log, the marks, the bases), so a change made during a write
+         starts from the merged log and keeps its "not synced yet" mark */
+      const baseNew = JSON.stringify(m.base) !== JSON.stringify(baseRef.current);
+      if (baseNew) baseRef.current = m.base;
+      if (!m.changed.length) {
+        if (baseNew) await AsyncStorage.setItem(BASE, JSON.stringify(m.base));
+        return 0;
       }
-      if (!m.changed.length) return 0;
       snapRef.current = m.snap;
       setSnap(m.snap);
-      /* the marks change before any wait, so a change made during the write keeps its "not synced yet" mark */
       const marks = saveDirty(m.dirty);
+      if (baseNew) await AsyncStorage.setItem(BASE, JSON.stringify(m.base));
       await writeQuiet(m.snap, m.changed);
       await marks;
       if (dirtyRef.current !== m.dirty) await writeDirty();
@@ -520,23 +524,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
   const ackPushed = useCallback(
     async (acked: Record<string, number>) => {
+      /* everything in memory changes before any wait (the marks, the bases, the tombs), so a change made during a write
+         keeps its "not synced yet" mark: the writes below then save what memory holds by then */
       const d = clearAcked(dirtyRef.current, acked);
-      const b = keepBase(baseRef.current, d);
-      if (b !== baseRef.current) {
-        baseRef.current = b;
-        await AsyncStorage.setItem(BASE, JSON.stringify(b));
-      }
+      const b = ackBase(baseRef.current, acked, d);
+      const baseNew = b !== baseRef.current;
+      if (baseNew) baseRef.current = b;
       /* a deleted day the account now has needs its marks no longer */
       const t = keepTombs(snapRef.current.tomb, d);
-      if (t !== snapRef.current.tomb) {
+      const tombNew = t !== snapRef.current.tomb;
+      if (tombNew) {
         const next = { ...snapRef.current, tomb: t };
         snapRef.current = next;
         setSnap(next);
-        await AsyncStorage.setItem(TOMB, JSON.stringify(t || {}));
       }
-      await saveDirty(d);
+      const marks = saveDirty(d);
+      if (baseNew) await AsyncStorage.setItem(BASE, JSON.stringify(baseRef.current));
+      if (tombNew) await AsyncStorage.setItem(TOMB, JSON.stringify(snapRef.current.tomb || {}));
+      await marks;
+      if (dirtyRef.current !== d) await writeDirty();
     },
-    [saveDirty],
+    [saveDirty, writeDirty],
   );
   const markAllDirty = useCallback(async () => saveDirty(allDirty(snapRef.current, dirtyRef.current)), [saveDirty]);
   const restamp = useCallback(

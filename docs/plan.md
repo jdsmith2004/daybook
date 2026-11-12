@@ -205,6 +205,14 @@ The morning self's choices become the night's defenses. Built on the Screen Time
 Steps 1 and 2 are built (November 12, 2026, the owner saw it on the simulator): core `morning-set.ts`, app `app/morning.tsx`. The hooks the
 other parts use (tonight's time and reason, mornings set, free nights, last night's slip) are listed at the top of `morning-set.ts`.
 
+Step 3 is built on `claude/night-wait` (November 12, 2026), compiled for the simulator with `DAYBOOK_PULL=1`, not merged: it waits for
+the owner's iPhone, on a TestFlight build (the long wait's relock, thread 807934). Decided in building it: the night ends at 6 AM; a
+looser choice made from 6 AM to 2 PM works at once (the morning self), any other time it waits for 6 AM; the feeds' all-day wait
+replaces the old pause at 30 minutes in the hard hours; the long wait starts from More, Screen Time, in the night, keeps counting if
+the person leaves, and opens adult sites only on a tap once it is over; nothing counts as a night gone through in the quiet after a slip,
+since the stake is not said then; the morning line reads "Adult sites wait from 10:30 PM", since the feeds wait all day. The shape and
+the hooks (`pullNights`, `pullNightHeld` for step 4) are in `night-wait-shape.md` in the side session notes.
+
 1. **High.** Core `morning-set.ts`: when it shows, the last-night answer saved as a slip on the night before with no time (it feeds the
    count, points, `runLedger` and the hero: golden fixtures checked), the reason, the night time and the optional morning feel saved to the day; `partDone` counts it.
 2. **Medium.** The two morning pages (`SceneFrame`, `Dock`, the dawn sky, the flame big) and the morning note pointing to them.

@@ -1,4 +1,4 @@
-// The pause's two buttons. Open Daybook: Daybook's wait screen is where the apps can open again after the wait. From iOS 26.5 Apple
+// The wait's two buttons. The first ("Wait 10 seconds"): Daybook's wait screen is where the apps can open again after the wait. From iOS 26.5 Apple
 // can open the app that set the pause (openParentalControlsApp); before that a shield cannot open an app, so a note comes that opens
 // the wait screen with one tap. Either way the app is told (pull.want) and opens on the wait screen. Close: back to the Home Screen,
 // and one more time the person put it down (Pull.countDown: the shield and the notes say the count).

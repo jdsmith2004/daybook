@@ -42,10 +42,10 @@ import { FeelMove } from './feel-move';
 import { StackMove } from './stack';
 import { BigFlame } from '@/components/big-flame';
 import { Button, Icon, T } from '@/components/ui';
+import { useFutureNote } from '@/components/future-note';
 import { BigPlay } from '@/components/voice-note';
 import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
-import { futureUri, seenFuture, useFuture } from '@/lib/future';
 import { useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useCareSettings } from '@/lib/store';
@@ -406,18 +406,8 @@ export function WordsMove({ on, onDone }: MoveProps) {
 /* ---------- future you (core future.ts): the note from a good day, right after the first breath ---------- */
 export function FutureMove({ on, onDone }: MoveProps) {
   const c = useTheme();
-  const mem = useFuture();
-  /* one note for this page, picked once, so it holds still while the ride moves */
-  const [n] = useState(() => futurePick(mem));
-  const [uri] = useState(() => (n ? futureUri(n) : null));
-  const [now] = useState(() => Date.now());
-  const seen = useRef(false);
-  useEffect(() => {
-    if (!on || !n || seen.current) return;
-    seen.current = true;
-    seenFuture(n.id);
-    if (n.k === 'text') track('future_heard', { note: 'text' });
-  }, [on, n]);
+  /* one note for this page, picked once, so it holds still while the ride moves (components/future-note.tsx) */
+  const { n, uri, cap } = useFutureNote(on);
   const text = n?.k === 'text';
   const sec = useClock(on && text);
   useDoneAfter(text && sec >= READ_SEC, 200, onDone);
@@ -431,7 +421,7 @@ export function FutureMove({ on, onDone }: MoveProps) {
         <View style={s.mid}>
           <View style={[s.note, { backgroundColor: c.sunSoft }]}>
             <T v="eyebrow" tone="sunText">
-              {futureCap(n, now)}
+              {cap}
             </T>
             <Text style={[s.noteT, { color: c.ink }]}>{n.t}</Text>
           </View>
@@ -443,7 +433,7 @@ export function FutureMove({ on, onDone }: MoveProps) {
     );
   return (
     <View style={s.move}>
-      <Words head="You left yourself a note" sub={futureCap(n, now) + '. Tap to hear it.'} />
+      <Words head="You left yourself a note" sub={cap + '. Tap to hear it.'} />
       <View style={s.mid}>
         {uri ? (
           <BigPlay uri={uri} label="Hear your note" size={132} onPlay={() => track('future_heard', { note: 'voice' })} onEnd={() => setEnded(true)} />

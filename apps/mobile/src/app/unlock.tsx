@@ -4,8 +4,8 @@
 
    - the journal: on the night sky, like the journal itself. Write the first one opens a new entry; a quiet link puts it on the
      day as an any-time stop.
-   - the apps that pull you in (Screen Time, iPhone only, core pull.ts): the two ways low (nudges by default, the pause only
-     by choice), and Choose the apps opens Apple's ask, then Apple's own list. It is all in More, too. */
+   - the apps that pull you in (Screen Time, iPhone only, core pull.ts): the two ways low (the short wait all day first, notes
+     only by choice), and Choose the apps opens Apple's ask, then Apple's own list. It is all in More, too. */
 import { gameCompute, setField, setRoutine, UNLOCK_ORDER, UNLOCK_WORDS, type UnlockId } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -27,9 +27,10 @@ import { useUnlockMark } from '@/lib/unlock';
 /* each part on its own sky: the journal on the night, like the journal itself; Planning a slip? in its violet */
 const SKY: Record<UnlockId, Sky> = { journal: 'night', plan: 'violet', person: 'coral', pull: 'sky', reach: 'mint', sunday: 'sun' };
 
+/* the short wait all day is the one with the evidence (one sec), so it comes first; notes only stays a choice */
 const WAYS: [boolean, string, string][] = [
-  [false, 'Nudge me', 'A note after two hours, and in your hard hours'],
-  [true, 'Nudge me, then pause it', 'If I nudge twice in your hard hours, the app rests until they end'],
+  [true, 'A short wait first', 'Ten seconds before each one opens, all day'],
+  [false, 'Notes only', 'A note after two hours, and at night'],
 ];
 
 export default function Unlocked() {
@@ -47,7 +48,7 @@ export default function Unlocked() {
   const [name, setName] = useState('');
   const ink = night ? nightInk.ink : undefined;
   const soft = night ? nightInk.muted : undefined;
-  const [pause, setPause] = useState(false);
+  const [pause, setPause] = useState(true);
   const asking = useRef(false);
 
   useEffect(() => {
@@ -91,7 +92,7 @@ export default function Unlocked() {
     asking.current = false;
     if (r === 'denied') say(PULL_DENIED);
     if (r !== 'on') return;
-    setPullPrefs({ pause });
+    setPullPrefs({ feeds: pause });
     buzz('lit');
     say('I am watching for it now.');
     close();

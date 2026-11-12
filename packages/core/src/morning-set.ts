@@ -319,9 +319,9 @@ export const MORNING_WORDS = {
 /** the eyebrow on the first page: "Good morning · Wednesday" */
 export const morningHello = (now: number): string => MORNING_WORDS.title + ' · ' + new Date(now).toLocaleDateString('en-US', { weekday: 'long' });
 
-/** the line over tonight's time: what happens then. With Screen Time's night waits on, what waits (feeds, and adult sites when the
-    habit is porn); without them, the time the phone goes down, which is the person's own plan. */
+/** the line over tonight's time: what happens then. With Screen Time's night wait on (core pull.ts nightWaitOn), adult sites wait
+    from then (the feeds wait all day, so they are not the night's); without it, the time the phone goes down, which is the
+    person's own plan. The night wait is only for porn, so any other habit keeps the plan's words. */
 export function tonightLine(o: { waits: boolean; habit: 'porn' | 'alcohol' | 'gambling' | 'other' }): string {
-  if (!o.waits) return 'Phone down tonight at';
-  return o.habit === 'porn' ? 'Feeds and adult sites wait from' : 'Feeds wait from';
+  return o.waits && o.habit === 'porn' ? 'Adult sites wait from' : 'Phone down tonight at';
 }

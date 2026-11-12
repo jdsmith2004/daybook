@@ -19,6 +19,8 @@ import {
   freeLater,
   freeProof,
   isTime,
+  pullSetupSay,
+  type Clock,
   keyOfDate,
   LEARN_FREE,
   gameCompute,
@@ -113,7 +115,7 @@ import { close } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { track } from '@/lib/events';
-import { usePullDowns } from '@/lib/pull';
+import { getPullPrefs, PULL_DENIED, pullOffered, pullStart, setPullPrefs, usePullDowns } from '@/lib/pull';
 import { countSetup } from '@/lib/pulse';
 import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
@@ -169,10 +171,13 @@ export default function Setup() {
   /* the reminder page shows on a phone, and on a walk-through only while the check-in reminder is off */
   /* the account page shows to a new person while this build has accounts and they are not signed in; once they are, it
      drops out of the list and the setup moves on by itself */
+  /* Screen Time's page: decided once, so it keeps its place in the list after the apps are picked */
+  const [pullAsk] = useState(() => pullOffered && getPullPrefs().asked !== 'picked');
   const env = {
     notify: remindersOffered && !(f.redo && rem.checkin),
     account: !f.redo && sync.status.k === 'out',
     free: freeAsk,
+    pull: pullAsk,
   };
   const [breathed, setBreathed] = useState(false);
   /* the hold finished: the flame in the plan lights, and the setup moves on a moment later */
@@ -1098,6 +1103,60 @@ export default function Setup() {
       );
       break;
     }
+    case 'night': {
+      /* Screen Time's waits, for people who said most days: the question at the top, what the wait looks like in the middle (the
+         shield as Apple shows it, in the flame's colors), Choose the apps at the bottom, Skip under it (it records the choice;
+         More has it any time). The night starts at the screens-off time just chosen. */
+      const at = st && isTime(st.nightAt) ? (st.nightAt as string) : isTime(a.so) ? (a.so as string) : st ? st.screensOff : '22:30';
+      const pick = async () => {
+        if (busy() || asking.current) return;
+        asking.current = true;
+        until.current = Date.now() + 1500;
+        const r = await pullStart().catch(() => 'closed' as const);
+        asking.current = false;
+        until.current = 0;
+        if (r === 'denied') return say(PULL_DENIED);
+        if (r !== 'on') return;
+        setPullPrefs({ feeds: true });
+        buzz('lit');
+        go(1);
+      };
+      body = (
+        <>
+          <Head h="Want a wait before the apps that start it?" />
+          <Middle>
+            <View
+              style={[s.shield, { backgroundColor: skies.light.night[0] }]}
+              accessible
+              accessibilityLabel="When you open one of them, you will see this: A short wait first. Wait 10 seconds, or Close.">
+              <Icon name="flame" size={34} color={c.sun} />
+              <Text style={[s.shieldT, { color: nightInk.ink }]}>A short wait first</Text>
+              <Text style={[s.lockB, { color: nightInk.muted, textAlign: 'center' }]}>You asked me for a moment before this one.</Text>
+              <View style={[s.shieldB, { backgroundColor: c.sun }]}>
+                <Text style={[s.lockT, { color: '#33240A' }]}>Wait 10 seconds</Text>
+              </View>
+              <Text style={[s.lockT, { color: nightInk.ink }]}>Close</Text>
+            </View>
+          </Middle>
+          <Say text={pullSetupSay({ porn: habit === 'porn', at: at as Clock, lift: getPullPrefs().lift })} />
+        </>
+      );
+      foot = (
+        <View key="f" style={[s.footOne, { gap: 6 }]}>
+          <Next key="n" label="Choose the apps" onPress={pick} off={false} />
+          <Ghost
+            label="Skip"
+            onPress={() => {
+              if (busy() || asking.current) return;
+              setPullPrefs({ asked: 'skipped' });
+              if (!f.redo) track('setup_skip', { page: pg.id });
+              go(1);
+            }}
+          />
+        </View>
+      );
+      break;
+    }
     case 'star': {
       /* the north star's starting point (core north.ts): the question at the top, the person's own proof under it (none yet
          for someone new), the number huge in the open middle, the slider under the thumb, Next at the bottom. Skip waits a week. */
@@ -1962,6 +2021,9 @@ function Cheer() {
 }
 
 const s = StyleSheet.create({
+  shield: { alignItems: 'center', gap: 10, alignSelf: 'stretch', borderRadius: 28, paddingVertical: 28, paddingHorizontal: 24 },
+  shieldT: { fontFamily: font.displayBold, fontSize: 22, lineHeight: 28 },
+  shieldB: { alignSelf: 'stretch', alignItems: 'center', borderRadius: 14, paddingVertical: 12, marginTop: 8 },
   lock: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch', borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16 },
   lockIc: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   lockT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },

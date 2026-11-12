@@ -139,7 +139,7 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
     eb: 'Unlocked',
     h: 'Screen Time',
     title: 'Which app pulls you in?',
-    say: 'When it has you too long, I will say so. In your hard hours, I will say it louder.',
+    say: 'A few seconds before it opens, every time. That moment is where you choose.',
     btn: 'Choose the apps',
   },
   reach: {

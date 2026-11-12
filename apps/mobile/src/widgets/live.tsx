@@ -36,6 +36,10 @@ import {
 import { createLiveActivity, type LiveActivityEnvironment } from 'expo-widgets';
 
 export type FlameLiveProps = {
+  /** 'ride' while SOS is open (the time held on counts up, no bar), else the hard hours or the night; missing on older ones */
+  kind?: string;
+  /** the ride's one button back into SOS ("Keep going") */
+  back?: string;
   /** the picture of the flame, a file:// path in the shared folder */
   img: string;
   /** the one line at the top ("Wind down") */
@@ -176,6 +180,68 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
       </VStack>
     </HStack>
   );
+  /* the ride, while SOS is open: the flame burning bright, how long the person has held on counting up (no bar, no end to wait for:
+     it is not a countdown), and one tap back into SOS. The whole card opens SOS too */
+  if (props.kind === 'ride') {
+    const up = (size: number, color: string) => (
+      <Text
+        timerInterval={span}
+        countsDown={false}
+        modifiers={[font({ size, weight: 'bold', design: 'rounded' }), monospacedDigit(), foregroundStyle(color), lineLimit(1)]}
+      />
+    );
+    const back = (
+      <Link destination="daybook://sos">
+        <Text
+          modifiers={[
+            font({ size: 16, weight: 'heavy', design: 'rounded' }),
+            foregroundStyle(NIGHT),
+            padding({ horizontal: 16, vertical: 8 }),
+            background(
+              { type: 'linearGradient' as const, colors: ['#FFC870', WARM], startPoint: { x: 0.5, y: 0 }, endPoint: { x: 0.5, y: 1 } },
+              shapes.capsule(),
+            ),
+            shadow({ radius: 0, y: 3, color: '#B86A1E' }),
+          ]}>
+          {props.back || 'Keep going'}
+        </Text>
+      </Link>
+    );
+    return {
+      banner: (
+        <VStack modifiers={card}>
+          <HStack spacing={12}>
+            <VStack alignment="leading" spacing={2}>
+              {brand}
+              {text(props.line, 22, '#FFFFFF', 'bold')}
+              {up(34, WARM)}
+              {text(props.sub, 13, SOFT)}
+            </VStack>
+            <Spacer />
+            <VStack spacing={8}>
+              {flame(72)}
+              {back}
+            </VStack>
+          </HStack>
+        </VStack>
+      ),
+      compactLeading: <VStack modifiers={[padding({ leading: 2 })]}>{flame(24)}</VStack>,
+      compactTrailing: <VStack modifiers={[frame({ maxWidth: 64 })]}>{up(15, WARM)}</VStack>,
+      minimal: flame(22),
+      expandedLeading: <VStack modifiers={[padding({ leading: 8, top: 4 })]}>{brand}</VStack>,
+      expandedTrailing: <VStack modifiers={[padding({ trailing: 8, top: 4 }), frame({ maxWidth: 80 })]}>{up(15, WARM)}</VStack>,
+      expandedBottom: (
+        <HStack spacing={10} modifiers={[padding({ horizontal: 8, bottom: 4 })]}>
+          {flame(36)}
+          <Text modifiers={[font({ size: 18, weight: 'bold', design: 'rounded' }), foregroundStyle('#FFFFFF'), lineLimit(1), minimumScaleFactor(0.7)]}>
+            {props.line}
+          </Text>
+          <Spacer />
+          {back}
+        </HStack>
+      ),
+    };
+  }
   if (asleep)
     return {
       banner: <VStack modifiers={card}>{rest(24, 64)}</VStack>,

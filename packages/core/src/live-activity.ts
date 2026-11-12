@@ -6,7 +6,12 @@
      morning.
    iPhone starts one only while the app is open (no server: free, and nothing leaves the phone). So it starts when the heads-up or the
    wind-down note is tapped, or whenever the app is opened in those hours. The app ends it when its time is up, or iPhone does after
-   8 hours. The hard hours come first when both fall at once. Checked by test/live-activity.test.ts. */
+   8 hours. The hard hours come first when both fall at once.
+   - The ride (the owner kept #42, November 11, 2026: "this is a good idea"; it starts with every SOS, by the owner's choice): from the
+     moment SOS opens, the flame and how long the person has held on, counting up, and one tap back into SOS. It ends when the urge is
+     ridden out, when a slip is logged, when SOS closes, or after LIVE_RIDE_MAX. It comes before the other two. This is the Lock Screen
+     only: the in-app timer bar on SOS stays gone (the owner ruled it out).
+   Checked by test/live-activity.test.ts. */
 import { addDays, fmtClock, isTime } from './legacy/core.js';
 import { riskAt, riskDay, riskStartLabel } from './risk';
 import type { DayKey, Days, Settings } from './types';
@@ -17,10 +22,12 @@ const HOUR = 60 * MIN;
 export const LIVE_NIGHT_BEFORE = 30 * MIN;
 /** how long after screens off it stays, while Goodnight is not done */
 export const LIVE_NIGHT_AFTER = 60 * MIN;
+/** the longest the ride shows: an SOS left open longer than this is let go from the Lock Screen */
+export const LIVE_RIDE_MAX = 60 * MIN;
 /** iPhone ends a Live Activity after 8 hours */
 const LIVE_MAX = 8 * HOUR;
 
-export type LiveKind = 'hard' | 'night';
+export type LiveKind = 'hard' | 'night' | 'ride';
 export interface LivePlan {
   kind: LiveKind;
   /** one per kind a log day: the same key is updated, a new key ends the old one and starts again */
@@ -53,6 +60,9 @@ export const LIVE_WORDS = {
   wind: 'Wind down',
   windSub: (off: string) => 'Screens off at ' + fmtClock(off),
   asleep: 'Resting till morning',
+  ride: 'Holding on',
+  rideSub: (t0: number) => 'Since ' + liveClock(t0),
+  rideBack: 'Keep going',
 };
 
 const minOf = (t: string) => +t.slice(0, 2) * 60 + +t.slice(3, 5);
@@ -65,8 +75,22 @@ export function liveClock(ms: number): string {
 }
 const barOf = (a: number, b: number): LiveBar => ({ a, b, left: liveClock(a), right: liveClock(b) });
 
-/** the Live Activity that should be showing now, or null */
-export function livePlan(days: Days, st: Settings | null, tk: DayKey, now: number): LivePlan | null {
+/** the Live Activity that should be showing now, or null. sosAt: when the open SOS began (null when none is open) */
+export function livePlan(days: Days, st: Settings | null, tk: DayKey, now: number, sosAt: number | null = null): LivePlan | null {
+  if (sosAt != null && now >= sosAt && now < sosAt + LIVE_RIDE_MAX) {
+    return {
+      kind: 'ride',
+      key: 'ride-' + sosAt,
+      to: sosAt + LIVE_RIDE_MAX,
+      asleep: false,
+      line: LIVE_WORDS.ride,
+      sub: LIVE_WORDS.rideSub(sosAt),
+      short: liveClock(sosAt),
+      url: '/sos',
+      /* not drawn as a bar: the time held on counts up from a (b is only where iPhone stops counting) */
+      bar: barOf(sosAt, sosAt + LIVE_RIDE_MAX),
+    };
+  }
   if (!st) return null;
   const r = riskDay(days, st, tk, now);
   if (r && (r.phase === 'soon' || r.phase === 'during')) {

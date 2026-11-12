@@ -11,6 +11,7 @@ export function useFlameWidget(
   _now: number,
   _onPlaced: () => void,
   _onTold: (t: WidgetTold[]) => void,
+  _sosAt?: number | null,
 ): ReactNode {
   return null;
 }

@@ -37,7 +37,14 @@ const SWAPS: [string, Record<Exclude<Habit, 'porn'>, string>][] = [
   ['struggling with porn', { alcohol: 'struggling with drinking', gambling: 'struggling with gambling', other: 'struggling with a habit' }],
   ['how often do you watch porn', { alcohol: 'how often do you drink', gambling: 'how often do you gamble', other: 'how often does it happen' }],
   ['Quit porn', { alcohol: 'Quit drinking', gambling: 'Quit gambling', other: 'Quit this habit' }],
+  /* the lessons' own phrases (lesson-habit.ts): a fact about who you are, and where the pull starts */
+  ['I do not watch porn', { alcohol: 'I do not drink', gambling: 'I do not gamble', other: 'I do not do that' }],
+  ['before anything is on the screen', { alcohol: 'before anything is poured', gambling: 'before any bet is placed', other: 'before anything has happened' }],
+  ['it is not on the screen', { alcohol: 'it is not in a glass', gambling: 'it is not in a bet', other: 'it is not in the habit' }],
+  ['reach for porn', { alcohol: 'reach for a drink', gambling: 'reach for a bet', other: 'reach for the habit' }],
+  ['watch porn', { alcohol: 'drink', gambling: 'gamble', other: 'do it' }],
   ['on porn', { alcohol: 'on drinking', gambling: 'on gambling', other: 'on this habit' }],
+  ['Porn', { alcohol: 'Drinking', gambling: 'Gambling', other: 'This habit' }],
   ['porn', { alcohol: 'drinking', gambling: 'gambling', other: 'this habit' }],
 ];
 export function habitSay(text: string, h: Habit): string {

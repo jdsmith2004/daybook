@@ -200,6 +200,23 @@ beside it.
 - **#35 Graduation.** The moment the app says "you are someone who is free of this", for good. Its words say who they have become, not
   "90 days complete".
 - **#33 Lessons for alcohol and gambling.** Those people get fewer lessons, so they get less of the change in thinking.
+  Built November 11, 2026 (branch `claude/sharp-proskuriakova-5f7bda`, core `lesson-habit.ts`), waiting for the owner's look on
+  the web: 13 of the 25 porn-only lessons open to alcohol and gambling (9 of them to another habit too), and four new lessons of
+  one habit each. Alcohol: 40 lessons on the path, against 33 before; gambling the same; another habit 35. Every step has a
+  lesson again for alcohol and gambling, so Make it right and Keep a daily practice are no longer passed by.
+  - **Words only** (`HABIT_OPEN` 'say', through `habitSay`): l13 Name the feeling, l33 Wanting is not liking, l38 Say “I do
+    not” (“I do not drink”, “I do not gamble”), and g3, g8, g9, g10, g11, g12.
+  - **Its own parts** (a `vo`-style overlay per habit): l34 The cue comes first (the drive home past the store, the game about
+    to start, with a cue study for each), l36 What the habit does for you (“I drink because I like it”, “It is about the
+    money”), l46 What getting free feels like (low mood lifting within weeks of the last drink, with the doctor line for the
+    first days; restlessness as a known sign for gambling), l25 The 12 steps (AA, Gamblers Anonymous, groups for another habit).
+    A habit version that swaps a study has its own Behind this note; the porn notes stay as written.
+  - **Lessons of one habit** (`HABIT_TURNS`, steps.ts `habit`): l50 The drink in every hand (Close the door: the round, the
+    toast, the question), l51 The people around the glass (Make it right), l52 Chasing it back (Know your pattern), l53 The
+    money and the truth (Make it right). On their habit's path only, never on porn's.
+  - Still porn-only: l4, l11, l16, l22, l24, l42, l45, l47, l48, g4, g6, g7. Next, if wanted: l16 and l24 with alcohol and
+    gambling studies, near misses and “due” thinking for gambling, the evening routine and sleep for alcohol. The Close the
+    door deed still names a filter for every habit.
 
 **Changed:**
 

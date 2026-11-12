@@ -510,10 +510,10 @@ export default function Log() {
             {w.h}
           </T>
           {lit ? (
-            <T style={[s.center, s.kind]}>{rkLitLine(snap.days, st, snap.reviews, tk, date)}</T>
+            <T style={[s.center, s.kind]}>{keepLast(rkLitLine(snap.days, st, snap.reviews, tk, date))}</T>
           ) : (
             <>
-              <T style={[s.center, s.kind]}>{rkFirstLine(snap.days, st, snap.reviews, tk)}</T>
+              <T style={[s.center, s.kind]}>{keepLast(rkFirstLine(snap.days, st, snap.reviews, tk))}</T>
               <T tone="muted" style={s.center}>
                 {w.p}
               </T>

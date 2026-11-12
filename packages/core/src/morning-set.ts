@@ -310,6 +310,8 @@ export const MORNING_WORDS = {
   when: 'When does tonight start?',
   whenDone: 'Done',
   set: 'Set tonight',
+  /** the quiet link to Rekindle after It happened */
+  look: 'Look back on it',
   /** said once it is set, as the lesson opens */
   done: 'Tonight is set.',
 } as const;

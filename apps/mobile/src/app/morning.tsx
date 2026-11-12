@@ -14,6 +14,8 @@ import {
   answerNight,
   gameCompute,
   habitOf,
+  futureAsk,
+  lastNightSlip,
   lastNightStart,
   lessonDue,
   MORNING_FEEL,
@@ -36,6 +38,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { Appear } from '@/components/appear';
+import { Link } from '@/components/choices';
 import { FlameMedallion } from '@/components/flame-medallion';
 import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
@@ -44,6 +47,7 @@ import { buzz } from '@/lib/feel';
 import { nightWaitsOn } from '@/lib/morning';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
+import { askedFuture, useFuture } from '@/lib/future';
 import { useAccount } from '@/lib/sync';
 import { font, nightInk, useTheme } from '@/lib/theme';
 
@@ -64,6 +68,7 @@ export default function Morning() {
   const { then } = useLocalSearchParams<{ then?: string }>();
   const { snap, tk, update, say, now } = useStore();
   const account = useAccount();
+  const future = useFuture();
   const c = useTheme();
   const win = useWindowDimensions();
   const st = snap.settings;
@@ -101,13 +106,17 @@ export default function Morning() {
   };
   const next = () => {
     if (!n || !st) return;
+    /* earned as usual, but nothing is said about points here: no ceremony after It happened (noWin) */
     const t = Date.now();
-    update((s0) => {
-      if (!s0.settings) return s0;
-      let days = answerNight(s0.days, s0.settings, tk, n, t);
-      days = setMorningFeel(days, tk, f, t);
-      return { ...s0, days };
-    });
+    update(
+      (s0) => {
+        if (!s0.settings) return s0;
+        let days = answerNight(s0.days, s0.settings, tk, n, t);
+        days = setMorningFeel(days, tk, f, t);
+        return { ...s0, days };
+      },
+      { noWin: true },
+    );
     setSaid(n);
     buzz('save');
     go('why', 1);
@@ -116,18 +125,29 @@ export default function Morning() {
     if (!st || leaving.current) return;
     leaving.current = true;
     const t = Date.now();
-    update((s0) => {
-      if (!s0.settings) return s0;
-      const out = setTonight(s0.days, s0.settings, tk, { r, nt }, t);
-      return { ...s0, days: out.days, settings: out.st };
-    });
+    update(
+      (s0) => {
+        if (!s0.settings) return s0;
+        const out = setTonight(s0.days, s0.settings, tk, { r, nt }, t);
+        return { ...s0, days: out.days, settings: out.st };
+      },
+      { noWin: true },
+    );
     buzz('lit');
     say(W.done);
     /* then the lesson: the one this was opened in front of, or today's next one when it is open */
     const lid = then || lessonDue(snap.days, st, tk, account);
     if (lid) router.replace({ pathname: '/lesson/[id]', params: { id: lid, at: 'morning' } });
     else close();
+    /* a note from this morning's self to tonight's (Future you, app/future.tsx), offered when it is due and only after a free
+       night (never on the morning after It happened): it opens over the lesson, and its Done or X goes back to it */
+    if (n === 'free' && futureAsk(snap.days, st, future, t)) {
+      askedFuture();
+      setTimeout(() => router.push('/future'), 350);
+    }
   };
+  /* after It happened: Rekindle, one quiet tap away and never pushed (the log page of last night's slip) */
+  const rk = said === 'slip' ? lastNightSlip(snap.days, tk) : null;
 
   if (!st) return null;
 
@@ -191,6 +211,15 @@ export default function Morning() {
               <Icon name="next" size={14} color={c.sun} />
             </Pressable>
             <Button label={W.set} kind="warm" onPress={set} disabled={!r} />
+            {rk ? (
+              <View style={s.c}>
+                <Link
+                  label={W.look}
+                  color={INK}
+                  onPress={() => router.push({ pathname: '/log', params: { date: rk.k, evId: rk.id, outcome: 'slipped', from: 'entry' } })}
+                />
+              </View>
+            ) : null}
           </Dock>
         </Stage>
       </SceneFrame>
@@ -272,6 +301,7 @@ function Pill({ label, on, onPress }: { label: string; on: boolean; onPress: () 
 
 const s = StyleSheet.create({
   h: { color: nightInk.ink, alignSelf: 'stretch', textAlign: 'left' },
+  c: { alignItems: 'center' },
   list: { gap: 10 },
   choice: { minHeight: 58, borderRadius: 18, paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
   choiceT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22, color: INK, opacity: 0.78 },

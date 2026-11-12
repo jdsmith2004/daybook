@@ -194,7 +194,7 @@ export function trailFill(id: (typeof TRAIL_LIGHTS)[number]['id'], len: TrailLen
 export const TRAIL_LINES: { line: string; answer: string; late?: boolean }[] = [
   { line: 'You fought all day. You earned it.', answer: 'Earning it is the oldest trick it has. What I earned is this week.' },
   { line: 'Just a look. You will stop after.', answer: 'I have never stopped after. A look is the first step down the stairs.' },
-  { line: 'You already slipped this week, so it does not matter.', answer: 'Every day counts on its own. Today can still be clean.' },
+  { line: 'You already slipped this week, so it does not matter.', answer: 'Every day counts on its own. Today can still be a free day.' },
   { line: 'Nobody will know.', answer: 'I will know, and I am the one I am doing this for.' },
   { line: 'You will not sleep until you do.', answer: 'I have fallen asleep with it before. It fades when I stop feeding it.', late: true },
   { line: 'This is the last time.', answer: 'The last time is the one I do not take.' },

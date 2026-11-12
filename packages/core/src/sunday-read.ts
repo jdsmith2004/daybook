@@ -265,7 +265,7 @@ export function weekRead(
     case 'clean':
       says = D === 7 ? 'Not one slip all week.' : 'Not one slip in ' + plural(D, 'day') + '.';
       held = first
-        ? 'Your first week, and it is clean.'
+        ? 'Your first week, free of it.'
         : R >= 3
           ? cap(rodeLine) + ' to get here.'
           : vs === 'better'

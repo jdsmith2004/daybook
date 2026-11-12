@@ -196,25 +196,25 @@ export function PicSlip({ width = 300 }: { width?: number }) {
     <View
       style={{ alignItems: 'center', gap: 6 }}
       accessible
-      accessibilityLabel="Two lines. A streak counter climbs, then drops to zero at a slip. Daybook points keep climbing through the slip.">
+      accessibilityLabel="Two lines. What you earned climbs, and at a slip it holds where it was. Daybook points keep climbing through the slip.">
       <Svg width={width} height={(width * 150) / 300} viewBox="0 0 300 150">
         <Path d="M10 126H292" stroke={c.line} strokeWidth={2} />
         <Path d="M160 22V126" stroke={c.slip} strokeWidth={2} strokeDasharray="4 4" />
-        <Path d="M12 122L60 112L110 100L160 88V124L210 116L260 106L290 100" stroke={c.muted} strokeWidth={3} fill="none" />
+        <Path d="M12 122L60 112L110 100L160 88L210 88L260 88L290 88" stroke={c.muted} strokeWidth={3} fill="none" />
         <Path d="M12 116L60 96L110 76L160 56L176 53L210 42L260 26L290 16" stroke={c.mint} strokeWidth={4} fill="none" strokeLinecap="round" />
-        <Circle cx={160} cy={124} r={5} fill={c.muted} />
+        <Circle cx={160} cy={88} r={5} fill={c.muted} />
         <Circle cx={160} cy={56} r={5} fill={c.mint} />
         <Rect x={138} y={2} width={44} height={18} rx={9} fill={c.slip} />
         <SvgText x={160} y={15} fontSize={11} fontFamily={font.bodyBold} fill="#fff" textAnchor="middle">
           Slip
         </SvgText>
         <SvgText x={160} y={143} fontSize={11} fontFamily={font.bodyBold} fill={c.muted} textAnchor="middle">
-          Back to 0
+          Held, not lost
         </SvgText>
       </Svg>
       <View style={{ flexDirection: 'row', gap: 14 }}>
         <Legend col={c.mint} label="Daybook points" />
-        <Legend col={c.muted} label="A streak counter" />
+        <Legend col={c.muted} label="Your longest run" />
       </View>
     </View>
   );

@@ -10,6 +10,14 @@ import {
   BE_LEN,
   fmtClock,
   fmtDate,
+  FREE_HI,
+  FREE_LO,
+  FREE_Q,
+  freeAtSetup,
+  freeCounts,
+  freeKeep,
+  freeLater,
+  freeProof,
   isTime,
   keyOfDate,
   LEARN_FREE,
@@ -80,6 +88,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { Appear } from '@/components/appear';
 import { Confetti } from '@/components/celebrate';
 import { Field } from '@/components/choices';
+import { FreeProof } from '@/components/free-proof';
 import { CountUp } from '@/components/count-up';
 import { FitArt, SHORT, useFitRoom } from '@/components/fit';
 import { LessonArt } from '@/components/lesson-art';
@@ -150,12 +159,17 @@ export default function Setup() {
   }, []);
   const rem = useReminderPrefs();
   const [remAt, setRemAt] = useState(rem.checkinAt);
+  /* the north star's starting point (core north.ts): asked when there is no answer yet, never in the hours after a slip or an
+     SOS. Decided once, so the page keeps its place in the list after it is answered. */
+  const sosNow = useSos();
+  const [freeAsk] = useState(() => freeAtSetup(snap.days, st, tk, { now: Date.now(), sos: urLastAt(sosNow.mem) }));
   /* the reminder page shows on a phone, and on a walk-through only while the check-in reminder is off */
   /* the account page shows to a new person while this build has accounts and they are not signed in; once they are, it
      drops out of the list and the setup moves on by itself */
   const env = {
     notify: remindersOffered && !(f.redo && rem.checkin),
     account: !f.redo && sync.status.k === 'out',
+    free: freeAsk,
   };
   const [breathed, setBreathed] = useState(false);
   /* the hold finished: the flame in the plan lights, and the setup moves on a moment later */
@@ -309,7 +323,7 @@ export default function Setup() {
   };
 
   const ans = (v: unknown) => (Array.isArray(v) ? v.length > 0 : v != null && v !== '');
-  const noBack = i === 0 || pg.k === 'done' || pg.k === 'remind' || pg.k === 'account';
+  const noBack = i === 0 || pg.k === 'done' || pg.k === 'remind' || pg.k === 'star' || pg.k === 'account';
   /* Skip is quiet, so an answer is the easy way on; Next is the main button */
   const nextBtn = (label: string, skip?: boolean) =>
     skip ? (
@@ -377,7 +391,10 @@ export default function Setup() {
         </>
       ) : (
         <>
-          <Head h="Quit porn, one honest day at a time." sub="A plan built from your answers, a short lesson a day, and help when urges hit." />
+          <Head
+            h={habitSay('Get free of porn, one honest day at a time.', habit)}
+            sub="A plan built from your answers, a short lesson a day, and help when urges hit."
+          />
           {/* the first thing a new person sees: the flame, big and alive, saying hello. It is the same one they will watch grow. */}
           <Talk text={voice} want={want} />
           {/* someone opening Daybook in the middle of an urge gets help before any question */}
@@ -1039,26 +1056,34 @@ export default function Setup() {
           <Head h="When should Daybook check in with you?" />
           <Middle>
             <View style={{ alignItems: 'center', gap: 14, alignSelf: 'stretch' }}>
-              {/* what it will look like on a locked screen: plain words that say nothing about what Daybook is for */}
-              <View
-                style={[s.lock, { backgroundColor: skies.light.night[0] }]}
-                accessible
-                accessibilityLabel={'At ' + fmtClock(remAt) + ', a reminder will look like this: Daybook. Check in. Under a minute.'}>
-                <View style={[s.lockIc, { backgroundColor: c.accent }]}>
-                  <Icon name="flame" size={16} color={c.accentInk} />
+              {/* what they will look like on a locked screen: the morning lesson note and the evening honest tap, plain words
+                  that say nothing about what Daybook is for (core NUDGE_WORDS.preview) */}
+              {[
+                { w: NUDGE_WORDS.preview.am, at: 'Morning' },
+                { w: NUDGE_WORDS.preview.pm, at: fmtClock(remAt) },
+              ].map(({ w, at }) => (
+                <View
+                  key={at}
+                  style={[s.lock, { backgroundColor: skies.light.night[0] }]}
+                  accessible
+                  accessibilityLabel={at + ', a reminder will look like this: Daybook. ' + w.t + '. ' + w.b}>
+                  <View style={[s.lockIc, { backgroundColor: c.accent }]}>
+                    <Icon name="flame" size={16} color={c.accentInk} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.lockT, { color: nightInk.ink }]}>{w.t}</Text>
+                    <Text style={[s.lockB, { color: nightInk.ink }]}>{w.b}</Text>
+                  </View>
+                  <Text style={[s.lockW, { color: nightInk.muted }]}>{at}</Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.lockT, { color: nightInk.ink }]}>{NUDGE_WORDS.checkin.t}</Text>
-                  <Text style={[s.lockB, { color: nightInk.ink }]}>{NUDGE_WORDS.checkin.b}</Text>
-                </View>
-                <Text style={[s.lockW, { color: nightInk.muted }]}>{fmtClock(remAt)}</Text>
-              </View>
+              ))}
             </View>
           </Middle>
           <Say text={voice} />
           <ClockWheels {...hm(remAt)} step={5} onChange={(h, m) => setRemAt(clockOf(h, m))} />
           <T v="small" tone="muted" style={s.c}>
-            Skipped on days you have already checked in. Also a heads-up before your hard hours, and one on Sundays for your week. Never at night.
+            Skipped on days you have already checked in. Also a heads-up before your hard hours, and one on Sundays for your week. Nothing at night unless you
+            pick a time there.
           </T>
         </>
       );
@@ -1068,6 +1093,51 @@ export default function Setup() {
           <Ghost label="Not now" onPress={notNow} />
         </View>
       );
+      break;
+    }
+    case 'star': {
+      /* the north star's starting point (core north.ts): the question at the top, the person's own proof under it (none yet
+         for someone new), the number huge in the open middle, the slider under the thumb, Next at the bottom. Skip waits a week. */
+      const v = typeof a.free === 'number' ? a.free : null;
+      const proof = st ? freeProof(snap.days, st, snap.reviews, tk) : [];
+      body = (
+        <>
+          <Head h={FREE_Q} />
+          <FreeProof lines={proof} color={c.mintText} />
+          <Middle>
+            <SliderValue big value={v} caption="out of 10" hint="Slide below to answer" />
+          </Middle>
+          <Say text={voice} />
+          <Slider label={FREE_Q} value={v} lo={FREE_LO} hi={FREE_HI} readout={false} onChange={(n) => setA({ free: n })} />
+        </>
+      );
+      foot =
+        v != null ? (
+          <View key="n" style={s.footOne}>
+            <Next
+              label="Next"
+              off={false}
+              onPress={() => {
+                if (busy()) return;
+                if (st) apply({ st: freeKeep(st, tk, v) });
+                track('free', { free: v, ...freeCounts(snap.days, tk) });
+                go(1);
+              }}
+            />
+          </View>
+        ) : (
+          <View key="s" style={s.footOne}>
+            <Ghost
+              label="Skip"
+              onPress={() => {
+                if (busy()) return;
+                if (st) apply({ st: freeLater(st, tk) });
+                if (!f.redo) track('setup_skip', { page: pg.id });
+                go(1);
+              }}
+            />
+          </View>
+        );
       break;
     }
     case 'account': {

@@ -194,7 +194,9 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
       lessons, tools, charts, reminders, the asks.)
     - Diagnostics, **Other Diagnostic Data** (new): purposes Analytics; linked: **No**; tracking: **No**. (Which part had an error.)
     - Health and Fitness, **Health** (already there for accounts): add the purpose **Analytics**; linked stays **Yes**; tracking
-      **No**. (Urges, slips, their strength and triggers, the check-in's numbers, the five questions.)
+      **No**. (Urges, slips, their strength and triggers, the check-in's numbers, the five questions, and since November 11, 2026
+      the monthly "How free of this do you see yourself?" number with urges ridden out and slips in the last 30 days as counts:
+      the same Health type, so the label needs no new answer.)
     - Sensitive Info (already there for accounts): add **Analytics**; linked stays **Yes**; tracking **No**. (Faith, the habit.)
     - Purchases, **Purchase History** (already there): add **Analytics**; linked stays **Yes**; tracking **No**.
     - Then Publish. Nothing here is Apple Health data, and the label says nothing about HealthKit.

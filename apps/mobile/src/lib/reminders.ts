@@ -5,10 +5,12 @@
    Today (or the screen it is for: the lesson reminder opens today's lesson). On Android each kind has its own channel, so one can be quieted without the others.
    Each note has its own title (core NUDGE_WORDS) and no picture: on iPhone a picture shows beside the app icon, and the
    flame picture looked like the icon twice. Android shows the fixed small and large icons from app.json. */
-import type { Nudge, NudgeKind, TrailNote } from '@daybook/core';
+import { nudgeExt, nudgeQuietLeft, type Nudge, type NudgeKind, type TrailNote } from '@daybook/core';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { Linking, Platform } from 'react-native';
+
+import { getNudgeLog, setNudgeLog } from '@/lib/prefs';
 
 export const remindersOffered = true;
 const CHANNEL = 'reminders';
@@ -117,16 +119,22 @@ export function openPhoneSettings(): void {
 
 const TALK = 'talk';
 /** one reminder from Talk it through (time to decide, or time to look back), replacing any earlier one. The words are
-    plain, so a locked screen says nothing about what Daybook is for. url opens that screen. False when not allowed. */
+    plain, so a locked screen says nothing about what Daybook is for. url opens that screen. False when not allowed, or when
+    these reminders went quiet because they were not being opened (core nudgeQuietLeft). It is kept in the log so a tap or
+    an open soon after counts (core nudgeLearn). */
 export async function scheduleTalk(t: number, body: string, url: string): Promise<boolean> {
   await cancelTalk();
-  if (t <= Date.now() || !(await allowReminders())) return false;
+  const now = Date.now();
+  setNudgeLog((l) => nudgeExt(l, 'talk', [], now));
+  if (t <= now || nudgeQuietLeft(getNudgeLog(), 'talk', now) < 1 || !(await allowReminders())) return false;
   await makeChannels();
+  const id = 'talk@' + t;
   await Notifications.scheduleNotificationAsync({
     identifier: TALK,
-    content: { title: 'Daybook', body, data: { url } },
+    content: { title: 'Daybook', body, data: { url, id } },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: t, channelId: CHANNEL },
   });
+  setNudgeLog((l) => nudgeExt(l, 'talk', [{ id, at: t }], Date.now()));
   return true;
 }
 export async function cancelTalk(): Promise<void> {
@@ -162,7 +170,7 @@ export function scheduleTrail(notes: TrailNote[]): Promise<void> {
       if (n.at <= now) continue;
       await Notifications.scheduleNotificationAsync({
         identifier: n.id,
-        content: { title: n.title, body: n.body, categoryIdentifier: 'trail', data: { url: '/trail', trail: true } },
+        content: { title: n.title, body: n.body, categoryIdentifier: 'trail', data: { url: '/trail', trail: true, id: 'trail@' + n.at } },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.at, channelId: TRAIL_CHANNEL },
       });
     }
@@ -179,6 +187,9 @@ export function listenForTaps(onTap: (id: string) => void = () => undefined, onT
     /* a trail note: its answer, and the trail opened where the button says */
     if (r.notification.request.content.data?.trail) {
       const a = r.actionIdentifier;
+      /* any answer counts as opened, the quiet buttons too (core nudgeLearn) */
+      const tid = r.notification.request.content.data?.id;
+      if (typeof tid === 'string') onTap(tid);
       const ans: TrailAnswer = a === 'door' || a === 'where' || a === 'later' || a === 'off' ? a : 'open';
       onTrail(ans);
       if (ans === 'door') router.navigate('/trail?at=case' as '/');

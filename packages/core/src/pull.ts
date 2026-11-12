@@ -17,10 +17,10 @@
    from any of it (pulse.ts), and none of it is in synced Settings: the choices are each phone's own. */
 import { lastSlipMs, LOW_OF, partDone, type FireLow } from './flame-low';
 import { SLIP_HOURS } from './hero';
-import { addDays, eventsOf, isTime, logicalKey } from './legacy/core.js';
+import { addDays, clockOf, evMs, eventsOf, isTime, logicalKey } from './legacy/core.js';
 import { lessonDue } from './nudges';
 import { riskAt, riskStartLabel, riskWindow } from './risk';
-import type { DayKey, Days, Settings } from './types';
+import type { DayEvent, DayKey, Days, Settings } from './types';
 
 /** the person's choices, kept on the phone */
 export interface PullPrefs {
@@ -208,8 +208,29 @@ export function pullPauseWords(o: { quiet: boolean; open: number; plan: string |
     hold: 'Breathe while it runs.',
     down: 'Put it down',
     open: 'Open it for ' + o.open + ' minutes',
-    thanks: o.quiet ? 'That was the strong choice. I am proud of you.' : 'That is how your fire grows. Go, and leave the phone here.',
+    thanks: o.quiet ? 'That was the strong choice. It is in your log as a win.' : 'One more win in your log. That is what someone free does.',
   };
+}
+
+/* ---------- Put it down: evidence, not just a way out ---------- */
+
+/** minutes after an urge ridden out (from anywhere) before Put it down logs another, so the notes cannot be tapped for points */
+export const PULL_DOWN_GAP = 60;
+
+/** "Put it down" on the wait screen is an urge ridden out: after scrolling, by leaving the room. It goes in the log like any
+    other, so it earns its points, feeds the flame and counts as the person's part for the day (flame-low partDone). Null when
+    an urge was already ridden out in the last PULL_DOWN_GAP minutes (that one already counts). Nothing here is a Screen Time
+    number: it is the person's own answer on Daybook's own screen. */
+export function pullDownEvent(days: Days, st: Settings, now: number): { key: DayKey; time: string; fields: Partial<DayEvent> } | null {
+  const key = logicalKey(now, st.rollover);
+  for (const k of [key, addDays(key, -1)]) {
+    for (const e of days[k]?.events ?? []) {
+      if (e.outcome !== 'rode' || !e.time) continue;
+      const at = evMs(k, e.time, st.rollover);
+      if (at <= now && now - at < PULL_DOWN_GAP * 60000) return null;
+    }
+  }
+  return { key, time: clockOf(now), fields: { trigger: 'scroll', did: ['left'] } };
 }
 
 /* ---------- what the app shares with the extensions ---------- */

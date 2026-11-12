@@ -68,3 +68,21 @@ describe('the ask on Today', () => {
     expect(all).not.toMatch(/n['’]t|['’](re|ll|ve|d|m)\b|\b(it|that|there|what)['’]s\b/i);
   });
 });
+
+describe('the ask when the value is plain (docs/plan.md, "Becoming free", 3)', () => {
+  const rode = core.addEvent({}, tk, 'rode', '21:00', {}, 1).days;
+  const nine = new Date(tk + 'T21:00:00').getTime();
+  it('after a ride, it offers the heads-up before the hard hours', () => {
+    expect(core.notifyAsk(phone, mem0, rode, st, tk)).toMatchObject({ k: 'allow', ride: true, text: core.NOTIFY_WORDS.ride });
+    expect(core.NOTIFY_WORDS.ride).toMatch(/^You rode it out\. /);
+  });
+  it('right after an SOS that ended in a ride, yes; after one that did not, not for a few hours', () => {
+    expect(core.notifyAsk(phone, mem0, rode, st, tk, { at: nine - 10 * 60000, now: nine + 5 * 60000 })?.ride).toBe(true);
+    expect(core.notifyAsk(phone, mem0, {}, st, tk, { at: nine, now: nine + 3600_000 })).toBeNull();
+    expect(core.notifyAsk(phone, mem0, {}, st, tk, { at: nine, now: nine + 4 * 3600_000 })).not.toBeNull();
+  });
+  it('never after a slip, ride or not', () => {
+    const d = core.addEvent(rode, tk, 'slipped', '22:00', {}, 1).days;
+    expect(core.notifyAsk(phone, mem0, d, st, tk)).toBeNull();
+  });
+});

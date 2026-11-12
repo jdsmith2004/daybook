@@ -67,6 +67,7 @@ import {
   type WalkLine,
   type WalkNeed,
   type WalkStage,
+  NUDGE_WORDS,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -224,7 +225,7 @@ export function Walk({
   const finish = (withPlan: boolean) => {
     save(withPlan);
     /* the reminder comes at the moment and opens Today, where the plan waits */
-    if (withPlan && remind && remindersOffered && moAt) scheduleTalk(moAt, 'Your plan is ready. One tap away.', '/').catch(() => undefined);
+    if (withPlan && remind && remindersOffered && moAt) scheduleTalk(moAt, NUDGE_WORDS.talk.change, '/').catch(() => undefined);
     buzz('save');
     onHome(at, first ?? n0);
   };

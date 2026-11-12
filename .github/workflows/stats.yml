@@ -76,4 +76,7 @@ jobs:
           LEARN_DAYS: ${{ inputs.learn_days || '90' }}
         run: |
           # a fixed set of Athena queries (scripts/stats-events.mjs); a few cents at most, each query stopped at 1 GB
-          node scripts/stats-events.mjs "$LEARN_DAYS" | tee -a "$GITHUB_STEP_SUMMARY" > /dev/null || echo 'What Daybook learns: the report did not run (see this step in the log).' >> "$GITHUB_STEP_SUMMARY"
+          # printed here in the log too, so it can be read without a browser (gh run view --log)
+          node scripts/stats-events.mjs "$LEARN_DAYS" > learns.md || echo 'What Daybook learns: the report did not run (see this step in the log).' >> learns.md
+          cat learns.md
+          cat learns.md >> "$GITHUB_STEP_SUMMARY"

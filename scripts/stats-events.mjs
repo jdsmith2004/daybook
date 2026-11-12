@@ -3,7 +3,8 @@
    infra/bootstrap/events.tf) and prints the answers as Markdown tables for the run's summary page.
 
    Each query answers one question the owner asked: where people leave, where setup loses them, which screens, tabs and charts
-   are used, which tools and lessons help, whether reminders work, who stays, whether Daybook is working, and what earns. A
+   are used, which tools and lessons help, whether reminders work, who stays, whether Daybook is working (the five questions,
+   and the north star: how free people see themselves, with urges ridden out against slips), and what earns. A
    line under "What this suggests" is said only where it rests on MIN people or more. The workgroup stops any query at 1 GB.
 
    Usage (with the stats role's AWS credentials): node scripts/stats-events.mjs [days]   (days: how far back; default 90) */
@@ -327,6 +328,53 @@ async function main() {
       ['five_questions', 'Five questions (average)'],
     ]),
   );
+
+  /* the north star (core north.ts): "How much do you see yourself as someone free of this?" by month of use, each phone's first
+     answer against its latest, and urges ridden out against slips over the last 30 days (each phone's latest day) */
+  const star = await q(`
+    SELECT d / 30 AS month, count(DISTINCT i) AS people, avg(CAST(${P('free')} AS double)) AS free_avg,
+      avg(CAST(${P('rode30')} AS double)) AS rode30, avg(CAST(${P('slips30')} AS double)) AS slips30
+    FROM events WHERE ${W} AND n = 'free' GROUP BY 1 ORDER BY 1 LIMIT 24`);
+  const [moved] = await q(`
+    WITH x AS (SELECT i, min_by(CAST(${P('free')} AS integer), k) AS a, max_by(CAST(${P('free')} AS integer), k) AS b, count(*) AS n
+      FROM events WHERE ${W} AND n = 'free' GROUP BY i)
+    SELECT count(*) AS people, count_if(b > a) AS up, count_if(b = a) AS same, count_if(b < a) AS down, avg(CAST(b - a AS double)) AS change
+    FROM x WHERE n >= 2`);
+  const [ratio] = await q(`
+    WITH x AS (SELECT i, max_by(CAST(${P('rode30')} AS integer), k) AS r, max_by(CAST(${P('slips30')} AS integer), k) AS sl
+      FROM events WHERE ${W} AND n = 'day' AND ${P('rode30')} IS NOT NULL GROUP BY i)
+    SELECT count(*) AS people, avg(CAST(r AS double)) AS rode30, avg(CAST(sl AS double)) AS slips30,
+      count_if(r > sl) AS more_ridden, count_if(r = 0 AND sl = 0) AS neither FROM x`);
+  section(
+    'The north star: do people see themselves as free? (0 to 10, by month of use; and the last 30 days)',
+    table(star, [
+      ['month', 'Month of use'],
+      ['people', 'People'],
+      ['free_avg', 'Free (average, 0 to 10)'],
+      ['rode30', 'Urges ridden out, 30 days'],
+      ['slips30', 'Slips, 30 days'],
+    ]) +
+      '\n' +
+      table(Number(moved?.people) ? [moved] : [], [
+        ['people', 'People with two answers or more'],
+        ['up', 'Up'],
+        ['same', 'Same'],
+        ['down', 'Down'],
+        ['change', 'Change (average)'],
+      ]) +
+      '\n' +
+      table(Number(ratio?.people) ? [ratio] : [], [
+        ['people', 'Phones (latest day)'],
+        ['rode30', 'Urges ridden out, 30 days (average)'],
+        ['slips30', 'Slips, 30 days (average)'],
+        ['more_ridden', 'More ridden out than slips'],
+        ['neither', 'Neither logged'],
+      ]),
+  );
+  if (Number(moved?.people) >= MIN)
+    say.push(
+      `Of ${moved.people} people who answered the north star twice or more, **${moved.up}** see themselves as freer now (average change ${fmt(moved.change)}).`,
+    );
 
   /* what earns */
   const money = await q(`

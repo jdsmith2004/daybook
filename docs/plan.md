@@ -313,6 +313,12 @@ who a person thinks they are.
 
 **2. Rekindle and the morning after (effort: medium for words and screens; high for anything touching points or runs).**
 
+- **Rethought, November 12, 2026.** The owner: "i think the light the fire is good we should just let them stop there and then if they
+  want to do more we give them something but put some time and thought into how we should do this bc it def needs work". So Rekindle ends
+  at lighting the fire again: the hold is the whole required step, and the person may stop there. Anything more (the one question, the
+  plan for next time, what it gave and what it cost) is offered after it, never required, and its shape is being redesigned by "Daybook:
+  Rekindle and the morning after" before that branch merges. The points rule below still holds.
+
 - No point numbers in the hours after a slip: the "+5" beside "Slipped at 10:00 AM", the "+10 points" under "You came back." and the "+30
   points" on the slip day's page all go. The points are still earned (honesty points stay); they show on the level page and the Sunday
   review. The page after the hold says what is kept as who the person is, not as a score: today it reads "Level 17, 655 points and 4 urges

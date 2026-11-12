@@ -200,7 +200,8 @@ describe('the words', () => {
       expect(w).not.toMatch(/n[’']t\b|[’'](re|ll|ve|m|d)\b|\bit[’']s\b/i);
       expect(w).not.toMatch(/\b(fail|failed|bad|wrong|should|reset|lost|points?|streak)\b/i);
     }
-    expect(core.tonightLine({ waits: true, habit: 'alcohol' })).toBe('Feeds wait from');
+    expect(core.tonightLine({ waits: true, habit: 'alcohol' })).toBe('Phone down tonight at');
+    expect(core.tonightLine({ waits: true, habit: 'porn' })).toBe('Adult sites wait from');
     expect(core.morningHello(at(21, 7))).toBe('Good morning · Wednesday');
   });
 });

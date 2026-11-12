@@ -1,6 +1,6 @@
 # What is planned next
 
-## The morning, not the moment: help for the person who does not want to stop (the owner, November 11, 2026; proposed, waiting for the owner's answers)
+## The morning, not the moment: help for the person who does not want to stop (the owner, November 11, 2026; approved November 11, 2026, each question the recommended option)
 
 The owner asked what it would take for Daybook to actually help, because it still does not help them. This plan starts from the owner's
 own answers about their hard moments (asked in the chat, November 11; kept general here, since they are personal), then a walk through
@@ -187,7 +187,7 @@ The morning self's choices become the night's defenses. Built on the Screen Time
   bypassing.
 - **Hard walls that cannot be undone.** The owner chose a wait, and Apple lets the person lift any Screen Time setting anyway.
 
-### Questions for the owner (each with a recommendation)
+### Questions for the owner (the owner, November 11, 2026: the recommended option on 1, 2, 4 and 5; 3 follows from 2)
 
 1. **A morning moment again.** (a) Two pages before the lesson, from the morning note, once a day (recommended). (b) At the end of the
    lesson instead. (c) No morning; set the night in the evening wind-down.

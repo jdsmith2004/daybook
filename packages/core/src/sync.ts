@@ -12,7 +12,8 @@
    the push sends the merged log, and records the account already has newer copies of are dropped before they are sent.
    The network parts take a transport, so the same code runs against the real API and, in tests, against the API's own
    handler with an in-memory table. Checked by services/api/test/client.test.ts. */
-import { keepEarned, normRecord, parseId, toRecords, type RecordId, type SyncRecord } from './data';
+import { cleanGone, keepEarned, normRecord, parseId, toRecords, type RecordId, type SyncRecord } from './data';
+import { isKey } from './legacy/core.js';
 import type { JEntry } from './journal-entries';
 import { goneMark } from './mutate';
 import { keepPat, keepSup } from './supporter';
@@ -38,9 +39,12 @@ export interface SyncTransport {
   push(records: SyncRecord[]): Promise<PushAnswer>;
 }
 
-/** the most records, and bytes, sent in one request (the API allows 200 and 1,000,000) */
+/** the most records, and bytes, sent in one request (the API allows 200 and 1,000,000). The bytes are kept small on purpose
+    (sync on cellular data, November 11, 2026): a phone on a weak signal sends a few kilobytes a second, and a request that
+    cannot finish before the app gives up on it would be sent again, whole, on every round. Small requests each get through,
+    and each is marked as sent the moment the account has it (pushAll's onBatch), so the next round carries on from there. */
 export const PUSH_N = 200;
-export const PUSH_BYTES = 800_000;
+export const PUSH_BYTES = 96_000;
 /** the API refuses records larger than these; a record this large is reported, not sent forever */
 export const MAX_SETTINGS_BYTES = 256_000;
 export const MAX_RECORD_BYTES = 64_000;
@@ -155,15 +159,127 @@ export function mergeDay(a: Day, b: Day): Day | null {
 const same = (x: unknown, y: unknown) => JSON.stringify(x) === JSON.stringify(y);
 const bodyOf = (d: Day) => ({ e: d.events, c: d.checkin, p: d.p, g: d.gone || [] });
 
+/** a deleted day as mergeDay can read it: nothing in it, and the marks of the entries it held */
+export const tombDay = (key: string, marks: string[], u: number): Day => ({ d: key, events: [], checkin: null, p: null, gone: marks, u });
+const allMarks = (...xs: (string[] | undefined)[]) => [...new Set(xs.flatMap((x) => x || []))].slice(-100);
+
+/* A day emptied here (its last entry deleted) leaves the log, as it always has. Until its deletion reaches the account, the
+   marks of the entries it held are kept beside the log (Snapshot.tomb) and go with the deletion, so a copy of that day
+   another device changed meanwhile keeps the entries it added, and loses only the ones deleted here (the sync fuzz test,
+   November 11, 2026). Without them, the deletion took the other device's new entries with it. */
+
+/** the tombs after a change from `cur` to `next`: a day that left the log gets the marks of what it held; a day back in the
+    log has none. Gives back the same object when nothing changed. */
+export function tombsAfter(cur: Snapshot, next: Snapshot): Snapshot['tomb'] {
+  let t = next.tomb ?? cur.tomb;
+  let copied = false;
+  const edit = () => {
+    if (!copied) {
+      t = { ...(t || {}) };
+      copied = true;
+    }
+    return t!;
+  };
+  for (const k of Object.keys(cur.days))
+    if (!next.days[k]) {
+      const day = cur.days[k];
+      edit()[k] = allMarks(
+        t?.[k],
+        day.gone,
+        day.events.map((e) => goneMark(e.id)),
+      );
+    }
+  for (const k of Object.keys(t || {})) if (next.days[k]) delete edit()[k];
+  return t;
+}
+
+/** the log after a change, with its tombs kept (tombsAfter), and a day that comes back into the log after it was emptied
+    here keeps the marks of what was deleted from it, so an older copy elsewhere does not bring those entries back. An entry
+    put back (Undo) is not marked. Gives back `next` itself when nothing changed. */
+export function withTombs(cur: Snapshot, next: Snapshot): Snapshot {
+  const was = next.tomb ?? cur.tomb;
+  const tomb = tombsAfter(cur, next);
+  let days = next.days;
+  for (const k of Object.keys(was || {})) {
+    const day = next.days[k];
+    if (!day || cur.days[k]) continue;
+    const here = new Set(day.events.map((e) => goneMark(e.id)));
+    const marks = allMarks(
+      day.gone,
+      was![k].filter((m) => !here.has(m)),
+    );
+    if (marks.length) {
+      if (days === next.days) days = { ...next.days };
+      days[k] = { ...day, gone: marks };
+    }
+  }
+  return tomb === next.tomb && days === next.days ? next : { ...next, days, tomb };
+}
+
+/** tombs read back from storage, cleaned: day keys only, each with its marks */
+export function cleanTombs(v: unknown): Snapshot['tomb'] {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+  const out: Record<string, string[]> = {};
+  for (const [k, g] of Object.entries(v as Record<string, unknown>)) {
+    const marks = isKey(k) ? cleanGone(g) : undefined;
+    if (marks) out[k] = marks;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/* What each waiting change was made from (the change time of the account's copy it started from), so the account can tell a
+   change made on top of what it holds (it stands as sent: an Undo that takes back what a mistaken log earned, a cleared
+   check-in) from one made while another device saved something (then the two are joined). */
+
+/** the bases after a change to `ids`: a record that had nothing waiting gets the change time of its copy before the change
+    (the account's copy, since nothing here was waiting); a record already waiting keeps the base it had */
+export function baseAfter(before: Snapshot, ids: string[], dirty: Dirty, base: Dirty): Dirty {
+  let out = base;
+  for (const id of ids) {
+    if (dirty[id] != null || !(id === 'settings' || id.startsWith('days/'))) continue;
+    const r = recordOf(before, id as RecordId);
+    if (out === base) out = { ...base };
+    if (r && r.u) out[id] = r.u;
+    else delete out[id];
+  }
+  return out;
+}
+
+/** the bases still needed: only those of records still waiting to be sent */
+export function keepBase(base: Dirty, dirty: Dirty): Dirty {
+  const keys = Object.keys(base);
+  if (keys.every((id) => dirty[id] != null)) return base;
+  const out: Dirty = {};
+  for (const id of keys) if (dirty[id] != null) out[id] = base[id];
+  return out;
+}
+
+/** the tombs still needed: only those of days whose deletion is still waiting to be sent */
+export function keepTombs(tomb: Snapshot['tomb'], dirty: Dirty): Snapshot['tomb'] {
+  if (!tomb) return tomb;
+  const keys = Object.keys(tomb);
+  if (keys.every((k) => dirty['days/' + k] != null)) return tomb;
+  const out: Record<string, string[]> = {};
+  for (const k of keys) if (dirty['days/' + k] != null) out[k] = tomb[k];
+  return out;
+}
+
 /** merges records from the account into the log. A record replaces what is here when it was changed later and this
     device has nothing of its own waiting to send for it. When both changed it, a day is joined entry by entry (mergeDay)
     and settings keep what each side earned (keepEarned); the joined record is marked to send, so the account gets it too.
     A deletion from the account (another device deleted that day, or everything) removes the record here when it is the
     newer change: a delete wins. The ids that changed come back, with the dirty list after the merge. */
-export function mergeRemote(s: Snapshot, dirty: Dirty, recs: SyncRecord[]): { snap: Snapshot; changed: RecordId[]; dirty: Dirty } {
+export function mergeRemote(
+  s: Snapshot,
+  dirty: Dirty,
+  recs: SyncRecord[],
+  base: Dirty = {},
+): { snap: Snapshot; changed: RecordId[]; dirty: Dirty; base: Dirty } {
   const snap: Snapshot = { settings: s.settings, days: { ...s.days }, reviews: { ...s.reviews }, journal: { ...(s.journal || {}) } };
+  if (s.tomb) snap.tomb = { ...s.tomb };
   const jn = snap.journal!;
   const d: Dirty = { ...dirty };
+  const bs: Dirty = { ...base };
   const changed = new Set<RecordId>();
   /* the newest copy of each id, if the account sent one twice */
   const best = new Map<string, SyncRecord>();
@@ -175,18 +291,39 @@ export function mergeRemote(s: Snapshot, dirty: Dirty, recs: SyncRecord[]): { sn
     const p = parseId(r.id)!;
     const mine = d[r.id] != null;
     const here = localU(snap, d, r.id);
-    /* both sides changed it: join them, and send the joined copy */
-    if (mine && r.data && p.kind === 'days' && snap.days[p.key]) {
+    /* the very copy the change waiting here was made from (baseAfter): it holds nothing new, and joining it would undo
+       what the change took away on purpose (an Undo of a mistaken log) */
+    if (mine && bs[r.id] != null && r.u === bs[r.id]) continue;
+    /* both sides changed a day: join them, and send the joined copy. Either side may be a day emptied there, known by the
+       marks of what it held; a deletion with no marks (everything erased, or an older app) is not joined, and the newer
+       change wins below, as it always has. */
+    if (mine && p.kind === 'days') {
       const local = snap.days[p.key];
-      const j = mergeDay(local, r.data as Day);
-      if (j && same(bodyOf(j), bodyOf(local)) && (local.u || 0) >= r.u) continue;
-      if (j) snap.days[p.key] = j;
-      else delete snap.days[p.key];
-      d[r.id] = j ? j.u : Math.max(local.u || 0, r.u) + 1;
-      changed.add(r.id);
-      continue;
+      const marks = snap.tomb?.[p.key];
+      const theirs = r.data ? (r.data as Day) : r.gone ? tombDay(p.key, r.gone, r.u) : null;
+      const ours = local ?? (marks ? tombDay(p.key, marks, here ?? 0) : null);
+      if (theirs && ours) {
+        /* what is here now holds the account's copy */
+        bs[r.id] = r.u;
+        const j = mergeDay(ours, theirs);
+        if (local && j && same(bodyOf(j), bodyOf(local)) && (local.u || 0) >= r.u) continue;
+        if (!local && !j && (here ?? 0) >= r.u) continue;
+        if (j) {
+          snap.days[p.key] = j;
+          d[r.id] = j.u;
+          if (snap.tomb?.[p.key]) delete snap.tomb[p.key];
+        } else {
+          /* nothing is left on either side: the day stays deleted, with every mark, and the deletion is sent */
+          delete snap.days[p.key];
+          d[r.id] = Math.max(here ?? 0, r.u) + 1;
+          snap.tomb = { ...(snap.tomb || {}), [p.key]: allMarks(ours.gone, theirs.gone) };
+        }
+        changed.add(r.id);
+        continue;
+      }
     }
     if (mine && r.data && p.kind === 'settings' && snap.settings) {
+      bs[r.id] = r.u;
       const theirs = r.data as Settings;
       const win = (r.u > (here ?? 0) ? keepEarned(theirs, snap.settings) : keepEarned(snap.settings, theirs)) as Settings;
       if (same({ ...win, u: 0 }, { ...snap.settings, u: 0 }) && (here ?? 0) >= r.u) continue;
@@ -234,23 +371,28 @@ export function mergeRemote(s: Snapshot, dirty: Dirty, recs: SyncRecord[]): { sn
     } else if (r.data) snap.reviews[p.key] = r.data as Snapshot['reviews'][string];
     else delete snap.reviews[p.key];
     delete d[r.id];
+    delete bs[r.id];
     changed.add(r.id);
   }
-  return { snap, changed: [...changed], dirty: d };
+  return { snap, changed: [...changed], dirty: d, base: bs };
 }
 
 /** what to send: each dirty record as it is now, or a deletion when it is gone */
-export function pendingRecords(s: Snapshot, dirty: Dirty): SyncRecord[] {
+export function pendingRecords(s: Snapshot, dirty: Dirty, base: Dirty = {}): SyncRecord[] {
   const out: SyncRecord[] = [];
   for (const id of Object.keys(dirty)) {
     if (!parseId(id)) continue;
     const r = recordOf(s, id as RecordId);
-    out.push(r ? { id: id as RecordId, u: r.u || dirty[id], data: r } : { id: id as RecordId, u: dirty[id], data: null });
+    const gone = !r && id.startsWith('days/') ? s.tomb?.[id.slice(5)] : undefined;
+    const rec: SyncRecord = r ? { id: id as RecordId, u: r.u || dirty[id], data: r } : { id: id as RecordId, u: dirty[id], data: null };
+    if (!r && gone?.length) rec.gone = gone;
+    if (base[id] != null) rec.b = base[id];
+    out.push(rec);
   }
   return out;
 }
 
-const sizeOf = (r: SyncRecord) => (r.data == null ? 0 : JSON.stringify(r.data).length) + r.id.length + 24;
+const sizeOf = (r: SyncRecord) => (r.data == null ? (r.gone?.length || 0) * 12 : JSON.stringify(r.data).length) + r.id.length + 24;
 const tooBig = (r: SyncRecord) => r.data != null && JSON.stringify(r.data).length > (r.id === 'settings' ? MAX_SETTINGS_BYTES : MAX_RECORD_BYTES);
 
 /** splits the records into requests the API takes */
@@ -300,6 +442,7 @@ export const CLOCK_OK = 5 * 60_000;
     the clock is right again), and the dirty list with that time, so they are sent again and win as the change made now */
 export function restampRecords(s: Snapshot, dirty: Dirty, ids: string[], u: number): { snap: Snapshot; dirty: Dirty } {
   const snap: Snapshot = { settings: s.settings, days: { ...s.days }, reviews: { ...s.reviews }, journal: { ...(s.journal || {}) } };
+  if (s.tomb) snap.tomb = s.tomb;
   const jn = snap.journal!;
   const d: Dirty = { ...dirty };
   for (const id of ids) {
@@ -317,36 +460,63 @@ export function restampRecords(s: Snapshot, dirty: Dirty, ids: string[], u: numb
   return { snap, dirty: d };
 }
 
-/** sends the records, a batch at a time */
-export async function pushAll(t: SyncTransport, recs: SyncRecord[]): Promise<PushResult> {
+/** sends the records, a batch at a time. onBatch hears what each batch got into the account as soon as it is in, so a
+    round that stops halfway (the connection dropped) has still marked those records as sent, and the next round does not
+    send them again. Records the account will never take are let go in the first call. */
+export async function pushAll(t: SyncTransport, recs: SyncRecord[], onBatch?: (acked: Record<string, number>) => Promise<void> | void): Promise<PushResult> {
   const res: PushResult = { acked: {}, refused: [], retry: [], clock: [], saved: 0, now: 0 };
   const u = new Map(recs.map((r) => [r.id as string, r.u]));
   const send: SyncRecord[] = [];
+  const first: Record<string, number> = {};
   for (const r of recs) {
     if (tooBig(r)) {
       res.refused.push({ id: r.id, why: 'too large' });
       res.acked[r.id] = r.u;
+      first[r.id] = r.u;
     } else send.push(r);
   }
+  if (onBatch && Object.keys(first).length) await onBatch(first);
   for (const part of batches(send)) {
     const a = await t.push(part);
+    const got: Record<string, number> = {};
     res.now = a.now;
     for (const id of a.saved) {
-      if (u.has(id)) res.acked[id] = u.get(id)!;
+      if (u.has(id)) got[id] = u.get(id)!;
       res.saved++;
     }
-    for (const id of a.stale) if (u.has(id)) res.acked[id] = u.get(id)!;
+    for (const id of a.stale) if (u.has(id)) got[id] = u.get(id)!;
     for (const b of a.bad) {
       const id = String(b.id);
       if (b.why === 'could not save, try again') res.retry.push(id);
       else if (b.why === WHY_FUTURE) res.clock.push(id);
       else if (u.has(id)) {
         res.refused.push({ id, why: b.why });
-        res.acked[id] = u.get(id)!;
+        got[id] = u.get(id)!;
       }
     }
+    Object.assign(res.acked, got);
+    if (onBatch && Object.keys(got).length) await onBatch(got);
   }
   return res;
+}
+
+/** how long a request carrying this many bytes may take before the app gives up on it: a base for the round trip, and
+    time for the body at a weak cellular signal (about 4 kB a second), so a slow link is never mistaken for no link */
+export function requestTimeout(bytes: number, base = 20_000): number {
+  return base + Math.ceil(Math.max(0, bytes) / 4_000) * 1_000;
+}
+
+/** whether an answer to a pull is the sync API's own (a page of records), not some other page in its place (an error
+    page from the network in between, a captive portal, a web page served for an unknown address) */
+export function isPullPage(x: unknown): x is PullPage {
+  const p = x as PullPage;
+  return !!p && typeof p === 'object' && Array.isArray(p.records) && (p.cursor === null || typeof p.cursor === 'string') && Number.isFinite(p.now);
+}
+
+/** the same for an answer to a push */
+export function isPushAnswer(x: unknown): x is PushAnswer {
+  const a = x as PushAnswer;
+  return !!a && typeof a === 'object' && Array.isArray(a.saved) && Array.isArray(a.stale) && Array.isArray(a.bad) && Number.isFinite(a.now);
 }
 
 /** what a device does when the sync API turns a request down: retry once soon (the gateway's own request ceiling, hit

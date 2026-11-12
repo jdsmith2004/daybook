@@ -486,6 +486,29 @@ the same time; 2 waits for 1 (both touch `RodeOut` and Today's proof); 4 needs t
 
 Each one is built on its branch, looked at on the web and on the simulator, and shown to the owner before it is merged.
 
+### Protect what was earned: #1, #7 and #16 (built November 11, 2026; merged and deployed November 12, 2026 on the owner's word)
+
+Branch `claude/frosty-mclean-029784`. Effort: high (sync can lose what a person earned).
+
+- **#1, "Not syncing right now" on cellular data.** The cause on the owner's phone is not confirmed (no server logs here), but
+  three faults each left sync stuck. A push of up to 800 KB with a fixed 20 second limit was sent whole and given up at the
+  same point every round on a weak signal; requests are now 96 KB, each marked sent as it lands, with time for the bytes. A
+  first join that failed was never tried again, and Try again did nothing; it is now tried again like a round. Every
+  failure said "check the connection", even a problem inside Daybook or a web page answering in the API's place; they are
+  now told apart, in the words and in the events (`net`, `sync`, `other`).
+- **#16, the sync fuzz test** (`services/api/test/sync-fuzz.test.ts`). Two devices, random entries, deletes and earned
+  things, rounds split and cut off, against the real handler. It found entries and points being lost, and the fixes are:
+  the server joins a day or the settings with the copy it holds instead of keeping only the newer one, unless the device
+  says its copy was made from exactly that one (so an Undo stays undone); "the account already has it" is said only when
+  it does; a day emptied by deleting its last entry keeps the marks of what it held and sends them with its deletion, so
+  another device's new entry on that day is kept. Delete everything still wins. 3,000 histories of 200 steps pass.
+- **#7, the upgrade test** (`packages/core/test/upgrade.test.ts`). A save written by 1.2.1's own code (63 days, 73 entries,
+  4,280 points, level 46, 41 badges, a 34 day longest run, 4 comebacks) opens today with all of it.
+- **Needs the server deployed** for the join. No new permission (it reads one record with Query). Older apps keep working:
+  they ignore the new fields and are joined like any other device.
+- **Follow-up:** CloudFront's rule that answers 403 and 404 with the app's page also covers `/sync`; the app now refuses
+  such an answer, but the rule itself could be limited to the web app.
+
 ### Measuring the change: #19, #20, #22, #24 (built November 12, 2026 on `claude/recursing-mahavira-156b04`, not merged)
 
 Effort: high (analytics and privacy). For the person: nothing on screen changes except Rekindle's first line for half the

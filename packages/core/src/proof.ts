@@ -45,7 +45,10 @@ export function effortCounts(days: Days, tk: DayKey): EffortCounts | null {
   return e.mornings || e.mornings7 || e.free7 ? e : null;
 }
 
-/** the effort lines, strongest first. No "in a row": a run that breaks on one skipped morning is the all-or-nothing count
+/** the hero's lines sit under the level, in a corner 40% wide: each fits on one line at this many characters */
+export const PROOF_MAX = 20;
+
+/** the effort lines, strongest first. The week is the last 7 ("of 7" for short). No "in a row": a run that breaks on one skipped morning is the all-or-nothing count
     CLAUDE.md rules out, so the window is the last 7 and the totals only go up */
 export function effortProofs(e: EffortCounts | null | undefined): string[] {
   if (!e) return [];
@@ -55,9 +58,9 @@ export function effortProofs(e: EffortCounts | null | undefined): string[] {
   const held = n(e.lockHeld);
   const free7 = Math.min(7, n(e.free7));
   return [
-    free7 ? 'Free ' + free7 + ' of the last 7 nights' : '',
-    held ? 'Your lock held ' + times(held, 'night', 'nights') : '',
-    m7 >= 3 ? m7 + ' of the last 7 mornings set' : m ? times(m, 'morning', 'mornings') + ' set' : '',
+    free7 ? 'Free ' + free7 + ' of 7 nights' : '',
+    held ? 'Lock held ' + times(held, 'night', 'nights') : '',
+    m7 >= 3 ? m7 + ' of 7 mornings set' : m ? times(m, 'morning', 'mornings') + ' set' : '',
   ].filter(Boolean);
 }
 
@@ -77,7 +80,7 @@ export function heroProofs(days: Days, st: Settings, reviews: Reviews, tk: DayKe
     rode ? times(rode, 'urge', 'urges') + ' ridden out' : '',
     free >= 2 ? free + ' days free of it' : '',
     comebacks ? times(comebacks, 'comeback', 'comebacks') : '',
-    held ? 'Hard hours held ' + times(held, 'time', 'times') : '',
+    held ? 'Hard hours held: ' + held : '',
     lessons ? times(lessons, 'lesson', 'lessons') + ' learned' : '',
     checkins ? times(checkins, 'honest check-in', 'honest check-ins') : '',
   ].filter(Boolean);

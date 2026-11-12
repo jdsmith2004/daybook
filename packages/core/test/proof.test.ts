@@ -51,11 +51,11 @@ describe('effortProofs', () => {
   });
   it('names effort, never a slip or a run', () => {
     const l = core.effortProofs({ mornings: 12, mornings7: 6, lockHeld: 9, free7: 3 });
-    expect(l).toEqual(['Free 3 of the last 7 nights', 'Your lock held 9 nights', '6 of the last 7 mornings set']);
+    expect(l).toEqual(['Free 3 of 7 nights', 'Lock held 9 nights', '6 of 7 mornings set']);
     l.forEach((x) => expect(x).not.toMatch(/slip|in a row|happened/i));
   });
   it('a thin week says the total instead', () => {
-    expect(core.effortProofs({ mornings: 1, mornings7: 1, lockHeld: 1, free7: 0 })).toEqual(['Your lock held 1 night', '1 morning set']);
+    expect(core.effortProofs({ mornings: 1, mornings7: 1, lockHeld: 1, free7: 0 })).toEqual(['Lock held 1 night', '1 morning set']);
   });
   it('fills the hero for someone who never opens SOS', () => {
     const { days } = log([
@@ -105,9 +105,27 @@ describe('effortCounts, from the morning set', () => {
     ]);
     expect(core.effortProofs(core.effortCounts(after.days, tk))).toEqual(['2 mornings set']);
     const all = core.heroProofs(days, s1, {}, tk, core.effortCounts(days, tk));
-    expect(all[0]).toBe('Free 1 of the last 7 nights');
-    expect(all).toContain('3 of the last 7 mornings set');
+    expect(all[0]).toBe('Free 1 of 7 nights');
+    expect(all).toContain('3 of 7 mornings set');
     all.forEach((l) => expect(l).not.toMatch(/slip|happened/i));
+  });
+});
+
+describe('the hero line fits one line', () => {
+  it('every line, at big but real counts', () => {
+    const { days } = log([['2026-10-19', 'rode', '21:00']]);
+    const lines = [
+      ...core.effortProofs({ mornings: 365, mornings7: 7, lockHeld: 365, free7: 7 }),
+      ...core.effortProofs({ mornings: 365, mornings7: 1, lockHeld: 0, free7: 0 }),
+      ...core.heroProofs(days, st, {}, tk),
+      '999 urges ridden out',
+      '999 days free of it',
+      '999 comebacks',
+      'Hard hours held: 999',
+      '999 lessons learned',
+      '999 honest check-ins',
+    ];
+    lines.forEach((l) => expect(l.length, l).toBeLessThanOrEqual(core.PROOF_MAX));
   });
 });
 

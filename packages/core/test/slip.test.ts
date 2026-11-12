@@ -230,14 +230,22 @@ describe('the words', () => {
 });
 
 describe('the line under Rekindle once it is held', () => {
-  it('is one plain line: what is still yours, with no contractions', () => {
+  it('is one plain line: what is kept, as who the person is, with no contractions and no score', () => {
     const st = core.normSettings({ start: '2026-10-01', day1: '2026-10-01' });
     const days = slipOn({}, K, 's1', '22:10');
     const line = core.rkLitLine(days, st, {}, K, K);
-    expect(line).toBe('Your 19 days are on your record, and everything you earned is still yours.');
-    expect(line).not.toMatch(/for now/);
-    expect(line.split('. ').length).toBe(1);
-    expect(line).not.toMatch(noContractions);
+    expect(line).toBe('19 days free of it. All still yours.');
+    /* with urges ridden out, they lead (Becoming free, step 2) */
+    const rode = core.addEvent(core.addEvent(days, '2026-10-05', 'rode', '21:00').days, '2026-10-09', 'rode', '21:00').days;
+    expect(core.rkLitLine(rode, st, {}, K, K)).toBe('2 urges ridden out, 19 days free of it. All still yours.');
+    for (const l of [line, core.rkLitLine(rode, st, {}, K, K)]) {
+      expect(l).not.toMatch(/for now|level|points?\b/i);
+      expect(l).not.toMatch(noContractions);
+    }
+  });
+  it('a slip on the first day still has a true line', () => {
+    const st = core.normSettings({ start: K, day1: K });
+    expect(core.rkLitLine(slipOn({}, K, 's1', '22:10'), st, {}, K, K)).toBe('You told the truth about it. That is yours too.');
   });
 });
 

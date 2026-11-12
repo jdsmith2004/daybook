@@ -29,10 +29,11 @@ describe('a slip after a long run', () => {
 
   it('leads with what is permanent, in the words of the mode, and never says a run can be saved or lost', () => {
     const days = slip(K);
-    expect(core.rkLitLine(days, st, {}, K, K)).toBe('Your 7 days are on your record, and everything you earned is still yours.');
+    expect(core.rkLitLine(days, st, {}, K, K)).toBe('7 days free of it. All still yours.');
     const g = { ...st, cleanMode: 'gentle' as const };
     expect(core.rkRunBefore(days, g, K, K)).toBe(7);
-    expect(core.rkLitLine(days, g, {}, K, K)).toBe('Your 7 days still count, and everything you earned is still yours.');
+    /* the same in every mode: the days free of it are who the person is, whatever the count shows */
+    expect(core.rkLitLine(days, g, {}, K, K)).toBe('7 days free of it. All still yours.');
     expect([core.rkLitLine(days, st, {}, K, K), core.rkLitLine(days, g, {}, K, K)].join(' ')).not.toMatch(/for now|saved?\b|down to embers|start fresh/i);
   });
 });

@@ -49,6 +49,10 @@ export interface DayEvent {
   fb?: string;
   /** a slip: how it felt afterwards (Rekindle's words, RK_FEELS) */
   fa?: 'shame' | 'giveup' | 'angry' | 'flat' | 'pull' | 'okay';
+  /** a slip, looked back at the next day (look-back.ts): what it gave */
+  gv?: 'relief' | 'sleep' | 'escape' | 'low' | 'nothing';
+  /** ...and what it cost */
+  cs?: 'time' | 'sleep' | 'trust' | 'feel';
 }
 
 export interface Checkin {

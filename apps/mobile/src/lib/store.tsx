@@ -17,6 +17,7 @@ import {
   isJnId,
   normJEntry,
   keepCounts,
+  ptsQuiet,
   winGain,
   winWhy,
   keepPoints,
@@ -324,8 +325,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (note) show({ text: note });
       return;
     }
-    if (!pts) {
-      show({ text: note || (quiet ? 'Logged. That took honesty.' : 'Logged. That counts.') });
+    /* in the hours after a slip, no point number: the words alone (core ptsQuiet). The points are still earned. */
+    if (!pts || (st && ptsQuiet(cur.days, st, now))) {
+      show({ text: note || (pts ? winWhy(by, quiet) : quiet ? 'Logged. That took honesty.' : 'Logged. That counts.') });
       return;
     }
     if (st && st.celebrate === false) show({ text: '+' + pts + ' point' + (pts === 1 ? '' : 's') + '. ' + (note || winWhy(by, quiet)) });

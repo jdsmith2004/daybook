@@ -12,6 +12,7 @@ import {
   rkOf,
   rkThirdOf,
   runLedger,
+  slipMoments,
   sumDay,
   type RekindleState,
 } from './legacy/core.js';
@@ -91,16 +92,52 @@ export function rkRunBefore(days: Days, st: Settings, _tk: DayKey, k: DayKey): n
   return runLedger(days, st, addDays(k, -1)).cur;
 }
 
-/** once the hold is done, the one line under the heading: what the slip did not take. The days, when there are many: on the
-    record in strict, still counting in gentle; otherwise the level, points and urges ridden out, by name. One line, because
-    right after a slip a full page is too much to read (the owner, October 25, 2026). */
-export function rkLitLine(days: Days, st: Settings, reviews: Reviews, tk: DayKey, date: DayKey): string {
-  const run = rkRunBefore(days, st, tk, date);
-  if (run >= LONG_RUN)
-    return 'Your ' + run + (st.cleanMode === 'gentle' ? ' days still count' : ' days are on your record') + ', and everything you earned is still yours.';
-  const g = gameCompute(days, st, reviews, tk);
-  const rode = g.S.rode ? plural(g.S.rode as number, 'urge') + ' ridden out' : '';
-  return 'Level ' + g.level.n + ', ' + g.pts.toLocaleString('en-US') + ' points' + (rode ? ' and ' + rode : '') + ': all still yours.';
+/** what is kept, counted as who the person is (miles.ts): the urges ridden out, the days free of it (every no-slip day since Day 1,
+    in any mode) and the comebacks, the first two there are. Never a level or points: in the hours after a slip a score is a
+    game voice (Becoming free, step 2). */
+function rkKept(days: Days, st: Settings, reviews: Reviews, tk: DayKey): { rode: number; free: number; back: number } {
+  const S = gameCompute(days, st, reviews, tk).S;
+  return {
+    rode: typeof S.rode === 'number' ? S.rode : 0,
+    free: runLedger(days, st, tk, 'strict', true).clean,
+    back: rkComebackCount(days, st, tk),
+  };
+}
+/** the first words of Rekindle, over the hold: one slip, one event, and the person unchanged, from their own record ("One slip.
+    You are still someone who rides out urges: 4 times."). Logging it honestly is proof too, so there is always a line. */
+export function rkFirstLine(days: Days, st: Settings, reviews: Reviews, tk: DayKey): string {
+  const k = rkKept(days, st, reviews, tk);
+  const who = k.rode
+    ? 'rides out urges: ' + plural(k.rode, 'time')
+    : k.back
+      ? 'comes back after a hard night: ' + plural(k.back, 'time')
+      : k.free >= 2
+        ? 'has days free of it: ' + k.free + ' so far'
+        : 'tells the truth, even about a slip';
+  return 'One slip. You are still someone who ' + who + '.';
+}
+
+/** once the hold is done, the one line under the heading: what is kept, as who the person is ("4 urges ridden out, 13 days free
+    of it. All still yours."). One line, because right after a slip a full page is too much to read (the owner, October 25, 2026). */
+export function rkLitLine(days: Days, st: Settings, reviews: Reviews, tk: DayKey, _date: DayKey): string {
+  const k = rkKept(days, st, reviews, tk);
+  const kept = [
+    k.rode ? plural(k.rode, 'urge') + ' ridden out' : '',
+    k.free ? plural(k.free, 'day') + ' free of it' : '',
+    k.back ? plural(k.back, 'comeback') : '',
+  ].filter(Boolean);
+  if (!kept.length) return 'You told the truth about it. That is yours too.';
+  return kept.slice(0, 2).join(', ') + '. All still yours.';
+}
+
+/** how long after a slip no point number shows (a toast, Goodnight): the night and the morning after an evening slip */
+export const PTS_QUIET_HOURS = 12;
+/** whether a point number stays out of sight now: within PTS_QUIET_HOURS of the latest slip. The points are still earned, and
+    the level page and the Sunday review show them (Becoming free, step 2). */
+export function ptsQuiet(days: Days, st: Settings | null, now: number): boolean {
+  if (!st) return false;
+  const last = slipMoments(days, st, now).pop();
+  return last != null && now - last < PTS_QUIET_HOURS * 3600_000;
 }
 
 /* ---------- the comeback, noticed (roadmap move 3, docs/plan.md) ----------

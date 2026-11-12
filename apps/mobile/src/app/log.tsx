@@ -5,10 +5,12 @@
    After "I slipped" the slip is saved at once, and the comeback starts (core slip.ts has the research). One tap a page,
    and the X closes it at any point with everything given so far kept. Rethought on October 27, 2026 (the owner: do not
    ask how they felt before a slip, the answer is the urge itself):
-   1. Rekindle: one big button to press and hold until the fire catches (components/hearth.tsx). Once it is held: this
-      is a slip, and you can recover from it, and one line on what it did not take (core rkLitLine: a long run's days
-      are on the record, or what is still yours). A long run is never "down to embers" (rkHoldWords). Nothing asks about
-      the count: the mode decides it (core hero.ts).
+   1. Rekindle: one big button to press and hold until the fire catches (components/hearth.tsx). Over it, the first words:
+      one slip, and the person unchanged, from their record (core rkFirstLine: "One slip. You are still someone who rides
+      out urges: 4 times."). Once it is held: this is a slip, and you can recover from it, and what is kept as who the
+      person is (core rkLitLine: "4 urges ridden out, 13 days free of it. All still yours."). No point number anywhere in
+      the comeback: the points are still earned, on the level page and the Sunday review (Becoming free, step 2). A long
+      run is never "down to embers" (rkHoldWords). Nothing asks about the count: the mode decides it (core hero.ts).
    2. Right now: how it feels a few minutes later, one tap, then the kind, true answer to that feeling and their own
       record of it (fa). Still pulled toward it leads to SOS; like giving up shows the 988 line too.
    3. Just before: what was going on, the situation and not the feeling (late in bed with the phone, scrolling, bored,
@@ -43,6 +45,7 @@ import {
   OPT_MAX,
   patchEvent,
   removeEvent,
+  rkFirstLine,
   rkHoldWords,
   rkLitLine,
   safeName,
@@ -370,7 +373,6 @@ export default function Log() {
   const saved = ev ? (
     <SavedPill
       text={savedMoment ? whenDayWord(savedMoment.day, now) + ', ' + whenClock(savedMoment) : entryLabel(ev)}
-      gain={gain}
       onUndo={from === 'talk' && params.made !== '1' ? undefined : undo}
     />
   ) : null;
@@ -507,7 +509,16 @@ export default function Log() {
           <T v="title" style={s.h} accessibilityRole="header" accessibilityLiveRegion="polite">
             {w.h}
           </T>
-          {lit ? <T style={[s.center, s.kind]}>{rkLitLine(snap.days, st, snap.reviews, tk, date)}</T> : <T style={s.center}>{w.p}</T>}
+          {lit ? (
+            <T style={[s.center, s.kind]}>{rkLitLine(snap.days, st, snap.reviews, tk, date)}</T>
+          ) : (
+            <>
+              <T style={[s.center, s.kind]}>{rkFirstLine(snap.days, st, snap.reviews, tk)}</T>
+              <T tone="muted" style={s.center}>
+                {w.p}
+              </T>
+            </>
+          )}
         </Appear>
         <Dock>
           {lit ? (
@@ -792,11 +803,6 @@ export default function Log() {
             You came back.
           </T>
           <T style={s.center}>{line ? '“' + keepLast(line) + '”' : 'Logged honestly, and looked at. That is how the next one gets easier.'}</T>
-          {gain ? (
-            <T v="label" tone="mintText" style={s.center}>
-              {'+' + gain + ' points'}
-            </T>
-          ) : null}
         </View>
         <Dock>
           {door ? (
@@ -841,8 +847,8 @@ export default function Log() {
 /* a sentence's last word stays with the one before it, so "SOS." is not left alone on a line, and "I" stays with "will" */
 const keepLast = (line: string) => line.replace(', I will ', ', I\u00A0will ').replace(/ (\S+)$/, '\u00A0$1');
 
-/* "✓ Saved · Slipped at 11:40 PM  +10  Undo" */
-function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo?: () => void }) {
+/* "✓ Saved · Slipped at 11:40 PM  Undo": no points beside a slip (Becoming free, step 2; they are still earned) */
+function SavedPill({ text, onUndo }: { text: string; onUndo?: () => void }) {
   const c = useTheme();
   return (
     <View style={[s.pill, { backgroundColor: c.scBtn }]}>
@@ -852,11 +858,6 @@ function SavedPill({ text, gain, onUndo }: { text: string; gain: number; onUndo?
       <T v="label" style={{ flexShrink: 1 }}>
         Saved · {text.replace(/ (AM|PM)/, '\u00A0$1')}
       </T>
-      {gain ? (
-        <T v="label" tone="mintText">
-          +{gain}
-        </T>
-      ) : null}
       {onUndo ? (
         <Pressable accessibilityRole="button" onPress={onUndo} hitSlop={10} style={{ paddingHorizontal: 8, minHeight: 36, justifyContent: 'center' }}>
           <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>Undo</Text>

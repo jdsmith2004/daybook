@@ -125,6 +125,7 @@ export interface DaySummary {
   head: string;
   rode: number;
   slips: number;
+  /** the day's points, or 0 on a day with a slip */
   pts: number;
   events: { id: string; outcome: DayEvent['outcome']; time: string; what: string; meta: string; sos: string[]; note: string }[];
   /** the check-in, when one was saved */
@@ -199,7 +200,9 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
     head,
     rode: s.rode,
     slips: s.slipped,
-    pts: d ? dayPoints(days, key, st).total : 0,
+    /* a day with a slip shows no point number: a score beside a slip is a game voice. Its points are still earned, and the level
+       page and the Sunday review show them (Becoming free, step 2) */
+    pts: d && !s.slipped ? dayPoints(days, key, st).total : 0,
     events,
     ci: c ? { md: c.md ?? null, u: c.u ?? null, m: c.m, c: c.c, e: c.e, s: c.s, h: c.h, so: c.so, ro: c.ro, n: (c.n || '').trim() } : null,
     more,

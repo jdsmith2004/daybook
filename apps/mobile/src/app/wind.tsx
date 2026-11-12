@@ -26,7 +26,7 @@ export default function Wind() {
   const r = rhythm(snap.days, st, tk, now);
   const ci = r.stops.find((x) => x.k === 'evening' && !x.done);
   /* opened again later the same night: the phone is already away, so the flame is asleep */
-  const held: Bed | null = bed || (p && p.po ? { at: p.po, gain: 0, msg: '' } : null);
+  const held: Bed | null = bed || (p && p.po ? { at: p.po, gain: 0, hush: false, msg: '' } : null);
   return (
     <NightPage
       bed={held}

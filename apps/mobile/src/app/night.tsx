@@ -15,7 +15,7 @@ export default function Night() {
   const ci = st ? rhythm(snap.days, st, tk, now).stops.find((x) => x.k === 'evening' && !x.done) : null;
   return (
     <GoingToBed
-      bed={{ at: at || '', gain: Number(gain) || 0, msg: '' }}
+      bed={{ at: at || '', gain: Number(gain) || 0, hush: false, msg: '' }}
       plan={plan || undefined}
       extra={ci ? <NightRow icon="pencil" title="One minute first?" sub="Today's check-in is still open." onPress={() => router.replace('/checkin')} /> : null}
     />

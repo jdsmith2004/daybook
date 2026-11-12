@@ -11,6 +11,7 @@ import {
   clockOf,
   gameCompute,
   phoneNights,
+  ptsQuiet,
   sayGoodnight,
   fmtClock,
   windToggle,
@@ -39,6 +40,8 @@ import { font, nightInk, useTheme } from '@/lib/theme';
 export interface Bed {
   at: string;
   gain: number;
+  /** in the hours after a slip the points are earned, but no number shows (core ptsQuiet) */
+  hush: boolean;
   msg: string;
 }
 
@@ -48,6 +51,7 @@ export function useGoodnight() {
   return (form: CheckinForm | null): Bed => {
     const at = clockOf(Date.now());
     let gain = 0;
+    let hush = false;
     let msg = '';
     let first = false;
     update((s0) => {
@@ -56,6 +60,7 @@ export function useGoodnight() {
       const days = sayGoodnight(s0.days, tk, form, at, Date.now(), s0.settings);
       if (form && checkinAnswered(form)) msg = checkinSaveText(days, s0.settings, tk, tk);
       gain = Math.max(0, gameCompute(days, s0.settings, s0.reviews, tk).pts - b0);
+      hush = ptsQuiet(days, s0.settings, Date.now());
       /* once a night, and only one that counted: too early in the day, Goodnight writes nothing */
       first = !s0.days[tk]?.p?.po && !!days[tk]?.p?.po;
       return { ...s0, days };
@@ -65,7 +70,7 @@ export function useGoodnight() {
       track('wind');
     }
     buzz('save');
-    return { at, gain, msg };
+    return { at, gain, hush, msg };
   };
 }
 
@@ -413,7 +418,7 @@ export function NightPage({
                 {bed.msg}
               </T>
             ) : null}
-            {bed.gain ? (
+            {bed.gain && !bed.hush ? (
               <T v="label" style={[s.c, { color: '#8CF0CE' }]}>
                 {'+' + bed.gain + ' points'}
               </T>

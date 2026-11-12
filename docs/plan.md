@@ -99,6 +99,15 @@ who a person thinks they are.
   the urges ridden out. Never asked within the first hour, never after 10 PM.
 - For the person: the spiral is broken where it starts (giving up in the first hours), and the honest look happens when it can teach.
   For Daybook: this is the moment every rival fails, and the one people will tell others about.
+- **Built (November 11, 2026, branch `claude/rekindle-morning-after`, to be shown on the simulator before it merges).** The check
+  first: `runLedger` is right. A log with no `countFrom` (the journey's seed, the store pictures' demo) has the slip fall under the old
+  rule, which held the run while it could be saved; every phone has `countFrom` from its first open (core `keepCounts`), so the seeds
+  now set it too. Rekindle: `rkFirstLine` over the hold, `rkLitLine` after it (urges ridden out, days free of it, comebacks; never a
+  level or points). No point number for 12 hours after a slip (core `ptsQuiet`: the toast and Goodnight), none beside the saved slip
+  or under "You came back.", and none on a slip day's page (`daySummary`). The look back (core `look-back.ts`): a small card at the
+  bottom of Today the day after a slip, in place of the day's question, at least an hour after it, 5 AM to 10 PM, never in the hard
+  hours or the wind-down, once; the answers sit on the slip (`gv`, `cs`), and show in a Pattern card ("What a slip gives, and what it
+  costs") and on the Sunday review's slips screen beside the urges ridden out.
 
 **3. Notifications: fewer, private, built from the record (effort: medium; the permission ask medium).**
 

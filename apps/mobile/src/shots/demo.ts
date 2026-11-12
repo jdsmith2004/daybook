@@ -21,6 +21,8 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   const st = {
     ...defaultSettings(start),
     day1: '2026-09-08',
+    /* on the one-count rule from the start, as a real phone is (core keepCounts), so no slip keeps the old rule's held run */
+    countFrom: start,
     becoming: 'I am free of this.',
     reasons: ['Being fully present with the people I love', 'Clear mornings and steady energy'],
     menu: ['A brisk two-minute walk', 'Cold water on my face', 'Text a friend', 'Ten pushups'],

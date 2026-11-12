@@ -399,6 +399,9 @@ function normEvent(e){
  /* on a slip (slip.ts): the feeling named for before it (fb, a word from the field of feelings) and how it felt afterwards (fa) */
  if(e.outcome==='slipped'&&typeof e.fb==='string'&&/^[A-Za-z][A-Za-z ]{0,23}$/.test(e.fb))o.fb=e.fb;
  if(e.outcome==='slipped'&&['shame','giveup','angry','flat','pull','okay'].indexOf(e.fa)>=0)o.fa=e.fa;
+ /* on a slip, looked back at the next day (look-back.ts): what it gave (gv) and what it cost (cs) */
+ if(e.outcome==='slipped'&&['relief','sleep','escape','low','nothing'].indexOf(e.gv)>=0)o.gv=e.gv;
+ if(e.outcome==='slipped'&&['time','sleep','trust','feel'].indexOf(e.cs)>=0)o.cs=e.cs;
  return o;
 }
 function normCheckin(c){

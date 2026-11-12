@@ -32,6 +32,15 @@ describe('strict: the days in a row', () => {
     expect(hero(d, strict, 5).n).toBe('2');
     expect(hero(d, strict, 5).unit).toBe('days in a row');
   });
+  it('the morning after a slip at 23:10, the count is 1 and the chip says the hours (not the run before it)', () => {
+    const d = slip({}, 11, '23:10');
+    expect(['eb', 'n', 'unit', 'chip'].map((k) => core.heroNumber(d, strict, day(12), ms(12, 7))![k as 'n'])).toEqual([
+      'No slip',
+      '1',
+      'day',
+      '7 hours since your last slip',
+    ]);
+  });
   it('a slip at day 40 puts it to 0 too, and the 39 days stay on the record', () => {
     const d = slip({}, 40);
     expect(hero(d, strict, 40, 23).n).toBe('0');

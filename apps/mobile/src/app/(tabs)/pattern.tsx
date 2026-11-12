@@ -30,6 +30,7 @@ import {
   patRideSay,
   patRideOut,
   patSlipTrig,
+  patLookBack,
   patTriggerLines,
   patTriggers,
   patWeeks,
@@ -432,6 +433,45 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       ),
     });
   else ghost('what', 'What sets it off?');
+  /* what slips gave and what they cost, from the look back the day after (core look-back.ts). The whole log: slips are few. It
+     shows once there is an answer, and never as an empty shape, so it never waits for a slip. */
+  const lb = patLookBack(snap.days, tk);
+  if (lb)
+    cards.push({
+      id: 'cost',
+      title: 'What a slip gives, and what it costs',
+      head: lb.head,
+      say: <Say>{lb.line}</Say>,
+      chart: lb.cost.length ? (
+        <Room>
+          {(w, h) => (
+            <Mosaic
+              items={lb.cost.map((x) => ({
+                label: x.id === 'time' ? 'The time it took' : x.t.charAt(0).toUpperCase() + x.t.slice(1),
+                n: x.n,
+                note: x.n + ' of ' + lb.n,
+                short: x.n + ' of ' + lb.n,
+              }))}
+              tone="warm"
+              w={w}
+              h={h}
+            />
+          )}
+        </Room>
+      ) : (
+        empty('what')
+      ),
+      numbers: (
+        <NumbersTable
+          cap="What slips gave and what they cost"
+          head={['Answer', 'Times']}
+          rows={[
+            ...lb.gave.map((x) => ['Gave ' + x.t, String(x.n)]),
+            ...lb.cost.map((x) => ['Cost ' + (x.id === 'time' ? 'the time it took' : x.t), String(x.n)]),
+          ]}
+        />
+      ),
+    });
   /* sleep is drawn as two moons; what else differs stands beside it as pairs */
   const sleepLead = leads.list.find((d) => d.k === 'h');
   const otherLeads = leads.list.filter((d) => d.k !== 'h');

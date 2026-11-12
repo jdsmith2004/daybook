@@ -51,6 +51,9 @@ const SCENES: Scene[] = [
   { name: 'tool-ground', path: '/tool/ground' },
   { name: 'already-happened', path: '/log' },
   { name: 'rekindle', path: '/log', tap: [/^I slipped/] },
+  /* the morning after the seeded slip (October 24): what it gave, what it cost, on Today (core look-back.ts) */
+  { name: 'rekindle-morning', path: '/', day: '2026-10-25', at: '09:30' },
+  { name: 'rekindle-morning-2', path: '/', day: '2026-10-25', at: '09:30', tap: [/^Relief$/] },
   { name: 'pattern-days', path: '/pattern?pane=days' },
   { name: 'pattern', path: '/pattern?pane=patterns' },
   { name: 'pattern-weeks', path: '/pattern?pane=weeks' },
@@ -101,6 +104,10 @@ function seed(upTo: string) {
       u: 1,
       start: START,
       day1: addDays(START, 7),
+      /* on the one-count rule from the start, as every phone is since it first opened (core keepCounts): without it, the app
+         stamps the day of the journey, and the slip before it would keep the old rule's held run ("11 days in a row" the
+         morning after a slip) */
+      countFrom: START,
       wk1: addDays(START, 14),
       becoming: 'I am someone who keeps my word to myself.',
       rollover: 4,
@@ -114,7 +121,10 @@ function seed(upTo: string) {
     const events = [];
     /* a lesson a day, the first fourteen */
     const p = ++n <= 14 ? { w: [], wd: false, r: false, c: 0, m: false, tl: [], po: null, ls: ['l' + n], lv: [], ov: {} } : null;
-    if (k === slip) events.push({ id: k + '-s', time: '23:10', outcome: 'slipped', trigger: 'Bored', paused: null, did: null, recovered: true, note: '' });
+    /* looked back at the next morning (look-back.ts), except on the morning after itself, when the question is still to come */
+    const look = upTo > addDays(slip, 1) ? { gv: 'relief', cs: 'sleep' } : {};
+    if (k === slip)
+      events.push({ id: k + '-s', time: '23:10', outcome: 'slipped', trigger: 'Bored', paused: null, did: null, recovered: true, note: '', ...look });
     if (rode.has(k)) events.push({ id: k + '-r', time: '21:40', outcome: 'rode', trigger: 'Stressed', paused: null, did: null, recovered: false, note: '' });
     const mood = 5 + ((k.charCodeAt(9) + k.charCodeAt(8)) % 4);
     s['daybook:days/' + k] = JSON.stringify({

@@ -26,18 +26,19 @@ describe('after the fire is lit, what is kept, as who the person is', () => {
 });
 
 describe('the one quiet "more": a lesson for after a slip', () => {
-  it('kindness after a slip first, then the next one not read yet, then the first again', () => {
-    expect(core.rkLesson({}, st, false)).toBe('l6');
-    expect(core.rkLesson(read({}, 2, ['l6']), st, false)).toBe('l3');
-    expect(core.rkLesson(read({}, 2, ['l6', 'l3', 'l31', 'l27']), st, false)).toBe('l6');
+  it('what therapy is like first, then the next one not read yet, then the first again', () => {
+    expect(core.rkLesson({}, st, false)).toBe('l24');
+    expect(core.rkLesson(read({}, 2, ['l24']), st, false)).toBe('l6');
+    expect(core.rkLesson(read({}, 2, ['l24', 'l6']), st, false)).toBe('l3');
+    expect(core.rkLesson(read({}, 2, ['l24', 'l6', 'l3', 'l31', 'l27']), st, false)).toBe('l24');
   });
-  it('after a second slip in a week, what therapy is like leads', () => {
-    expect(core.rkLesson({}, st, true)).toBe('l24');
+  it('after a second slip in a week, what therapy is like, even when it was read before', () => {
+    expect(core.rkLesson(read({}, 2, ['l24']), st, true)).toBe('l24');
   });
   it('a faith lesson only on a path with faith', () => {
     const noFaith = core.normSettings({ ...st, onb: { n: 1, at: 1, a: { faith: 'no' } } });
-    expect(core.rkLesson(read({}, 2, ['l6', 'l3']), noFaith, false)).toBe('l27');
-    expect(core.rkLesson(read({}, 2, ['l6', 'l3']), st, false)).toBe('l31');
+    expect(core.rkLesson(read({}, 2, ['l24', 'l6', 'l3']), noFaith, false)).toBe('l27');
+    expect(core.rkLesson(read({}, 2, ['l24', 'l6', 'l3']), st, false)).toBe('l31');
   });
 });
 

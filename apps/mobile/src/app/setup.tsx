@@ -163,7 +163,7 @@ export default function Setup() {
   /* the north star's starting point (core north.ts): asked when there is no answer yet, never in the hours after a slip or an
      SOS. Decided once, so the page keeps its place in the list after it is answered. */
   const sosNow = useSos();
-  const [freeAsk] = useState(() => freeAtSetup(snap.days, st, tk, { now: Date.now(), sos: urLastAt(sosNow.mem) }));
+  const [freeAsk] = useState(() => freeAtSetup(snap.days, st, tk, { now: Date.now(), sos: careLastAt(sosNow.mem) }));
   /* the reminder page shows on a phone, and on a walk-through only while the check-in reminder is off */
   /* the account page shows to a new person while this build has accounts and they are not signed in; once they are, it
      drops out of the list and the setup moves on by itself */

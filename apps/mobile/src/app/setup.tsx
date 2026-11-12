@@ -72,7 +72,7 @@ import {
   LIKE_WORDS,
   likeAnswer,
   likeAskDue,
-  urLastAt,
+  careLastAt,
   type LikeAnswer,
   HABIT_NOUN,
   habitSay,
@@ -1885,7 +1885,7 @@ function Cheer() {
   const [step, setStep] = useState<'ask' | 'no' | 'off' | null>(null);
   useEffect(() => {
     if (step || !st) return;
-    setStep(likeAskDue(snap.days, st, false, { now: Date.now(), sos: urLastAt(sos.mem) }) ? 'ask' : 'off');
+    setStep(likeAskDue(snap.days, st, false, { now: Date.now(), sos: careLastAt(sos.mem) }) ? 'ask' : 'off');
   }, [step, st, snap.days, sos.mem]);
   const [rain] = useState(() => Date.now());
   const answer = (a: LikeAnswer) => {

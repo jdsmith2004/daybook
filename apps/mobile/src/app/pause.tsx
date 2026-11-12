@@ -64,9 +64,11 @@ export default function PullPause() {
   const st = snap.settings;
   /* the mode is fixed when the screen opens, so a wait running across the night's start does not change under the person */
   const [mode] = useState<'day' | 'night' | 'long'>(() => {
-    /* `dev=night` opens it as the night in a development build only, to show the screens by day (the simulator keeps the Mac's
-       clock); a store build never reads it */
-    const night = (__DEV__ && dev === 'night') || (!!st && pullInNight(Date.now(), pullNightStart(snap.days, st, saved, Date.now())));
+    /* `dev=night` opens it as the night in a development build or a preview build (EXPO_PUBLIC_PULL_PREVIEW=1), to show the
+       screens by day (the simulator keeps the Mac's clock); a store build never reads it */
+    const night =
+      ((__DEV__ || process.env.EXPO_PUBLIC_PULL_PREVIEW === '1') && dev === 'night') ||
+      (!!st && pullInNight(Date.now(), pullNightStart(snap.days, st, saved, Date.now())));
     /* the long wait is only the night's: by day adult sites do not wait, so a stale link opens the short one */
     return night ? (which === 'long' ? 'long' : 'night') : 'day';
   });

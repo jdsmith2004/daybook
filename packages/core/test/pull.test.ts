@@ -28,6 +28,7 @@ import {
   pullNightHeld,
   pullNightOf,
   pullNightStart,
+  pullNextStart,
   pullSettle,
   pullShown,
   PULL_NIGHT_END,
@@ -108,6 +109,17 @@ describe('the night', () => {
     expect(pullNightStart(d, st, e, at('2026-10-13T15:00'))).toBe('23:00');
     expect(pullEarly(e, d, st, '23:30', now).early).toBeUndefined();
   });
+  it('an early start holds after midnight when the morning chose a time after midnight', () => {
+    const d = morning('x', '00:30');
+    const e = pullEarly(on, d, st, '22:00', at('2026-10-12T15:00'));
+    expect(pullNightStart(d, st, e, at('2026-10-13T00:10'))).toBe('22:00');
+    expect(pullInNight(at('2026-10-13T00:10'), pullNightStart(d, st, e, at('2026-10-13T00:10')))).toBe(true);
+  });
+  it('between midnight and 6 AM, the schedules already follow this evening (set by a morning before 6)', () => {
+    const d = { ...morning('a', '22:00', '2026-10-12'), ...morning('b', '23:30', '2026-10-13') };
+    expect(pullNightStart(d, st, on, at('2026-10-13T05:00'))).toBe('22:00');
+    expect(pullNextStart(d, st, on, at('2026-10-13T05:00'))).toBe('23:30');
+  });
   it('Lift every wait now: until tonight by day, until 6 AM at night', () => {
     expect(pullLiftUntil(at('2026-10-12T15:00'), '22:30')).toBe(at('2026-10-12T22:30'));
     expect(pullLiftUntil(at('2026-10-12T23:00'), '22:30')).toBe(at('2026-10-13T06:00'));
@@ -179,8 +191,10 @@ describe('what is held right now', () => {
     const t = at('2026-10-12T23:00');
     expect(g(t, { open: t + 60_000 })).toEqual({ apps: false, web: true });
     expect(g(t, { web: t + 60_000 })).toEqual({ apps: true, web: false });
-    expect(g(t, { lift: t + 60_000 })).toEqual({ apps: false, web: false });
-    expect(g(t + 60_000, { lift: t + 60_000 })).toEqual({ apps: true, web: true });
+    expect(g(t, { lift: t + 600_000 })).toEqual({ apps: false, web: false });
+    expect(g(t + 600_000, { lift: t + 600_000 })).toEqual({ apps: true, web: true });
+    /* a callback a few seconds early still ends it */
+    expect(g(t + 590_000, { lift: t + 600_000 }).apps).toBe(true);
   });
   it('nothing for a habit other than porn, or with the choices off', () => {
     const t = at('2026-10-12T23:00');
@@ -336,7 +350,7 @@ describe('the bridge', () => {
   it('carries the night from the morning, the reason on the night shield, and adult sites only for porn', () => {
     const d = morning('For my future family', '23:00');
     const b = pullBridge(d, st, normPull({ on: true }), at('2026-10-12T21:00'));
-    expect(b.night).toEqual({ from: '23:00', to: '06:00' });
+    expect(b.night).toEqual({ from: '23:00', to: '06:00', next: '23:00' });
     expect(b.adult).toBe(true);
     expect(b.shieldNight.title).toBe('You set this up this morning');
     expect(b.shieldNight.sub).toMatch(/For my future family/);

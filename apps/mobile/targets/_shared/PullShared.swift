@@ -5,6 +5,7 @@
 //
 // This file is compiled into each extension (targets/_shared) and into the main app's module (modules/daybook-pull/ios links to it).
 // Keep it tiny: the monitor has about 6 MB of memory.
+import DeviceActivity
 import FamilyControls
 import Foundation
 import ManagedSettings
@@ -114,8 +115,30 @@ enum Pull {
     return h * 60 + m
   }
 
-  /// when tonight starts, minutes into the day (core pullNightStart, written by the app), or nil
+  /// when the night running or coming starts, minutes into the day (core pullNightStart, written by the app), or nil
   static func nightFrom(_ b: [String: Any]) -> Int? { clockMin((b["night"] as? [String: Any])?["from"] as? String) }
+
+  /// when this evening's night starts, for Apple's schedules (core pullNextStart), or nil
+  static func nightNext(_ b: [String: Any]) -> Int? { clockMin((b["night"] as? [String: Any])?["next"] as? String) ?? nightFrom(b) }
+
+  /// a one-time tick at `at` (hour and minute only, never across midnight, longer than Apple's shortest schedule) whose start and
+  /// end run guardNow. False when it could not be set; the night's own starts and ends, and the next open, still catch up.
+  @discardableResult
+  static func tick(_ name: String, at: Date) -> Bool {
+    let cal = Calendar.current
+    let end = at.addingTimeInterval(16 * 60)
+    let center = DeviceActivityCenter()
+    center.stopMonitoring([DeviceActivityName(name)])
+    guard cal.isDate(at, inSameDayAs: end) else { return false }
+    let s = DeviceActivitySchedule(
+      intervalStart: cal.dateComponents([.hour, .minute], from: at), intervalEnd: cal.dateComponents([.hour, .minute], from: end), repeats: false)
+    do {
+      try center.startMonitoring(DeviceActivityName(name), during: s)
+      return true
+    } catch {
+      return false
+    }
+  }
 
   /// whether it is the night now (core pullInNight): from tonight's start to 6 AM, by the phone's clock
   static func inNight(_ b: [String: Any], at date: Date = Date()) -> Bool {
@@ -131,7 +154,8 @@ enum Pull {
     guard (p["on"] as? Bool) == true else { return (false, false) }
     let now = nowMs
     let d = defaults
-    let free = now >= (d?.double(forKey: liftKey) ?? 0)
+    /* Lift every wait ends at a night's start or end, where Apple's callback can come a few seconds early: a minute's grace */
+    let free = now >= (d?.double(forKey: liftKey) ?? 0) - 60_000
     let apps = (p["feeds"] as? Bool) == true && free && now >= (d?.double(forKey: openKey) ?? 0)
     let web = (p["adult"] as? Bool) == true && (b["adult"] as? Bool) == true && free && now >= (d?.double(forKey: webKey) ?? 0) && inNight(b)
     return (apps, web)

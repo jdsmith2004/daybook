@@ -136,6 +136,8 @@ public final class DaybookPullModule: Module {
       self.defaults?.set(until, forKey: Pull.liftKey)
       DeviceActivityCenter().stopMonitoring([DeviceActivityName("pull.open"), DeviceActivityName("pull.relock")])
       Pull.guardNow()
+      /* its own tick at the end, so the waits come back on time even if tonight's start was changed after it */
+      Pull.tick("pull.unlift", at: Date(timeIntervalSince1970: until / 1000).addingTimeInterval(60))
     }.runOnQueue(Self.queue)
 
     /// After the short wait: the apps open for this many minutes of use (inside Apple's shortest schedule), then the wait is back
@@ -171,25 +173,18 @@ public final class DaybookPullModule: Module {
 
     /// After the long wait: adult sites open for this many minutes, then pull.relock puts the filter back (and the app re-checks
     /// on every open). Tonight goes in the week as a night the person went through.
-    AsyncFunction("openWeb") { (minutes: Int) in
+    AsyncFunction("openWeb") { (minutes: Int, count: Bool) in
       let m = max(1, minutes)
       let until = Date().addingTimeInterval(TimeInterval(m * 60))
-      self.defaults?.set(until.timeIntervalSince1970 * 1000, forKey: Pull.webKey)
-      Pull.markNight(2)
-      Pull.guardNow()
-      /* hour and minute only, not repeating: the next time the clock reads it (one developer saw full dates make callbacks
-         unreliable), and longer than Apple's shortest schedule */
-      let cal = Calendar.current
-      let center = DeviceActivityCenter()
-      center.stopMonitoring([DeviceActivityName("pull.relock")])
-      /* from the minute after the time is up, so its start never comes a few seconds too soon */
+      /* the relock, from the minute after the time is up (so its start never comes a few seconds too soon). Hour and minute only:
+         one developer saw full dates make callbacks unreliable. One that would cross midnight is not needed: the night's
+         23:59 end and midnight start put the filter back. One Apple will not take keeps the sites closed (fail closed). */
       let start = until.addingTimeInterval(60)
-      let schedule = DeviceActivitySchedule(
-        intervalStart: cal.dateComponents([.hour, .minute], from: start),
-        intervalEnd: cal.dateComponents([.hour, .minute], from: start.addingTimeInterval(16 * 60)),
-        repeats: false
-      )
-      try? center.startMonitoring(DeviceActivityName("pull.relock"), during: schedule)
+      let midnight = !Calendar.current.isDate(start, inSameDayAs: start.addingTimeInterval(16 * 60))
+      if !midnight && !Pull.tick("pull.relock", at: start) { return }
+      self.defaults?.set(until.timeIntervalSince1970 * 1000, forKey: Pull.webKey)
+      if count { Pull.markNight(2) }
+      Pull.guardNow()
     }.runOnQueue(Self.queue)
 
     /// tonight goes in the week as a night the person went through (Lift every wait now, or Screen Time turned off, at night)
@@ -278,7 +273,7 @@ public final class DaybookPullModule: Module {
         [DeviceActivityEvent.Name("long"): ev(DateComponents(hour: long))]
       )
     }
-    if let f = Pull.nightFrom(b) {
+    if let f = Pull.nightNext(b) {
       var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
       if hard { for (i, m) in hardAt.enumerated() { events[DeviceActivityEvent.Name(String(i + 1))] = ev(DateComponents(minute: m)) } }
       let key = "\(f)|\(hard)|\(sel)"

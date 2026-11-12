@@ -107,8 +107,11 @@ let prefs: PullPrefs = normPull(null);
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((f) => f());
 /** settles once the saved choices are read (or found missing): nothing is decided from the defaults before then */
+/* whether the saved choices were read: a read that failed must never be taken for "off" (PullKeeper would clear the picked apps) */
+let readOk = false;
 const ready: Promise<void> = AsyncStorage.getItem(KEY)
   .then((v) => {
+    readOk = true;
     if (!v) return;
     prefs = normPull(JSON.parse(v));
     emit();
@@ -196,9 +199,10 @@ AsyncStorage.getItem(LONG_KEY)
     if (v && !longAt) longAt = +v || 0;
   })
   .catch(() => undefined);
-/** when the long wait started, starting it now if it is not running (or one from an earlier night was left) */
-export function pullLongStart(now = Date.now()): number {
-  if (!longAt || now - longAt > 6 * 3600_000 || longAt > now) {
+/** when the long wait started, starting it now if it is not running. One that ran out more than a few minutes ago is gone, so a
+    later urge meets the whole wait again, not an Open left over from an earlier one. */
+export function pullLongStart(lift: number, now = Date.now()): number {
+  if (!longAt || now - longAt > (lift + 5) * 60_000 || longAt > now) {
     longAt = now;
     AsyncStorage.setItem(LONG_KEY, String(now)).catch(() => undefined);
   }
@@ -260,7 +264,8 @@ export function PullKeeper() {
     const back = async () => {
       readDowns();
       settle();
-      if (real.takeWant()) router.navigate('/pause');
+      /* a fresh token each time, so a wait screen still open from before starts its wait again */
+      if (real.takeWant()) router.navigate({ pathname: '/pause', params: { t: String(Date.now()) } });
       /* access taken back in Settings: More shows it off, and the schedules and any pause are stopped too. allowed() is false
          only for a plain no, never while Apple's status is still loading after a launch. */
       if (getPullPrefs().on && !(await real.allowed().catch(() => true))) await pullStop().catch(() => undefined);
@@ -272,7 +277,7 @@ export function PullKeeper() {
     ready.then(() =>
       setTimeout(() => {
         if (gone) return;
-        if (!getPullPrefs().on) real.stop().catch(() => undefined);
+        if (readOk && !getPullPrefs().on) real.stop().catch(() => undefined);
         back();
       }, 600),
     );

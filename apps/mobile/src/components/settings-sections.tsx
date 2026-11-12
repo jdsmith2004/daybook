@@ -817,7 +817,7 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
   const span = fmtClock(from) + ' to ' + fmtClock(PULL_NIGHT_END);
   /* by day, tonight can start earlier than the morning said (never later: that is the morning's choice) */
   const morning = tonightOf(days, st, keyOfDate(new Date(t))).at;
-  const earlier = NIGHT_TIMES.filter((x) => pullEarlier(morning, x) === x).slice(-3);
+  const earlier = NIGHT_TIMES.filter((x) => x !== morning && pullEarlier(morning, x) === x).slice(-3);
   const hours = (n: number) => (n === 0 ? 'Off' : n === 1 ? '1 hour' : n + ' hours');
   const mins = (n: number) => n + ' minutes';
   const foot = (k: keyof PullPrefs, base?: string) => (held(k) ? (base ? base + ' ' : '') + 'Your change starts at ' + waits + '.' : base);

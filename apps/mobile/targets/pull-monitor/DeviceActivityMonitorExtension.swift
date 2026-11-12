@@ -5,6 +5,7 @@
 //                         interval across midnight); events "1", "2" at 10 and 20 minutes of use, "3" at 30 (the notes ignored)
 //   pull.open             the few minutes open after the short wait, event "open" at those minutes of use
 //   pull.relock           10 minutes after adult sites opened from the long wait: the filter is back
+//   pull.unlift           when Lift every wait now ends: the waits are back
 // Every start and end runs Pull.guardNow, which sets the shield and the adult filter from the clock and the App Group, so a
 // callback that comes late, twice or not at all is caught up by the next one (or by the app on its next open). Thresholds are
 // known to fire early right after a schedule starts (iOS 17 to 26), so one that comes sooner than its minutes after both the

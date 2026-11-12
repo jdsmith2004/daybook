@@ -143,11 +143,18 @@ export const pullLater = (a: Clock, b: Clock) => nightMin(b) > nightMin(a);
 /** the night a moment belongs to: the day it started (11 PM and 2 AM are the same night; it ends at 6 AM) */
 export const pullNightOf = (now: number): DayKey => logicalKey(now, END_H);
 
-/** when the night starts: the morning set's time (core tonightOf: today's, or the last morning's), or earlier when More was used
-    to start it earlier tonight. A later start is only ever the morning's. It is read by the clock's day, so after midnight it is
-    already the time for the next evening (the night running then started before, and it ends at 6 AM whatever its start). */
+/** when the night starts: the morning set's time (core tonightOf: that day's, or the last morning's), or earlier when More was
+    used to start it earlier that night. A later start is only ever the morning's. Between midnight and 6 AM it is the night still
+    running (pullNightOf), so an early start before midnight holds through to the morning. */
 export function pullNightStart(days: Days, st: Settings, prefs: PullPrefs, now: number): Clock {
-  const k = logicalKey(now, 0);
+  return startOf(days, st, prefs, pullNightOf(now));
+}
+/** when the next night starts, for Apple's schedules: this evening's, even between midnight and 6 AM (the morning set at 5 AM
+    sets tonight) */
+export function pullNextStart(days: Days, st: Settings, prefs: PullPrefs, now: number): Clock {
+  return startOf(days, st, prefs, logicalKey(now, 0));
+}
+function startOf(days: Days, st: Settings, prefs: PullPrefs, k: DayKey): Clock {
   const at = tonightOf(days, st, k).at;
   return prefs.early && prefs.early.k === k ? pullEarlier(at, prefs.early.at) : at;
 }
@@ -248,7 +255,8 @@ export interface PullHolds {
 }
 export function pullGuard(p: PullPrefs, o: { adult: boolean; from: Clock; holds: PullHolds; now: number }): { apps: boolean; web: boolean } {
   const { holds: h, now } = o;
-  const free = now >= h.lift;
+  /* Lift every wait ends at a night's start or end, where Apple's callback can come a few seconds early: a minute's grace */
+  const free = now >= h.lift - 60_000;
   return {
     apps: p.on && p.feeds && free && now >= h.open,
     web: p.on && p.adult && o.adult && free && now >= h.web && pullInNight(now, o.from),
@@ -497,8 +505,9 @@ export interface PullBridge {
   quietUntil: number | null;
   /** the choices as they stand, with any looser ones waiting for the morning in `later` (the extensions apply them at its time) */
   prefs: PullPrefs;
-  /** the night: when it starts (the morning's time, or earlier) and when it ends, by the clock; Apple's schedules follow it */
-  night: { from: Clock; to: Clock };
+  /** the night: when the one running or coming starts (the morning's time, or earlier) and ends, by the clock; `next` is this
+      evening's start, which Apple's schedules follow */
+  night: { from: Clock; to: Clock; next: Clock };
   /** adult sites wait in the night: the person's choice, and only when the habit is porn */
   adult: boolean;
   notes: Record<PullNoteKind, PullNote>;
@@ -523,7 +532,7 @@ export function pullBridge(days: Days, st: Settings, prefs: PullPrefs, now: numb
     lessonDone: !lid,
     quietUntil: pullQuietUntil(days, st, now),
     prefs: p,
-    night: { from, to: PULL_NIGHT_END },
+    night: { from, to: PULL_NIGHT_END, next: pullNextStart(days, st, p, now) },
     adult: habitOf(st) === 'porn',
     notes: pullNudges({ lessonUrl: lid ? '/lesson/' + lid : '/', long: p.long }),
     shield: pullShield({ night: false, wait: p.wait, plan, tonight: null, quiet: false }),

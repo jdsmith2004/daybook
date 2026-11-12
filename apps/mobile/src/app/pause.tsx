@@ -53,7 +53,7 @@ const PAUSE_LOW = 0.6;
 const leftLabel = (s: number, long: boolean) => (long ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s));
 
 export default function PullPause() {
-  const { w: which } = useLocalSearchParams<{ w?: string }>();
+  const { w: which, t: token } = useLocalSearchParams<{ w?: string; t?: string }>();
   const { snap, tk, now, say, update } = useStore();
   const c = useTheme();
   const saved = usePullPrefs();
@@ -81,7 +81,17 @@ export default function PullPause() {
   /* the count after this put-down, for the thanks */
   const downs = useRef(0);
   /* the short wait runs from the moment this opens; the long one from when it first started, so leaving does not start it again */
-  const [from] = useState(() => (long ? pullLongStart() : Date.now()));
+  const [from, setFrom] = useState(() => (long ? pullLongStart(prefs.lift) : Date.now()));
+  /* opened again from the shield while still on screen (a new token): the short wait starts again */
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (!long) setFrom(Date.now());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
   useClock(true);
   const total = long ? prefs.lift * 60 : prefs.wait;
   const gone = (Date.now() - from) / 1000;
@@ -151,6 +161,8 @@ export default function PullPause() {
     );
   };
   const open = async () => {
+    if (leaving.current) return;
+    leaving.current = true;
     if (long) {
       pullLongEnd();
       /* the stake was said before the choice, so it counts; in the quiet after a slip it was not said, so it does not */

@@ -4,6 +4,7 @@
    Today's hero, the first breath of an SOS, and the page after an urge ridden out. Every line is a fact from the log, said as
    who the person is, never a score, never a slip count, never a number of days in a run. Every count only goes up. */
 import { addDays, eventsOf, gameCompute, runLedger } from './legacy/core.js';
+import { noSlipDays } from './graduate';
 import { rkComebackCount } from './rekindle';
 import { hardHeld, riskWindow } from './risk';
 import type { DayKey, Days, Reviews, Settings } from './types';
@@ -54,7 +55,7 @@ export function heroProofs(days: Days, st: Settings, reviews: Reviews, tk: DayKe
   const checkins = num(S.checkins);
   const comebacks = rkComebackCount(days, st, tk);
   const held = hardHeld(days);
-  const free = runLedger(days, st, tk, 'strict', true).clean;
+  const free = noSlipDays(days, st, tk);
   return [
     ...effortProofs(effort),
     rode ? times(rode, 'urge', 'urges') + ' ridden out' : '',

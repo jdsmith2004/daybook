@@ -7,7 +7,7 @@
    Once earned, settings.gradAt holds the date and is never cleared, so the award survives later slips, rule changes and
    sync; earning it does not change Today. Days Daybook does not know about (a long gap away, away.ts) count neither way. Checked by test/graduate.test.ts. */
 import { changeSettings, type Change } from './actions';
-import { addDays, computeMetrics, eventsOf, isKey } from './legacy/core.js';
+import { addDays, computeMetrics, eventsOf, isKey, runLedger } from './legacy/core.js';
 import { awaySlipDay, dayKnown } from './away';
 import type { DayKey, Days, Settings } from './types';
 
@@ -20,6 +20,12 @@ export const GRAD_GATE = 7;
 export const GRAD_TODAY = 30;
 /** from here on, an "almost there" word */
 export const GRAD_NEAR = 80;
+
+/** the no-slip days on the record: every finished day since Day 1 with no slip, in any mode (a day Daybook does not know is not
+    one). Today counts once it is over, the same as graduation (gradInfo), so "14 no-slip days" never sits beside "13 of 90". */
+export function noSlipDays(days: Days, st: Settings, tk: DayKey): number {
+  return runLedger(days, st, addDays(tk, -1), 'strict', true).clean;
+}
 
 export const gradOf = (st: Settings | null): DayKey | null => (st && isKey(st.gradAt) ? (st.gradAt as DayKey) : null);
 

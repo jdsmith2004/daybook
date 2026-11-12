@@ -4,6 +4,7 @@ import type { Badge } from './legacy/core.js';
 import type { Settings } from './types';
 import { addDays, computeMetrics, fmtDate, dayPoints, eventsOf, gameCompute, isKey, obHours, obRnd, runLedger, WIN_WHY, type Quest } from './legacy/core.js';
 import { awaySlipDay, dayKnown } from './away';
+import { noSlipDays } from './graduate';
 import { rkComebackCount } from './rekindle';
 import { hardHeld } from './risk';
 import { eventRow } from './view';
@@ -212,7 +213,7 @@ export function identityLines(days: Days, st: Settings, reviews: Reviews, tk: Da
     days on, so a first day is not a record yet. */
 export function recordLines(days: Days, st: Settings, tk: DayKey): IdLine[] {
   const longest = computeMetrics(days, st, tk).longest;
-  const noSlip = runLedger(days, st, tk, 'strict', true).clean;
+  const noSlip = noSlipDays(days, st, tk);
   return [
     longest >= 2 ? { ic: 'flame', who: 'You are someone who can go the distance.', n: 'Longest run: ' + longest + ' days' } : null,
     noSlip >= 2 ? { ic: 'sun', who: 'You are someone who has days free of it.', n: noSlip + ' no-slip days, all on your record' } : null,
@@ -227,7 +228,7 @@ export function gradRecord(days: Days, st: Settings, reviews: Reviews, tk: DayKe
   const rode0 = gameCompute(days, st, reviews, tk).S.rode;
   const rode = typeof rode0 === 'number' ? rode0 : 0;
   const back = rkComebackCount(days, st, tk);
-  const free = runLedger(days, st, tk, 'strict', true).clean;
+  const free = noSlipDays(days, st, tk);
   return [
     rode ? (rode === 1 ? 'You rode out an urge, and it passed.' : 'You rode out ' + rode.toLocaleString('en-US') + ' urges.') : null,
     back ? (back === 1 ? 'You came back after a hard night.' : 'You came back ' + back + ' times after a hard night.') : null,

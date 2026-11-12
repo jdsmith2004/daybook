@@ -17,7 +17,7 @@ import {
   type RekindleState,
 } from './legacy/core.js';
 import { changeSettings } from './actions';
-import { todayMeasure } from './graduate';
+import { noSlipDays, todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
 import { plural } from './view';
 import type { DayEvent, DayKey, Days, Reviews, Settings } from './types';
@@ -99,7 +99,7 @@ function rkKept(days: Days, st: Settings, reviews: Reviews, tk: DayKey): { rode:
   const S = gameCompute(days, st, reviews, tk).S;
   return {
     rode: typeof S.rode === 'number' ? S.rode : 0,
-    free: runLedger(days, st, tk, 'strict', true).clean,
+    free: noSlipDays(days, st, tk),
     back: rkComebackCount(days, st, tk),
   };
 }

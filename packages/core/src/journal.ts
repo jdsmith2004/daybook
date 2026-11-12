@@ -29,7 +29,7 @@ import {
   type RunLedger,
 } from './legacy/core.js';
 import { logRateKeys, rateKeys, ratingOf, type RateKey } from './day';
-import { todayMeasure } from './graduate';
+import { noSlipDays, todayMeasure } from './graduate';
 import { logStart } from './log-start';
 import { rkComebackCount } from './rekindle';
 import { sunOf, sunRange } from './sunday';
@@ -123,7 +123,7 @@ export function myNumbers(days: Days, st: Settings, tk: DayKey, nowMs: number) {
   });
   const n = (k: string) => m[k] as number;
   /* the count, as Today shows it, then what stays on the record */
-  const noSlip = runLedger(days, st, tk, 'strict', true).clean;
+  const noSlip = noSlipDays(days, st, tk);
   const back = rkComebackCount(days, st, tk);
   const kept = [`${noSlip} no-slip day${noSlip === 1 ? '' : 's'} in all`, back ? `${back} comeback${back === 1 ? '' : 's'}` : ''].filter(Boolean);
   const t = counting && st.cleanMode === 'gentle' ? todayMeasure(days, st, tk) : null;

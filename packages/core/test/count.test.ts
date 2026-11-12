@@ -48,7 +48,7 @@ describe('strict: the days in a row', () => {
     const m = core.computeMetrics(d, strict, day(41));
     expect(m.longest).toBe(39);
     expect(core.myNumbers(d, strict, day(41), ms(41, 9))[2]).toMatchObject({ l: 'Longest run', b: '39' });
-    expect(core.myNumbers(d, strict, day(41), ms(41, 9))[2].s).toContain('40 no-slip days in all');
+    expect(core.myNumbers(d, strict, day(41), ms(41, 9))[2].s).toContain('39 no-slip days in all');
   });
   it('the line on the day of a slip, in one day and in the morning', () => {
     const d = slip({}, 2, '09:00');
@@ -204,7 +204,7 @@ describe('comebacks count in every mode', () => {
       expect(core.rkComebackCount(slip(d, 20), s, day(22))).toBe(2);
     }
     expect(core.identityLines(slip({}, 10), strict, {}, day(12)).find((l) => /comes back/.test(l.who))!.n).toBe('1 comeback');
-    expect(core.recordLines(slip({}, 10), strict, day(12)).map((l) => l.n)).toEqual(['Longest run: 9 days', '11 no-slip days, all on your record']);
+    expect(core.recordLines(slip({}, 10), strict, day(12)).map((l) => l.n)).toEqual(['Longest run: 9 days', '10 no-slip days, all on your record']);
   });
 });
 

@@ -2,7 +2,7 @@
    Here they are pure: the screen passes in the log, the settings, today's key and the time, and gets back what to show.
    Each one is checked against the legacy app by the golden tests, so the words and numbers match it exactly. */
 import { hoursSinceSlip } from './hero';
-import { todayMeasure } from './graduate';
+import { noSlipDays, todayMeasure } from './graduate';
 import {
   addDays,
   DID_T,
@@ -67,7 +67,7 @@ export function cleanView(days: Days, st: Settings, tk: DayKey, nowMs: number): 
   /* the record never drops, whichever way the days are counted now */
   v.longest = Math.max(sk.longest, computeMetrics(days, st, tk).longest);
   v.counted = sk.counted;
-  v.noSlip = runLedger(days, st, tk, 'strict', true).clean;
+  v.noSlip = noSlipDays(days, st, tk);
   v.hours = hoursSinceSlip(days, { ...st, cleanMode: mode }, tk, nowMs);
   v.next = v.longest > v.cur ? (RUN_GOALS.find((n) => n > v.cur) ?? null) : null;
   return v;

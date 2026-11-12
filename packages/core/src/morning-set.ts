@@ -135,12 +135,12 @@ export function setMorningFeel(days: Days, tk: DayKey, f: 1 | 2 | 3 | null, now 
 }
 
 /** the person's own reasons to pick from for tonight: their reasons from setup or My plan, then who they are becoming, then the
-    starting ones when they have none; the one picked last time first. At most four, so they all sit in reach of the thumb. */
+    starting ones when they have none; the one picked last time first. At most three, so they sit by the thumb and the flame stays big. */
 export function morningReasons(days: Days, st: Settings, tk: DayKey): string[] {
   const out: string[] = [];
   const add = (t: string | null | undefined) => {
     const s = (t || '').trim();
-    if (s && out.length < 4 && !out.some((x) => x.toLowerCase() === s.toLowerCase())) out.push(s);
+    if (s && out.length < 3 && !out.some((x) => x.toLowerCase() === s.toLowerCase())) out.push(s);
   };
   const last = lastSet(days, tk, CARRY_DAYS)?.ms.r;
   const own = [...(st.reasons || []), st.becoming || ''].filter((x) => x.trim());
@@ -291,3 +291,34 @@ export const toldNextMorning = (e: DayEvent): boolean => e.mn === true;
 
 /** whether the day has a slip at all (for callers that only need that) */
 export const slippedOn = (days: Days, k: DayKey): boolean => sumDay(days[k]).slipped > 0;
+
+/* ---------- the words on the two pages ---------- */
+
+/** the words of the morning set. Plain and sure; nothing said about points or stakes, and It happened gets no ceremony. */
+export const MORNING_WORDS = {
+  title: 'Good morning',
+  night: 'How was last night?',
+  free: 'Free of it',
+  slip: 'It happened',
+  feel: 'And this morning?',
+  next: 'Next',
+  /** the eyebrow of the second page after It happened: logged, and the day is still open */
+  logged: 'Logged. Today is open.',
+  setup: 'Set up tonight',
+  why: 'Who are you doing tonight for?',
+  when: 'When does tonight start?',
+  whenDone: 'Done',
+  set: 'Set tonight',
+  /** said once it is set, as the lesson opens */
+  done: 'Tonight is set.',
+} as const;
+
+/** the eyebrow on the first page: "Good morning · Wednesday" */
+export const morningHello = (now: number): string => MORNING_WORDS.title + ' · ' + new Date(now).toLocaleDateString('en-US', { weekday: 'long' });
+
+/** the line over tonight's time: what happens then. With Screen Time's night waits on, what waits (feeds, and adult sites when the
+    habit is porn); without them, the time the phone goes down, which is the person's own plan. */
+export function tonightLine(o: { waits: boolean; habit: 'porn' | 'alcohol' | 'gambling' | 'other' }): string {
+  if (!o.waits) return 'Phone down tonight at';
+  return o.habit === 'porn' ? 'Feeds and adult sites wait from' : 'Feeds wait from';
+}

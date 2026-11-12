@@ -40,6 +40,7 @@ import {
   srDone,
   standRow,
   sunriseDue,
+  morningDue,
 } from '@daybook/core';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -159,6 +160,18 @@ export default function Today() {
   const backNow = !!due && askAgain;
   const cameBack = useCameBack();
   const feelQuiet = !!st && dayFeelQuiet(snap.days, st, tk, now);
+  /* the morning set (core morning-set.ts, app/morning.tsx): in the morning, until set or closed today, over Today only, once the
+     log has settled and nothing else is opening (Welcome back, graduation). Not on the day the person came back, when enough has
+     opened already, and not while SOS is open. It comes before "How are you feeling today?", which it answers. */
+  const morningNow = !!st && !syncing && !cameBack && !sos.ur && !sos.timer && morningDue(snap.days, st, tk, now);
+  useEffect(() => {
+    if (!ready || !morningNow || !focused || backNow || gradNow || celebrating) return;
+    const t = setTimeout(() => {
+      if (!focusRef.current || sheetOnTop()) return;
+      router.push('/morning');
+    }, 400);
+    return () => clearTimeout(t);
+  }, [ready, morningNow, focused, backNow, gradNow, celebrating]);
   useEffect(() => {
     if (!firstOpen || !ready) return;
     if (firstOpen.k < tk || sosUsed || feelQuiet || cameBack || celebrating || celebrationSheetAt() >= firstOpen.at) {
@@ -171,14 +184,14 @@ export default function Today() {
       spendFirstOpen();
       return;
     }
-    if (!focused || backNow || gradNow) return;
+    if (!focused || backNow || gradNow || morningNow) return;
     const t = setTimeout(() => {
       if (!focusRef.current || sheetOnTop()) return;
       spendFirstOpen();
       setAskFeel(true);
     }, 700);
     return () => clearTimeout(t);
-  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack, celebrating]);
+  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack, celebrating, morningNow]);
 
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
   useEffect(() => {

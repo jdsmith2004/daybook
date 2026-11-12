@@ -188,3 +188,15 @@ describe('kept like the rest of the day', () => {
     expect(core.dayPoints(a, y, st)).toEqual(core.dayPoints(b, y, st));
   });
 });
+
+describe('the words', () => {
+  it('are plain, with no contractions, no points and no blame', () => {
+    const all = [...Object.values(core.MORNING_WORDS), core.tonightLine({ waits: false, habit: 'porn' }), core.tonightLine({ waits: true, habit: 'porn' })];
+    for (const w of all) {
+      expect(w).not.toMatch(/n[’']t\b|[’'](re|ll|ve|m|d)\b|\bit[’']s\b/i);
+      expect(w).not.toMatch(/\b(fail|failed|bad|wrong|should|reset|lost|points?|streak)\b/i);
+    }
+    expect(core.tonightLine({ waits: true, habit: 'alcohol' })).toBe('Feeds wait from');
+    expect(core.morningHello(at(21, 7))).toBe('Good morning · Wednesday');
+  });
+});

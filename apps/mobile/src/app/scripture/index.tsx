@@ -27,6 +27,7 @@ export default function Library() {
     }, [lib.on]),
   );
   if (!lib.can) return <Redirect href="/" />;
+  if (!lib.ready) return null;
   if (!lib.on)
     return (
       <Screen title="Scriptures" back>

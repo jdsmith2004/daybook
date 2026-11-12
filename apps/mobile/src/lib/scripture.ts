@@ -43,8 +43,10 @@ export interface ScriptureState {
   name: string | null;
   /** notes waiting to reach the vault */
   waiting: number;
+  /** what this phone keeps has been read, so `on` can be trusted */
+  ready: boolean;
 }
-let state: ScriptureState = { can: !!ScriptureVault, on: false, name: null, waiting: 0 };
+let state: ScriptureState = { can: !!ScriptureVault, on: false, name: null, waiting: 0, ready: !ScriptureVault };
 const subs = new Set<() => void>();
 const set = (p: Partial<ScriptureState>) => {
   state = { ...state, ...p };
@@ -60,14 +62,24 @@ async function load() {
   if (!kept) {
     if (name) await ScriptureVault.forget().catch(() => undefined);
     set({ on: false, name: null });
-  } else set({ on: true, name: name || JSON.parse(kept).name || null });
+  } else set({ on: true, name: name || keptName(kept) });
+  set({ ready: true });
   const out = await readOut();
   set({ waiting: out.length });
   if (kept && out.length) void sendWaiting();
 }
 
+function keptName(raw: string): string | null {
+  try {
+    const o = JSON.parse(raw);
+    return o && typeof o.name === 'string' ? o.name : null;
+  } catch {
+    return null;
+  }
+}
+
 export function useScripture(): ScriptureState {
-  useEffect(() => void load(), []);
+  useEffect(() => void load().catch(() => set({ ready: true })), []);
   return useSyncExternalStore(
     (f) => {
       subs.add(f);

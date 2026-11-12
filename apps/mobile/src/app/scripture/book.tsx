@@ -33,6 +33,7 @@ export default function Book() {
       return () => void (live = false);
     }, [vol, book]),
   );
+  if (!lib.ready) return null;
   if (!lib.can || !lib.on) return <Redirect href="/scripture" />;
   return (
     <Screen title={name} back>

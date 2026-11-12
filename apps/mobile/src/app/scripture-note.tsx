@@ -21,6 +21,7 @@ export default function ScriptureNote() {
   const lib = useScripture();
   const { key, v } = useLocalSearchParams<{ key: string; v: string }>();
   const verses = scrVerseList(v || '');
+  if (!lib.ready) return null;
   if (!lib.can || !lib.on || !key || !verses.length) return <Redirect href="/scripture" />;
   return <NoteSheet chKey={key} verses={verses} />;
 }

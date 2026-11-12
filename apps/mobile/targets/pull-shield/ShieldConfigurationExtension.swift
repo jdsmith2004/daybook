@@ -21,7 +21,7 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
       backgroundBlurStyle: .systemUltraThinMaterialDark,
       backgroundColor: UIColor(red: 0.11, green: 0.09, blue: 0.29, alpha: 1),
       icon: UIImage(named: "flame"),
-      title: .init(text: (w?["title"] as? String) ?? "Resting for now", color: ink),
+      title: .init(text: Pull.restingTitle() ?? (w?["title"] as? String) ?? "Resting for now", color: ink),
       subtitle: .init(text: (w?["sub"] as? String) ?? "You asked me to hold this in your hard hours.", color: soft),
       primaryButtonLabel: .init(text: (w?["primary"] as? String) ?? "Open Daybook", color: UIColor(red: 0.2, green: 0.14, blue: 0.02, alpha: 1)),
       primaryButtonBackgroundColor: sun,

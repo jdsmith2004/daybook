@@ -29,7 +29,7 @@ export const EV_NAMES = {
   screen_left: 'Left a screen for another (route, secs: how long it was on)',
   chart_seen: 'A chart was shown (chart, secs: how long, locked)',
   error: 'Something went wrong (err: which part)',
-  day: 'Once a day, where things stand (mode, count, no-slip days, level, points, badges, flame form, burning low, reminders, account, sync, supporter, Apple Health connected, faith, habit, language, OS version)',
+  day: 'Once a day, where things stand (mode, count, no-slip days, urges ridden out and slips in the last 30 days, level, points, badges, flame form, burning low, reminders, account, sync, supporter, Apple Health connected, faith, habit, language, OS version)',
   /* setup */
   setup_page: 'Reached a setup page (page)',
   setup_pick: 'Picked a choice on a setup page (page, ix: which choice)',
@@ -56,6 +56,7 @@ export const EV_NAMES = {
   rekindle: 'Did a Rekindle step (step)',
   checkin: 'Saved a check-in (mood, sleep, str)',
   recheck: 'Answered the monthly five questions (q1 to q5)',
+  free: 'Answered "How much do you see yourself as someone free of this?" (free: 0 to 10; rode30 and slips30: urges ridden out and slips in the last 30 days)',
   sunday: 'Finished the Sunday review',
   wind: 'Said Goodnight in the wind-down',
   /* the flame */
@@ -179,6 +180,10 @@ export const EV_PROPS: Record<string, Prop> = {
   q3: int(0, 10),
   q4: int(0, 10),
   q5: int(0, 10),
+  /* the north star (north.ts): the answer, and the last 30 days as two counts */
+  free: int(0, 10),
+  rode30: int(0, 1000),
+  slips30: int(0, 1000),
   lvl: int(0, 1000),
   kind: one(() => NUDGE_KINDS),
   what: one(() => ['tip', 'pattern', 'account', 'rate', 'sos', 'happened', 'planning', 'lesson', 'checkin', 'plan', 'journal', 'rekindle', 'idea', 'other']),

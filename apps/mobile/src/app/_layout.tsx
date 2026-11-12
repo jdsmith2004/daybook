@@ -17,6 +17,8 @@ import {
   trailNoteKeep,
   trailNotes,
   WIDGET_PTS,
+  nudgeExt,
+  nudgeQuietLeft,
 } from '@daybook/core';
 import { useFonts } from 'expo-font';
 import {
@@ -157,12 +159,26 @@ function TrailNotes() {
     const sub = AppState.addEventListener('change', (a) => a === 'active' && setOpenAt(Date.now()));
     return () => sub.remove();
   }, []);
-  const notes = useMemo(() => (ready ? trailNotes(sos.mem, snap.days, Math.max(openAt, Date.now() - 60000)) : []), [ready, sos.mem, snap.days, openAt]);
+  /* the trail's notes learn whether they are opened (core nudgeQuietLeft): paused, none; on the one more try, only the first */
+  const log = useNudgeLog();
+  const left = log.ready ? nudgeQuietLeft(log, 'trail', openAt) : 0;
+  const notes = useMemo(
+    () => (ready ? trailNotes(sos.mem, snap.days, Math.max(openAt, Date.now() - 60000)).slice(0, left) : []),
+    [ready, sos.mem, snap.days, openAt, left],
+  );
   const key = notes.map((n) => n.at).join(',');
   useEffect(() => {
     if (!ready || !remindersOffered) return;
     scheduleTrail(notes).catch(() => undefined);
     sos.setMem((m) => trailNoteKeep(m, notes, Date.now()));
+    setNudgeLog((l) =>
+      nudgeExt(
+        l,
+        'trail',
+        notes.map((n) => ({ id: 'trail@' + n.at, at: n.at })),
+        Date.now(),
+      ),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, ready]);
   return null;

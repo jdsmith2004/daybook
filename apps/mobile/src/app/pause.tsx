@@ -8,7 +8,7 @@
    reaching this screen means the notes were ignored, so it is seen burning fully, then goes down to PAUSE_LOW with its smoke, as on
    Today (big-flame.tsx, core flame-low.ts). Put it down lights it again in front of the person, with the same knocks as Today,
    before going home; opening the apps leaves it low. In the hours after a slip it never dims: the job then is to bring them back. */
-import { gameCompute, pullPauseWords, pullPlanLine, pullQuietUntil } from '@daybook/core';
+import { addEvent, gameCompute, pullDownEvent, pullPauseWords, pullPlanLine, pullQuietUntil } from '@daybook/core';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
@@ -31,7 +31,7 @@ import { useReducedMotion } from '@/lib/motion';
 const PAUSE_LOW = 0.6;
 
 export default function PullPause() {
-  const { snap, tk, now, say } = useStore();
+  const { snap, tk, now, say, update } = useStore();
   const c = useTheme();
   const prefs = usePullPrefs();
   const reduce = useReducedMotion();
@@ -73,6 +73,12 @@ export default function PullPause() {
   const down = () => {
     if (leaving.current) return;
     leaving.current = true;
+    /* putting it down is evidence: an urge ridden out in the log (core pullDownEvent), so it earns its points and feeds the
+       flame. No count or event is sent for it: it starts from Screen Time, whose data never leaves the phone. */
+    update((s) => {
+      const e = s.settings && pullDownEvent(s.days, s.settings, Date.now());
+      return e ? { ...s, days: addEvent(s.days, e.key, 'rode', e.time, e.fields).days } : s;
+    });
     if (quiet || reduce || low === 0) {
       buzz('lit');
       if (low) setLow(0);
@@ -111,7 +117,7 @@ export default function PullPause() {
         <Bubble text={w.say} style={{ marginBottom: 12, alignSelf: 'center', maxWidth: 300 }} />
         <View style={s.c} accessible accessibilityRole="timer" accessibilityLabel={over ? 'The wait is over' : left + ' seconds'}>
           <WavyRing size={ring} p={p} color={c.sun} track="rgba(255,255,255,0.14)" speed={reduce ? 0 : undefined}>
-            <BigFlame level={level} size={ring * 0.7} pulse={pulse} noLand low={low} douse={!quiet} smoke="#6B6577" label={w.title} />
+            <BigFlame level={level} size={ring * 0.86} pulse={pulse} noLand low={low} douse={!quiet} smoke="#6B6577" label={w.title} />
           </WavyRing>
           <Text style={[s.left, { color: over ? nightInk.muted : c.sun }]}>{over ? ' ' : String(left)}</Text>
           <T v="small" style={{ color: nightInk.muted }}>

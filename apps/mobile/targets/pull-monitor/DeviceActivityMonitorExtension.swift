@@ -43,9 +43,13 @@ class DeviceActivityMonitorExtension: DeviceActivityMonitor {
       if let k = Pull.noteFor(b, kind: e) { Pull.post(b, kind: k, once: once) }
       return
     }
-    /* 30 minutes of use inside the hard hours, after both notes */
+    /* 30 minutes of use inside the hard hours, after both notes: once a window (a threshold can fire twice, and must not pause
+       again in the minutes opened after the wait, or after Lift every pause now), and never at or past the window's end (a late
+       callback would pause with no end left to lift it) */
     let p = Pull.prefs(b)
     if (p["hard"] as? Bool) == false { return }
+    if Pull.nowMs >= w.end.timeIntervalSince1970 * 1000 - 60_000 { return }
+    if !Pull.mark("pause", once: once) { return }
     if !Pull.quiet(b) { Pull.defaults?.set(Pull.nowMs, forKey: Pull.ignoredKey) }
     if (p["pause"] as? Bool) == true { Pull.rest(until: w.end.timeIntervalSince1970 * 1000) }
   }

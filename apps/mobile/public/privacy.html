@@ -159,9 +159,10 @@
             part).
           </li>
           <li>
-            <code>day</code>: once a day, where things stand: the counting mode, the count, no-slip days in the last 28, level, points, badges, the flame's
-            form, whether it burns low, whether reminders are allowed, whether there is an account, sync or a tip, whether Apple Health is connected (never what
-            it holds), your faith setting, which habit, the phone's language and its system version.
+            <code>day</code>: once a day, where things stand: the counting mode, the count, no-slip days in the last 28, how many urges were ridden out and how
+            many slips in the last 30 days (two counts, never when or what), level, points, badges, the flame's form, whether it burns low, whether reminders
+            are allowed, whether there is an account, sync or a tip, whether Apple Health is connected (never what it holds), your faith setting, which habit,
+            the phone's language and its system version.
           </li>
           <li>
             <code>setup_page</code>, <code>setup_pick</code>, <code>setup_skip</code>, <code>setup_done</code>: a setup page was reached, a choice picked on it
@@ -186,6 +187,10 @@
             <code>checkin</code>, <code>recheck</code>, <code>sunday</code>, <code>wind</code>: a check-in was saved (the mood, sleep and urge numbers picked),
             the five questions were answered (the five scores), the Sunday review was finished, Goodnight was said.
           </li>
+          <li>
+            <code>free</code>: once a month, and once at the end of setup, "How much do you see yourself as someone free of this?" was answered: the number
+            picked from 0 to 10, with how many urges were ridden out and how many slips in the last 30 days, as two counts. Never any words.
+          </li>
           <li><code>chart_seen</code>: a chart was shown (which one, for how long, and whether it was locked).</li>
           <li>
             <code>level_up</code>, <code>form</code>, <code>flame_low</code>, <code>flame_lit</code>, <code>badge</code>: a new level, a new flame form, the
@@ -205,10 +210,11 @@
           The values are only numbers, yes or no, or names from Daybook's own lists: <code>cold</code>, <code>secs</code>, <code>route</code>, <code>err</code>,
           <code>page</code>, <code>ix</code>, <code>lesson</code>, <code>beat</code>, <code>from</code>, <code>outcome</code>, <code>str</code>,
           <code>tool</code>, <code>chart</code>, <code>locked</code>, <code>trigger</code>, <code>hrs</code>, <code>step</code>, <code>mood</code>,
-          <code>sleep</code>, <code>q1</code> to <code>q5</code>, <code>lvl</code>, <code>kind</code>, <code>what</code>, <code>tier</code>, <code>how</code>,
-          <code>mode</code>, <code>count</code>, <code>ns28</code>, <code>pts</code>, <code>badges</code>, <code>low</code>, <code>rem</code>,
-          <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>, <code>faith</code>, <code>habit</code>, <code>lang</code>,
-          <code>os</code>. Anything that is not on those lists is dropped on your phone, and refused by the server.
+          <code>sleep</code>, <code>q1</code> to <code>q5</code>, <code>free</code>, <code>rode30</code>, <code>slips30</code>, <code>lvl</code>,
+          <code>kind</code>, <code>what</code>, <code>tier</code>, <code>how</code>, <code>mode</code>, <code>count</code>, <code>ns28</code>, <code>pts</code>,
+          <code>badges</code>, <code>low</code>, <code>rem</code>, <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>,
+          <code>faith</code>, <code>habit</code>, <code>lang</code>, <code>os</code>. Anything that is not on those lists is dropped on your phone, and refused
+          by the server.
         </p>
         <p>
           Never sent: your journal, notes, voice notes, Obsidian folder, plan, reasons, Talk it through, or anything else you write; your name, email, account
@@ -268,7 +274,7 @@
           </li>
           <li>
             <code>setup_</code> and a setup page's name (hello, how, habit, aim, years, freq, mins, faith, creed, b0, b1, b2, b3, b4, heard, costs, guess,
-            hours, when, wave, breathe, loop, tour, curve, tried, tries, slip, goal, reasons, ifthen, so, becoming, review, remind, account), and
+            hours, when, wave, breathe, loop, tour, curve, tried, tries, slip, goal, reasons, ifthen, so, becoming, review, remind, star, account), and
             <code>setup_done</code>: how far setup got, sent once for each page.
           </li>
         </ul>

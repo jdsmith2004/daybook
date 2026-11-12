@@ -16,6 +16,7 @@
     "shots": "node --experimental-strip-types --no-warnings scripts/shots.ts",
     "shots:ios": "node --experimental-strip-types --no-warnings scripts/shots-ios.ts",
     "journey": "node --experimental-strip-types --no-warnings scripts/journey.ts",
+    "release-check": "node scripts/release-check.mjs",
     "story": "node --experimental-strip-types --no-warnings scripts/story.ts"
   },
   "devDependencies": {

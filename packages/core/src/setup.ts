@@ -67,6 +67,8 @@ export interface SetupAnswers {
   person?: string;
   /** who I am becoming: a starter sentence or the person's own */
   be?: string;
+  /** the north star's first answer, 0 to 10, while its page is open (kept in st.free, north.ts) */
+  free?: number;
   [k: string]: unknown;
 }
 
@@ -198,6 +200,7 @@ export type PageKind =
   | 'becoming'
   | 'review'
   | 'remind'
+  | 'star'
   | 'done';
 export interface ObPage {
   id: string;
@@ -223,6 +226,8 @@ export interface ObEnv {
   notify?: boolean;
   /** true when this build has accounts and the person is not signed in: the account page shows once the plan is built */
   account?: boolean;
+  /** true when the north star is asked here: no answer yet, and not in the hours after a slip or an SOS (north.ts freeAtSetup) */
+  free?: boolean;
 }
 /** the three acts of the setup: id, name, tone and icon. Every page points at its act with `s`. */
 export const OB_SECS: [string, string, string, string][] = [
@@ -389,6 +394,9 @@ export const OB_PAGES: ObPage[] = [
   { id: 'review', s: 'plan', k: 'review' },
   /* when to check in, with the phone's one permission prompt (nudges.ts); only where the device can notify */
   { id: 'remind', s: 'plan', k: 'remind', need: (_a, env) => !!env.notify },
+  /* the north star's starting point (north.ts): how much the person sees themselves as free of this, 0 to 10, on the page before
+     the account ask, which stays last */
+  { id: 'star', s: 'plan', k: 'star', need: (_a, env) => !!env.free },
   /* a free account, asked for at the best moment there is: the plan was just built, and nothing has gone wrong yet
      (accounts.ts). It comes last, so it is the one ask left in mind. Never required: "Keep it on this phone" goes on. */
   { id: 'account', s: 'plan', k: 'account', need: (_a, env) => !!env.account },
@@ -759,6 +767,7 @@ const OB_SAY: Record<string, string> = {
   ifthen: 'A plan made ahead is easier to follow.',
   so: 'An hour before, a short wind-down starts.',
   becoming: 'One sentence about who you are growing into. I will show it to you on hard days.',
+  star: 'This is your starting point. Once a month you answer again, and we watch it move.',
   review: 'This plan is yours. Hold, and I will light up.',
   remind: 'One short reminder a day, so the check-in becomes part of your evening.',
   account: 'Look at me now. You did that.',

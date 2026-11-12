@@ -68,6 +68,7 @@ import {
   type WalkNeed,
   type WalkStage,
   NUDGE_WORDS,
+  noneTail,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -83,6 +84,7 @@ import { Slider } from '@/components/slider';
 import { Text } from '@/components/text';
 import { DoCard, DoorArt, DriftArt, PreviewArt, Rise, SparkArt, StepsArt, TrailMap, TW, WaveLine } from '@/components/trail-art';
 import { Button } from '@/components/ui';
+import { Packed } from '@/components/packed';
 import { buzz } from '@/lib/feel';
 import { NATIVE } from '@/lib/motion';
 import { close } from '@/lib/nav';
@@ -1017,7 +1019,7 @@ function Chips<K extends string>({
   multi?: boolean;
 }) {
   return (
-    <View style={s.chips} accessibilityRole={multi ? undefined : 'radiogroup'} accessibilityLabel={label}>
+    <Packed last={noneTail(opts.map((o) => o.label))} accessibilityRole={multi ? undefined : 'radiogroup'} accessibilityLabel={label}>
       {opts.map((o) => {
         const sel = on.indexOf(o.id) >= 0;
         return (
@@ -1036,7 +1038,7 @@ function Chips<K extends string>({
           </Pressable>
         );
       })}
-    </View>
+    </Packed>
   );
 }
 
@@ -1270,7 +1272,6 @@ const s = StyleSheet.create({
     fontSize: 17,
   },
   write: { marginTop: 14, gap: 10 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22, backgroundColor: TW.bubble, justifyContent: 'center' },
   chipOn: { backgroundColor: TW.mint },
   chipT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },

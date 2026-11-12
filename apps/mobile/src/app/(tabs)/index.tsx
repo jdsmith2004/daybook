@@ -16,6 +16,7 @@ import {
   markOpen,
   tipAsk,
   urLastAt,
+  careLastAt,
   tipButton,
   autoCount,
   bpsDue,
@@ -283,13 +284,13 @@ export default function Today() {
     patternDay: patDay || (pat ? tk : null),
     account: !!account,
     comebackSeen: typeof sos.mem.cbSeen === 'string' ? (sos.mem.cbSeen as string) : null,
-    recheck: bpsDue(snap.days, st, tk, sos.mem, { now, sos: urLastAt(sos.mem) }),
-    free: freeDue(snap.days, st, tk, { now, sos: urLastAt(sos.mem) }),
+    recheck: bpsDue(snap.days, st, tk, sos.mem, { now, sos: careLastAt(sos.mem) }),
+    free: freeDue(snap.days, st, tk, { now, sos: careLastAt(sos.mem) }),
     unlock,
   });
   /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */
   const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
-  const tip = !quiet && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: urLastAt(sos.mem) });
+  const tip = !quiet && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: careLastAt(sos.mem) });
   /* one quiet line under the next step: the week's goal from Sunday (today's entries are in Today so far, under it) */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name, nights)?.note;
   /* the quiet lines under the next step take their room from the sky */
@@ -328,7 +329,7 @@ export default function Today() {
             title={title}
             lead={<FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />}
             action={
-              tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: urLastAt(sos.mem) }) ? <TipTop on={{ glass: ink.glass, ink: ink.ink }} /> : undefined
+              tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: careLastAt(sos.mem) }) ? <TipTop on={{ glass: ink.glass, ink: ink.ink }} /> : undefined
             }
           />
         }>

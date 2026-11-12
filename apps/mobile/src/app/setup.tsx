@@ -72,7 +72,7 @@ import {
   LIKE_WORDS,
   likeAnswer,
   likeAskDue,
-  urLastAt,
+  careLastAt,
   type LikeAnswer,
   HABIT_NOUN,
   habitSay,
@@ -104,6 +104,7 @@ import { TIP_ON } from '@/components/support';
 import { ToolShape } from '@/components/tool-grid';
 import { BEAT_BREATH, ToolTimer, type BeatOf } from '@/components/tools/timer';
 import { Icon, T } from '@/components/ui';
+import { Packed } from '@/components/packed';
 import { pickBackupText } from '@/lib/backup';
 import { BACKUP_FILES } from '@/lib/backup-files';
 import { buzz } from '@/lib/feel';
@@ -162,7 +163,7 @@ export default function Setup() {
   /* the north star's starting point (core north.ts): asked when there is no answer yet, never in the hours after a slip or an
      SOS. Decided once, so the page keeps its place in the list after it is answered. */
   const sosNow = useSos();
-  const [freeAsk] = useState(() => freeAtSetup(snap.days, st, tk, { now: Date.now(), sos: urLastAt(sosNow.mem) }));
+  const [freeAsk] = useState(() => freeAtSetup(snap.days, st, tk, { now: Date.now(), sos: careLastAt(sosNow.mem) }));
   /* the reminder page shows on a phone, and on a walk-through only while the check-in reminder is off */
   /* the account page shows to a new person while this build has accounts and they are not signed in; once they are, it
      drops out of the list and the setup moves on by itself */
@@ -770,7 +771,7 @@ export default function Setup() {
           <Head h="What do you want your life to look like instead?" />
           <Middle>{null}</Middle>
           <Say text={voice} />
-          <View style={s.pills}>
+          <Packed>
             {obReasonOpts(a, st, f.redo).map((x) => {
               const on = rs.indexOf(x) >= 0;
               return (
@@ -788,7 +789,7 @@ export default function Setup() {
                 </Answer>
               );
             })}
-          </View>
+          </Packed>
           <Field label="Write my own" maxLength={REASON_LEN} placeholder="I want to…" defaultValue={a.own || ''} onChangeText={(v) => setA({ own: v })} />
         </>
       );
@@ -1884,7 +1885,7 @@ function Cheer() {
   const [step, setStep] = useState<'ask' | 'no' | 'off' | null>(null);
   useEffect(() => {
     if (step || !st) return;
-    setStep(likeAskDue(snap.days, st, false, { now: Date.now(), sos: urLastAt(sos.mem) }) ? 'ask' : 'off');
+    setStep(likeAskDue(snap.days, st, false, { now: Date.now(), sos: careLastAt(sos.mem) }) ? 'ask' : 'off');
   }, [step, st, snap.days, sos.mem]);
   const [rain] = useState(() => Date.now());
   const answer = (a: LikeAnswer) => {
@@ -2045,7 +2046,6 @@ const s = StyleSheet.create({
     borderRadius: 20,
   },
   more: { gap: 8, padding: 16, borderRadius: 20 },
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',

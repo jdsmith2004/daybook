@@ -48,6 +48,16 @@ describe('the morning after a slip: what it gave, what it cost', () => {
     expect(core.lookBackDue(d, night, day(11), at(11, 20, 30))).toBeNull();
     expect(core.lookBackDue(d, night, day(11), at(11, 9))).not.toBeNull();
   });
+  it('not for a slip told the next morning ("It happened"), and not for someone who slips most days', () => {
+    const told = core.addEvent({}, day(10), 'slipped', null, { mn: true } as never, at(11, 7)).days;
+    expect(due(told, 11, 9)).toBeNull();
+    const stepper = core.normSettings({ ...st, cleanMode: 'step', stepAt: day(1) });
+    expect(core.lookBackDue(d, stepper, day(11), at(11, 9))).toBeNull();
+    /* slips on most days of the last week: the look waits for the Sunday review */
+    let most: Days = {};
+    for (const n of [5, 6, 7, 8, 10]) most = slip(most, n);
+    expect(due(most, 11, 9)).toBeNull();
+  });
   it('two taps, kept on the slip, and asked once answered no more', () => {
     const ev = due(d, 11, 9)!.ev;
     let x = core.lookBackSet(d, day(10), ev.id, { gv: 'relief' });
@@ -96,12 +106,6 @@ describe('the answers feed the pattern and the Sunday review', () => {
 });
 
 describe('Rekindle says what is kept as who the person is', () => {
-  it('the first words: one slip, and the person unchanged, from their own record', () => {
-    const d = slip(rode(rode(rode(rode({}, 2), 4), 6), 8), 10);
-    expect(core.rkFirstLine(d, st, {}, day(10))).toBe('One slip. You are still someone who rides out urges: 4 times.');
-    expect(core.rkFirstLine(slip({}, 10), st, {}, day(10))).toBe('One slip. You are still someone who has days free of it: 9 so far.');
-    expect(core.rkFirstLine(slip({}, 1), st, {}, day(1))).toBe('One slip. You are still someone who tells the truth, even about a slip.');
-  });
   it('after the hold, the urges ridden out and the days free of it, never a level or points', () => {
     const d = slip(rode(rode(rode(rode({}, 2), 4), 6), 8), 14);
     expect(core.rkLitLine(d, st, {}, day(14), day(14))).toBe('4 urges ridden out, 13 days free of it. All still yours.');
@@ -115,6 +119,18 @@ describe('no point number in the hours after a slip', () => {
     expect(core.ptsQuiet(d, st, at(11, 11, 0))).toBe(true);
     expect(core.ptsQuiet(d, st, at(11, 11, 15))).toBe(false);
     expect(core.ptsQuiet({}, st, at(11, 9))).toBe(false);
+  });
+  it('a slip told the next morning counts from when it was logged', () => {
+    const told = core.addEvent({}, day(10), 'slipped', null, {}, at(11, 7)).days;
+    expect(core.ptsQuiet(told, st, at(11, 7, 5))).toBe(true);
+    expect(core.ptsQuiet(told, st, at(11, 19, 30))).toBe(false);
+  });
+  it('the morning’s quiet link to Rekindle shows until Rekindle has asked about the slip', () => {
+    const told = core.addEvent({}, day(10), 'slipped', null, {}, at(11, 7)).days;
+    const id = told[day(10)].events[0].id;
+    expect(core.rkOpenFor(told, day(10), id)).toBe(true);
+    expect(core.rkOpenFor(core.patchEvent(told, day(10), id, { fa: 'okay' }), day(10), id)).toBe(false);
+    expect(core.rkOpenFor(told, day(10), 'nope')).toBe(false);
   });
   it('the slip day’s page shows no points, and they are still earned', () => {
     const x = core.daySummary(d, st, day(10), day(12));

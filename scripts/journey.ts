@@ -54,6 +54,7 @@ const SCENES: Scene[] = [
   /* the morning after the seeded slip (October 24): what it gave, what it cost, on Today (core look-back.ts) */
   { name: 'rekindle-morning', path: '/', day: '2026-10-25', at: '09:30' },
   { name: 'rekindle-morning-2', path: '/', day: '2026-10-25', at: '09:30', tap: [/^Relief$/] },
+  { name: 'rode-out', path: '/log', tap: [/^I rode it out/] },
   { name: 'pattern-days', path: '/pattern?pane=days' },
   { name: 'pattern', path: '/pattern?pane=patterns' },
   { name: 'pattern-weeks', path: '/pattern?pane=weeks' },

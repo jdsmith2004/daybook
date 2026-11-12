@@ -996,6 +996,18 @@ export function nudgeCounts(log: NudgeLog, days: Days, st: Settings | null, revi
     if (n.k !== 'back' && n.k !== 'plan' && !left.has(n.id + '@' + n.at) && didIt(days, st, reviews, n)) out.push('nt_' + n.k + '_did');
   return out;
 }
+/** the notes delivered since the last open (scheduled, and their time has come), with when each came: what nudgeCounts counts
+    as nt_<kind>, for What Daybook learns (the hour each came, and a slip in the hour after one). Nothing when the phone does
+    not let Daybook notify. */
+export function nudgeDue(log: NudgeLog, st: Settings | null, now: number, allowed: boolean): { id: string; k: NudgeKind; at: number }[] {
+  if (!allowed || !st) return [];
+  return log.plan.filter((n) => n.at <= now).map((n) => ({ id: n.id, k: n.k, at: n.at }));
+}
+/** when a note came, by its id, while the log still holds it (to give a tap the hour its note came); null once it is gone */
+export function nudgeAt(log: NudgeLog, id: string): number | null {
+  const n = log.plan.find((x) => x.id === id) || log.wait.find((x) => x.id === id) || log.ext.find((x) => x.id === id);
+  return n ? n.at : null;
+}
 /** the kind of a tapped notification, from its id ("lesson-2026-11-04", "back-7"); null for anything else */
 export function nudgeTapKind(id: string): NudgeKind | null {
   const k = id.split('-')[0] as NudgeKind;

@@ -1,6 +1,7 @@
 /* One urge ridden out, one ending (the UX audit of October 27, 2026). The ride's "It passed", the 10-minute pause's "It
    passed" and Already happened's "I rode it out" all end on this page, so riding out an urge feels the same wherever it
-   is logged. The flame pops in with its burst, confetti bursts out with a run of buzzes and then a shower falls; how long
+   is logged. Its headline names what this one proved, from the record (core rodeHeadline: "You rode it out. Now you know you
+   can." the first time). The flame pops in with its burst, confetti bursts out with a run of buzzes and then a shower falls; how long
    it took, how many you have ridden out and the points; what helped (the moves of an SOS, with one line on why that one
    works and its lesson for later, or what you did, for one logged afterwards); and what set it off. Each answer is one tap
    or none, and saved as it is tapped. Done is pinned at the bottom, in reach on every phone while the card scrolls, with
@@ -16,9 +17,11 @@ import {
   ridePracticeAsk,
   rideWeek,
   rideWhy,
+  rodeHeadline,
   urTool,
   type DayKey,
   lessonFor,
+  noneTail,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -28,6 +31,7 @@ import { Link } from '@/components/choices';
 import { Appear } from '@/components/appear';
 import { Confetti } from '@/components/celebrate';
 import { MOVE_ICON, MOVE_NAME } from '@/components/ride/moves';
+import { Packed } from '@/components/packed';
 import { Finish, SceneFrame } from '@/components/scene';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
@@ -61,6 +65,9 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
   /* the record as it was when it passed: this ride is already in it */
   const [rec] = useState(() => rideRecord(snap.days, won.mins ?? 0));
   const [week] = useState(() => rideWeek(snap.days, tk));
+  /* one headline that names what this one proved (core rodeHeadline): the first ever, a comeback in the days after a slip, the
+     fifth, or one inside the hardest hours */
+  const [head] = useState(() => rodeHeadline(snap.days, st, won.key, won.id));
   const [helped, setHelped] = useState<string | null>(null);
   const [trig, setTrig] = useState<string | null>(() => ev?.trigger || null);
   /* practice is offered once, after the first few rides in SOS */
@@ -116,7 +123,8 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
   };
 
   const mins = won.mins == null ? '' : won.mins < 1 ? 'under a minute' : won.mins === 1 ? '1 minute' : won.mins + ' minutes';
-  const chips: string[] = [rec.n === 1 ? 'Your first one' : rec.n + ' ridden out'];
+  /* the count, unless the headline already says it */
+  const chips: string[] = head.kind === 'first' || head.kind === 'mark' ? [] : [rec.n + ' ridden out'];
   if (won.mins != null && rec.faster && rec.med) chips.push('Faster than your usual ' + rec.med + ' min');
   if (week > 1) chips.push(week + ' this week');
   if (won.gain > 0) chips.push('+' + won.gain + ' points');
@@ -143,7 +151,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
           tone="mint"
           alive
           always
-          title="You rode it out."
+          title={head.h}
           text={(mins ? 'It passed in ' + mins + '. ' : 'The urge came, and you did not act on it. ') + 'Every one you ride out makes the next one easier.'}
         />
         <Appear delay={650} style={s.chips}>
@@ -157,7 +165,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
           {won.moves.length ? (
             <>
               <Text style={[s.q, { color: c.ink }]}>What helped most?</Text>
-              <View style={s.wrap} accessibilityRole="radiogroup">
+              <Packed accessibilityRole="radiogroup">
                 {won.moves.map((x) => {
                   const on = helped === x;
                   return (
@@ -172,14 +180,14 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
                     </Pressable>
                   );
                 })}
-              </View>
+              </Packed>
             </>
           ) : (
             <>
               <Text style={[s.q, { color: c.ink }]}>
                 What helped? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
               </Text>
-              <View style={s.wrap}>
+              <Packed last={noneTail(dids.map((d) => d[1]))}>
                 {dids.map(([v, label]) => {
                   const on = did.indexOf(v) >= 0;
                   return (
@@ -194,7 +202,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
                     </Pressable>
                   );
                 })}
-              </View>
+              </Packed>
             </>
           )}
           {why ? (
@@ -213,7 +221,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
           <Text style={[s.q, { color: c.ink }]}>
             What set it off? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
           </Text>
-          <View style={s.wrap}>
+          <Packed last={noneTail(trigs.map((t) => t[1]))}>
             {trigs.map(([v, label]) => {
               const on = trig === v;
               return (
@@ -227,7 +235,7 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
                 </Pressable>
               );
             })}
-          </View>
+          </Packed>
         </Appear>
         {askPrac ? (
           <T v="small" tone="muted" style={s.center}>
@@ -257,7 +265,6 @@ const s = StyleSheet.create({
   card: { alignSelf: 'stretch', gap: 12, padding: 16, borderRadius: 20 },
   q: { fontFamily: font.display, fontSize: 17, lineHeight: 22 },
   opt: { fontFamily: font.body, fontSize: 13 },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pick: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16, borderRadius: 22 },
   pickT: { fontFamily: font.bodySemi, fontSize: 15 },
   lesson: { fontFamily: font.bodySemi, fontSize: 13 },

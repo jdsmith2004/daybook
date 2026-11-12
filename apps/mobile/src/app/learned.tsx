@@ -1,6 +1,6 @@
 /* What I have learned: each finished lesson's takeaway with my notes and picks, what I wrote at the checkpoints, and "Copy it
    all as text". It lived in My plan as the Learned part until November 2026; it sits with Learn now, where it is made. */
-import { LCHECKS, lcheckNo, lessonCount, lessonNo, lessonWalk, LESSONS, lessonsDone, lwriteOf, playbookText } from '@daybook/core';
+import { LCHECKS, lcheckNo, lessonCount, lessonNo, lessonTo, lessonWalk, LESSONS, lessonsDone, lwriteOf, playbookText } from '@daybook/core';
 import { Redirect, router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -19,7 +19,7 @@ export default function Learned() {
   const done = lessonsDone(snap.days);
   const notes = (st.learn && st.learn.notes) || {};
   const picks = (st.learn && st.learn.picks) || {};
-  const mine = LESSONS.filter((L) => done.has(L.id));
+  const mine = LESSONS.filter((L) => done.has(L.id)).map((L) => lessonTo(L, st));
   /* each checkpoint's writing under its own record, shown in the path's order and with the number the path gives it */
   const wrote = LCHECKS.map((C, k) => ({ n: k + 1, C, a: lwriteOf(st, k + 1) }))
     .filter((x) => x.a.some((t) => t.trim()))

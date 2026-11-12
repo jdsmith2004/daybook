@@ -94,6 +94,7 @@ import { count } from '@/lib/pulse';
 import { track } from '@/lib/events';
 import { close, closeAll, openCare } from '@/lib/nav';
 import { remindersOffered, scheduleTalk } from '@/lib/reminders';
+import { useCareOpen } from '@/lib/quiet-asks';
 import { useSos } from '@/lib/sos';
 import { play } from '@/lib/sound';
 import { useCareSettings, useStore } from '@/lib/store';
@@ -151,6 +152,8 @@ const MOVE_IC: Record<TalkMove, string> = {
 
 export default function TalkIt() {
   const c = useTheme();
+  /* the asks wait after it, as after an SOS (lib/quiet-asks.ts) */
+  useCareOpen();
   const { snap, tk, update, say } = useStore();
   const sos = useSos();
   const st = useCareSettings();
@@ -545,7 +548,7 @@ export default function TalkIt() {
                 <T v="label" style={s.c}>
                   What is in that {n}?
                 </T>
-                <ChipWrap>
+                <ChipWrap last={1}>
                   {whys.map((r) => (
                     <AnswerChip key={r} label={r} tone="mint" on={talk.why.indexOf(r) >= 0} onPress={() => set({ why: toggle(talk.why, r) })} />
                   ))}

@@ -22,7 +22,7 @@ import {
   freeResult,
   OB_BPS,
   OB_BPS_C,
-  urLastAt,
+  careLastAt,
 } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -54,7 +54,7 @@ export default function Recheck() {
   /* what this visit asks, decided once: the five (unless the card was for the one question alone), and the north star when due */
   const [five] = useState(() => params.only !== 'free');
   const [askFree] = useState(
-    () => params.only === 'free' || (!!snap.settings && freeDue(snap.days, snap.settings, tk, { now: Date.now(), sos: urLastAt(sos.mem) })),
+    () => params.only === 'free' || (!!snap.settings && freeDue(snap.days, snap.settings, tk, { now: Date.now(), sos: careLastAt(sos.mem) })),
   );
   const [answers, setAnswers] = useState<number[]>([]);
   /* past the five's result, on to the one question */

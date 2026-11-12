@@ -5,7 +5,21 @@
    track('lesson_done', { lesson: 'l14', secs: 300 }) anywhere in the app adds an event; anything not on core's list is
    dropped. It does nothing while the person has turned it off in More (lib/pulse.ts tells this file, with setEventsOff),
    and nothing at all in a build with no EVENTS_URL. Turning it off, or Delete everything, drops what waits and the id. */
-import { EV_KEEP, EV_ROUTES, evAdd, evBatch, evNew, evNorm, evSent, logicalKey, type EvName, type EvState } from '@daybook/core';
+import {
+  abArm,
+  EV_KEEP,
+  EV_ROUTES,
+  evAdd,
+  evBatch,
+  evNew,
+  evNorm,
+  evSent,
+  logicalKey,
+  type AbArm,
+  type AbTest,
+  type EvName,
+  type EvState,
+} from '@daybook/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
@@ -106,6 +120,7 @@ export function forgetEvents() {
   gen++;
   state = null;
   pending = [];
+  notes = [];
   loading = null;
   AsyncStorage.removeItem(KEY).catch(() => undefined);
 }
@@ -185,16 +200,50 @@ export function useTrackScreens(path: string) {
   }, [path]);
 }
 
-/** a reminder count (core nudgeCounts: nt_lesson, nt_lesson_did) as its event */
-export function trackNudge(k: string) {
+/** a reminder count (core nudgeCounts: nt_lesson, nt_lesson_did) as its event. Deliveries go through notesCame instead, with
+    the hour each came; a tap gives the hour its note came when the log still knows it (at). */
+export function trackNudge(k: string, at?: number | null) {
   const m = /^nt_([a-z]+)(?:_(tap|did))?$/.exec(k);
-  if (m) track(m[2] === 'tap' ? 'nudge_tap' : m[2] === 'did' ? 'nudge_did' : 'nudge', { kind: m[1] });
+  if (!m || !m[2]) return;
+  track(m[2] === 'tap' ? 'nudge_tap' : 'nudge_did', { kind: m[1], nh: m[2] === 'tap' && at ? new Date(at).getHours() : undefined });
 }
+
+/* ---------- a slip in the hour after a reminder (#20: does a note at night come before a slip?) ----------
+   The notes delivered lately, kept in memory only (never saved, never sent as a list): when a slip is logged, the latest one
+   that came in the hour before it goes with the slip as its kind and the hour it came, never a time. */
+const NOTE_HOUR = 3600_000;
+let notes: { k: string; at: number }[] = [];
+/** the notes delivered since the last open (core nudgeDue): an event for each, with the hour it came */
+export function notesCame(list: { k: string; at: number }[]) {
+  for (const n of list) track('nudge', { kind: n.k, nh: new Date(n.at).getHours() });
+  const since = Date.now() - 24 * NOTE_HOUR;
+  notes = [...notes, ...list.map(({ k, at }) => ({ k, at }))].filter((n) => n.at > since).slice(-30);
+}
+/** the latest note that came in the hour before ms, as the slip's props */
+function noteBefore(ms: number): { after?: string; nh?: number } {
+  const n = notes.filter((x) => x.at <= ms && x.at > ms - NOTE_HOUR).sort((a, b) => b.at - a.at)[0];
+  return n ? { after: n.k, nh: new Date(n.at).getHours() } : {};
+}
+/** a slip logged: its props, and a note that came in the hour before it. at: when the slip happened (now by default) */
+export function trackSlip(p: Record<string, unknown> = {}, at = Date.now()) {
+  track('slip', { ...p, ...noteBefore(at) });
+}
+
+/* ---------- word tests (core ab.ts) ---------- */
+/** the arm this phone is in for a test, from its install id; null when What Daybook learns is off or not loaded yet (then
+    the app shows arm a and sends nothing) */
+export function armFor(test: AbTest): AbArm | null {
+  if (!eventsOffered || off !== false || !state) return null;
+  return abArm(state.id, test);
+}
+/** the line being tested was shown with this arm */
+export const trackAb = (test: AbTest, arm: AbArm) => track('ab', { test, arm });
 
 /** SOS ended: how, how long, how strong it was, the trigger picked, and each tool tried with what came after it (core urEntry) */
 export function trackSos(v: 'rode' | 'slipped', f: { trigger?: string | null; st?: 'low' | 'mid' | 'high'; m?: number; tr?: [string, 'p' | 's' | 'x'][] }) {
   const str = f.st === 'low' ? 3 : f.st === 'mid' ? 6 : f.st === 'high' ? 9 : undefined;
   for (const [tool, r] of f.tr || []) track('sos_tool', { tool, outcome: r === 'p' ? 'rode' : r === 'x' ? 'slipped' : 'strong' });
   track('sos_end', { outcome: v, secs: (f.m || 0) * 60, str });
-  track(v === 'rode' ? 'urge' : 'slip', { str, trigger: f.trigger || undefined, outcome: v === 'rode' ? 'rode' : undefined });
+  if (v === 'rode') track('urge', { str, trigger: f.trigger || undefined, outcome: 'rode' });
+  else trackSlip({ str, trigger: f.trigger || undefined });
 }

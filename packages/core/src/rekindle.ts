@@ -4,6 +4,7 @@
 import {
   addDays,
   BACK_DAYS,
+  evMs,
   fmtClock,
   fmtDate,
   gameCompute,
@@ -12,7 +13,6 @@ import {
   rkOf,
   rkThirdOf,
   runLedger,
-  slipMoments,
   sumDay,
   type RekindleState,
 } from './legacy/core.js';
@@ -103,20 +103,6 @@ function rkKept(days: Days, st: Settings, reviews: Reviews, tk: DayKey): { rode:
     back: rkComebackCount(days, st, tk),
   };
 }
-/** the first words of Rekindle, over the hold: one slip, one event, and the person unchanged, from their own record ("One slip.
-    You are still someone who rides out urges: 4 times."). Logging it honestly is proof too, so there is always a line. */
-export function rkFirstLine(days: Days, st: Settings, reviews: Reviews, tk: DayKey): string {
-  const k = rkKept(days, st, reviews, tk);
-  const who = k.rode
-    ? 'rides out urges: ' + plural(k.rode, 'time')
-    : k.back
-      ? 'comes back after a hard night: ' + plural(k.back, 'time')
-      : k.free >= 2
-        ? 'has days free of it: ' + k.free + ' so far'
-        : 'tells the truth, even about a slip';
-  return 'One slip. You are still someone who ' + who + '.';
-}
-
 /** once the hold is done, the one line under the heading: what is kept, as who the person is ("4 urges ridden out, 13 days free
     of it. All still yours."). One line, because right after a slip a full page is too much to read (the owner, October 25, 2026). */
 export function rkLitLine(days: Days, st: Settings, reviews: Reviews, tk: DayKey, _date: DayKey): string {
@@ -136,8 +122,23 @@ export const PTS_QUIET_HOURS = 12;
     the level page and the Sunday review show them (Becoming free, step 2). */
 export function ptsQuiet(days: Days, st: Settings | null, now: number): boolean {
   if (!st) return false;
-  const last = slipMoments(days, st, now).pop();
-  return last != null && now - last < PTS_QUIET_HOURS * 3600_000;
+  let last = -Infinity;
+  for (const k of Object.keys(days))
+    for (const e of days[k]?.events || [])
+      if (e.outcome === 'slipped') {
+        /* a slip with no time (told the next morning, "It happened") counts from when it was logged: its day's last change */
+        const t = e.time ? evMs(k, e.time, st.rollover) : Math.max(evMs(k, null, st.rollover), days[k].u || 0);
+        last = Math.max(last, Math.min(t, now));
+      }
+  return now - last < PTS_QUIET_HOURS * 3600_000;
+}
+
+/** the slip on day k (id) can still be opened in Rekindle: it is there, and Rekindle has not asked about it yet (no "How do you
+    feel now?" answer). The morning's "It happened" shows one quiet link to it while this is true (the morning set, route
+    /log?date=k&evId=id&outcome=slipped&from=entry); it is never pushed. */
+export function rkOpenFor(days: Days, k: DayKey, id: string): boolean {
+  const e = (days[k]?.events || []).find((x) => x.id === id);
+  return !!e && e.outcome === 'slipped' && !e.fa;
 }
 
 /* ---------- the comeback, noticed (roadmap move 3, docs/plan.md) ----------

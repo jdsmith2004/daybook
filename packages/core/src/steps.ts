@@ -20,6 +20,8 @@ export interface PathStep {
   art: string;
   /** the lessons of the step, in order. A faith lesson leaves the path of someone who said No to faith. */
   ids: string[];
+  /** the step's lessons of one habit only (lesson-habit.ts HABIT_ONLY), after the rest of the step, on that habit's path only */
+  habit?: Partial<Record<string, string[]>>;
   /** the step's God lesson (lesson-turns.ts GOD), last in the step, on the path only for someone who said faith plays a part
       (lessons.ts godOn) */
   god: string;
@@ -61,6 +63,7 @@ export const PATH_STEPS: PathStep[] = [
     tone: 'coral',
     art: 'door',
     ids: ['l10', 'l9', 'l29', 'l4'],
+    habit: { alcohol: ['l50'] },
     god: 'g3',
     deed: 'Tonight, your phone sleeps outside your bedroom. Then turn on a filter, and let someone else keep the code.',
     back: 'put your phone outside your bedroom',
@@ -83,6 +86,7 @@ export const PATH_STEPS: PathStep[] = [
     tone: 'sky',
     art: 'chain',
     ids: ['l17', 'l18', 'l19', 'l35', 'l41'],
+    habit: { gambling: ['l52'] },
     god: 'g5',
     deed: 'Walk one slip back, link by link. Write the chain, and one thing you did right.',
     back: 'walk one slip back',
@@ -138,6 +142,7 @@ export const PATH_STEPS: PathStep[] = [
     tone: 'mint',
     art: 'map',
     ids: ['l47', 'l48'],
+    habit: { alcohol: ['l51'], gambling: ['l53'] },
     god: 'g10',
     deed: 'Make one repair. Small is fine. Leave out any that would hurt someone.',
     back: 'make one repair',
@@ -173,7 +178,7 @@ export const OFF_PATH = ['l26', 'l27'];
 export const DEED_PTS = 30;
 
 const STEP_AT: Record<string, number> = {};
-PATH_STEPS.forEach((s, i) => [...s.ids, s.god].forEach((id) => (STEP_AT[id] = i)));
+PATH_STEPS.forEach((s, i) => [...s.ids, ...Object.values(s.habit || {}).flatMap((x) => x || []), s.god].forEach((id) => (STEP_AT[id] = i)));
 /** the step a lesson is on (its index in PATH_STEPS), or -1 when it is off the path */
 export const stepAt = (id: string): number => (id in STEP_AT ? STEP_AT[id] : -1);
 

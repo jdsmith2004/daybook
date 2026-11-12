@@ -4,11 +4,14 @@
    last night"), when it can teach: what the slip gave, one tap, and what it cost, one tap. It is about the slip, never the person.
 
    When: the log day after the slip, at least an hour after it, from 5 AM until 10 PM, never in the hard hours or the
-   wind-down (dayFeelQuiet), and not on a day with a slip of its own (that one has its own Rekindle). Only the latest slip of
+   wind-down (dayFeelQuiet), and not on a day with a slip of its own (that one has its own Rekindle). Not for a slip told the next
+   morning ("It happened", the morning set: no time, mn), which gets no ceremony, and not for someone who slips most days (step
+   down, or slips on most days of the last week, roughPatch): for them the look comes once a week, in the Sunday review ("The
+   morning, not the moment", docs/plan.md, the owner, November 11, 2026). Only the latest slip of
    the day before is asked about, and the app shows the card once (it keeps which slip it showed, on the device). The answers
    live on the slip itself (gv, cs; core.js normEvent), go with the day through sync, earn nothing, and feed the pattern
    (patLookBack) and the Sunday review (storyLookBack). Checked by test/look-back.test.ts. */
-import { addDays, evMs, eventsOf, sortedEvents } from './legacy/core.js';
+import { addDays, evMs, eventsOf, roughPatch, sortedEvents } from './legacy/core.js';
 import { dayFeelQuiet } from './day-feel';
 import { patchEvent } from './mutate';
 import { plural } from './view';
@@ -78,6 +81,8 @@ export function lookBackDue(days: Days, st: Settings | null, tk: DayKey, now: nu
   const slips = sortedEvents(days[k], st.rollover).filter((e) => e.outcome === 'slipped');
   const ev = slips[slips.length - 1];
   if (!ev || ev.gv || ev.cs) return null;
+  if (!ev.time || (ev as DayEvent & { mn?: true }).mn) return null;
+  if (st.cleanMode === 'step' || roughPatch(days, st, tk)) return null;
   if (now - evMs(k, ev.time, st.rollover) < LOOK_MIN_HOURS * 3600_000) return null;
   if (dayFeelQuiet(days, st, tk, now)) return null;
   return { k, ev, q: lookBackQ(ev, st.rollover), costs: lookBackCosts(ev, st.rollover) };

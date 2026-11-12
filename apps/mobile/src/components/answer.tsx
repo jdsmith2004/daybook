@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { AnimatedText, Text } from '@/components/text';
 
+import { Packed } from '@/components/packed';
 import { Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
@@ -125,9 +126,13 @@ export function AnswerChip({ label, on, tone = 'accent', onPress }: { label: str
   );
 }
 
-/** a wrapping row of AnswerChips */
-export function ChipWrap({ children }: { children: React.ReactNode }) {
-  return <View style={s.wrap}>{children}</View>;
+/** a centered group of AnswerChips, packed so no row is wasted. last: how many at the end stay in the last row ("Your own") */
+export function ChipWrap({ children, last }: { children: React.ReactNode; last?: number }) {
+  return (
+    <Packed center last={last}>
+      {children}
+    </Packed>
+  );
 }
 
 const s = StyleSheet.create({
@@ -152,5 +157,4 @@ const s = StyleSheet.create({
   squareDot: { borderRadius: 8 },
   chip: { minHeight: 44, paddingHorizontal: 16, borderRadius: 999, justifyContent: 'center' },
   chipT: { fontFamily: font.bodySemi, fontSize: 15 },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
 });

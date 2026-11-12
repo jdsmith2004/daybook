@@ -1107,7 +1107,7 @@ export default function Setup() {
       /* Screen Time's waits, for people who said most days: the question at the top, what the wait looks like in the middle (the
          shield as Apple shows it, in the flame's colors), Choose the apps at the bottom, Skip under it (it records the choice;
          More has it any time). The night starts at the screens-off time just chosen. */
-      const at = isTime(a.so) ? (a.so as string) : st ? st.screensOff : '22:30';
+      const at = st && isTime(st.nightAt) ? (st.nightAt as string) : isTime(a.so) ? (a.so as string) : st ? st.screensOff : '22:30';
       const pick = async () => {
         if (busy() || asking.current) return;
         asking.current = true;
@@ -1138,7 +1138,7 @@ export default function Setup() {
               <Text style={[s.lockT, { color: nightInk.ink }]}>Close</Text>
             </View>
           </Middle>
-          <Say text={pullSetupSay({ porn: habit === 'porn', at: at as Clock })} />
+          <Say text={pullSetupSay({ porn: habit === 'porn', at: at as Clock, lift: getPullPrefs().lift })} />
         </>
       );
       foot = (

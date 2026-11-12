@@ -32,6 +32,7 @@ import {
   pullShown,
   PULL_NIGHT_END,
   PULL_WEB_OPEN,
+  pullSetupSay,
 } from '../src/pull';
 import { lowWords, partDone } from '../src/flame-low';
 import { nightAtStart } from '../src/morning-set';
@@ -284,6 +285,12 @@ describe('the words', () => {
     expect(pullCounts(0, t0)).toBe(true);
     expect(pullCounts(t0, t0 + 9 * 60000)).toBe(false);
     expect(pullCounts(t0, t0 + PULL_COUNT_GAP * 60000)).toBe(true);
+  });
+  it('setup says what waits, and when', () => {
+    expect(pullSetupSay({ porn: true, at: '22:30' })).toBe(
+      'It usually starts with scrolling. Each feed will wait ten seconds before it opens, and from 10:30 PM adult sites wait 15 minutes. You can lift it whenever you want.',
+    );
+    expect(pullSetupSay({ porn: false, at: '22:30' })).not.toMatch(/adult/);
   });
   it('counts the hours it says', () => {
     expect(pullNudges({ lessonUrl: '/', long: 1 }).long.t).toBe('🔥 An hour in');

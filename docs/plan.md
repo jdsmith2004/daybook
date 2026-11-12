@@ -56,6 +56,11 @@ The research agrees on the main points, though nobody has tested this exact pers
   cut porn use.
 - The biggest danger is leaving: a porn web program lost 89% of its people in six weeks. The daily ask must be tiny and skipping must cost
   nothing.
+- What people who stayed free say most (`help-research-quitters.md`; stories and small studies, nothing on people free for years): it was
+  doing a job (boredom, loneliness, stress, escape), and they got free when that need was met another way, not by attacking the habit.
+  Friction on the on-ramps helped, "useful but not sufficient". One or a few people who knew, never a scoreboard. A whole-life routine:
+  exercise, sleep, people, purpose, faith. The costs that felt real were next-day ones from their own life (lost sleep, fog, lost hours),
+  not shame. And the danger is the second slip and the run of them, more than the first.
 
 ### The walk: Daybook at 11 PM, for this person
 
@@ -80,6 +85,9 @@ The first time Daybook opens in the morning (from the morning note, 4 AM to 2 PM
 - **"How was last night?"** Two choices: **Free of it** and **It happened**. This is the honest log, moved to the one time of day it is
   easy to give. "It happened" is saved as a slip on the night before (time unknown), counts as honesty, and gets no ceremony: "Logged. Today
   is open." Rekindle is one quiet tap away, never pushed. No stakes and no points shown, as CLAUDE.md asks after a slip.
+- **"And this morning?"** One optional tap under it: Low, Okay, Good. Nothing is said about it then. After four weeks, the Sunday review
+  shows the person their own mornings: "After free nights, you woke up good 5 times out of 6. After the others, once out of 4." This is
+  the cost the owner says they never feel, shown from their own life, not from a lecture, and never in the hours after a slip.
 - **"Who are you doing tonight for?"** The person's own reasons from setup (the "what has it cost you" and "who are you becoming" answers,
   and a short list of their own), one tap. Under it, one line: "Feeds and adult sites wait from 10:30 PM ›", yesterday's time unless they
   change it. **Set tonight.**
@@ -124,7 +132,10 @@ The morning self's choices become the night's defenses. Built on the Screen Time
   tap). "Free 3 of the last 7 nights", "You set up 12 mornings in a row", "Your lock held 9 nights this month".
 - **Fewer, not never, as the weekly goal** for people who slip most days (step-down mode): this week's free nights against last week's,
   aiming for one more. The Sunday review shows it. Once a week passes with no slip, the usual goals return (CLAUDE.md: no big goals before
-  that).
+  that). The one goal Today names after "It happened" is the next free night, since the run of slips is the danger, not the first.
+- **What it was doing for you.** Once a week, not each morning, the Sunday review asks it of the nights it happened: bored, lonely,
+  stressed, tired, wanted it. The answers pick the week's good-week things (5, below): bored nights get a plan for the evening, lonely ones
+  a person.
 - **The fire's "part done" counts the morning set**, so a person who sets up the morning keeps their fire; a person who stops setting it
   up sees it burn lower, as built. Nothing is ever taken away from what was earned.
 - For the person: proof that grows on the days they try, even before the slips stop. For Daybook: a record that fills for everyone, not
@@ -192,7 +203,7 @@ The morning self's choices become the night's defenses. Built on the Screen Time
 ### Steps, with the effort each needs
 
 1. **High.** Core `morning-set.ts`: when it shows, the last-night answer saved as a slip on the night before with no time (it feeds the
-   count, points, `runLedger` and the hero: golden fixtures checked), the reason and the night time saved to the day; `partDone` counts it.
+   count, points, `runLedger` and the hero: golden fixtures checked), the reason, the night time and the optional morning feel saved to the day; `partDone` counts it.
 2. **Medium.** The two morning pages (`SceneFrame`, `Dock`, the dawn sky, the flame big) and the morning note pointing to them.
 3. **High.** Screen Time: hours from the morning, the two waits, the adult web filter, the long wait's timer on `/pause`, the morning
    reason, setup's offer; on the owner's iPhone (the simulator cannot run it).

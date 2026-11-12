@@ -383,8 +383,8 @@ four beats and the Sunday review's first card. It waits until the numbers say wh
   private app is built from the record.
 - **A dimming home-screen icon.** It would put the person's struggle on the home screen for anyone to see, and iOS asks the person to
   confirm every icon change with a system alert. The flame widget already dims, where the person chose to put it.
-- **The accountability partner,** for now. Kept as an idea, only as wins the person chooses to send (never the log, never a slip). With 8
-  people, nobody has asked; it waits until about 50 people use Daybook every week or someone asks for it.
+- ~~The accountability partner, for now.~~ Reversed by "The morning, not the moment" (approved November 11, 2026): one person gets an
+  effort-only weekly note, one tap in Messages. That plan owns it.
 
 ### Questions for the owner (each with a recommendation; the owner, November 11, 2026: "Yes, all four", each the recommended option)
 
@@ -467,6 +467,12 @@ beside it.
 **Already in this plan:** #28 (waits), #34 (step 6), #40 and #41 (step 3), #43 (built: the flame widget dims), #46 (kept as built).
 
 ### Building chats
+
+**The order things merge (November 11, 2026, after "The morning, not the moment").** "Daybook: The morning set" builds first. Proof
+where it counts, Rekindle and the morning after, and Screen Time shield shows proof merge only after the morning set's data shape is on
+main, so nobody builds on a guess. Future you notes and Graduation merge after Proof (both touch SOS or the record). The urge Live Activity
+(#42) is on hold. This chat (the planning chat for "Becoming free") reads each diff and merges it; the ownership note is
+`becoming-free-ownership.md` in the side-session notes folder.
 
 Each is its own session on its own branch, on Opus unless said, at the effort marked. 1, 3 and 5 touch different files and can run at
 the same time; 2 waits for 1 (both touch `RodeOut` and Today's proof); 4 needs the owner's answer on the question.

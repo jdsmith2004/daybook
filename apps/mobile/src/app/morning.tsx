@@ -16,6 +16,7 @@ import {
   habitOf,
   futureAsk,
   lastNightSlip,
+  rkOpenFor,
   lastNightStart,
   lessonDue,
   MORNING_FEEL,
@@ -147,7 +148,8 @@ export default function Morning() {
     }
   };
   /* after It happened: Rekindle, one quiet tap away and never pushed (the log page of last night's slip) */
-  const rk = said === 'slip' ? lastNightSlip(snap.days, tk) : null;
+  const last = said === 'slip' ? lastNightSlip(snap.days, tk) : null;
+  const rk = last && rkOpenFor(snap.days, last.k, last.id) ? last : null;
 
   if (!st) return null;
 

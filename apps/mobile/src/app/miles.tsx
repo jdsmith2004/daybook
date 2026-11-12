@@ -192,9 +192,9 @@ export default function Miles() {
           <View style={s.who}>
             <GradCap size={52} />
             <View style={{ flex: 1, gap: 2 }}>
-              <T v="h2">Graduated</T>
+              <T v="h2">Free of it, for good</T>
               <T v="small" tone="muted">
-                {fmtDate(gi.at, { month: 'long', day: 'numeric', year: 'numeric' })} · yours for good
+                Graduated {fmtDate(gi.at, { month: 'long', day: 'numeric', year: 'numeric' })}
               </T>
             </View>
           </View>

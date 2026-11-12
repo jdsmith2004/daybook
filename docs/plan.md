@@ -198,7 +198,9 @@ beside it.
 - **#30 "Future you" notes.** The person's own voice, recorded on a good day, saying who they are, played during an urge. It is the
   strongest identity tool on the list, stronger than anything Daybook can say for them. Voice notes already exist and stay on the phone.
 - **#35 Graduation.** The moment the app says "you are someone who is free of this", for good. Its words say who they have become, not
-  "90 days complete".
+  "90 days complete". Built (November 11, 2026, the owner's choices): the page leads with "You are free of it. For good." over the person's
+  own flame as big as the phone allows, then three lines from their record (core `gradRecord`: urges ridden out, comebacks after a
+  hard night, days free of it in all, every count only going up), and Milestones' card says "Free of it, for good".
 - **#33 Lessons for alcohol and gambling.** Those people get fewer lessons, so they get less of the change in thinking.
 
 **Changed:**

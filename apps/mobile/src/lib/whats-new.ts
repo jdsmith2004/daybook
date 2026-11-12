@@ -4,7 +4,7 @@
    rules say wait (a hard hour, the day of a slip, the day the person came back), a later open shows it. It is kept as seen
    as soon as it opens, so it opens once, even if the app is closed on it. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { gradInfo, urLastAt, whatsNew, type NewItem } from '@daybook/core';
+import { careLastAt, gradInfo, whatsNew, type NewItem } from '@daybook/core';
 import Constants from 'expo-constants';
 import { router, usePathname } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -62,7 +62,7 @@ export function useWhatsNew() {
   const step =
     !ready || seen === undefined
       ? null
-      : whatsNew(seen, ver, { st, days: snap.days, now, sos: urLastAt(sos.mem) ?? null, back, busy, ios: Platform.OS === 'ios' });
+      : whatsNew(seen, ver, { st, days: snap.days, now, sos: careLastAt(sos.mem) ?? null, back, busy, ios: Platform.OS === 'ios' });
   const late = useRef<() => boolean>(() => false);
   late.current = () => Date.now() - openAt > WINDOW || celebrating || sheetOnTop();
 

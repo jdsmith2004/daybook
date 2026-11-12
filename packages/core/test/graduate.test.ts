@@ -126,3 +126,34 @@ describe('the one day number on Today', () => {
     expect(m.of).toBe('of the last 100 days with no slip');
   });
 });
+
+describe('graduation says who the person became', () => {
+  const ride = (days: Days, key: string) => core.addEvent(days, key, 'rode', '21:00').days;
+  it('names the urges ridden out and the days free of it, from the record, never "90 days complete"', () => {
+    let days: Days = {};
+    for (let i = 2; i <= 40; i += 2) days = ride(days, core.addDays(tk, -i));
+    const st = core.graduate(st0(core.addDays(tk, -95)), tk).st;
+    const lines = core.gradRecord(days, st, {}, tk);
+    expect(lines[0]).toBe('You rode out 20 urges.');
+    expect(lines[lines.length - 1]).toMatch(/^9\d days free of it, all on your record\.$/);
+    expect(lines.join(' ')).not.toMatch(/complete|lost|lose|fail|reset|streak|clean|addict|relapse/i);
+    expect(lines.join(' ')).not.toMatch(/\b\w+n[’']t\b/);
+  });
+  it('leaves out a line with nothing behind it, and one urge reads as a moment', () => {
+    const st = st0(core.addDays(tk, -95));
+    expect(core.gradRecord({}, st, {}, tk)).toHaveLength(1);
+    expect(core.gradRecord(ride({}, core.addDays(tk, -3)), st, {}, tk)[0]).toBe('You rode out an urge, and it passed.');
+  });
+  it('only says more as time goes on: a slip after graduating takes no line away', () => {
+    let days: Days = {};
+    for (let i = 2; i <= 20; i += 2) days = ride(days, core.addDays(tk, -i));
+    const st = core.graduate(st0(core.addDays(tk, -95)), tk).st;
+    const before = core.gradRecord(days, st, {}, tk);
+    const later = core.addDays(tk, 10);
+    const after = core.gradRecord(slip(days, core.addDays(later, -2)), st, {}, later);
+    expect(after.length).toBeGreaterThanOrEqual(before.length);
+    expect(after[0]).toBe(before[0]);
+    const n = (l: string) => parseInt(l.replace(/,/g, ''), 10);
+    expect(n(after[after.length - 1])).toBeGreaterThan(n(before[before.length - 1]));
+  });
+});

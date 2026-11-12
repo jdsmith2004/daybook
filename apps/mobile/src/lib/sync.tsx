@@ -15,10 +15,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   accountHasLog,
   hasLog,
+  isPullPage,
+  isPushAnswer,
   joinRecords,
   pendingRecords,
   pullAll,
   pushAll,
+  requestTimeout,
   snapshotOf,
   syncFailure,
   CLOCK_OK,
@@ -119,23 +122,40 @@ async function liveSession(): Promise<Session | null> {
 /** "One change was", "3 changes were" */
 const changes = (n: number) => (n === 1 ? 'One change was' : n + ' changes were');
 
-/** how long a call to the sync API may take before it counts as no connection */
+/** how long a call to the sync API may take before it counts as no connection, when nothing says otherwise */
 const TIMEOUT = 20_000;
-/** a call to the sync API and its answer, given up after TIMEOUT (a stalled connection must not hold a round, or the
-    "Syncing…" line, for good). Throws a plain Error when it runs out, which reads as "could not reach your account". */
-async function callWithin(url: string, init: RequestInit): Promise<{ status: number; ok: boolean; body: Record<string, unknown> }> {
+/** a pull's answer can be a page of 500 records, so a pull gets longer on a slow signal before it counts as no connection */
+const PULL_TIMEOUT = 45_000;
+
+/** the account could not be reached: no connection, or the connection stalled until the app gave up on it */
+class NoLink extends Error {}
+/** an answer came, but not the sync API's own (another page in its place, or an answer cut off on the way) */
+class OddAnswer extends Error {}
+
+/** a call to the sync API and its answer, given up after `ms` (a stalled connection must not hold a round, or the
+    "Syncing…" line, for good). Throws NoLink when the connection fails or runs out. `json` says whether the answer was JSON. */
+async function callWithin(
+  url: string,
+  init: RequestInit,
+  ms = TIMEOUT,
+): Promise<{ status: number; ok: boolean; json: boolean; body: Record<string, unknown> }> {
   const ctl = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   const late = new Promise<never>((_, no) => {
     timer = setTimeout(() => {
       ctl.abort();
-      no(new Error('timeout'));
-    }, TIMEOUT);
+      no(new NoLink('timeout'));
+    }, ms);
   });
   try {
-    const r = await Promise.race([fetch(url, { ...init, signal: ctl.signal }), late]);
-    const body = (await Promise.race([r.json().catch(() => ({})), late])) as Record<string, unknown>;
-    return { status: r.status, ok: r.ok, body: body && typeof body === 'object' ? body : {} };
+    const r = await Promise.race([
+      fetch(url, { ...init, signal: ctl.signal }).catch((e) => Promise.reject(e instanceof NoLink ? e : new NoLink(String(e)))),
+      late,
+    ]);
+    const NOT = Symbol('not json');
+    const body = (await Promise.race([r.json().catch(() => NOT), late])) as Record<string, unknown> | typeof NOT;
+    const json = body !== NOT && !!body && typeof body === 'object';
+    return { status: r.status, ok: r.ok, json, body: json ? (body as Record<string, unknown>) : {} };
   } finally {
     clearTimeout(timer);
   }
@@ -171,6 +191,8 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
   const store = useStore();
   const { ready, dirty, current, replace, mergeFromAccount, ackPushed, markAllDirty, restamp, replaceFromAccount, erase, apply, say, snap } = store;
   const [status, setStatus] = useState<SyncStatus>(syncOffered ? { k: 'out' } : { k: 'off' });
+  const statusRef = useRef(status);
+  statusRef.current = status;
   const [session, setSession] = useState<Session | null>(null);
   const [kept, setKept] = useState<Kept | null>(null);
   const sessionRef = useRef(session);
@@ -196,25 +218,48 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
 
   /* the transport: the sync API, with the access token, renewed once if the API turns it down */
   const transport = useCallback((s: Session): SyncTransport => {
-    const call = async (method: string, query: string, body?: unknown) => {
+    const call = async (method: string, query: string, body?: unknown): Promise<unknown> => {
+      const text = body ? JSON.stringify(body) : undefined;
+      /* a slow cellular signal is given time for the bytes it carries (core requestTimeout), so it is never taken for no
+         connection and the same request is not given up on at the same point every round */
+      const ms = method === 'GET' ? PULL_TIMEOUT : requestTimeout(text ? text.length : 0, TIMEOUT);
       for (let tries = 0; ; tries++) {
-        const token = await accessToken(s, tries > 0);
-        const r = await callWithin(SYNC_URL + query, {
-          method,
-          headers: { authorization: 'Bearer ' + token, ...(body ? { 'content-type': 'application/json' } : {}) },
-          body: body ? JSON.stringify(body) : undefined,
-        });
+        let token: string;
+        try {
+          token = await accessToken(s, tries > 0);
+        } catch (e) {
+          /* renewing the sign-in needs the connection too: no connection there is no connection, not a broken sign-in */
+          if (e instanceof CognitoError && e.code === 'Network') throw new NoLink(e.message);
+          throw e;
+        }
+        const r = await callWithin(
+          SYNC_URL + query,
+          {
+            method,
+            headers: { authorization: 'Bearer ' + token, ...(text ? { 'content-type': 'application/json' } : {}) },
+            body: text,
+          },
+          ms,
+        );
         if (r.status === 401 && tries === 0) continue;
         if (r.status === 401) throw new SignInExpired('Sign in again to keep syncing.');
         if (!r.ok)
           throw new HttpError(r.status, typeof r.body.error === 'string' ? r.body.error : 'Sync did not work this time.', typeof r.body.error === 'string');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return r.body as any;
+        if (!r.json) throw new OddAnswer('not json');
+        return r.body;
       }
     };
     return {
-      pull: (since, cursor) => call('GET', `?since=${since}` + (cursor ? `&cursor=${encodeURIComponent(cursor)}` : '')),
-      push: (records) => call('POST', '', { records }),
+      pull: async (since, cursor) => {
+        const p = await call('GET', `?since=${since}` + (cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''));
+        if (!isPullPage(p)) throw new OddAnswer('not a page');
+        return p;
+      },
+      push: async (records) => {
+        const a = await call('POST', '', { records });
+        if (!isPushAnswer(a)) throw new OddAnswer('not a push answer');
+        return a;
+      },
     };
   }, []);
 
@@ -251,14 +296,28 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       if (what === 'pause') paused.current = true;
       setStatus({ k: 'error', msg: syncWords(e) });
       track('error', { err: 'sync' });
-    } else setStatus({ k: 'error', msg: here('Could not reach your account. Check the connection. Your changes are kept on this phone and will sync later.') });
+    } else if (e instanceof NoLink) {
+      setStatus({ k: 'error', msg: here('Could not reach your account. Check the connection. Your changes are kept on this phone and will sync later.') });
+      track('error', { err: 'net' });
+    } else if (e instanceof OddAnswer) {
+      setStatus({ k: 'error', msg: here('The answer from your account did not come through whole. Your changes are kept on this phone and will sync later.') });
+      track('error', { err: 'sync' });
+    } else {
+      /* something in Daybook itself stopped the round: said as that, never blamed on the connection */
+      setStatus({
+        k: 'error',
+        msg: here(
+          'Sync stopped on a problem inside Daybook, not your connection. Your changes are kept on this phone, and Daybook tries again in a few minutes.',
+        ),
+      });
+      track('error', { err: 'other' });
+    }
   }, []);
 
   /** one round: pull, merge, push */
   const round = useCallback(async () => {
     const s = sessionRef.current;
-    const k = keptRef.current;
-    if (!s || !k || paused.current || need.current) return;
+    if (!s || !keptRef.current || paused.current || need.current) return;
     if (running.current) {
       again.current = true;
       return;
@@ -270,19 +329,23 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         again.current = false;
         setStatus({ k: 'busy', what: 'Syncing…' });
         const t = transport(s);
-        const p = await pullAll(t, k.since);
+        const p = await pullAll(t, keptRef.current!.since);
         const had = Object.keys(current().snap.days).length;
         await mergeFromAccount(p.records);
+        /* what was pulled is merged and saved here, so the next round need not pull it again even if this push does not
+           get through (anything the merge joined is still marked to send) */
+        await saveKept({ ...keptRef.current!, since: p.now });
         /* another device deleted everything: this phone's log just went with it, so the person is told once, and where to
            bring it back while the account keeps its copy */
         if (had > 0 && Object.keys(current().snap.days).length === 0) {
           say('Your log was deleted from another device. Your account keeps a copy for 7 days: Settings, Sync, Bring my log back.');
           checkErasedRef.current();
         }
-        const pend = pendingRecords(current().snap, current().dirty);
+        const pend = pendingRecords(current().snap, current().dirty, current().base);
         let note = '';
         if (pend.length) {
-          const r = await pushAll(t, pend);
+          /* each batch is marked as sent the moment the account has it, so a push cut off halfway keeps what got through */
+          const r = await pushAll(t, pend, ackPushed);
           await ackPushed(r.acked);
           /* changes stamped while this phone's clock was ahead: once the clock is right, they take the account's time and
              go again; while it is still ahead, they wait, and the person is told why */
@@ -375,22 +438,6 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     return () => sub.remove();
   }, [status.k]);
 
-  /* when the app comes back, and every few minutes while it is open */
-  useEffect(() => {
-    if (!kept) return;
-    const sub = AppState.addEventListener('change', (st) => {
-      if (st === 'active') {
-        paused.current = false;
-        round();
-      }
-    });
-    const id = setInterval(() => AppState.currentState === 'active' && round(), EVERY);
-    return () => {
-      sub.remove();
-      clearInterval(id);
-    };
-  }, [kept, round]);
-
   /* a few seconds after a change */
   const waiting = Object.keys(dirty).length;
   useEffect(() => {
@@ -411,28 +458,66 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     [current, replace, markAllDirty, mergeFromAccount],
   );
 
+  /* a join is running (one at a time: a second would pull the whole account again and could ask the question twice) */
+  const joining = useRef(false);
+
   /** joins this device to the account, the first time */
   const join = useCallback(
     async (s: Session) => {
-      setStatus({ k: 'busy', what: 'Looking at your account…' });
-      const t = transport(s);
-      const p = await pullAll(t, 0);
-      const here = current().snap;
-      const there = p.records.some((r) => r.data != null);
-      if (there && hasLog(here) && accountHasLog(p.records)) {
-        setStatus({ k: 'ask', recs: p.records, now: p.now });
-        return;
+      if (joining.current) return;
+      joining.current = true;
+      try {
+        setStatus({ k: 'busy', what: 'Looking at your account…' });
+        const t = transport(s);
+        const p = await pullAll(t, 0);
+        const here = current().snap;
+        const there = p.records.some((r) => r.data != null);
+        if (there && hasLog(here) && accountHasLog(p.records)) {
+          setStatus({ k: 'ask', recs: p.records, now: p.now });
+          return;
+        }
+        const theirs = snapshotOf(p.records);
+        /* a new device takes the account's log, as long as the account has settings to take */
+        if (there && !hasLog(here) && theirs.settings) await replaceFromAccount(theirs);
+        else await combine(p.records);
+        await saveKept({ sub: s.sub, email: s.email, since: p.now, at: Date.now() });
+      } finally {
+        joining.current = false;
       }
-      const theirs = snapshotOf(p.records);
-      /* a new device takes the account's log, as long as the account has settings to take */
-      if (there && !hasLog(here) && theirs.settings) await replaceFromAccount(theirs);
-      else await combine(p.records);
-      await saveKept({ sub: s.sub, email: s.email, since: p.now, at: Date.now() });
       setStatus({ k: 'on' });
       await round();
     },
     [transport, current, replaceFromAccount, combine, saveKept, round],
   );
+
+  /** sync again now: a round, or for a device signed in that has not joined its account yet, the join. Never while the
+      first-sign-in question waits for the person, or while the account waits for a tip. */
+  const retry = useCallback(async () => {
+    if (keptRef.current) return round();
+    const s = sessionRef.current;
+    if (!s || need.current || statusRef.current.k === 'ask') return;
+    await join(s).catch(fail);
+  }, [round, join, fail]);
+  const retryRef = useRef(retry);
+  retryRef.current = retry;
+
+  /* when the app comes back, and every few minutes while it is open. A device that is signed in but has not joined its
+     account yet (the first join could not reach it) tries the join again the same way, so it is never left at "Not
+     syncing" until the app is closed and opened. */
+  useEffect(() => {
+    if (!kept && !session) return;
+    const sub = AppState.addEventListener('change', (st) => {
+      if (st === 'active') {
+        paused.current = false;
+        retryRef.current();
+      }
+    });
+    const id = setInterval(() => AppState.currentState === 'active' && retryRef.current(), EVERY);
+    return () => {
+      sub.remove();
+      clearInterval(id);
+    };
+  }, [kept, session]);
 
   const signInNow = useCallback((o?: { why?: string; then?: string; email?: string }) => {
     router.push({ pathname: '/account', params: { why: o?.why || '', then: o?.then || '', email: o?.email || '' } });
@@ -695,7 +780,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       startWith,
       syncNow: async () => {
         paused.current = false;
-        await round();
+        await retry();
       },
       token: async () => {
         const s = sessionRef.current;
@@ -720,7 +805,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       waiting,
       signInNow,
       startWith,
-      round,
+      retry,
       choose,
       signOutNow,
       eraseAccount,

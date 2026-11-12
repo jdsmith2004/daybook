@@ -20,7 +20,19 @@ export interface StoredRecord {
   s: number;
   /** the record as JSON, or null when it was deleted */
   d: string | null;
+  /** on a deleted day: the marks of the entries it held when a device emptied it (core SyncRecord.gone) */
+  g?: string[];
 }
+
+/** a record as it is kept: a deletion carries its marks, if it has any */
+const item = (user: string, r: StoredRecord) =>
+  r.d == null ? { pk: user, sk: r.id, u: r.u, s: r.s, del: true, ...(r.g?.length ? { g: r.g } : {}) } : { pk: user, sk: r.id, u: r.u, s: r.s, d: r.d };
+/** and as it is read back */
+const fromItem = (i: Record<string, unknown>): StoredRecord => {
+  const r: StoredRecord = { id: i.sk as string, u: i.u as number, s: i.s as number, d: (i.d as string | undefined) ?? null };
+  if (r.d == null && Array.isArray(i.g) && i.g.length) r.g = i.g as string[];
+  return r;
+};
 
 export interface Page {
   items: StoredRecord[];
@@ -50,6 +62,11 @@ export interface Store {
   changedSince(user: string, since: number, limit: number, cursor: string | null): Promise<Page>;
   /** saves the record only if it is newer than the one kept. Returns false when the kept one is the same age or newer. */
   putIfNewer(user: string, r: StoredRecord): Promise<boolean>;
+  /** the record kept for this id (a deletion included), or null when there is none; read strongly, so a save just made is seen */
+  getRecord(user: string, id: string): Promise<StoredRecord | null>;
+  /** saves the record only if the one kept still has change time `was` (null: there is none yet). False when another save
+      landed first, so the caller reads again and joins with that one. */
+  putIfStill(user: string, r: StoredRecord, was: number | null): Promise<boolean>;
   /** adds to today's write allowance; false when it would go over `max` bytes */
   useAllowance(user: string, day: string, bytes: number, max: number): Promise<boolean>;
   /** every record becomes a deletion (so other devices remove it too), and a copy of it is kept for KEEP_ERASED, so the
@@ -118,7 +135,7 @@ export class DynamoStore implements Store {
       }),
     );
     return {
-      items: (r.Items || []).map((i) => ({ id: i.sk as string, u: i.u as number, s: i.s as number, d: (i.d as string | undefined) ?? null })),
+      items: (r.Items || []).map(fromItem),
       cursor: r.LastEvaluatedKey ? enc(r.LastEvaluatedKey) : null,
     };
   }
@@ -128,9 +145,41 @@ export class DynamoStore implements Store {
       await this.db.send(
         new PutCommand({
           TableName: this.table,
-          Item: r.d == null ? { pk: user, sk: r.id, u: r.u, s: r.s, del: true } : { pk: user, sk: r.id, u: r.u, s: r.s, d: r.d },
+          Item: item(user, r),
           ConditionExpression: 'attribute_not_exists(pk) OR u < :u',
           ExpressionAttributeValues: { ':u': r.u },
+        }),
+      );
+      return true;
+    } catch (e) {
+      if (e instanceof ConditionalCheckFailedException) return false;
+      throw e;
+    }
+  }
+
+  async getRecord(user: string, id: string): Promise<StoredRecord | null> {
+    /* a Query on the one key (the function's role may Query, not GetItem), read strongly */
+    const q = await this.db.send(
+      new QueryCommand({
+        TableName: this.table,
+        KeyConditionExpression: 'pk = :p AND sk = :k',
+        ExpressionAttributeValues: { ':p': user, ':k': id },
+        ConsistentRead: true,
+        Limit: 1,
+      }),
+    );
+    const i = q.Items?.[0];
+    return i ? fromItem(i) : null;
+  }
+
+  async putIfStill(user: string, r: StoredRecord, was: number | null): Promise<boolean> {
+    try {
+      await this.db.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: item(user, r),
+          ConditionExpression: was == null ? 'attribute_not_exists(pk)' : 'u = :was',
+          ...(was == null ? {} : { ExpressionAttributeValues: { ':was': was } }),
         }),
       );
       return true;
@@ -408,6 +457,23 @@ export class MemoryStore implements Store {
     const m = this.of(user);
     const cur = m.get(r.id);
     if (cur && cur.u >= r.u) return false;
+    m.set(r.id, { ...r });
+    return true;
+  }
+
+  async getRecord(user: string, id: string): Promise<StoredRecord | null> {
+    const r = this.of(user).get(id);
+    return r ? { ...r } : null;
+  }
+
+  /** a test can land another save just before this one, the way a second phone's push can (see sync-fuzz.test.ts) */
+  beforeWrite: ((user: string, id: string) => Promise<void> | void) | null = null;
+
+  async putIfStill(user: string, r: StoredRecord, was: number | null): Promise<boolean> {
+    if (this.beforeWrite) await this.beforeWrite(user, r.id);
+    const m = this.of(user);
+    const cur = m.get(r.id);
+    if (was == null ? !!cur : cur?.u !== was) return false;
     m.set(r.id, { ...r });
     return true;
   }

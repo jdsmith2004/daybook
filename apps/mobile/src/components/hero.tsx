@@ -1,23 +1,25 @@
 /* The top of Today: your flame in its own sky (core: emblemScene), from edge to edge and under the clock, with stars at night
    and its own hills carried on across the page. Nothing is written over the flame (the owner, November 1, 2026): your one number
-   sits low on the left (core: heroNumber), your level on the right, and the bar to the next form along the bottom edge. The flame is the
-   biggest thing on the screen (lib/today-size.ts; CLAUDE.md, "The flame is the heart of the app"). The one next step hangs right
+   sits low on the left (core: heroNumber), your level on the right with one proof line under it
+   (core heroProof: "4 urges ridden out", picked fresh each day; the owner, November 11, 2026: proof, not points, in the hero;
+   the points and the bar are on the level page, one tap on the level). The flame is the biggest thing on the screen (lib/today-size.ts; CLAUDE.md, "The flame is the heart of the app"). The one next step hangs right
    under it (core pickMoment, moment-card.tsx), so what you do and what it grows are one picture. The flame moves in a way that
    fits its form and the stars twinkle (both still under Reduce Motion). Tap the flame and a slow bloom of light goes through it
-   and it says hi; tap the sky for Milestones; the level for how points work; the number for your days. When points come in while
-   the app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you: back on Today, the bar fills to
-   where it now is, the flame blooms once, and a quiet word says so (after any celebration that came with it).
+   and it says hi; tap the sky for Milestones; the level for your level and points; the number for your days. When points come in while
+   the app is open (a lesson, a check-in, an urge ridden out), the flame grows in front of you:
+   back on Today, the flame blooms once, and a quiet word says so (after any celebration that came with it).
    Under the number, the hours since a slip, for 72 hours after one (the owner, October 30, 2026), or a best or the way to graduation.
    When the person stops doing their part the fire burns lower (core flame-low.ts, the owner, November 8, 2026): the first time Today is seen that
    day it burns fully and then goes down, as if water were poured on it, with a few fading ticks, and one firm line at the top of the sky says so.
    When they do something again and come back to Today, it is lit again in front of them: the heart catches, the fire climbs back with three
-   rising knocks, sparks fly, and a quiet word says so. Only the glow changes; the level, the bar and the number stay as they are. */
+   rising knocks, sparks fly, and a quiet word says so. Only the glow changes; the level and the number stay as they are. */
 import {
   CHEERS,
   emblemScene,
   fireLow,
   formOfLevel,
   heroNumber,
+  heroProof,
   LOW_OF,
   LOW_WARN,
   lowWords,
@@ -155,6 +157,8 @@ function Sky({
   const { say } = useStore();
   const reduce = useReducedMotion();
   const lvl = g.level;
+  /* one proof line under the level, picked fresh each day (core heroProof) */
+  const proof = useMemo(() => (snap.settings ? heroProof(snap.days, snap.settings, snap.reviews, tk) : null), [snap, tk]);
   const sc = useMemo(() => emblemScene(lvl.n), [lvl.n]);
   const inset = useSafeAreaInsets();
   const SCENE_H = height;
@@ -187,10 +191,9 @@ function Sky({
     say(CHEERS[Math.floor(Math.random() * CHEERS.length)]);
     setPulse((p) => p + 1);
   };
-  /* the flame grows in front of you: what was last seen here, and the bar from there to now, once any celebration that
-     came with it is closed */
-  const seen = useRef({ n: lvl.n, frac: lvl.frac, pts: g.pts });
-  const bar = useRef(new Animated.Value(lvl.frac)).current;
+  /* the flame grows in front of you: points came in since it was last seen here, so once any celebration that came with it
+     is closed, the flame blooms and a quiet word says so (the points and the bar live on the level page) */
+  const seen = useRef({ pts: g.pts });
   const busy = useCelebrating();
   const [due, setDue] = useState(false);
   const dueRef = useRef(false);
@@ -198,25 +201,22 @@ function Sky({
   useFocusEffect(
     useCallback(() => {
       const was = seen.current;
-      seen.current = { n: lvl.n, frac: lvl.frac, pts: g.pts };
+      seen.current = { pts: g.pts };
       if (g.pts > was.pts && !dueRef.current) {
-        bar.setValue(lvl.n > was.n ? 0 : was.frac);
         dueRef.current = true;
         setDue(true);
-      } else if (!dueRef.current) bar.setValue(lvl.frac);
-    }, [g.pts, lvl.n, lvl.frac, bar]),
+      }
+    }, [g.pts]),
   );
   useEffect(() => {
     if (!due || busy) return;
     dueRef.current = false;
     setDue(false);
-    if (reduce) bar.setValue(lvl.frac);
-    else Animated.timing(bar, { toValue: lvl.frac, duration: 1100, delay: 350, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     setPulse((p) => p + 1);
     setGrew(true);
     AccessibilityInfo.announceForAccessibility('Your flame grew.');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [due, busy, reduce, bar, lvl.frac]);
+  }, [due, busy]);
   useEffect(() => {
     if (!grew) return;
     const t = setTimeout(() => setGrew(false), 2800);
@@ -373,16 +373,16 @@ function Sky({
         ) : null}
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Level ${lvl.n}, ${lvl.name}. ${g.pts} points.${lvl.next ? ` The bar along the bottom is your level: ${lvl.toNext} points to level ${lvl.n + 1}.` : ''} Tap to see how points work.`}
+          accessibilityLabel={`Level ${lvl.n}, ${lvl.name}.${proof ? ' ' + proof + '.' : ''} Opens your level and points.`}
           onPress={() => router.push('/points')}
           style={({ pressed }) => [s.lv, pressed && { opacity: 0.8 }]}>
           <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
             Level {lvl.n} · {lvl.name} ›
           </Text>
-          {/* what the bar along the bottom is: the level, not the number on the left (the owner, October 23, 2026) */}
-          {lvl.next ? (
+          {/* who the person is, from the record (core heroProof), not a score: points and the bar live on the level page */}
+          {proof ? (
             <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft, textAlign: 'right' }]}>
-              {lvl.toNext} {lvl.toNext === 1 ? 'point' : 'points'} to Level {lvl.n + 1}
+              {proof}
             </Text>
           ) : null}
         </Pressable>
@@ -401,15 +401,6 @@ function Sky({
             </Text>
           </View>
         ) : null}
-        <View style={[s.bar, { backgroundColor: light ? 'rgba(255,255,255,0.14)' : 'rgba(31,26,74,0.14)' }]} pointerEvents="none">
-          <Animated.View
-            style={{
-              width: bar.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'], extrapolate: 'clamp' }),
-              height: '100%',
-              backgroundColor: c.sun,
-            }}
-          />
-        </View>
       </View>
       {/* burning low: one firm line under the sky, clear of the flame, read before the next step */}
       {words || (fl.warn && !relit) ? (
@@ -435,7 +426,6 @@ const s = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 4 },
   small: { flexShrink: 1, fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
   lvT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'right' },
-  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 6 },
   /* under the sky, off the flame */
   low: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 4, gap: 4 },
   lowH: { fontFamily: font.display, fontSize: 28, lineHeight: 33 },

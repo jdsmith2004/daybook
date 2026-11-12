@@ -57,13 +57,33 @@ describe('sync', () => {
   });
 
   it('keeps the newer change when two devices change the same day', async () => {
-    await call(ev('POST', { body: { records: [day('2026-10-14', 700)] } }));
-    const older = await call(ev('POST', { body: { records: [day('2026-10-14', 650)] } }));
+    const one = (u: number, outcome = 'rode') => ({
+      id: 'days/2026-10-14',
+      u,
+      data: { d: '2026-10-14', events: [{ id: 'e1', time: '22:00', outcome }], checkin: null, p: null, u },
+    });
+    await call(ev('POST', { body: { records: [one(700, 'slipped')] } }));
+    /* an older copy of the same entry: the account's newer one stands, and the device is told it has it */
+    const older = await call(ev('POST', { body: { records: [one(650)] } }));
     expect(older.body.stale).toEqual(['days/2026-10-14']);
-    const same = await call(ev('POST', { body: { records: [day('2026-10-14', 700)] } }));
+    const same = await call(ev('POST', { body: { records: [one(700, 'slipped')] } }));
     expect(same.body.stale).toEqual(['days/2026-10-14']);
-    const newer = await call(ev('POST', { body: { records: [day('2026-10-14', 800)] } }));
+    const newer = await call(ev('POST', { body: { records: [one(800)] } }));
     expect(newer.body.saved).toEqual(['days/2026-10-14']);
+    const got = await call(ev('GET', { query: { since: '0' } }));
+    expect(got.body.records[0].data.events.map((e: { outcome: string }) => e.outcome)).toEqual(['rode']);
+  });
+
+  it('an older copy of a day that holds an entry the account does not is joined, not dropped', async () => {
+    await call(ev('POST', { body: { records: [day('2026-10-14', 700)] } }));
+    /* another device logged on that day before it pulled the newer copy */
+    const older = await call(ev('POST', { body: { records: [day('2026-10-14', 650)] } }));
+    expect(older.body.saved).toEqual(['days/2026-10-14']);
+    const got = await call(ev('GET', { query: { since: '0' } }));
+    const r = got.body.records[0];
+    expect(r.data.events.map((e: { id: string }) => e.id).sort()).toEqual(['e650', 'e700']);
+    /* past both, so each device takes the joined copy on its next pull */
+    expect(r.u).toBe(701);
   });
 
   it('never lets one person see another person’s records', async () => {
@@ -202,10 +222,10 @@ describe('sync', () => {
 
   it('reports a record that fails to save, and saves the rest', async () => {
     const failing = supporters(new MemoryStore());
-    const put = failing.putIfNewer.bind(failing);
-    failing.putIfNewer = async (u, r) => {
+    const put = failing.putIfStill.bind(failing);
+    failing.putIfStill = async (u, r, was) => {
       if (r.id === 'days/2026-10-13') throw new Error('boom');
-      return put(u, r);
+      return put(u, r, was);
     };
     handler = makeHandler(failing, () => now);
     const p = await call(ev('POST', { body: { records: [day('2026-10-13', 500), day('2026-10-14', 500)] } }));

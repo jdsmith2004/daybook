@@ -7,6 +7,7 @@ export function dropVoice() {}
 export const noteUri = (_id: string): string | null => null;
 export async function keepNoteFile(_tmp: string, _id: string) {}
 export function dropNoteFile(_id: string) {}
-export async function takeOldVoice(_id: string): Promise<{ at: number } | null> {
-  return null;
+export const oldVoiceAt = (): number | null => null;
+export async function moveOldVoice(_id: string): Promise<boolean> {
+  return false;
 }

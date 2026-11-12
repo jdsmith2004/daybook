@@ -9,7 +9,7 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
@@ -25,6 +25,10 @@ const clock = (s: number) => Math.floor(s / 60) + ':' + String(s % 60).padStart(
 /* the phone's silent switch is ignored only while the person plays or records their own note on purpose */
 const loud = (rec: boolean) => setAudioModeAsync({ playsInSilentMode: true, allowsRecording: rec }).catch(() => undefined);
 const quiet = () => setAudioModeAsync({ playsInSilentMode: false, allowsRecording: false }).catch(() => undefined);
+/* while a recording is starting or running, a player going away (Record again unmounts the hear-back) must not turn the
+   microphone off under it */
+let recording = false;
+const quietIfFree = () => (recording ? undefined : quiet());
 
 /** a small round play button with a line of words: plays the note, or pauses it */
 export function VoicePlay({ uri, label }: { uri: string; label: string }) {
@@ -37,7 +41,7 @@ export function VoicePlay({ uri, label }: { uri: string; label: string }) {
       quiet();
     }
   }, [st.didJustFinish, p]);
-  useEffect(() => () => void quiet(), []);
+  useEffect(() => () => void quietIfFree(), []);
   const on = st.playing;
   return (
     <Pressable
@@ -69,17 +73,31 @@ export function useNoteRecorder(max: number) {
   const [denied, setDenied] = useState(false);
   const [fail, setFail] = useState('');
   const [tmp, setTmp] = useState<string | null>(null);
+  /* the time limit and a tap on Stop can both ask to stop: only the first does */
+  const stopping = useRef(false);
   const stop = async () => {
+    if (stopping.current) return;
+    stopping.current = true;
     try {
       await rec.stop();
+      recording = false;
       await quiet();
       if (rec.uri) setTmp(rec.uri);
       buzz('save');
     } catch {
+      recording = false;
       await quiet();
       setFail('That did not record. Try again.');
     }
   };
+  /* leaving the page mid-recording gives the phone's sound back */
+  useEffect(
+    () => () => {
+      recording = false;
+      quiet();
+    },
+    [],
+  );
   useEffect(() => {
     if (rs.isRecording && secs(rs.durationMillis) >= max) stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,12 +111,15 @@ export function useNoteRecorder(max: number) {
     setDenied(false);
     setFail('');
     setTmp(null);
+    recording = true;
+    stopping.current = false;
     try {
       await loud(true);
       await rec.prepareToRecordAsync();
       rec.record();
       buzz('tap');
     } catch {
+      recording = false;
       await quiet();
       setFail('The microphone did not start. Nothing was recorded. Try again.');
     }
@@ -120,7 +141,7 @@ export function BigPlay({ uri, label, onPlay, onEnd, size = 112 }: { uri: string
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [st.didJustFinish, p]);
-  useEffect(() => () => void quiet(), []);
+  useEffect(() => () => void quietIfFree(), []);
   const on = st.playing;
   return (
     <Pressable

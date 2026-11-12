@@ -6,19 +6,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { futureAsked, futureClean, futureDrop, futureId, futureKeep, futureQ, futureSeen, type FutureMem, type FutureNote } from '@daybook/core';
 import { useEffect, useSyncExternalStore } from 'react';
 
-import { dropNoteFile, keepNoteFile, noteUri, takeOldVoice } from '@/lib/voice';
+import { dropNoteFile, keepNoteFile, moveOldVoice, noteUri, oldVoiceAt } from '@/lib/voice';
 
 const KEY = 'daybook.future.v1';
 let mem: FutureMem = { notes: [] };
 let loaded = false;
+/* false when the list could not be read: nothing is written over it then, so one bad read never wipes the notes */
+let readOk = false;
 let loading: Promise<void> | null = null;
 const subs = new Set<() => void>();
 const tell = () => subs.forEach((f) => f());
 
 const rnd = () => Math.random().toString(36).slice(2, 8);
 
-function save() {
-  AsyncStorage.setItem(KEY, JSON.stringify(mem)).catch(() => undefined);
+function save(): Promise<boolean> {
+  if (!readOk) return Promise.resolve(false);
+  return AsyncStorage.setItem(KEY, JSON.stringify(mem)).then(
+    () => true,
+    () => false,
+  );
 }
 function set(m: FutureMem) {
   mem = m;
@@ -33,6 +39,7 @@ export function loadFuture(): Promise<void> {
     try {
       const raw = await AsyncStorage.getItem(KEY);
       mem = futureClean(raw ? JSON.parse(raw) : null);
+      readOk = true;
     } catch {
       mem = { notes: [] };
     }
@@ -40,16 +47,22 @@ export function loadFuture(): Promise<void> {
     const live = mem.notes.filter((n) => n.k !== 'voice' || !!noteUri(n.id));
     let dirty = live.length !== mem.notes.length;
     if (dirty) mem = { ...mem, notes: live };
-    const id = futureId(Date.now(), rnd());
-    const old = await takeOldVoice(id);
-    if (old) {
-      const r = futureKeep(mem, { id, at: old.at, k: 'voice' });
-      r.drop.forEach(dropNoteFile);
+    /* the voice note from before: its entry is saved first, and only then does the file move, so a stop in between never
+       leaves a recording with no entry (an entry with no file is dropped by the check above next time) */
+    const at = readOk ? oldVoiceAt() : null;
+    if (at != null) {
+      const id = futureId(Date.now(), rnd());
+      const r = futureKeep(mem, { id, at, k: 'voice' });
+      const was = mem;
       mem = r.mem;
+      if ((await save()) && (await moveOldVoice(id))) r.drop.forEach(dropNoteFile);
+      else mem = was;
       dirty = true;
     }
     if (dirty) save();
     loaded = true;
+    /* a new object, so every screen that read the list before it was ready looks again */
+    mem = { ...mem };
     tell();
   })();
   return loading;
@@ -75,14 +88,27 @@ export const futureLoaded = () => loaded;
 /** the question for the next note */
 export const nextFutureQ = () => futureQ(mem);
 
+/** save a new note's entry; only once it is saved do the notes it pushed out go. If it does not save, nothing changes and
+    the page says so (it throws). */
+async function keepEntry(n: FutureNote, undo: () => void) {
+  const was = mem;
+  const r = futureKeep(mem, n);
+  mem = r.mem;
+  if (!(await save())) {
+    mem = was;
+    undo();
+    throw new Error('not saved');
+  }
+  r.drop.forEach(dropNoteFile);
+  tell();
+}
+
 /** keep a recording (from the recorder's cache) as a new note */
 export async function keepFutureVoice(tmp: string, q: number): Promise<FutureNote> {
   await loadFuture();
   const n: FutureNote = { id: futureId(Date.now(), rnd()), at: Date.now(), k: 'voice', q };
   await keepNoteFile(tmp, n.id);
-  const r = futureKeep(mem, n);
-  r.drop.forEach(dropNoteFile);
-  set(r.mem);
+  await keepEntry(n, () => dropNoteFile(n.id));
   return n;
 }
 
@@ -92,9 +118,7 @@ export async function keepFutureText(t: string, q: number): Promise<FutureNote |
   if (!words) return null;
   await loadFuture();
   const n: FutureNote = { id: futureId(Date.now(), rnd()), at: Date.now(), k: 'text', t: words, q };
-  const r = futureKeep(mem, n);
-  r.drop.forEach(dropNoteFile);
-  set(r.mem);
+  await keepEntry(n, () => undefined);
   return n;
 }
 

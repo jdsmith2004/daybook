@@ -413,6 +413,8 @@ export function FutureMove({ on, onDone }: MoveProps) {
   useDoneAfter(text && sec >= READ_SEC, 200, onDone);
   const [ended, setEnded] = useState(false);
   useDoneAfter(ended, 1200, onDone);
+  /* a recording whose file is gone: on to the next move rather than an empty page */
+  useDoneAfter(on && !!n && !text && !uri, 300, onDone);
   if (!n) return <View style={s.move} />;
   if (text)
     return (

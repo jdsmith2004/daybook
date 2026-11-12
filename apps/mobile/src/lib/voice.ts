@@ -80,24 +80,26 @@ export function dropNoteFile(id: string) {
   }
 }
 
-/** the voice note from before Future you (My plan's one recording) becomes a note: its file moves to the note's name. Its
-    time is when it was last written, so it sorts where it belongs. Null when there is none. */
-export async function takeOldVoice(id: string): Promise<{ at: number } | null> {
+/** the voice note from before Future you (My plan's one recording): when it was last written, or null when there is none */
+export function oldVoiceAt(): number | null {
   try {
     const f = file();
     if (!f.exists) return null;
-    let at = Date.now();
-    try {
-      const t = f.info().modificationTime;
-      if (typeof t === 'number' && t > 0) at = t;
-    } catch {
-      /* no time: now will do */
-    }
-    await f.move(noteFile(id));
-    changed();
-    return { at };
+    const t = f.info().modificationTime;
+    return typeof t === 'number' && t > 0 ? t : Date.now();
   } catch {
     return null;
+  }
+}
+
+/** move the voice note from before into a note's file, once its entry is saved. False when it did not move (it stays where it was). */
+export async function moveOldVoice(id: string): Promise<boolean> {
+  try {
+    await file().move(noteFile(id));
+    changed();
+    return true;
+  } catch {
+    return false;
   }
 }
 

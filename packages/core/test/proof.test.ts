@@ -44,6 +44,30 @@ describe('heroProof', () => {
   });
 });
 
+describe('effortProofs', () => {
+  it('says nothing without a record, or with nothing in it', () => {
+    expect(core.effortProofs(null)).toEqual([]);
+    expect(core.effortProofs({ mornings: 0, mornings7: 0, lockHeld: 0, free7: 0 })).toEqual([]);
+  });
+  it('names effort, never a slip or a run', () => {
+    const l = core.effortProofs({ mornings: 12, mornings7: 6, lockHeld: 9, free7: 3 });
+    expect(l).toEqual(['Free 3 of the last 7 nights', 'Your lock held 9 nights', '6 of the last 7 mornings set']);
+    l.forEach((x) => expect(x).not.toMatch(/slip|in a row|happened/i));
+  });
+  it('a thin week says the total instead', () => {
+    expect(core.effortProofs({ mornings: 1, mornings7: 1, lockHeld: 1, free7: 0 })).toEqual(['Your lock held 1 night', '1 morning set']);
+  });
+  it('fills the hero for someone who never opens SOS', () => {
+    const { days } = log([
+      ['2026-10-19', 'slipped', null],
+      ['2026-10-20', 'slipped', null],
+    ]);
+    const s1 = { ...st, day1: tk };
+    expect(core.heroProof(days, s1, {}, tk)).toBeNull();
+    expect(core.heroProof(days, s1, {}, tk, { mornings: 4, mornings7: 4, lockHeld: 2, free7: 1 })).not.toBeNull();
+  });
+});
+
 describe('sosProof', () => {
   it('shows nothing before the first urge ridden out', () => {
     const { days } = log([['2026-10-20', 'slipped', '22:00']]);

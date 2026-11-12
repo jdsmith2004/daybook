@@ -13,9 +13,41 @@ const num = (v: unknown) => (typeof v === 'number' ? v : 0);
 /** the days since 1970 for a log day, so the hero's line turns over once a day */
 const dayNo = (k: DayKey) => Math.round(Date.parse(k + 'T12:00:00Z') / 86400e3);
 
+/** The effort record ("The morning, not the moment", step 3, docs/plan.md, approved November 11, 2026). People who slip most
+    days rarely open SOS, so urges ridden out stays at 0 and the hero would have nothing to say. These counts come from the morning
+    set (built by "Daybook: The morning set", which owns how they are stored; the shape is agreed in the shared notes,
+    proof-effort-shape.md). Every one is a count of effort, never of slips. All may be 0. */
+export interface EffortCounts {
+  /** mornings the person set up the night, ever (only goes up) */
+  mornings: number;
+  /** of the last 7 mornings, today included, how many were set */
+  mornings7: number;
+  /** nights the night lock held (the wait was not opened), ever (only goes up) */
+  lockHeld: number;
+  /** of the last 7 nights, how many the morning tap called free of it */
+  free7: number;
+}
+
+/** the effort lines, strongest first. No "in a row": a run that breaks on one skipped morning is the all-or-nothing count
+    CLAUDE.md rules out, so the window is the last 7 and the totals only go up */
+export function effortProofs(e: EffortCounts | null | undefined): string[] {
+  if (!e) return [];
+  const n = (v: number) => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
+  const m = n(e.mornings);
+  const m7 = Math.min(7, n(e.mornings7));
+  const held = n(e.lockHeld);
+  const free7 = Math.min(7, n(e.free7));
+  return [
+    free7 ? 'Free ' + free7 + ' of the last 7 nights' : '',
+    held ? 'Your lock held ' + times(held, 'night', 'nights') : '',
+    m7 >= 3 ? m7 + ' of the last 7 mornings set' : m ? times(m, 'morning', 'mornings') + ' set' : '',
+  ].filter(Boolean);
+}
+
 /** every short proof the hero can show today, in a fixed order: each once its count is there. Never the longest run: the number
-    on the left of the hero already shows the best (core heroNumber) */
-export function heroProofs(days: Days, st: Settings, reviews: Reviews, tk: DayKey): string[] {
+    on the left of the hero already shows the best (core heroNumber). The effort record comes first, when there is one, so the
+    line fills for someone who never opens SOS. */
+export function heroProofs(days: Days, st: Settings, reviews: Reviews, tk: DayKey, effort?: EffortCounts | null): string[] {
   const S = gameCompute(days, st, reviews, tk).S;
   const rode = num(S.rode);
   const lessons = num(S.lessons);
@@ -24,6 +56,7 @@ export function heroProofs(days: Days, st: Settings, reviews: Reviews, tk: DayKe
   const held = hardHeld(days);
   const free = runLedger(days, st, tk, 'strict', true).clean;
   return [
+    ...effortProofs(effort),
     rode ? times(rode, 'urge', 'urges') + ' ridden out' : '',
     free >= 2 ? free + ' days free of it' : '',
     comebacks ? times(comebacks, 'comeback', 'comebacks') : '',
@@ -35,8 +68,8 @@ export function heroProofs(days: Days, st: Settings, reviews: Reviews, tk: DayKe
 
 /** the one proof line in Today's hero, under the level, in place of the points to the next level: picked fresh each day from
     what the person has done. Null before there is anything to show (the level stands alone). */
-export function heroProof(days: Days, st: Settings, reviews: Reviews, tk: DayKey): string | null {
-  const all = heroProofs(days, st, reviews, tk);
+export function heroProof(days: Days, st: Settings, reviews: Reviews, tk: DayKey, effort?: EffortCounts | null): string | null {
+  const all = heroProofs(days, st, reviews, tk, effort);
   return all.length ? all[dayNo(tk) % all.length] : null;
 }
 

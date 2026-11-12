@@ -56,6 +56,7 @@ import {
   type When,
   lessonFor,
   rkLesson,
+  lmin,
   roughPatch,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
@@ -387,7 +388,8 @@ export default function Log() {
                 <QuietButton
                   icon="book"
                   label={lesson.title}
-                  a11y={'Lesson: ' + lesson.title}
+                  sub={'Lesson · ' + lmin(lesson)}
+                  a11y={'Lesson: ' + lesson.title + ', ' + lmin(lesson)}
                   onPress={() => {
                     track('rekindle', { step: 'learn' });
                     router.push({ pathname: '/lesson/[id]', params: { id: lesson.id, at: 'care' } });
@@ -460,17 +462,20 @@ function SavedPill({ text, onUndo }: { text: string; onUndo?: () => void }) {
 }
 
 /* the quiet choice under the main button on the fire's sky: a soft fill, never a second bright button and never an underlined link */
-function QuietButton({ icon, label, a11y, onPress }: { icon: string; label: string; a11y?: string; onPress: () => void }) {
+function QuietButton({ icon, label, sub, a11y, onPress }: { icon: string; label: string; sub?: string; a11y?: string; onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={a11y || label}
       onPress={onPress}
       style={({ pressed }) => [s.quiet, { backgroundColor: nightInk.btn, opacity: pressed ? 0.75 : 1 }]}>
-      <Icon name={icon} size={18} color={nightInk.ink} />
-      <Text style={[s.quietT, { color: nightInk.ink }]} numberOfLines={1}>
-        {label}
-      </Text>
+      <Icon name={icon} size={20} color={nightInk.ink} />
+      <View style={{ flexShrink: 1 }}>
+        <Text style={[s.quietT, { color: nightInk.ink }]} numberOfLines={1}>
+          {label}
+        </Text>
+        {sub ? <Text style={[s.quietS, { color: nightInk.muted }]}>{sub}</Text> : null}
+      </View>
     </Pressable>
   );
 }
@@ -485,8 +490,18 @@ const s = StyleSheet.create({
   gapLine: { alignSelf: 'stretch', minHeight: 64 },
   btnSpace: { height: 52 },
   done: { alignSelf: 'stretch', gap: 12 },
-  quiet: { minHeight: 50, borderRadius: 999, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  quietT: { fontFamily: font.bodySemi, fontSize: 15, flexShrink: 1 },
+  quiet: {
+    minHeight: 56,
+    borderRadius: 999,
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  quietT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  quietS: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
   help: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44 },
   helpT: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 6, borderRadius: 999, alignSelf: 'center', maxWidth: '100%' },

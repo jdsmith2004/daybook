@@ -356,9 +356,9 @@ who a person thinks they are.
   - **Kept from step 2 as built:** no point number in the hours after a slip, the kept-as-who-you-are line, the word test on the first
     words, `countFrom` in the seeds, and no-slip days counting finished days.
   - **The owner's answers (November 12, 2026).** The one "more": "maybe just have them refresh and close and if not maybe just offer
-    to go into a lesson". So the quiet link under Done is a lesson for after a slip (core `rkLesson`: Kindness after a slip, Why one
-    slip snowballs, Guilt, shame, and God on a path with faith, Mindfulness and relapse prevention; What therapy is like leads after
-    a second slip in a week; one not read yet first), opened in full with `at=care`, never behind a gate. "What it gave, what it
+    to go into a lesson". So the quiet button under Done is a lesson for after a slip (core `rkLesson`: What therapy is like first, by the
+    owner's choice, then Kindness after a slip, Why one slip snowballs, Guilt, shame, and God on a path with faith, Mindfulness and
+    relapse prevention; one not read yet first, and What therapy is like again after a second slip in a week), named as a lesson, opened in full with `at=care`, never behind a gate. "What it gave, what it
     cost": not sure it adds anything, and the morning set covers last night, so the morning card, its Pattern card and its Sunday
     line are gone (`look-back.ts` removed). The 988 line: under Done after a second slip in a week or in a rough stretch
     (`roughPatch`), as recommended.

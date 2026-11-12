@@ -13,7 +13,8 @@
     9. one-time moments: first week done, Day 1 tell the safe person, a counting note, the comeback noticed (all
        three flames lit: it celebrates, and its button is the day's next step), a paused reminder, the first pattern
    10. a calm day: the day's next stop; everything done: "All done. Rest well." ("Rest well." alone on the night of a slip)
-   11. the five questions again, every 30 days (recheck.ts): low on purpose, so they wait behind the day's next stop as "and one
+   11. the five questions again, every 30 days (recheck.ts), with the north star after them (north.ts; alone, as "One question", when
+       the five are not due or not for this habit): low on purpose, so they wait behind the day's next stop as "and one
        more", and are the card once the day's stops are done. They never push the lesson off the flame.
    12. a part unlocked (unlock.ts: the journal, the apps that pull you in), just after them and as low.
 
@@ -102,6 +103,8 @@ export interface MomentDev {
   comebackSeen?: DayKey | null;
   /** the five questions are due again (core bpsDue, kept on this device) */
   recheck?: boolean;
+  /** the north star is due (core freeDue): with the five when they are due, or on its own card when they are not */
+  free?: boolean;
   /** a part unlocked now (core unlock.ts unlockNow, kept on this device) */
   unlock?: UnlockId | null;
 }
@@ -218,6 +221,9 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   if (cur) m('calm', cur.eyebrow, cur.head, cur.body, cur.btn, cur.go, 'the day', cur.id);
   if (dev.recheck)
     m('recheck', 'One month on', 'Five questions, one minute', 'The same five from your setup. See where you are now.', 'Start', 'recheck', 'five questions');
+  else if (dev.free)
+    /* the north star alone (north.ts): one question; v says so, so the sheet skips the five */
+    m('recheck', 'One month on', 'One question', 'How much do you see yourself as someone free of this?', 'Answer', 'recheck', 'one question', 'free');
   /* a part unlocked (unlock.ts): as low as the five questions, so it never pushes the lesson off the flame */
   if (dev.unlock) {
     const w = UNLOCK_WORDS[dev.unlock];

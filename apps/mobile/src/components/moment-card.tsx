@@ -79,7 +79,7 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
     case 'away':
       return <Band m={m} onPress={() => router.push('/back')} />;
     case 'recheck':
-      return <Band m={m} onPress={() => router.push('/recheck')} />;
+      return <Band m={m} onPress={() => router.push(m.v === 'free' ? { pathname: '/recheck', params: { only: 'free' } } : '/recheck')} />;
     case 'unlock':
       return <UnlockBand m={m} id={m.v as UnlockId} />;
     default:

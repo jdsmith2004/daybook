@@ -1,8 +1,10 @@
-/* Under Your day on Today: the person's own words and record, which lived only in Journal and My plan before. Today so far (each
-   entry logged today, with a shape like a badge: mint for an urge ridden out), Tonight (the hard hours and the two lines of the urge
-   plan that fit them, components/tonight-card.tsx), and who you are becoming (the sentence from the end of setup, big in the flame's
-   gold, with one true line from the log under it: core rodeProof). Nothing here is an ask, so it shows on every day. */
-import { eventRow, planBlank, planTonight, rodeProof, sortedEvents, type DayKey, type Snapshot } from '@daybook/core';
+/* Under Your day on Today: the person's own words and record, which lived only in Journal and My plan before. First who you are
+   becoming (the sentence from the end of setup, big in the flame's gold, with the newest proof from the log under it: core rodeProof,
+   or the first line of who you are in numbers; moved up to sit right under the flame and the next step, "Becoming free", the owner,
+   November 11, 2026), then Today so far (each entry logged today, with a shape like a badge: mint for an urge ridden out), and
+   Tonight (the hard hours and the two lines of the urge plan that fit them, components/tonight-card.tsx). Nothing here is an ask,
+   so it shows on every day. */
+import { eventRow, identityLines, planBlank, planTonight, rodeProof, sortedEvents, type DayKey, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -11,18 +13,39 @@ import { Text } from '@/components/text';
 import { TonightCard } from '@/components/tonight-card';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { usePullDowns } from '@/lib/pull';
 import { font, useTheme } from '@/lib/theme';
 
 export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now: number }) {
   const c = useTheme();
+  const downs = usePullDowns();
   const st = snap.settings!;
   const evs = sortedEvents(snap.days[tk], st.rollover);
   const lines = planTonight(snap.days, st, tk);
   const all = (st.plan || []).filter((p) => !planBlank(p) && String(p.then || '').trim()).length;
   const be = String(st.becoming || '').trim();
-  const proof = rodeProof(snap.days, st, tk);
+  const proof = rodeProof(snap.days, st, tk) || newest(snap, tk, downs);
   return (
     <View style={s.all}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={be ? 'Who you are becoming: ' + be + '. Opens My plan.' : 'Who are you becoming? Write it in one sentence.'}
+        onPress={() => {
+          buzz('tap');
+          router.push('/plan');
+        }}
+        style={({ pressed }) => [s.be, { opacity: pressed ? 0.85 : 1 }]}>
+        <T v="small" tone="muted">
+          Who you are becoming
+        </T>
+        <Text style={[be ? s.beT : s.beAsk, { color: be ? c.sunText : c.accentText }]}>{be || 'Write it in one sentence'}</Text>
+        {proof ? (
+          <Text style={[s.proof, { color: c.muted }]}>
+            {proof.t} <Text style={{ color: c.mintText, fontFamily: font.bodySemi }}>{proof.n.replace(/ /g, ' ')}</Text>
+          </Text>
+        ) : null}
+      </Pressable>
+
       {evs.length ? (
         <View style={s.sec}>
           <T v="h2">Today so far</T>
@@ -57,27 +80,15 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
       ) : null}
 
       <TonightCard snap={snap} tk={tk} now={now} lines={lines} more={all > lines.length} />
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={be ? 'Who you are becoming: ' + be + '. Opens My plan.' : 'Who are you becoming? Write it in one sentence.'}
-        onPress={() => {
-          buzz('tap');
-          router.push('/plan');
-        }}
-        style={({ pressed }) => [s.be, { opacity: pressed ? 0.85 : 1 }]}>
-        <T v="small" tone="muted">
-          Who you are becoming
-        </T>
-        <Text style={[be ? s.beT : s.beAsk, { color: be ? c.sunText : c.accentText }]}>{be || 'Write it in one sentence'}</Text>
-        {proof ? (
-          <Text style={[s.proof, { color: c.muted }]}>
-            {proof.t} <Text style={{ color: c.mintText, fontFamily: font.bodySemi }}>{proof.n.replace(/ /g, ' ')}</Text>
-          </Text>
-        ) : null}
-      </Pressable>
     </View>
   );
+}
+
+/** with no urge ridden out in two weeks, the first thing the record says about who the person is. Never the slips line: no slip
+    count sits on Today */
+function newest(snap: Snapshot, tk: DayKey, downs: number): { t: string; n: string } | null {
+  const l = identityLines(snap.days, snap.settings!, snap.reviews, tk, downs).filter((x) => x.ic !== 'leaf')[0];
+  return l ? { t: l.who, n: l.n + '.' } : null;
 }
 
 const s = StyleSheet.create({

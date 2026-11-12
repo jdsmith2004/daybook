@@ -22,7 +22,7 @@ import { useClock, WavyRing } from '@/components/shapes';
 import { Button, T } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
 import { close } from '@/lib/nav';
-import { Pull, usePullPrefs } from '@/lib/pull';
+import { Pull, pullCountDown, usePullPrefs } from '@/lib/pull';
 import { useStore } from '@/lib/store';
 import { font, nightInk, useTheme } from '@/lib/theme';
 import { useReducedMotion } from '@/lib/motion';
@@ -41,7 +41,10 @@ export default function PullPause() {
   const st = snap.settings;
   const level = st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1;
   const quiet = !!st && (pullQuietUntil(snap.days, st, now) ?? 0) > now;
-  const w = pullPauseWords({ quiet, open: prefs.open, plan: st ? pullPlanLine(st) : null });
+  const plan = st ? pullPlanLine(st) : null;
+  const w = pullPauseWords({ quiet, open: prefs.open, plan });
+  /* the count after this put-down, for the thanks */
+  const downs = useRef(0);
   /* the wait runs from the moment this opens, on the smooth clock (the motion never ticks; the number may) */
   const t = useClock(true);
   const p = Math.min(1, t / prefs.wait);
@@ -67,12 +70,14 @@ export default function PullPause() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const home = () => {
-    say(w.thanks);
+    say(pullPauseWords({ quiet, open: prefs.open, plan, downs: downs.current }).thanks);
     router.replace('/');
   };
   const down = () => {
     if (leaving.current) return;
     leaving.current = true;
+    /* one more time they put it down: the count the shield and the notes say, kept on this phone */
+    downs.current = pullCountDown();
     /* putting it down is evidence: an urge ridden out in the log (core pullDownEvent), so it earns its points and feeds the
        flame. No count or event is sent for it: it starts from Screen Time, whose data never leaves the phone. */
     update((s) => {

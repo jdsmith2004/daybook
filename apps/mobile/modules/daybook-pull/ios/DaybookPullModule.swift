@@ -28,6 +28,11 @@ private let startedKey = "pull.started"
 /// ms when Open it for a few minutes started, and those minutes (the monitor reads them)
 private let openAtKey = "pull.openAt"
 private let openMinsKey = "pull.openMins"
+/// the times the person put it down, and ms of the last one counted (the shield's Close counts too: Pull.countDown)
+private let downsKey = "pull.downs"
+private let downAtKey = "pull.downAt"
+/// minutes after one put-down before another counts (core PULL_COUNT_GAP)
+private let downGap: Double = 10
 /// the minutes of use in the hard hours for the two notes and the pause (core PULL_HARD_AT)
 private let hardAt = [10, 20, 30]
 /// pull.open's length: more than Apple's shortest schedule (core PULL_MIN_SCHEDULE, 15 minutes), started now, never backdated
@@ -174,6 +179,21 @@ public final class DaybookPullModule: Module {
     Function("ignoredAt") { () -> Double? in
       let v = self.defaults?.double(forKey: ignoredKey) ?? 0
       return v > 0 ? v : nil
+    }
+
+    /// the times the person put it down, on this phone only
+    Function("downs") { () -> Int in
+      self.defaults?.integer(forKey: downsKey) ?? 0
+    }
+
+    /// Put it down on the wait screen: one more, unless one was counted in the last downGap minutes; the count after it
+    Function("countDown") { () -> Int in
+      let n = self.defaults?.integer(forKey: downsKey) ?? 0
+      let last = self.defaults?.double(forKey: downAtKey) ?? 0
+      if last > 0 && self.nowMs >= last && self.nowMs - last < downGap * 60_000 { return n }
+      self.defaults?.set(n + 1, forKey: downsKey)
+      self.defaults?.set(self.nowMs, forKey: downAtKey)
+      return n + 1
     }
 
     /// whether a pause's button asked for Daybook in the last two minutes (its wait screen opens), taken once

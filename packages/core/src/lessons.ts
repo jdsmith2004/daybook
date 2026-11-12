@@ -5,7 +5,8 @@
    LCHECKS) was copied from the legacy app into legacy/core.js. Checked by test/lessons.test.ts and test/families.test.ts. */
 import { addDays, diffDays, fmtDate, LESSON_IDS, LESSONS, LUNITS, eventsOf, topTrigger, busiestWindow, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
 import { PATH_STEPS, stepAt } from './steps';
-import { habitOf } from './habit';
+import { habitOf, type Habit } from './habit';
+import { habitOpen, habitOwn, PORN_ONLY } from './lesson-habit';
 import { changeDay, withDay } from './mutate';
 import { changeSettings } from './actions';
 import { blankP } from './legacy/core.js';
@@ -184,38 +185,15 @@ export const godOn = (st: Settings | null | undefined) => {
 /** a God lesson (g1 to g12) */
 export const isGod = (L: Lesson) => /^g\d+$/.test(L.id);
 /** the lessons written for porn only (the owner, November 8, 2026): their live words name porn or sex, or rest on a porn study.
-    For someone quitting gambling or another habit they leave the path, Learn and every link, the way the faith lessons leave
-    it for a No (faithOut). One finished before the habit changed stays finished and counted (lessonCount), with its points.
-    A new lesson is for porn only until it is checked and left off this list. */
-export const PORN_ONLY = new Set([
-  'l4',
-  'l11',
-  'l13',
-  'l16',
-  'l22',
-  'l24',
-  'l25',
-  'l33',
-  'l34',
-  'l36',
-  'l38',
-  'l42',
-  'l45',
-  'l46',
-  'l47',
-  'l48',
-  'g3',
-  'g4',
-  'g6',
-  'g7',
-  'g8',
-  'g9',
-  'g10',
-  'g11',
-  'g12',
-]);
+    For someone quitting another habit they leave the path, Learn and every link, the way the faith lessons leave it for a No
+    (faithOut), unless lesson-habit.ts HABIT_OPEN opens one for that habit, in its words. A lesson of one habit only
+    (HABIT_ONLY) is off every other path, porn's too. One finished before the habit changed stays finished and counted
+    (lessonCount), with its points. A new lesson is for porn only until it is checked and left off this list. */
+export { PORN_ONLY };
+/** this lesson is for this habit */
+const habitFits = (id: string, h: Habit) => (!PORN_ONLY.has(id) || habitOpen(id, h)) && habitOwn(id, h);
 /** this lesson is not for this person's habit */
-export const habitOff = (L: Lesson | null | undefined, st: Settings | null | undefined) => !!L && PORN_ONLY.has(L.id) && habitOf(st) !== 'porn';
+export const habitOff = (L: Lesson | null | undefined, st: Settings | null | undefined) => !!L && !habitFits(L.id, habitOf(st));
 /** a lesson to link to, or null when it is not for this person's habit: every link to a lesson goes through this */
 export const lessonFor = (id: string | null | undefined, st: Settings | null | undefined) => {
   const L = lessonById(id);
@@ -224,8 +202,8 @@ export const lessonFor = (id: string | null | undefined, st: Settings | null | u
 /** off this person's path by choice: faith said No, or the lesson was written for another habit */
 const offFor = (st: Settings | null | undefined) => {
   const out = faithOut(st);
-  const h = habitOf(st) !== 'porn';
-  return (L: Lesson) => (out && !!L.f) || (h && PORN_ONLY.has(L.id));
+  const h = habitOf(st);
+  return (L: Lesson) => (out && !!L.f) || !habitFits(L.id, h);
 };
 let NO_FAITH: { from: Lesson[]; list: Lesson[] } | null = null;
 let WITH_GOD: { from: Lesson[]; list: Lesson[] } | null = null;
@@ -234,11 +212,23 @@ let WITH_GOD: { from: Lesson[]; list: Lesson[] } | null = null;
     (lessonGate), and stays finished and counted (lessonCount). */
 export function lessonPathFor(st: Settings | null | undefined): Lesson[] {
   const list = lessonPathFaith(st);
-  if (habitOf(st) === 'porn') return list;
-  if (!FOR_HABIT || FOR_HABIT.from !== list) FOR_HABIT = { from: list, list: list.filter((L) => !PORN_ONLY.has(L.id)) };
-  return FOR_HABIT.list;
+  const h = habitOf(st);
+  if (h === 'porn') return list;
+  let c = FOR_HABIT.get(h);
+  if (!c || c.from !== list) FOR_HABIT.set(h, (c = { from: list, list: habitPath(list, h) }));
+  return c.list;
 }
-let FOR_HABIT: { from: Lesson[]; list: Lesson[] } | null = null;
+const FOR_HABIT = new Map<Habit, { from: Lesson[]; list: Lesson[] }>();
+/** a path for another habit: the lessons for it, each step's own lessons for this habit (steps.ts habit) after the rest of
+    the step, and its God lesson still last */
+function habitPath(list: Lesson[], h: Habit): Lesson[] {
+  const fits = list.filter((L) => habitFits(L.id, h));
+  return PATH_STEPS.flatMap((s, k) => {
+    const mine = fits.filter((L) => stepAt(L.id) === k);
+    const own = ((s.habit && s.habit[h]) || []).map((id) => lessonById(id)).filter((L): L is Lesson => !!L);
+    return [...mine.filter((L) => !isGod(L)), ...own, ...mine.filter(isGod)];
+  });
+}
 function lessonPathFaith(st: Settings | null | undefined): Lesson[] {
   const path = lessonPath();
   if (godOn(st)) {

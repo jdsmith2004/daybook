@@ -88,7 +88,10 @@
             Tracking across other apps or websites, and no ad or tracking code from anyone else. What Daybook learns (below) stays with Daybook, is never tied
             to who you are, and is used only to make the app better.
           </li>
-          <li>Voice notes. They stay on your phone, with or without an account.</li>
+          <li>
+            Voice notes, and the notes you leave for the next hard moment. They stay on your phone, with or without an account: not synced, not in the safe
+            copy, never sent.
+          </li>
           <li>
             Anything about your Home Screen. The flame widget is drawn on your phone from your own records, and shows no count and nothing that says what
             Daybook is for. To give its points once, the app asks your phone only whether Daybook's own widget is on a screen, and keeps the day it first was.
@@ -102,8 +105,8 @@
           <li>
             Anything from Screen Time. On iPhone, if you choose apps that pull you in, Apple keeps the list and Daybook never learns which apps they are or how
             long you use them; Apple only tells the app on your phone that a time was passed. The nudges and any pause are made on your phone, and none of it is
-            sent, synced, backed up or counted. You can turn it off in Daybook (More, Screen Time) or in the phone's own Settings, under Screen Time, at any
-            time.
+            sent, synced, backed up or counted. The number of times you put it down is kept on your phone only, to show it back to you. You can turn it off in
+            Daybook (More, Screen Time) or in the phone's own Settings, under Screen Time, at any time.
           </li>
           <li>
             The trail, for a craving that keeps coming. When it began, the last place you touched, the length you picked, and the times of its notes stay on
@@ -179,9 +182,10 @@
             a tool was opened or finished, Talk it through was finished (never what was said).
           </li>
           <li>
-            <code>urge</code>, <code>slip</code>, <code>happened</code>, <code>planning</code>, <code>rekindle</code>: an urge was logged (its strength, which
-            of Daybook's own triggers was picked, a trigger you wrote yourself only as "other", and how it ended), a slip was logged (which trigger, and about
-            how long since the one before), Already happened or Planning a slip was used, a Rekindle step was done.
+            <code>urge</code>, <code>slip</code>, <code>happened</code>, <code>planning</code>, <code>rekindle</code>, <code>comeback</code>: an urge was logged
+            (its strength, which of Daybook's own triggers was picked, a trigger you wrote yourself only as "other", and how it ended), a slip was logged (which
+            trigger, about how long since the one before, and, if a reminder came in the hour before it, that reminder's kind and the hour it came, never the
+            minute), Already happened or Planning a slip was used, a Rekindle step was done, all three flames were lit after a slip.
           </li>
           <li>
             <code>checkin</code>, <code>recheck</code>, <code>sunday</code>, <code>wind</code>: a check-in was saved (the mood, sleep and urge numbers picked),
@@ -191,19 +195,28 @@
             <code>free</code>: once a month, and once at the end of setup, "How much do you see yourself as someone free of this?" was answered: the number
             picked from 0 to 10, with how many urges were ridden out and how many slips in the last 30 days, as two counts. Never any words.
           </li>
+          <li>
+            <code>future_kept</code>, <code>future_heard</code>: a note for the next hard moment was kept, or played or read in SOS (only whether it was
+            <code>note</code>: voice or written; never the note, its words or the recording).
+          </li>
           <li><code>chart_seen</code>: a chart was shown (which one, for how long, and whether it was locked).</li>
           <li>
             <code>level_up</code>, <code>form</code>, <code>flame_low</code>, <code>flame_lit</code>, <code>badge</code>: a new level, a new flame form, the
             flame burning low or lit again, a badge earned.
           </li>
           <li>
-            <code>nudge</code>, <code>nudge_tap</code>, <code>nudge_did</code>: a reminder of a kind (lesson, checkin, wind, sunday, risk, back, plan) arrived,
-            Daybook was opened from it, or what it was for was done that day.
+            <code>nudge</code>, <code>nudge_tap</code>, <code>nudge_did</code>: a reminder of a kind (lesson, checkin, wind, sunday, risk, back, plan) arrived
+            (and the hour it came), Daybook was opened from it (and the hour it came), or what it was for was done that day.
           </li>
           <li>
             <code>ask</code>, <code>ask_tap</code>, <code>bought</code>, <code>account</code>, <code>sync_on</code>, <code>feedback</code>: an ask (for a tip,
-            Daybook Pattern, an account or a rating) was shown or tapped, a tip or Daybook Pattern was bought (which one, never a card or a receipt), an account
-            was made (with Apple or email, never the account), sync was turned on, feedback was sent (never its words here).
+            Daybook Pattern, an account, a rating or a note for the next hard moment) was shown or tapped, a tip or Daybook Pattern was bought (which one, never
+            a card or a receipt), an account was made (with Apple or email, never the account), sync was turned on, feedback was sent (never its words here).
+          </li>
+          <li>
+            <code>ab</code>: Daybook tries two wordings of a line to learn which helps more, and this says which one was shown: the line's name (rk_first,
+            Rekindle's first line) and a or b. Which one a phone sees is picked from its random number above, never from anything about you, and is the same
+            every time. With this turned off, you always see the wording Daybook had before.
           </li>
         </ul>
         <p>
@@ -211,10 +224,10 @@
           <code>page</code>, <code>ix</code>, <code>lesson</code>, <code>beat</code>, <code>from</code>, <code>outcome</code>, <code>str</code>,
           <code>tool</code>, <code>chart</code>, <code>locked</code>, <code>trigger</code>, <code>hrs</code>, <code>step</code>, <code>mood</code>,
           <code>sleep</code>, <code>q1</code> to <code>q5</code>, <code>free</code>, <code>rode30</code>, <code>slips30</code>, <code>lvl</code>,
-          <code>kind</code>, <code>what</code>, <code>tier</code>, <code>how</code>, <code>mode</code>, <code>count</code>, <code>ns28</code>, <code>pts</code>,
-          <code>badges</code>, <code>low</code>, <code>rem</code>, <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>,
-          <code>faith</code>, <code>habit</code>, <code>lang</code>, <code>os</code>. Anything that is not on those lists is dropped on your phone, and refused
-          by the server.
+          <code>kind</code>, <code>nh</code>, <code>after</code>, <code>test</code>, <code>arm</code>, <code>what</code>, <code>note</code>, <code>tier</code>,
+          <code>how</code>, <code>mode</code>, <code>count</code>, <code>ns28</code>, <code>pts</code>, <code>badges</code>, <code>low</code>, <code>rem</code>,
+          <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>, <code>faith</code>, <code>habit</code>, <code>lang</code>,
+          <code>os</code>. Anything that is not on those lists is dropped on your phone, and refused by the server.
         </p>
         <p>
           Never sent: your journal, notes, voice notes, Obsidian folder, plan, reasons, Talk it through, or anything else you write; your name, email, account
@@ -253,7 +266,7 @@
           </li>
           <li><code>sos_rode</code>, <code>sos_slip</code>: SOS ended with It passed, or with I slipped.</li>
           <li>
-            <code>lesson_open</code>: a lesson was opened. <code>ld_</code> and the lesson's number (l1 to l49; never the faith lessons): which lesson was
+            <code>lesson_open</code>: a lesson was opened. <code>ld_</code> and the lesson's number (l1 to l53; never the faith lessons): which lesson was
             finished.
           </li>
           <li>
@@ -358,8 +371,9 @@
           <li>In your account: until you delete it.</li>
           <li>
             <strong>One entry:</strong> open the day in Pattern, tap the entry, then Delete. It is removed from your device and your account; the rest of your
-            log and your account stay. The day keeps only a short code that says nothing about the entry, so your other devices do not bring it back. A journal
-            entry is the same: open it in the journal, then Delete entry.
+            log and your account stay. The day keeps only a short code that says nothing about the entry, so your other devices do not bring it back. When it
+            was the day's last entry, your account keeps those codes with the deleted day, for the same reason. A journal entry is the same: open it in the
+            journal, then Delete entry.
           </li>
           <li>
             <strong>Journal notes:</strong> if you turn on Obsidian in More to sync your journal with a folder (iPhone only, off until you pick one), each entry

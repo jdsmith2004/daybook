@@ -37,6 +37,7 @@ import {
   urTags,
   urTried,
   weekGame,
+  lessonTo,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -356,7 +357,7 @@ function LessonsPane({
           onToggle={() => setFaith(!faith)}>
           <View>
             {LESSONS.filter((L) => L.f).map((L) => (
-              <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={L.tag} />
+              <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={lessonTo(L, st).tag} />
             ))}
           </View>
         </Collapse>
@@ -366,7 +367,9 @@ function LessonsPane({
       <Collapse title="Two more programs" sub="Not on the twelve steps. Here whenever you want them." icon="book" open={more} onToggle={() => setMore(!more)}>
         <View>
           {OFF_PATH.map(lessonById).map((L) =>
-            L ? <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={L.tag} /> : null,
+            L ? (
+              <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={lessonTo(L, st).tag} />
+            ) : null,
           )}
         </View>
       </Collapse>

@@ -190,7 +190,8 @@ export interface IdLine {
   who: string;
   n: string;
 }
-export function identityLines(days: Days, st: Settings, reviews: Reviews, tk: DayKey): IdLine[] {
+/** `downs`: the times the person put it down when an app pulled them in (Screen Time, kept on the phone: core pull.ts) */
+export function identityLines(days: Days, st: Settings, reviews: Reviews, tk: DayKey, downs = 0): IdLine[] {
   const S0 = gameCompute(days, st, reviews, tk).S;
   const num = (v: unknown) => (typeof v === 'number' ? v : 0);
   const S = { rode: num(S0.rode), slips: num(S0.slips), lessons: num(S0.lessons), checkins: num(S0.checkins) };
@@ -201,6 +202,7 @@ export function identityLines(days: Days, st: Settings, reviews: Reviews, tk: Da
     S.rode ? { ic: 'wave', who: 'You are someone who rides out urges.', n: times(S.rode, 'time', 'times') } : null,
     S.slips ? { ic: 'leaf', who: 'You are someone who tells the truth, even about a slip.', n: times(S.slips, 'slip', 'slips') + ', every one logged' } : null,
     comebacks ? { ic: 'sunrise', who: 'You are someone who comes back after a hard night.', n: times(comebacks, 'comeback', 'comebacks') } : null,
+    downs > 0 ? { ic: 'phone', who: 'You are someone who puts it down.', n: times(downs, 'time', 'times') } : null,
     held ? { ic: 'shield', who: 'You are someone who gets through the hard hours.', n: times(held, 'time', 'times') } : null,
     S.lessons ? { ic: 'book', who: 'You are someone who learns how this works.', n: times(S.lessons, 'lesson', 'lessons') + ' finished' } : null,
     S.checkins ? { ic: 'pencil', who: 'You are someone who looks honestly at the day.', n: times(S.checkins, 'check-in', 'check-ins') } : null,
@@ -217,6 +219,22 @@ export function recordLines(days: Days, st: Settings, tk: DayKey): IdLine[] {
     longest >= 2 ? { ic: 'flame', who: 'You are someone who can go the distance.', n: 'Longest run: ' + longest + ' days' } : null,
     noSlip >= 2 ? { ic: 'sun', who: 'You are someone who has days free of it.', n: noSlip + ' no-slip days, all on your record' } : null,
   ].filter((x): x is IdLine => !!x);
+}
+
+/** graduation's words (graduate.ts, the app's graduated.tsx): who the person became, from their own record, under "You are free
+    of it." The urges ridden out, the comebacks after a hard night, and the days free of it in all. Every count only goes up, so
+    the award page says the same or more each time it opens, long after the day it was earned. A line shows once its count is one
+    or more; the days line is always there, since graduating takes ninety of them. */
+export function gradRecord(days: Days, st: Settings, reviews: Reviews, tk: DayKey): string[] {
+  const rode0 = gameCompute(days, st, reviews, tk).S.rode;
+  const rode = typeof rode0 === 'number' ? rode0 : 0;
+  const back = rkComebackCount(days, st, tk);
+  const free = runLedger(days, st, tk, 'strict', true).clean;
+  return [
+    rode ? (rode === 1 ? 'You rode out an urge, and it passed.' : 'You rode out ' + rode.toLocaleString('en-US') + ' urges.') : null,
+    back ? (back === 1 ? 'You came back after a hard night.' : 'You came back ' + back + ' times after a hard night.') : null,
+    free.toLocaleString('en-US') + (free === 1 ? ' day' : ' days') + ' free of it, all on your record.',
+  ].filter((x): x is string => !!x);
 }
 
 /** the hours given back so far: the days with no slip since Day 1, at the pace the person told the setup (obHours).

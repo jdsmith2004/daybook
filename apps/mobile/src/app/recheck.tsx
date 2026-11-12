@@ -22,7 +22,7 @@ import {
   freeResult,
   OB_BPS,
   OB_BPS_C,
-  urLastAt,
+  careLastAt,
 } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -39,6 +39,7 @@ import { Button, T } from '@/components/ui';
 import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
 import { useSos } from '@/lib/sos';
+import { usePullDowns } from '@/lib/pull';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -49,12 +50,13 @@ const TONES = ['mint', 'sky', 'violet'];
 export default function Recheck() {
   const c = useTheme();
   const { snap, tk, apply } = useStore();
+  const downs = usePullDowns();
   const sos = useSos();
   const params = useLocalSearchParams<{ only?: string }>();
   /* what this visit asks, decided once: the five (unless the card was for the one question alone), and the north star when due */
   const [five] = useState(() => params.only !== 'free');
   const [askFree] = useState(
-    () => params.only === 'free' || (!!snap.settings && freeDue(snap.days, snap.settings, tk, { now: Date.now(), sos: urLastAt(sos.mem) })),
+    () => params.only === 'free' || (!!snap.settings && freeDue(snap.days, snap.settings, tk, { now: Date.now(), sos: careLastAt(sos.mem) })),
   );
   const [answers, setAnswers] = useState<number[]>([]);
   /* past the five's result, on to the one question */
@@ -127,7 +129,7 @@ export default function Recheck() {
   }
   /* the north star: the question at the top, the proof under it, the number huge in the middle, the slider and Save low */
   if (onFree) {
-    const proof = snap.settings ? freeProof(snap.days, snap.settings, snap.reviews, tk) : [];
+    const proof = snap.settings ? freeProof(snap.days, snap.settings, snap.reviews, tk, 2, downs) : [];
     return (
       <SheetFrame title="One question">
         <T v="title" accessibilityRole="header">

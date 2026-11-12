@@ -72,7 +72,7 @@ import {
   LIKE_WORDS,
   likeAnswer,
   likeAskDue,
-  urLastAt,
+  careLastAt,
   type LikeAnswer,
   HABIT_NOUN,
   habitSay,
@@ -113,6 +113,7 @@ import { close } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { track } from '@/lib/events';
+import { usePullDowns } from '@/lib/pull';
 import { countSetup } from '@/lib/pulse';
 import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
 import { useSos } from '@/lib/sos';
@@ -134,6 +135,7 @@ export default function Setup() {
   const [pulse, setPulse] = useState(0);
   const win = useWindowDimensions();
   const { snap, tk, replace, say, current, apply } = useStore();
+  const downs = usePullDowns();
   const sync = useSync();
   const st = snap.settings;
   const [f, setF] = useState<Flow>(() => {
@@ -163,7 +165,7 @@ export default function Setup() {
   /* the north star's starting point (core north.ts): asked when there is no answer yet, never in the hours after a slip or an
      SOS. Decided once, so the page keeps its place in the list after it is answered. */
   const sosNow = useSos();
-  const [freeAsk] = useState(() => freeAtSetup(snap.days, st, tk, { now: Date.now(), sos: urLastAt(sosNow.mem) }));
+  const [freeAsk] = useState(() => freeAtSetup(snap.days, st, tk, { now: Date.now(), sos: careLastAt(sosNow.mem) }));
   /* the reminder page shows on a phone, and on a walk-through only while the check-in reminder is off */
   /* the account page shows to a new person while this build has accounts and they are not signed in; once they are, it
      drops out of the list and the setup moves on by itself */
@@ -1100,7 +1102,7 @@ export default function Setup() {
       /* the north star's starting point (core north.ts): the question at the top, the person's own proof under it (none yet
          for someone new), the number huge in the open middle, the slider under the thumb, Next at the bottom. Skip waits a week. */
       const v = typeof a.free === 'number' ? a.free : null;
-      const proof = st ? freeProof(snap.days, st, snap.reviews, tk) : [];
+      const proof = st ? freeProof(snap.days, st, snap.reviews, tk, 2, downs) : [];
       body = (
         <>
           <Head h={FREE_Q} />
@@ -1885,7 +1887,7 @@ function Cheer() {
   const [step, setStep] = useState<'ask' | 'no' | 'off' | null>(null);
   useEffect(() => {
     if (step || !st) return;
-    setStep(likeAskDue(snap.days, st, false, { now: Date.now(), sos: urLastAt(sos.mem) }) ? 'ask' : 'off');
+    setStep(likeAskDue(snap.days, st, false, { now: Date.now(), sos: careLastAt(sos.mem) }) ? 'ask' : 'off');
   }, [step, st, snap.days, sos.mem]);
   const [rain] = useState(() => Date.now());
   const answer = (a: LikeAnswer) => {

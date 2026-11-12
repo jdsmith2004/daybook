@@ -3,8 +3,10 @@
    lesson needs its beats here; test/lesson-beats.test.ts fails without them, and holds them to the limits and the words rules. A card is one
    of: a question, the sun card (the answer), the number card (the science, when it has a number), or the sky. */
 import type { Card, Lesson } from './lessons';
-import type { FaithVoice } from './faith';
-import { GOD, TURNS, turnIn, turnLesson } from './lesson-turns';
+import { faithVoice, type FaithVoice } from './faith';
+import { GOD, TURNS, turnIn, turnLesson, type Turn } from './lesson-turns';
+import { habitOf, habitSay, type Habit } from './habit';
+import { HABIT_TURNS, habitOpen, habitPart, PORN_ONLY } from './lesson-habit';
 
 export interface Beat {
   /** the big line. On a number card it finishes the sentence the number starts ("7" + "days off porn, and ...") */
@@ -37,7 +39,10 @@ export type BeatBook = Record<string, LessonBeats>;
 /* a turned lesson (lesson-turns.ts) brings its own short words */
 let TURNED: BeatBook | null = null;
 const turned = () =>
-  TURNED || (TURNED = Object.fromEntries([...Object.values(TURNS), ...Object.values(GOD)].map((T) => [T.id, turnLesson(T, { id: T.id } as Lesson).beats])));
+  TURNED ||
+  (TURNED = Object.fromEntries(
+    [...Object.values(TURNS), ...Object.values(GOD), ...Object.values(HABIT_TURNS)].map((T) => [T.id, turnLesson(T, { id: T.id } as Lesson).beats]),
+  ));
 /* a God lesson in another faith's voice is its own lesson, with its own short words (lessonVoiced) */
 const VOICED = new Map<string, { L: Lesson; beats: LessonBeats }>();
 const VOICE_BEATS = new WeakMap<Lesson, LessonBeats>();
@@ -55,6 +60,38 @@ export function lessonVoiced(L: Lesson, voice: FaithVoice | null): Lesson {
   }
   return v.L;
 }
+/** every word a person reads, in this habit's words: the "Behind this" note and its sources stay as written */
+const sayAll = <V>(v: V, h: Habit): V => {
+  if (typeof v === 'string') return habitSay(v, h) as V;
+  if (Array.isArray(v)) return v.map((x) => sayAll(x, h)) as V;
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, k === 'scope' || k === 'src' ? x : sayAll(x, h)])) as V;
+  return v;
+};
+const SAID = new Map<string, Lesson>();
+/** a lesson as this person reads it: in the voice of their faith (lessonVoiced), and, when it was written for porn and opens
+    to their habit (lesson-habit.ts HABIT_OPEN), with that habit's own parts and in its words. Pass the lesson as it sits in
+    LESSONS. Any other lesson is as it is: its words already hold for every habit. */
+export function lessonAs(L: Lesson, voice: FaithVoice | null, h: Habit): Lesson {
+  const T0 = TURNS[L.id] || GOD[L.id];
+  if (h === 'porn' || !T0 || !PORN_ONLY.has(L.id) || !habitOpen(L.id, h)) return lessonVoiced(L, voice);
+  const k = L.id + ':' + (voice || '') + ':' + h;
+  let out = SAID.get(k);
+  if (!out) {
+    let T: Turn = turnIn(T0, GOD[L.id] ? voice : null);
+    const part = habitPart(L.id, h);
+    if (part) {
+      const { srcAt, ...rest } = part;
+      T = { ...T, ...rest };
+      if (srcAt) T = { ...T, src: T.src.map((x, i) => srcAt[i] || x) };
+    }
+    const v = turnLesson(sayAll(T, h), L);
+    VOICE_BEATS.set(v.L, v.beats);
+    SAID.set(k, (out = v.L));
+  }
+  return out;
+}
+/** a lesson as this person reads it, from their settings: their faith's voice and their habit's words (lessonAs) */
+export const lessonTo = (L: Lesson, st: Parameters<typeof habitOf>[0] & Parameters<typeof faithVoice>[0]): Lesson => lessonAs(L, faithVoice(st), habitOf(st));
 export const lessonBeats = (L: Lesson): LessonBeats | null => bookOf(L);
 /** a card's beat, when it has one */
 export const cardBeat = (L: Lesson, ci: number): Beat => bookOf(L)?.cards[ci] || {};

@@ -235,4 +235,7 @@ export interface Snapshot {
   reviews: Reviews;
   /** the journal's entries (journal-entries.ts). Optional, so a snapshot from before the journal needs no change. */
   journal?: Journal;
+  /** days emptied on this device whose deletion has not reached the account yet: day -> the marks of the entries it held
+      (sync.ts tombsAfter). Only sync reads it; the log itself never shows these days. */
+  tomb?: Record<string, string[]>;
 }

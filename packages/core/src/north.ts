@@ -98,10 +98,10 @@ export function freeResult(s: number, last: number | null): { h: string; p: stri
 }
 
 /* the proof shown beside the question: the strongest evidence first */
-const PROOF_ORDER = ['wave', 'sun', 'sunrise', 'shield', 'flame', 'book', 'pencil', 'leaf'];
+const PROOF_ORDER = ['wave', 'sun', 'sunrise', 'shield', 'phone', 'flame', 'book', 'pencil', 'leaf'];
 /** up to `max` lines of the person's own proof (miles.ts), strongest first; none for someone with no record yet */
-export function freeProof(days: Days, st: Settings, reviews: Reviews, tk: DayKey, max = 2): IdLine[] {
-  const all = [...identityLines(days, st, reviews, tk), ...recordLines(days, st, tk)];
+export function freeProof(days: Days, st: Settings, reviews: Reviews, tk: DayKey, max = 2, downs = 0): IdLine[] {
+  const all = [...identityLines(days, st, reviews, tk, downs), ...recordLines(days, st, tk)];
   const rank = (l: IdLine) => {
     const i = PROOF_ORDER.indexOf(l.ic);
     return i < 0 ? PROOF_ORDER.length : i;

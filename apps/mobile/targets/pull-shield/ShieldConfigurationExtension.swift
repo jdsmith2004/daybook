@@ -1,5 +1,6 @@
 // The pause's look: Apple draws it over a resting app as a still picture (it cannot count down; the wait is Daybook's own /pause).
-// The words are core pullShield's, written by the app: "Resting until 1 AM", the person's own plan, Open Daybook and Close. The
+// The words are core pullShield's, written by the app: "Resting until 1 AM", the person's own plan, Open Daybook and Close, and once
+// they have put it down, how many times ("You have put it down 6 times. Close it, and that makes 7."), read live here. The
 // night sky's colors and the flame, like the wait screen. Never the app's name or the habit.
 import ManagedSettings
 import ManagedSettingsUI
@@ -22,10 +23,16 @@ class ShieldConfigurationExtension: ShieldConfigurationDataSource {
       backgroundColor: UIColor(red: 0.11, green: 0.09, blue: 0.29, alpha: 1),
       icon: UIImage(named: "flame"),
       title: .init(text: Pull.restingTitle() ?? (w?["title"] as? String) ?? "Resting for now", color: ink),
-      subtitle: .init(text: (w?["sub"] as? String) ?? "You asked me to hold this in your hard hours.", color: soft),
+      subtitle: .init(text: sub(w), color: soft),
       primaryButtonLabel: .init(text: (w?["primary"] as? String) ?? "Open Daybook", color: UIColor(red: 0.2, green: 0.14, blue: 0.02, alpha: 1)),
       primaryButtonBackgroundColor: sun,
       secondaryButtonLabel: .init(text: (w?["secondary"] as? String) ?? "Close", color: ink)
     )
+  }
+
+  private func sub(_ w: [String: Any]?) -> String {
+    let n = Pull.downs
+    if n > 0, let t = w?["subDowns"] as? String { return Pull.fill(t, n) }
+    return (w?["sub"] as? String) ?? "You asked me to hold this in your hard hours."
   }
 }

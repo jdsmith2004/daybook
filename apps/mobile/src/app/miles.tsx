@@ -38,6 +38,7 @@ import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Bar, Card, Icon, T } from '@/components/ui';
 import { useBackLabel, useHoldsBar, useOverModal } from '@/lib/nav';
+import { usePullDowns } from '@/lib/pull';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -50,6 +51,7 @@ const CLOSE_CAP = 3;
 export default function Miles() {
   const c = useTheme();
   const { snap, tk } = useStore();
+  const downs = usePullDowns();
   const st = snap.settings;
   const inset = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -78,7 +80,7 @@ export default function Miles() {
   const shown = shownBadges(g.badges, st);
   const earned = shown.filter((b) => badgeDone(b, st));
   const gi = gradInfo(snap.days, st, tk);
-  const who = [...recordLines(snap.days, st, tk), ...identityLines(snap.days, st, snap.reviews, tk)];
+  const who = [...recordLines(snap.days, st, tk), ...identityLines(snap.days, st, snap.reviews, tk, downs)];
   const back = hoursBack(snap.days, st, tk);
   const todo = shown.filter((b) => !badgeDone(b, st)).sort((a, b) => b.now / b.goal - a.now / a.goal);
   /* the biggest wins first */
@@ -192,9 +194,9 @@ export default function Miles() {
           <View style={s.who}>
             <GradCap size={52} />
             <View style={{ flex: 1, gap: 2 }}>
-              <T v="h2">Graduated</T>
+              <T v="h2">Free of it, for good</T>
               <T v="small" tone="muted">
-                {fmtDate(gi.at, { month: 'long', day: 'numeric', year: 'numeric' })} · yours for good
+                Graduated {fmtDate(gi.at, { month: 'long', day: 'numeric', year: 'numeric' })}
               </T>
             </View>
           </View>

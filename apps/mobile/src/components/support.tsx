@@ -23,7 +23,7 @@ import {
   tipMoment,
   tipMomentShown,
   TIP_WORDS,
-  urLastAt,
+  careLastAt,
   type Extra,
   type TipMoment,
 } from '@daybook/core';
@@ -61,7 +61,7 @@ export function usePatOffer(): string | null {
   const { snap, tk, now } = useStore();
   const sos = useSos();
   if (!TIP_ON || !snap.settings) return null;
-  return patOffer(snap.days, snap.settings, tk, { now, sos: urLastAt(sos.mem) });
+  return patOffer(snap.days, snap.settings, tk, { now, sos: careLastAt(sos.mem) });
 }
 
 /** whether an extra shows as locked here (core extraLocked) */
@@ -143,7 +143,7 @@ export function useTipMoment(why: TipMoment, quiet = false): boolean {
   const { snap, tk, now, apply } = useStore();
   const sos = useSos();
   const [ask] = useState(
-    () => TIP_ON && !!snap.settings && tipMoment(snap.days, snap.settings, tk, new Date(now).getHours(), TIP_URL, { now, sos: urLastAt(sos.mem) }, quiet),
+    () => TIP_ON && !!snap.settings && tipMoment(snap.days, snap.settings, tk, new Date(now).getHours(), TIP_URL, { now, sos: careLastAt(sos.mem) }, quiet),
   );
   useEffect(() => {
     if (ask) {

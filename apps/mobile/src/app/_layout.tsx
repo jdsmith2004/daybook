@@ -6,7 +6,9 @@ import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/6
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
 import {
+  nudgeAt,
   nudgeCounts,
+  nudgeDue,
   nudgeKeep,
   nudgeKey,
   nudgeLearn,
@@ -52,7 +54,7 @@ import { listenForTaps, onPermission, remindersAllowed, remindersOffered, schedu
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
 import { HealthKeeper } from '@/lib/health';
-import { track, trackNudge, useKeepEvents, useTrackScreens } from '@/lib/events';
+import { notesCame, track, trackNudge, useKeepEvents, useTrackScreens } from '@/lib/events';
 import { DayEvents, FlameEvents } from '@/lib/events-day';
 import { PullKeeper } from '@/lib/pull';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
@@ -92,6 +94,8 @@ function Reminders() {
         count(k);
         trackNudge(k);
       });
+      /* each note delivered since the last open, with the hour it came (the counts above say only how many) */
+      notesCame(nudgeDue(l0, s.settings, t, ok));
       setNudgeLog((l) => nudgeLearn({ ...l, opens: [...l.opens, t] }, s.days, s.settings, s.reviews, t, ok));
       setAllowed(ok);
       setOpenAt(t);
@@ -119,7 +123,7 @@ function Reminders() {
           const k = nudgeTapKind(id);
           if (k) {
             count('nt_' + k + '_tap');
-            trackNudge('nt_' + k + '_tap');
+            trackNudge('nt_' + k + '_tap', nudgeAt(nlog.current, id));
           }
           setNudgeLog((l) => ({ ...l, taps: [...l.taps, id] }));
         },
@@ -318,6 +322,7 @@ function Shell() {
             'back',
             'whats-new',
             'feedback',
+            'future',
             'pause',
             'unlock',
           ].map((name) => (

@@ -30,12 +30,14 @@ import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useBackLabel, useHoldsBar, useOverModal } from '@/lib/nav';
 import { chapterPalette, CHAPTERS, partFor, type Part } from '@/lib/plan-look';
+import { usePullDowns } from '@/lib/pull';
 import { useStore } from '@/lib/store';
 import { font, PaletteOverride, useTheme } from '@/lib/theme';
 
 export default function MyPlan() {
   const params = useLocalSearchParams<{ pane?: string; sub?: string; to?: string; fresh?: string; add?: string }>();
   const { snap, tk } = useStore();
+  const downs = usePullDowns();
   const { width, height } = useWindowDimensions();
   const inset = useSafeAreaInsets();
   const over = useOverModal();
@@ -65,7 +67,7 @@ export default function MyPlan() {
   const sky = Math.round(Math.max(340, Math.min(460, height * 0.5)));
   const flame = Math.max(160, Math.round(Math.min(width * 0.8, sky - top - 28)));
   const be = String(st.becoming || '').trim();
-  const proof = [...identityLines(snap.days, st, snap.reviews, tk), ...recordLines(snap.days, st, tk)][0];
+  const proof = [...identityLines(snap.days, st, snap.reviews, tk, downs), ...recordLines(snap.days, st, tk)][0];
   /* the sentence stands left of the flame, never on it. The flame stands far right (SHIFT of its box past the edge), and every form's
      drawing starts at least ART of the way into its box (the sun at about 0.26, the torch 0.3), so the words have the room up to there. The largest size that fits that room and
      the sky's height above the ground is used; a sentence too long for any of them sits under the sky instead, full width. */

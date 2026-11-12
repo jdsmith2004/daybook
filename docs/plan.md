@@ -202,6 +202,9 @@ The morning self's choices become the night's defenses. Built on the Screen Time
 
 ### Steps, with the effort each needs
 
+Steps 1 and 2 are built (November 12, 2026, the owner saw it on the simulator): core `morning-set.ts`, app `app/morning.tsx`. The hooks the
+other parts use (tonight's time and reason, mornings set, free nights, last night's slip) are listed at the top of `morning-set.ts`.
+
 1. **High.** Core `morning-set.ts`: when it shows, the last-night answer saved as a slip on the night before with no time (it feeds the
    count, points, `runLedger` and the hero: golden fixtures checked), the reason, the night time and the optional morning feel saved to the day; `partDone` counts it.
 2. **Medium.** The two morning pages (`SceneFrame`, `Dock`, the dawn sky, the flame big) and the morning note pointing to them.

@@ -13,7 +13,21 @@
    - It is written: for faith people only (core written.ts). Are you facing a temptation, hold to say no, the three pulls
      each answered as Jesus answered them in Matthew 4, then it left; then Matthew 5: it starts in the heart, cast away
      one real thing now, and you are the light, with your own flame. */
-import { faithVoice, FWD_A, FWD_B, FWD_TOMORROW, GROUND, THOUGHTS, urFromYou, WRITTEN_CAST, writtenWords, type UrMem, type WrittenWords } from '@daybook/core';
+import {
+  faithVoice,
+  futureCap,
+  futurePick,
+  FWD_A,
+  FWD_B,
+  FWD_TOMORROW,
+  GROUND,
+  THOUGHTS,
+  urFromYou,
+  WRITTEN_CAST,
+  writtenWords,
+  type UrMem,
+  type WrittenWords,
+} from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
@@ -28,8 +42,10 @@ import { FeelMove } from './feel-move';
 import { StackMove } from './stack';
 import { BigFlame } from '@/components/big-flame';
 import { Button, Icon, T } from '@/components/ui';
-import { SosVoice } from '@/components/voice-note';
+import { BigPlay } from '@/components/voice-note';
+import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
+import { futureUri, seenFuture, useFuture } from '@/lib/future';
 import { useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useCareSettings } from '@/lib/store';
@@ -378,11 +394,60 @@ export function WordsMove({ on, onDone }: MoveProps) {
             {fy?.cap || 'From you'}
           </T>
           <Text style={[s.noteT, { color: c.ink }]}>{fy?.t || ''}</Text>
-          <SosVoice />
         </View>
       </View>
       <View style={s.line}>
         <WavyLine width={220} p={Math.min(1, sec / READ_SEC)} color={c.sun2} track={c.sun2 + '33'} />
+      </View>
+    </View>
+  );
+}
+
+/* ---------- future you (core future.ts): the note from a good day, right after the first breath ---------- */
+export function FutureMove({ on, onDone }: MoveProps) {
+  const c = useTheme();
+  const mem = useFuture();
+  /* one note for this page, picked once, so it holds still while the ride moves */
+  const [n] = useState(() => futurePick(mem));
+  const [uri] = useState(() => (n ? futureUri(n) : null));
+  const [now] = useState(() => Date.now());
+  const seen = useRef(false);
+  useEffect(() => {
+    if (!on || !n || seen.current) return;
+    seen.current = true;
+    seenFuture(n.id);
+    if (n.k === 'text') track('future_heard', { note: 'text' });
+  }, [on, n]);
+  const text = n?.k === 'text';
+  const sec = useClock(on && text);
+  useDoneAfter(text && sec >= READ_SEC, 200, onDone);
+  const [ended, setEnded] = useState(false);
+  useDoneAfter(ended, 1200, onDone);
+  if (!n) return <View style={s.move} />;
+  if (text)
+    return (
+      <View style={s.move}>
+        <Words head="Read it slowly" sub="Out loud, if you can." />
+        <View style={s.mid}>
+          <View style={[s.note, { backgroundColor: c.sunSoft }]}>
+            <T v="eyebrow" tone="sunText">
+              {futureCap(n, now)}
+            </T>
+            <Text style={[s.noteT, { color: c.ink }]}>{n.t}</Text>
+          </View>
+        </View>
+        <View style={s.line}>
+          <WavyLine width={220} p={Math.min(1, sec / READ_SEC)} color={c.sun2} track={c.sun2 + '33'} />
+        </View>
+      </View>
+    );
+  return (
+    <View style={s.move}>
+      <Words head="You left yourself a note" sub={futureCap(n, now) + '. Tap to hear it.'} />
+      <View style={s.mid}>
+        {uri ? (
+          <BigPlay uri={uri} label="Hear your note" size={132} onPlay={() => track('future_heard', { note: 'voice' })} onEnd={() => setEnded(true)} />
+        ) : null}
       </View>
     </View>
   );
@@ -638,6 +703,7 @@ export const MOVES: Record<string, (p: MoveProps) => React.ReactElement> = {
   thought: SayMove,
   reasons: WordsMove,
   written: WrittenMove,
+  future: FutureMove,
 };
 
 /** the short name of a move, as the ride shows it */
@@ -651,6 +717,7 @@ export const MOVE_NAME: Record<string, string> = {
   thought: 'Say it fast',
   reasons: 'Your words',
   written: 'It is written',
+  future: 'From you',
 };
 
 /** the icon for a move */
@@ -664,11 +731,22 @@ export const MOVE_ICON: Record<string, string> = {
   thought: 'chat',
   reasons: 'star',
   written: 'shield',
+  future: 'mic',
 };
 
 export const moveTint = (c: Palette, id: string) =>
-  ({ breathe: c.sun, move: c.coral, stack: c.sky, ground: c.mint, feel: c.coral, forward: c.mint, thought: c.violet, reasons: c.sun2, written: c.sun2 })[id] ||
-  c.accent;
+  ({
+    breathe: c.sun,
+    move: c.coral,
+    stack: c.sky,
+    ground: c.mint,
+    feel: c.coral,
+    forward: c.mint,
+    thought: c.violet,
+    reasons: c.sun2,
+    written: c.sun2,
+    future: c.sun2,
+  })[id] || c.accent;
 
 const s = StyleSheet.create({
   move: { flexGrow: 1, alignSelf: 'stretch', gap: 12 },

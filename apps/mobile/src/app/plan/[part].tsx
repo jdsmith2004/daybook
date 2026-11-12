@@ -41,7 +41,7 @@ import { SlipEditor } from '@/components/plan-editors';
 import { Screen } from '@/components/screen';
 import { TextInput } from '@/components/text';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
-import { VoiceRecorder } from '@/components/voice-note';
+import { FutureList } from '@/components/future-list';
 import { chapterPalette, CHAPTERS, partOf } from '@/lib/plan-look';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
@@ -367,7 +367,7 @@ function Why({ fresh, add }: { fresh?: string; add?: string }) {
         <Editable label="The loop I am breaking" value={st.loop} prompt="Name the loop" placeholder="Fail → shame → hide → give up." onSave={set('loop')} />
         <Editable label="My new rule" value={st.rule} prompt="Write my rule" placeholder="I log slips instead of hiding them." onSave={set('rule')} />
       </PageSec>
-      <PageSec icon="sparkle" title="A note for hard moments">
+      <PageSec icon="sparkle" title="Notes for hard moments">
         <Editable
           label="From me, on a calm day"
           value={st.note || ''}
@@ -379,7 +379,8 @@ function Why({ fresh, add }: { fresh?: string; add?: string }) {
         <T v="small" tone="muted">
           SOS and My reasons show it to you first.
         </T>
-        <VoiceRecorder />
+        <Hair />
+        <FutureList />
       </PageSec>
       <ListCard
         k="words"

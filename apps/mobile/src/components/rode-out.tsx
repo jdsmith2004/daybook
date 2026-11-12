@@ -27,11 +27,13 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Link } from '@/components/choices';
 import { Appear } from '@/components/appear';
 import { Confetti } from '@/components/celebrate';
+import { FutureInvite, useFutureInvite } from '@/components/future-invite';
 import { MOVE_ICON, MOVE_NAME } from '@/components/ride/moves';
 import { Finish, SceneFrame } from '@/components/scene';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useFuture } from '@/lib/future';
 import { close, closeAll } from '@/lib/nav';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
@@ -69,6 +71,9 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
     if (askPrac) sos.setMem((m) => ({ ...m, pracAsk: 1 }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  /* Future you: a win is the moment to leave a note for the next hard one (core futureAsk decides how often) */
+  const invite = useFutureInvite();
+  const firstNote = useFuture().notes.length === 0;
   const cel = st.celebrate !== false;
   const [rain, setRain] = useState(false);
   useEffect(() => {
@@ -229,6 +234,11 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
             })}
           </View>
         </Appear>
+        {invite ? (
+          <Appear delay={1150} by={16} duration={380} style={{ alignSelf: 'stretch' }}>
+            <FutureInvite first={firstNote} />
+          </Appear>
+        ) : null}
         {askPrac ? (
           <T v="small" tone="muted" style={s.center}>
             Run a practice ride on a calm day (Learn, then Tools). Practiced calm, it comes easier when it counts.

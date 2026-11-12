@@ -98,6 +98,7 @@ import { useSync } from '@/lib/sync';
 import { SAVE_FAILED, useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 import { restoredWords, WORDS } from '@/lib/words';
+import { forgetFuture } from '@/lib/future';
 import { dropVoice, voiceOk } from '@/lib/voice';
 
 /* the words for each way of counting: only the one chosen shows */
@@ -268,7 +269,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
   const remN = [rem.lesson, rem.checkin, rem.wind, rem.review, rem.risk].filter(Boolean).length;
   /* the phone's own permission comes first: reminders chosen here send nothing while it is off */
   const notifyOff = !!notifyEnv && notifyEnv.offered && !notifyEnv.granted;
-  const wipeWhat = `every entry, check-in${voiceOk ? ', setting and voice note' : ' and setting'}`;
+  const wipeWhat = 'every entry, check-in, setting and note';
 
   return {
     sync:
@@ -678,7 +679,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
           foot={
             signedIn
               ? 'Your other devices clear it too when they next sync. Your account keeps a copy for 7 days, so it can be brought back until then.' +
-                (voiceOk ? ' The voice note is only on this phone and cannot be brought back.' : '')
+                (voiceOk ? ' Voice notes are only on this phone and cannot be brought back.' : '')
               : 'Your log is only on this device, so this cannot be undone.'
           }>
           <SetRow
@@ -699,6 +700,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
                     await sos.forget();
                     await forgetDrafts();
                     dropVoice();
+                    await forgetFuture();
                     say('Everything was deleted.');
                     router.replace('/');
                   }

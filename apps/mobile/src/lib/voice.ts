@@ -51,6 +51,56 @@ export async function keepVoice(tmp: string) {
   changed();
 }
 
+/* ---------- Future you (core future.ts): one recording per note, named by its id, on this phone only ---------- */
+const noteFile = (id: string) => new File(Paths.document, 'future-' + id.replace(/[^a-z0-9-]/g, '') + '.m4a');
+
+/** where a note's recording is, or null when the file is gone */
+export function noteUri(id: string): string | null {
+  try {
+    const f = noteFile(id);
+    return f.exists ? f.uri : null;
+  } catch {
+    return null;
+  }
+}
+
+/** keep a new recording (from the recorder's cache) as this note's file */
+export async function keepNoteFile(tmp: string, id: string) {
+  const f = noteFile(id);
+  if (f.exists) f.delete();
+  await new File(tmp).move(f);
+}
+
+export function dropNoteFile(id: string) {
+  try {
+    const f = noteFile(id);
+    if (f.exists) f.delete();
+  } catch {
+    /* nothing to remove */
+  }
+}
+
+/** the voice note from before Future you (My plan's one recording) becomes a note: its file moves to the note's name. Its
+    time is when it was last written, so it sorts where it belongs. Null when there is none. */
+export async function takeOldVoice(id: string): Promise<{ at: number } | null> {
+  try {
+    const f = file();
+    if (!f.exists) return null;
+    let at = Date.now();
+    try {
+      const t = f.info().modificationTime;
+      if (typeof t === 'number' && t > 0) at = t;
+    } catch {
+      /* no time: now will do */
+    }
+    await f.move(noteFile(id));
+    changed();
+    return { at };
+  } catch {
+    return null;
+  }
+}
+
 export function dropVoice() {
   try {
     const f = file();

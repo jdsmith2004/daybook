@@ -28,9 +28,13 @@ export const RIDE_KIND: Record<string, 'calm' | 'body' | 'eyes' | 'mind'> = {
   thought: 'mind',
   reasons: 'mind',
   written: 'mind',
+  future: 'mind',
 };
 /** It is written (written.ts): a ride move only for people who said faith plays a part, so it is not in RIDE_MOVES */
 export const RIDE_FAITH = 'written';
+/** Future you (future.ts): the person's own note from a good day, the page right after the first breath when there is one.
+    It is shown once a ride, so it is not in RIDE_MOVES either */
+export const RIDE_FUTURE = 'future';
 /** the first move of every SOS */
 export const RIDE_FIRST = 'breathe';
 
@@ -39,6 +43,8 @@ export interface RideCan {
   words: boolean;
   /** It is written: Yes or Somewhat to faith (lessons godOn) */
   faith?: boolean;
+  /** Future you: a note from a good day is kept on this phone */
+  future?: boolean;
 }
 
 /** the moves this person can be shown, best for them first, each with how often it should come round (the best about
@@ -80,7 +86,9 @@ export function rideNext(
   lead?: string | null,
 ): string {
   if (!shown.length) return RIDE_FIRST;
-  if (can.faith && shown.length === 1 && writtenEarly(days, st, mem)) return RIDE_FAITH;
+  /* a note from a good day comes right after the breath, before the urge peaks: early is when calm words still land */
+  if (can.future && shown.length === 1) return RIDE_FUTURE;
+  if (can.faith && shown.length === (can.future ? 2 : 1) && writtenEarly(days, st, mem)) return RIDE_FAITH;
   const ws = rideWeights(sc, days, st, tk, now, mem, can);
   const last = shown[shown.length - 1];
   const due = (id: string, w: number) => {
@@ -107,6 +115,7 @@ export const RIDE_WHY: Record<string, { t: string; l?: string }> = {
   forward: { t: 'Picturing the hour after makes later weigh more than right now. That is the skill: you looked past the urge.', l: 'l44' },
   thought: { t: 'A thought said fast, over and over, turns into sounds. It is still there, but it stops giving orders.', l: 'l16' },
   reasons: { t: 'Your own words, from a calm day, speak for the part of you that wants this.', l: 'l45' },
+  future: { t: 'You left this on a good day, when you could see clearly. In an urge it is hard to see that far, so you said it for yourself.', l: 'l45' },
   written: {
     t: 'A temptation is one of a few old moves, not a verdict on you. Named, it loses its surprise, and an answer said out loud is ready the next time it comes.',
     l: 'g8',

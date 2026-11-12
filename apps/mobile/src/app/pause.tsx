@@ -53,7 +53,7 @@ const PAUSE_LOW = 0.6;
 const leftLabel = (s: number, long: boolean) => (long ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s));
 
 export default function PullPause() {
-  const { w: which, t: token } = useLocalSearchParams<{ w?: string; t?: string }>();
+  const { w: which, t: token, dev } = useLocalSearchParams<{ w?: string; t?: string; dev?: string }>();
   const { snap, tk, now, say, update } = useStore();
   const c = useTheme();
   const saved = usePullPrefs();
@@ -64,7 +64,9 @@ export default function PullPause() {
   const st = snap.settings;
   /* the mode is fixed when the screen opens, so a wait running across the night's start does not change under the person */
   const [mode] = useState<'day' | 'night' | 'long'>(() => {
-    const night = !!st && pullInNight(Date.now(), pullNightStart(snap.days, st, saved, Date.now()));
+    /* `dev=night` opens it as the night in a development build only, to show the screens by day (the simulator keeps the Mac's
+       clock); a store build never reads it */
+    const night = (__DEV__ && dev === 'night') || (!!st && pullInNight(Date.now(), pullNightStart(snap.days, st, saved, Date.now())));
     /* the long wait is only the night's: by day adult sites do not wait, so a stale link opens the short one */
     return night ? (which === 'long' ? 'long' : 'night') : 'day';
   });

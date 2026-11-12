@@ -1056,26 +1056,34 @@ export default function Setup() {
           <Head h="When should Daybook check in with you?" />
           <Middle>
             <View style={{ alignItems: 'center', gap: 14, alignSelf: 'stretch' }}>
-              {/* what it will look like on a locked screen: plain words that say nothing about what Daybook is for */}
-              <View
-                style={[s.lock, { backgroundColor: skies.light.night[0] }]}
-                accessible
-                accessibilityLabel={'At ' + fmtClock(remAt) + ', a reminder will look like this: Daybook. Check in. Under a minute.'}>
-                <View style={[s.lockIc, { backgroundColor: c.accent }]}>
-                  <Icon name="flame" size={16} color={c.accentInk} />
+              {/* what they will look like on a locked screen: the morning lesson note and the evening honest tap, plain words
+                  that say nothing about what Daybook is for (core NUDGE_WORDS.preview) */}
+              {[
+                { w: NUDGE_WORDS.preview.am, at: 'Morning' },
+                { w: NUDGE_WORDS.preview.pm, at: fmtClock(remAt) },
+              ].map(({ w, at }) => (
+                <View
+                  key={at}
+                  style={[s.lock, { backgroundColor: skies.light.night[0] }]}
+                  accessible
+                  accessibilityLabel={at + ', a reminder will look like this: Daybook. ' + w.t + '. ' + w.b}>
+                  <View style={[s.lockIc, { backgroundColor: c.accent }]}>
+                    <Icon name="flame" size={16} color={c.accentInk} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.lockT, { color: nightInk.ink }]}>{w.t}</Text>
+                    <Text style={[s.lockB, { color: nightInk.ink }]}>{w.b}</Text>
+                  </View>
+                  <Text style={[s.lockW, { color: nightInk.muted }]}>{at}</Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.lockT, { color: nightInk.ink }]}>{NUDGE_WORDS.checkin.t}</Text>
-                  <Text style={[s.lockB, { color: nightInk.ink }]}>{NUDGE_WORDS.checkin.b}</Text>
-                </View>
-                <Text style={[s.lockW, { color: nightInk.muted }]}>{fmtClock(remAt)}</Text>
-              </View>
+              ))}
             </View>
           </Middle>
           <Say text={voice} />
           <ClockWheels {...hm(remAt)} step={5} onChange={(h, m) => setRemAt(clockOf(h, m))} />
           <T v="small" tone="muted" style={s.c}>
-            Skipped on days you have already checked in. Also a heads-up before your hard hours, and one on Sundays for your week. Never at night.
+            Skipped on days you have already checked in. Also a heads-up before your hard hours, and one on Sundays for your week. Nothing at night unless you
+            pick a time there.
           </T>
         </>
       );

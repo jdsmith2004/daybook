@@ -1,5 +1,220 @@
 # What is planned next
 
+## The morning, not the moment: help for the person who does not want to stop (the owner, November 11, 2026; proposed, waiting for the owner's answers)
+
+The owner asked what it would take for Daybook to actually help, because it still does not help them. This plan starts from the owner's
+own answers about their hard moments (asked in the chat, November 11; kept general here, since they are personal), then a walk through
+the app at 11 PM, then four research passes (in the side session notes folder for this group: `help-research-motivation.md`,
+`help-research-accountability.md`, `help-research-rivals-waits.md`, `help-research-quitters.md`). It builds on "Becoming free" below and
+changes parts of it; the last part says which.
+
+### What the owner told us
+
+- **The moment.** Late at night in bed, alone at home, bored. Scrolling feeds comes first, and is often used to work up to it. In the
+  moment there is almost no resistance: it sounds good, it usually feels good, it does not feel bad afterwards, and it seems to cost
+  nothing. Daybook is not opened. When it comes to mind, the answer is "not now".
+- **When the person is sure.** In the morning. The reasons are real and all four apply: faith and values, a future marriage, time and
+  energy and focus, and not liking who they are when hooked.
+- **What worked.** A structured program, for a long time: reporting every day, a group, a leader, steps. It ended because they fought so
+  hard they burnt out, and stopped trying for years. Blocking and deleting apps, being busy, a run they did not want to break, and telling
+  someone all worked for a while. "I need something that is consistent in pushing me in my life."
+- **People.** One family member they would let in. With slips most days, telling them broke down into hiding and silence. The people
+  close to them already know; daily logging never stuck.
+- **Daybook.** Easy to ignore, built for a fight they skip, nothing at stake. "Do one little thing" never gets pressed, because they are
+  always about to do it.
+- **A good week.** Everything together: work going well, exercise, good habits, people, faith, sleep, off the phone.
+- **What they chose.** A wait, not a wall. A one-minute morning, if it is quick. A weekly note to that one person with effort only, never
+  a slip. And all four of: fewer, not never, at first; build the good week; defenses, not willpower; real stakes.
+
+### What that means
+
+Daybook is built for someone who wants to stop and needs help getting through the urge: SOS and its tools, Already happened, Rekindle,
+Walk it through. That person is real and keeps every tool. But the owner loses before any urge "arrives": the choice is made by someone
+who, right then, does not want to stop. Every tool Daybook has asks that person to fight. The person who wants to quit is the one who
+wakes up in the morning, and Daybook barely talks to them (the morning check-in was retired on October 23).
+
+So the center moves. **Daybook works for the morning self, and lets the morning self reach into the night.** The night is met with
+defenses set hours earlier, not with persuasion, and the week is built around a good life, not around a fight.
+
+The research agrees on the main points, though nobody has tested this exact person (`help-research-motivation.md`):
+
+- The hot-cold gap is solid: the calm self cannot feel what the evening self will want, and arguing with the evening self raises the very
+  talk that predicts worse outcomes (Loewenstein; Magill on sustain talk; moderate).
+- A plan made ahead and a check afterwards worked where it was tested: a weekly plan and a check cut binge-drinking days by about a third at
+  9 months (Suffoletto, n=765; moderate). Writing down what happened helps (Harkin meta-analysis; moderate to strong).
+- A short wait with an easy way out, at the app that starts it, cut app openings by 57% over six weeks (one sec, PNAS 2023; moderate). The
+  wait and the exit did the work; the message shown during the wait did nothing. No study has tested a delay before porn itself.
+- The person's own reasons, in their own words, are the strongest kind of motivation (Williams 2009, self-endorsed motivation, 24 months;
+  moderate to strong). Lectures are not.
+- People with good self-control avoid temptation more than they resist it (Galla and Duckworth; moderate), and the "willpower runs out"
+  idea failed to replicate. Defenses, not willpower, is the right instinct.
+- Fewer, not never, is a fair first goal: alcohol reductions hold for years; in the porn ACT trial most people cut use a lot, a third
+  stopped completely. Whether reducing leads to stopping later is not proven, so the app says "fewer" plainly, not "fewer, then none".
+- A supporter helps through being kind, clear and expected, and expectations about effort work better than expectations about outcomes,
+  which "can backfire" (Mohr's supportive accountability; `help-research-accountability.md`). Pressing for information raises hiding;
+  being known and belonging do the work, and reporting is only the vehicle. No independent study shows filters or accountability software
+  cut porn use.
+- The biggest danger is leaving: a porn web program lost 89% of its people in six weeks. The daily ask must be tiny and skipping must cost
+  nothing.
+
+### The walk: Daybook at 11 PM, for this person
+
+- **Nothing reaches out.** Notifications were on for 1 of 23 phone-days in the first two weeks. Screen Time is not on main. If the app is
+  not opened, it does not exist at 11 PM.
+- **If it is opened, Today is a status page that waits to be pressed:** the count, the level, Already happened, Walk it through, the
+  pattern, "Lesson, Still open", "Check-in, Still open", "Wind-down, Open now". Nothing on it says put the phone down, or reminds the person
+  of anything they said that morning.
+- **Every tool assumes a willing person.** SOS opens into a breath. Already happened asks for a log at the worst moment to give one.
+- **Everything that learns needs a log this person never makes.** Hard hours need two logged slips or six logged urges (core `risk.ts`,
+  `MIN_SCORE`), so Screen Time's hard-hours schedules would never start for them. "Urges ridden out" stays at 0, so the proof lines that
+  "Becoming free" step 1 puts on Today have nothing to say. The pattern stays empty.
+- **The stakes are on the lessons, not the habit.** The fire burns lower only when no part is done (core `flame-low.ts`, `partDone`). A
+  person who does the lesson and slips every night keeps a full fire. That is the "nothing at stake" the owner feels.
+
+### The design: five changes
+
+**1. The morning set: one minute, before the lesson (effort: high for the data, medium for the screens).**
+
+The first time Daybook opens in the morning (from the morning note, 4 AM to 2 PM, once a day), two pages, then today's lesson:
+
+- **"How was last night?"** Two choices: **Free of it** and **It happened**. This is the honest log, moved to the one time of day it is
+  easy to give. "It happened" is saved as a slip on the night before (time unknown), counts as honesty, and gets no ceremony: "Logged. Today
+  is open." Rekindle is one quiet tap away, never pushed. No stakes and no points shown, as CLAUDE.md asks after a slip.
+- **"Who are you doing tonight for?"** The person's own reasons from setup (the "what has it cost you" and "who are you becoming" answers,
+  and a short list of their own), one tap. Under it, one line: "Feeds and adult sites wait from 10:30 PM ›", yesterday's time unless they
+  change it. **Set tonight.**
+- Then today's lesson, as now. The lesson stays the daily thing to learn; the morning set is the daily thing to do.
+- Skipping costs nothing that day. It counts in the week (below) and in the weekly note.
+- For the person: the one who is sure gets to act, every day, in under a minute. For Daybook: a reason to open it every morning that is not
+  a chore (the October 23 morning check-in asked two questions about last night and gave nothing back; this one sets up the night).
+
+**2. The night wait (effort: high; changes Screen Time, which is on its own branch).**
+
+The morning self's choices become the night's defenses. Built on the Screen Time work (`claude/screen-time-device`), with these changes:
+
+- **The hours come from the person, not the log.** The morning set's time starts the night (and setup asks it, for people who said most
+  days). `riskWindow` can still suggest a time once the log finds one.
+- **Two waits, at the on-ramp and at the destination.** The feeds the person picks (the scrolling that starts it) get a short wait with
+  an easy way out, all day, as one sec does (the evidence is for this). Adult websites get Apple's adult web filter
+  (`ManagedSettings` web content, `.auto`) inside the night hours, lifted only after a long wait: 15 minutes by default (5, 15 or 30 in
+  More), which is the owner's "wait, not a wall". The filter works in Safari, Chrome and Firefox and turns off private browsing; nothing
+  shows it reaches the browsers inside other apps, so the feeds' wait matters as much as the filter. Both are always undoable in More and in Settings, as Apple requires.
+- **The wait screen (`/pause`, already built) shows the morning:** "You set this up this morning." and the person's reason, quoted with
+  the time they chose it. Then the timer and **Put it down and go to bed**. A future-you voice note plays here if they recorded one. No
+  argument and no lecture: the research says the message does little; the wait and the exit do the work.
+- **The stake, said before the choice, never after:** "Open it, and tonight goes in the week as a night you went through." That night then
+  counts as a night the lock did not hold, in the week and in the weekly note (effort, not a slip: the note never says why).
+- **Loosen slowly, tighten at once** (the hole people find in every rival is the rule, not the shield: one sec's schedule can be moved to
+  3 AM in a second). A change that makes the night stricter (an earlier time, a longer wait, more feeds) works now. A change that loosens it
+  (a later time, a shorter wait, the filter off) starts the next morning, and says so. "Lift every pause now" in More stays instant, as
+  the Screen Time plan promises, but counts as a night the lock did not hold.
+- **How the long wait works** (`help-research-rivals-waits.md`): the shield's button cannot open Daybook, so it posts a note that opens
+  `/pause`; when the wait is over, Daybook saves an unlock time to the App Group and a DeviceActivity schedule lifts the filter for 10
+  minutes, then it comes back. This rests on one developer's report and fails in some TestFlight builds (Apple forum thread 807934), so
+  the app also re-checks the unlock time every time it opens, and it is tested on a TestFlight build before anything is promised.
+- **Honest limit:** Apple lets the person turn all of this off in Settings in seconds. iOS 26.4 adds a 4-digit code that locks the
+  Screen Time settings; a supporter could hold it. That is a wall, not a wait, so it is only ever a top rung the person climbs by choice,
+  later, not part of this.
+- For the person: defenses, not willpower, set by the self who wants them. For Daybook: the first thing in the app that works when the app
+  is not opened, which is what keeps it on the phone.
+
+**3. A record built from effort and the morning's honest tap (effort: high where it touches points and counts; medium for words).**
+
+- New proof in `miles.ts`, for people who never open SOS: **mornings set**, **nights the lock held**, **free nights** (from the morning
+  tap). "Free 3 of the last 7 nights", "You set up 12 mornings in a row", "Your lock held 9 nights this month".
+- **Fewer, not never, as the weekly goal** for people who slip most days (step-down mode): this week's free nights against last week's,
+  aiming for one more. The Sunday review shows it. Once a week passes with no slip, the usual goals return (CLAUDE.md: no big goals before
+  that).
+- **The fire's "part done" counts the morning set**, so a person who sets up the morning keeps their fire; a person who stops setting it
+  up sees it burn lower, as built. Nothing is ever taken away from what was earned.
+- For the person: proof that grows on the days they try, even before the slips stop. For Daybook: a record that fills for everyone, not
+  only for people who log.
+
+**4. One person, one note a week, effort only (effort: medium on the phone; high if the server sends it).**
+
+- The person names one supporter (the "safe person" in My plan already holds a name). On Sunday, the review ends on "Your note to Alex":
+  "This week Sam set up his nights 6 of 7 mornings, kept his night lock 4 times, and moved 3 days. He is working at it." Never a slip, a
+  time, a count of nights it happened, or anything from the journal. **Send to Alex** opens Messages with it ready; one tap.
+- The first note carries a short line for the supporter, from the research (CRAFT and supportive accountability): thank the person for the
+  week, the same warmth for a good week and a hard one, never ask how many times. The app says this to the person too, so they know what
+  the note asks of them.
+- The person can stop the notes at any time, and the supporter is not told.
+- For the person: being known again without having to confess, which is what broke last time. For Daybook: the one thing every program
+  that worked for them had, and that no rival does without surveillance.
+
+**5. The good week (effort: medium; after 1 and 3).**
+
+- On Sunday, the person picks two or three things for the week from what makes a good week for them: move, a person, faith, bed on time
+  with the phone out of the room, a goal at work or school. The wind-down ticks them off. The flame grows from them, like a lesson.
+- "Do one little thing" goes; this is what it was trying to be.
+- For the person: the replacement, not just the removal, and a life that does not burn out the way a fight does. For Daybook: a reason to
+  open it on good weeks too.
+
+### What this changes in the work now in progress
+
+- **Screen Time** (`claude/screen-time-device`): hours set by the person, the short wait on feeds all day, the adult web filter back in
+  (dropped by the owner on November 8 as "not worth it"; asked again below, since the web is where it happens), the long wait, the morning
+  reason on `/pause`, and offered at the end of setup to people who said most days instead of unlocked on day 7. The 10-, 30- and 60-second
+  waits stay for the feeds.
+- **Proof where it counts** (building): add the effort proofs as sources, or the hero's proof line is empty for people who never open SOS.
+- **Future-you notes** (building): play them at the wait, and offer recording at the end of a morning set, not only inside SOS.
+- **The urge Live Activity** (#42): it starts only from SOS, which this person does not open. Hold it until the morning set and the wait
+  are in.
+- **Rekindle** (building): it also opens from the morning's "It happened", optional and quiet. The morning-after "what it gave, what it
+  cost" moves to the Sunday review for people who slip most days, so the morning stays one minute.
+- **The accountability partner** ("Becoming free", What stays out: wait until about 50 people a week): reversed. It is what worked for the
+  owner, and the effort-only note avoids what the rivals got wrong.
+- **Lessons first** (October 23): the lesson stays first among things to learn; the morning set comes before it. This brings back a
+  morning moment, on the owner's word now, in a different shape.
+- **Stop for now:** new SOS tools and more SOS polish. SOS stays as it is, free and one tap away, for the person who wants it.
+
+### What stays out
+
+- **Money stakes** (a pledge to a cause, a deposit). Most people refuse them (13.7% in Halpern 2015), App Store rules for paid
+  commitments are unclear, and money after a slip is the worst review the rivals get.
+- **Screen monitoring for the supporter** (Covenant Eyes style). No independent evidence, and the reviews are about resentment and
+  bypassing.
+- **Hard walls that cannot be undone.** The owner chose a wait, and Apple lets the person lift any Screen Time setting anyway.
+
+### Questions for the owner (each with a recommendation)
+
+1. **A morning moment again.** (a) Two pages before the lesson, from the morning note, once a day (recommended). (b) At the end of the
+   lesson instead. (c) No morning; set the night in the evening wind-down.
+2. **The waits.** (a) Feeds: a short wait all day (10 seconds, as one sec); adult sites: blocked in the night hours, lifted after 15
+   minutes (recommended). (b) One wait for both, the person picks it. (c) As built: 10 to 60 seconds, night only, apps only.
+3. **The adult web filter.** (a) On in the night hours, behind the long wait (recommended). (b) On all day. (c) Off, as decided November 8.
+4. **The weekly note.** (a) Daybook writes it on Sunday and one tap sends it in Messages; nothing goes through Daybook's server
+   (recommended to start). (b) Daybook's server emails it every Sunday by itself, even when the app is not opened (needs an account; the
+   server holds only the three effort numbers; the privacy page changes).
+5. **The stake.** (a) Going through the wait counts in the week and the weekly note, and the screen says so before the choice
+   (recommended). (b) Also the fire burns lower that night.
+
+### Steps, with the effort each needs
+
+1. **High.** Core `morning-set.ts`: when it shows, the last-night answer saved as a slip on the night before with no time (it feeds the
+   count, points, `runLedger` and the hero: golden fixtures checked), the reason and the night time saved to the day; `partDone` counts it.
+2. **Medium.** The two morning pages (`SceneFrame`, `Dock`, the dawn sky, the flame big) and the morning note pointing to them.
+3. **High.** Screen Time: hours from the morning, the two waits, the adult web filter, the long wait's timer on `/pause`, the morning
+   reason, setup's offer; on the owner's iPhone (the simulator cannot run it).
+4. **High.** The effort record: mornings set, nights the lock held (written by the app on its next open from the App Group; Screen Time
+   data never leaves the phone), free nights; `miles.ts` proofs; the weekly "fewer, not never" goal in the Sunday review.
+5. **Medium.** The weekly note: the supporter in My plan, the Sunday page, Messages share, the stop switch. **High** if the server sends it.
+6. **Medium.** The good week: Sunday picks, the wind-down ticks, the flame grows.
+7. **High.** Measure it: anonymous events for a morning set done and a free night answered (on the fixed lists and the privacy page), so
+   the north star can show whether free nights rise. Nothing from Screen Time is counted (Apple's license).
+
+### Building chats
+
+1. **Daybook: The morning set** (Opus, high then medium): steps 1 and 2. First, alone, since 3 to 6 read what it writes.
+2. **Screen Time changes**: step 3, sent to the session that owns the Screen Time branch, not a new one.
+3. **Daybook: The effort record** (Opus, high): step 4, after 1; tell "Proof where it counts" so the proofs land in one place.
+4. **Daybook: One person, one note** (Opus, medium): step 5, after 1 and 4.
+5. **Daybook: The good week** (Opus, medium): step 6, later.
+6. Step 7 goes to the analytics session.
+
+Each is built on its branch, looked at on the web and the simulator (Screen Time on the owner's iPhone), and shown to the owner before it
+is merged. The owner is the first user: the right test is the owner using it for two weeks and saying whether the nights changed.
+
 ## Becoming free: the whole app around one change of identity (the owner, November 11, 2026; approved November 11, 2026, being built)
 
 The owner asked for one plan that judges every moment by one question: does this help the person see themselves as someone who is free of

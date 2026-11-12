@@ -190,7 +190,8 @@ export interface IdLine {
   who: string;
   n: string;
 }
-export function identityLines(days: Days, st: Settings, reviews: Reviews, tk: DayKey): IdLine[] {
+/** `downs`: the times the person put it down when an app pulled them in (Screen Time, kept on the phone: core pull.ts) */
+export function identityLines(days: Days, st: Settings, reviews: Reviews, tk: DayKey, downs = 0): IdLine[] {
   const S0 = gameCompute(days, st, reviews, tk).S;
   const num = (v: unknown) => (typeof v === 'number' ? v : 0);
   const S = { rode: num(S0.rode), slips: num(S0.slips), lessons: num(S0.lessons), checkins: num(S0.checkins) };
@@ -201,6 +202,7 @@ export function identityLines(days: Days, st: Settings, reviews: Reviews, tk: Da
     S.rode ? { ic: 'wave', who: 'You are someone who rides out urges.', n: times(S.rode, 'time', 'times') } : null,
     S.slips ? { ic: 'leaf', who: 'You are someone who tells the truth, even about a slip.', n: times(S.slips, 'slip', 'slips') + ', every one logged' } : null,
     comebacks ? { ic: 'sunrise', who: 'You are someone who comes back after a hard night.', n: times(comebacks, 'comeback', 'comebacks') } : null,
+    downs > 0 ? { ic: 'phone', who: 'You are someone who puts it down.', n: times(downs, 'time', 'times') } : null,
     held ? { ic: 'shield', who: 'You are someone who gets through the hard hours.', n: times(held, 'time', 'times') } : null,
     S.lessons ? { ic: 'book', who: 'You are someone who learns how this works.', n: times(S.lessons, 'lesson', 'lessons') + ' finished' } : null,
     S.checkins ? { ic: 'pencil', who: 'You are someone who looks honestly at the day.', n: times(S.checkins, 'check-in', 'check-ins') } : null,

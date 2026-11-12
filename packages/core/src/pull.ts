@@ -138,6 +138,9 @@ export interface PullNote {
   t: string;
   b: string;
   url: string;
+  /** the words once the person has put it down at least once: {n} and {next} are filled on the phone with the live count
+      (pullDownsFill), since the shield's Close adds to it while Daybook is shut */
+  bDowns?: string;
 }
 /** every note the extension may post, with where a tap goes; the lesson's link is today's lesson (or Today) */
 export function pullNudges(o: { lessonUrl: string; long: number; pauseAt?: number }): Record<PullNoteKind, PullNote> {
@@ -149,10 +152,17 @@ export function pullNudges(o: { lessonUrl: string; long: number; pauseAt?: numbe
       b: hrs + ' there today, and no lesson yet. You are dimming your fire. Three minutes with me puts it back.',
       url: o.lessonUrl,
     },
-    longDone: { t: '🔥 ' + hrs + ' in', b: hrs + ' there today. Every minute more is a minute your fire does not get. Put it down.', url: '/' },
+    longDone: {
+      t: '🔥 ' + hrs + ' in',
+      b: hrs + ' there today. Every minute more is a minute your fire does not get. Put it down.',
+      bDowns: hrs + ' there today. Every minute more is a minute your fire does not get. You have put it down {n}. Make it {next}.',
+      url: '/',
+    },
+    /* the next choice and what it costs, never who the person is: the count says what they have already done, and asks for one more */
     hard1: {
       t: '🔥 Your hard hours',
-      b: 'This is when it gets you, and you are on it again. You are dimming your fire. Stand up and walk to another room, now.',
+      b: 'You are on it again. You are dimming your fire. The next choice is yours: stand up and walk to another room, now.',
+      bDowns: 'You have put it down {n}. You are dimming your fire now. Make it {next}: stand up and walk to another room.',
       url: '/pause',
     },
     hard2: { t: '🔥 Still here', b: 'This is the choice that counts tonight. Put the phone in another room. If it pulls, open me.', url: '/pause' },
@@ -171,6 +181,8 @@ export function pullNudges(o: { lessonUrl: string; long: number; pauseAt?: numbe
 export interface PullShield {
   title: string;
   sub: string;
+  /** the line once the person has put it down at least once, {n} and {next} filled by the shield with the live count */
+  subDowns: string;
   primary: string;
   secondary: string;
 }
@@ -179,6 +191,7 @@ export function pullShield(o: { until: string; plan: string | null; quiet: boole
   return {
     title: 'Resting until ' + o.until,
     sub: o.plan ? first + ' ' + o.plan : first + ' Your fire is worth more than this.',
+    subDowns: 'You have put it down {n}. Close it, and that makes {next}.' + (o.plan ? ' ' + o.plan : ''),
     primary: 'Open Daybook',
     secondary: 'Close',
   };
@@ -200,7 +213,8 @@ export interface PullPauseWords {
   /** after "Put it down" */
   thanks: string;
 }
-export function pullPauseWords(o: { quiet: boolean; open: number; plan: string | null }): PullPauseWords {
+export function pullPauseWords(o: { quiet: boolean; open: number; plan: string | null; downs?: number }): PullPauseWords {
+  const n = o.downs ?? 0;
   return {
     title: 'These are your hard hours',
     line: o.quiet ? 'Tonight is not a night to be alone with your phone.' : 'Put the phone down. This is the choice that keeps your fire burning.',
@@ -208,7 +222,11 @@ export function pullPauseWords(o: { quiet: boolean; open: number; plan: string |
     hold: 'Breathe while it runs.',
     down: 'Put it down',
     open: 'Open it for ' + o.open + ' minutes',
-    thanks: o.quiet ? 'That was the strong choice. It is in your log as a win.' : 'One more win in your log. That is what someone free does.',
+    thanks: o.quiet
+      ? 'That was the strong choice. It is in your log as a win.'
+      : n >= 2
+        ? 'That makes ' + n + '. One more win in your log.'
+        : 'One more win in your log. That is what someone free does.',
   };
 }
 
@@ -232,6 +250,22 @@ export function pullDownEvent(days: Days, st: Settings, now: number): { key: Day
   }
   return { key, time: clockOf(now), fields: { trigger: 'scroll', did: ['left'] } };
 }
+
+/* ---------- the count: every time the person puts it down ----------
+   Each Close on the shield, and each Put it down on the wait screen (reached from the shield or a note), is one more time the person
+   put it down. The count is kept in the App Group on this phone (Pull.countDown in targets/_shared/PullShared.swift, and the
+   module's countDown), never synced and never sent, because it comes from Screen Time. It only goes up. */
+
+/** minutes after one put-down before another counts, so closing the shield again and again does not run the count up */
+export const PULL_COUNT_GAP = 10;
+
+/** "once", "6 times" */
+export const pullTimes = (n: number) => (n === 1 ? 'once' : n + ' times');
+/** fills a line's {n} and {next} with the count (the same rule as the extensions' Pull.fill) */
+export const pullDownsFill = (s: string, n: number) => s.replace('{n}', pullTimes(n)).replace('{next}', String(n + 1));
+
+/** whether a put-down at `now` counts, after the last counted one at `last` ms */
+export const pullCounts = (last: number, now: number) => !(last > 0 && now >= last && now - last < PULL_COUNT_GAP * 60000);
 
 /* ---------- what the app shares with the extensions ---------- */
 

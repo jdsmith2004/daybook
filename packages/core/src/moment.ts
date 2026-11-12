@@ -93,7 +93,7 @@ export interface MomentDev {
   /** days away not known (core awayDue), once Welcome back has been closed twice: the fill-in (Welcome back itself opens on its own) */
   back?: number | null;
   /** the reminders' one word (core nudgeCard), on a phone that can remind */
-  nudge?: { k: 'paused' | 'backup' | 'time'; h: string; p: string } | null;
+  nudge?: { k: 'paused' | 'backup' | 'time' | 'off'; h: string; p: string } | null;
   /** the first day the first pattern was shown as the card: it is the card on that day only */
   patternDay?: DayKey | null;
   /** signed in: lessons after the first LEARN_FREE are open (nextUp) */

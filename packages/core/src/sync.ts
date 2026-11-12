@@ -239,10 +239,26 @@ export function baseAfter(before: Snapshot, ids: string[], dirty: Dirty, base: D
     if (dirty[id] != null || !(id === 'settings' || id.startsWith('days/'))) continue;
     const r = recordOf(before, id as RecordId);
     if (out === base) out = { ...base };
-    if (r && r.u) out[id] = r.u;
-    else delete out[id];
+    /* 0: new on this device, made from no copy of the account's. Sent as b: 0, it tells the account this is a new app that
+       wants a join; an older app sends no b at all, and the account keeps its old rule (the newer change wins) */
+    out[id] = r && r.u ? r.u : 0;
   }
   return out;
+}
+
+/** the bases after a push was taken: a record changed again while it was being sent (still waiting, at a newer change time)
+    was made on top of the copy just sent, so that copy is its base now. Without this, the copy just sent comes back on the
+    next pull as "another device's" and is joined into the newer change, bringing back what an Undo took away. A base that is
+    wrong only ever causes a join, never a loss. Then only the bases still needed are kept (keepBase). */
+export function ackBase(base: Dirty, acked: Record<string, number>, dirty: Dirty): Dirty {
+  let out = base;
+  for (const id of Object.keys(acked)) {
+    if (!(id === 'settings' || id.startsWith('days/'))) continue;
+    if (dirty[id] == null || dirty[id] === acked[id]) continue;
+    if (out === base) out = { ...base };
+    out[id] = acked[id];
+  }
+  return keepBase(out, dirty);
 }
 
 /** the bases still needed: only those of records still waiting to be sent */

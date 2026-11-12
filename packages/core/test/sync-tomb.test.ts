@@ -92,3 +92,38 @@ describe('sync on a weak signal', () => {
     expect(core.isPushAnswer({ message: 'Not Found' })).toBe(false);
   });
 });
+
+describe('what a waiting change was made from (the review of November 12, 2026)', () => {
+  it('marks a record new on this device with base 0, so the account knows a new app sent it and joins it', () => {
+    const b = core.baseAfter(empty(), ['days/2026-10-10'], {}, {});
+    expect(b['days/2026-10-10']).toBe(0);
+    const s = withEntry(empty(), '2026-10-10', 'a1', 100);
+    const recs = core.pendingRecords(s, { 'days/2026-10-10': 100 }, b);
+    expect(recs[0].b).toBe(0);
+  });
+
+  it('an Undo made while its change was still being sent stays undone when that change comes back on a pull', () => {
+    /* settings at S0 (from the account), a log raises them to S1, the push of S1 is in flight, the person taps Undo: S2 */
+    const S0 = 100;
+    const S1 = 200;
+    const S2 = 300;
+    const base0 = { settings: S0 };
+    /* the push of S1 is taken, but settings changed again meanwhile (S2 waits) */
+    const dirty = { settings: S2 };
+    const base = core.ackBase(base0, { settings: S1 }, dirty);
+    expect(base.settings).toBe(S1);
+    /* without it the base stays S0, and S1 coming back would be joined into S2 */
+    expect(core.keepBase(base0, dirty).settings).toBe(S0);
+    /* a record whose push was the latest change needs no base any more */
+    expect(core.ackBase({ settings: S0 }, { settings: S1 }, {})).toEqual({});
+  });
+
+  it('S1 coming back on a pull does not undo the Undo once the base is S1', () => {
+    const st = (u: number, badges: string[], level: number) =>
+      ({ ...core.normSettings({ start: '2026-10-01' }), seen: { badges, quests: [], level, full: null }, u }) as unknown as NonNullable<Snapshot['settings']>;
+    const here: Snapshot = { ...empty(), settings: st(300, [], 1) };
+    const m = core.mergeRemote(here, { settings: 300 }, [{ id: 'settings', u: 200, data: st(200, ['first'], 3) }], { settings: 200 });
+    expect(m.changed).toEqual([]);
+    expect(m.snap.settings!.seen!.badges).toEqual([]);
+  });
+});

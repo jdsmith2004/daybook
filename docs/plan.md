@@ -295,8 +295,9 @@ who a person thinks they are.
 
 - **Today.** The hero's second line becomes one proof line, picked fresh each day from `miles.ts` ("4 urges ridden out", "14 days free of
   it", "1 comeback"), in place of "35 points to Level 18". The flame, its form and its level stay in the hero (the flame is the heart);
-  points and the bar to the next level live on the level page, one tap on the flame. "Who you are becoming" moves up to sit right under the
-  hero, with the person's own setup line and the newest proof under it.
+  points and the bar to the next level live on the level page, one tap on the flame. "Who you are becoming" sits after the day's steps (built that way on purpose, November 12, 2026: above them the
+  34pt sentence pushes the lesson below the fold, and the next step must stay obvious), with the person's own setup line and the newest
+  proof under it.
 - **SOS, opening.** Over the first breath, one small line for the first few seconds: "You have ridden this out 4 times." It fades as the
   breath starts. Never on a first-ever SOS (nothing to prove yet; it shows nothing), never a slip count, never a number of days.
 - **SOS, ending.** `RodeOut` already counts the urges ridden out. Its headline names what this one proved, from the record: the first ever

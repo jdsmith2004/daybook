@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import type { Lesson } from '../src/lessons';
 
-const NEW = core.LESSONS.filter((L) => Number(L.id.slice(1)) > 32);
+const NEW = core.LESSONS.filter((L) => Number(L.id.slice(1)) > 32 && Number(L.id.slice(1)) < 50);
 /* contractions, but not possessives ("tonight’s") or the titles of sources */
 const CONTRACTION = /\b\w+n[’']t\b|\b(I|you|we|they|it|that|what|there|here|let)[’'](m|re|ve|ll|d|s)\b/i;
 const words = (L: Lesson): string[] => {
@@ -18,10 +18,11 @@ const words = (L: Lesson): string[] => {
   return out;
 };
 
-it('there are 49 lessons and the twelve God lessons, and the ids match the lesson list', () => {
+it('there are 49 lessons, the twelve God lessons and the lessons of one habit, and the ids match the lesson list', () => {
   expect(core.LESSONS.map((L) => L.id)).toEqual(core.LESSON_IDS);
-  expect(core.LESSON_IDS).toHaveLength(61);
-  expect(core.LESSON_IDS.slice(49)).toEqual(core.PATH_STEPS.map((s) => s.god));
+  expect(core.LESSON_IDS).toHaveLength(65);
+  expect(core.LESSON_IDS.slice(49, 61)).toEqual(core.PATH_STEPS.map((s) => s.god));
+  expect(core.LESSON_IDS.slice(61)).toEqual(['l50', 'l51', 'l52', 'l53']);
   expect(NEW.map((L) => L.id)).toEqual(['l33', 'l34', 'l35', 'l36', 'l37', 'l38', 'l39', 'l40', 'l41', 'l42', 'l43', 'l44', 'l45', 'l46', 'l47', 'l48', 'l49']);
 });
 
@@ -128,7 +129,8 @@ describe('families', () => {
 
   it('the path is the twelve steps, each once, in order, and every lesson is on one step or off the path (November 2, 2026)', () => {
     const ids = core.lessonPath().map((L) => L.id);
-    expect([...ids, ...core.OFF_PATH, ...core.PATH_STEPS.map((s) => s.god)].sort()).toEqual(core.LESSON_IDS.slice().sort());
+    const own = core.PATH_STEPS.flatMap((s) => Object.values(s.habit || {}).flatMap((x) => x || []));
+    expect([...ids, ...own, ...core.OFF_PATH, ...core.PATH_STEPS.map((s) => s.god)].sort()).toEqual(core.LESSON_IDS.slice().sort());
     expect(new Set(ids).size).toBe(ids.length);
     expect(core.lessonSections().map((x) => x.u)).toEqual(core.PATH_STEPS.map((_, k) => k));
     /* the first eight, open without an account: the truth, then why willpower is not enough */

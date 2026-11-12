@@ -707,7 +707,7 @@ export const MOVE_NAME: Record<string, string> = {
   thought: 'Say it fast',
   reasons: 'Your words',
   written: 'It is written',
-  future: 'From you',
+  future: 'Your note',
 };
 
 /** the icon for a move */

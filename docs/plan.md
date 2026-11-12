@@ -6173,3 +6173,5 @@ say, and what is your answer?", "Who are you becoming?", each with a one-line ex
 
 **To measure:** how many leave a note after the invitation, how many play it in SOS, and whether rides that play it pass more
 often than rides that do not.
+
+Pictures: `docs/future-you/` (the page on the web, a written note in SOS on the web, a recorded note in SOS on an iPhone 17 Pro simulator, release build).

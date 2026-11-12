@@ -19,6 +19,7 @@ import {
   fireLow,
   formOfLevel,
   heroNumber,
+  effortCounts,
   heroProof,
   LOW_OF,
   LOW_WARN,
@@ -158,7 +159,7 @@ function Sky({
   const reduce = useReducedMotion();
   const lvl = g.level;
   /* one proof line under the level, picked fresh each day (core heroProof) */
-  const proof = useMemo(() => (snap.settings ? heroProof(snap.days, snap.settings, snap.reviews, tk) : null), [snap, tk]);
+  const proof = useMemo(() => (snap.settings ? heroProof(snap.days, snap.settings, snap.reviews, tk, effortCounts(snap.days, tk)) : null), [snap, tk]);
   const sc = useMemo(() => emblemScene(lvl.n), [lvl.n]);
   const inset = useSafeAreaInsets();
   const SCENE_H = height;

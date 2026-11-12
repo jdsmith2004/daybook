@@ -5,6 +5,7 @@
    who the person is, never a score, never a slip count, never a number of days in a run. Every count only goes up. */
 import { addDays, eventsOf, gameCompute, runLedger } from './legacy/core.js';
 import { rkComebackCount } from './rekindle';
+import { firstMorning, freeNights, morningsSet, nightTold } from './morning-set';
 import { hardHeld, riskWindow } from './risk';
 import type { DayKey, Days, Reviews, Settings } from './types';
 
@@ -26,6 +27,22 @@ export interface EffortCounts {
   lockHeld: number;
   /** of the last 7 nights, how many the morning tap called free of it */
   free7: number;
+}
+
+/** the effort record from the morning set (core morning-set.ts): mornings set ever and in the last 7, and the last 7 nights the
+    morning tap called free (night k is told on k + 1, so the last night is tk - 1). Nights the lock held come from the night wait
+    (Screen Time), which is not built yet: 0 until it is. Null while there is nothing in it. */
+export function effortCounts(days: Days, tk: DayKey): EffortCounts | null {
+  const first = firstMorning(days, tk);
+  const e: EffortCounts = {
+    mornings: first ? morningsSet(days, first, tk) : 0,
+    mornings7: morningsSet(days, addDays(tk, -6), tk),
+    lockHeld: 0,
+    /* on the morning after "It happened", the free nights wait a day: "Free 1 of the last 7" would read as a score of the
+       others, and the hours after a slip are for coming back (CLAUDE.md). The mornings set lead instead */
+    free7: nightTold(days, addDays(tk, -1)) === 'slip' ? 0 : freeNights(days, addDays(tk, -7), addDays(tk, -1)).free,
+  };
+  return e.mornings || e.mornings7 || e.free7 ? e : null;
 }
 
 /** the effort lines, strongest first. No "in a row": a run that breaks on one skipped morning is the all-or-nothing count

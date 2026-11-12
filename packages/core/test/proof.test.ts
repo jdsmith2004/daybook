@@ -68,6 +68,49 @@ describe('effortProofs', () => {
   });
 });
 
+describe('effortCounts, from the morning set', () => {
+  /** a person who answers each morning and sets the night, and never opens SOS */
+  function mornings(list: [string, 'free' | 'slip', boolean][]) {
+    let days: Days = {};
+    let s1: Settings = { ...st, day1: '2026-10-01' };
+    list.forEach(([k, n, set]) => {
+      days = core.answerNight(days, s1, k, n);
+      if (set) ({ days, st: s1 } = core.setTonight(days, s1, k, { r: 'For the morning', nt: '22:30' }));
+    });
+    return { days, s1 };
+  }
+  it('is null before the first morning', () => {
+    expect(core.effortCounts({}, tk)).toBeNull();
+  });
+  it('counts mornings set and free nights, the last night told this morning', () => {
+    const { days } = mornings([
+      ['2026-10-17', 'slip', true],
+      ['2026-10-18', 'free', true],
+      ['2026-10-19', 'slip', false],
+      ['2026-10-20', 'free', true],
+      ['2026-10-21', 'free', true],
+    ]);
+    expect(core.effortCounts(days, tk)).toEqual({ mornings: 4, mornings7: 4, lockHeld: 0, free7: 3 });
+  });
+  it('fills the hero for someone who slips most nights and never opens SOS', () => {
+    const { days, s1 } = mornings([
+      ['2026-10-19', 'slip', true],
+      ['2026-10-20', 'slip', true],
+      ['2026-10-21', 'free', true],
+    ]);
+    /* the morning after "It happened": no free-night line that day, the mornings set lead */
+    const after = mornings([
+      ['2026-10-20', 'free', true],
+      ['2026-10-21', 'slip', true],
+    ]);
+    expect(core.effortProofs(core.effortCounts(after.days, tk))).toEqual(['2 mornings set']);
+    const all = core.heroProofs(days, s1, {}, tk, core.effortCounts(days, tk));
+    expect(all[0]).toBe('Free 1 of the last 7 nights');
+    expect(all).toContain('3 of the last 7 mornings set');
+    all.forEach((l) => expect(l).not.toMatch(/slip|happened/i));
+  });
+});
+
 describe('sosProof', () => {
   it('shows nothing before the first urge ridden out', () => {
     const { days } = log([['2026-10-20', 'slipped', '22:00']]);

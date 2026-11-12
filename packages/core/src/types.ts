@@ -49,6 +49,28 @@ export interface DayEvent {
   fb?: string;
   /** a slip: how it felt afterwards (Rekindle's words, RK_FEELS) */
   fa?: 'shame' | 'giveup' | 'angry' | 'flat' | 'pull' | 'okay';
+  /** a slip told the next morning, in the morning set's "It happened" (morning-set.ts): it was in the night, at a time not given */
+  mn?: true;
+}
+
+/** the morning set on the day it was done (morning-set.ts): the self who is sure, setting up the night. Kept on Play.ms. */
+export interface MorningSet {
+  /** last change, in ms */
+  at: number;
+  /** "How was last night?": the night of the day before. 'slip' adds a slip to that day (unless one was already logged that night). */
+  n?: 'free' | 'slip';
+  /** the id of the slip the morning added, so changing the answer back takes it away again */
+  ev?: string;
+  /** "And this morning?": 1 Low, 2 Okay, 3 Good */
+  f?: 1 | 2 | 3;
+  /** "Who are you doing tonight for?": the reason picked, in the person's own words, as it was shown */
+  r?: string;
+  /** when tonight's wait starts, 'HH:MM' */
+  nt?: Clock;
+  /** when Set tonight was pressed (ms): this morning was set */
+  set?: number;
+  /** when it was closed without being set (ms): skipped today, which costs nothing */
+  x?: number;
 }
 
 export interface Checkin {
@@ -92,6 +114,8 @@ export interface Play {
   o?: true;
   /** How are you feeling today? (day-feel.ts): the step from 1 (Rough) to 5 (Great), and when it was answered (ms). It earns nothing and does not start the log. */
   df?: [1 | 2 | 3 | 4 | 5, number];
+  /** the morning set (morning-set.ts), on the day it was done */
+  ms?: MorningSet;
 }
 
 export interface Day {
@@ -225,6 +249,9 @@ export interface Settings {
   free?: { d: DayKey; s: number }[];
   /** the day that question was last closed or skipped unanswered (north.ts freeLater). Optional. */
   freeNo?: DayKey | null;
+  /** when the night's wait starts, 'HH:MM': the last time the morning set (or setup) chose, and tomorrow morning's starting time
+      (morning-set.ts). Optional. */
+  nightAt?: Clock;
   u: number;
 }
 

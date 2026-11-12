@@ -7,6 +7,7 @@ import { GOD, TURNS, turnLesson } from '../lesson-turns';
 import { HABIT_ONLY, HABIT_TURNS } from '../lesson-habit';
 import { DEED_PTS, deedCount, normDeeds } from '../steps';
 import { normCreed } from '../faith';
+import { normMorning } from '../morning-norm';
 import { normHabit } from '../habit';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 import { normTalks } from '../talk';
@@ -398,6 +399,8 @@ function normEvent(e){
  if(e.outcome==='slipped'&&Number.isInteger(e.wm)&&e.wm>=0&&e.wm<=240)o.wm=e.wm;
  /* keep or start fresh, kept from older builds (the old rule in runLedger reads it): true keep the run going, false start fresh, absent not answered */
  if(e.outcome==='slipped'&&(e.keep===true||e.keep===false))o.keep=e.keep;
+ /* mn: a slip told the next morning in the morning set (morning-set.ts): it happened in the night, at a time not given */
+ if(e.outcome==='slipped'&&e.mn===true)o.mn=true;
  /* on a slip (slip.ts): the feeling named for before it (fb, a word from the field of feelings) and how it felt afterwards (fa) */
  if(e.outcome==='slipped'&&typeof e.fb==='string'&&/^[A-Za-z][A-Za-z ]{0,23}$/.test(e.fb))o.fb=e.fb;
  if(e.outcome==='slipped'&&['shame','giveup','angry','flat','pull','okay'].indexOf(e.fa)>=0)o.fa=e.fa;
@@ -433,7 +436,9 @@ function normP(p){
  if(p.o===true)q.o=true;
  /* df: the answer to "How are you feeling today?" (day-feel.ts): a step from 1 to 5, and when (ms) */
  if(Array.isArray(p.df)&&[1,2,3,4,5].includes(p.df[0])&&typeof p.df[1]==='number'&&isFinite(p.df[1])&&p.df[1]>=0)q.df=[p.df[0],p.df[1]];
- return pEmpty(q)&&!Object.keys(ov).length&&!q.o&&!q.fe&&!q.df?null:q;
+ /* ms: the morning set (morning-set.ts): last night's answer, this morning's feel, tonight's reason and wait time */
+ const ms=normMorning(p.ms);if(ms)q.ms=ms;
+ return pEmpty(q)&&!Object.keys(ov).length&&!q.o&&!q.fe&&!q.df&&!q.ms?null:q;
 }
 function blankP(){return {w:[],wd:false,r:false,c:0,m:false,tl:[],po:null,ls:[],lv:[],ov:{}}}
 /* a day counts as active when something was done, not when only the routine was edited */

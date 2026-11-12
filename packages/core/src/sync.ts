@@ -84,12 +84,12 @@ function localU(s: Snapshot, dirty: Dirty, id: RecordId): number | null {
 /* What an older app version does not know. It reads a day through its own normDay, which drops fields it has never
    heard of, so when it changes that day (a new entry, a check-in) the copy it sends comes back without them: how a slip
    felt after (fa) and the feeling before (fb, older slips), the situation and the after-slip mark on a plan (ft, pr, fw),
-   the mood and urges of the check-in (md, u), the answer to "How are you feeling today?" (df). None of these is ever
+   the mood and urges of the check-in (md, u), the answer to "How are you feeling today?" (df), the morning set (ms) and a slip told the next morning (mn). None of these is ever
    taken off by the app once set, so a copy without one that this device has is a copy from an app that cannot see it. */
-const EV_KEEP = ['fb', 'fa'] as const;
+const EV_KEEP = ['fb', 'fa', 'mn'] as const;
 const TALK_KEEP = ['pr', 'fw', 'ft'] as const;
 const CI_KEEP = ['md', 'u'] as const;
-const P_KEEP = ['df'] as const;
+const P_KEEP = ['df', 'ms'] as const;
 
 /** fills in, from `had`, the fields that only a newer app knows and `day` is missing (see EV_KEEP above), so an older app
     version that changed the day never takes them away. A slip's fields come back only while it is still a slip, and a

@@ -58,6 +58,8 @@ export interface UrMem {
   won?: Record<string, number>;
   /** when an SOS was last open on this device (opened or closed): Today holds the one tip ask for a few hours after it */
   sosAt?: number;
+  /** when Talk it through or Walk it through was last open on this device: the asks wait after them as after an SOS */
+  careAt?: number;
   /** how many times the ride was swiped to the next move, counted up to 3: until then SOS shows how to swipe */
   swiped?: number;
   [bucket: string]: unknown;
@@ -412,6 +414,13 @@ export function urLastAt(mem: UrMem): number | null {
   const a = typeof mem.sosAt === 'number' && Number.isFinite(mem.sosAt) ? mem.sosAt : 0;
   const b = mem.last && typeof mem.last === 'object' && typeof mem.last.t === 'number' ? mem.last.t : 0;
   return Math.max(a, b) || null;
+}
+
+/** when a care tool was last open on this device: an SOS (urLastAt), Talk it through or Walk it through (careAt). Every ask
+    (the tip card, the account card, the counts question) waits the same quiet hours after any of them. */
+export function careLastAt(mem: UrMem): number | null {
+  const c = typeof mem.careAt === 'number' && Number.isFinite(mem.careAt) ? mem.careAt : 0;
+  return Math.max(urLastAt(mem) || 0, c) || null;
 }
 
 /** the small tag on each tool in SOS: how it went for you, or that you like it (a Yes to "Would you use it again?", or

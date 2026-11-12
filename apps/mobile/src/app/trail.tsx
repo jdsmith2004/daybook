@@ -77,6 +77,7 @@ import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close, closeAll } from '@/lib/nav';
 import { count } from '@/lib/pulse';
+import { useCareOpen } from '@/lib/quiet-asks';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font } from '@/lib/theme';
@@ -85,6 +86,8 @@ type Step = 'walk' | 'where' | TrailPlace | 'home';
 
 export default function Trail() {
   const { snap, tk, update } = useStore();
+  /* the asks wait after it, as after an SOS (lib/quiet-asks.ts) */
+  useCareOpen();
   const st = useCareSettings();
   const sos = useSos();
   const g = useMemo(() => gameCompute(snap.days, st, snap.reviews, tk), [snap, st, tk]);

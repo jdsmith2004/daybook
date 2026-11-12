@@ -68,6 +68,7 @@ import {
   type TalkNeed,
   type TalkPath,
   type TalkSign,
+  NUDGE_WORDS,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -285,7 +286,7 @@ export default function TalkIt() {
     track('talk_done');
     const at = t.p === 'open' ? now + 3600000 : t.at;
     if (remind && remindersOffered && at) {
-      const body = t.p === 'wait' ? 'Time to decide. One minute.' : t.p === 'open' ? 'One minute to look back.' : 'Your plan is ready. One tap away.';
+      const body = NUDGE_WORDS.talk[t.p === 'wait' ? 'wait' : t.p === 'open' ? 'open' : 'change'];
       /* a change plan's reminder comes at its moment, so it opens Today with the plan, not the look back */
       scheduleTalk(at, body, t.p === 'change' ? '/' : '/talk?' + (t.p === 'wait' ? 'decide=' : 'look=') + t.id).then(setReminded);
     }
@@ -544,7 +545,7 @@ export default function TalkIt() {
                 <T v="label" style={s.c}>
                   What is in that {n}?
                 </T>
-                <ChipWrap>
+                <ChipWrap last={1}>
                   {whys.map((r) => (
                     <AnswerChip key={r} label={r} tone="mint" on={talk.why.indexOf(r) >= 0} onPress={() => set({ why: toggle(talk.why, r) })} />
                   ))}

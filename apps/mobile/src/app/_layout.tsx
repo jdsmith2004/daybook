@@ -6,7 +6,9 @@ import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/6
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
 import {
+  nudgeAt,
   nudgeCounts,
+  nudgeDue,
   nudgeKeep,
   nudgeKey,
   nudgeLearn,
@@ -17,6 +19,8 @@ import {
   trailNoteKeep,
   trailNotes,
   WIDGET_PTS,
+  nudgeExt,
+  nudgeQuietLeft,
 } from '@daybook/core';
 import { useFonts } from 'expo-font';
 import {
@@ -50,7 +54,7 @@ import { listenForTaps, onPermission, remindersAllowed, remindersOffered, schedu
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
 import { HealthKeeper } from '@/lib/health';
-import { track, trackNudge, useKeepEvents, useTrackScreens } from '@/lib/events';
+import { notesCame, track, trackNudge, useKeepEvents, useTrackScreens } from '@/lib/events';
 import { DayEvents, FlameEvents } from '@/lib/events-day';
 import { PullKeeper } from '@/lib/pull';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
@@ -90,6 +94,8 @@ function Reminders() {
         count(k);
         trackNudge(k);
       });
+      /* each note delivered since the last open, with the hour it came (the counts above say only how many) */
+      notesCame(nudgeDue(l0, s.settings, t, ok));
       setNudgeLog((l) => nudgeLearn({ ...l, opens: [...l.opens, t] }, s.days, s.settings, s.reviews, t, ok));
       setAllowed(ok);
       setOpenAt(t);
@@ -117,7 +123,7 @@ function Reminders() {
           const k = nudgeTapKind(id);
           if (k) {
             count('nt_' + k + '_tap');
-            trackNudge('nt_' + k + '_tap');
+            trackNudge('nt_' + k + '_tap', nudgeAt(nlog.current, id));
           }
           setNudgeLog((l) => ({ ...l, taps: [...l.taps, id] }));
         },
@@ -157,12 +163,26 @@ function TrailNotes() {
     const sub = AppState.addEventListener('change', (a) => a === 'active' && setOpenAt(Date.now()));
     return () => sub.remove();
   }, []);
-  const notes = useMemo(() => (ready ? trailNotes(sos.mem, snap.days, Math.max(openAt, Date.now() - 60000)) : []), [ready, sos.mem, snap.days, openAt]);
+  /* the trail's notes learn whether they are opened (core nudgeQuietLeft): paused, none; on the one more try, only the first */
+  const log = useNudgeLog();
+  const left = log.ready ? nudgeQuietLeft(log, 'trail', openAt) : 0;
+  const notes = useMemo(
+    () => (ready ? trailNotes(sos.mem, snap.days, Math.max(openAt, Date.now() - 60000)).slice(0, left) : []),
+    [ready, sos.mem, snap.days, openAt, left],
+  );
   const key = notes.map((n) => n.at).join(',');
   useEffect(() => {
     if (!ready || !remindersOffered) return;
     scheduleTrail(notes).catch(() => undefined);
     sos.setMem((m) => trailNoteKeep(m, notes, Date.now()));
+    setNudgeLog((l) =>
+      nudgeExt(
+        l,
+        'trail',
+        notes.map((n) => ({ id: 'trail@' + n.at, at: n.at })),
+        Date.now(),
+      ),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, ready]);
   return null;

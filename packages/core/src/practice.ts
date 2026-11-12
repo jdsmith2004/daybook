@@ -693,6 +693,53 @@ export const PRACTICE: Record<string, PStep> = {
     ok: 'Your good days have a plan too.',
   },
 
+  /* ---------- one habit only (lesson-habit.ts HABIT_TURNS) ---------- */
+  l50: {
+    h: 'Have your drink and your words ready.',
+    p: 'Decide now, while it is calm, what you will hold and what you will say. At the table you only have to follow it.',
+    mins: 1,
+    items: [
+      plan('someone offers me a drink', 'Say “No thanks, I am set with this one,” and keep my soda in my hand.'),
+      plan('the round is being ordered', 'Order first: a soda, a tea or an alcohol-free beer, before anyone asks.'),
+      line('be', 'I do not drink. I can still enjoy the night.'),
+    ],
+    ok: 'You are ready for the table.',
+  },
+  l51: {
+    h: 'Pick one repair you can keep.',
+    p: 'One plain sorry, then one thing to show up for this week. Small and kept beats big and promised.',
+    mins: 1,
+    items: [
+      line('reason', 'I want the people at home to see me show up, week after week.'),
+      plan('I want to make a big promise to fix things', 'Pick one small thing I will do this week instead, and do it.'),
+    ],
+    ok: 'Your repair is ready.',
+  },
+  l52: {
+    h: 'Have an answer for the chase.',
+    p: 'Add this to your urge plan, so “one more and you are even” already has an answer.',
+    mins: 1,
+    items: [
+      plan('I am down and want to win it back', 'Say “That money is gone,” close the app, and tell one person the true number.'),
+      line('words', 'The money is gone. The next bet is a new bet.'),
+    ],
+    go: [help('Block betting on my phone', 'phone', '', 'shield')],
+    ok: 'The chase has an answer now.',
+  },
+  l53: {
+    h: 'Write the sentence you will say.',
+    p: 'The hardest part is the first sentence. Here is one way to say it. Copy it, or change the words first.',
+    mins: 1,
+    items: [
+      copy(
+        'To someone I trust',
+        'I need to tell you something hard. I have been gambling, and I owe more than I have said. I want to stop, and I want your help keeping the money safe.',
+      ),
+    ],
+    go: [help('The gambling helpline', 'people', '', 'life')],
+    ok: 'You have the words ready.',
+  },
+
   /* ---------- Well-known programs ---------- */
   l25: {
     h: 'Borrow what fits.',
@@ -746,7 +793,13 @@ export const lessonPractice = (L: Lesson | null, st?: Settings | null): PStep | 
   const h = habitOf(st);
   if (!P || h === 'porn') return P;
   /* another habit: the lines to copy say its words (habit.ts habitSay) */
-  return { ...P, items: P.items && P.items.map((it) => ({ ...it, text: habitSay(it.text, h) })) };
+  return {
+    ...P,
+    h: habitSay(P.h, h),
+    p: habitSay(P.p, h),
+    ok: habitSay(P.ok, h),
+    items: P.items && P.items.map((it) => ({ ...it, text: habitSay(it.text, h) })),
+  };
 };
 export const practiceOf = (id: string) => lessonPractice(lessonById(id));
 

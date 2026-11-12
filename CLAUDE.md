@@ -90,6 +90,12 @@ need, without letting the screen turn into a list of features.
 - **Lessons inspire hope; that is their main goal.** A lesson must be wholesome, true to its spirit, motivating and hopeful,
   written plainly and surely. The quality of the lesson matters far more than checking its sources: do not spend effort
   validating sources, and do not rewrite, flag or ask about the "Behind this" notes. That work is not wanted.
+- **Never use one of the 15 monthly EAS builds without the owner's explicit yes (the owner, November 11, 2026, after a
+  Screen Time build was started without asking).** Anything that runs on Expo's servers and counts against the free plan's 15
+  iOS builds a month (`eas build` without `--local`, the App Store or Play workflow) needs the owner's yes for that exact build
+  in the chat, every time: say which profile and that it uses one of the 15, then wait. A task that says "make a TestFlight
+  build" is not that yes, and one yes covers one build. Builds that use none of the 15 need no permission: local builds
+  (`expo run:ios`, Xcode, the simulator, `eas build --local`) and setting up credentials when no build can be queued.
 - **Working style.** Work on your own and ask only about design changes or real uncertainty. When `npm run typecheck` and
   `npm test` pass, merge to `main` (deploying as below); GitHub keeps everything, so a change can always be rolled back.
   Effort levels save usage: every plan marks each step with the Opus effort level it needs (high for sync, accounts,
@@ -205,3 +211,12 @@ cd apps/mobile && npx expo start
 - **AWS:** deploys use GitHub OpenID Connect (no stored keys). The deploy role can never make, change or take on an IAM role, and cannot invoke the sync function: any role the app needs is made in `infra/bootstrap` (run by the owner), never in `infra/app`. Keep everything pay-per-use; the budget alert is $5 a month.
 - **Git:** commit as the owner's personal GitHub noreply address (set with `git config user.email` in this repository), never a personal or work email. This computer may be signed in to a work GitHub account by default.
 - Before calling a change done: `npm run format`, `npm run typecheck`, `npm test`, and for app changes `npx expo export --platform web` and a look at the result, against docs/craft-checklist.md.
+- **QA the experience before calling anything done, without being asked (the owner, November 11, 2026: "if you didn't qa
+  means other chats aren't doing qa either and missing the experience part").** Passing tests is not QA. Walk the whole flow
+  as the person would, on the web and the simulator (and the phone when only the phone can run it), from the moment it first
+  appears to the way out, and look at a picture of every screen and every note. For each one ask: is it clear on first sight
+  with nothing to read twice, is it easy to use one-handed, does it come up at a good moment and cleanly, does it feel alive
+  and made with care, does it move the person toward seeing themselves as free, and could it annoy them enough to delete the
+  app (too many notes, a nag, a trap, a guilt trip, something broken). Also read the code for what only a device shows (stuck
+  states, double notes, a way out that fails). Fix what you find, then say in the report what you checked and what you could
+  not check.

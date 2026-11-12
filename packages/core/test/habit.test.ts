@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import { GOD, TURNS } from '../src/lesson-turns';
+import { HABIT_ONLY, HABIT_OPEN, HABIT_TURNS } from '../src/lesson-habit';
 
 const TK = '2026-11-08';
 const withA = (a: Record<string, unknown>) => core.normSettings({ ...core.defaultSettings('2026-11-01'), onb: { n: 1, at: 1, a, hist: [] } });
@@ -76,7 +77,9 @@ describe('the habit', () => {
     ['b0', 'heard'].forEach((id) => expect(ids).not.toContain(id));
     core.obPages({ habit: 'alcohol' }).forEach((p) => expect(String(p.h || '') + (p.sub || '')).not.toMatch(/porn/i));
     expect(core.obSave({ habit: 'alcohol', goal: 'now' }, null, null, TK, 0).st.goal).toBe('Quit drinking, starting tomorrow. Log honestly, slips included.');
-    expect(core.lessonPathFor(withA({ habit: 'alcohol' })).map((L) => L.id)).toEqual(core.lessonPathFor(withA({ habit: 'gambling' })).map((L) => L.id));
+    const alc = core.lessonPathFor(withA({ habit: 'alcohol' })).map((L) => L.id);
+    expect(alc).toEqual(expect.arrayContaining(['l50', 'l51']));
+    expect(alc).not.toContain('l52');
     expect(core.safetyFor(1, ['x', 'y'], 'alcohol')[0]).toBe('No alcohol in the house');
     expect(core.OB_REPLY.habit.alcohol).toBeTruthy();
   });
@@ -106,22 +109,77 @@ describe('the habit', () => {
 describe('the lessons for another habit', () => {
   const porn = withA({ habit: 'porn' });
   const gamb = withA({ habit: 'gambling' });
-  it('leave the lessons written for porn off the path, and keep the rest in their order', () => {
+  it('leave the lessons written for porn off the path unless they open to the habit, and keep the rest in their order', () => {
     const p = core.lessonPathFor(porn).map((L) => L.id);
     const g = core.lessonPathFor(gamb).map((L) => L.id);
     expect(p).toEqual(core.lessonPathFor(null).map((L) => L.id));
-    expect(g).toEqual(p.filter((id) => !core.PORN_ONLY.has(id)));
+    expect(g.filter((id) => !HABIT_ONLY[id])).toEqual(p.filter((id) => !core.PORN_ONLY.has(id) || HABIT_OPEN[id]?.gambling));
     expect(g[0]).toBe('l1');
-    expect(g.length).toBeGreaterThanOrEqual(30);
+    expect(g.length).toBeGreaterThanOrEqual(40);
     expect(core.lessonFor('l4', gamb)).toBeNull();
     expect(core.lessonFor('l4', porn)!.id).toBe('l4');
     expect(core.lessonFor('l2', gamb)!.id).toBe('l2');
-    expect(core.PORN_ONLY.has(core.reviewPick(TK, gamb).id)).toBe(false);
+    expect(core.lessonFor('l34', gamb)!.id).toBe('l34');
+    expect(core.lessonFor('l46', withA({ habit: 'other' }))).toBeNull();
+    for (let i = 0; i < 70; i++) {
+      const id = core.reviewPick(core.addDays(TK, i), gamb).id;
+      expect(core.PORN_ONLY.has(id) && !HABIT_OPEN[id]?.gambling, id).toBe(false);
+      expect(HABIT_ONLY[id] && HABIT_ONLY[id].h !== 'gambling', id).toBeFalsy();
+    }
   });
-  it('with faith, the God lessons written for porn leave too', () => {
+  it('the lessons of one habit are on its path only, in their step, never on porn’s', () => {
+    const p = core.lessonPathFor(withA({ habit: 'porn', faith: 'big' })).map((L) => L.id);
+    const a = core.lessonPathFor(withA({ habit: 'alcohol', faith: 'big' })).map((L) => L.id);
+    const g = core.lessonPathFor(withA({ habit: 'gambling', faith: 'big' })).map((L) => L.id);
+    Object.keys(HABIT_ONLY).forEach((id) => {
+      expect(p).not.toContain(id);
+      expect(core.lessonFor(id, porn)).toBeNull();
+    });
+    /* each sits in its step, before the step's God lesson */
+    expect(a.indexOf('l50')).toBeGreaterThan(a.indexOf('l29'));
+    expect(a.indexOf('l50')).toBeLessThan(a.indexOf('g3'));
+    expect(a.slice(a.indexOf('l51') + 1, a.indexOf('l51') + 2)).toEqual(['g10']);
+    expect(g.indexOf('l52')).toBeGreaterThan(g.indexOf('l41'));
+    expect(g).not.toContain('l50');
+    expect(a).not.toContain('l53');
+    /* the steps that were empty for another habit have lessons again */
+    expect(core.lessonSections(gamb).map((x) => x.u)).toEqual(core.PATH_STEPS.map((_, k) => k));
+    expect(core.lessonSections(withA({ habit: 'alcohol' })).map((x) => x.u)).toEqual(core.PATH_STEPS.map((_, k) => k));
+  });
+  it('with faith, the God lessons written for porn leave too, unless they open to the habit', () => {
     const g = core.lessonPathFor(withA({ habit: 'gambling', faith: 'big' })).map((L) => L.id);
     expect(g).toContain('g1');
-    expect(g).not.toContain('g9');
+    expect(g).toContain('g9');
+    expect(g).not.toContain('g7');
+  });
+  it('a lesson that opens to another habit reads in its words, and says nothing of porn or sex', () => {
+    const RE = /\b(porn\w*|sex\w*|arous\w*|masturb\w*|erotic|lust)\b/i;
+    const voices = [null, 'christian', 'plain'] as const;
+    (['alcohol', 'gambling', 'other'] as const).forEach((h) =>
+      Object.entries(HABIT_OPEN).forEach(([id, o]) => {
+        if (!o[h]) return;
+        voices.forEach((v) => {
+          const L = core.lessonAs(core.lessonById(id)!, v, h);
+          const { scope, src, ...live } = L as unknown as Record<string, unknown>;
+          void scope;
+          void src;
+          const said = JSON.stringify([live, core.lessonBeats(L), core.lessonPractice(core.lessonById(id), withA({ habit: h }))]);
+          expect([id, h, v, said.match(RE)?.[0] || '']).toEqual([id, h, v, '']);
+        });
+      }),
+    );
+    expect(core.lessonAs(core.lessonById('l38')!, null, 'gambling').cards.find((c) => c.e === 'move')!.h).toBeTruthy();
+    expect(JSON.stringify(core.lessonBeats(core.lessonAs(core.lessonById('l38')!, null, 'gambling')))).toContain('I do not gamble');
+    /* porn reads it as written, and a lesson not open to the habit is left as it is */
+    expect(core.lessonAs(core.lessonById('l38')!, null, 'porn')).toBe(core.lessonById('l38'));
+    expect(core.lessonAs(core.lessonById('l48')!, null, 'alcohol')).toBe(core.lessonById('l48'));
+    /* alcohol: the flat weeks lesson says a doctor helps with the first days */
+    expect(JSON.stringify(core.lessonAs(core.lessonById('l46')!, null, 'alcohol').cards)).toMatch(/doctor should help with the first days/);
+  });
+  it('a lesson of one habit says nothing of porn or sex, and is for that habit only', () => {
+    const RE = /\b(porn\w*|sex\w*|arous\w*|masturb\w*|erotic|lust)\b/i;
+    Object.values(HABIT_TURNS).forEach((T) => expect([T.id, JSON.stringify(T).match(RE)?.[0] || '']).toEqual([T.id, '']));
+    expect(Object.keys(HABIT_TURNS).sort()).toEqual(Object.keys(HABIT_ONLY).sort());
   });
   it('a lesson kept for every habit says nothing of porn or sex', () => {
     const RE = /\b(porn\w*|sex\w*|arous\w*|masturb\w*|erotic|lust)\b/i;

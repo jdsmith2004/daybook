@@ -12,6 +12,7 @@ import { Hair } from '@/components/editable';
 import { Collapse } from '@/components/form';
 import { Screen } from '@/components/screen';
 import { Button, Card, Icon, T } from '@/components/ui';
+import { Packed } from '@/components/packed';
 import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
@@ -20,7 +21,7 @@ type CatId = (typeof RCATS)[number]['id'];
 function CatChips({ cur, onPick, label }: { cur: string | null; onPick: (id: CatId) => void; label: string }) {
   const c = useTheme();
   return (
-    <View style={s.chips} accessibilityLabel={label}>
+    <Packed accessibilityLabel={label}>
       {RCATS.map((k) => {
         const t = toneOf(c, k.tone);
         const on = cur === k.id;
@@ -36,7 +37,7 @@ function CatChips({ cur, onPick, label }: { cur: string | null; onPick: (id: Cat
           </Pressable>
         );
       })}
-    </View>
+    </Packed>
   );
 }
 
@@ -302,7 +303,6 @@ function Tool({
 }
 
 const s = StyleSheet.create({
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   cat: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5 },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   main: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', minHeight: 44 },

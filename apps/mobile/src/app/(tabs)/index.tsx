@@ -19,6 +19,7 @@ import {
   tipButton,
   autoCount,
   bpsDue,
+  freeDue,
   autoStep,
   startFromLog,
   lessonPathFor,
@@ -261,6 +262,7 @@ export default function Today() {
     account: !!account,
     comebackSeen: typeof sos.mem.cbSeen === 'string' ? (sos.mem.cbSeen as string) : null,
     recheck: bpsDue(snap.days, st, tk, sos.mem, { now, sos: urLastAt(sos.mem) }),
+    free: freeDue(snap.days, st, tk, { now, sos: urLastAt(sos.mem) }),
     unlock,
   });
   /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */

@@ -36,6 +36,9 @@ private let openSchedule: TimeInterval = 20 * 60
 
 public final class DaybookPullModule: Module {
   private var picking: Promise?
+  /// every change to the schedules and the pause runs here, one at a time: two writes at once would both restart a schedule
+  /// (ending its interval) and lose each other's marks
+  private static let queue = DispatchQueue(label: "daybook.pull")
 
   private var defaults: UserDefaults? { UserDefaults(suiteName: group) }
   private var store: ManagedSettingsStore { ManagedSettingsStore(named: ManagedSettingsStore.Name("daybook.pull")) }
@@ -90,10 +93,14 @@ public final class DaybookPullModule: Module {
           p?.resolve(nil)
           return
         }
-        if let d = try? JSONEncoder().encode(s) { self.defaults?.set(d, forKey: selectionKey) }
-        /* what is watched changed: the schedules are set again on the next write */
-        self.defaults?.removeObject(forKey: schedKey)
-        p?.resolve(Self.count(s))
+        let n = Self.count(s)
+        Self.queue.async {
+          if let d = try? JSONEncoder().encode(s) { self.defaults?.set(d, forKey: selectionKey) }
+          /* what is watched changed: the schedules are set again now from the last bridge, and a pause running covers the new apps */
+          self.defaults?.removeObject(forKey: schedKey)
+          self.rewrite()
+          DispatchQueue.main.async { p?.resolve(n) }
+        }
       }
       let h = UIHostingController(rootView: view)
       h.isModalInPresentation = true
@@ -118,14 +125,14 @@ public final class DaybookPullModule: Module {
       /* the pause turned off while it runs, or one whose end has passed (the monitor's end was missed: the phone was off, or the
          extension did not run): lifted now */
       let rest = self.defaults?.double(forKey: restKey) ?? 0
-      if (p["pause"] as? Bool) != true || (rest > 0 && rest <= self.nowMs) { self.liftAll() }
+      if (p["pause"] as? Bool) != true || (p["hard"] as? Bool) == false || (rest > 0 && rest <= self.nowMs) { self.liftAll() }
       self.schedule(b, prefs: p)
-    }
+    }.runOnQueue(Self.queue)
 
     /// lifts every pause at once
     AsyncFunction("lift") { () in
       self.liftAll()
-    }
+    }.runOnQueue(Self.queue)
 
     /// the apps open for this many minutes of use (inside Apple's shortest schedule); then, while the hard hours last, the pause is back
     AsyncFunction("openFor") { (minutes: Int) in
@@ -156,12 +163,12 @@ public final class DaybookPullModule: Module {
         /* Apple would not watch the minutes: the pause comes back at once rather than never */
         self.shield(s)
       }
-    }
+    }.runOnQueue(Self.queue)
 
     /// stops everything: nothing watched, nothing paused, nothing picked
     AsyncFunction("stop") { () in
       self.stopAll(forget: true)
-    }
+    }.runOnQueue(Self.queue)
 
     /// when the hard hours' notes were ignored (core pullDrift), or null
     Function("ignoredAt") { () -> Double? in
@@ -236,6 +243,17 @@ public final class DaybookPullModule: Module {
       }
     }
     defaults?.set(keys, forKey: schedKey)
+  }
+
+  /// sets the schedules again from the last bridge written, and covers the picked apps again while a pause runs (after a new pick)
+  private func rewrite() {
+    guard let json = defaults?.string(forKey: bridgeKey), let d = json.data(using: .utf8),
+      let b = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any]
+    else { return }
+    let p = (b["prefs"] as? [String: Any]) ?? [:]
+    guard (p["on"] as? Bool) == true else { return }
+    if (defaults?.double(forKey: restKey) ?? 0) > nowMs, let s = selection() { shield(s) }
+    schedule(b, prefs: p)
   }
 
   /// when the app started a schedule, for the monitor

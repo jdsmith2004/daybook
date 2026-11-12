@@ -28,7 +28,7 @@ export function useSosLeadOn() {
   const mem = useNotifyMem();
   const st = snap.settings;
   if (Platform.OS !== 'ios' || !st || !sosLead(snap.days, st, tk, now, urLastAt(sos.mem))) return false;
-  return !(env && notifyAsk(env, mem, snap.days, st, tk));
+  return !(env && notifyAsk(env, mem, snap.days, st, tk, { at: urLastAt(sos.mem), now }));
 }
 
 export function SosLead() {

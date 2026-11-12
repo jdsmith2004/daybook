@@ -51,6 +51,7 @@ const SCENES: Scene[] = [
   { name: 'tool-ground', path: '/tool/ground' },
   { name: 'already-happened', path: '/log' },
   { name: 'rekindle', path: '/log', tap: [/^I slipped/] },
+  { name: 'rode-out', path: '/log', tap: [/^I rode it out/] },
   { name: 'pattern-days', path: '/pattern?pane=days' },
   { name: 'pattern', path: '/pattern?pane=patterns' },
   { name: 'pattern-weeks', path: '/pattern?pane=weeks' },

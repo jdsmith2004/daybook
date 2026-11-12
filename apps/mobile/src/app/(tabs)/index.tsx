@@ -41,8 +41,6 @@ import {
   srDone,
   standRow,
   sunriseDue,
-  lookBackDue,
-  type LookBack,
   morningDue,
 } from '@daybook/core';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
@@ -70,7 +68,6 @@ import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
 import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
 import { DayFeelPop } from '@/components/day-feel-pop';
-import { LookBackPop } from '@/components/look-back-pop';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
@@ -181,28 +178,9 @@ export default function Today() {
     }, 400);
     return () => clearTimeout(t);
   }, [ready, morningNow, focused, backNow, gradNow, celebrating, tk]);
-  /* the day after a slip: what it gave, what it cost (core look-back.ts), asked once, over Today, in place of the day's question */
-  const lbDue = st && !syncing ? lookBackDue(snap.days, st, tk, now) : null;
-  const lbShown = typeof sos.mem.lookBack === 'string' ? (sos.mem.lookBack as string) : null;
-  const lbWaits = !!lbDue && lbShown !== lbDue.ev.id;
-  const [look, setLook] = useState<LookBack | null>(null);
-  useEffect(() => {
-    if (!ready || !lbDue || !lbWaits || look) return;
-    if (!focused || backNow || gradNow || celebrating || sosUsed || askFeel || morningNow) return;
-    const t = setTimeout(() => {
-      if (!focusRef.current || sheetOnTop()) return;
-      sos.setMem((m) => ({ ...m, lookBack: lbDue.ev.id }));
-      setLook(lbDue);
-    }, 900);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, lbDue?.ev.id, lbWaits, look, focused, backNow, gradNow, celebrating, sosUsed, askFeel, morningNow]);
-  useEffect(() => {
-    if (celebrating && look) setLook(null);
-  }, [celebrating, look]);
   useEffect(() => {
     if (!firstOpen || !ready) return;
-    if (firstOpen.k < tk || sosUsed || feelQuiet || cameBack || celebrating || lbWaits || celebrationSheetAt() >= firstOpen.at) {
+    if (firstOpen.k < tk || sosUsed || feelQuiet || cameBack || celebrating || celebrationSheetAt() >= firstOpen.at) {
       spendFirstOpen();
       return;
     }
@@ -219,7 +197,7 @@ export default function Today() {
       setAskFeel(true);
     }, 700);
     return () => clearTimeout(t);
-  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack, celebrating, lbWaits, morningNow]);
+  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack, celebrating, morningNow]);
 
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
   useEffect(() => {
@@ -378,7 +356,6 @@ export default function Today() {
         <HomeScreenCard />
       </Screen>
       {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
-      {look && !celebrating && !askFeel ? <LookBackPop lb={look} onDone={() => setLook(null)} /> : null}
     </View>
   );
 }

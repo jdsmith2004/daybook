@@ -327,7 +327,6 @@ export default function Review() {
               <Fact icon="timer" text={'You waited first ' + S.slips.waited + ' of ' + S.slips.n + ' times. That wait is the skill growing.'} />
             ) : null}
             {pat ? <Fact icon="compass" text={pat.line} /> : S.slips.top ? <Fact icon="compass" text={'Most came with: ' + S.slips.top + '.'} /> : null}
-            {S.look ? <Fact icon="sunrise" text={S.look} /> : null}
             <Fact icon="leaf" text="Each one is data for the week ahead, not a reset." />
           </View>
         </>

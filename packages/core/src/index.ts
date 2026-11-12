@@ -17,7 +17,6 @@ export * from './talk-log';
 export * from './walk';
 export * from './feelings';
 export * from './day-feel';
-export * from './look-back';
 export * from './morning-set';
 export * from './risk';
 export * from './pull';

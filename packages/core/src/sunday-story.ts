@@ -10,7 +10,6 @@
    test/sunday-story.test.ts. */
 import { addDays, didText, eventsOf, evMs, slipMoments, sumDay, trigText } from './legacy/core.js';
 import { logStart } from './log-start';
-import { storyLookBack } from './look-back';
 import { patWhen, type PatWhen } from './pattern';
 import { urTool } from './sos';
 import { sunChange, sunLastGoal, sunWeek, type SunWeek } from './sunday';
@@ -505,8 +504,6 @@ export interface Story {
   trig: ReturnType<typeof storyTrig>;
   help: ReturnType<typeof storyHelp>;
   slips: ReturnType<typeof storySlips>;
-  /** what the week's slips gave and what they cost, from the look back the day after, beside the urges ridden out (look-back.ts) */
-  look: string | null;
   base: ReturnType<typeof storyBase>;
   last: ReturnType<typeof sunLastGoal>;
   weeks: StoryWeek[];
@@ -559,7 +556,6 @@ export function story(
     trig,
     help,
     slips,
-    look: w.slipped ? storyLookBack(days, sun, tk, w.rode) : null,
     base,
     last,
     weeks,

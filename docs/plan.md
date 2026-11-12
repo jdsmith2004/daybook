@@ -344,7 +344,7 @@ who a person thinks they are.
     "Look back on it") lands on the hold, as now, with the word test's first words. Once lit: "This is a slip, and you can recover from
     it.", what is kept ("4 urges ridden out, 13 days free of it. All still yours."), the flame big, and **Done**. Nothing moves on by
     itself; Done and the X both close. SOS stays in the corner for a pull that is not over.
-  - **One quiet "more", by choice** (a link under Done, never a second big button). Recommended: "What was going on?": one tap on the
+  - **One quiet "more", by choice** (a link under Done, never a second big button). Recommended then, and not chosen: "What was going on?": one tap on the
     situation, answered on the same page by what it shows in the person's own pattern and the defense that covers it ("Late in bed
     with your phone came before 3 of your last 4. Tonight's wait starts at 10:30 PM."). It is the one thing only this moment can
     catch: the morning set and the Sunday review do not ask the situation, and it is what the Pattern, the hard hours, the heads-ups and
@@ -355,11 +355,13 @@ who a person thinks they are.
     stay. Old answers (fa, plans) stay on the record and keep showing where they did.
   - **Kept from step 2 as built:** no point number in the hours after a slip, the kept-as-who-you-are line, the word test on the first
     words, `countFrom` in the seeds, and no-slip days counting finished days.
-  - **Questions for the owner** (each with a recommendation): (1) the one "more": "What was going on?" (recommended), a one-minute
-    ride-it-out practice, a plan for next time, or nothing. (2) The morning card "what it gave, what it cost": drop it and let the
-    Sunday review ask once a week (recommended), keep it on mornings with no morning set, or put it inside the morning set. (3) The 988
-    line, which today shows only after "Like giving up": on the lit page after a second slip in a week or in a rough stretch
-    (recommended), always on the lit page, or only in More.
+  - **The owner's answers (November 12, 2026).** The one "more": "maybe just have them refresh and close and if not maybe just offer
+    to go into a lesson". So the quiet link under Done is a lesson for after a slip (core `rkLesson`: Kindness after a slip, Why one
+    slip snowballs, Guilt, shame, and God on a path with faith, Mindfulness and relapse prevention; What therapy is like leads after
+    a second slip in a week; one not read yet first), opened in full with `at=care`, never behind a gate. "What it gave, what it
+    cost": not sure it adds anything, and the morning set covers last night, so the morning card, its Pattern card and its Sunday
+    line are gone (`look-back.ts` removed). The 988 line: under Done after a second slip in a week or in a rough stretch
+    (`roughPatch`), as recommended.
 - **Built (November 11, 2026, branch `claude/rekindle-morning-after`, to be shown on the simulator before it merges).** The check
   first: `runLedger` is right. A log with no `countFrom` (the journey's seed, the store pictures' demo) has the slip fall under the old
   rule, which held the run while it could be saved; every phone has `countFrom` from its first open (core `keepCounts`), so the seeds

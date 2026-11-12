@@ -18,6 +18,7 @@ import {
 } from './legacy/core.js';
 import { changeSettings } from './actions';
 import { noSlipDays, todayMeasure } from './graduate';
+import { faithOut, lessonFor, lessonsDone } from './lessons';
 import { changeDay, withDay } from './mutate';
 import { plural } from './view';
 import type { DayEvent, DayKey, Days, Reviews, Settings } from './types';
@@ -116,6 +117,23 @@ export function rkLitLine(days: Days, st: Settings, reviews: Reviews, tk: DayKey
   return kept.slice(0, 2).join(', ') + '. All still yours.';
 }
 
+/** the lessons Rekindle offers after the fire, in order: kindness after a slip, why one slip snowballs, guilt and shame before God
+    (only on a path with faith), and mindfulness for the next urge. After a second slip in a week, what therapy is like comes
+    first. The person's own path decides (habit and faith); one not read yet leads, and once all are read, the first is read again. */
+export const RK_LESSONS = ['l6', 'l3', 'l31', 'l27'];
+export const RK_REPEAT_LESSON = 'l24';
+/** the one quiet "more" after the fire is lit (the owner, November 12, 2026: "maybe just have them refresh and close and if not
+    maybe just offer to go into a lesson"): a lesson for after a slip, opened in full (at=care), never behind a gate. null when
+    none is on this person's path. */
+export function rkLesson(days: Days, st: Settings, repeat: boolean): string | null {
+  const done = lessonsDone(days);
+  const fits = (repeat ? [RK_REPEAT_LESSON, ...RK_LESSONS] : RK_LESSONS).filter((id) => {
+    const L = lessonFor(id, st);
+    return !!L && !(L.f && faithOut(st));
+  });
+  return fits.find((id) => !done.has(id)) || fits[0] || null;
+}
+
 /** how long after a slip no point number shows (a toast, Goodnight): the night and the morning after an evening slip */
 export const PTS_QUIET_HOURS = 12;
 /** whether a point number stays out of sight now: within PTS_QUIET_HOURS of the latest slip. The points are still earned, and
@@ -133,12 +151,11 @@ export function ptsQuiet(days: Days, st: Settings | null, now: number): boolean 
   return now - last < PTS_QUIET_HOURS * 3600_000;
 }
 
-/** the slip on day k (id) can still be opened in Rekindle: it is there, and Rekindle has not asked about it yet (no "How do you
-    feel now?" answer). The morning's "It happened" shows one quiet link to it while this is true (the morning set, route
-    /log?date=k&evId=id&outcome=slipped&from=entry); it is never pushed. */
+/** the slip on day k (id) is there to open in Rekindle: the morning's "It happened" shows one quiet link to it ("Look back on
+    it", the morning set, route /log?date=k&evId=id&outcome=slipped&from=entry), which lights the fire again; it is never pushed. */
 export function rkOpenFor(days: Days, k: DayKey, id: string): boolean {
   const e = (days[k]?.events || []).find((x) => x.id === id);
-  return !!e && e.outcome === 'slipped' && !e.fa;
+  return !!e && e.outcome === 'slipped';
 }
 
 /* ---------- the comeback, noticed (roadmap move 3, docs/plan.md) ----------

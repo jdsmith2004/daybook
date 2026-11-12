@@ -173,13 +173,13 @@ enum Pull {
     if on && inNight(b) { markNight(1) }
   }
 
-  /// the night's mark: 1 when the waits were on, 2 when the person went through; it only goes up. The last 60 nights are kept.
+  /// the night's mark: 1 when the waits were on, 2 when the person went through; it only goes up. Every night is kept (a few bytes
+  /// each), since "Lock held N nights" must only ever go up.
   static func markNight(_ v: Int) {
     let k = nightOf()
     var n = (defaults?.dictionary(forKey: nightsKey) as? [String: Int]) ?? [:]
     if (n[k] ?? 0) >= v { return }
     n[k] = v
-    if n.count > 60 { for old in n.keys.sorted().prefix(n.count - 60) { n[old] = nil } }
     defaults?.set(n, forKey: nightsKey)
   }
 

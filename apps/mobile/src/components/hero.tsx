@@ -45,7 +45,7 @@ import { BigFlame, DOUSE_MS, DOUSE_WAIT, RELIGHT_CATCH, RELIGHT_MS } from '@/com
 import { useCelebrating } from '@/components/celebrate';
 import { Icon } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
-import { pullIgnoredAt } from '@/lib/pull';
+import { pullIgnoredAt, pullNights } from '@/lib/pull';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -159,7 +159,10 @@ function Sky({
   const reduce = useReducedMotion();
   const lvl = g.level;
   /* one proof line under the level, picked fresh each day (core heroProof) */
-  const proof = useMemo(() => (snap.settings ? heroProof(snap.days, snap.settings, snap.reviews, tk, effortCounts(snap.days, tk)) : null), [snap, tk]);
+  const proof = useMemo(
+    () => (snap.settings ? heroProof(snap.days, snap.settings, snap.reviews, tk, effortCounts(snap.days, tk, pullNights())) : null),
+    [snap, tk],
+  );
   const sc = useMemo(() => emblemScene(lvl.n), [lvl.n]);
   const inset = useSafeAreaInsets();
   const SCENE_H = height;

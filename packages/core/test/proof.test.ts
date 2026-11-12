@@ -68,6 +68,16 @@ describe('effortProofs', () => {
   });
 });
 
+describe('effortCounts, nights the lock held', () => {
+  it('counts nights before today whose waits were on and held, never one gone through or tonight', () => {
+    const tk = '2026-10-21';
+    const e = core.effortCounts({}, tk, { '2026-10-18': 1, '2026-10-19': 2, '2026-10-20': 1, '2026-10-21': 1 });
+    expect(e?.lockHeld).toBe(2);
+    expect(core.effortProofs(e)).toEqual(['Lock held 2 nights']);
+    expect(core.effortCounts({}, tk, {})).toBeNull();
+  });
+});
+
 describe('effortCounts, from the morning set', () => {
   /** a person who answers each morning and sets the night, and never opens SOS */
   function mornings(list: [string, 'free' | 'slip', boolean][]) {

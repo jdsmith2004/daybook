@@ -7,6 +7,7 @@ import { addDays, eventsOf, gameCompute, runLedger } from './legacy/core.js';
 import { noSlipDays } from './graduate';
 import { rkComebackCount } from './rekindle';
 import { firstMorning, freeNights, morningsSet, nightTold } from './morning-set';
+import { pullNightHeld, type PullNights } from './pull';
 import { hardHeld, riskWindow } from './risk';
 import type { DayKey, Days, Reviews, Settings } from './types';
 
@@ -32,18 +33,20 @@ export interface EffortCounts {
 
 /** the effort record from the morning set (core morning-set.ts): mornings set ever and in the last 7, and the last 7 nights the
     morning tap called free (night k is told on k + 1, so the last night is tk - 1). Nights the lock held come from the night wait
-    (Screen Time), which is not built yet: 0 until it is. Null while there is nothing in it. */
-export function effortCounts(days: Days, tk: DayKey): EffortCounts | null {
+    (Screen Time, core pull.ts pullNightHeld): `nights` is the phone's own record (lib/pull.ts pullNights), a night counting once
+    it is before today and its waits were on and not gone through. It stays on the phone, like everything from Screen Time.
+    Null while there is nothing in it. */
+export function effortCounts(days: Days, tk: DayKey, nights?: PullNights | null): EffortCounts | null {
   const first = firstMorning(days, tk);
   const e: EffortCounts = {
     mornings: first ? morningsSet(days, first, tk) : 0,
     mornings7: morningsSet(days, addDays(tk, -6), tk),
-    lockHeld: 0,
+    lockHeld: Object.keys(nights ?? {}).filter((k) => k < tk && pullNightHeld(nights, k) === 'held').length,
     /* on the morning after "It happened", the free nights wait a day: "Free 1 of the last 7" would read as a score of the
        others, and the hours after a slip are for coming back (CLAUDE.md). The mornings set lead instead */
     free7: nightTold(days, addDays(tk, -1)) === 'slip' ? 0 : freeNights(days, addDays(tk, -7), addDays(tk, -1)).free,
   };
-  return e.mornings || e.mornings7 || e.free7 ? e : null;
+  return e.mornings || e.mornings7 || e.free7 || e.lockHeld ? e : null;
 }
 
 /** the hero's lines sit under the level, in a corner 40% wide: each fits on one line at this many characters */

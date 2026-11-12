@@ -360,11 +360,12 @@ export interface PullShield {
 export function pullShield(o: { night: boolean; wait: number; plan: string | null; tonight: PullTonight | null; quiet: boolean }): PullShield {
   const primary = 'Wait ' + pullWaitLabel(o.wait);
   const downs = 'You have put it down {n}. Close it, and that makes {next}.';
+  /* by day, never the plan: it is the night's ("back to bed without my phone" at noon reads wrong) */
   if (!o.night)
     return {
       title: 'A short wait first',
-      sub: 'You asked me for a moment before this one. ' + (o.plan ?? 'Close it, or take the wait.'),
-      subDowns: downs + (o.plan ? ' ' + o.plan : ''),
+      sub: 'You asked me for a moment before this one. Close it, or take the wait.',
+      subDowns: downs,
       primary,
       secondary: 'Close',
     };
@@ -412,7 +413,7 @@ export function pullPauseWords(o: {
     return {
       title: 'A short wait first',
       line: 'You asked me for a moment before this one.',
-      say: o.plan ?? 'You can put it down right now.',
+      say: 'You can put it down right now.',
       hold: 'Breathe while it runs.',
       down: 'Put it down',
       open: 'Open it for ' + o.open + ' minutes',

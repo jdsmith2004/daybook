@@ -63,9 +63,11 @@ export default function PullPause() {
   const { height } = useWindowDimensions();
   const st = snap.settings;
   /* the mode is fixed when the screen opens, so a wait running across the night's start does not change under the person */
-  const [mode] = useState<'day' | 'night' | 'long'>(() =>
-    which === 'long' ? 'long' : st && pullInNight(Date.now(), pullNightStart(snap.days, st, saved, Date.now())) ? 'night' : 'day',
-  );
+  const [mode] = useState<'day' | 'night' | 'long'>(() => {
+    const night = !!st && pullInNight(Date.now(), pullNightStart(snap.days, st, saved, Date.now()));
+    /* the long wait is only the night's: by day adult sites do not wait, so a stale link opens the short one */
+    return night ? (which === 'long' ? 'long' : 'night') : 'day';
+  });
   const dark = mode !== 'day';
   const long = mode === 'long';
   /* small enough that the reason, a future-you note and Open it all fit under the flame on a small phone */
@@ -151,7 +153,8 @@ export default function PullPause() {
   const open = async () => {
     if (long) {
       pullLongEnd();
-      await Pull?.openWeb(PULL_WEB_OPEN);
+      /* the stake was said before the choice, so it counts; in the quiet after a slip it was not said, so it does not */
+      await Pull?.openWeb(PULL_WEB_OPEN, !quiet);
     } else await Pull?.openFor(prefs.open);
     close();
   };

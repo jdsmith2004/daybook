@@ -291,7 +291,10 @@ describe('the words', () => {
   it('quotes the person own plan', () => {
     const s = { ...st, plan: [{ when: 'I catch myself scrolling with no plan', then: 'Put the phone down and stand up.' }] } as Settings;
     expect(pullPlanLine(s)).toBe('Your plan: “Put the phone down and stand up.”');
-    expect(pullShield({ night: false, wait: 10, plan: pullPlanLine(s), tonight: null, quiet: false }).sub).toMatch(/Your plan: “Put the phone down/);
+    expect(pullShield({ night: true, wait: 10, plan: pullPlanLine(s), tonight: null, quiet: false }).sub).not.toMatch(/Your plan/);
+    expect(pullShield({ night: false, wait: 10, plan: pullPlanLine(s), tonight: null, quiet: false }).sub).not.toMatch(/Your plan/);
+    expect(pullPauseWords({ mode: 'night', quiet: false, open: 3, plan: pullPlanLine(s) }).say).toMatch(/Your plan: “Put the phone down/);
+    expect(pullPauseWords({ mode: 'day', quiet: false, open: 3, plan: pullPlanLine(s) }).say).not.toMatch(/Your plan/);
     expect(pullPlanLine({ ...st, plan: [{ when: 'I am bored or idle', then: 'Walk.' }] } as Settings)).toBeNull();
   });
 });

@@ -876,18 +876,18 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
       </SetGroup>
       <SetGroup
         foot={
-          (night && !quiet ? 'Tonight, lifting every wait counts as a night you went through. ' : '') +
+          (night && !quiet ? 'Tonight, lifting every wait or turning this off counts as a night you went through. ' : '') +
           'You can also turn this off in the phone’s Settings, under Screen Time.'
         }>
         <SetRow
           label="Lift every wait now"
           act="accent"
           onPress={async () => {
-            const until = await pullLiftAll(days, st);
+            const until = await pullLiftAll(days, st, !quiet);
             say('Every wait is lifted until ' + fmtClock(clockOf(until)) + '.');
           }}
         />
-        <SetRow label="Turn Screen Time off" act="danger" onPress={() => pullStop(night)} />
+        <SetRow label="Turn Screen Time off" act="danger" onPress={() => pullStop(night && !quiet)} />
       </SetGroup>
     </>
   );

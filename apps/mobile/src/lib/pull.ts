@@ -53,7 +53,7 @@ export interface PullModule {
   /** after the short wait: the apps open for this many minutes of use, then the wait is back */
   openFor(minutes: number): Promise<void>;
   /** after the long wait: adult sites open for this many minutes, then the filter is back; the night counts as gone through */
-  openWeb(minutes: number): Promise<void>;
+  openWeb(minutes: number, count: boolean): Promise<void>;
   /** tonight counts as a night the person went through */
   through(): void;
   /** the nights, on this phone only (core pullNightHeld) */
@@ -168,8 +168,6 @@ export async function pullPick(): Promise<number | null> {
   await Pull.pick(pullLooseAt(Date.now())).catch(() => null);
   return Pull.pickWaits();
 }
-/** whether it is the night now, by the morning's time (core pullInNight) */
-export const pullNightNow = (days: Days, st: Settings | null, now = Date.now()) => !!st && pullInNight(now, pullNightStart(days, st, prefs, now));
 /** turn it all off: nothing watched, nothing held. In the night, it counts as a night the person went through. Instant, always. */
 export async function pullStop(night = false) {
   if (night && prefs.on) Pull?.through();
@@ -177,12 +175,12 @@ export async function pullStop(night = false) {
   await Pull?.stop();
 }
 /** Lift every wait now (instant, as promised): until tonight starts by day, until 6 AM in the night, when it counts as a night the
-    person went through. Its end, as ms. */
-export async function pullLiftAll(days: Days, st: Settings): Promise<number> {
+    person went through (`counts`: not in the quiet after a slip, when the stake is not said). Its end, as ms. */
+export async function pullLiftAll(days: Days, st: Settings, counts: boolean): Promise<number> {
   const now = Date.now();
   const from = pullNightStart(days, st, prefs, now);
   const until = pullLiftUntil(now, from);
-  if (pullInNight(now, from)) Pull?.through();
+  if (counts && pullInNight(now, from)) Pull?.through();
   await Pull?.lift(until);
   return until;
 }

@@ -101,6 +101,12 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 
 ## 6. The listing (Claude drafts, you or Claude in Chrome paste)
 
+> **Waiting for 1.3.4 (the owner picked it on November 12, 2026).** The next version after 1.3.3 clears review carries a new
+> subtitle, new keywords (en-US and Spanish, Mexico) and a new first-screenshot caption. The exact text is at the top of
+> `docs/listing-update.md` in the daybook-shorts repository; take it from there, not from here. The "Daybook: App Store listing
+> update" session enters it in App Store Connect once 1.3.4 exists, and stops before Submit for Review. The name stays the same.
+> Check every screenshot for the banned words (CLAUDE.md, the store listing rule) before it goes in.
+
 - **Name:** Daybook: Master Yourself
 - **Subtitle:** Break a habit. Stay free.
 - **Category:** Health & Fitness. Second: Lifestyle.

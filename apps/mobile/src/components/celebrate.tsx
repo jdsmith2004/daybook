@@ -20,12 +20,14 @@ import { Text } from '@/components/text';
 import { SHORT } from '@/components/fit';
 import { Flame } from '@/components/flame';
 import { FlameMedallion } from '@/components/flame-medallion';
+import { FutureInvite, useFutureInvite } from '@/components/future-invite';
 import { Medal } from '@/components/medal';
 import { MomentAsk, useTipMoment } from '@/components/support';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useQuietAsks } from '@/lib/quiet-asks';
+import { useFuture } from '@/lib/future';
 import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
@@ -240,6 +242,11 @@ function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClo
           : null
       : null;
   const ask = useTipMoment(why || 'level', !why);
+  /* Future you: a new level or form, with no tip ask riding on it, can invite a note for the next hard moment. Never on a
+     sheet after a slip, on the day the person came back, or in the hours after an SOS (the same quiet as the tip) */
+  const lifted = !more && !quiet && !quietAsks && group.some((x) => x.type === 'level' && x.from > 0);
+  const invite = useFutureInvite(!lifted || !!(ask && why));
+  const firstNote = useFuture().notes.length === 0;
   const scale = useRef(new Animated.Value(still ? 1 : 0.85)).current;
   useEffect(() => {
     if (!still) Animated.spring(scale, { toValue: 1, friction: 6, tension: 120, useNativeDriver: NATIVE }).start();
@@ -274,7 +281,7 @@ function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClo
             {'And ' + extra + ' more in Milestones.'}
           </T>
         ) : null}
-        {ask && why ? <MomentAsk why={why} onGo={onClose} center /> : null}
+        {ask && why ? <MomentAsk why={why} onGo={onClose} center /> : invite ? <FutureInvite first={firstNote} onGo={onClose} /> : null}
       </Animated.View>
       <Animated.View style={{ alignSelf: 'stretch', marginTop: 4, opacity: words }}>
         <Button label={more ? 'Next' : grows ? 'Keep going' : 'Nice'} onPress={onClose} />

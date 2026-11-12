@@ -62,6 +62,7 @@ import { SYNC_NEED_SHORT } from '@/components/support';
 import { STORAGE_LINE } from '@/components/home-screen';
 import { Stepper } from '@/components/form';
 import { Screen } from '@/components/screen';
+import { ScriptureSetting } from '@/components/scripture';
 import { SetCell, SetGroup, SetPick, SetRow, SetSwitch, useTone, type Tone } from '@/components/settings-ui';
 import { confirmUnlock, lockOffered } from '@/components/lock';
 import { SyncBody } from '@/components/sync-card';
@@ -380,6 +381,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
                   />
                 </SetGroup>
               )}
+              {fa === 'no' ? null : <ScriptureSetting />}
             </>
           ),
         }

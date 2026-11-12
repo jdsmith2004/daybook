@@ -2,6 +2,7 @@
    so a long history never hits a size limit, and each change is remembered as "not synced yet" for when sync is turned on. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { forgetHealth } from './health';
+import { forgetScripture } from './scripture';
 import { forgetEvents } from '@/lib/events';
 import {
   allDirty,
@@ -469,6 +470,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await forgetHealth();
     /* what Daybook learns waits outside the log too: it goes, and the next event has a new install id */
     forgetEvents();
+    /* scripture notes still waiting for the vault, and the vault itself */
+    await forgetScripture();
     snapRef.current = empty();
     setSnap(empty());
     dirtyRef.current = {};

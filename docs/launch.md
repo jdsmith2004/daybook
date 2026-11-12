@@ -234,6 +234,14 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   > with and without a slip. The nights stay on the device: they are never sent to our server, synced, backed up or used
   > for anything else. To see it, connect Apple Health in More with sleep data in the simulator's Health app.
   >
+  > Scripture library (iPhone, optional, off by default; add this paragraph from the first build after 1.3.4 that carries it):
+  > for a person whose faith is part of their quit, More, Settings, Faith in the lessons has a switch, Scripture library. It
+  > opens the folder picker so the person can choose their own Obsidian vault (in iCloud Drive). Daybook then reads the
+  > scriptures kept in that vault's Scriptures folder, streams a public recording where the vault lists one (Bradley Ross,
+  > archive.org, CC BY-ND 3.0, credited in the app) or links to the chapter in the Church's Gospel Library app, and writes the
+  > person's verse notes back into the vault. Daybook ships no scripture text and sends none of this to our server. To see it,
+  > put a folder holding a Scriptures folder of Markdown chapters in Files (we can send a small sample vault).
+  >
   > The app has no ads and no tracking. Reminders are local notifications made on the device, with plain words that do
   > not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
 

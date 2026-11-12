@@ -8,7 +8,7 @@ import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-au
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Redirect, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Link } from '@/components/choices';
@@ -16,6 +16,7 @@ import { ScrLost, scrType } from '@/components/scripture';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useOverModal } from '@/lib/nav';
 import { openChapter, scrTrackOf, sendWaiting, setLastRead, useScripture, type ScrOpen } from '@/lib/scripture';
 import { MAX_WIDTH, useTheme } from '@/lib/theme';
 
@@ -25,6 +26,7 @@ const HANDS_OFF_MS = 6000;
 export default function Read() {
   const lib = useScripture();
   const { key, v } = useLocalSearchParams<{ key: string; v?: string }>();
+  if (!lib.ready) return null;
   if (!lib.can || !lib.on || !key) return <Redirect href="/scripture" />;
   /* a new chapter is a new page: its player, its marks and its place start fresh */
   return <Chapter key={key} chKey={key} marked={v ? scrVerseList(v) : []} />;
@@ -32,7 +34,11 @@ export default function Read() {
 
 function Chapter({ chKey, marked }: { chKey: string; marked: number[] }) {
   const c = useTheme();
-  const inset = useSafeAreaInsets();
+  const safe = useSafeAreaInsets();
+  /* opened over a sheet or a full-screen moment (It is written), the page is itself a card below the clock (components/screen.tsx) */
+  const over = useOverModal();
+  const card = Platform.OS === 'ios' && over;
+  const inset = card ? { ...safe, top: 0 } : safe;
   const [ch, setCh] = useState<ScrOpen | null>(null);
   const [lost, setLost] = useState(false);
   const [track, setTrack] = useState<ScrTrack | null>(null);
@@ -47,6 +53,8 @@ function Chapter({ chKey, marked }: { chKey: string; marked: number[] }) {
   useFocusEffect(
     useCallback(() => {
       let live = true;
+      /* back from the note sheet: the verses it was about are let go */
+      setSel([]);
       openChapter(chKey)
         .then((o) => {
           if (!live) return;
@@ -85,6 +93,19 @@ function Chapter({ chKey, marked }: { chKey: string; marked: number[] }) {
       void player.seekTo(track.from);
     }
   }, [track, st.playing, st.currentTime, player]);
+  /* asked to play and nothing came: the recording is out of reach (no network, or the host refuses), so Gospel Library is offered */
+  const [askedAt, setAskedAt] = useState(0);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (st.playing) {
+      setAskedAt(0);
+      setFailed(false);
+      return;
+    }
+    if (!askedAt) return;
+    const id = setTimeout(() => setFailed(true), 8000);
+    return () => clearTimeout(id);
+  }, [askedAt, st.playing]);
   const toggle = async () => {
     if (!track) return;
     buzz('tap');
@@ -92,6 +113,8 @@ function Chapter({ chKey, marked }: { chKey: string; marked: number[] }) {
       player.pause();
       return;
     }
+    setAskedAt(Date.now());
+    setFailed(false);
     await setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'doNotMix' }).catch(() => undefined);
     if (st.currentTime < track.from - 0.5 || st.didJustFinish || (track.to != null && st.currentTime >= track.to - 0.25)) await player.seekTo(track.from);
     handsOff.current = 0;
@@ -130,6 +153,8 @@ function Chapter({ chKey, marked }: { chKey: string; marked: number[] }) {
   };
   const gl = ch ? scrGospelLibrary(ch.volume, chKey, sel) : null;
   const tint = useTint();
+  const fillOf = (x: { n: number; mark: ScrMark | null }) =>
+    sel.includes(x.n) ? c.accentSoft : x.n === reading || marked.includes(x.n) ? c.sunSoft : x.mark ? tint[x.mark] : 'transparent';
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -149,10 +174,13 @@ function Chapter({ chKey, marked }: { chKey: string; marked: number[] }) {
             {chKey}
           </T>
           {lost ? <ScrLost /> : null}
-          {(ch?.chapter.verses ?? []).map((vs) => {
+          {(ch?.chapter.verses ?? []).map((vs, i, all) => {
             const on = sel.includes(vs.n);
             const now = vs.n === reading;
-            const bg = on ? c.accentSoft : now ? c.sunSoft : marked.includes(vs.n) ? c.sunSoft : vs.mark ? tint[vs.mark] : 'transparent';
+            const bg = fillOf(all[i]);
+            /* verses side by side in the same color are one band, rounded only at its ends */
+            const joinUp = i > 0 && bg !== 'transparent' && fillOf(all[i - 1]) === bg;
+            const joinDown = i + 1 < all.length && bg !== 'transparent' && fillOf(all[i + 1]) === bg;
             return (
               <Pressable
                 key={vs.n}
@@ -161,7 +189,12 @@ function Chapter({ chKey, marked }: { chKey: string; marked: number[] }) {
                 accessibilityRole="button"
                 accessibilityState={{ selected: on }}
                 accessibilityLabel={`Verse ${vs.n}. ${vs.text}`}
-                style={[s.verse, { backgroundColor: bg }]}>
+                style={[
+                  s.verse,
+                  { backgroundColor: bg },
+                  joinUp && { borderTopLeftRadius: 0, borderTopRightRadius: 0 },
+                  joinDown && { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
+                ]}>
                 <Text style={[scrType.verse, { color: c.ink }]}>
                   <Text style={[scrType.n, { color: now ? c.sunText : c.muted }]}>{vs.n} </Text>
                   {vs.text}
@@ -216,9 +249,13 @@ function Chapter({ chKey, marked }: { chKey: string; marked: number[] }) {
                     style={({ pressed }) => [s.play, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}>
                     <Icon name={st.playing ? 'pause' : 'play'} size={28} color={c.accentInk} />
                   </Pressable>
-                  <T v="small" tone="muted">
-                    {st.isBuffering && st.playing ? 'Loading…' : 'Bradley Ross'}
-                  </T>
+                  {failed && gl ? (
+                    <Link label="Listen in Gospel Library" onPress={() => Linking.openURL(gl).catch(() => undefined)} />
+                  ) : (
+                    <T v="small" tone="muted">
+                      {askedAt || (st.isBuffering && st.playing) ? 'Loading…' : 'Bradley Ross'}
+                    </T>
+                  )}
                 </View>
               ) : gl ? (
                 <View style={[s.mid, { flex: 1 }]}>

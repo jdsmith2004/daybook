@@ -5,7 +5,7 @@
    (core nudges.ts, "Lessons first"), and when nothing at all is on it is turned back on (the check-in and the wind-down
    stay a choice in Settings); "Open settings" opens the phone's page for
    Daybook when the phone has said no. The X hides it until tomorrow. */
-import { notifyAsk, notifyQuiet, nudgeResume, urLastAt } from '@daybook/core';
+import { careLastAt, notifyAsk, notifyQuiet, nudgeResume } from '@daybook/core';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
@@ -29,7 +29,7 @@ export function NotifyBanner() {
   const env = useNotifyEnv();
   const mem = useNotifyMem();
   const rem = useReminderPrefs();
-  const ask = env ? notifyAsk(env, mem, snap.days, snap.settings, tk, { at: urLastAt(sos.mem), now }) : null;
+  const ask = env ? notifyAsk(env, mem, snap.days, snap.settings, tk, { at: careLastAt(sos.mem), now }) : null;
   if (!ask) return null;
 
   const yes = async () => {

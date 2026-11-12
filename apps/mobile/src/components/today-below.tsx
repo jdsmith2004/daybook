@@ -82,9 +82,10 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
   );
 }
 
-/** with no urge ridden out in two weeks, the first thing the record says about who the person is */
+/** with no urge ridden out in two weeks, the first thing the record says about who the person is. Never the slips line: no slip
+    count sits on Today */
 function newest(snap: Snapshot, tk: DayKey): { t: string; n: string } | null {
-  const l = identityLines(snap.days, snap.settings!, snap.reviews, tk)[0];
+  const l = identityLines(snap.days, snap.settings!, snap.reviews, tk).filter((x) => x.ic !== 'leaf')[0];
   return l ? { t: l.who, n: l.n + '.' } : null;
 }
 

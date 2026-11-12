@@ -235,6 +235,39 @@ the same time; 2 waits for 1 (both touch `RodeOut` and Today's proof); 4 needs t
 
 Each one is built on its branch, looked at on the web and on the simulator, and shown to the owner before it is merged.
 
+### Measuring the change: #19, #20, #22, #24 (built November 12, 2026 on `claude/recursing-mahavira-156b04`, not merged)
+
+Effort: high (analytics and privacy). For the person: nothing on screen changes except Rekindle's first line for half the
+phones in the test. For Daybook: one weekly read of whether people are becoming free, where the way in loses them, and whether
+notes help or harm.
+
+- **#19 The weekly report.** Stats now runs by itself every Monday (13:00 UTC) as well as by hand. "What Daybook learns" leads
+  with "This week", plain lines that read in the log: how free people see themselves (each phone seen that week, its latest 0 to
+  10 answer), urges ridden out against slips logged that week, then setup (started, finished, the pages the rest stopped on), who
+  stays (opened on day 1, in days 7 to 13, in days 30 to 36, among phones whose first day was seen and old enough), the tools used
+  and whether the urge passed in SOS, each against the week before. The "Who stays" table uses the same windows now.
+- **#22 The way in.** First open, setup done, the first lesson finished, the first urge ridden out, the first comeback after a slip:
+  how many reached each in order, the share of the step before, how many at all, and the usual day. A comeback is the new event
+  `comeback` (all three flames lit for a slip, core `rkComebackCount`), so it counts from the builds that send it.
+- **#20 Notes.** `nudge` and `nudge_tap` carry `nh`, the hour the note came (it used to be the hour the app was next opened). The
+  report gives the open rate by kind and hour, what a tap led to (a lesson or SOS before the app was left), and harm: a slip within
+  the hour after a note, night (10 PM to 7 AM) against day. The phone works the hour out itself: when a slip is logged, the latest
+  note it saw delivered in the hour before the slip's own time goes with the slip as `after` (its kind) and `nh`. It knows only
+  the notes delivered before it was opened, so a note that arrives while Daybook is open is missed.
+- **#24 Word tests.** Core `ab.ts`: an arm from the install id (FNV-1a of test and id), arm a always when What Daybook learns is
+  off, and the event `ab` (test, arm) each time the line is shown. The first test, `rk_first`, is Rekindle's first line before the
+  hold: a "Your fire did not go out." against b "One slip. You are still someone who rides out urges: 4 times." (the line from
+  step 2 above), only for people who have ridden out an urge and not for a slip stopped partway. It is judged by logging again (an
+  urge, a slip or a check-in) within 24 and 72 hours of the first showing. A winner is named only once each arm has 30 people 72
+  hours on (`AB_MIN`), and only when the difference would come by chance less than 1 time in 20. With 8 people now, that is far
+  off, so the report says "too few to call" for a long while.
+- **On the list, the page and the label in the same change:** events `ab`, `comeback`; values `nh`, `after`, `test`, `arm`; the
+  privacy page and the App Store label note in docs/launch.md (no new label answer: the same types).
+- **The server needs a deploy** before the new names and values are kept: the events function checks each batch with core's list,
+  so until it carries the new list, it drops them. Merging with `[deploy]` does it.
+- The SQL can only run on main (the stats role trusts main alone), so each new part of the report is on its own: if a query fails,
+  that part says so and the rest still reads.
+
 ## Much more analytics, anonymous, never the journal (the owner, November 9, 2026; merged November 10, 2026 on the owner's word)
 
 **The ask.** "I want to store as much user information as possible, we'll keep it anonymous but we need to add a ton of

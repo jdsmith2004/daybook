@@ -13,6 +13,7 @@
      the account id, Apple's id, a push token, Apple Health's nights, exact times, location, the device model.
    - Every event and value is on the privacy page (apps/mobile/public/privacy.html). A new one goes on both in the same change.
    - The server checks each batch with eventsClean, the same rules (services/api/src/events.ts), and keeps it for 2 years. */
+import { AB_ARMS, AB_TEST_IDS } from './ab';
 import { LESSONS, TOOLS, TRIGGERS } from './legacy/core.js';
 import { NUDGE_KINDS } from './nudges';
 import { OB_PAGES } from './setup';
@@ -50,10 +51,11 @@ export const EV_NAMES = {
   talk_done: 'Finished Talk it through (secs)',
   /* the log */
   urge: 'Logged an urge (str, trigger, outcome)',
-  slip: 'Logged a slip (trigger, hrs: hours since the slip before, in bands)',
+  slip: 'Logged a slip (trigger, hrs: hours since the slip before, in bands; after and nh: a reminder that came in the hour before the slip, its kind and the hour it came)',
   happened: 'Used Already happened',
   planning: 'Used Planning a slip?',
   rekindle: 'Did a Rekindle step (step)',
+  comeback: 'Came back from a slip: all three of its flames lit',
   checkin: 'Saved a check-in (mood, sleep, str)',
   recheck: 'Answered the monthly five questions (q1 to q5)',
   free: 'Answered "How much do you see yourself as someone free of this?" (free: 0 to 10; rode30 and slips30: urges ridden out and slips in the last 30 days)',
@@ -66,8 +68,8 @@ export const EV_NAMES = {
   flame_lit: 'The flame was lit again',
   badge: 'Earned a badge (ix)',
   /* reminders */
-  nudge: 'Got a reminder (kind)',
-  nudge_tap: 'Opened Daybook from a reminder (kind)',
+  nudge: 'Got a reminder (kind, nh: the hour it came)',
+  nudge_tap: 'Opened Daybook from a reminder (kind, nh: the hour it came)',
   nudge_did: 'Did what a reminder was for, that day (kind)',
   /* money and accounts */
   ask: 'Was shown an ask (what)',
@@ -76,6 +78,8 @@ export const EV_NAMES = {
   account: 'Made an account (how)',
   sync_on: 'Turned sync on',
   feedback: 'Sent feedback (never the words here)',
+  /* word tests (ab.ts) */
+  ab: 'Was shown one wording of a line being tested (test, arm)',
 } as const;
 export type EvName = keyof typeof EV_NAMES;
 
@@ -186,6 +190,12 @@ export const EV_PROPS: Record<string, Prop> = {
   slips30: int(0, 1000),
   lvl: int(0, 1000),
   kind: one(() => NUDGE_KINDS),
+  /* a reminder: the hour it came; on a slip, the kind of reminder that came in the hour before it */
+  nh: int(0, 23),
+  after: one(() => NUDGE_KINDS),
+  /* a word test, and the wording shown (ab.ts) */
+  test: one(() => AB_TEST_IDS),
+  arm: one(() => AB_ARMS),
   what: one(() => ['tip', 'pattern', 'account', 'rate', 'sos', 'happened', 'planning', 'lesson', 'checkin', 'plan', 'journal', 'rekindle', 'idea', 'other']),
   chart: one(() => EV_CHARTS),
   locked: bool,

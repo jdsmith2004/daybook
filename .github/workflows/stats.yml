@@ -1,5 +1,9 @@
 # How Daybook is doing, with no sign-in (the owner, November 4, 2026): Apple's daily downloads, Daybook's own anonymous
 # daily totals, and what Daybook learns (Athena over the events, November 9, 2026), printed in the run's summary. Run it with: gh workflow run Stats (or Actions > Stats > Run workflow).
+# It also runs by itself every Monday (the weekly report, #19 in docs/plan.md): What Daybook learns leads with the week, the two
+# north-star numbers first, and is printed in the log too, so the newest run reads with:
+#   gh run view $(gh run list --workflow Stats --limit 1 --json databaseId -q '.[0].databaseId') --log
+# A scheduled run uses the defaults below, runs only on main, and costs a few cents of Athena at most.
 #
 # Safe by design:
 # - Reading only. AWS trusts this only on main (OpenID Connect, no stored keys), with a role that can read the totals'
@@ -9,6 +13,9 @@
 name: Stats
 
 on:
+  schedule:
+    # Mondays, 13:00 UTC (7 AM in Chicago in winter)
+    - cron: '0 13 * * 1'
   workflow_dispatch:
     inputs:
       days:

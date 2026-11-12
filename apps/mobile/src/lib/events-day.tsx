@@ -1,6 +1,6 @@
 /* What Daybook learns, once a day: where things stand (core events.ts, "day"). Rendered in the root layout, inside the store
    and sync providers. Only numbers, yes or no, and the fixed settings: never a word, the log itself or Health's nights. */
-import { addDays, evLang, evRound, fireLow, freeCounts, gameCompute, habitOf, heroNumber, isSupporter, type Days } from '@daybook/core';
+import { addDays, evLang, evRound, fireLow, freeCounts, gameCompute, habitOf, heroNumber, isSupporter, rkComebackCount, type Days } from '@daybook/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
@@ -85,11 +85,13 @@ interface Seen {
   badges: string[];
   low: number;
   sync: boolean;
+  /** comebacks from a slip (core rkComebackCount); missing in what older builds saved */
+  cb?: number;
 }
 let seen: Seen | null | undefined;
 
-/** each time the log changes: a new level, a new form of the flame, a badge earned, the flame burning lower or lit again, and
-    sync turned on. Compared with what was seen last, kept on the phone, so each is said once, when it happens (the first
+/** each time the log changes: a new level, a new form of the flame, a badge earned, the flame burning lower or lit again, a
+    comeback from a slip, and sync turned on. Compared with what was seen last, kept on the phone, so each is said once, when it happens (the first
     look only remembers, so nothing old is said as new). */
 export function FlameEvents() {
   const { ready, snap, tk } = useStore();
@@ -115,6 +117,7 @@ export function FlameEvents() {
         badges: g.badges.filter((b) => b.done).map((b) => b.id),
         low: fireLow(snap.days, st, tk, Date.now()).step,
         sync: sync.status.k === 'on',
+        cb: rkComebackCount(snap.days, st, tk),
       };
       const was = seen;
       if (was) {
@@ -124,6 +127,8 @@ export function FlameEvents() {
         if (now.low > was.low) track('flame_low', { low: now.low });
         if (now.low === 0 && was.low > 0) track('flame_lit');
         if (now.sync && !was.sync) track('sync_on');
+        /* a phone that saved before comebacks were watched only remembers the count this first time */
+        if (was.cb != null && now.cb! > was.cb) track('comeback');
       }
       seen = now;
       AsyncStorage.setItem(SEEN, JSON.stringify(now)).catch(() => undefined);

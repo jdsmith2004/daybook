@@ -104,6 +104,7 @@ import { TIP_ON } from '@/components/support';
 import { ToolShape } from '@/components/tool-grid';
 import { BEAT_BREATH, ToolTimer, type BeatOf } from '@/components/tools/timer';
 import { Icon, T } from '@/components/ui';
+import { Packed } from '@/components/packed';
 import { pickBackupText } from '@/lib/backup';
 import { BACKUP_FILES } from '@/lib/backup-files';
 import { buzz } from '@/lib/feel';
@@ -770,7 +771,7 @@ export default function Setup() {
           <Head h="What do you want your life to look like instead?" />
           <Middle>{null}</Middle>
           <Say text={voice} />
-          <View style={s.pills}>
+          <Packed>
             {obReasonOpts(a, st, f.redo).map((x) => {
               const on = rs.indexOf(x) >= 0;
               return (
@@ -788,7 +789,7 @@ export default function Setup() {
                 </Answer>
               );
             })}
-          </View>
+          </Packed>
           <Field label="Write my own" maxLength={REASON_LEN} placeholder="I want to…" defaultValue={a.own || ''} onChangeText={(v) => setA({ own: v })} />
         </>
       );
@@ -2045,7 +2046,6 @@ const s = StyleSheet.create({
     borderRadius: 20,
   },
   more: { gap: 8, padding: 16, borderRadius: 20 },
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',

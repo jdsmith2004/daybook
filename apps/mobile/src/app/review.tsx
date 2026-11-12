@@ -566,7 +566,7 @@ export default function Review() {
             </Appear>
           ) : null}
           <Dock>
-            <ChipWrap>
+            <ChipWrap last={1}>
               {goals.map((g) => {
                 const on = !!goal && (goal.k ? goal.k === g.k : goal.t === g.t);
                 return (

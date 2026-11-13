@@ -7,7 +7,7 @@ import { Text } from '@/components/text';
 
 import { DayColumns, EmptyChart } from '@/components/charts';
 import { Link } from '@/components/choices';
-import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { PointsList } from '@/components/points-list';
 import { closeSheet, SheetFrame, SheetH } from '@/components/sheet';
 import { Bar, Button, T } from '@/components/ui';
@@ -27,7 +27,8 @@ export default function Points() {
   return (
     <SheetFrame title="How your flame grows" sub={`Level ${lvl.n} · ${lvl.name}`}>
       <View style={s.hero}>
-        <Flame level={lvl.n} size={196} alive />
+        {/* the flame drawn big in its own sky, like the lesson finish and Welcome back (the owner, November 13, 2026: 'whys the avatar so small') */}
+        <FlameMedallion level={lvl.n} size={196} />
         {/* the number is its own line of text: inside a body line, iOS gives it the body's short line and cuts off its top */}
         <View style={s.pts} accessible accessibilityLabel={`${g.pts.toLocaleString('en-US')} points`}>
           <Text style={[s.big, { color: c.ink }]}>{g.pts.toLocaleString('en-US')}</Text>

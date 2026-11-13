@@ -273,7 +273,7 @@ export default function Today() {
   const nudge = remindersOffered && st && nlog.ready ? nudgeCard(snap.days, st, prefs, nlog, tk) : null;
   const quiet = useQuietAsks();
   /* the tour: on Today in front, with nothing else opening, never in the hours after an SOS or a slip (it waits for them to pass),
-     and never during an SOS or a pause. A short wait first, so a lesson opened by setup's Keep going is in front by then. */
+     and never during an SOS or a pause. A short wait first, so a page still closing (setup's end) is gone by then. */
   const [touring, setTouring] = useState(false);
   const tourNow = ready && !!st && tourWaits && !syncing && focused && !quiet && !backNow && !gradNow && !morningNow && !celebrating && !sos.ur && !sos.timer;
   useEffect(() => {

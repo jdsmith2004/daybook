@@ -2,7 +2,8 @@
    November 13, 2026: "if i just go home it should have a fun like first display on lessons and maybe like a floating explanation
    like a tutorial walkthrough of where lessons are and what the app has you do"). components/tour.tsx draws it.
 
-   It is due once, set by setup's last sheet (Go home, or Keep going into lesson 1), and kept in this device's memory, never synced.
+   It is due once, set as setup ends (setup now always lands on Today, and the tour ends on Start lesson 1), and kept in this device's
+   memory, never synced.
    Once it is finished or skipped it never comes back. The parts of Today it points at register themselves here (useSpot), so the
    spotlight always sits on the real thing. */
 import { useCallback, useEffect, useRef } from 'react';

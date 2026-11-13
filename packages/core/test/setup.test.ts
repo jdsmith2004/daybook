@@ -120,9 +120,9 @@ describe('the goal it suggests', () => {
 
 describe('setup in two minutes (WP10)', () => {
   it('asks a new person a few things, sets tonight, lights the flame, then asks for the account', () => {
-    expect(core.obPages({}).map((p) => p.id)).toEqual(['habit', 'freq', 'when', 'breathe', 'promise', 'for', 'faith', 'tonight', 'light']);
+    expect(core.obPages({}).map((p) => p.id)).toEqual(['how', 'habit', 'freq', 'when', 'sos', 'promise', 'for', 'faith', 'tonight', 'light']);
     expect(core.obPages({ faith: 'big' }, { account: true }).map((p) => p.id)).toEqual(
-      'habit freq when breathe promise for faith creed tonight light account'.split(' '),
+      'how habit freq when sos promise for faith creed tonight light account'.split(' '),
     );
     expect(core.obPages({}, { redo: true })[0].id).toBe('hello');
   });

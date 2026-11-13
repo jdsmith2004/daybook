@@ -189,7 +189,7 @@ export function obThenPick(a: SetupAnswers, st: Settings | null, redo: boolean, 
    week, one part a day, each set up by using it (unlock.ts). Duolingo is the model (the owner, November 12, 2026): the flame
    talks in its bubble and answers each pick, one question a page with big answers low, a bar across the top, the first win
    inside setup, and the flame lit by the person at the end. Every question can be skipped; setup itself cannot. */
-export type PageKind = 'hello' | 'account' | 'tiles' | 'multi' | 'breathe' | 'promise' | 'tonight' | 'light' | 'review' | 'done';
+export type PageKind = 'hello' | 'how' | 'sos' | 'account' | 'tiles' | 'multi' | 'promise' | 'tonight' | 'light' | 'review' | 'done';
 export interface ObPage {
   id: string;
   k: PageKind;
@@ -241,12 +241,16 @@ export const OB_PAGES: ObPage[] = [
   /* a walk-through opens with a hello; a new person starts on the first question, where the flame says hello (the owner,
      November 13, 2026: the welcome page "feels kind of pointless") */
   { id: 'hello', k: 'hello', need: isRedo },
+  /* a new person starts here: the flame says hello and how Daybook helps, one line each for SOS, the lessons and the mornings
+     (the owner, November 13, 2026: "onboarding doesn't explain lessons what sos is ... i don't know how the app is going to help me") */
+  { id: 'how', k: 'how', need: isNew },
   /* what the person is quitting (habit.ts): first, so every word after it is theirs */
   { id: 'habit', k: 'tiles', key: 'habit', list: OB_HABIT, h: 'What are you quitting?', keep: 1 },
   { id: 'freq', k: 'tiles', key: 'freq', list: OB_FREQ4, h: 'How often does it happen?', keep: 1 },
   { id: 'when', k: 'multi', key: 'when', list: OB_WHEN, h: 'When does it pull hardest?', sub: 'Pick any.', cols: 2, keep: 1 },
-  /* the first win, inside setup: thirty seconds of the breathing SOS starts with, done once */
-  { id: 'breathe', k: 'breathe', need: isNew },
+  /* the first win, inside setup: the real SOS, a short practice ride with its swipes, then SOS is unlocked (the owner, November 13,
+     2026: "the sos preview should literally be sos with the swipe gestures and stuff and when theyre done press next") */
+  { id: 'sos', k: 'sos', need: isNew },
   /* the heart of setup (the owner's condition on D4): you are here, this is different, it is going to work */
   { id: 'promise', k: 'promise', need: isNew },
   {
@@ -739,10 +743,11 @@ export const obLast = (st: Settings | null, redo: boolean, key: string, list: Ob
     on a one-tap question it answers what was picked. Plain words, no contractions, never shame. */
 const OB_SAY: Record<string, string> = {
   hello: 'Hi. I am your flame. Answer a few quick questions, and tonight is set.',
-  habit: 'Hi. I am your flame. Pick the closest one, and I will help with it.',
+  how: 'Hi. I am your flame. You came here, and that is the hardest step.',
+  sos: 'When an urge hits, tap SOS. Try it now, while it is calm. Swipe up for the next move.',
+  habit: 'Pick the closest one. I can help with each.',
   freq: 'Rough is fine. Only you see this.',
   when: 'Pick any. I will be ready for these.',
-  breathe: 'Breathe with me. This is how SOS starts.',
   for: 'On a hard night, I will remind you.',
   faith: 'It changes which lessons come up.',
   tonight: 'Set it now, while it is easy.',

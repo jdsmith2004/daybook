@@ -29,7 +29,7 @@ describe('the habit', () => {
   });
   it('setup asks it right after how it works, and keeps the answer', () => {
     const ids = core.obPages({}).map((p) => p.id);
-    expect(ids.indexOf('habit')).toBe(0);
+    expect(ids.indexOf('habit')).toBe(ids.indexOf('how') + 1);
     const r = core.obSave({ habit: 'gambling', faith: 'big', creed: 'lds' }, null, null, TK, 0);
     expect(core.habitOf(r.st)).toBe('gambling');
     /* the faith chosen in setup is kept too (it was dropped before November 8, 2026) */

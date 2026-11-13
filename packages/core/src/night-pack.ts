@@ -81,7 +81,7 @@ export function packWords(k: PackKind, at: string): { title: string; line: strin
       line: 'From ' + at + ', opening one of them opens Daybook first, with a short wait. By day nothing changes.',
       steps: [
         'In Shortcuts, open Automation and tap +. Pick App, choose the apps that pull you in, and keep Is Opened. ' + run,
-        'Add the action Wait first at night, from Daybook.',
+        'Add the action Wait first at night, from Daybook, and leave Open When Run on.',
       ],
     };
   if (k === 'bed')
@@ -90,12 +90,15 @@ export function packWords(k: PackKind, at: string): { title: string; line: strin
       line: 'Put the phone on the charger late in the evening, and Good night opens. Once a night.',
       steps: [
         'In Shortcuts, open Automation and tap +. Pick Charger, and keep Is Connected. ' + run,
-        'Add the action Good night, if it is late, from Daybook.',
+        'Add the action Good night, if it is late, from Daybook, and leave Open When Run on.',
       ],
     };
   return {
     title: 'The alarm opens the morning',
     line: 'Stop your alarm, and the morning is the first thing you see.',
-    steps: ['In Shortcuts, open Automation and tap +. Pick Alarm, then Is Stopped, and Any Alarm. ' + run, 'Add the action Open the morning, from Daybook.'],
+    steps: [
+      'In Shortcuts, open Automation and tap +. Pick Alarm, then Is Stopped, and Any Alarm. ' + run,
+      'Add the action Open the morning, from Daybook, and leave Open When Run on.',
+    ],
   };
 }

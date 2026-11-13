@@ -7,9 +7,10 @@ import { Linking, StyleSheet, View } from 'react-native';
 
 import { Flame } from '@/components/flame';
 import { SetGroup, SetRow, SetSwitch } from '@/components/settings-ui';
-import { T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { packSay, usePack } from '@/lib/night-pack';
 import { useStore } from '@/lib/store';
+import { useTheme } from '@/lib/theme';
 
 const SHORT: Record<PackKind, string> = { grey: 'Grey', wait: 'Wait', bed: 'Good night', wake: 'Morning' };
 
@@ -26,6 +27,7 @@ const ranAt = (ms: number) => {
 export function NightPackBody() {
   const { snap, tk } = useStore();
   const pack = usePack();
+  const c = useTheme();
   const st = snap.settings;
   if (!st) return null;
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
@@ -37,7 +39,13 @@ export function NightPackBody() {
           const lit = packLit(pack, k);
           return (
             <View key={k} style={s.light} accessible accessibilityLabel={SHORT[k] + (lit ? ', on' : ', not set yet')}>
-              <Flame level={level} size={60} locked={!lit} alive={lit} label="" />
+              {lit ? (
+                <Flame level={level} size={60} alive label="" />
+              ) : (
+                <View style={s.unlit}>
+                  <Icon name="flame" size={40} color={c.muted} />
+                </View>
+              )}
               <T v="small" tone={lit ? undefined : 'muted'}>
                 {SHORT[k]}
               </T>
@@ -78,5 +86,6 @@ export function NightPackBody() {
 const s = StyleSheet.create({
   lights: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 },
   light: { alignItems: 'center', gap: 6, flex: 1 },
+  unlit: { width: 60, height: 60, alignItems: 'center', justifyContent: 'center' },
   lead: { textAlign: 'center', marginTop: -12, paddingHorizontal: 16 },
 });

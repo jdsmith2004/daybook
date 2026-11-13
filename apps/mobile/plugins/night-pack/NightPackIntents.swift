@@ -8,6 +8,9 @@
 // UserDefaults keys with modules/night-pack. Nothing here names the habit: these names can show on the lock screen.
 import AppIntents
 import Foundation
+import os
+
+let nightPackLog = Logger(subsystem: "com.jdsmith2004.daybook", category: "nightpack")
 
 enum NightPackStore {
   static let at = "daybook.pack.at"
@@ -43,32 +46,33 @@ enum NightPackStore {
     return "\(c.year ?? 0)-\(c.month ?? 0)-\(c.day ?? 0)"
   }
   static func mark(_ kind: String, _ path: String) {
+    nightPackLog.log("action \(kind, privacy: .public) acts")
     d.set(Date().timeIntervalSince1970 * 1000, forKey: seen + kind)
     d.set(path, forKey: route)
   }
 }
 
-@available(iOS 26.0, *)
 struct NightPackWaitIntent: AppIntent {
   static let title: LocalizedStringResource = "Wait first at night"
   static let description = IntentDescription("At night, Daybook opens first, with a short wait. By day nothing happens.")
-  static let supportedModes: IntentModes = [.background, .foreground(.dynamic)]
+  @available(iOS 26.0, *)
+  static var supportedModes: IntentModes { [.background, .foreground(.dynamic)] }
   static let isDiscoverable = true
 
   func perform() async throws -> some IntentResult {
     let open = NightPackStore.d.double(forKey: NightPackStore.open)
     guard NightPackStore.acts("wait"), Date().timeIntervalSince1970 * 1000 >= open else { return .result() }
     NightPackStore.mark("wait", "/pause?pk=1")
-    try await continueInForeground(nil, alwaysConfirm: false)
+    if #available(iOS 26.0, *) { try await continueInForeground(nil, alwaysConfirm: false) }
     return .result()
   }
 }
 
-@available(iOS 26.0, *)
 struct NightPackBedIntent: AppIntent {
   static let title: LocalizedStringResource = "Good night, if it is late"
   static let description = IntentDescription("Late in the evening, Daybook opens Good night. Once a night; at other times nothing happens.")
-  static let supportedModes: IntentModes = [.background, .foreground(.dynamic)]
+  @available(iOS 26.0, *)
+  static var supportedModes: IntentModes { [.background, .foreground(.dynamic)] }
   static let isDiscoverable = true
 
   func perform() async throws -> some IntentResult {
@@ -76,27 +80,26 @@ struct NightPackBedIntent: AppIntent {
     guard NightPackStore.acts("bed"), NightPackStore.d.string(forKey: NightPackStore.bedNight) != night else { return .result() }
     NightPackStore.d.set(night, forKey: NightPackStore.bedNight)
     NightPackStore.mark("bed", "/night?pk=1")
-    try await continueInForeground(nil, alwaysConfirm: false)
+    if #available(iOS 26.0, *) { try await continueInForeground(nil, alwaysConfirm: false) }
     return .result()
   }
 }
 
-@available(iOS 26.0, *)
 struct NightPackWakeIntent: AppIntent {
   static let title: LocalizedStringResource = "Open the morning"
   static let description = IntentDescription("In the morning, Daybook opens the morning. At other times nothing happens.")
-  static let supportedModes: IntentModes = [.background, .foreground(.dynamic)]
+  @available(iOS 26.0, *)
+  static var supportedModes: IntentModes { [.background, .foreground(.dynamic)] }
   static let isDiscoverable = true
 
   func perform() async throws -> some IntentResult {
     guard NightPackStore.acts("wake") else { return .result() }
     NightPackStore.mark("wake", "/morning?pk=1")
-    try await continueInForeground(nil, alwaysConfirm: false)
+    if #available(iOS 26.0, *) { try await continueInForeground(nil, alwaysConfirm: false) }
     return .result()
   }
 }
 
-@available(iOS 26.0, *)
 struct NightPackShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
     AppShortcut(intent: NightPackWaitIntent(), phrases: ["Wait first with \(.applicationName)"], shortTitle: "Wait first at night", systemImageName: "hourglass")

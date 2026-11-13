@@ -79,7 +79,7 @@ export default function Unlocked() {
   };
   const main: Record<UnlockId, () => void> = {
     journal: write,
-    plan: () => router.replace('/talk'),
+    plan: () => router.replace('/trail'),
     person: saveName,
     pull: () => void choose(),
     reach: onReach,

@@ -17,7 +17,8 @@
     "shots:ios": "node --experimental-strip-types --no-warnings scripts/shots-ios.ts",
     "journey": "node --experimental-strip-types --no-warnings scripts/journey.ts",
     "release-check": "node scripts/release-check.mjs",
-    "story": "node --experimental-strip-types --no-warnings scripts/story.ts"
+    "story": "node --experimental-strip-types --no-warnings scripts/story.ts",
+    "story:walk": "node --experimental-strip-types --no-warnings scripts/walk-story.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

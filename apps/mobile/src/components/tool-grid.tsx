@@ -1,7 +1,7 @@
 /* Every tool, in its four groups (the legacy toolCard and the Tools grid). Used by the Tools tab and by the second SOS screen,
    where each tool can carry a small tag ("Worked 3 of 4", core: urTags). */
 import { TOOL_GROUPS, TOOLS, UR_QUIET, urTried, type Days } from '@daybook/core';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Shape, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 
@@ -65,6 +65,7 @@ export function ToolGrid({
   night,
   lead,
   onLead,
+  omit,
 }: {
   days: Days;
   onPick: (id: string) => void;
@@ -74,8 +75,12 @@ export function ToolGrid({
   /** one ride move shown first, in a group of its own (SOS: It is written, for people who said faith plays a part) */
   lead?: { id: string; name: string; desc: string; ic: string; tone: string; group: string };
   onLead?: (id: string) => void;
+  /** tools already offered above it, so no door is listed twice (SOS, More) */
+  omit?: string[];
 }) {
   const c = useTheme();
+  /* on a 320-wide phone two columns leave a name three letters of room: one column there */
+  const narrow = useWindowDimensions().width < 360;
   const tried = urTried(days);
   const any = fresh && TOOLS.some((t) => tried[t.id]);
   const [lSoft, lInk] = lead ? toolTone(c, lead.tone) : ['', ''];
@@ -99,42 +104,50 @@ export function ToolGrid({
           </Pressable>
         </View>
       ) : null}
-      {TOOL_GROUPS.map(([g, name]) => (
-        <View key={g} style={{ gap: 8 }}>
-          <T v="eyebrow" tone="muted" accessibilityRole="header">
-            {name}
-          </T>
-          <View style={s.grid}>
-            {TOOLS.filter((t) => t.g === g && UR_QUIET.indexOf(t.id) < 0 && !(t.id === 'bed' && night === false)).map((t) => {
-              const [soft, ink] = toolTone(c, t.tone);
-              const isNew = any && !tried[t.id];
-              const tag = tags?.[t.id];
-              return (
-                <Pressable
-                  key={t.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${t.name}. ${t.desc}${tag ? '. ' + tag : isNew ? '. New for you' : ''}`}
-                  onPress={() => onPick(t.id)}
-                  style={({ pressed }) => [s.tool, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
-                  <ToolShape id={t.id} ic={t.ic} size={46} iconSize={22} color={soft} ink={ink} />
-                  <View style={{ flex: 1 }}>
-                    <View style={s.nameRow}>
-                      <Text style={[s.name, { color: c.ink, flexShrink: 1 }]}>{t.name}</Text>
-                      {isNew ? (
-                        <View style={[s.new, { backgroundColor: c.sun }]}>
-                          <Text style={[s.newT, { color: c.onSun }]}>New</Text>
-                        </View>
-                      ) : null}
+      {TOOL_GROUPS.map(([g, name]) => {
+        const list = TOOLS.filter((t) => t.g === g && UR_QUIET.indexOf(t.id) < 0 && !(t.id === 'bed' && night === false) && !omit?.includes(t.id));
+        if (!list.length) return null;
+        return (
+          <View key={g} style={{ gap: 8 }}>
+            <T v="eyebrow" tone="muted" accessibilityRole="header">
+              {name}
+            </T>
+            <View style={s.grid}>
+              {list.map((t) => {
+                const [soft, ink] = toolTone(c, t.tone);
+                const isNew = any && !tried[t.id];
+                const tag = tags?.[t.id];
+                return (
+                  <Pressable
+                    key={t.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t.name}. ${t.desc}${tag ? '. ' + tag : isNew ? '. New for you' : ''}`}
+                    onPress={() => onPick(t.id)}
+                    style={({ pressed }) => [
+                      s.tool,
+                      narrow && { flexBasis: '100%' },
+                      { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] },
+                    ]}>
+                    <ToolShape id={t.id} ic={t.ic} size={46} iconSize={22} color={soft} ink={ink} />
+                    <View style={{ flex: 1 }}>
+                      <View style={s.nameRow}>
+                        <Text style={[s.name, { color: c.ink, flexShrink: 1 }]}>{t.name}</Text>
+                        {isNew ? (
+                          <View style={[s.new, { backgroundColor: c.sun }]}>
+                            <Text style={[s.newT, { color: c.onSun }]}>New</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text style={[s.desc, { color: c.muted }]}>{t.desc}</Text>
+                      {tag ? <Text style={[s.tag, { color: c.mintText }]}>{tag}</Text> : null}
                     </View>
-                    <Text style={[s.desc, { color: c.muted }]}>{t.desc}</Text>
-                    {tag ? <Text style={[s.tag, { color: c.mintText }]}>{tag}</Text> : null}
-                  </View>
-                </Pressable>
-              );
-            })}
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }

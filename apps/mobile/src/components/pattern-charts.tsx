@@ -327,13 +327,13 @@ export function Hillside({
         </Text>
       ) : null}
       <View style={[s.between, s.abs, { left: 16, right: 16, bottom: note ? 62 : 14, alignItems: 'center' }]}>
-        <Text style={[s.ax, { color: k.c.muted }]}>{first}</Text>
+        <Text style={[s.ax, { color: nightInk.muted }]}>{first}</Text>
         {was ? (
           <View style={s.keyItem}>
             <Svg width={18} height={4} {...SVG_HIDE}>
               <Path d="M2 2H16" stroke={k.c.ink} strokeOpacity={0.7} strokeWidth={2} strokeDasharray="0.1 6" strokeLinecap="round" />
             </Svg>
-            <Text style={[s.ax, { color: k.c.muted }]}>{than.replace(/^in /, '').replace(/^t/, 'T')}</Text>
+            <Text style={[s.ax, { color: nightInk.muted }]}>{than.replace(/^in /, '').replace(/^t/, 'T')}</Text>
           </View>
         ) : null}
         <Text style={[s.ax, { color: k.c.ink }]}>Today</Text>
@@ -467,7 +467,7 @@ export function DayFlow({
         )}
       </Sweep>
       <View style={[s.between, s.abs, { left: 16, right: 16, bottom: 6 }]}>
-        <Text style={[s.ax, { color: k.c.muted }]}>{first}</Text>
+        <Text style={[s.ax, { color: nightInk.muted }]}>{first}</Text>
         <Text style={[s.ax, { color: k.c.ink }]}>Today</Text>
       </View>
     </View>
@@ -745,10 +745,10 @@ export function DaySky({ hours, hard, w, h, sky }: { hours: PatHour[]; hard: Pat
             </Svg>
           ) : l === 'Midnight' ? (
             <Svg width={12} height={12} viewBox="0 0 24 24" {...SVG_HIDE}>
-              <Path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill={k.c.muted} />
+              <Path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill={nightInk.muted} />
             </Svg>
           ) : null}
-          <Text style={[s.ax, { color: k.c.muted }]}>{l}</Text>
+          <Text style={[s.ax, { color: nightInk.muted }]}>{l}</Text>
         </View>
       ))}
     </View>
@@ -1040,11 +1040,11 @@ export function Pairs({ list, w, h }: { list: PatDiff[]; w: number; h: number })
       <View style={[s.key, { justifyContent: 'center', columnGap: 16 }]}>
         <View style={s.keyItem}>
           <View style={[s.keyDot, { backgroundColor: k.win }]} />
-          <Text style={[s.ax, { color: k.c.muted }]}>Days with no slip</Text>
+          <Text style={[s.ax, { color: nightInk.muted }]}>Days with no slip</Text>
         </View>
         <View style={s.keyItem}>
           <View style={[s.keyDot, { backgroundColor: '#A99FE0' }]} />
-          <Text style={[s.ax, { color: k.c.muted }]}>Slip days</Text>
+          <Text style={[s.ax, { color: nightInk.muted }]}>Slip days</Text>
         </View>
       </View>
     </View>

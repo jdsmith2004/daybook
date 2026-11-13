@@ -11,6 +11,8 @@ import {
   bpsScore,
   bpsScores,
   FREE_HI,
+  habitOf,
+  habitSay,
   FREE_LO,
   FREE_Q,
   freeCounts,
@@ -172,7 +174,7 @@ export default function Recheck() {
     <SheetFrame title={'Five questions · ' + (answers.length + 1) + ' of ' + OB_BPS.length}>
       <T tone="muted">{BPS_STEM}</T>
       <T v="title" accessibilityRole="header">
-        {OB_BPS[answers.length]}
+        {habitSay(OB_BPS[answers.length], habitOf(snap.settings))}
       </T>
       <Dock>
         <ChoiceRows list={OB_BPS_C.map(([id, name], j) => ({ id, name, icon: ICONS[j], tone: TONES[j] }))} onPick={(id) => pick(Number(id))} />

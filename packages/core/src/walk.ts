@@ -109,6 +109,16 @@ export const WALK_COACH: Record<WalkBeat, { say: string; why: string; src: strin
     src: ['gollwitzer'],
   },
 };
+/** the "Why this works" for a beat. The first beat's reason is a trial in porn use, so another habit gets a general one, with its own paper */
+export function walkCoach(beat: WalkBeat, habit: string): { say: string; why: string; src: string[] } {
+  const c = WALK_COACH[beat];
+  if (beat !== 'open' || habit === 'porn') return c;
+  return {
+    ...c,
+    why: 'In a trial with smokers, people taught to notice an urge and ride it out, without fighting it, smoked less over the next week than people who were not.',
+    src: ['bowen'],
+  };
+}
 
 /* ---------- 1. nothing has gone wrong ---------- */
 export type WalkFaith = 'lds' | 'christian' | 'plain' | null;

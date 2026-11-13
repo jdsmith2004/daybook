@@ -1,6 +1,6 @@
 /* Get help: if it is hard right now (SOS, the safe person, 988 and the Crisis Text Line), then where to start.
    Ported from the legacy helpHome and nowCard. */
-import { HELP_PAGES, safeName, type HelpPage } from '@daybook/core';
+import { HELP_PAGES, faithOut, safeName, type HelpPage } from '@daybook/core';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
@@ -16,7 +16,7 @@ const msg = () => router.push({ pathname: '/tool/[id]', params: { id: 'message' 
 export default function HelpHome() {
   const { snap } = useStore();
   const nm = safeName(snap.settings);
-  const pages = (Object.keys(HELP_PAGES) as HelpPage[]).filter((k) => k !== 'plan' && k !== 'playbook');
+  const pages = (Object.keys(HELP_PAGES) as HelpPage[]).filter((k) => k !== 'plan' && k !== 'playbook' && !(k === 'faith' && faithOut(snap.settings)));
   return (
     <Screen title="Get help" back="More">
       <Card>

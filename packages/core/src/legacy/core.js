@@ -3080,7 +3080,7 @@ const LCHECKS=[
 const RCATS=[
  {id:'rel',name:'Relationships',ic:'heart',tone:'coral',words:/relationship|marri|partner|wife|husband|spouse|girlfriend|boyfriend|dating|romanc|love|famil|friend|intima|connect|trust|father|mother|\bdad\b|\bmom\b|kids|child/i},
  {id:'foc',name:'Energy and focus',ic:'bolt',tone:'sky',words:/focus|energy|work|career|sleep|tired|product|concentrat|clear|fog|mind|health|study|school|money|morning|time/i},
- {id:'val',name:'Values and faith',ic:'star',tone:'violet',words:/value|faith|\bgod\b|pray|church|spirit|integrity|honest|character|belief|believe|purpose|soul|proud|my word|respect/i},
+ {id:'val',name:'Values',ic:'star',tone:'violet',words:/value|faith|\bgod\b|pray|church|spirit|integrity|honest|character|belief|believe|purpose|soul|proud|my word|respect/i},
  {id:'oth',name:'Something else',ic:'leaf',tone:'mint',words:null}
 ];
 function reasonGuess(text){for(let i=0;i<3;i++)if(RCATS[i].words.test(text))return RCATS[i];return RCATS[3]}

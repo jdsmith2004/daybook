@@ -4,12 +4,12 @@
    the map as before. The map asks "Where is it now?": touch the place it has reached
    (the flame walks there) and how much time there is (10 seconds, 2 minutes, or 10 or more, remembered). Then that place:
    three beats, like a lesson (the owner, November 3, 2026): what the craving whispers there, what that thought really is,
-   then the one line to say once and the one thing to do, at that length (10 seconds goes straight to the move). Done is an exit, and every exit leads
-   home: the house with the lit window, how long this battle has been held, and an urge ridden out saved to the log. "It is
-   back" starts again at the map. Nothing on the trail asks the person to reach out to anyone (the owner, November 3, 2026).
+   then the one line to say once and the one thing to do, at that length (10 seconds goes straight to the move). Done is an exit, and every exit is an
+   urge ridden out, saved to the log, with the one ending every ridden-out urge gets (RodeOut; the review of November 12,
+   2026, in place of the trail's own home page). Nothing on the trail asks the person to reach out to anyone (the owner, November 3, 2026).
 
    The stretch (one battle across hours or days) lives in the SOS memory on this device (core trailBegin): opening the trail
-   carries it on, and the map starts where the flame was last. The X closes, like SOS; "It passed" goes home from anywhere. */
+   carries it on, and the map starts where the flame was last. The X closes, like SOS; "It passed" ends it from anywhere. */
 import {
   addEvent,
   gameCompute,
@@ -26,7 +26,6 @@ import {
   trailBegin,
   trailFill,
   trailGuide,
-  trailHomeLine,
   trailKey,
   trailLenOf,
   trailLine,
@@ -53,6 +52,7 @@ import Reanimated, { useAnimatedStyle, withTiming } from 'react-native-reanimate
 import { Link } from '@/components/choices';
 import { useHearthHold } from '@/components/hearth';
 import { Mirror, useMirror } from '@/components/mirror';
+import { RodeOut, type Rode } from '@/components/rode-out';
 import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Text } from '@/components/text';
 import { Walk } from '@/components/walk';
@@ -60,7 +60,6 @@ import {
   DoorArt,
   DrillClock,
   DriftArt,
-  HomeArt,
   PictureSlider,
   PreviewArt,
   Rise,
@@ -75,14 +74,14 @@ import {
 } from '@/components/trail-art';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { close, closeAll } from '@/lib/nav';
+import { close } from '@/lib/nav';
 import { count } from '@/lib/pulse';
 import { useCareOpen } from '@/lib/quiet-asks';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font } from '@/lib/theme';
 
-type Step = 'walk' | 'where' | TrailPlace | 'home';
+type Step = 'walk' | 'where' | TrailPlace;
 
 export default function Trail() {
   const { snap, tk, update } = useStore();
@@ -108,7 +107,7 @@ export default function Trail() {
   const [len, setLen] = useState<TrailLen>(() => trailLenOf(sos.mem));
   /* the beat inside a place: 0 what it says, 1 what it really is, 2 the move */
   const [beat, setBeat] = useState(() => (trailLenOf(sos.mem) === 's' ? 2 : 0));
-  const [home, setHome] = useState<{ at: TrailPlace | null; line: string } | null>(null);
+  const [won, setWon] = useState<Rode | null>(null);
   /* how many times the door was reached, so the line it may say next is a new one each time */
   const visits = useRef(stretch0?.visits ?? 1);
 
@@ -121,7 +120,8 @@ export default function Trail() {
     sos.setMem((m) => ({ ...m, trailLen: l }));
   };
 
-  /* an exit: the drill done (or "It passed"), saved as an urge ridden out, and home */
+  /* an exit: the drill done (or "It passed"), saved as an urge ridden out, and the one ending every ridden-out urge gets
+     (RodeOut, the review of November 12, 2026) */
   const reach = useCallback(
     (at: TrailPlace | null, n0?: number | null) => {
       const now = Date.now();
@@ -130,26 +130,27 @@ export default function Trail() {
       const done: UrState = at ? { ...u, used: u.used.concat(TRAIL[at].did) } : u;
       const a = urMark(done, 'p');
       const e = urEntry(a, 'rode', st, now);
-      update((s) => ({ ...s, days: addEvent(s.days, e.key, 'rode', e.time, e.fields).days }));
-      count('urge_logged');
-      let line = '';
-      sos.setMem((m) => {
-        const next = trailReach(m, now);
-        line = trailHomeLine(at, trailStretchOf(next), now);
-        return { ...next, last: e.last };
+      let id = '';
+      let gain = 0;
+      update((s) => {
+        const r = addEvent(s.days, e.key, 'rode', e.time, e.fields);
+        id = r.id;
+        if (s.settings) gain = gameCompute(r.days, s.settings, s.reviews, tk).pts - gameCompute(s.days, s.settings, s.reviews, tk).pts;
+        return { ...s, days: r.days };
       });
-      setHome({ at, line: line || trailHomeLine(at, null, now) });
-      setStep('home');
-      buzz('lit');
+      count('urge_logged');
+      sos.setMem((m) => ({ ...trailReach(m, now), last: e.last }));
+      /* what helped is asked as for one logged afterwards: the trail's exits are not SOS moves */
+      setWon({ key: e.key, id, mins: e.mins, moves: [], gain });
     },
-    [ur, st, update, sos],
+    [ur, st, update, sos, tk],
   );
 
   const night = urNight(new Date().getHours());
   const passedAt = (at: TrailPlace | null, first?: () => void) => (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="It passed. Go home."
+      accessibilityLabel="It passed"
       onPress={() => {
         first?.();
         reach(at);
@@ -159,7 +160,10 @@ export default function Trail() {
       <Text style={s.passedT}>It passed</Text>
     </Pressable>
   );
-  const passed = step === 'home' || step === 'walk' ? undefined : passedAt(step === 'where' ? pick : step);
+  const passed = step === 'walk' ? undefined : passedAt(step === 'where' ? pick : step);
+
+  /* ---------- the end: an urge ridden out ---------- */
+  if (won) return <RodeOut won={won} night={night} level={level} title="Walk it through" />;
 
   /* ---------- Walk it through: the way in (components/walk.tsx) ---------- */
   if (step === 'walk') {
@@ -179,40 +183,6 @@ export default function Trail() {
           reach(at, n0);
         }}
       />
-    );
-  }
-
-  /* ---------- home ---------- */
-  if (step === 'home' && home) {
-    return (
-      <SceneFrame title="The trail" sky="night" onClose={close}>
-        <Stage key="home" dir={1}>
-          <T v="title" accessibilityRole="header">
-            Home.
-          </T>
-          <T tone="muted">{home.line}</T>
-          <Middle>
-            <HomeArt level={level} />
-          </Middle>
-          <Dock>
-            <Button label="Done" onPress={() => closeAll()} />
-            <View style={s.center}>
-              <Link
-                label="It is back"
-                tone="muted"
-                onPress={() => {
-                  buzz('tap');
-                  visits.current += 1;
-                  setUr(newUrge(Date.now(), g.pts));
-                  sos.setMem((m) => trailBegin(m, Date.now()));
-                  setHome(null);
-                  setStep('walk');
-                }}
-              />
-            </View>
-          </Dock>
-        </Stage>
-      </SceneFrame>
     );
   }
 
@@ -252,7 +222,6 @@ export default function Trail() {
   /* ---------- a place: what it says, what it really is, then the move (10 seconds goes straight to the move). At 2 minutes the
      move is guided: how strong it is (very strong offers SOS first), what it wants them to do and what it is showing them,
      written down, eight cues that speak to those words while the picture acts them out, and how strong it is after. ---------- */
-  if (step === 'home') return null;
   const at = step;
   const P = TRAIL[at];
   const drill = P.drills[len];

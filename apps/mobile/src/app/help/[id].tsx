@@ -9,6 +9,7 @@ import {
   habitOf,
   habitSay,
   HELP_PAGES,
+  faithOut,
   HELP_SRC,
   HELP_SUBS,
   LESSONS,
@@ -40,9 +41,11 @@ const urgePlan = () => router.push({ pathname: '/plan', params: { pane: 'plans',
 
 export default function HelpPageRoute() {
   const { id, sub } = useLocalSearchParams<{ id: string; sub?: string }>();
+  const { snap } = useStore();
   if (id === 'plan') return <Redirect href={{ pathname: '/plan', params: { pane: 'plans', ...(sub ? { sub } : {}) } }} />;
   if (id === 'playbook') return <Redirect href="/learned" />;
   if (id === 'sources') return <Sources />;
+  if (id === 'faith' && faithOut(snap.settings)) return <Redirect href="/help" />;
   if (!(id in HELP_PAGES)) return <Redirect href="/help" />;
   const pg = HELP_PAGES[id as HelpPage];
   return (
@@ -428,12 +431,14 @@ function Groups() {
           </HCard>
         </>
       )}
-      <HCard title="Celebrate Recovery" links={<Ext url="https://www.celebraterecovery.com/" label="Find a group" />}>
-        <P>
-          A Christ-centered program for “hurts, hang-ups and habits,” started at Saddleback Church in 1991. Since your faith matters to you, this may fit. Ask
-          the local group what they run and whether it covers {habit === 'porn' ? 'porn use' : habit === 'other' ? 'your habit' : HABIT_NOUN[habit]}.
-        </P>
-      </HCard>
+      {faithOut(snap.settings) ? null : (
+        <HCard title="Celebrate Recovery" links={<Ext url="https://www.celebraterecovery.com/" label="Find a group" />}>
+          <P>
+            A Christ-centered program for “hurts, hang-ups and habits,” started at Saddleback Church in 1991. Since your faith matters to you, this may fit. Ask
+            the local group what they run and whether it covers {habit === 'porn' ? 'porn use' : habit === 'other' ? 'your habit' : HABIT_NOUN[habit]}.
+          </P>
+        </HCard>
+      )}
       <HCard title="Your first meeting">
         <UL
           items={[

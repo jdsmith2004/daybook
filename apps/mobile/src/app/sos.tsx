@@ -8,8 +8,8 @@
    "It passed" in the corner ends it with the one celebration every urge ridden out gets (components/rode-out.tsx): the
    flame, confetti, how long it took, how many you have ridden out, which move helped most (one tap, and SOS leans on it
    next time), one line on why that move works with its lesson for later, and what set it off (one tap). More (next to it)
-   holds the bigger moves (the trail, for a craving that keeps coming; step away, text someone, talk it through, and bed at night), every tool, and I slipped, which
-   goes on to Rekindle (log.tsx). A tool picked there runs over SOS; when it is done, SOS asks one quiet question, "How is
+   holds four big choices (Walk it through, Step away 10 minutes, Text someone, and Go to bed at night or Move by day), one
+   row for every other tool, and I slipped, pinned under them so it is never a scroll away; it goes on to Rekindle (log.tsx). A tool picked there runs over SOS; when it is done, SOS asks one quiet question, "How is
    it now?": Better leads on to It passed, Still strong opens the tools again. The X on a tool comes back to the tools.
    The X here just closes. With ?practice=1 it is three moves, for a calm moment, and nothing is saved as an urge. */
 import {
@@ -103,6 +103,8 @@ export default function Sos() {
   const [near, setNear] = useState<number | null>(null);
   const [won, setWon] = useState<Rode | null>(() => (SHOTS && wq === '1' ? SHOT_WON : null));
   const [more, setMore] = useState(false);
+  /* More, one step in: every other tool (the X there goes back to the four; back from a tool picked there, it opens there) */
+  const [all, setAll] = useState(false);
   const [sci, setSci] = useState(false);
   /* "How is it now?" after a tool, answered Better: It passed is the next step */
   const [better, setBetter] = useState(false);
@@ -371,8 +373,9 @@ export default function Sos() {
     <View style={s.topR}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="More: other tools, someone to talk to, or I slipped"
+        accessibilityLabel="More: Walk it through, step away, text someone, every tool, or I slipped"
         onPress={() => {
+          setAll(false);
           setMore(true);
           buzz('tap');
         }}
@@ -391,12 +394,14 @@ export default function Sos() {
       </Pressable>
     </View>
   );
-  /* the trail opens on Walk it through, which took the place of Talk it through (the owner, November 4, 2026); Go to bed at night */
+  /* four big choices, named as Today names them (the review of November 12, 2026): Walk it through, the two that take a
+     person out of it, and Go to bed at night (by day, Move: nothing sends a person to bed in the day). Every other tool is one
+     row away, and none of these four is listed there again. */
   const big: [string, string, string][] = [
-    ['trail', 'compass', 'The trail'],
-    ['pause', 'timer', 'Step away 10 min'],
+    ['trail', 'compass', 'Walk it through'],
+    ['pause', 'timer', 'Step away 10 minutes'],
     ['message', 'chat', 'Text someone'],
-    ...(night ? ([['bed', 'moon', 'Go to bed']] as [string, string, string][]) : []),
+    night ? ['bed', 'moon', 'Go to bed'] : ['move', 'bolt', 'Move for 2 minutes'],
   ];
   return (
     <SceneFrame title={title} sky={sky} onClose={close} topRight={top} fixed>
@@ -468,75 +473,123 @@ export default function Sos() {
         </View>
       </View>
       <ScienceSheet id={id} name={moveName(id)} open={sci} night={night} onClose={() => setSci(false)} />
-      <More open={more} night={night} onClose={() => setMore(false)}>
-        <Text style={[s.moreH, { color: c.ink }]}>Something bigger</Text>
-        <View style={s.bigRow}>
-          {big.map(([bid, ic, label]) => (
+      <More
+        open={more}
+        night={night}
+        back={all ? () => setAll(false) : null}
+        onClose={() => setMore(false)}
+        foot={
+          <Pressable accessibilityRole="button" onPress={() => save('slipped')} style={s.slip} hitSlop={8}>
+            <Icon name="leaf" size={16} color={c.slipText} />
+            <Text style={[s.slipT, { color: c.slipText }]}>I slipped. A slip is data, not a reset.</Text>
+          </Pressable>
+        }>
+        {all ? (
+          <>
+            <Text style={[s.moreH, { color: c.ink }]} accessibilityRole="header">
+              Every tool
+            </Text>
+            <ToolGrid
+              days={snap.days}
+              tags={tags}
+              fresh={false}
+              night={night}
+              omit={big.map((b) => b[0])}
+              onPick={pickTool}
+              lead={
+                faith
+                  ? {
+                      id: 'written',
+                      name: moveName('written'),
+                      desc: (faithVoice(st) || 'plain') === 'plain' ? 'Say no, and stand firm' : 'Answer it like He did',
+                      ic: 'shield',
+                      tone: 'sun',
+                      group: 'Stand on faith',
+                    }
+                  : undefined
+              }
+              onLead={jump}
+            />
+          </>
+        ) : (
+          <>
+            <View style={s.bigGrid}>
+              {big.map(([bid, ic, label]) => (
+                <Pressable
+                  key={bid}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    if (bid !== 'trail') return pickTool(bid);
+                    setMore(false);
+                    buzz('tap');
+                    router.push('/trail?from=sos' as '/trail');
+                  }}
+                  style={({ pressed }) => [s.bigB, { backgroundColor: c.bg, transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
+                  <Icon name={ic} size={26} color={c.accentText} />
+                  <Text style={[s.bigT, { color: c.ink }]}>{label}</Text>
+                </Pressable>
+              ))}
+            </View>
             <Pressable
-              key={bid}
               accessibilityRole="button"
               onPress={() => {
-                if (bid !== 'talk' && bid !== 'trail') return pickTool(bid);
-                setMore(false);
                 buzz('tap');
-                router.push('/trail?from=sos' as '/trail');
+                setAll(true);
               }}
-              style={({ pressed }) => [s.bigB, big.length > 3 && s.bigB2, { backgroundColor: c.bg, opacity: pressed ? 0.8 : 1 }]}>
-              <Icon name={ic} size={20} color={c.accentText} />
-              <Text style={[s.bigT, { color: c.ink }]}>{label}</Text>
+              style={({ pressed }) => [s.allRow, { opacity: pressed ? 0.7 : 1 }]}>
+              <Icon name="dots" size={20} color={c.ink} />
+              <Text style={[s.allT, { color: c.ink }]}>Every tool</Text>
+              <Icon name="next" size={18} color={c.muted} />
             </Pressable>
-          ))}
-        </View>
-        <Text style={[s.moreH, { color: c.ink }]}>Every tool</Text>
-        <ToolGrid
-          days={snap.days}
-          tags={tags}
-          fresh={false}
-          night={night}
-          onPick={pickTool}
-          lead={
-            faith
-              ? {
-                  id: 'written',
-                  name: moveName('written'),
-                  desc: (faithVoice(st) || 'plain') === 'plain' ? 'Say no, and stand firm' : 'Answer it like He did',
-                  ic: 'shield',
-                  tone: 'sun',
-                  group: 'Stand on faith',
-                }
-              : undefined
-          }
-          onLead={jump}
-        />
-        <Pressable accessibilityRole="button" onPress={() => save('slipped')} style={s.slip} hitSlop={8}>
-          <Icon name="leaf" size={16} color={c.slipText} />
-          <Text style={[s.slipT, { color: c.slipText }]}>I slipped. A slip is data, not a reset.</Text>
-        </Pressable>
+          </>
+        )}
       </More>
     </SceneFrame>
   );
 }
 
-/** More: a sheet over the ride, with the bigger moves, every tool and I slipped. It slides up from the bottom; the ride
-    pauses under it. */
-function More({ open, night, onClose, children }: { open: boolean; night: boolean; onClose: () => void; children: ReactNode }) {
+/** More: a sheet over the ride, with four big choices, one row for every other tool, and I slipped pinned under them, in
+    reach without scrolling. It slides up from the bottom; the ride pauses under it. One step in (every tool), the X and the
+    back gesture go back to the four. */
+function More({
+  open,
+  night,
+  back,
+  onClose,
+  foot,
+  children,
+}: {
+  open: boolean;
+  night: boolean;
+  back: (() => void) | null;
+  onClose: () => void;
+  foot: ReactNode;
+  children: ReactNode;
+}) {
   const c = useSkyTheme(night ? 'night' : 'violet');
   const inset = useSafeAreaInsets();
+  const x = back || onClose;
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={open} transparent animationType="slide" onRequestClose={x}>
       <NightContext.Provider value={night}>
         <View style={s.moreWrap}>
           <Pressable accessibilityRole="button" accessibilityLabel="Close" style={StyleSheet.absoluteFill} onPress={onClose} />
-          <View style={[s.moreSheet, { backgroundColor: c.surface, paddingBottom: inset.bottom + 16 }]}>
+          <View style={[s.moreSheet, { backgroundColor: c.surface, paddingBottom: inset.bottom + 8 }]}>
             <View style={s.moreTop}>
               <View style={[s.grab, { backgroundColor: c.line }]} />
-              <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} hitSlop={8} style={[s.moreX, { backgroundColor: c.bg }]}>
-                <Icon name="x" size={18} color={c.ink} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={back ? 'Back' : 'Close'}
+                onPress={x}
+                hitSlop={8}
+                style={[s.moreX, { backgroundColor: c.bg }]}>
+                <Icon name={back ? 'back' : 'x'} size={18} color={c.ink} />
               </Pressable>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ flexShrink: 1 }} contentContainerStyle={{ gap: 12 }}>
               {children}
             </ScrollView>
+            {foot}
           </View>
         </View>
       </NightContext.Provider>
@@ -679,11 +732,12 @@ const s = StyleSheet.create({
   why: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   whyT: { fontFamily: font.bodySemi, fontSize: 13 },
   center: { alignItems: 'center' },
-  bigRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  bigB: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 70, paddingHorizontal: 6, borderRadius: 20 },
-  /* four of them (at night): two rows of two */
-  bigB2: { flexBasis: '45%', flexDirection: 'row', minHeight: 56, gap: 8 },
-  bigT: { fontFamily: font.bodySemi, fontSize: 13, textAlign: 'center' },
+  /* the four big choices: two rows of two, big enough for a shaking thumb */
+  bigGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  bigB: { flexBasis: '47%', flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 104, paddingHorizontal: 10, borderRadius: 24 },
+  bigT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22, textAlign: 'center' },
+  allRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 6 },
+  allT: { flex: 1, fontFamily: font.bodySemi, fontSize: 17 },
   topR: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   moreB: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   moreWrap: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15,10,40,0.38)' },
@@ -692,6 +746,6 @@ const s = StyleSheet.create({
   grab: { width: 40, height: 5, borderRadius: 3 },
   moreX: { position: 'absolute', right: 0, top: 2, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   moreH: { fontFamily: font.display, fontSize: 17, lineHeight: 22, marginTop: 4 },
-  slip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, marginTop: 6 },
+  slip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 48, marginTop: 4 },
   slipT: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
 });

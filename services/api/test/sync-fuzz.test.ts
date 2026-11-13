@@ -9,6 +9,8 @@
    After every step, and once both devices have settled:
    - every entry logged on either device, and not deleted on purpose, is on both;
    - every badge, lesson mark, level and point either device ever held is on both;
+   - every lesson finished and tool used on a day, on either device, is in that day on both (the day's play record, p: two
+     phones used on one day once kept only the newer phone's, WP4, November 12, 2026);
    - a device never holds less of what it earned than it held a step before;
    - both devices end with the same log, and nothing left waiting to send. */
 import type { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
@@ -82,6 +84,9 @@ function earnedOf(s: Snapshot) {
     pts: seen?.pts || 0,
   };
 }
+/** what the days hold that was done: a lesson finished or a tool used on a day, as 'day ls id' or 'day tl id' */
+const playOf = (s: Snapshot) =>
+  new Set(Object.values(s.days).flatMap((d) => [...(d.p?.ls || []).map((id) => `${d.d} ls ${id}`), ...(d.p?.tl || []).map((id) => `${d.d} tl ${id}`)]));
 const entryIds = (s: Snapshot) => new Set(Object.values(s.days).flatMap((d) => d.events.map((e) => e.id)));
 
 /** a device: its log, its dirty list, where its last pull ended, and its own clock (a little off from the account's) */
@@ -156,6 +161,7 @@ const SETTINGS = (u: number) =>
 const DAYS = ['2026-10-10', '2026-10-11', '2026-10-12', '2026-10-13'];
 const BADGES = ['b1', 'b2', 'b3', 'b4', 'b5', 'b6'];
 const LESSONS = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6'];
+const TOOLS = ['breathe', 'ground', 'move', 'bed'];
 
 /** one made-up history. Gives back what went wrong, or an empty list. */
 async function history(seed: number, steps: number): Promise<string[]> {
@@ -182,6 +188,30 @@ async function history(seed: number, steps: number): Promise<string[]> {
   let everLevel = 1;
   let everPts = 0;
   const held = new Map(devs.map((d) => [d.name, earnedOf(d.snap)]));
+  const everPlay = new Set<string>();
+  const heldPlay = new Map(devs.map((d) => [d.name, playOf(d.snap)]));
+
+  /* a lesson finished or a tool used on a day, the way the app writes the day's play record */
+  const play = (d: Device) => {
+    const k = r.pick(DAYS);
+    const tool = r.chance(0.4);
+    const id = tool ? r.pick(TOOLS) : r.pick(LESSONS);
+    d.change((s) => {
+      const day = core.changeDay(
+        s.days[k],
+        k,
+        (x) => {
+          const p = x.p || { w: [], wd: false, r: false, c: 0, m: false, tl: [], po: null, ls: [], lv: [], ov: {} };
+          const list = tool ? p.tl : p.ls;
+          if (!list.includes(id)) list.push(id);
+          x.p = p;
+        },
+        Math.max(d.clock(), (s.days[k]?.u || 0) + 1),
+      );
+      return day ? { ...s, days: { ...s.days, [k]: day } } : s;
+    });
+    log.push(`${d.name} ${tool ? 'uses' : 'finishes'} ${id} on ${k}`);
+  };
 
   const earn = (d: Device) =>
     d.change((s) => {
@@ -218,6 +248,8 @@ async function history(seed: number, steps: number): Promise<string[]> {
         deleted.add(id);
         log.push(`${d.name} deletes ${id} on ${k}`);
       }
+    } else if (op < 44) {
+      play(d);
     } else if (op < 52) {
       earn(d);
       log.push(`${d.name} earns`);
@@ -253,6 +285,11 @@ async function history(seed: number, steps: number): Promise<string[]> {
       if (fewer.length || e.level < was.level || e.pts < was.pts)
         problems.push(`step ${step}: ${x.name} lost what it earned (${fewer.join(', ') || ''} level ${was.level}→${e.level}, points ${was.pts}→${e.pts})`);
       held.set(x.name, e);
+      const pl = playOf(x.snap);
+      pl.forEach((v) => everPlay.add(v));
+      const lostPlay = [...heldPlay.get(x.name)!].filter((v) => !pl.has(v));
+      if (lostPlay.length) problems.push(`step ${step}: ${x.name} lost what was done on a day (${lostPlay.join(', ')})`);
+      heldPlay.set(x.name, pl);
     }
     if (TRACE)
       console.log(
@@ -287,6 +324,9 @@ async function history(seed: number, steps: number): Promise<string[]> {
     if (nl.length) problems.push(`${d.name} lost lessons: ${nl.join(', ')}`);
     if (e.level < everLevel) problems.push(`${d.name} level ${e.level} < ${everLevel}`);
     if (e.pts < everPts) problems.push(`${d.name} points ${e.pts} < ${everPts}`);
+    const pl = playOf(d.snap);
+    const np = [...everPlay].filter((v) => !pl.has(v));
+    if (np.length) problems.push(`${d.name} lost what was done on a day: ${np.join(', ')}`);
     if (Object.keys(d.dirty).length) problems.push(`${d.name} still has waiting: ${Object.keys(d.dirty).join(', ')}`);
   }
   const sameLog = (x: Snapshot) =>

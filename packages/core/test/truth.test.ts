@@ -242,3 +242,17 @@ describe('truthFrom is set once and kept', () => {
     expect(core.normSettingsLoaded({ ...base, cleanMode: 'strict' }).cleanMode).toBe('strict');
   });
 });
+
+describe('the tracking week counts in the record (D14)', () => {
+  it('a run that began in the tracking week is as long on screen as it was in life', () => {
+    /* Dan: a tracking week from November 1, Day 1 on the 8th, free for 12 days, a slip on the 13th; this version opened on the 14th */
+    const dan = core.normSettings({ start: day(1), day1: day(8), countFrom: day(8), truthFrom: day(14), cleanMode: 'strict' });
+    const d = core.addEvent({}, day(13), 'slipped', '23:00', {}, at(13, 23)).days;
+    expect(core.computeMetrics(d, dan, day(14)).longest).toBe(12);
+    expect(core.noSlipDays(d, dan, day(14))).toBe(12);
+    expect(core.heroSlipLine(d, dan, day(13), at(13, 23, 30))).toBe('Tonight is logged. Your 12 days are on your record.');
+    /* a log this version never opened counts from Day 1, as it did (the frozen fixtures) */
+    const before = core.normSettings({ start: day(1), day1: day(8), countFrom: day(8), cleanMode: 'strict' });
+    expect(core.computeMetrics(d, before, day(14)).longest).toBe(5);
+  });
+});

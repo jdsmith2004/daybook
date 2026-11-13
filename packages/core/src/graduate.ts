@@ -7,7 +7,7 @@
    Once earned, settings.gradAt holds the date and is never cleared, so the award survives later slips, rule changes and
    sync; earning it does not change Today. Days Daybook does not know about (a long gap away, away.ts) count neither way. Checked by test/graduate.test.ts. */
 import { changeSettings, type Change } from './actions';
-import { addDays, computeMetrics, eventsOf, isKey, runLedger } from './legacy/core.js';
+import { addDays, computeMetrics, eventsOf, isKey, recordFrom, runLedger } from './legacy/core.js';
 import { awaySlipDay, dayKnown, dayUntold } from './away';
 import type { DayKey, Days, Settings } from './types';
 
@@ -48,7 +48,8 @@ export function gradInfo(days: Days, st: Settings, tk: DayKey): GradInfo {
       .filter((e) => e.outcome === 'slipped')
       .map((e) => e.key),
   );
-  const first = isKey(st.day1) ? (st.day1 as DayKey) : null;
+  /* the tracking week counts too once this version has opened the log (D14, recordFrom) */
+  const first = isKey(st.day1) ? (recordFrom(st) as DayKey) : null;
   let count = 0;
   if (first)
     for (let i = 1; i <= GRAD_WINDOW; i++) {
@@ -118,6 +119,7 @@ export function todayMeasure(days: Days, st: Settings, tk: DayKey): TodayMeasure
       sub: g.near ? 'Almost there, and every day already counts.' : `Every day with no slip in your last ${GRAD_WINDOW} counts.`,
       frac: Math.min(1, g.count / GRAD_DAYS),
     };
+  const from = recordFrom(st) as DayKey;
   const slips = new Set(
     eventsOf(days)
       .filter((e) => e.outcome === 'slipped')
@@ -130,10 +132,10 @@ export function todayMeasure(days: Days, st: Settings, tk: DayKey): TodayMeasure
   for (let i = WEEK; i >= 1; i--) {
     const k = addDays(tk, -i);
     /* a night not told is one of the last nights, but not a free one: "3 of the last 7", with the four hollow */
-    if (k >= first && dayUntold(days, st, k, tk)) {
+    if (k >= from && dayUntold(days, st, k, tk)) {
       m++;
       cells.push('untold');
-    } else if (k < first || !dayKnown(days, st, k, tk)) cells.push('none');
+    } else if (k < from || !dayKnown(days, st, k, tk)) cells.push('none');
     else {
       m++;
       if (slips.has(k) || awaySlipDay(days, st, k, tk)) {

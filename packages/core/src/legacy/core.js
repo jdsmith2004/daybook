@@ -465,6 +465,11 @@ function sumDay(day){
  return {n:ev.length,rode,slipped,checked:!!(day&&day.checkin&&day.checkin.done)};
 }
 function sortedEvents(day,roll){return ((day&&day.events)||[]).slice().sort((a,b)=>sortMin(a.time,roll)-sortMin(b.time,roll))}
+/* D14 (the owner, November 12, 2026): once there is a Day 1, the free days of the tracking week before it count in the record (the
+   run, the longest run, the no-slip days, graduation), from the first day, so a run is never shorter on screen than it was in life.
+   It holds for every record this version has opened: keepCounts writes truthFrom on the first open (truth.ts), and the tracking
+   week counts from then on, back to the start. A log with no truthFrom (the frozen golden fixtures) counts from Day 1 as it did. */
+function recordFrom(st){return st.day1&&isKey(st.truthFrom)&&st.start<st.day1?st.start:st.day1}
 function phaseOf(key,st){
  if(key<st.start)return {p:'before',n:0};
  if(!st.day1||key<st.day1)return {p:'tracking',n:diffDays(key,st.start)+1};
@@ -478,7 +483,8 @@ function statusOf(key,day,st,today,days){
     enough that Daybook does not know (away.ts) */
  /* a day inside a gap away (away.ts) is not shown as a day of its own: the gap has one look, and one line with its slips */
  /* from truthFrom on, a night nobody told Daybook about is not a free night (truth.ts): it is drawn hollow */
- if(phaseOf(key,st).p==='quitting')return days&&dayUntold(days,st,key,today)?'untold':days&&awayGapAt(days,st,key,today)?'unknown':'clean';
+ /* the tracking week's days count too once there is a Day 1 (D14, recordFrom), up to yesterday */
+ if(phaseOf(key,st).p==='quitting'||(st.day1&&key>=recordFrom(st)&&key<today))return days&&dayUntold(days,st,key,today)?'untold':days&&awayGapAt(days,st,key,today)?'unknown':'clean';
  if(s.checked)return 'tracked';
  if(s.n)return 'events';
  return 'empty';
@@ -499,7 +505,7 @@ const cleanLimit=(st,mode)=>(mode||(st&&st.cleanMode))==='gentle'?1:0;
    or unknown: nothing logged while the person was away long enough that Daybook does not know (away.ts; only when the log is given) */
 function dayKind(key,day,st,today,mode,days){
  if(key>today)return 'ahead';
- if(!st.day1||key<st.day1)return 'before';
+ if(!st.day1||key<recordFrom(st))return 'before';
  let n=sumDay(day).slipped;
  if(n===0&&days){
   if(!dayKnown(days,st,key,today))return 'unknown';
@@ -551,7 +557,7 @@ function runLedger(days,st,today,mode,noSave){
  const L={cur:0,longest:0,clean:0,counted:0,saves:0,kind:{},open:null};
  if(!st.day1)return L;
  const canSave=!noSave&&(mode==='strict'||mode==='gentle'),full=canSave?rkFullDays(days):{};
- for(let k=st.day1;k<=today;k=addDays(k,1)){
+ for(let k=recordFrom(st);k<=today;k=addDays(k,1)){
   let dk=dayKind(k,days[k],st,today,mode,days);
   /* one slip kept a gentle run going until countFrom; since then a slip ends the run in every mode, so the longest run means the same everywhere */
   if(dk==='one'&&st.countFrom&&k>st.countFrom)dk='slip';
@@ -561,7 +567,7 @@ function runLedger(days,st,today,mode,noSave){
   if(dk!=='slip'){L.cur++;L.clean++}
   else{
    let s=null;const run=L.cur;
-   if(full[k]&&(!st.countFrom||k<=st.countFrom)&&run>=(k<RUN_ASK_FROM?1:RUN_ASK)&&rkKeepOf(days[k])!==false){
+   if(full[k]&&k>=st.day1&&(!st.countFrom||k<=st.countFrom)&&run>=(k<RUN_ASK_FROM?1:RUN_ASK)&&rkKeepOf(days[k])!==false){
     const r=rkOf(days,k,st),deep=run>=RUN_DEEP,dl=addDays(k,BACK_DAYS);
     const done=!!(r&&r.m3&&r.ev.rk.at<=dl&&((r.m1&&r.m2&&(!deep||r.m4))||(k>=RK_BACK_FROM&&rkThirdOf(days,k,st,today))));
     s=done?'saved':today<=dl?'open':null;
@@ -3130,7 +3136,7 @@ function obTool(t){
 }
 const CHEERS=['Hi! I get brighter every time you take a step.','You showed up. That is the whole thing.','Slow and steady is still moving.','Honest with yourself. I like that.','A calm minute counts. So does this one.','Warm and glowing over here.','One small thing next?','Proud of you for being here.'];
 
-export {
+export {recordFrom,
   TRIGGERS,
   DIDS,
   BUCKETS,

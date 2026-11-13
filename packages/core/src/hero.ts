@@ -11,7 +11,20 @@
    by test/hero.test.ts. */
 import { awayGaps, QUIET_GRACE } from './away';
 import { GRAD_DAYS, GRAD_WINDOW, gradInfo, gradOnToday, todayMeasure, WEEK, type TodayMeasure } from './graduate';
-import { addDays, computeMetrics, diffDays, evMs, fmtDate, fmtStretch, fmtStretchShort, phaseOf, runLedger, stepView, sumDay } from './legacy/core.js';
+import {
+  addDays,
+  recordFrom,
+  computeMetrics,
+  diffDays,
+  evMs,
+  fmtDate,
+  fmtStretch,
+  fmtStretchShort,
+  phaseOf,
+  runLedger,
+  stepView,
+  sumDay,
+} from './legacy/core.js';
 import type { DayKey, Days, Settings } from './types';
 
 export interface HeroNumber {
@@ -146,7 +159,7 @@ export function heroSlipLine(days: Days, st: Settings, tk: DayKey, nowMs: number
   const slips = (days[tk]?.events || []).filter((e) => e.outcome === 'slipped');
   if (!slips.length) return null;
   const strict = st.cleanMode !== 'gentle';
-  const n = strict ? (tk > st.day1 ? runLedger(days, st, addDays(tk, -1)).cur : 0) : Number(heroNumber(days, st, tk, nowMs)?.n);
+  const n = strict ? (tk > (recordFrom(st) || st.day1) ? runLedger(days, st, addDays(tk, -1)).cur : 0) : Number(heroNumber(days, st, tk, nowMs)?.n);
   if (!(n > 0)) return null;
   /* the latest slip's hour, in the log day's order (an hour after midnight comes after the evening) */
   const hours = slips

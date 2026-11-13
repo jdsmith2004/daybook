@@ -242,7 +242,8 @@ export const awayFromOf = (st: Settings | null): DayKey | null => {
 /* ---------- the nights, as one mark each (the hero, Days and Sunday draw them the same way: the app's NightMarks) ---------- */
 export type NightMark = NightState | 'none';
 /** where the record starts: Day 1, or the start for someone only tracking */
-const recordFrom = (st: Settings): DayKey => (isKey(st.day1) ? (st.day1 as DayKey) : st.start);
+/* the same as legacy/core.js recordFrom (D14), which this file cannot import */
+const recordFrom = (st: Settings): DayKey => (isKey(st.day1) ? (truthFromOf(st) && st.start < (st.day1 as DayKey) ? st.start : (st.day1 as DayKey)) : st.start);
 /** one mark per night from `from` to `to` (both included): free, a slip, not told, or none (before the record starts, or still to
     come). Today is drawn as none: its night has not happened. */
 export function nightMarks(days: Days, st: Settings, from: DayKey, to: DayKey, tk: DayKey): NightMark[] {

@@ -2,7 +2,21 @@
    sheetGrowth and badgeDone. */
 import type { Badge } from './legacy/core.js';
 import type { Settings } from './types';
-import { addDays, computeMetrics, fmtDate, dayPoints, eventsOf, gameCompute, isKey, obHours, obRnd, runLedger, WIN_WHY, type Quest } from './legacy/core.js';
+import {
+  addDays,
+  computeMetrics,
+  fmtDate,
+  dayPoints,
+  eventsOf,
+  gameCompute,
+  isKey,
+  obHours,
+  obRnd,
+  recordFrom,
+  runLedger,
+  WIN_WHY,
+  type Quest,
+} from './legacy/core.js';
 import { awaySlipDay, dayKnown, untoldDays } from './away';
 import { noSlipDays } from './graduate';
 import { rkComebackCount } from './rekindle';
@@ -253,7 +267,7 @@ export function gradRecord(days: Days, st: Settings, reviews: Reviews, tk: DayKe
     null without a Day 1, without those answers, or before the first hour. It only goes up: a slip takes nothing back. */
 export function hoursBack(days: Days, st: Settings, tk: DayKey): number | null {
   const H = st.onb && st.onb.a ? obHours(st.onb.a) : null;
-  const d1 = isKey(st.day1) ? (st.day1 as DayKey) : null;
+  const d1 = isKey(st.day1) ? (recordFrom(st) as DayKey) : null;
   if (!H || !d1 || d1 >= tk) return null;
   const slips = new Set(
     eventsOf(days)

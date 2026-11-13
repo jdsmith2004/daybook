@@ -241,7 +241,7 @@ export const MODE_LEGEND = (st: Settings): [ModeInfo['k'], string, string][] => 
   [
     'week',
     st.day1 && diffDays(st.day1, st.start) !== 7 ? 'Tracking' : 'Tracking week',
-    'You only log and look. Nothing is counted, so there is nothing to fail. The first week always works this way.',
+    'You only log and look, so there is nothing to fail. Every free day in it still counts once Day 1 comes.',
   ],
   [
     'quit',

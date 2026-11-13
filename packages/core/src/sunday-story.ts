@@ -8,7 +8,7 @@
    Hope first: a hard week is never shown as a fall. The trend over the weeks says when a week was better, and on a harder
    week it says what held instead. Every number here is one the log already has; nothing is guessed. Checked by
    test/sunday-story.test.ts. */
-import { addDays, didText, eventsOf, evMs, logicalKey, slipMoments, sumDay, trigText } from './legacy/core.js';
+import { addDays, didText, eventsOf, evMs, logicalKey, recordFrom, slipMoments, sumDay, trigText } from './legacy/core.js';
 import { dayUntold, untoldDays } from './away';
 import { logStart } from './log-start';
 import { patWhen, type PatWhen } from './pattern';
@@ -57,7 +57,7 @@ export function storyDays(days: Days, st: Settings, sun: DayKey, tk: DayKey): St
             ? 'before'
             : slipped
               ? 'slip'
-              : st.day1 && st.day1 <= tk && k < st.day1
+              : st.day1 && st.day1 <= tk && k < recordFrom(st)!
                 ? 'before'
                 : dayUntold(days, st, k, tk)
                   ? 'untold'
@@ -205,7 +205,7 @@ export function storyWeeks(days: Days, st: Settings, sun: DayKey, tk: DayKey, n 
     const w = sunWeek(days, st, s, tk);
     /* once Day 1 has come, the days before it are logged, not no-slip days, as Days counts them (the owner, November 8, 2026):
        a week counts only its days from Day 1, and a week all before it is left out */
-    const pre = st.day1 && st.day1 <= tk ? weekKeys(s).filter((k) => k < st.day1! && k <= tk && k >= logStart(days, st)) : [];
+    const pre = st.day1 && st.day1 <= tk ? weekKeys(s).filter((k) => k < recordFrom(st)! && k <= tk && k >= logStart(days, st)) : [];
     const before = pre.length;
     const preClean = pre.filter((k) => !sumDay(days[k]).slipped && !dayUntold(days, st, k, tk)).length;
     const preUntold = pre.filter((k) => !sumDay(days[k]).slipped && dayUntold(days, st, k, tk)).length;

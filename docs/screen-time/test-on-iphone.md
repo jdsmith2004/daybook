@@ -1,68 +1,90 @@
 # Screen Time on your iPhone: the test
 
-This is the first build where Screen Time is real. The simulator cannot run any of it, so this is the test that counts.
-It takes about a day, because the notes come after real use. Note anything that feels wrong, cold or confusing, and send it
-back as it comes.
+The night wait is the one part of Daybook that acts while the app is closed. The simulator runs none of Apple's Screen Time, so
+this test on your own iPhone is the one that counts. It replaces the old hard-hours test (November 12, 2026, work package WP2 in
+`docs/review-plan.md`; the steps come from the code audit's device script).
 
-**Build:** TestFlight, Daybook 1.3.3 (17) or later. It is a TestFlight build only: it does not touch the 1.3.3 that is waiting
-on Apple's reply.
+Write down what you see at each step, even when it passes: the exact words, the time, and anything that felt wrong, cold or
+confusing. A step that fails is still useful: write down what Apple did.
 
-## 1. Turn it on (2 minutes)
+## Before you start (about 15 minutes, with the Mac)
 
-1. Install the build from TestFlight and open Daybook.
-2. More, **Screen Time**, **Choose the apps**. (If more than a week has passed since you started, Today may also show the
-   "Unlocked" card. Use it instead, so you see that too.)
-3. Apple asks to let Daybook use Screen Time. Allow it with Face ID or your passcode.
-4. Apple's list opens. Pick **one** app you really do lose time in. Done.
-5. Allow notifications if it asks.
+This is a **local** build to your phone on a cable. It uses **none** of the 15 monthly EAS builds.
 
-Check: does More now show the app with Apple's icon, and the choices under it?
+1. On the iPhone: Settings, Privacy and Security, **Developer Mode** on. Plug it into the Mac and tap Trust.
+2. In Xcode: Settings, Accounts, the developer account is signed in (team `2G4K7PN999`).
+3. On the Mac, in a terminal:
 
-## 2. A long-use note (about an hour)
+   ```bash
+   cd ~/personal/daybook/apps/mobile && DAYBOOK_PULL=1 APPLE_TEAM_ID=2G4K7PN999 npx expo run:ios --device --configuration Release
+   ```
 
-1. In More, Screen Time, set **A note after long use** to **1 hour**.
-2. Use the picked app for an hour today, in one go or spread out.
-3. A note should come: "🔥 An hour in". Without a lesson done today, it says "You are dimming your fire" and a tap opens the
-   lesson. With the lesson done, it says to put the phone down.
+   Pick your iPhone when it asks. Xcode's automatic signing makes the app's ID, the three extensions' IDs and the App Group with
+   Family Controls (Development).
 
-Check: look at it on the **locked screen**. Would you mind someone seeing it? It must never name the habit or the app.
+4. For a quick test, set the Daybook times short where a step says so, and put them back after.
 
-## 3. The hard hours (in your hard hours)
+A cable build is not the same as TestFlight: Apple has a known problem (forum thread 807934) where an extension's changes work
+from Xcode and fail from TestFlight. Steps 6 and 12 must also be done once on the `production-pull` TestFlight build, which needs
+the owner's separate yes (it uses one of the 15).
 
-More, Screen Time, **In my hard hours** shows your window (for example "10 PM to midnight"). If it says "Your hard hours show
-here once your log finds them", your log has not found them yet, so skip to step 4.
+## The steps
 
-1. In that window, use the picked app for 10 minutes: "🔥 Your hard hours", firm.
-2. Keep going to 20 minutes: "🔥 Still here".
-3. Tap a note: the wait screen opens (the night sky, the flame burning low with smoke).
+1. **Turn it on (setup).** A fresh install, answer "most days". Expect the page "Want a wait before the apps that start it?". Tap
+   Choose the apps, Continue, Face ID, pick one feed app, Done. Expect: back in setup, no error. More, Screen Time says On, and no
+   "Not working" line.
+2. **Day shield.** Open the picked app at noon. Expect "A short wait first / You asked me for a moment before this one. Close it,
+   or take the wait." with "Wait 10 seconds" and "Close". Tap Wait: on iOS 26.5 or later Daybook should open on the ring with no
+   note; before that a note "🔥 Here" comes. The ring counts from the tap on the shield, not from when Daybook opened. After it,
+   tap "Open it for 5 minutes", go back to the app, use it 5 minutes: the shield should return within a minute or two. Write down
+   how long it really took.
+3. **A wait left over.** Tap Wait again, let the ring finish, then leave Daybook for 3 minutes. Come back: the ring should start
+   again (a wait over for more than two minutes does not open the app).
+4. **Close counts.** Tap Close on the shield twice within 10 minutes: Today should count once.
+5. **Night, no app.** Set tonight (the morning page) to the next half hour, force-quit Daybook, lock the phone. At the time,
+   open the picked app: expect the night shield (title "You set this up this morning", your reason in quotes, "Close it, and go
+   to bed. Your fire is worth more than this."). In Safari open a harmless adult-filtered test page: expect a block page.
+   **Write down exactly what the block page says and whether it has any button.** If it is Daybook's own shield ("Wait 15
+   minutes"), tap it: Daybook should open on the long wait. If it is Apple's own page, the long wait is only in More, Screen
+   Time; write that down, since it decides the next design.
+6. **The night's start, to the minute, five nights.** Note whether the filter was ever late or early. A start callback a few
+   seconds early must still turn the filter on (it reads two minutes ahead, and a heartbeat asks again five minutes after the
+   start). At 6:00 AM note whether it lifts on time with Daybook closed, and by 6:05 at the latest.
+7. **Long wait.** At night, More, Screen Time, Start the wait (set the wait to 5 minutes for the test). Leave the app for 3
+   minutes, come back: the ring should have kept counting. Read the line above the buttons: "Open them, and tonight goes in the
+   week as a night you went through." After 5 minutes tap "Open them for 10 minutes": the test site should load; after 11 to 12
+   minutes it should be blocked again **with Daybook closed**. Write the minute it came back.
+8. **Good night arms it now.** (Once WP5's Good night is built.) Before tonight's start, say Good night: adult sites should wait
+   at once, not at the start time.
+9. **Notes only.** On a second try of setup or the Day 7 card, choose "Notes only": nothing should be blocked, by day or at night.
+10. **Lift and off.** More, Lift every wait now: shield and filter gone at once. Wait for the next night's start: they come back.
+    Then iPhone Settings, Screen Time, Apps With Screen Time Access, turn Daybook off. Open Daybook: More says Off, with "Screen
+    Time access was turned off in the phone's Settings, so nothing waits now." If it was at night, that night must not count as
+    held.
+11. **Silent on.** After step 10, turn access back on in iPhone Settings only (do not open Daybook): does the shield come back?
+    Then restore the app from an iCloud backup on a spare phone (or delete and reinstall with the saved choices) and open it:
+    More must say "Not working: it needs your yes again on this phone", and Today shows the same strip, never plain "On".
+12. **No-open week.** Do not open Daybook for 3 days with Screen Time on. Does each night still block at the same time? Does the
+    shield still quote the reason?
+13. **Restart and time zone.** With a night running, restart the phone: does the filter come back with no app open? Then change the
+    time zone by two hours: does it turn on and off at the times shown, with Daybook closed?
+14. **Delete with a shield up.** Delete Daybook while a shield is up. Does the shield stay? How do you remove it?
+15. **Browsers, at night.** Try each and write which load an adult test page:
+    - Safari, a normal tab
+    - Safari, a private tab (Apple turns private tabs off while the filter is on)
+    - Chrome
+    - Firefox
+    - a link opened inside a social app (Instagram, Reddit or X: the in-app browser)
+    - the Instagram and X websites in Safari
+16. **Live Activity.** Open Daybook 20 minutes before screens off: the activity starts. Close the app and look at the Lock Screen
+    at screens off, at 1 AM and at 6 AM. After its end time it must show only the flame: no words, no time, no bar. Write what it
+    shows and when it went away.
+17. **Proof.** The morning after a night with the waits on and nothing gone through, Today says "Lock held 1 night". After a night
+    you opened a feed from the night's wait, or opened adult sites after the long wait, or lifted every wait, or turned it off in
+    Settings: that night does not count. Also check Today when something is broken (step 11): "Screen Time is not working: ..."
+    with one button that fixes it.
 
-## 4. The pause and "Put it down"
+## When it is done
 
-1. In More, Screen Time, turn on **Pause it if I keep going**.
-2. In your hard hours, at 30 minutes of the picked app, Apple's shield covers it: "Resting until …" with your own plan line.
-3. Tap **Open Daybook** on the shield. Daybook opens on the wait screen (on iOS 26.5 or later straight away; before that,
-   through a note to tap).
-4. Let the ring run. Then tap **Put it down**: the flame lights again in front of you, and Today opens.
-5. Look at Today and at the day in your log: there should be **one urge ridden out** ("After scrolling or gaming", "Left the
-   room"), with its points, and the flame no longer low. Tapping Put it down again within the hour adds nothing more.
-6. Open it again from a note, wait, and choose **Open it for 3 minutes**. The app opens. After about 3 minutes of use the
-   shield comes back.
-
-## 5. The way out (always one tap)
-
-1. More, Screen Time, **Lift every pause now**: the shield is gone at once.
-2. iPhone Settings, Screen Time, **Apps With Screen Time Access**, turn Daybook off. Open Daybook: More shows Screen Time as off,
-   with no nag.
-
-## 6. After a slip (optional)
-
-Log a slip. For the rest of that day and until the next morning, the hard-hours note becomes a gentle "You do not have to fight
-it alone tonight. SOS is one tap away." with no stakes, and the wait screen is not dimmed.
-
-## What to send back
-
-- Which steps worked, and which never came (a missing note is the most likely problem: Apple's thresholds are known to be late
-  or to fire twice).
-- Any word that felt wrong, too soft or too harsh.
-- Whether the shield and the wait screen looked good.
-- If everything works: say yes, and Screen Time goes into the next App Store build.
+Send the notes back. Every step passes, or its failure is written down with what Apple did. Only then does the owner say yes (or
+no) to one `production-pull` TestFlight build, which uses one of the 15 monthly EAS builds.

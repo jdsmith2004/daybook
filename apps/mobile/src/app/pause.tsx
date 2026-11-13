@@ -11,6 +11,13 @@
      leaves, and the stake is said before the choice, never after: "Open it, and tonight goes in the week as a night you went
      through." Once over, Open them for 10 minutes; then Apple's filter is back.
 
+   At night, once the wait is over, sleep care's one line for the person lying awake takes the place of "Breathe while it runs."
+   (the plan, C3), so it costs the screen no room.
+
+   Loosen slowly here too: the short wait counts from the shield's tap (not from whenever this screen is looked at), a wait left
+   over for more than two minutes in the background starts again, and a screen opened by day that is still open when the night
+   starts becomes the night's wait before anything opens. In the night, Open counts as a night gone through, and says so first.
+
    No argument and no lecture: the research says the message does little; the wait and the way out do the work. In the hours after
    a slip there are no stakes and nothing dims; the wait is the same. */
 import {
@@ -30,7 +37,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { AppState, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { Link } from '@/components/choices';
 import { BigFlame, DOUSE_MS, DOUSE_WAIT, RELIGHT_CATCH, RELIGHT_MS } from '@/components/big-flame';
@@ -50,6 +57,14 @@ import { useReducedMotion } from '@/lib/motion';
 /** how low the fire burns on the night's wait: between Today's first two steps, smoke clearly rising */
 const PAUSE_LOW = 0.6;
 
+/** the shield's tap, when the token is one (ms, in the last two minutes): the short wait counts from it */
+const tapOf = (t: string | undefined, now: number) => {
+  const v = Number(t);
+  return Number.isFinite(v) && v <= now && now - v < 120_000 ? v : now;
+};
+/** seconds an over wait may sit unused (in the background) before it starts again */
+const STALE_S = 120;
+
 /** "14:05" for the long wait, "7" for the short one */
 const leftLabel = (s: number, long: boolean) => (long ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s));
 
@@ -64,7 +79,7 @@ export default function PullPause() {
   const { height } = useWindowDimensions();
   const st = snap.settings;
   /* the mode is fixed when the screen opens, so a wait running across the night's start does not change under the person */
-  const [mode] = useState<'day' | 'night' | 'long'>(() => {
+  const [mode, setMode] = useState<'day' | 'night' | 'long'>(() => {
     /* `dev=night` opens it as the night in a development build or a preview build (EXPO_PUBLIC_PULL_PREVIEW=1), to show the
        screens by day (the simulator keeps the Mac's clock); a store build never reads it */
     const night =
@@ -75,8 +90,8 @@ export default function PullPause() {
   });
   const dark = mode !== 'day';
   const long = mode === 'long';
-  /* small enough that the reason, a future-you note and Open it all fit under the flame on a small phone */
-  const ring = Math.min(280, Math.round(height * (dark && note ? 0.2 : 0.26)));
+  /* small enough that the reason, a future-you note, the stake and Open it all fit under the flame on a small phone */
+  const ring = Math.min(280, Math.round(height * (dark ? (note || height < 700 ? 0.13 : 0.22) : 0.26)));
   const level = st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1;
   const quiet = !!st && (pullQuietUntil(snap.days, st, now) ?? 0) > now;
   const plan = st ? pullPlanLine(st) : null;
@@ -86,19 +101,29 @@ export default function PullPause() {
   /* the count after this put-down, for the thanks */
   const downs = useRef(0);
   /* the short wait runs from the moment this opens; the long one from when it first started, so leaving does not start it again */
-  const [from, setFrom] = useState(() => (long ? pullLongStart(prefs.lift) : Date.now()));
-  /* opened again from the shield while still on screen (a new token): the short wait starts again */
+  const [from, setFrom] = useState(() => (long ? pullLongStart(prefs.lift) : tapOf(token, Date.now())));
+  /* opened again from the shield while still on screen (a new token): the short wait starts again, from that tap */
   const first = useRef(true);
   useEffect(() => {
     if (first.current) {
       first.current = false;
       return;
     }
-    if (!long) setFrom(Date.now());
+    if (!long) setFrom(tapOf(token, Date.now()));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
   useClock(true);
   const total = long ? prefs.lift * 60 : prefs.wait;
+  /* a short wait that has sat over in the background for a while starts again on return: the wait is for this moment */
+  const live = useRef({ from, total, long });
+  live.current = { from, total, long };
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (a) => {
+      const v = live.current;
+      if (a === 'active' && !v.long && Date.now() - (v.from + v.total * 1000) > STALE_S * 1000) setFrom(Date.now());
+    });
+    return () => sub.remove();
+  }, []);
   const gone = (Date.now() - from) / 1000;
   const p = Math.min(1, gone / total);
   const over = p >= 1;
@@ -167,12 +192,18 @@ export default function PullPause() {
   };
   const open = async () => {
     if (leaving.current) return;
+    /* opened by day and the night has started since: it is the night's wait now, from the start, before anything opens */
+    if (mode === 'day' && st && pullInNight(Date.now(), pullNightStart(snap.days, st, saved, Date.now()))) {
+      setMode('night');
+      setFrom(Date.now());
+      return;
+    }
     leaving.current = true;
+    /* the stake was said before the choice, so it counts; in the quiet after a slip it was not said, so it does not */
     if (long) {
       pullLongEnd();
-      /* the stake was said before the choice, so it counts; in the quiet after a slip it was not said, so it does not */
       await Pull?.openWeb(PULL_WEB_OPEN, !quiet);
-    } else if (Pull) await Pull.openFor(prefs.open);
+    } else if (Pull) await Pull.openFor(prefs.open, dark && !quiet);
     else {
       /* the night pack's wait (no Screen Time in this build): the action lets the apps through for the same minutes */
       packOpenFor(prefs.open);
@@ -191,7 +222,7 @@ export default function PullPause() {
       </T>
       <T style={{ color: soft, marginTop: 8 }}>{w.line}</T>
       <Middle>
-        {bubble ? <Bubble text={w.say} style={{ marginBottom: 12, alignSelf: 'center', maxWidth: 300 }} /> : null}
+        {bubble ? <Bubble text={w.say} style={{ marginBottom: 12, alignSelf: 'center', maxWidth: 340 }} /> : null}
         <View
           style={s.c}
           accessible
@@ -201,11 +232,11 @@ export default function PullPause() {
             <BigFlame level={level} size={ring * 0.86} pulse={pulse} noLand low={low} douse={dims} smoke="#6B6577" label={w.title} />
           </WavyRing>
           <Text style={[s.left, { color: over ? soft : dark ? c.sun : c.ink }]}>{over ? ' ' : leftLabel(left, long)}</Text>
-          <T v="small" style={{ color: soft }}>
-            {over ? ' ' : w.hold}
+          <T v="small" style={{ color: soft, textAlign: 'center' }}>
+            {over ? (w.awake ?? ' ') : w.hold}
           </T>
         </View>
-        {dark ? (
+        {dark && note ? (
           <View style={s.note}>
             <FutureNoteCard on size={72} />
           </View>

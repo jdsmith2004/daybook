@@ -8,15 +8,23 @@
    choices stay on this phone: never synced, never in a backup, never counted (Apple's license keeps Screen Time data on the device).
 
    PullKeeper (in the root layout) writes core pullBridge for the extensions each time the app opens or comes back, and whenever the
-   log or the choices change; notices access taken back in Settings; and opens the wait screen when a pause's button asked for it. */
+   log or the choices change; notices access taken back in Settings; checks the night just gone held; reads what is not working
+   (core pullTrouble: More, the morning page and Today say so, never "On" over nothing); and opens the wait screen when a
+   pause's button asked for it. */
 import {
   normPull,
+  pullArmNow,
   pullBridge,
+  pullHoldStart,
+  pullTrouble,
+  type PullFix,
+  type PullHealth,
   pullChange,
   pullInNight,
   pullLiftUntil,
   pullLooseAt,
   pullNightStart,
+  pullQuietUntil,
   pullSettle,
   type Days,
   type PullBridge,
@@ -28,7 +36,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requireOptionalNativeModule } from 'expo';
 import { router } from 'expo-router';
 import { AppState, Platform } from 'react-native';
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 
 import { allowReminders } from '@/lib/reminders';
 import { useStore } from '@/lib/store';
@@ -37,8 +45,16 @@ import { useAccount } from '@/lib/sync';
 export interface PullModule {
   /** Apple's Screen Time ask (Face ID or the passcode); whether it was given */
   authorize(): Promise<boolean>;
-  /** false only when access was taken back (Settings, Screen Time); true while Apple's status is still loading */
-  allowed(): Promise<boolean>;
+  /** Apple's answer, read for up to three seconds while it loads after a launch */
+  status(): Promise<PullHealth['status']>;
+  /** what is not working: schedules Apple would not start, picked apps unreadable, how many single apps */
+  health(): Omit<PullHealth, 'status'>;
+  /** sets every schedule again from the last bridge */
+  retry(): Promise<void>;
+  /** the night just gone held (its waits were on at its start, nothing gone through), checked with access still given */
+  confirm(): void;
+  /** Good night: the same write with the night starting now; whether adult sites wait now */
+  armNow(bridge: string): Promise<boolean>;
   /** Apple's app list; how many apps and kinds are picked, or null when it was closed. `laterAt` (core pullLooseAt): a pick that
       leaves an app out keeps it in until then; null when it all works now */
   pick(laterAt: number | null): Promise<number | null>;
@@ -50,8 +66,8 @@ export interface PullModule {
   write(bridge: string): Promise<void>;
   /** Lift every wait now: nothing held until `until` ms (core pullLiftUntil) */
   lift(until: number): Promise<void>;
-  /** after the short wait: the apps open for this many minutes of use, then the wait is back */
-  openFor(minutes: number): Promise<void>;
+  /** after the short wait: the apps open for this many minutes of use, then the wait is back; `through` in the night (counted) */
+  openFor(minutes: number, through: boolean): Promise<void>;
   /** after the long wait: adult sites open for this many minutes, then the filter is back; the night counts as gone through */
   openWeb(minutes: number, count: boolean): Promise<void>;
   /** tonight counts as a night the person went through */
@@ -62,8 +78,8 @@ export interface PullModule {
   stop(): Promise<void>;
   /** when the night's notes were ignored (core pullDrift), or null */
   ignoredAt(): number | null;
-  /** whether a pause's button asked for Daybook just now, taken once */
-  takeWant(): boolean;
+  /** when a pause's button asked for Daybook (in the last two minutes), and whether it was over a site in the night; taken once */
+  takeWant(): { at: number; long: boolean } | null;
   /** the times the person put it down (the shield's Close and the wait screen's Put it down), on this phone only */
   downs(): number;
   /** Put it down on the wait screen: one more (at most one in core PULL_COUNT_GAP minutes); the count after it */
@@ -78,11 +94,23 @@ const real: PullModule | null = native?.on ? native : null;
 const preview = (Platform.OS === 'ios' && __DEV__) || process.env.EXPO_PUBLIC_PULL_PREVIEW === '1';
 let fakeCount = 0;
 let fakeDowns = 0;
+/* EXPO_PUBLIC_PULL_TROUBLE=ask, retry or pick shows that failure (core pullTrouble), to look at those screens; the fix clears it */
+let fakeTrouble = process.env.EXPO_PUBLIC_PULL_TROUBLE ?? '';
 /* the stand-in: says yes to the ask and picks two apps, so the screens can be walked */
 const fake: PullModule = {
-  authorize: async () => true,
-  allowed: async () => true,
-  pick: async () => (fakeCount = 2),
+  authorize: async () => {
+    if (fakeTrouble === 'ask') fakeTrouble = '';
+    return true;
+  },
+  status: async () => (fakeTrouble === 'ask' ? 'notDetermined' : 'approved'),
+  health: () => ({ failed: fakeTrouble === 'retry' ? ['pull.night.a'] : [], decodeFail: fakeTrouble === 'pick', apps: fakeCount }),
+  retry: async () => void (fakeTrouble = ''),
+  confirm: () => undefined,
+  armNow: async () => true,
+  pick: async () => {
+    if (fakeTrouble === 'pick') fakeTrouble = '';
+    return (fakeCount = 2);
+  },
   picked: async () => fakeCount,
   pickWaits: () => null,
   write: async () => undefined,
@@ -93,7 +121,7 @@ const fake: PullModule = {
   nights: () => ({}),
   stop: async () => void (fakeCount = 0),
   ignoredAt: () => null,
-  takeWant: () => false,
+  takeWant: () => null,
   downs: () => fakeDowns,
   countDown: () => ++fakeDowns,
 };
@@ -159,8 +187,9 @@ export async function pullStart(): Promise<'on' | 'denied' | 'closed'> {
   if (!(await Pull.authorize().catch(() => false))) return 'denied';
   const n = await Pull.pick(null).catch(() => null);
   if (!n) return 'closed';
-  setPullPrefs({ on: true, asked: 'picked' });
+  setPullPrefs({ on: true, asked: 'picked', lost: undefined });
   if (real) await allowReminders().catch(() => false);
+  readHealth(await Pull.status().catch(() => 'approved' as const));
   return 'on';
 }
 /** what the flame says when Screen Time said no */
@@ -171,11 +200,64 @@ export async function pullPick(): Promise<number | null> {
   await Pull.pick(pullLooseAt(Date.now())).catch(() => null);
   return Pull.pickWaits();
 }
-/** turn it all off: nothing watched, nothing held. In the night, it counts as a night the person went through. Instant, always. */
-export async function pullStop(night = false) {
+/** turn it all off: nothing watched, nothing held. In the night, it counts as a night the person went through. Instant, always.
+    `lost`: it was access taken back in the phone's Settings (More says so). */
+export async function pullStop(night = false, lost = false) {
   if (night && prefs.on) Pull?.through();
-  setPullPrefs({ on: false });
+  setPullPrefs({ on: false, lost: lost || undefined });
   await Pull?.stop();
+  readHealth();
+}
+
+/* ---------- when it is not working (core pullTrouble) ---------- */
+let health: PullHealth | null = null;
+let status: PullHealth['status'] = 'approved';
+/** reads what is not working, fresh (after every write and every return to the front) */
+function readHealth(st?: PullHealth['status']) {
+  if (st) status = st;
+  const h = Pull ? { ...Pull.health(), status } : null;
+  if (JSON.stringify(h) !== JSON.stringify(health)) {
+    health = h;
+    emit();
+  }
+}
+/** the same, read once (the morning page) */
+export const getPullTrouble = () => pullTrouble(prefs, health);
+/** what is wrong now, in one line, with the one tap that fixes it; null when it works or is off */
+export const usePullTrouble = () => {
+  const p = usePullPrefs();
+  const h = useSyncExternalStore(
+    sub,
+    () => health,
+    () => health,
+  );
+  return pullTrouble(p, h);
+};
+/** the one tap: ask again (after a restore to a new phone), pick again (unreadable, or too many), or set the night again */
+export async function pullFix(fix: PullFix): Promise<'ok' | 'denied' | 'closed'> {
+  if (!Pull) return 'closed';
+  if (fix === 'ask') {
+    if (!(await Pull.authorize().catch(() => false))) return 'denied';
+    readHealth(await Pull.status().catch(() => 'notDetermined' as const));
+    /* the schedules failed while it had no yes: set them again */
+    await Pull.retry().catch(() => undefined);
+  } else if (fix === 'pick') {
+    const n = await Pull.pick(pullLooseAt(Date.now())).catch(() => null);
+    if (!n) return 'closed';
+  } else await Pull.retry().catch(() => undefined);
+  readHealth();
+  return 'ok';
+}
+
+/** Good night (WP5 calls it): the night starts now, for tonight (core pullArmNow), and the phone is told at once. Whether adult
+    sites wait now, so the flame says only what is true. */
+export async function pullArmNight(days: Days, st: Settings, account = true): Promise<boolean> {
+  if (!Pull || !prefs.on) return false;
+  const now = Date.now();
+  save(pullHoldStart(pullArmNow(pullSettle(prefs, now), days, st, now), days, st, now));
+  const on = await Pull.armNow(JSON.stringify(pullBridge(days, st, prefs, now, account))).catch(() => false);
+  readHealth();
+  return on;
 }
 /** Lift every wait now (instant, as promised): until tonight starts by day, until 6 AM in the night, when it counts as a night the
     person went through (`counts`: not in the quiet after a slip, when the stake is not said). Its end, as ms. */
@@ -217,6 +299,7 @@ export function pullLongEnd() {
 export async function pullWrite(b: PullBridge) {
   if (!Pull || !b.prefs.on) return;
   await Pull.write(JSON.stringify(b));
+  readHealth();
 }
 
 /* the times the person put it down, read fresh each time the app comes back (the shield's Close adds to it while Daybook is shut) */
@@ -253,22 +336,45 @@ export function PullKeeper() {
   const st = snap.settings;
   /* the bridge only changes with the log, the choices and the minute: a write per change, and on each return to the front */
   const minute = Math.floor(now / 60_000);
+  /* the latest log, for the checks on each return (the listener below is set once) */
+  const live = useRef({ days: snap.days, st });
+  live.current = { days: snap.days, st };
   useEffect(() => {
     if (!real || !st) return;
     settle();
-    pullWrite(pullBridge(snap.days, st, getPullPrefs(), Date.now(), account)).catch(() => undefined);
+    const t = Date.now();
+    /* loosen slowly for the start itself: a later start for a night already handed to the phone waits for the morning */
+    const held = pullHoldStart(getPullPrefs(), snap.days, st, t);
+    if (held !== getPullPrefs()) save(held);
+    pullWrite(pullBridge(snap.days, st, getPullPrefs(), t, account)).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snap.days, st, prefs, account, Math.floor(minute / 15)]);
   useEffect(() => {
-    if (!real) return;
+    /* the stand-in too, so the preview shows what a failure looks like */
+    const mod = Pull;
+    if (!mod) return;
     const back = async () => {
       readDowns();
       settle();
-      /* a fresh token each time, so a wait screen still open from before starts its wait again */
-      if (real.takeWant()) router.navigate({ pathname: '/pause', params: { t: String(Date.now()) } });
-      /* access taken back in Settings: More shows it off, and the schedules and any pause are stopped too. allowed() is false
-         only for a plain no, never while Apple's status is still loading after a launch. */
-      if (getPullPrefs().on && !(await real.allowed().catch(() => true))) await pullStop().catch(() => undefined);
+      /* the wait counts from the shield's tap; a fresh token each time, so a wait screen still open from before starts again */
+      const want = mod.takeWant();
+      if (want) router.navigate({ pathname: '/pause', params: { t: String(want.at), ...(want.long ? { w: 'long' } : {}) } });
+      if (!getPullPrefs().on) return readHealth();
+      /* Apple's answer, once it has loaded. A plain no is access taken back in Settings: it is turned off here too, More says
+         why, and in the night it counts as a night gone through (not in the quiet after a slip, where no stake is said). Not
+         determined after the wait (a restore to a new phone) keeps it on, and More and Today say it needs a yes again. */
+      const ans = await mod.status().catch(() => 'approved' as const);
+      if (ans === 'denied') {
+        const { days, st: s0 } = live.current;
+        const now = Date.now();
+        const night = !!s0 && pullInNight(now, pullNightStart(days, s0, getPullPrefs(), now));
+        const quiet = !!s0 && (pullQuietUntil(days, s0, now) ?? 0) > now;
+        await pullStop(night && !quiet, true).catch(() => undefined);
+        return;
+      }
+      /* the morning's own check, in case the monitor's did not come (it only marks a night that started and was not gone through) */
+      if (ans === 'approved' && new Date().getHours() >= 6) mod.confirm();
+      readHealth(ans);
     };
     /* the first check waits for the saved choices (and a moment for the screens to be ready to open the wait screen). Off with
        anything Apple still holds (a pause or schedules that outlived a reinstall, or a stop that did not finish): all of it is
@@ -277,7 +383,7 @@ export function PullKeeper() {
     ready.then(() =>
       setTimeout(() => {
         if (gone) return;
-        if (readOk && !getPullPrefs().on) real.stop().catch(() => undefined);
+        if (readOk && !getPullPrefs().on) mod.stop().catch(() => undefined);
         back();
       }, 600),
     );

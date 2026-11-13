@@ -144,6 +144,12 @@ need, without letting the screen turn into a list of features.
   - **Build it on a feature branch, look at it on the web and on the iOS simulator, and show the owner on the simulator**
     (a release build, so it runs at real speed). Never merge it before the owner has seen it; this overrides "merge when
     the tests pass" above.
+- **Merge to main, then archive; the iPhone check is TestFlight from main (the owner, November 13, 2026: "i want the chats
+  to merge to main then archive alot of these chats keep not merging to main bc it's not tested on iphone, we will test it on
+  iphone by making a build from main and publishing it to testflight").** A chat whose work is done (tests pass, QA on the web
+  and the simulator done) merges it to `main` and is archived. A check only a real iPhone can do (Health, Face ID, Screen
+  Time, widgets, notifications) never holds a merge: write it in the chat's hand-over note, and it is checked on the TestFlight
+  build made from `main`. That build still needs the owner's yes when it uses one of the 15 EAS builds.
 - **The icon follows the calendar (the owner, October 26, 2026).** Before every App Store build, run `npm run icons --
 --auto`: it sets the app icon to the look for that time of year (Halloween, autumn, winter, New Year, Valentine's) or
   the plain flame, by date, with no need to ask. Commit the icon and say which one the update carries. The calendar and

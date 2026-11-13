@@ -213,7 +213,7 @@ export function Ignition({
     transform: [{ scale: interpolate(flare.value, [0, 1], [0.5 + fan.value * 0.3, 1.25]) }],
   }));
   const popIn = useAnimatedStyle(() => ({ transform: [{ scale: popV.value }] }));
-  const old = useAnimatedStyle(() => ({ opacity: 1 - turn.value, transform: [{ translateY: -36 * turn.value }] }));
+  const old = useAnimatedStyle(() => ({ opacity: Math.max(0, 1 - turn.value * 2), transform: [{ translateY: -36 * Math.min(1, turn.value) }] }));
   const neu = useAnimatedStyle(() => ({
     opacity: Math.min(1, turn.value * 1.6),
     transform: [{ translateY: 40 * (1 - turn.value) }, { scale: 0.7 + 0.3 * turn.value }],

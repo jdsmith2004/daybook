@@ -1044,21 +1044,19 @@ a defence that works with the app closed, a record that is true, a day small eno
   Daybook's server.
 - **Checked by:** core tests for the note's words (a word test: no slip, urge, count of nights or habit name can appear in it), pictures.
 
-### WP8. Daybook: Quiet the game
+### WP8. Daybook: Celebrations like Duolingo (replaces "Quiet the game", which the owner turned down: D7)
 
-- **Model and effort:** Opus, medium (earned things must not move).
-- **Waits on:** D7. **Depends on:** WP5.
-- **Goal (C10).** Points and level numbers show on one page; the flame's forms carry the progress; sheets open for true firsts only.
-- **Read first:** `review-nov-12/seams.md` (the twelve places points show; Milestones, Points and Growth), `critic-more.md`, and
-  `dan.md` (a month of doing everything: every number and celebration he was shown, day by day).
-- **What to build.** Remove every "+N points" and level number outside Milestones (lesson end, check-in end, Goodnight, Today's row
-  chips, the widget toast, the rode-out chip, the Sunday review); the hero and More say the form by name; Milestones leads with "Who you
-  are becoming" and holds the level, points and badges under it, with Points and Growth folded in; a celebration sheet only for a new
-  form, a true first and graduation, never over the morning or after an SOS or a slip, never with a tip ask in it; the Support pill
-  leaves Today's sky (the tip ask stays in More and at its earned moments).
-- **Done looks like:** points still add up exactly as before (a test compares totals before and after over the fuzz histories); a month
-  of Dan's days shows no number chasing on any screen but Milestones.
-- **Checked by:** `npm test`, the upgrade test, pictures.
+- **Model and effort:** Opus, medium for screens, high for anything that changes points or earned things. Show first.
+- **Branch:** `claude/celebrations-941c95`. Shared pieces for WP10 (setup) and WP11 (lessons): `components/ignite.tsx` (`Ignition`),
+  `components/lesson-finish.tsx` (`LessonFinish`), core `ignite.ts`.
+- **Built so far.** Lighting the night: a free night told in the morning opens a dark screen where the flame waits with an ember in it;
+  the person swipes it alight, it bursts, the count turns over, the flame says who they are becoming, the row of nights ticks in, the
+  button comes last (`docs/review/wp8-ignite-before.png`, `wp8-ignite-after.png`). The lesson finish: tiles land one by one, the
+  points fly into the flame and fill the level bar, the flame says the line to keep, the button last.
+- **Still to build.** The moments for an urge ridden out, a told morning and the phone put to bed; small goals (3, then 7 nights,
+  core `igniteGoal`); the tip ask at most once, on a new flame form.
+- **Bounds.** No big goals before a clean week; after a slip only the honesty and the comeback are celebrated (core `ptsQuiet`);
+  earned things stay earned; no random-reward chests (the owner to confirm).
 
 ### WP9. Daybook: Sunday in three pages (show first)
 

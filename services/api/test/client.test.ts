@@ -299,6 +299,37 @@ describe('two devices of one person', () => {
     expect(b.snap.days['2026-10-10']).toEqual(a.snap.days['2026-10-10']);
   });
 
+  it('two phones each finish a different lesson on the same day while apart: both lessons are kept on both (WP4)', async () => {
+    const a = new Device(transport('alice'));
+    const b = new Device(transport('alice'));
+    const tk = '2026-10-10';
+    const lesson = (id: string) => core.lessonById(id)!;
+    a.change((s) => ({ ...s, settings: st(100) }), 100);
+    a.change((s) => addRode(s, tk, 110), 110);
+    await a.sync();
+    await b.sync();
+    /* apart: the morning on the phone, the evening on the other one, a different lesson on each, and a check-in on one */
+    a.change((s) => ({ ...s, days: core.recordLesson(s.days, tk, lesson('l1'), 200).days }), 200);
+    a.change((s) => {
+      const ci = { md: 7, m: null, c: null, e: null, s: 3, h: null, so: null, ro: null, n: '', done: true, at: 210 };
+      return { ...s, days: { ...s.days, [tk]: core.changeDay(s.days[tk], tk, (d) => void (d.checkin = ci), 210)! } };
+    }, 210);
+    b.change((s) => ({ ...s, days: core.recordLesson(s.days, tk, lesson('l2'), 300).days }), 300);
+    serverNow += 1000;
+    await a.sync();
+    serverNow += 1000;
+    await b.sync();
+    serverNow += 1000;
+    await a.sync();
+    for (const d of [a, b]) {
+      expect([...core.lessonsDone(d.snap.days)].sort()).toEqual(['l1', 'l2']);
+      expect(d.snap.days[tk].checkin?.md).toBe(7);
+      expect(d.snap.days[tk].events.length).toBe(1);
+      expect(d.dirty).toEqual({});
+    }
+    expect(b.snap.days[tk]).toEqual(a.snap.days[tk]);
+  });
+
   it('an entry deleted on one device stays deleted when the other logged that day too', async () => {
     const a = new Device(transport('alice'));
     const b = new Device(transport('alice'));

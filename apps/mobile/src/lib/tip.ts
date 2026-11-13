@@ -32,8 +32,11 @@ import {
   TIP_USD,
   TIP_WORDS,
   type PatRec,
+  tipWaysFor,
+  localTipWords,
   type Supporter,
   type TipTierId,
+  type TipVia,
 } from '@daybook/core';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
@@ -52,8 +55,8 @@ import {
   ownedTips,
   ownedTipsFailed,
   storeMonthlyPrice,
+  storefront,
   storePrice,
-  usStorefront,
   watchTips,
   type StorePat,
   type StoreTip,
@@ -67,16 +70,17 @@ export const TIP_TIERS: { id: TipTier; name: string; usd: number }[] = [
   { id: 'amazing', name: 'Amazing tip', usd: TIP_USD.amazing },
 ];
 
-/** how a tip is paid: Apple's in-app purchase (iPhone only) or the web tip page */
-export type TipVia = 'apple' | 'web';
+export type { TipVia };
 
-/** the ways this device can pay, best first. On iPhone the web tip page is offered only on the United States storefront
-    (Guidelines 3.1.1(a)), and not until the store has said which one it is. (Android is not shipped; the Play Store would
-    not allow the web page for this, so ask before shipping it there.) */
-export function tipWays(): TipVia[] {
-  if (!iapAvailable) return ['web'];
-  return usStorefront() ? ['apple', 'web'] : ['apple'];
-}
+/** the ways this device can pay, best first (core tipWaysFor). On iPhone the web tip page is offered only on the United
+    States storefront (Guidelines 3.1.1(a)), and not until the store has said which one it is, so Daybook can be offered in
+    every other storefront with Apple's in-app purchase alone. (Android is not shipped; the Play Store would not allow the
+    web page for this, so ask before shipping it there.) */
+export const tipWays = (): TipVia[] => tipWaysFor(Platform.OS, iapAvailable, storefront());
+
+/** the ask's words in this person's currency: off the United States storefront, "$5" becomes Apple's price there (core
+    localTipWords); unchanged on the web, on the US storefront, and until the store has answered */
+export const tipLocal = (text: string): string => localTipWords(text, storefront(), storePrice);
 
 /** asks the store for its prices again (the tip sheet, as it opens); resolves once it has answered or failed */
 export const refreshPrices = (): Promise<void> => (iapAvailable ? loadPrices().catch(() => undefined) : Promise.resolve());
@@ -364,6 +368,8 @@ async function buyTip0(tier: TipTier, via: TipVia, pattern: boolean): Promise<Su
       buying.delete(tier);
     }
   }
+  /* never the web tip page where this device may not offer it (an iPhone outside the United States storefront) */
+  if (!tipWays().includes('web')) return null;
   return webPay(tipLink(tier, account), w);
 }
 

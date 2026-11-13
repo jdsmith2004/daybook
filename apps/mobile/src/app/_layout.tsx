@@ -19,6 +19,8 @@ import {
   trailNoteKeep,
   trailNotes,
   WIDGET_PTS,
+  widgetTold,
+  answerNight,
   nudgeExt,
   nudgeQuietLeft,
 } from '@daybook/core';
@@ -145,11 +147,28 @@ function Reminders() {
    its points (core WIDGET_PTS), once and for good */
 function FlameWidgetKeeper() {
   const { ready, snap, tk, now, update, say } = useStore();
-  return useFlameWidget(snap, tk, ready, now, () => {
-    if (snap.settings?.widget) return;
-    update((s) => (s.settings && !s.settings.widget ? { ...s, settings: { ...s.settings, widget: tk } } : s));
-    say('Your flame is on your screen. +' + WIDGET_PTS + ' points');
-  });
+  return useFlameWidget(
+    snap,
+    tk,
+    ready,
+    now,
+    () => {
+      if (snap.settings?.widget) return;
+      update((s) => (s.settings && !s.settings.widget ? { ...s, settings: { ...s.settings, widget: tk } } : s));
+      say('Your flame is on your screen. +' + WIDGET_PTS + ' points');
+    },
+    /* a morning answered on the Home Screen (Free of it, core widgetTold): written the same way as on the morning page, once, and
+       only while that morning is still unanswered */
+    (told) =>
+      update((s) => {
+        const st = s.settings;
+        if (!st) return s;
+        let days = s.days;
+        for (const t of told)
+          if (widgetTold(days, st, [{ told: 'free', toldK: t.k, toldAt: t.at }], tk).length) days = answerNight(days, st, t.k, 'free', t.at);
+        return days === s.days ? s : { ...s, days };
+      }),
+  );
 }
 
 /* The trail's notes while a battle goes on (core trailNotes): two at a time, an hour apart, never at night, resting after a

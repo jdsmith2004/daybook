@@ -220,6 +220,8 @@ export interface Settings {
   /** the day the flame was first seen on the Home Screen or the Lock Screen (flame-widget.ts): WIDGET_PTS, once, kept for good.
       Set once and never cleared. Optional, so older records need no change. */
   widget?: DayKey;
+  /** the day the widget was offered (flame-widget.ts widgetAskDue): offered once. Optional, so older records need no change. */
+  widgetAsk?: DayKey;
   /** the day graduation was earned (see graduate.ts). Set once and never cleared. Optional, so older records need no change. */
   gradAt?: DayKey | null;
   /** the last "Not now" on the account card (see accounts.ts) */

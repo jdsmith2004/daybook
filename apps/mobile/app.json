@@ -98,10 +98,20 @@
             {
               "name": "Flame",
               "displayName": "Your flame",
-              "description": "Your flame as it burns now.",
+              "description": "Your flame as it burns now. Tap it for today, or SOS for help.",
               "ios": {
-                "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge", "accessoryCircular"],
+                "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge", "accessoryCircular", "accessoryRectangular", "accessoryInline"],
                 "initialLayout": "./src/widgets/flame.tsx"
+              },
+              "android": null
+            },
+            {
+              "name": "Sos",
+              "displayName": "SOS",
+              "description": "One tap opens SOS.",
+              "ios": {
+                "supportedFamilies": ["systemSmall", "accessoryCircular"],
+                "initialLayout": "./src/widgets/sos.tsx"
               },
               "android": null
             }

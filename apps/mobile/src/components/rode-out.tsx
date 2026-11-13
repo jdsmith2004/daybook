@@ -10,6 +10,9 @@
    off. Each answer is one tap or none, and saved as it is tapped. Done comes in last, pinned at the bottom, with Undo under
    it for an entry logged by hand. With celebrations off or Reduce Motion, the same page, all in place at once. */
 import {
+  addOption,
+  didAdd,
+  OPT_MAX,
   didIds,
   didToggle,
   habitOf,
@@ -31,7 +34,8 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { Link } from '@/components/choices';
+import { AddOwn, Link } from '@/components/choices';
+import { OwnChip } from '@/components/own';
 import { Appear } from '@/components/appear';
 import { BigFlame } from '@/components/big-flame';
 import { FutureInvite, useFutureInvite } from '@/components/future-invite';
@@ -120,7 +124,26 @@ function RodeOutPage({ won, level, title = 'SOS', onUndo, after }: RodeProps & {
 
   const why = won.moves.length ? rideWhy(helped, won.moves) : null;
   const lesson = why?.l ? lessonFor(why.l, st) : null;
-  const trigs = (optList('trig', st.opts, { time: ev?.time || null, sel: trig, all: false, habit: habitOf(st) }).list as [string, string][]).slice(0, 7);
+  const trigAll = optList('trig', st.opts, { time: ev?.time || null, sel: trig, all: false, habit: habitOf(st) }).list as [string, string][];
+  /* the first seven, and the one picked even when it is further down (one just written, say) */
+  const trigs = trigAll.slice(0, 7).concat(trigAll.slice(7).filter(([v]) => v === trig));
+  /* "Write my own": the box opens under its group, with its button beside it */
+  const [adding, setAdding] = useState<'trig' | 'did' | null>(null);
+  const full = (k: 'trig' | 'did') => st.opts[k].filter((x) => !x.off).length >= OPT_MAX;
+  const saveOwn = (kind: 'trig' | 'did', text: string) => {
+    const r = addOption(st, kind, text);
+    if (!r.id) return;
+    const nid = r.id;
+    if (kind === 'trig') setTrig(nid);
+    update((s) => ({
+      ...s,
+      settings: r.st,
+      days: patchEvent(s.days, won.key, won.id, kind === 'did' ? { did: didAdd(ev?.did, nid) } : { trigger: nid }),
+    }));
+    setAdding(null);
+    buzz('tap');
+  };
+  const own = (kind: 'trig' | 'did') => (adding === kind ? <AddOwn kind={kind} onCancel={() => setAdding(null)} onSave={(t) => saveOwn(kind, t)} /> : null);
   const did = didIds(ev?.did);
   /* what you did, for one logged afterwards ("Something else" says nothing, so it is left out here) */
   const dids = won.moves.length
@@ -268,7 +291,7 @@ function RodeOutPage({ won, level, title = 'SOS', onUndo, after }: RodeProps & {
             <Text style={[s.q, { color: c.ink }]}>
               What helped? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
             </Text>
-            <Packed last={noneTail(dids.map((d) => d[1]))}>
+            <Packed last={noneTail(dids.map((d) => d[1])) + (adding === 'did' || full('did') ? 0 : 1)}>
               {dids.map(([v, label]) => {
                 const on = did.indexOf(v) >= 0;
                 return (
@@ -278,14 +301,16 @@ function RodeOutPage({ won, level, title = 'SOS', onUndo, after }: RodeProps & {
                   </Pressable>
                 );
               })}
+              {adding === 'did' || full('did') ? null : <OwnChip key="own" onPress={() => setAdding('did')} />}
             </Packed>
+            {own('did')}
           </View>
         )}
         <View style={s.group}>
           <Text style={[s.q, { color: c.ink }]}>
             What set it off? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
           </Text>
-          <Packed last={noneTail(trigs.map((t) => t[1]))}>
+          <Packed last={noneTail(trigs.map((t) => t[1])) + (adding === 'trig' || full('trig') ? 0 : 1)}>
             {trigs.map(([v, label]) => {
               const on = trig === v;
               return (
@@ -294,7 +319,9 @@ function RodeOutPage({ won, level, title = 'SOS', onUndo, after }: RodeProps & {
                 </Pressable>
               );
             })}
+            {adding === 'trig' || full('trig') ? null : <OwnChip key="own" onPress={() => setAdding('trig')} />}
           </Packed>
+          {own('trig')}
         </View>
         {invite ? <FutureInvite first={firstNote} /> : null}
         {askPrac ? (

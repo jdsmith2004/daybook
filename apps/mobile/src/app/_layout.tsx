@@ -190,9 +190,13 @@ function TrailNotes() {
   /* the trail's notes learn whether they are opened (core nudgeQuietLeft): paused, none; on the one more try, only the first */
   const log = useNudgeLog();
   const left = log.ready ? nudgeQuietLeft(log, 'trail', openAt) : 0;
+  /* planned from a time that moves once a minute, never Date.now() itself: the notes' times come from it, and saving them changes
+     sos.mem, so a time that moved on every render planned new notes, saved them and rendered again without end (the owner hit it
+     on November 13, 2026: "Something broke on this screen" after Walk it through, with dozens of notes scheduled) */
+  const minute = Math.floor(Date.now() / 60000) * 60000;
   const notes = useMemo(
-    () => (ready ? trailNotes(sos.mem, snap.days, Math.max(openAt, Date.now() - 60000)).slice(0, left) : []),
-    [ready, sos.mem, snap.days, openAt, left],
+    () => (ready ? trailNotes(sos.mem, snap.days, Math.max(openAt, minute - 60000)).slice(0, left) : []),
+    [ready, sos.mem, snap.days, openAt, minute, left],
   );
   const key = notes.map((n) => n.at).join(',');
   useEffect(() => {

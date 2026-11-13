@@ -158,6 +158,16 @@ describe('the notes', () => {
     expect(core.trailNotes(open(at(1)), {}, at(14))).toEqual([]);
   });
 
+  it('keeping the plan does not change the plan, so the app does not schedule again and again (November 13, 2026)', () => {
+    const now = at(14, 10);
+    let mem = open(at(14));
+    const first = core.trailNotes(mem, {}, now);
+    for (let i = 0; i < 3; i++) {
+      mem = core.trailNoteKeep(mem, core.trailNotes(mem, {}, now), now);
+      expect(core.trailNotes(mem, {}, now).map((x) => x.at)).toEqual(first.map((x) => x.at));
+    }
+  });
+
   it('never comes at night', () => {
     expect(core.trailNotes(open(at(20, 30)), {}, at(20, 30)).map((x) => x.at)).toEqual([at(21, 30)]);
     expect(core.trailNotes(open(at(21, 30)), {}, at(21, 30))).toEqual([]);

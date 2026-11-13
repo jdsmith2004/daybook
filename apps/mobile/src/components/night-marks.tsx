@@ -14,12 +14,12 @@ const RUN: [string, string] = ['#F27A1C', '#FFC43D'];
 const SLIP_DARK = '#4C3C96';
 const SLIP_LIGHT = '#7A68D6';
 
-const WORD: Record<NightMark, string> = { free: 'free of it', slip: 'it happened', untold: 'not told', none: '' };
+const WORD: Record<NightMark, string> = { free: 'free of it', slip: 'it happened', untold: 'not told', none: '', ahead: 'still to come' };
 
 /** a screen reader's line for the marks: "Free of it, not told, it happened" */
 export const nightMarksSay = (m: NightMark[]) =>
   m
-    .filter((x) => x !== 'none')
+    .filter((x) => x !== 'none' && x !== 'ahead')
     .map((x) => WORD[x])
     .join(', ');
 

@@ -20,6 +20,7 @@
 
    This file imports nothing from legacy/core.js, because legacy/core.js imports it (dayKind and statusOf ask here).
    Checked by test/away.test.ts. */
+import type { NightMark } from './ignite';
 import { toldOn, truthFromOf, type NightState } from './truth';
 import type { DayKey, Days, Settings } from './types';
 
@@ -269,7 +270,6 @@ export const awayFromOf = (st: Settings | null): DayKey | null => {
 };
 
 /* ---------- the nights, as one mark each (the hero, Days and Sunday draw them the same way: the app's NightMarks) ---------- */
-export type NightMark = NightState | 'none';
 /** where the record starts: Day 1, or the start for someone only tracking */
 /* the same as legacy/core.js recordFrom (D14), which this file cannot import */
 const recordFrom = (st: Settings): DayKey => (isKey(st.day1) ? (truthFromOf(st) && st.start < (st.day1 as DayKey) ? st.start : (st.day1 as DayKey)) : st.start);

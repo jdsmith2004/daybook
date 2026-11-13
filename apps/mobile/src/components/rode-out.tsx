@@ -1,8 +1,8 @@
 /* One urge ridden out, one ending (the UX audit of October 27, 2026). The ride's "It passed", the 10-minute pause's "It
    passed" and Already happened's "I rode it out" all end on this page, so riding out an urge feels the same wherever it
    is logged. Its headline names what this one proved, from the record (core rodeHeadline: "You rode it out. Now you know you
-   can." the first time). The flame pops in with its burst, confetti bursts out with a run of buzzes and then a shower falls; how long
-   it took, how many you have ridden out and the points; what helped (the moves of an SOS, with one line on why that one
+   can." the first time). The flame pops in with its burst, confetti bursts out with a run of buzzes and then a shower falls; then
+   the lines fill as gold stars fly into them: the urges ridden out toward the next small mark, and the points into the level; what helped (the moves of an SOS, with one line on why that one
    works and its lesson for later, or what you did, for one logged afterwards); and what set it off. Each answer is one tap
    or none, and saved as it is tapped. Done is pinned at the bottom, in reach on every phone while the card scrolls, with
    Undo under it for an entry logged by hand. With celebrations off it is the same page, quietly. */
@@ -15,13 +15,14 @@ import {
   rateUrTool,
   rideRecord,
   ridePracticeAsk,
-  rideWeek,
   rideWhy,
   rodeHeadline,
   urTool,
   type DayKey,
   lessonFor,
   noneTail,
+  gameCompute,
+  levelOf,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -33,6 +34,7 @@ import { Confetti } from '@/components/celebrate';
 import { FutureInvite, useFutureInvite } from '@/components/future-invite';
 import { MOVE_ICON, MOVE_NAME } from '@/components/ride/moves';
 import { Packed } from '@/components/packed';
+import { Meter, meterTime, type MeterSpec } from '@/components/reward-kit';
 import { Opener } from '@/components/opener';
 import { Finish, SceneFrame } from '@/components/scene';
 import { Text } from '@/components/text';
@@ -84,7 +86,6 @@ function RodeOutPage({ won, night, level, title = 'SOS', onUndo, after }: RodePr
   const ev = snap.days[won.key]?.events.find((e) => e.id === won.id) || null;
   /* the record as it was when it passed: this ride is already in it */
   const [rec] = useState(() => rideRecord(snap.days, won.mins ?? 0));
-  const [week] = useState(() => rideWeek(snap.days, tk));
   /* one headline that names what this one proved (core rodeHeadline): the first ever, a comeback in the days after a slip, the
      fifth, or one inside the hardest hours */
   const [head] = useState(() => rodeHeadline(snap.days, st, won.key, won.id));
@@ -151,11 +152,31 @@ function RodeOutPage({ won, night, level, title = 'SOS', onUndo, after }: RodePr
   };
 
   const mins = won.mins == null ? '' : won.mins < 1 ? 'under a minute' : won.mins === 1 ? '1 minute' : won.mins + ' minutes';
-  /* the count, unless the headline already says it */
-  const chips: string[] = head.kind === 'first' || head.kind === 'mark' ? [] : [rec.n + ' ridden out'];
-  if (won.mins != null && rec.faster && rec.med) chips.push('Faster than your usual ' + rec.med + ' min');
-  if (week > 1) chips.push(week + ' this week');
-  if (won.gain > 0) chips.push('+' + won.gain + ' points');
+  /* the lines, the way the lesson finish shows them (the owner, November 13, 2026: "i liked the previous celebration lines"):
+     the urges ridden out, toward the next small mark (1, 5, 15, 40, then every ten), and the points filling the level line,
+     turning over when they make a new level */
+  const [lines] = useState<MeterSpec[]>(() => {
+    const n = rec.n;
+    const goal = [1, 5, 15, 40].find((x) => x >= n) ?? Math.ceil(n / 10) * 10;
+    const out: MeterSpec[] = [
+      { label: 'Ridden out', right: n + ' of ' + goal, from: Math.max(0, n - 1) / goal, to: n / goal, stars: 3, a11y: n + ' urges ridden out, of ' + goal },
+    ];
+    if (won.gain > 0 && snap.settings) {
+      const pts = gameCompute(snap.days, snap.settings, snap.reviews, tk).pts;
+      const was = levelOf(Math.max(0, pts - won.gain));
+      const now = levelOf(pts);
+      const right = '+' + won.gain + ' points';
+      out.push(
+        now.n > was.n
+          ? { label: 'Level ' + was.n, right, from: was.frac, to: 1, next: { label: 'Level ' + now.n, right, to: now.frac }, stars: 5 }
+          : { label: 'Level ' + now.n, right, from: was.frac, to: now.frac, stars: 4 },
+      );
+    }
+    return out;
+  });
+  const lineAt = lines.map((_, i) => 650 + lines.slice(0, i).reduce((s0, l) => s0 + meterTime(l) - 250, 0));
+  const linesEnd = 650 + lines.reduce((s0, l) => s0 + meterTime(l) - 250, 0);
+  const faster = won.mins != null && rec.faster && rec.med ? 'Faster than your usual ' + rec.med + ' min' : '';
   return (
     <View style={s.full}>
       <SceneFrame
@@ -182,14 +203,19 @@ function RodeOutPage({ won, night, level, title = 'SOS', onUndo, after }: RodePr
           title={head.h}
           text={(mins ? 'It passed in ' + mins + '. ' : 'The urge came, and you did not act on it. ') + 'Every one you ride out makes the next one easier.'}
         />
-        <Appear delay={650} style={s.chips}>
-          {chips.map((t) => (
-            <View key={t} style={[s.chip, { backgroundColor: c.scBtn }]}>
-              <Text style={[s.chipT, { color: c.ink }]}>{t}</Text>
-            </View>
+        <View style={s.lines}>
+          {lines.map((l, i) => (
+            <Meter key={l.label} m={l} at={lineAt[i]} still={!cel} ink={c.ink} muted={c.muted} track="rgba(30,22,70,0.1)" />
           ))}
-        </Appear>
-        <Appear delay={950} by={22} duration={420} style={[s.card, { backgroundColor: c.surface }]}>
+        </View>
+        {faster ? (
+          <Appear delay={linesEnd} style={s.chips}>
+            <View style={[s.chip, { backgroundColor: c.scBtn }]}>
+              <Text style={[s.chipT, { color: c.ink }]}>{faster}</Text>
+            </View>
+          </Appear>
+        ) : null}
+        <Appear delay={linesEnd + 100} by={22} duration={420} style={[s.card, { backgroundColor: c.surface }]}>
           {won.moves.length ? (
             <>
               <Text style={[s.q, { color: c.ink }]}>What helped most?</Text>
@@ -292,6 +318,7 @@ const s = StyleSheet.create({
   clip: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden' },
   c: { alignItems: 'center' },
   center: { textAlign: 'center' },
+  lines: { alignSelf: 'stretch', gap: 14, paddingHorizontal: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
   chip: { paddingHorizontal: 12, minHeight: 30, justifyContent: 'center', borderRadius: 15 },
   chipT: { fontFamily: font.bodyBold, fontSize: 13 },

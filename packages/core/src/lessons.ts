@@ -9,6 +9,7 @@ import { habitOf, type Habit } from './habit';
 import { habitOpen, habitOwn, PORN_ONLY } from './lesson-habit';
 import { changeDay, withDay } from './mutate';
 import { changeSettings } from './actions';
+import { morningOf } from './morning-set';
 import { blankP } from './legacy/core.js';
 import type { DayKey, Days, Play, Settings } from './types';
 import type { MineKind } from './lesson-turns';
@@ -211,6 +212,19 @@ let WITH_GOD: { from: Lesson[]; list: Lesson[] } | null = null;
     lesson last in it when they answered Yes or Somewhat. A lesson off the path keeps its id, opens in full from Learn
     (lessonGate), and stays finished and counted (lessonCount). */
 export function lessonPathFor(st: Settings | null | undefined): Lesson[] {
+  const base = lessonPathBase(st);
+  const v = frontKind(st);
+  if (v === 'none') return base;
+  let m = PERSONAL.get(base);
+  if (!m) PERSONAL.set(base, (m = new Map()));
+  const key = v + '|' + LESSONS.length;
+  let list = m.get(key);
+  if (!list) m.set(key, (list = personalPath(base, st, v)));
+  return list;
+}
+/** the path from faith and habit alone, before the two setup answers put a front track first (lessonPathFor). It is also an order
+    the path had before, so a lesson finished in it is never read as early (lessonsEarly). */
+export function lessonPathBase(st: Settings | null | undefined): Lesson[] {
   const list = lessonPathFaith(st);
   const h = habitOf(st);
   if (h === 'porn') return list;
@@ -218,6 +232,92 @@ export function lessonPathFor(st: Settings | null | undefined): Lesson[] {
   if (!c || c.from !== list) FOR_HABIT.set(h, (c = { from: list, list: habitPath(list, h) }));
   return c.list;
 }
+
+/* ---------- the front track (WP11, "Lessons that meet the night", the owner's review of November 12, 2026) ----------
+   Two setup answers pick the first lessons: how often it happens (freq) and when it pulls hardest (when). Someone who said about
+   once a day or more and late at night, in bed, gets a night track first: the lessons written for his night (the morning self and
+   the night self, the cue, where the phone sleeps, a plan made in the day, late and low), then "You do not need to feel ready" and
+   "Why one slip snowballs". The rest of the path follows in its own order, without them. "When values and habits clash" speaks to a
+   rare slip, so for anyone who said most days it moves after the first week (after "What getting free feels like"). Everyone else
+   keeps the path as it was. Faith and habit still decide what is on it: a lesson not for this person is never put in the track. */
+export type FrontKind = 'none' | 'most' | 'night';
+/** how many lessons the front track holds: the first week, one a day, and the lessons open without an account (LEARN_FREE) */
+export const FRONT_N = 7;
+/** the night track, in the order it is read when all are there. l54 and l55 are new (lessons-night.ts): until they are, l20 and
+    l10 take their places. */
+export const NIGHT_TRACK = ['l54', 'l34', 'l55', 'l20', 'l10', 'l9', 'l4'];
+const NIGHT_FIRST = ['l54', 'l34', 'l55', 'l9', 'l4'];
+const NIGHT_SPARE = ['l20', 'l10'];
+/** after the night lessons, the two that hold hope for someone slipping most nights */
+const NIGHT_HOPE = ['l1', 'l3'];
+/** the lesson for a rare slip, moved after the first week for someone who said most days */
+export const RARE_SLIP_LESSON = 'l22';
+const answers = (st: Settings | null | undefined) => (st && st.onb && st.onb.a) || {};
+/** about once a day or more (setup.ts obMostDays) */
+export const saidMostDays = (st: Settings | null | undefined) => {
+  const f = answers(st).freq;
+  return f === 'f3' || f === 'f4';
+};
+/** "Late at night, in bed" was one of the hardest moments picked */
+export const saidLateNight = (st: Settings | null | undefined) => {
+  const w = answers(st).when;
+  return Array.isArray(w) && w.indexOf('late') >= 0;
+};
+export const frontKind = (st: Settings | null | undefined): FrontKind => (!saidMostDays(st) ? 'none' : saidLateNight(st) ? 'night' : 'most');
+const PERSONAL = new Map<Lesson[], Map<string, Lesson[]>>();
+/** the land (a step, an index in PATH_STEPS) each lesson of a personal path stands in on the map: the front track in the first
+    land, a moved lesson in the land it was moved into, the rest in their own step */
+const LANDS = new WeakMap<Lesson[], Map<string, number>>();
+/** the front track of a personal path (its first FRONT_N lessons, or none) */
+const FRONTS = new WeakMap<Lesson[], Set<string>>();
+/** the front track for this person: the first lessons of their path, picked by their answers. Empty when they get the path as it was. */
+export const frontTrack = (st: Settings | null | undefined): Lesson[] => {
+  const path = lessonPathFor(st);
+  const f = FRONTS.get(path);
+  return f ? path.filter((L) => f.has(L.id)) : [];
+};
+function personalPath(base: Lesson[], st: Settings | null | undefined, v: FrontKind): Lesson[] {
+  const off = offFor(st);
+  const fit = (id: string) => {
+    const L = lessonById(id);
+    return L && !off(L) ? L : null;
+  };
+  const front: Lesson[] = [];
+  if (v === 'night') {
+    const night = NIGHT_FIRST.map(fit).filter((L): L is Lesson => !!L);
+    NIGHT_SPARE.forEach((id) => {
+      const L = fit(id);
+      if (L && night.length < FRONT_N - NIGHT_HOPE.length) night.push(L);
+    });
+    night.sort((a, b) => NIGHT_TRACK.indexOf(a.id) - NIGHT_TRACK.indexOf(b.id));
+    front.push(...night, ...NIGHT_HOPE.map(fit).filter((L): L is Lesson => !!L));
+    /* a path with fewer night lessons (another habit) is filled from the start of its own order */
+    for (const L of base) {
+      if (front.length >= FRONT_N) break;
+      if (!isGod(L) && L.id !== RARE_SLIP_LESSON && front.indexOf(L) < 0) front.push(L);
+    }
+  }
+  const lands = new Map<string, number>();
+  front.forEach((L) => lands.set(L.id, 0));
+  const rest = base.filter((L) => front.indexOf(L) < 0);
+  const rare = rest.find((L) => L.id === RARE_SLIP_LESSON);
+  if (rare) {
+    rest.splice(rest.indexOf(rare), 1);
+    /* after the first week: after the last lesson of the second step that is not its God lesson, or after the first week's lessons */
+    let at = -1;
+    rest.forEach((L, i) => {
+      if (stepAt(L.id) === 1 && !isGod(L)) at = i;
+    });
+    if (at < 0) at = Math.max(0, FRONT_N - front.length - 1);
+    rest.splice(at + 1, 0, rare);
+    lands.set(rare.id, at >= 0 && rest[at] ? landIn(rest[at], lands) : 0);
+  }
+  const list = [...front, ...rest];
+  LANDS.set(list, lands);
+  if (front.length) FRONTS.set(list, new Set(front.map((L) => L.id)));
+  return list;
+}
+const landIn = (L: Lesson, lands: Map<string, number>) => (lands.has(L.id) ? lands.get(L.id)! : stepAt(L.id));
 const FOR_HABIT = new Map<Habit, { from: Lesson[]; list: Lesson[] }>();
 /** a path for another habit: the lessons for it, each step's own lessons for this habit (steps.ts habit) after the rest of
     the step, and its God lesson still last */
@@ -246,8 +346,9 @@ function lessonPathFaith(st: Settings | null | undefined): Lesson[] {
 /** a path in its steps: u is the step (an index in PATH_STEPS) */
 export const sectionsOf = (path: Lesson[]) => {
   const out: { u: number; lessons: Lesson[] }[] = [];
+  const lands = LANDS.get(path);
   path.forEach((L) => {
-    const u = lessonStep(L);
+    const u = lands ? landIn(L, lands) : lessonStep(L);
     const last = out[out.length - 1];
     if (last && last.u === u) last.lessons.push(L);
     else out.push({ u, lessons: [L] });
@@ -274,8 +375,10 @@ export const firstUndone = (done: Set<string>, st?: Settings | null) => lessonPa
     the record, in the order lessons were finished (by day, then within the day). */
 export function lessonsEarly(days: Days, st?: Settings | null): Set<string> {
   const off = offFor(st);
-  const befores = lessonPathsBefore().map((p) => p.filter((L) => !off(L)));
   const path = lessonPathFor(st);
+  /* the path from faith and habit alone is an order this person had before the front track (lessonPathFor) */
+  const base = lessonPathBase(st);
+  const befores = [...lessonPathsBefore().map((p) => p.filter((L) => !off(L))), ...(base !== path ? [base] : [])];
   const fin = new Set<string>();
   const early = new Set<string>();
   /** every lesson before it on this path was finished. A God lesson is not waited for here: it came later, or is passed by
@@ -284,9 +387,15 @@ export function lessonsEarly(days: Days, st?: Settings | null): Set<string> {
     const i = p.indexOf(L);
     return i >= 0 && p.slice(0, i).every((x) => fin.has(x.id) || isGod(x));
   };
-  lessonsInOrder(days).forEach(({ L }) => {
-    /* a lesson off this person's path is never waited for, so it is never early */
-    if (path.indexOf(L) >= 0 && !reached(path, L) && !befores.some((b) => reached(b, L))) early.add(L.id);
+  const hookRead = (L: Lesson, k: DayKey) => {
+    if (!HOOK_IDS.has(L.id) || ((days[k] && days[k].p && days[k].p.ls) || [])[0] !== L.id) return false;
+    const h = hookPick(days, st, k, fin, path, true);
+    return !!h && h.L === L;
+  };
+  lessonsInOrder(days).forEach(({ L, k }) => {
+    /* a lesson off this person's path is never waited for, so it is never early; nor is one a moment brought (lessonToday) as the
+       first lesson of its day: it counts as done, and the path walks past it later with no welcome back */
+    if (path.indexOf(L) >= 0 && !reached(path, L) && !befores.some((b) => reached(b, L)) && !hookRead(L, k)) early.add(L.id);
     fin.add(L.id);
   });
   return early;
@@ -362,6 +471,11 @@ export interface LessonWalk {
   /** God lessons not finished in a part of the path already walked past (they came after the person was further on, or
       faith was turned on later): they never hold the path back, open in full, and count once finished */
   passed: Set<string>;
+  /** the day's lesson (lessonToday), when the walk was made for a day (lessonWalk with tk): a moment's lesson (hook), or Up next.
+      It opens in full. null without a day, or at the end. */
+  today: Lesson | null;
+  /** the moment that brought today's lesson, or null when it is the path's own */
+  hook: LessonHook | null;
 }
 const stopsAt = (L: Lesson, done: Set<string>, early: Set<string>, reached: Set<string>) => !done.has(L.id) || (early.has(L.id) && !reached.has(L.id));
 /** the God lessons a person has walked past: unfinished, with a lesson after them on the path already finished */
@@ -375,8 +489,15 @@ function godPassed(path: Lesson[], done: Set<string>): Set<string> {
   }
   return out;
 }
-/** where the person is on the path */
-export function lessonWalk(days: Days, st: Settings | null | undefined): LessonWalk {
+/** where the person is on the path. With a day (tk), the walk also holds that day's lesson (today, hook: lessonToday), which opens
+    in full; account: signed in, or no accounts in this copy (a moment's lesson that waits behind one is not offered). */
+export function lessonWalk(days: Days, st: Settings | null | undefined, tk?: DayKey, account = true): LessonWalk {
+  const w = walkCore(days, st);
+  if (!tk) return w;
+  const h = hookFor(days, st, tk, w, account);
+  return h ? { ...w, today: h.L, hook: h.hook } : { ...w, today: w.next, hook: null };
+}
+function walkCore(days: Days, st: Settings | null | undefined): LessonWalk {
   const done = lessonsDone(days);
   const early = lessonsEarly(days, st);
   const reached = lessonsReached(st);
@@ -385,7 +506,7 @@ export function lessonWalk(days: Days, st: Settings | null | undefined): LessonW
   const at = path.findIndex((L) => !passed.has(L.id) && stopsAt(L, done, early, reached));
   const next = at < 0 ? null : path[at];
   const walked = new Set(path.filter((L, i) => !passed.has(L.id) && (at < 0 || i < at || (i > at && !stopsAt(L, done, early, reached)))).map((L) => L.id));
-  return { done, early, reached, walked, next, back: !!next && done.has(next.id), path, passed };
+  return { done, early, reached, walked, next, back: !!next && done.has(next.id), path, passed, today: null, hook: null };
 }
 /** a walk from finished lessons only, with nothing read early: for a map or a test that has no record */
 export function walkOf(done: Set<string>, st?: Settings | null): LessonWalk {
@@ -393,7 +514,7 @@ export function walkOf(done: Set<string>, st?: Settings | null): LessonWalk {
   const passed = godPassed(path, done);
   const next = path.find((L) => !passed.has(L.id) && !done.has(L.id)) || null;
   const walked = new Set((next ? path.slice(0, path.indexOf(next)) : path).filter((L) => !passed.has(L.id)).map((L) => L.id));
-  return { done, early: new Set(), reached: new Set(), walked, next, back: false, path, passed };
+  return { done, early: new Set(), reached: new Set(), walked, next, back: false, path, passed, today: null, hook: null };
 }
 /** "N of M done": the path, plus any lesson finished off it, which stays counted (a faith lesson read from Learn) */
 export function lessonCount(w: LessonWalk): { done: number; of: number } {
@@ -410,6 +531,8 @@ export function lessonGate(L0: Lesson, w: LessonWalk): LessonGate {
   if (w.path.indexOf(L) < 0) return 'open';
   if (w.walked.has(L.id) || w.passed.has(L.id)) return 'open';
   if (w.next === L) return w.back ? 'back' : 'open';
+  /* the day's lesson a moment brought (lessonToday) opens in full where it stands */
+  if (w.today === L) return 'open';
   return 'key';
 }
 /** what comes after this lesson: Up next, counting this one as reached. The same Up next as Today and the map. */
@@ -797,20 +920,148 @@ export function lessonWeek(days: Days, tk: DayKey): LessonWeek {
   return { days: out, n: out.filter((x) => x.on).length };
 }
 
-/* the day's lesson stop on Today */
-export function lessonStop(days: Days, st: Settings, tk: DayKey) {
+/* the day's lesson stop on Today: one answer for Today, the reminder, the hard hours card and the player (lessonToday).
+   read: a lesson was finished or read again today. next: the day's lesson; locked when it waits behind a free account, so the stop
+   says so instead of quietly becoming a re-read (never on the day of a slip or the day after: then it is a re-read, wait). review:
+   a re-read, at the end of the path (wait false) or while the next lesson waits (wait true). account: signed in, or no accounts. */
+export type LessonStop =
+  | { kind: 'read'; L: Lesson; next: Lesson | null }
+  | { kind: 'next'; L: Lesson; n: number; total: number; hook: LessonHook | null; locked: boolean }
+  | { kind: 'review'; L: Lesson; note: string; wait: boolean };
+export function lessonStop(days: Days, st: Settings, tk: DayKey, account = true): LessonStop {
   const p = days[tk]?.p;
-  const nl = lessonWalk(days, st).next;
+  const w = lessonWalk(days, st, tk, account);
+  const nl = w.today;
   const readIds = [...((p && p.ls) || []), ...((p && p.lv) || [])];
   const readL =
     readIds
       .map(lessonById)
       .filter((x): x is Lesson => !!x)
       .pop() || null;
-  if (readL) return { kind: 'read' as const, L: readL, next: nl && nl.id !== readL.id ? nl : null };
-  if (nl) return { kind: 'next' as const, L: nl, n: lessonNo(nl, st), total: lessonPathFor(st).length };
+  if (readL) return { kind: 'read' as const, L: readL, next: w.next && w.next.id !== readL.id ? w.next : null };
+  const note = (L: Lesson) => (st.learn && st.learn.notes && st.learn.notes[L.id]) || '';
+  if (nl) {
+    const total = lessonPathFor(st).length;
+    if (w.hook || lessonOpen(nl, w.done, account, st)) return { kind: 'next' as const, L: nl, n: lessonNo(nl, st), total, hook: w.hook, locked: false };
+    if (!slipNear(days, tk)) return { kind: 'next' as const, L: nl, n: lessonNo(nl, st), total, hook: null, locked: true };
+    const R = lessonReread(w, tk, st, account);
+    return { kind: 'review' as const, L: R, note: note(R), wait: true };
+  }
   const R = reviewPick(tk, st);
-  return { kind: 'review' as const, L: R, note: (st.learn && st.learn.notes && st.learn.notes[R.id]) || '' };
+  return { kind: 'review' as const, L: R, note: note(R), wait: false };
+}
+
+/* ---------- the free lessons (D8, the owner, November 12, 2026) ----------
+   Without an account, the first LEARN_FREE lessons of this person's own path are open (their front track, when they have one), the
+   same number on every path: God lessons no longer come free on top. A lesson already finished stays open. Care doors (at=care in
+   the app) and the lesson the morning after a slip brings (lessonToday) are never behind it. accounts.ts asks for the account. */
+export const LEARN_FREE = 7;
+/** the lessons open without an account on this person's path */
+export const freeLessons = (st?: Settings | null): Lesson[] => lessonPathFor(st).slice(0, LEARN_FREE);
+/** whether a lesson can be read. `account` is true when signed in, or when this copy of Daybook has no accounts at all. */
+export function lessonOpen(L: Lesson, done: Set<string>, account: boolean, st?: Settings | null): boolean {
+  return account || done.has(L.id) || freeLessons(st).some((x) => x.id === L.id);
+}
+/** how many lessons of a list are waiting behind an account */
+export const lessonsLocked = (all: Lesson[], done: Set<string>, account: boolean, st?: Settings | null) =>
+  all.filter((L) => !lessonOpen(L, done, account, st)).length;
+/** a slip on this day or the day before: the hours after a slip, when nothing asks for an account */
+export const slipNear = (days: Days, tk: DayKey) => eventsOf(days).some((e) => e.outcome === 'slipped' && (e.key === tk || e.key === addDays(tk, -1)));
+/** a re-read: with an account any lesson in turn (reviewPick), without one a finished lesson behind Up next */
+export function lessonReread(w: LessonWalk, tk: DayKey, st: Settings | null | undefined, account: boolean): Lesson {
+  const read = LESSONS.filter((L: Lesson) => w.walked.has(L.id));
+  return account || !read.length ? reviewPick(tk, st) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
+}
+/** what the player's Next button opens after this lesson: the lesson after it (nextAfter), with locked when it waits behind a free
+    account (the app then shows the sign-up). null when there is none, or when it is locked on the day of a slip or the day after:
+    then the player ends in Done, never on a sign-up page. */
+export function nextLessonOk(
+  L: Lesson,
+  w: LessonWalk,
+  days: Days,
+  st: Settings | null | undefined,
+  tk: DayKey,
+  account: boolean,
+): { L: Lesson; locked: boolean } | null {
+  const nx = nextAfter(L, w);
+  if (!nx) return null;
+  const locked = !lessonOpen(nx, w.done, account, st);
+  return locked && slipNear(days, tk) ? null : { L: nx, locked };
+}
+
+/* ---------- three moments change the day's lesson (WP11), no more ----------
+   slip: the morning after a slip (told with "It happened", or logged for yesterday), the first not read of the lessons for after a
+   hard night that Rekindle offers (RK_LESSONS). It is care, so it is never behind an account.
+   free: a free night told this morning, the identity lesson "Say I do not" (l38), once.
+   rode: an urge ridden out today or yesterday, "Your log is your evidence" (l40): each urge ridden out is proof of who you are
+   becoming. free and rode only when the lesson is open (a free account past the first seven). None before the first lesson is
+   finished: the path's first lesson is the way in.
+   Otherwise the day's lesson is Up next on the path. A lesson read this way counts as done, and the path walks past it later
+   (lessonsEarly). Not once a lesson was finished today: the stop then says read. */
+export type LessonHook = 'slip' | 'free' | 'rode';
+/** the lessons Rekindle offers after the fire, in order: what therapy is like first (the owner, November 12, 2026: "i think
+    that's a good lesson and should be a first recommendation"), then kindness after a slip, why one slip snowballs, guilt and
+    shame before God (only on a path with faith), and mindfulness for the next urge (rekindle.ts rkLesson) */
+export const RK_LESSONS = ['l24', 'l6', 'l3', 'l31', 'l27'];
+export const HOOK_FREE_LESSON = 'l38';
+export const HOOK_RODE_LESSON = 'l40';
+const HOOK_IDS = new Set([...RK_LESSONS, HOOK_FREE_LESSON, HOOK_RODE_LESSON]);
+/** the lessons for after a slip that fit this person (habit, and faith said No drops the faith one), in order */
+export const rkFits = (st: Settings | null | undefined): string[] =>
+  RK_LESSONS.filter((id) => {
+    const L = lessonFor(id, st);
+    return !!L && !(L.f && faithOut(st));
+  });
+function hookFor(days: Days, st: Settings | null | undefined, tk: DayKey, w: LessonWalk, account: boolean): { L: Lesson; hook: LessonHook } | null {
+  const p = days[tk]?.p;
+  /* not once a lesson was finished today */
+  if (p && p.ls && p.ls.length) return null;
+  return hookPick(days, st, tk, w.done, w.path, account);
+}
+/** the moment's lesson for day tk, from the lessons finished before it (done): also read back by lessonsEarly, so a lesson read as
+    a day's moment is never early. Not before the path's first lesson is finished: it is the way in. */
+function hookPick(
+  days: Days,
+  st: Settings | null | undefined,
+  tk: DayKey,
+  done: Set<string>,
+  path: Lesson[],
+  account: boolean,
+): { L: Lesson; hook: LessonHook } | null {
+  if (!path.length || !done.has(path[0].id)) return null;
+  const w = { done };
+  const y = addDays(tk, -1);
+  const evs = eventsOf(days);
+  if (evs.some((e) => e.outcome === 'slipped' && e.key === y)) {
+    const id = rkFits(st).find((x) => !w.done.has(x));
+    const L = id ? lessonById(id) : null;
+    return L ? { L, hook: 'slip' } : null;
+  }
+  const fit = (id: string) => {
+    const L = lessonFor(id, st);
+    return L && !(L.f && faithOut(st)) && !w.done.has(id) && lessonOpen(L, w.done, account, st) ? L : null;
+  };
+  if (morningOf(days[tk])?.n === 'free') {
+    const L = fit(HOOK_FREE_LESSON);
+    if (L) return { L, hook: 'free' };
+  }
+  if (evs.some((e) => e.outcome === 'rode' && (e.key === tk || e.key === y))) {
+    const L = fit(HOOK_RODE_LESSON);
+    if (L) return { L, hook: 'rode' };
+  }
+  return null;
+}
+/** the day's lesson: a moment's lesson (hook), or Up next on the path; null at the end of the path. open: it can be read now
+    (a moment's lesson always can; Up next without an account only among the first LEARN_FREE). */
+export function lessonToday(
+  days: Days,
+  st: Settings | null | undefined,
+  tk: DayKey,
+  account = true,
+): { L: Lesson; hook: LessonHook | null; open: boolean } | null {
+  const w = lessonWalk(days, st, tk, account);
+  if (!w.today) return null;
+  return { L: w.today, hook: w.hook, open: !!w.hook || lessonOpen(w.today, w.done, account, st) };
 }
 
 /* ---------- Learn > Lessons ---------- */

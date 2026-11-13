@@ -46,6 +46,7 @@ export function Shell({
   bodyKey,
   foot,
   over,
+  praise,
   children,
 }: {
   look: Look;
@@ -65,6 +66,8 @@ export function Shell({
   foot: ReactNode;
   /** something over the whole screen, like the sources sheet (outside the padded column, so it reaches the edges) */
   over?: ReactNode;
+  /** the bar that slides up once a card is answered (components/lesson-play Praise): it takes the foot's place, edge to edge */
+  praise?: ReactNode;
   children: ReactNode;
 }) {
   const c = look.c;
@@ -74,7 +77,7 @@ export function Shell({
       <View style={{ flex: 1, backgroundColor: c.bg }}>
         {holdsBar ? <StatusBar style={look.bar} /> : null}
         <LessonBackdrop look={look} />
-        <View style={{ flex: 1, paddingTop: inset.top + 8, paddingBottom: inset.bottom + 12, paddingHorizontal: 16 }}>
+        <View style={{ flex: 1, paddingTop: inset.top + 8, paddingBottom: praise ? 8 : inset.bottom + 12, paddingHorizontal: 16 }}>
           <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 8 }}>
             <View style={s.top}>
               {onBack ? (
@@ -108,13 +111,14 @@ export function Shell({
                 </KeyboardRoom>
               </FitProvider>
             </ScrollView>
-            {foot ? (
+            {foot && !praise ? (
               <LowInk.Provider value={look.low}>
                 <View style={s.foot}>{foot}</View>
               </LowInk.Provider>
             ) : null}
           </View>
         </View>
+        {praise}
         {over}
       </View>
     </PaletteOverride.Provider>

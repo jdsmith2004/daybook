@@ -69,6 +69,11 @@ import {
   type PItem,
   planRows,
   recordLesson,
+  type SeqItem,
+  eventsOf,
+  addDays,
+  type Days,
+  type DayKey,
   type Settings,
   srcNote,
   lessonDue,
@@ -87,10 +92,12 @@ import { Field } from '@/components/choices';
 import { LessonArt, useCount } from '@/components/lesson-art';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
 import { Answer, AnswerText, Prog, Question, Quiet, Shell } from '@/components/lesson-parts';
+import { Bar, PickLine, Praise, praiseFor, React2 } from '@/components/lesson-play';
 import { Ghost, Next, Rich, Route } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { play } from '@/lib/sound';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { lessonLook, PAPER, PAPER_INK, SUN_CARD, SUN_INK, type Look, type LookKind } from '@/lib/lesson-look';
 import { count } from '@/lib/pulse';
@@ -130,6 +137,7 @@ export default function LessonScreen() {
   );
   const base = useTheme();
   const inset = useSafeAreaInsets();
+  const still = useReducedMotion();
   const st = snap.settings;
   /* a God lesson speaks in the voice of this person's faith, and a lesson written for porn in the words of their habit (core lessonTo) */
   const found = lessonById(id);
@@ -152,7 +160,12 @@ export default function LessonScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [L?.id],
   );
-  const [len, setLen] = useState<'q' | 'f'>('f');
+  /* one way in (C8): the short cards are the lesson, with More on each; a lesson with no short cut runs in full */
+  const [len] = useState<'q' | 'f'>(() => (found && lessonHasQuick(found) ? 'q' : 'f'));
+  /* how a card without a question landed with the person (two answers, or the line they will try), by card */
+  const [ans, setAns] = useState<Record<number, number>>({});
+  /* a turn card's reply has landed */
+  const [turned, setTurned] = useState<Record<number, boolean>>({});
   const [pick, setPick] = useState<Record<number, number>>({});
   const [tried, setTried] = useState<Record<number, number[]>>({});
   const [gu, setGu] = useState<Record<number, { v: number | null; lock: boolean }>>({});
@@ -235,7 +248,32 @@ export default function LessonScreen() {
   const deedNext = dk >= 0 && !deedDone(st, dk) && deedA == null;
   /* the step before this one, asked about once more as its first lesson opens (never after a slip) */
   const askK = care || askedBack ? -1 : deedAskBack(L, snap.days, st, tk);
-  const seq = lessonSeq(L, len);
+  /* one way in: with nothing to ask before the step, the lesson opens on its first card */
+  const stg: Stage = stage === 'cover' && askK < 0 ? 'run' : stage;
+  /* the cards; the old Done card is gone: after the last card comes Put it to work, the step's deed, then one finish page */
+  const seq = lessonSeq(L, len).filter((x): x is Extract<SeqItem, { t: 'card' }> => x.t === 'card');
+  const pr0 = lessonPractice(L, st);
+  /* the deed counts in the bar while it is still to come, and once answered here */
+  const hasDeed = dk >= 0 && (!deedDone(st, dk) || deedA != null);
+  /* a card is answered when its question is answered, its guess locked, its turn landed, or it has been met with one tap */
+  const answered = (x: { c: Card; ci: number }) => {
+    const ci = x.ci;
+    if (x.c.k === 'choose') return pick[ci] != null;
+    if (x.c.k === 'guess') return !!gu[ci]?.lock;
+    if (x.c.k === 'flip') return !!turned[ci];
+    return ans[ci] != null;
+  };
+  /* the run: cards answered in this lesson. Nothing here is graded, so nothing breaks it. */
+  const run = seq.filter(answered).length;
+  const total = seq.length + (pr0 ? 1 : 0) + (hasDeed ? 1 : 0);
+  const doneN = stg === 'run' ? run : stg === 'practice' ? seq.length : stg === 'deed' ? seq.length + (pr0 ? 1 : 0) : total;
+  const bar = <Bar done={doneN} total={total} run={stg === 'run' ? run : 0} fill={base.sun} track={'rgba(255,255,255,0.22)'} />;
+  /* an answer lands: a bright little sound, a knock under the finger, the flame blooms, and the bar slides up */
+  const cheer = (big = false) => {
+    play('ding');
+    buzz(big ? 'lit' : 'save');
+    setPulse((x) => x + 1);
+  };
   const top = () => scroll.current?.scrollTo({ y: 0, animated: false });
   const beats = lessonBeats(L);
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
@@ -244,21 +282,21 @@ export default function LessonScreen() {
   let kind: LookKind = 'sky';
   let p = 0;
   let lockKey = false;
-  if (stage === 'run') {
+  if (stg === 'run') {
     const ix = Math.max(0, Math.min(seq.length - 1, i));
     const cur = seq[ix];
-    p = (ix + 1) / seq.length;
-    if (cur.t === 'card') {
+    p = (ix + 1) / (seq.length + 1);
+    {
       const cl = cardLook(cur.c, cardBeat(L, cur.ci));
       lockKey = (cl === 'guess' && !!gu[cur.ci]?.lock) || (cl === 'flip' && flip[cur.ci] != null);
       /* a turn keeps the sky it has: the card itself turns over (a change of sky read as a flash, the owner, November 2, 2026) */
       kind = cl === 'sun' ? 'sun' : cl === 'number' || (cl === 'guess' && lockKey) ? 'violet' : 'sky';
     }
-  } else if (stage !== 'cover') p = 1;
+  } else if (stg !== 'cover') p = 1;
   const look = lessonLook(kind, p, base.scheme);
   const c = look.c;
   const t = toneOf(c, lessonUnit(L).tone);
-  const flameOn = kind !== 'violet' && !(stage === 'practice' && editing != null);
+  const flameOn = kind !== 'violet' && !(stg === 'practice' && editing != null);
   let backBtn: (() => void) | undefined;
 
   const record = () => {
@@ -284,12 +322,15 @@ export default function LessonScreen() {
   };
   const step = (d: number) => {
     const to = i + d;
-    if (to < 0 || to >= seq.length) return;
-    const cur = seq[i];
-    if (d > 0 && cur.t === 'card' && cur.c.k === 'guess' && !(gu[cur.ci] && gu[cur.ci].lock)) return;
-    if (d > 0 && cur.t === 'card' && cur.c.k === 'flip' && flip[cur.ci] == null) return;
+    if (to < 0) return;
+    if (d > 0 && !answered(seq[i])) return;
+    /* past the last card the lesson is read: it is recorded, then Put it to work, the deed, and the finish */
+    if (to >= seq.length) {
+      record();
+      toStage(pr0 ? 'practice' : deedNext ? 'deed' : 'practiced');
+      return;
+    }
     setI(to);
-    if (seq[to].t === 'done') record();
   };
   const practiced = () => {
     setPrac(true);
@@ -383,9 +424,10 @@ export default function LessonScreen() {
   let prog: ReactNode = null;
   let body: ReactNode;
   let foot: ReactNode = null;
+  let praise: ReactNode = null;
   /* the flame grows a little as the lesson goes on */
   const want = (SHORT ? 210 : 260) + (SHORT ? 40 : 70) * p;
-  if (stage === 'cover' && askK >= 0) {
+  if (stg === 'cover') {
     /* the one ask back, before the next step starts: two answers, and either way it is never asked again */
     body = (
       <>
@@ -404,117 +446,45 @@ export default function LessonScreen() {
         </Dock>
       </>
     );
-  } else if (stage === 'cover') {
-    const pref = st.learn.len;
-    const start = (l: 'q' | 'f') => {
-      const ln = l === 'q' && lessonHasQuick(L) ? 'q' : 'f';
-      setLen(ln);
-      setI(0);
-      setStage('run');
-      if (lessonHasQuick(L) && st.learn.len !== ln) apply({ st: changeSettings(st, (s0) => void (s0.learn.len = ln)) });
-    };
-    body = (
-      <>
-        <FlameSlot size={SHORT ? 280 : 360} min={120} />
-        <T v="small" tone="muted">
-          {n ? 'Lesson ' + n + ' · Step ' + (lessonStep(L) + 1) + ', ' + lessonUnit(L).name : lessonUnit(L).name}
-        </T>
-        <T style={s.h} accessibilityRole="header">
-          {L.title}
-        </T>
-        <T style={s.p}>{L.ask || L.tag}</T>
-        {done.has(L.id) ? (
-          <View style={s.tag}>
-            <Icon name="check" size={15} color={c.ink} />
-            <T v="small">You finished this one</T>
-          </View>
-        ) : null}
-        {lessonHasQuick(L) ? (
-          <Dock>
-            <View style={{ gap: 12 }} accessibilityLabel="Pick a length">
-              <LenBtn
-                on={pref === 'q'}
-                title="Quick"
-                sub={L.v === 3 ? 'The turn, what to do, one check' : L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'}
-                mins="1–2 min"
-                onPress={() => start('q')}
-              />
-              <LenBtn
-                on={pref !== 'q'}
-                title="Full"
-                sub={
-                  L.v === 3
-                    ? 'Adds a question and what is behind the turn'
-                    : L.v === 2
-                      ? 'Adds a guess and the science behind it'
-                      : 'Adds the evidence and why it works'
-                }
-                mins="3–5 min"
-                onPress={() => start('f')}
-              />
-            </View>
-          </Dock>
-        ) : null}
-      </>
-    );
-    if (!lessonHasQuick(L)) foot = <Next label={'Start · about ' + (L.mins || 3) + ' min'} onPress={() => start('f')} />;
-  } else if (stage === 'run') {
+  } else if (stg === 'run') {
     const ix = Math.max(0, Math.min(seq.length - 1, i));
     const it = seq[ix];
-    prog = <Prog total={seq.length} i={ix} look={look} />;
+    prog = bar;
     if (ix > 0) backBtn = () => step(-1);
-    const nextLabel = seq[ix + 1] && seq[ix + 1].t === 'done' ? 'Finish' : 'Next';
-    if (it.t === 'done') {
-      const pr = lessonPractice(L, st);
-      const note = (st.learn.notes && st.learn.notes[L.id]) || '';
-      const key = beats?.key || L.key;
+    const card = it.c;
+    const ci = it.ci;
+    const b = cardBeat(L, ci);
+    const more = () => setSheet({ t: 'more', i: ci, pk: pick[ci] ?? null });
+    /* the first card says which lesson this is: there is no cover any more */
+    const head =
+      ix === 0 ? (
+        <T v="small" tone="muted">
+          {(n ? 'Lesson ' + n + ' · ' : '') + L.title}
+        </T>
+      ) : null;
+    /* once the card is answered, the bar slides up with a word of praise and the way on */
+    const ok = (say?: string, moreOn = true) =>
+      (praise = (
+        <Praise
+          key={'p' + ci}
+          show
+          word={praiseFor(ci + L.id.length, run)}
+          say={say}
+          label="Continue"
+          onMore={moreOn ? more : undefined}
+          onNext={() => step(1)}
+          inset={inset.bottom}
+        />
+      ));
+    if (card.k === 'choose') {
+      /* the question's words: rewritten to make the person think (core lesson-questions.ts), or the card's own */
+      const q = questionOf(L, ci, card, b);
+      const gr = q.a != null;
+      const pk = pick[ci] ?? null;
+      const saved = card.sv ? ' Saved to My plan.' : '';
       body = (
         <>
-          <View style={s.doneHead}>
-            <T style={[s.h, { flexShrink: 1 }]} accessibilityRole="header">
-              {again ? 'Lesson ' + n + ', again' : 'Lesson ' + n + ' done'}
-            </T>
-            {gain > 0 ? (
-              <View style={[s.pill, { backgroundColor: c.sun }]}>
-                <Text style={{ fontFamily: font.bodySemi, color: c.onSun, fontSize: 15, lineHeight: 20 }}>+{gain} points</Text>
-              </View>
-            ) : null}
-          </View>
-          <Bubble text={key} more={key !== L.key} onMore={() => setSheet({ t: 'key' })} />
-          <FlameSlot size={want} min={SHORT ? 96 : 130} />
-          {pr && pr.write ? null : <NoteField L={L} note={note} />}
-          {w.path.every((x) => done.has(x.id)) ? <T>That is all {w.path.length} lessons. They stay in Learn whenever you want to read one again.</T> : null}
-          <Pressable accessibilityRole="button" onPress={() => setSheet({ t: 'src' })} style={s.link}>
-            <Text style={[s.linkT, { color: c.accentText }]}>Behind this lesson</Text>
-          </Pressable>
-          {L.u === 1 || L.id === 'l22' || L.care ? (
-            <T v="small" tone="muted">
-              If this stirs up something heavy, you can call or text <Text style={{ fontFamily: font.bodyBold }}>988</Text>, the Suicide &amp; Crisis Lifeline,
-              any time, day or night (US). It is open to anyone who is struggling.
-            </T>
-          ) : null}
-        </>
-      );
-      foot = pr ? (
-        <Next label="Put it to work" onPress={() => toStage('practice')} />
-      ) : deedNext ? (
-        <Next label="Next" onPress={() => toStage('deed')} />
-      ) : next ? (
-        <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
-      ) : (
-        <Next label="Done" noIcon onPress={closeAll} />
-      );
-    } else {
-      const card = it.c;
-      const ci = it.ci;
-      const b = cardBeat(L, ci);
-      if (card.k === 'choose') {
-        /* the question's words: rewritten to make the person think (core lesson-questions.ts), or the card's own */
-        const q = questionOf(L, ci, card, b);
-        const gr = q.a != null;
-        const pk = pick[ci] ?? null;
-        const saved = card.sv ? ' Saved to My plan.' : '';
-        body = (
+          {head}
           <Question
             h={q.h}
             list={q.o}
@@ -523,61 +493,61 @@ export default function LessonScreen() {
             tried={tried[ci] || []}
             comments={q.c.map((x) => x + saved)}
             want={want}
-            onMore={b.c && !q.rewritten ? () => setSheet({ t: 'more', i: ci, pk }) : undefined}
             onPick={(j) => {
+              const first = pick[ci] == null;
               setPick((p0) => ({ ...p0, [ci]: j }));
               track('lesson_pick', { lesson: L.id, beat: i, ix: j });
               setTried((x) => ({ ...x, [ci]: (x[ci] || []).indexOf(j) < 0 ? (x[ci] || []).concat(j) : x[ci] }));
               if (card.sv) apply({ st: changeSettings(st, (s0) => void ((s0.learn.picks || (s0.learn.picks = {}))[L.id] = String(q.o[j]).slice(0, 200))) });
-              if (!gr || j === q.a) setPulse((x) => x + 1);
-              buzz('tap');
+              if (!gr || j === q.a) cheer(first && (run + 1) % 5 === 0);
+              else buzz('tap');
             }}
           />
-        );
-        /* a rewritten question waits for an answer, any answer: it is the person's own */
-        foot = <Next label={nextLabel} off={(gr || q.rewritten) && pk == null} onPress={() => step(1)} />;
-      } else if (card.k === 'guess') {
-        const g = card.g!;
-        const gs = gu[ci] || { v: null, lock: false };
-        body = gs.lock ? (
-          <NumberCard
-            n={b.rv?.n || String(g.ans)}
-            h={b.rv?.h || g.rv?.h || card.h}
-            lead={guessFeedback(g, gs.v!)}
-            p={b.rv?.p || g.rv?.b}
-            st={st}
-            fact={card.fact?.s}
-            onSrc={() => setSheet({ t: 'src', i: ci })}
-          />
-        ) : (
-          <>
-            <T style={[s.h, s.hsm]} accessibilityRole="header">
-              {b.h || card.h}
-            </T>
-            <View style={s.guessMid}>
-              <SliderValue big value={gs.v} caption={g.unit + ' · your guess'} hint="Slide below to guess" />
-            </View>
-            <FlameSlot size={want * 0.8} min={84} />
-            <Dock>
-              <Slider
-                label={card.h}
-                value={gs.v}
-                min={g.min}
-                max={g.max}
-                step={g.step || 1}
-                unit={g.unit}
-                readout={false}
-                onChange={(v) => setGu((x) => ({ ...x, [ci]: { v, lock: false } }))}
-              />
-            </Dock>
-          </>
-        );
-        foot = gs.lock ? (
-          <View style={s.footCol}>
-            <Quiet label="More" onPress={() => setSheet({ t: 'more', i: ci, pk: null })} />
-            <Next label={nextLabel} onPress={() => step(1)} />
+        </>
+      );
+      /* a graded question (a fact) waits for its answer; a question about the person takes any answer, as theirs */
+      const found = gr ? (tried[ci] || []).indexOf(q.a!) >= 0 : pk != null;
+      if (found) ok(undefined, !!(b.c && !q.rewritten));
+    } else if (card.k === 'guess') {
+      const g = card.g!;
+      const gs = gu[ci] || { v: null, lock: false };
+      body = gs.lock ? (
+        <NumberCard
+          n={b.rv?.n || String(g.ans)}
+          h={b.rv?.h || g.rv?.h || card.h}
+          lead={guessFeedback(g, gs.v!)}
+          p={b.rv?.p || g.rv?.b}
+          st={st}
+          fact={card.fact?.s}
+          onSrc={() => setSheet({ t: 'src', i: ci })}
+        />
+      ) : (
+        <>
+          {head}
+          <T style={[s.h, s.hsm]} accessibilityRole="header">
+            {b.h || card.h}
+          </T>
+          <View style={s.guessMid}>
+            <SliderValue big value={gs.v} caption={g.unit + ' · your guess'} hint="Slide below to guess" />
           </View>
-        ) : (
+          <FlameSlot size={want * 0.8} min={84} />
+          <Dock>
+            <Slider
+              label={card.h}
+              value={gs.v}
+              min={g.min}
+              max={g.max}
+              step={g.step || 1}
+              unit={g.unit}
+              readout={false}
+              onChange={(v) => setGu((x) => ({ ...x, [ci]: { v, lock: false } }))}
+            />
+          </Dock>
+        </>
+      );
+      if (gs.lock) ok();
+      else
+        foot = (
           <Next
             label="Lock in my guess"
             noIcon
@@ -585,14 +555,16 @@ export default function LessonScreen() {
             onPress={() => {
               if (gs.v == null) return;
               setGu((x) => ({ ...x, [ci]: { v: gs.v, lock: true } }));
-              buzz('save');
+              cheer((run + 1) % 5 === 0);
               top();
             }}
           />
         );
-      } else if (card.k === 'flip') {
-        const felt = flip[ci] ?? null;
-        body = (
+    } else if (card.k === 'flip') {
+      const felt = flip[ci] ?? null;
+      body = (
+        <>
+          {head}
           <FlipCard
             think={b.h || card.h}
             see={b.p || card.see || ''}
@@ -602,41 +574,70 @@ export default function LessonScreen() {
               if (felt != null) return;
               setFlip((x) => ({ ...x, [ci]: j }));
               buzz('tap');
+              /* the praise comes once the card has turned over and landed (it turns in 640 ms) */
+              const big = (run + 1) % 5 === 0;
+              setTimeout(
+                () => {
+                  setTurned((x) => ({ ...x, [ci]: true }));
+                  cheer(big);
+                },
+                still ? 0 : 720,
+              );
             }}
-            onLanded={() => {
-              setPulse((x) => x + 1);
-              buzz('lit');
-            }}
+            onLanded={() => undefined}
           />
-        );
-        foot =
-          felt != null ? (
-            <View style={s.footCol}>
-              <Quiet label="More" onPress={() => setSheet({ t: 'more', i: ci, pk: null })} />
-              <Next label={nextLabel} onPress={() => step(1)} />
-            </View>
-          ) : null;
-      } else {
-        body =
-          cardLook(card, b) === 'number' ? (
-            <NumberCard n={cardNumber(card, b)} h={b.h || card.h} p={b.p} st={st} fact={card.fact?.s} onSrc={() => setSheet({ t: 'src', i: ci })} />
-          ) : (
-            <TextCard L={L} card={card} beat={b} look={look} st={st} want={want} onSrc={() => setSheet({ t: 'src', i: ci })} />
-          );
-        foot = (
-          <View style={s.footCol}>
-            <Quiet label="More" onPress={() => setSheet({ t: 'more', i: ci, pk: null })} />
-            <Next label={nextLabel} onPress={() => step(1)} />
-          </View>
-        );
-      }
+        </>
+      );
+      if (turned[ci]) ok();
+    } else {
+      const num = cardLook(card, b) === 'number';
+      const a = ans[ci] ?? null;
+      const meet = (j: number) => {
+        if (a == null) cheer((run + 1) % 5 === 0);
+        else buzz('tap');
+        setAns((x) => ({ ...x, [ci]: j }));
+        track('lesson_pick', { lesson: L.id, beat: i, ix: j });
+      };
+      const lines = !num && b.l && b.l.length > 1 ? b.l : null;
+      const hook = !num && !lines && !!b.say && b.say.trim().endsWith('?');
+      const meetList = hook ? MEET_HOOK : MEET_TEXT;
+      const meetSay = num ? MEET_NUMBER_SAY : hook ? MEET_HOOK_SAY : MEET_TEXT_SAY;
+      body = num ? (
+        <>
+          {head}
+          <NumberCard n={cardNumber(card, b)} h={b.h || card.h} p={b.p} st={st} fact={card.fact?.s} onSrc={() => setSheet({ t: 'src', i: ci })} />
+          <Dock>
+            <React2 list={MEET_NUMBER} pk={a} onPick={meet} />
+          </Dock>
+        </>
+      ) : (
+        <>
+          {head}
+          <TextCard
+            L={L}
+            card={card}
+            beat={b}
+            look={look}
+            st={st}
+            want={want}
+            pick={lines ? { pk: a, onPick: meet } : undefined}
+            onSrc={() => setSheet({ t: 'src', i: ci })}
+          />
+          {lines ? null : (
+            <Dock>
+              <React2 list={meetList} pk={a} onPick={meet} />
+            </Dock>
+          )}
+        </>
+      );
+      if (a != null) ok(lines ? MEET_LINE[(ci + a) % MEET_LINE.length] : meetSay[a][ci % 3]);
     }
-  } else if (stage === 'practice') {
+  } else if (stg === 'practice') {
     const a = lessonPractice(L, st)!;
     const items = a.items || [];
     const note = wrote ?? ((st.learn.notes && st.learn.notes[L.id]) || '');
     const ed = editing != null ? items[editing] : null;
-    prog = <Prog total={1} i={0} all look={look} />;
+    prog = bar;
     body = ed ? (
       /* changing a line's words: the box and its button at the top, above the keyboard */
       <LineEditor key={editing} it={ed} t={t} onAdd={(x) => add(editing!, x)} onCancel={() => setEditing(null)} />
@@ -681,7 +682,7 @@ export default function LessonScreen() {
     foot = ed ? null : (
       <View style={s.footCol}>
         <Next
-          label="Done"
+          label="Continue"
           noIcon
           onPress={() => {
             if (acted) practiced();
@@ -691,9 +692,9 @@ export default function LessonScreen() {
         <Quiet label="Skip practice" onPress={() => toStage(deedNext ? 'deed' : 'practiced')} />
       </View>
     );
-  } else if (stage === 'deed') {
+  } else if (stg === 'deed') {
     /* the end of a step: its deed, done in real life. Nothing waits on the answer. */
-    prog = <Prog total={1} i={0} all look={look} />;
+    prog = bar;
     body = (
       <>
         <T v="small" tone="muted">
@@ -713,40 +714,57 @@ export default function LessonScreen() {
       </>
     );
   } else {
-    const a = lessonPractice(L, st);
+    /* the finish: one page, the lesson's only ending (C8). WP8 builds its celebration (the score, points flying into the flame, the
+       day row); until then this is the page, with the same parts. */
+    const a = pr0;
     const pair = lessonPairOf(L);
     const due = pair && (w.walked.has(pair.a.id) || (w.path.indexOf(pair.a) < 0 && done.has(pair.a.id))) && !lcheckWritten(st, pair.n);
-    prog = <Prog total={1} i={0} all look={look} />;
+    const key = beats?.key || L.key;
+    const note = (st.learn.notes && st.learn.notes[L.id]) || '';
+    prog = bar;
     body = (
       <>
-        <T style={s.h} accessibilityRole="header">
-          {deedA === 'did' ? 'You did step ' + (dk + 1) + '.' : prac ? (a && a.ok) || 'Nicely done.' : 'That is the lesson.'}
-        </T>
-        {deedA === 'did' ? (
-          <T style={s.p}>
-            {PATH_STEPS[dk].name}, done in real life{gain > 0 ? ': +' + gain + ' points' : ''}.
+        <View style={s.doneHead}>
+          <T style={[s.h, { flexShrink: 1 }]} accessibilityRole="header">
+            {deedA === 'did' ? 'You did step ' + (dk + 1) + '.' : again ? 'Lesson ' + n + ', again' : n ? 'Lesson ' + n + ' done' : 'Lesson done'}
           </T>
-        ) : prac || deedA ? null : (
-          <T style={s.p}>The practice stays in Learn whenever you want it.</T>
-        )}
+          {gain > 0 ? (
+            <View style={[s.pill, { backgroundColor: c.sun }]}>
+              <Text style={{ fontFamily: font.bodySemi, color: c.onSun, fontSize: 15, lineHeight: 20 }}>+{gain} points</Text>
+            </View>
+          ) : null}
+        </View>
+        <Bubble text={key} more={key !== L.key} onMore={() => setSheet({ t: 'key' })} />
         {ringLit ? <T style={s.p}>That lit today on your lessons ring, in Learn. One part for each day you do a lesson this week.</T> : null}
         {/* the end of a lesson is the flame's moment */}
-        <FlameSlot size={SHORT ? 330 : 420} min={150} />
+        <FlameSlot size={SHORT ? 300 : 380} min={140} />
+        {a && a.write ? null : <NoteField L={L} note={note} />}
+        {w.path.every((x) => done.has(x.id)) ? <T>That is all {w.path.length} lessons. They stay in Learn whenever you want to read one again.</T> : null}
+        <Pressable accessibilityRole="button" onPress={() => setSheet({ t: 'src' })} style={s.link}>
+          <Text style={[s.linkT, { color: c.accentText }]}>Behind this lesson</Text>
+        </Pressable>
+        {L.u === 1 || L.id === 'l22' || L.care ? (
+          <T v="small" tone="muted">
+            If this stirs up something heavy, you can call or text <Text style={{ fontFamily: font.bodyBold }}>988</Text>, the Suicide &amp; Crisis Lifeline,
+            any time, day or night (US). It is open to anyone who is struggling.
+          </T>
+        ) : null}
         {due && pair ? (
-          <Dock>
-            <Route
-              label="Write it out"
-              small={'3–5 min · a short checkpoint for ' + lcheckAbout(pair, st)}
-              onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(pair.n) } })}
-            />
-          </Dock>
+          <Route
+            label="Write it out"
+            small={'3–5 min · a short checkpoint for ' + lcheckAbout(pair, st)}
+            onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(pair.n) } })}
+          />
         ) : null}
       </>
     );
+    /* Next: the next lesson on the path. Past the free lessons it asks for the free account, except on a day a slip was told,
+       when there is no Next at all (D8). From a care door, Done goes back where it came from. */
+    const nextGo = next && !care && (lessonOpen(next, done, account) || !slipNear(snap.days, tk)) ? next : null;
     foot = (
       <View style={s.footCol}>
-        {next && !care ? (
-          <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
+        {nextGo ? (
+          <Next label={'Next: ' + nextGo.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: nextGo.id } })} />
         ) : (
           <Next label="Done" noIcon onPress={closeAll} />
         )}
@@ -786,13 +804,37 @@ export default function LessonScreen() {
       inset={inset}
       scroll={scroll}
       fit={fit}
-      bodyKey={stage + ':' + i + (lockKey ? ':lock' : '')}
+      bodyKey={stg + ':' + i + (lockKey ? ':lock' : '')}
+      praise={praise}
       foot={foot}
       over={sheet ? <SheetOver sheet={sheet} L={L} st={st} onClose={() => setSheet(null)} onSrc={(i0) => setSheet({ t: 'src', i: i0 })} /> : null}>
       {body}
     </Shell>
   );
 }
+
+/* how a card with no question is met: two answers, neither the right one, and the flame's reply to each (three, by card, so a
+   lesson does not repeat itself). What only the person can say: whether it lands, never whether they got it. */
+const MEET_TEXT: [string, string] = ['That rings true', 'Not sure yet'];
+const MEET_TEXT_SAY = [
+  ['Then it is yours now.', 'Hold on to that one tonight.', 'Good. Keep it close.'],
+  ['Fair. Try it once and see.', 'Honest. Test it on your own nights.', 'That is fine. See if it holds.'],
+];
+/* a card where the flame asks a question (the opening scene): does the scene fit the person */
+const MEET_HOOK: [string, string] = ['That sounds like me', 'Not quite me'];
+const MEET_HOOK_SAY = [
+  ['Then this one is for you.', 'Then keep going. It gets better.', 'You are in the right place.'],
+  ['Stay a minute. It may still fit.', 'Fair. Something in it may still be yours.', 'Good to know. Read on and see.'],
+];
+const MEET_NUMBER: [string, string] = ['That surprises me', 'I thought so'];
+const MEET_NUMBER_SAY = [
+  ['It surprises most people.', 'Now you know what most people do not.', 'Good. Surprise is how a belief moves.'],
+  ['Then you were ahead of most.', 'You knew more than most do.', 'Good instinct. Keep trusting it.'],
+];
+const MEET_LINE = ['Good pick. Try it today.', 'That one is yours to try.', 'Good. Small and real is how it starts.'];
+
+/** a slip was told today or yesterday: Next never lands on the sign-up sheet then (D8) */
+const slipNear = (days: Days, tk: DayKey) => eventsOf(days).some((e) => e.outcome === 'slipped' && (e.key === tk || e.key === addDays(tk, -1)));
 
 /** where a tool or page from a lesson goes; it comes back to the lesson. Tools are care, so they open from any lesson,
     reached or not. */
@@ -929,30 +971,6 @@ function DeedBtn({ title, sub, onPress }: { title: string; sub: string; onPress:
     </Answer>
   );
 }
-function LenBtn({ on, title, sub, mins, onPress }: { on: boolean; title: string; sub: string; mins: string; onPress: () => void }) {
-  const c = useTheme();
-  const ink = on ? c.onSun : c.ink;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: on }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        s.len,
-        on
-          ? { backgroundColor: c.sun, shadowColor: c.sun2, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 0 }
-          : { backgroundColor: c.accentSoft },
-        { transform: [{ translateY: pressed ? 3 : 0 }] },
-      ]}>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ fontFamily: font.display, fontSize: 17, lineHeight: 22, color: ink }}>{title}</Text>
-        <Text style={{ fontFamily: font.body, fontSize: 13, lineHeight: 18, color: ink }}>{sub}</Text>
-      </View>
-      <Text style={{ fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: ink }}>{mins}</Text>
-    </Pressable>
-  );
-}
-
 function NoteField({ L, note }: { L: Lesson; note: string }) {
   const { snap, apply } = useStore();
   return (
@@ -1089,7 +1107,26 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
 }
 
 /** the words of a card: one thought, with a real picture when it has one, and room left for the flame */
-function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: Card; beat: Beat; look: Look; st: Settings; want: number; onSrc: () => void }) {
+function TextCard({
+  L,
+  card,
+  beat,
+  look,
+  st,
+  want,
+  pick,
+  onSrc,
+}: {
+  L: Lesson;
+  card: Card;
+  beat: Beat;
+  look: Look;
+  st: Settings;
+  want: number;
+  /** the lines of what to do, as a pick: the one the person will try */
+  pick?: { pk: number | null; onPick: (j: number) => void };
+  onSrc: () => void;
+}) {
   const art = cardArt(card);
   const h = beat.h || card.h;
   /* what is the person's own stays on the card; the rest of the original words are in More */
@@ -1109,7 +1146,7 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
         {h}
       </T>
       {beat.p ? <Rich text={beat.p} st={st} style={s.p} /> : null}
-      {beat.l ? (
+      {beat.l && pick ? null : beat.l ? (
         <View style={{ gap: 8, marginTop: 4 }}>
           {beat.l.map((x, j) => (
             <View key={j} style={[s.line, { backgroundColor: look.row }]}>
@@ -1127,6 +1164,22 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
       ) : null}
       {beat.say ? <Bubble text={beat.say} style={{ marginTop: 16 }} /> : null}
       <FlameSlot size={art || own.length ? Math.min(want, SHORT ? 180 : 230) : want} min={art || own.length ? 84 : 96} />
+      {/* the lines of what to do, low where the thumb is: the one the person will try lights up */}
+      {beat.l && pick ? (
+        <Dock>
+          <View style={{ gap: 8 }}>
+            <T v="small" style={{ color: look.low }}>
+              Pick the one you will try
+            </T>
+            <PickLine
+              list={beat.l}
+              pk={pick.pk}
+              onPick={pick.onPick}
+              render={(x, on) => <Rich text={x} st={st} style={{ fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: on ? '#FFFFFF' : PAPER_INK }} />}
+            />
+          </View>
+        </Dock>
+      ) : null}
     </>
   );
 }

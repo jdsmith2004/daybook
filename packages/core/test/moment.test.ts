@@ -43,12 +43,8 @@ describe('a calm day', () => {
     const signedIn = pickMoment(d, s0, {}, '2026-10-20', at(20, 10), { account: true }).card;
     const local = pickMoment(d, s0, {}, '2026-10-20', at(20, 10), { account: false }).card;
     expect(signedIn).toMatchObject({ k: 'calm', go: 'lesson', v: lessonPath()[LEARN_FREE].id, h: lessonPath()[LEARN_FREE].title, btn: 'Start' });
-    expect(local).toMatchObject({ k: 'calm', go: 'lesson', btn: 'Read it again' });
-    expect(
-      lessonPath()
-        .slice(0, LEARN_FREE)
-        .map((L) => L.id),
-    ).toContain(local.v);
+    /* it says the next lesson waits for a free account (WP11), and its button opens the sign-up */
+    expect(local).toMatchObject({ k: 'calm', go: 'lesson', v: lessonPath()[LEARN_FREE].id, btn: 'Create an account or sign in' });
   });
   it('all done: rest well, and who the person is now', () => {
     const off = normSettings({ ...st, routine: { morning: false, lesson: false, calm: false, reach: false, checkin: false, wind: false } });

@@ -26,9 +26,8 @@ import {
   winsOf,
   type RhythmStop,
 } from './legacy/core.js';
-import { lessonOpen } from './accounts';
 import { fireLow, LOW_LEAD } from './flame-low';
-import { lessonNo, lessonStop, lessonWalk, lmin, reviewPick } from './lessons';
+import { LEARN_FREE, lessonStop, lmin } from './lessons';
 import { todayMeasure } from './graduate';
 import { changeDay, withDay } from './mutate';
 import type { Journal } from './journal-entries';
@@ -276,6 +275,8 @@ export interface StopTile {
   go: StopGo;
   /** the lesson to open */
   id?: string;
+  /** the lesson waits behind a free account: opening it shows the sign-up */
+  locked?: boolean;
 }
 const NAME: Record<string, string> = { lesson: 'Lesson', evening: 'Evening', night: 'Night' };
 const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
@@ -315,10 +316,18 @@ function anyTimeTiles(days: Days, st: Settings, tk: DayKey, journal: Journal | u
   }));
 }
 
-export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number, journal?: Journal): { tiles: StopTile[]; cur: string | null; done: number } {
+/** account: signed in, or no accounts in this copy. Without one, a lesson that waits behind one says so (lessons.ts lessonStop). */
+export function stopTiles(
+  days: Days,
+  st: Settings,
+  tk: DayKey,
+  nowMs: number,
+  journal?: Journal,
+  account = true,
+): { tiles: StopTile[]; cur: string | null; done: number } {
   const r = dayRhythm(days, st, tk, nowMs);
   const p = days[tk]?.p;
-  const ls = lessonStop(days, st, tk);
+  const ls = lessonStop(days, st, tk, account);
   const tiles = r.stops.map((s): StopTile => {
     const status = stopStatus(s, r.windMin);
     const eyebrow =
@@ -336,11 +345,24 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number, j
       const tile = { ...base, sky: 'sky' as const, ic: 'book', title: 'Lesson', go: 'lesson' as const, id: L.id };
       if (ls.kind === 'read')
         return { ...tile, line: 'Read: ' + L.title, head: L.title, body: L.key, chips: [lmin(L)], btn: 'Open it again', eyebrow: 'Lesson · done' };
+      const when = s.state === 'now' ? ' · open now' : s.state === 'due' ? ' · still open' : ' · ' + low(status);
+      /* the next lesson waits for a free account, and the stop says so: its button opens the sign-up (the lesson's own page) */
+      if (ls.kind === 'next' && ls.locked)
+        return {
+          ...tile,
+          locked: true,
+          line: 'Lesson ' + ls.n + ' waits for a free account',
+          eyebrow: 'Lesson ' + ls.n + ' of ' + ls.total + when,
+          head: L.title,
+          body: 'The first ' + LEARN_FREE + ' lessons are free. A free account opens this one and the rest.',
+          chips: [lmin(L)],
+          btn: 'Create an account or sign in',
+        };
       if (ls.kind === 'next')
         return {
           ...tile,
           line: L.title + ' · ' + lmin(L),
-          eyebrow: 'Lesson ' + ls.n + ' of ' + ls.total + (s.state === 'now' ? ' · open now' : s.state === 'due' ? ' · still open' : ' · ' + low(status)),
+          eyebrow: (ls.hook ? 'For today' : 'Lesson ' + ls.n + ' of ' + ls.total) + when,
           head: L.title,
           body: L.tag,
           chips: [lmin(L), pts('lesson')],
@@ -351,7 +373,7 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number, j
         line: 'Read again: ' + L.title,
         eyebrow: 'Read again' + (s.state === 'next' || s.state === 'later' ? ' · ' + low(status) : ''),
         head: L.title,
-        body: 'You have finished every lesson. A quick re-read keeps one fresh.',
+        body: ls.wait ? 'A quick re-read keeps one fresh.' : 'You have finished every lesson. A quick re-read keeps one fresh.',
         chips: [lmin(L), '+5 points'],
         btn: 'Read it again',
       };
@@ -566,9 +588,8 @@ export interface NextUp {
   pips?: ('on' | 'now' | '')[];
 }
 /** the part of the day that is open now, or the next one to open (legacy nextUp), today's lesson first until it is done
-    (dayRhythm). Without an account (`account` false),
-    a lesson that waits behind one is never offered: Next up gives a re-read of a finished lesson instead, so Today never
-    turns into a sign-up page (and never on the morning after a slip). */
+    (dayRhythm), the same lesson as the stop (lessons.ts lessonStop). Without an account (`account` false), a lesson that waits
+    behind one says so ("Opens with a free account"), except on the day of a slip or the day after: then a re-read. */
 export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number, account = true): NextUp {
   const r = dayRhythm(days, st, tk, nowMs);
   const n = r.stops.length;
@@ -590,22 +611,19 @@ export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number, acco
     pips: r.stops.map((x) => (x.done ? 'on' : x.k === s.k ? 'now' : '')),
   };
   if (s.k === 'lesson') {
-    const w = lessonWalk(days, st);
-    const nl = w.next;
-    if (nl && lessonOpen(nl, w.done, account)) {
-      o.t = 'Lesson ' + lessonNo(nl, st) + ': ' + nl.title;
-      o.s = lmin(nl);
+    const ls = lessonStop(days, st, tk, account);
+    if (ls.kind === 'next') {
+      o.t = (ls.hook ? '' : 'Lesson ' + ls.n + ': ') + ls.L.title;
+      o.s = ls.locked ? 'Opens with a free account' : lmin(ls.L);
+      if (ls.locked) o.pts = 0;
       o.act = 'lesson';
-      o.v = nl.id;
-    } else {
-      /* a re-read is one behind Up next on the path (one read early waits for the path to reach it) */
-      const read = LESSONS.filter((L) => w.walked.has(L.id));
-      const R = account ? reviewPick(tk, st) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
-      o.t = 'Read again: ' + R.title;
+      o.v = ls.L.id;
+    } else if (ls.kind === 'review') {
+      o.t = 'Read again: ' + ls.L.title;
       o.s = 'A quick re-read';
       o.pts = 5;
       o.act = 'lesson';
-      o.v = R.id;
+      o.v = ls.L.id;
     }
   }
   return o;
@@ -613,19 +631,8 @@ export function nextUp(days: Days, st: Settings, tk: DayKey, nowMs: number, acco
 
 /* ---------- the open stop, as Today shows it ---------- */
 /** the day's open stop (cur) and what opening it does, the same in the moment card and in Your day, where it grows into a
-    bigger card in its place (while it is not done). Without an account (`account` false), a lesson that waits behind one is never offered: it
-    becomes a re-read (nextUp), so Today never turns into a sign-up page. null when there is no open stop. */
+    bigger card in its place (while it is not done). Without an account (`account` false), a lesson that waits behind one says so,
+    and on the day of a slip or the day after it becomes a re-read (lessons.ts lessonStop). null when there is no open stop. */
 export function openTile(days: Days, st: Settings, tk: DayKey, nowMs: number, account = true): StopTile | null {
-  const cur = stopTiles(days, st, tk, nowMs).tiles.find((x) => x.cur);
-  if (!cur) return null;
-  const o = cur.go === 'lesson' ? nextUp(days, st, tk, nowMs, account) : null;
-  const swap = o && o.act === 'lesson' && o.v && o.v !== cur.id ? o : null;
-  if (!swap) return cur;
-  return {
-    ...cur,
-    head: (swap.t || '').replace(/^(Lesson \d+|Read again): /, ''),
-    body: 'A quick re-read keeps one fresh.',
-    btn: 'Read it again',
-    id: swap.v,
-  };
+  return stopTiles(days, st, tk, nowMs, undefined, account).tiles.find((x) => x.cur) || null;
 }

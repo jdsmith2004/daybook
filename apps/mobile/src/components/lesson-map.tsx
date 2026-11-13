@@ -199,6 +199,20 @@ export const Stone = memo(function Stone({
   const r = (next ? 28 : 22) * k;
   const rot = s.j % 2 ? 6 : -6;
   const q = quietOf(t, dark);
+  /* Up next breathes, a little bigger and back, so the eye finds it first (after Duolingo's path, the owner, November 12, 2026) */
+  const still = useReducedMotion();
+  const breath = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!next || still) return breath.setValue(0);
+    const a = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breath, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+        Animated.timing(breath, { toValue: 0, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+      ]),
+    );
+    a.start();
+    return () => a.stop();
+  }, [next, still, breath]);
   return (
     <Pressable
       accessibilityRole="button"
@@ -208,13 +222,13 @@ export const Stone = memo(function Stone({
       hitSlop={6}
       style={{ position: 'absolute', left: x - w / 2, top: y - h / 2, width: w, height: h, transform: [{ rotate: rot + 'deg' }], zIndex: 3 }}>
       {({ pressed }) => (
-        <View
+        <Animated.View
           style={[
             s_.stone,
             {
               borderRadius: r,
               backgroundColor: quiet ? q.face : t.ic,
-              transform: [{ translateY: pressed ? 2 : 0 }],
+              transform: [{ translateY: pressed ? 2 : 0 }, { scale: breath.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) }],
             },
             /* a quiet stone lies flat: no shadow, no shine, no lip */
             quiet ? s_.flat : null,
@@ -234,7 +248,7 @@ export const Stone = memo(function Stone({
               <Text style={{ fontFamily: font.display, fontSize: (next ? 30 : 22) * k, color: next ? t.ink : q.ink }}>{s.n}</Text>
             )}
           </View>
-        </View>
+        </Animated.View>
       )}
     </Pressable>
   );
@@ -272,6 +286,42 @@ export function Pin({ x, y, k, color, edge }: { x: number; y: number; k: number;
         transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -6 * k] }) }],
       }}>
       <SvgXml xml={xml} width={44 * k} height={58 * k} />
+    </Animated.View>
+  );
+}
+/** the bubble over Up next, bobbing: "Start", or "Opens with an account" when it waits behind one (a locked lesson says so) */
+export function StartTip({ x, y, k, color, locked }: { x: number; y: number; k: number; color: string; locked: boolean }) {
+  const still = useReducedMotion();
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (still) return v.setValue(0);
+    const a = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+        Animated.timing(v, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+      ]),
+    );
+    a.start();
+    return () => a.stop();
+  }, [still, v]);
+  const word = locked ? 'Locked' : 'Start';
+  const w = (locked ? 96 : 84) * k;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: x - w / 2,
+        top: y - 104 * k,
+        width: w,
+        alignItems: 'center',
+        zIndex: 5,
+        transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -6 * k] }) }],
+      }}>
+      <View style={[s_.startTip, { borderColor: color, borderRadius: 14 * k, minHeight: 40 * k, paddingHorizontal: 12 * k }]}>
+        <Text style={{ fontFamily: font.display, fontSize: 17 * k, lineHeight: 22 * k, color }}>{word}</Text>
+      </View>
+      <View style={[s_.tipTail, { borderTopColor: color, borderLeftWidth: 9 * k, borderRightWidth: 9 * k, borderTopWidth: 10 * k }]} />
     </Animated.View>
   );
 }
@@ -567,6 +617,8 @@ export function MapChip({ l, of, here, onPress }: { l: MapLand; of: number; here
 }
 
 const s_ = StyleSheet.create({
+  startTip: { backgroundColor: '#FFFFFF', borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  tipTail: { width: 0, height: 0, marginTop: -1, borderLeftColor: 'transparent', borderRightColor: 'transparent' },
   stone: {
     flex: 1,
     alignItems: 'center',
@@ -837,8 +889,10 @@ export function LessonMapView({
       {w && nx && sel !== nx.L.id ? (
         <NextLabel s={nx} land={m.lands.find((l) => l.stones.includes(nx))!} x={X(nx.x)} y={Y(nx.y)} k={k} w={w} onPress={() => onSel(nx.L.id)} />
       ) : null}
-      {w ? (
-        <Pin x={nx ? X(nx.x) : X(m.end.x)} y={nx ? Y(nx.y) - 4 * k : Y(m.end.y) + 6 * k} k={k} color={c.accent} edge={dark ? '#1A1250' : '#FFFFFF'} />
+      {w && nx && nxLand && sel !== nx.L.id ? (
+        <StartTip x={X(nx.x)} y={Y(nx.y)} k={k} color={toneOf(c, toneName(nxLand.u)).text} locked={!open(nx.L)} />
+      ) : w && !nx ? (
+        <Pin x={X(m.end.x)} y={Y(m.end.y) + 6 * k} k={k} color={c.accent} edge={dark ? '#1A1250' : '#FFFFFF'} />
       ) : null}
       {w ? <Trophy x={X(m.end.x)} y={Y(m.end.y)} k={k} all={!nx} total={all.length} /> : null}
       {w && nx && nxLand && spark === nx.L.id ? <Spark key={spark} x={X(nx.x)} y={Y(nx.y)} k={k} color={toneOf(c, toneName(nxLand.u)).ic} /> : null}

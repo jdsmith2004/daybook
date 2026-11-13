@@ -22,6 +22,7 @@ import { TURNS_C } from './lesson-turns-c';
 import { TURNS_D } from './lesson-turns-d';
 import { GOD_A } from './lesson-turns-god-a';
 import { GOD_B } from './lesson-turns-god-b';
+import { NIGHT } from './lessons-night';
 
 /** a source: [name: topic, url] */
 type Src = [string, string, string?, string?];
@@ -340,7 +341,8 @@ const FIRST: Record<string, Turn> = {
   },
 };
 
-export const TURNS: Record<string, Turn> = { ...FIRST, ...TURNS_A, ...TURNS_B, ...TURNS_C, ...TURNS_D };
+/* lessons 54 to 58 (lessons-night.ts) are new, not replacements: legacy/core.js adds them to LESSONS after the lessons of one habit */
+export const TURNS: Record<string, Turn> = { ...FIRST, ...TURNS_A, ...TURNS_B, ...TURNS_C, ...TURNS_D, ...NIGHT };
 /** the twelve God lessons, one for each step (g1 to g12), for people who said faith plays a part. Written, not yet on the path:
     where each sits in its step, and the order for people already partway along, come next (docs/plan.md). */
 export const GOD: Record<string, Turn> = { ...GOD_A, ...GOD_B };

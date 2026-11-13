@@ -9,7 +9,7 @@
 import { TRAIL, TRAIL_LIGHTS, TRAIL_PLACES, type TrailLen, type TrailPlace } from '@daybook/core';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, PanResponder, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import Reanimated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
+import Reanimated, { Easing as REasing, useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated';
 import Svg, { Circle, Defs, Ellipse, G, Line, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { BigFlame } from '@/components/big-flame';
@@ -525,24 +525,48 @@ export function PictureSlider({ p, onDone }: { p: Animated.Value; onDone: () => 
   );
 }
 
-/** the wave behind the preview: it rises to its top and the dot rides it past (p of the time gone, 0 to 1) */
+/** the wave behind the preview: it rises to its top and the dot rides it past (p of the time gone, 0 to 1). The fill and the
+    dot glide on the UI thread: each new p is reached over about the time since the last one, so a clock that ticks every
+    quarter or half second still moves smoothly instead of in jumps (the owner, November 13, 2026: "the timer bar above next
+    is super glitch it should move smoothly instead of bursty"). A big jump (Next tapped early) eases over half a second. */
+const waveY = (t: number) => {
+  'worklet';
+  return 34 - 28 * Math.exp(-Math.pow((t - 0.32) / 0.2, 2));
+};
+const WAVE_D = Array.from({ length: 81 }, (_, j) => (j ? 'L' : 'M') + ((j / 80) * 358).toFixed(1) + ' ' + waveY(j / 80).toFixed(1)).join(' ');
 export function WaveLine({ p }: { p: number }) {
   const w = useArtWidth();
   const k = w / 358;
-  const pts = Array.from({ length: 41 }, (_, j) => {
-    const t = j / 40;
-    return [t * 358, 34 - 28 * Math.exp(-Math.pow((t - 0.32) / 0.2, 2))] as [number, number];
-  });
-  const d = (a: [number, number][]) => a.map(([x, y], j) => (j ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1)).join(' ');
-  const n = Math.max(1, Math.round(Math.min(1, p) * 40));
-  const [dx, dy] = pts[n];
+  const reduce = useReducedMotion();
+  const q = Math.max(0, Math.min(1, p));
+  const v = useSharedValue(q);
+  const last = useRef(0);
+  useEffect(() => {
+    const now = Date.now();
+    const dt = last.current ? now - last.current : 0;
+    last.current = now;
+    if (reduce || !dt) {
+      v.value = q;
+      return;
+    }
+    const jump = Math.abs(q - v.value) > 0.06;
+    v.value = jump
+      ? withTiming(q, { duration: 500, easing: REasing.out(REasing.cubic) })
+      : withTiming(q, { duration: Math.max(80, Math.min(1200, dt * 1.15)), easing: REasing.linear });
+  }, [q, reduce, v]);
+  const fill = useAnimatedStyle(() => ({ width: Math.max(0, v.value) * w }));
+  const dot = useAnimatedStyle(() => ({ transform: [{ translateX: v.value * 358 * k - 7 * k }, { translateY: waveY(v.value) * k - 7 * k }] }));
   return (
-    <View accessible accessibilityLabel={p >= 0.45 ? 'The wave is past its top.' : 'The wave is rising.'}>
+    <View accessible accessibilityLabel={p >= 0.45 ? 'The wave is past its top.' : 'The wave is rising.'} style={{ width: w, height: 44 * k }}>
       <Svg width={w} height={44 * k} viewBox="0 0 358 44">
-        <Path d={d(pts)} stroke={TW.dim} strokeWidth={4} fill="none" strokeLinecap="round" />
-        <Path d={d(pts.slice(0, n + 1))} stroke={TW.mint} strokeWidth={5} fill="none" strokeLinecap="round" />
-        <Circle cx={dx} cy={dy} r={7} fill={TW.ink} />
+        <Path d={WAVE_D} stroke={TW.dim} strokeWidth={4} fill="none" strokeLinecap="round" />
       </Svg>
+      <Reanimated.View style={[s.waveFill, fill]} pointerEvents="none">
+        <Svg width={w} height={44 * k} viewBox="0 0 358 44">
+          <Path d={WAVE_D} stroke={TW.mint} strokeWidth={5} fill="none" strokeLinecap="round" />
+        </Svg>
+      </Reanimated.View>
+      <Reanimated.View style={[s.waveDot, { width: 14 * k, height: 14 * k, borderRadius: 7 * k }, dot]} pointerEvents="none" />
     </View>
   );
 }
@@ -886,6 +910,8 @@ export function DrillClock({ secs, onEnd }: { secs: number; onEnd: () => void })
 }
 
 const s = StyleSheet.create({
+  waveFill: { position: 'absolute', top: 0, left: 0, bottom: 0, overflow: 'hidden' },
+  waveDot: { position: 'absolute', top: 0, left: 0, backgroundColor: TW.ink },
   abs: { position: 'absolute' },
   small: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   mapHit: { position: 'absolute', alignItems: 'center', gap: 6 },

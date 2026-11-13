@@ -69,9 +69,9 @@ import { TodayBelow } from '@/components/today-below';
 import { LogLink, WaitingPlan } from '@/components/today-log';
 import { Welcome } from '@/components/welcome';
 import { StopCard, YourDay } from '@/components/your-day';
-import { FirstTour, tourSteps } from '@/components/tour';
+import { FirstTour, tourSteps, walkSteps } from '@/components/tour';
+import { buzz } from '@/lib/feel';
 import { markTourDone, markWalkOpen, tourDue, useSpot, walkLocked } from '@/lib/tour';
-import { WalkUnlock } from '@/components/walk-unlock';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
 import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
@@ -311,6 +311,9 @@ export default function Today() {
     if (!walkNow || walkOpen) return;
     const t = setTimeout(() => {
       if (!focusRef.current || sheetOnTop()) return;
+      /* the button comes onto Today first, so the spotlight has something to light */
+      sos.setMem(markWalkOpen);
+      buzz('lit');
       setWalkOpen(true);
     }, 900);
     return () => clearTimeout(t);
@@ -443,12 +446,16 @@ export default function Today() {
         )}
       </Screen>
       {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
-      {walkOpen ? (
-        <WalkUnlock
-          onDone={(tryIt) => {
-            sos.setMem(markWalkOpen);
-            setWalkOpen(false);
-            if (tryIt) router.push('/trail');
+      {walkOpen && g && !touring ? (
+        <FirstTour
+          steps={walkSteps()}
+          level={Math.max(1, g.level.n)}
+          onEnd={() => setWalkOpen(false)}
+          scrollBy={(dy) => {
+            const y = Math.max(0, scrolled.current + dy);
+            if (Math.abs(y - scrolled.current) < 2) return false;
+            scroll.current?.scrollTo({ y, animated: true });
+            return true;
           }}
         />
       ) : null}

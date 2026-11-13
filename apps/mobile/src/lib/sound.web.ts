@@ -45,8 +45,7 @@ export function play(name: SoundName, force = false) {
   else if (name === 'ding') {
     tone(784, 0.22, 0.06);
     setTimeout(() => tone(1047, 0.45, 0.06), 80);
-  }
-  else {
+  } else {
     tone(523, 1.4, 0.08);
     setTimeout(() => tone(659, 1.6, 0.07), 180);
   }

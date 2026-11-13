@@ -26,8 +26,6 @@ import {
   fmtDate,
   type Go,
   guessFeedback,
-  lcheckAbout,
-  lcheckWritten,
   type Lesson,
   lessonBeats,
   lessonById,
@@ -45,7 +43,7 @@ import {
   itemHas,
   itemUndo,
   lessonOpen,
-  lessonPairOf,
+  nextLessonOk,
   lessonPractice,
   lessonPracticed,
   lessonReach,
@@ -70,10 +68,6 @@ import {
   planRows,
   recordLesson,
   type SeqItem,
-  eventsOf,
-  addDays,
-  type Days,
-  type DayKey,
   type Settings,
   srcNote,
   lessonDue,
@@ -91,9 +85,10 @@ import { Slider, SliderValue } from '@/components/slider';
 import { Field } from '@/components/choices';
 import { LessonArt, useCount } from '@/components/lesson-art';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
-import { Answer, AnswerText, Prog, Question, Quiet, Shell } from '@/components/lesson-parts';
+import { Answer, AnswerText, Question, Quiet, Shell } from '@/components/lesson-parts';
+import { LessonFinish } from '@/components/lesson-finish';
 import { Bar, PickLine, Praise, praiseFor, React2 } from '@/components/lesson-play';
-import { Ghost, Next, Rich, Route } from '@/components/lx';
+import { Next, Rich } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -147,6 +142,8 @@ export default function LessonScreen() {
   const [i, setI] = useState(0);
   /* what Daybook learns: when it opened, each part reached, and a lesson left before its end (lib/events.ts) */
   const opened = useRef(Date.now());
+  /* how long the cards took, for the finish's time tile */
+  const took = useRef(0);
   const finished = useRef(false);
   const beatAt = useRef(0);
   useEffect(() => {
@@ -230,7 +227,7 @@ export default function LessonScreen() {
      due (from the morning note, or Learn), opens the morning set first, and the morning set opens this lesson after it */
   if (!at && morningFirst === id) return <Redirect href={{ pathname: '/morning', params: { then: id } }} />;
   const n = lessonNo(L, st);
-  const w = lessonWalk(snap.days, st);
+  const w = lessonWalk(snap.days, st, tk, account);
   const done = w.done;
   /* one lesson opens at a time: further on, the key idea; read early and reached now, the welcome back. "Read it all
      again" (?at=all) opens a finished one in full. */
@@ -238,11 +235,11 @@ export default function LessonScreen() {
   const back = gate === 'back';
   /* ?at=care: a door from a hard moment (Rekindle, the second slip in a week): it opens in full, and never asks for an account
      (never after a slip). It comes back to where it was opened. */
-  const care = at === 'care';
+  /* the morning after a slip, the day's lesson comes from the after-a-hard-night list (core lessonWalk hook): care, never gated */
+  const care = at === 'care' || (w.hook === 'slip' && w.today === L);
   if (gate !== 'open' && !care && !(at === 'all' && done.has(L.id))) return <PathGate L={L} w={w} gate={gate} />;
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
-  if (!care && !lessonOpen(L, done, account)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
-  const next = nextAfter(L, w);
+  if (!care && !lessonOpen(L, done, account, st)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
   /* the step whose deed comes after this lesson (its last on the path), shown once the lesson is read, unless it was done already */
   const dk = care ? -1 : deedAfter(L, st);
   const deedNext = dk >= 0 && !deedDone(st, dk) && deedA == null;
@@ -253,6 +250,7 @@ export default function LessonScreen() {
   /* the cards; the old Done card is gone: after the last card comes Put it to work, the step's deed, then one finish page */
   const seq = lessonSeq(L, len).filter((x): x is Extract<SeqItem, { t: 'card' }> => x.t === 'card');
   const pr0 = lessonPractice(L, st);
+  const heavy = L.u === 1 || L.id === 'l22' || !!L.care;
   /* the deed counts in the bar while it is still to come, and once answered here */
   const hasDeed = dk >= 0 && (!deedDone(st, dk) || deedA != null);
   /* a card is answered when its question is answered, its guess locked, its turn landed, or it has been met with one tap */
@@ -316,7 +314,8 @@ export default function LessonScreen() {
     setAgain(a);
     count('lesson_done');
     count('ld_' + L.id);
-    track('lesson_done', { lesson: L.id, secs: Math.round((Date.now() - opened.current) / 1000) });
+    took.current = Math.round((Date.now() - opened.current) / 1000);
+    track('lesson_done', { lesson: L.id, secs: took.current });
     finished.current = true;
     buzz(a ? 'save' : 'lit');
   };
@@ -354,7 +353,7 @@ export default function LessonScreen() {
     const g = deedSave((st0) => deedSet(st0, dk, a, tk));
     setDeedA(a);
     if (a === 'did') {
-      setGain(g);
+      setGain((x) => x + g);
       setPulse((x) => x + 1);
       buzz('lit');
     } else buzz('tap');
@@ -456,6 +455,8 @@ export default function LessonScreen() {
     const b = cardBeat(L, ci);
     const more = () => setSheet({ t: 'more', i: ci, pk: pick[ci] ?? null });
     /* the first card says which lesson this is: there is no cover any more */
+    /* a lesson that can stir up something heavy says where help is, on its last card */
+    const help = ix === seq.length - 1 && !pr0 && heavy ? <Help988 /> : null;
     const head =
       ix === 0 ? (
         <T v="small" tone="muted">
@@ -632,6 +633,13 @@ export default function LessonScreen() {
       );
       if (a != null) ok(lines ? MEET_LINE[(ci + a) % MEET_LINE.length] : meetSay[a][ci % 3]);
     }
+    if (help)
+      body = (
+        <>
+          {body}
+          {help}
+        </>
+      );
   } else if (stg === 'practice') {
     const a = lessonPractice(L, st)!;
     const items = a.items || [];
@@ -647,8 +655,13 @@ export default function LessonScreen() {
           {a.h}
         </T>
         <Rich text={a.p} st={st} style={s.p} />
-        {a.write ? <WriteBox label={L.np} value={note} examples={a.write} t={t} onChange={write} /> : null}
+        {a.write ? (
+          <WriteBox label={L.np} value={note} examples={a.write} t={t} onChange={write} />
+        ) : !items.length && !(a.go || []).length ? (
+          <NoteField L={L} note={note} />
+        ) : null}
         <Blocks bs={a.b} L={L} t={t} st={st} />
+        {heavy ? <Help988 /> : null}
         <FlameSlot size={SHORT ? 200 : 260} min={110} />
         <Dock>
           {items.map((it, k) => {
@@ -713,85 +726,26 @@ export default function LessonScreen() {
         </Dock>
       </>
     );
-  } else {
-    /* the finish: one page, the lesson's only ending (C8). WP8 builds its celebration (the score, points flying into the flame, the
-       day row); until then this is the page, with the same parts. */
-    const a = pr0;
-    const pair = lessonPairOf(L);
-    const due = pair && (w.walked.has(pair.a.id) || (w.path.indexOf(pair.a) < 0 && done.has(pair.a.id))) && !lcheckWritten(st, pair.n);
-    const key = beats?.key || L.key;
-    const note = (st.learn.notes && st.learn.notes[L.id]) || '';
-    prog = bar;
-    body = (
-      <>
-        <View style={s.doneHead}>
-          <T style={[s.h, { flexShrink: 1 }]} accessibilityRole="header">
-            {deedA === 'did' ? 'You did step ' + (dk + 1) + '.' : again ? 'Lesson ' + n + ', again' : n ? 'Lesson ' + n + ' done' : 'Lesson done'}
-          </T>
-          {gain > 0 ? (
-            <View style={[s.pill, { backgroundColor: c.sun }]}>
-              <Text style={{ fontFamily: font.bodySemi, color: c.onSun, fontSize: 15, lineHeight: 20 }}>+{gain} points</Text>
-            </View>
-          ) : null}
-        </View>
-        <Bubble text={key} more={key !== L.key} onMore={() => setSheet({ t: 'key' })} />
-        {ringLit ? <T style={s.p}>That lit today on your lessons ring, in Learn. One part for each day you do a lesson this week.</T> : null}
-        {/* the end of a lesson is the flame's moment */}
-        <FlameSlot size={SHORT ? 300 : 380} min={140} />
-        {a && a.write ? null : <NoteField L={L} note={note} />}
-        {w.path.every((x) => done.has(x.id)) ? <T>That is all {w.path.length} lessons. They stay in Learn whenever you want to read one again.</T> : null}
-        <Pressable accessibilityRole="button" onPress={() => setSheet({ t: 'src' })} style={s.link}>
-          <Text style={[s.linkT, { color: c.accentText }]}>Behind this lesson</Text>
-        </Pressable>
-        {L.u === 1 || L.id === 'l22' || L.care ? (
-          <T v="small" tone="muted">
-            If this stirs up something heavy, you can call or text <Text style={{ fontFamily: font.bodyBold }}>988</Text>, the Suicide &amp; Crisis Lifeline,
-            any time, day or night (US). It is open to anyone who is struggling.
-          </T>
-        ) : null}
-        {due && pair ? (
-          <Route
-            label="Write it out"
-            small={'3–5 min · a short checkpoint for ' + lcheckAbout(pair, st)}
-            onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(pair.n) } })}
-          />
-        ) : null}
-      </>
-    );
-    /* Next: the next lesson on the path. Past the free lessons it asks for the free account, except on a day a slip was told,
-       when there is no Next at all (D8). From a care door, Done goes back where it came from. */
-    const nextGo = next && !care && (lessonOpen(next, done, account) || !slipNear(snap.days, tk)) ? next : null;
-    foot = (
-      <View style={s.footCol}>
-        {nextGo ? (
-          <Next label={'Next: ' + nextGo.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: nextGo.id } })} />
-        ) : (
-          <Next label="Done" noIcon onPress={closeAll} />
-        )}
-        {care ? null : (
-          <View style={s.quiets}>
-            <Quiet
-              half
-              label="Back to Learn"
-              onPress={() => {
-                closeAll();
-                router.navigate('/learn');
-              }}
-            />
-            <Quiet
-              half
-              label="Back to Today"
-              onPress={() => {
-                closeAll();
-                router.navigate('/');
-              }}
-            />
-          </View>
-        )}
-      </View>
-    );
   }
 
+  /* the one ending (C8): WP8's finish, the score landing tile by tile and the points flying into the flame */
+  if (stg === 'practiced') {
+    const nx = care ? null : nextLessonOk(L, w, snap.days, st, tk, account);
+    return (
+      <LessonFinish
+        lessonId={L.id}
+        title={L.title}
+        n={n || 0}
+        gain={gain}
+        again={again}
+        stats={{ cards: seq.length, combo: run, secs: took.current }}
+        keep={beats?.key || L.key}
+        next={nx ? { id: nx.L.id, title: nx.L.title } : null}
+        onNext={() => nx && router.replace({ pathname: '/lesson/[id]', params: { id: nx.L.id } })}
+        onDone={closeAll}
+      />
+    );
+  }
   return (
     <Shell
       look={look}
@@ -832,9 +786,6 @@ const MEET_NUMBER_SAY = [
   ['Then you were ahead of most.', 'You knew more than most do.', 'Good instinct. Keep trusting it.'],
 ];
 const MEET_LINE = ['Good pick. Try it today.', 'That one is yours to try.', 'Good. Small and real is how it starts.'];
-
-/** a slip was told today or yesterday: Next never lands on the sign-up sheet then (D8) */
-const slipNear = (days: Days, tk: DayKey) => eventsOf(days).some((e) => e.outcome === 'slipped' && (e.key === tk || e.key === addDays(tk, -1)));
 
 /** where a tool or page from a lesson goes; it comes back to the lesson. Tools are care, so they open from any lesson,
     reached or not. */
@@ -923,7 +874,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
       apply((cur) => ({ st: lessonReach(cur, L.id) }));
       buzz('save');
       const nx = nextAfter(L, w);
-      if (nx && lessonOpen(nx, w.done, account)) router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } });
+      if (nx && lessonOpen(nx, w.done, account, st)) router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } });
       else closeAll();
     };
     body = (
@@ -962,6 +913,15 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
   );
 }
 /* ---------- small pieces ---------- */
+/** where help is, on a lesson that can stir up something heavy */
+function Help988() {
+  return (
+    <T v="small" tone="muted">
+      If this stirs up something heavy, you can call or text <Text style={{ fontFamily: font.bodyBold }}>988</Text>, the Suicide &amp; Crisis Lifeline, any
+      time, day or night (US). It is open to anyone who is struggling.
+    </T>
+  );
+}
 /** one answer to a step's deed: a plain choice on paper, like a question's answers, neither one marked as the right one */
 function DeedBtn({ title, sub, onPress }: { title: string; sub: string; onPress: () => void }) {
   return (
@@ -1175,7 +1135,9 @@ function TextCard({
               list={beat.l}
               pk={pick.pk}
               onPick={pick.onPick}
-              render={(x, on) => <Rich text={x} st={st} style={{ fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: on ? '#FFFFFF' : PAPER_INK }} />}
+              render={(x, on) => (
+                <Rich text={x} st={st} style={{ fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: on ? '#FFFFFF' : PAPER_INK }} />
+              )}
             />
           </View>
         </Dock>
@@ -1403,6 +1365,10 @@ function SheetBody({ sheet, L, st, onClose, onSrc }: { sheet: Sheet; L: Lesson; 
           </>
         ) : null}
         {card.fact ? <Fact text={card.fact.s} onPress={() => onSrc(sheet.i)} /> : null}
+        {/* the lesson's sources, one tap from any card (the finish page no longer carries them) */}
+        <Pressable accessibilityRole="button" onPress={() => onSrc()} style={s.link}>
+          <Text style={[s.linkT, { color: c.accentText }]}>Behind this lesson</Text>
+        </Pressable>
       </>
     );
   }

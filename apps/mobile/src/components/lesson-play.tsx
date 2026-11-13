@@ -142,11 +142,7 @@ export function React2({ list, pk, onPick }: { list: [string, string]; pk: numbe
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
             onPress={() => onPick(j)}
-            style={({ pressed }) => [
-              s.chip,
-              on ? s.chipOn : off ? s.chipOff : s.chipIdle,
-              { transform: [{ translateY: pressed && !on ? 2 : 0 }] },
-            ]}>
+            style={({ pressed }) => [s.chip, on ? s.chipOn : off ? s.chipOff : s.chipIdle, { transform: [{ translateY: pressed && !on ? 2 : 0 }] }]}>
             <Text style={[s.chipT, { color: on ? '#FFFFFF' : PAPER_INK, opacity: off ? 0.6 : 1 }]}>{o}</Text>
           </Pressable>
         );
@@ -156,7 +152,17 @@ export function React2({ list, pk, onPick }: { list: [string, string]; pk: numbe
 }
 
 /** the lines of what to do, as a pick: the one the person will try lights green, the rest step back */
-export function PickLine({ list, pk, onPick, render }: { list: string[]; pk: number | null; onPick: (j: number) => void; render: (x: string, on: boolean) => ReactNode }) {
+export function PickLine({
+  list,
+  pk,
+  onPick,
+  render,
+}: {
+  list: string[];
+  pk: number | null;
+  onPick: (j: number) => void;
+  render: (x: string, on: boolean) => ReactNode;
+}) {
   return (
     <View style={{ gap: 8 }}>
       {list.map((x, j) => {

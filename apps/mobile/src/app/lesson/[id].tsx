@@ -85,7 +85,7 @@ import { LessonArt, useCount } from '@/components/lesson-art';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
 import { Answer, Question, Quiet, Shell } from '@/components/lesson-parts';
 import { LessonFinish } from '@/components/lesson-finish';
-import { Bar, PickLine, Praise, praiseFor } from '@/components/lesson-play';
+import { Bar, Praise, praiseFor } from '@/components/lesson-play';
 import { FlashCard } from '@/components/lesson-flash';
 import { Next, Rich } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
@@ -592,14 +592,6 @@ export default function LessonScreen() {
       if (turned[ci]) ok();
     } else {
       const num = cardLook(card, b) === 'number';
-      const a = ans[ci] ?? null;
-      const meet = (j: number) => {
-        if (a == null) cheer((run + 1) % 5 === 0);
-        else buzz('tap');
-        setAns((x) => ({ ...x, [ci]: j }));
-        track('lesson_pick', { lesson: L.id, beat: i, ix: j });
-      };
-      const lines = !num && b.l && b.l.length > 1 ? b.l : null;
       body = num ? (
         <>
           {head}
@@ -608,34 +600,22 @@ export default function LessonScreen() {
       ) : (
         <>
           {head}
-          <TextCard
-            L={L}
-            card={card}
-            beat={b}
-            look={look}
-            st={st}
-            want={want}
-            pick={lines ? { pk: a, onPick: meet } : undefined}
-            onSrc={() => setSheet({ t: 'src', i: ci })}
-          />
+          <TextCard L={L} card={card} beat={b} look={look} st={st} want={want} onSrc={() => setSheet({ t: 'src', i: ci })} />
         </>
       );
-      /* a card that asks nothing is read and passed with Continue: no made-up answers that do not fit its words (the owner,
-         November 13, 2026: "it makes no sense"). Only a card with lines to try asks for a pick. */
-      if (lines) {
-        if (a != null) ok(MEET_LINE[(ci + a) % MEET_LINE.length]);
-      } else
-        foot = (
-          <Next
-            label="Continue"
-            noIcon
-            onPress={() => {
-              buzz('tap');
-              setAns((x) => ({ ...x, [ci]: 0 }));
-              step(1);
-            }}
-          />
-        );
+      /* a card that asks nothing is read and passed with Continue: no made-up answers and no pick over lines that are steps
+         (the owner, November 13, 2026: "it makes no sense"). The lines show as they did before. */
+      foot = (
+        <Next
+          label="Continue"
+          noIcon
+          onPress={() => {
+            buzz('tap');
+            setAns((x) => ({ ...x, [ci]: 0 }));
+            step(1);
+          }}
+        />
+      );
     }
     if (help)
       body = (
@@ -768,9 +748,6 @@ export default function LessonScreen() {
     </Shell>
   );
 }
-
-/* the flame's reply to the line a person picks to try */
-const MEET_LINE = ['Good pick. Try it today.', 'That one is yours to try.', 'Good. Small and real is how it starts.'];
 
 /** where a tool or page from a lesson goes; it comes back to the lesson. Tools are care, so they open from any lesson,
     reached or not. */
@@ -1054,26 +1031,7 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
 }
 
 /** the words of a card: one thought, with a real picture when it has one, and room left for the flame */
-function TextCard({
-  L,
-  card,
-  beat,
-  look,
-  st,
-  want,
-  pick,
-  onSrc,
-}: {
-  L: Lesson;
-  card: Card;
-  beat: Beat;
-  look: Look;
-  st: Settings;
-  want: number;
-  /** the lines of what to do, as a pick: the one the person will try */
-  pick?: { pk: number | null; onPick: (j: number) => void };
-  onSrc: () => void;
-}) {
+function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: Card; beat: Beat; look: Look; st: Settings; want: number; onSrc: () => void }) {
   const art = cardArt(card);
   const h = beat.h || card.h;
   /* what is the person's own stays on the card; the rest of the original words are in More */
@@ -1093,7 +1051,7 @@ function TextCard({
         {h}
       </T>
       {beat.p ? <Rich text={beat.p} st={st} style={s.p} /> : null}
-      {beat.l && pick ? null : beat.l ? (
+      {beat.l ? (
         <View style={{ gap: 8, marginTop: 4 }}>
           {beat.l.map((x, j) => (
             <View key={j} style={[s.line, { backgroundColor: look.row }]}>
@@ -1111,24 +1069,6 @@ function TextCard({
       ) : null}
       {beat.say ? <Bubble text={beat.say} style={{ marginTop: 16 }} /> : null}
       <FlameSlot size={art || own.length ? Math.min(want, SHORT ? 180 : 230) : want} min={art || own.length ? 84 : 96} />
-      {/* the lines of what to do, low where the thumb is: the one the person will try lights up */}
-      {beat.l && pick ? (
-        <Dock>
-          <View style={{ gap: 8 }}>
-            <T v="small" style={{ color: look.low }}>
-              Pick the one you will try
-            </T>
-            <PickLine
-              list={beat.l}
-              pk={pick.pk}
-              onPick={pick.onPick}
-              render={(x, on) => (
-                <Rich text={x} st={st} style={{ fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: on ? '#FFFFFF' : PAPER_INK }} />
-              )}
-            />
-          </View>
-        </Dock>
-      ) : null}
     </>
   );
 }

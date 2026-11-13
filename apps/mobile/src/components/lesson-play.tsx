@@ -8,7 +8,7 @@ import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
-import { PAPER, PAPER_INK, PAPER_LIP, RIGHT, RIGHT_LIP } from '@/lib/lesson-look';
+import { RIGHT, RIGHT_LIP } from '@/lib/lesson-look';
 import { font } from '@/lib/theme';
 
 /** the bar starts a little filled: a road already begun is easier to finish (Nunes and Drèze, 2006) */
@@ -129,43 +129,6 @@ export function Go({ label, onPress, icon }: { label: string; onPress: () => voi
   );
 }
 
-/** the lines of what to do, as a pick: the one the person will try lights green, the rest step back */
-export function PickLine({
-  list,
-  pk,
-  onPick,
-  render,
-}: {
-  list: string[];
-  pk: number | null;
-  onPick: (j: number) => void;
-  render: (x: string, on: boolean) => ReactNode;
-}) {
-  return (
-    <View style={{ gap: 8 }}>
-      {list.map((x, j) => {
-        const on = pk === j;
-        const off = pk != null && !on;
-        return (
-          <Pressable
-            key={j}
-            accessibilityRole="button"
-            accessibilityState={{ selected: on }}
-            onPress={() => onPick(j)}
-            style={({ pressed }) => [s.line, on ? s.chipOn : off ? s.chipOff : s.chipIdle, { transform: [{ translateY: pressed && !on ? 2 : 0 }] }]}>
-            {render(x, on)}
-            {on ? (
-              <View style={s.lineTick}>
-                <Icon name="check" size={18} color="#FFFFFF" />
-              </View>
-            ) : null}
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   barRoom: { flex: 1, justifyContent: 'center', minHeight: 44 },
   bar: { height: 16, borderRadius: 8, overflow: 'hidden' },
@@ -205,31 +168,4 @@ const s = StyleSheet.create({
     shadowRadius: 0,
   },
   goT: { fontFamily: font.display, fontSize: 17, lineHeight: 22, color: '#FFFFFF', textAlign: 'center' },
-  two: { flexDirection: 'row', gap: 8 },
-  chip: {
-    flex: 1,
-    minHeight: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 0,
-  },
-  chipIdle: { backgroundColor: PAPER, shadowColor: PAPER_LIP, shadowOpacity: 1 },
-  chipOn: { backgroundColor: RIGHT, shadowColor: RIGHT_LIP, shadowOpacity: 1 },
-  chipOff: { backgroundColor: 'rgba(255,255,255,0.55)', shadowOpacity: 0 },
-  chipT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'center' },
-  line: {
-    minHeight: 54,
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingLeft: 16,
-    paddingRight: 40,
-    borderRadius: 20,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 0,
-  },
-  lineTick: { position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' },
 });

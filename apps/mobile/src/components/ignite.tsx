@@ -53,7 +53,9 @@ const PULL = 140;
 
 /* when each beat lands, from the catch */
 /* the burst lands as the fire catches: BigFlame waits RELIGHT_CATCH before it climbs */
-const AT = { flare: 420, burst: 420 + RELIGHT_CATCH, turn: 1150, words: 1550, row: 2100, mark: 2700, button: 3300 };
+const AT = { flare: 420, burst: 420 + RELIGHT_CATCH, turn: 1150, words: 1550, row: 2100, mark: 2700, goal: 3150, button: 3300 };
+/* with a goal, the button waits for it */
+const GOAL_BUTTON = 3900;
 
 export interface IgniteDay {
   k: string;
@@ -74,6 +76,7 @@ export function Ignition({
   pop = row.length - 1,
   hint = 'Swipe up to light it',
   button = 'Keep going',
+  goal,
   onDone,
   onClose,
 }: {
@@ -92,6 +95,8 @@ export function Ignition({
   pop?: number;
   hint?: string;
   button?: string;
+  /** the small goal (core goalStep): 3 nights, then 7, then each week; its newest segment lights after last night's mark */
+  goal?: { of: number; kept: boolean; segs: number; lit: number };
   onDone: () => void;
   /** the X; left out, it does the same as the button */
   onClose?: () => void;
@@ -119,6 +124,8 @@ export function Ignition({
   const mark = useSharedValue(0);
   const btn = useSharedValue(0);
   const popV = useSharedValue(1);
+  const goalV = useSharedValue(0);
+  const segV = useSharedValue(0);
   useEffect(() => {
     if (still) return;
     wait.value = withRepeat(withSequence(withTiming(1, { duration: 900, easing: Easing.inOut(Easing.sin) }), withTiming(0, { duration: 900 })), -1);
@@ -131,7 +138,7 @@ export function Ignition({
     setLit(true);
     setBeat(2);
     setTyped(m.line.length);
-    for (const v of [flare, turn, words, rowV, mark, btn]) v.value = withTiming(1, { duration: still ? 0 : 200 });
+    for (const v of [flare, turn, words, rowV, mark, btn, goalV, segV]) v.value = withTiming(1, { duration: still ? 0 : 200 });
     shards.value = 0;
   };
 
@@ -177,7 +184,17 @@ export function Ignition({
       knock(Haptics.ImpactFeedbackStyle.Medium);
       mark.value = withSpring(1, { damping: 7, stiffness: 180 });
     });
-    at(AT.button, () => {
+    if (goal) {
+      at(AT.goal, () => {
+        goalV.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
+      });
+      at(AT.goal + 380, () => {
+        knock(goal.kept ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Light);
+        if (goal.kept) buzz('lit');
+        segV.value = withSpring(1, { damping: 8, stiffness: 200 });
+      });
+    }
+    at(goal ? GOAL_BUTTON : AT.button, () => {
       setBeat(2);
       btn.value = withTiming(1, { duration: 320, easing: Easing.out(Easing.cubic) });
     });
@@ -295,6 +312,7 @@ export function Ignition({
               </View>
             ))}
           </Reanimated.View>
+          {goal ? <Goal goal={goal} v={goalV} seg={segV} /> : null}
           <View style={s.foot}>
             {beat < 2 ? (
               <Reanimated.View style={[s.hintWrap, hintIn]}>
@@ -314,6 +332,35 @@ export function Ignition({
         </View>
       </View>
     </GestureDetector>
+  );
+}
+
+/** the small goal: "Goal: 3 free nights", how far along, and a bar of segments whose newest one pops in (gold when the goal is kept) */
+function Goal({ goal, v, seg }: { goal: { of: number; kept: boolean; segs: number; lit: number }; v: SharedValue<number>; seg: SharedValue<number> }) {
+  const boxIn = useAnimatedStyle(() => ({ opacity: v.value, transform: [{ translateY: 10 * (1 - v.value) }] }));
+  const newIn = useAnimatedStyle(() => ({
+    opacity: Math.min(1, seg.value * 2),
+    transform: [{ scaleY: 0.4 + 0.6 * seg.value }, { scaleX: 0.7 + 0.3 * seg.value }],
+  }));
+  /* up to a week it counts nights; after that, weeks (the bar is the week being built) */
+  const what = goal.of < 7 ? goal.of + ' free nights' : goal.of === 7 ? 'a whole week free' : goal.of / 7 + ' weeks free';
+  const say = (goal.kept ? 'Goal kept: ' : 'Goal: ') + what;
+  const left = goal.of - (goal.lit + goal.of - goal.segs);
+  return (
+    <Reanimated.View style={[s.goal, boxIn]} accessible accessibilityLabel={say + (goal.kept ? '' : ', ' + left + ' to go')}>
+      <View style={s.goalHead}>
+        <Text style={[s.goalText, goal.kept && { color: GOLD }]}>{say}</Text>
+        {!goal.kept ? <Text style={s.goalLeft}>{left === 1 ? '1 to go' : left + ' to go'}</Text> : null}
+      </View>
+      <View style={s.segs}>
+        {Array.from({ length: goal.segs }, (_, i) => (
+          <View key={i} style={s.seg}>
+            {i < goal.lit - 1 ? <View style={[s.segOn, { backgroundColor: goal.kept ? GOLD : ORANGE }]} /> : null}
+            {i === goal.lit - 1 ? <Reanimated.View style={[s.segOn, { backgroundColor: goal.kept ? GOLD : ORANGE }, newIn]} /> : null}
+          </View>
+        ))}
+      </View>
+    </Reanimated.View>
   );
 }
 
@@ -446,6 +493,13 @@ const s = StyleSheet.create({
   untold: { borderWidth: 2, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.3)' },
   spark: { position: 'absolute', width: 5, height: 5, borderRadius: 3, backgroundColor: GOLD },
   foot: { minHeight: 56, justifyContent: 'center' },
+  goal: { alignSelf: 'center', width: '100%', maxWidth: 340, gap: 8 },
+  goalHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  goalText: { fontFamily: font.bodyBold, fontSize: 15, color: nightInk.ink },
+  goalLeft: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted },
+  segs: { flexDirection: 'row', gap: 6 },
+  seg: { flex: 1, height: 14, borderRadius: 7, backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
+  segOn: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 7 },
   hintWrap: { alignItems: 'center' },
   hint: { alignItems: 'center', gap: 6, minHeight: 56, justifyContent: 'center', paddingHorizontal: 24 },
   hintText: { fontFamily: font.bodyBold, fontSize: 17, color: nightInk.ink },

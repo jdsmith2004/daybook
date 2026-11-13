@@ -74,3 +74,15 @@ describe('small goals', () => {
     expect(core.igniteGoal(15)).toBe(21);
   });
 });
+
+describe('the goal step', () => {
+  it('works toward 3, then 7, then each week, and says when one is kept', () => {
+    expect(core.goalStep(0)).toEqual({ of: 3, kept: false, segs: 3, lit: 0 });
+    expect(core.goalStep(2)).toEqual({ of: 3, kept: false, segs: 3, lit: 2 });
+    expect(core.goalStep(3)).toEqual({ of: 3, kept: true, segs: 3, lit: 3 });
+    expect(core.goalStep(5)).toEqual({ of: 7, kept: false, segs: 7, lit: 5 });
+    expect(core.goalStep(7)).toEqual({ of: 7, kept: true, segs: 7, lit: 7 });
+    expect(core.goalStep(9)).toEqual({ of: 14, kept: false, segs: 7, lit: 2 });
+    expect(core.goalStep(14)).toEqual({ of: 14, kept: true, segs: 7, lit: 7 });
+  });
+});

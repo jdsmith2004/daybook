@@ -36,6 +36,8 @@ import { font, useTheme } from '@/lib/theme';
 interface Step {
   /** what is lit: the parts, joined in one spotlight */
   at: SpotKey[];
+  /** the small word over what the flame says, with a sparkle ("Unlocked") */
+  eb?: string;
   say: string;
   /** the main button's word (Next when not given) */
   btn?: string;
@@ -82,6 +84,25 @@ export function tourSteps({ lessonDone, lessonId, walk = true }: { lessonDone: b
       go: () => router.push({ pathname: '/lesson/[id]', params: { id: lessonId } }),
     });
   return steps;
+}
+
+/* Walk it through, unlocked after the first lesson (lib/tour.ts): the same spotlight as the first tour, on its button, not a sheet
+   (the owner, November 13, 2026: "it should say unlocked walk it through the same way as it does the tutorial just unlock it and
+   highlight it and say what it is then tell them they can try it"). */
+export function walkSteps(): Step[] {
+  return [
+    {
+      at: ['trail'],
+      eb: 'Unlocked',
+      say: 'Walk it through. For an urge that keeps coming back, or a slip you start to plan: I walk you out of it, one step at a time.',
+    },
+    {
+      at: ['trail'],
+      say: 'It stays right here on Today, and in SOS. Want to try it now?',
+      btn: 'Try it now',
+      go: () => router.push('/trail'),
+    },
+  ];
 }
 
 /* ---------- where the iPhone's own tab bar draws its parts ---------- */
@@ -364,6 +385,12 @@ export function FirstTour({
             </View>
             <View ref={bubble} accessible accessibilityLabel={step.say} style={[s.bubble, { backgroundColor: BUBBLE }]}>
               <View style={[s.tail, { backgroundColor: BUBBLE }]} />
+              {step.eb ? (
+                <View style={s.eb}>
+                  <Icon name="sparkle" size={16} color={c.accentText} />
+                  <Text style={[s.ebT, { color: c.accentText }]}>{step.eb}</Text>
+                </View>
+              ) : null}
               <Text style={s.sayT}>{step.say}</Text>
             </View>
           </Animated.View>
@@ -396,6 +423,8 @@ const s = StyleSheet.create({
   bubble: { flex: 1, borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16 },
   tail: { position: 'absolute', left: -6, bottom: 22, width: 16, height: 16, borderRadius: 3, transform: [{ rotate: '45deg' }] },
   sayT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 23, color: PAPER_INK },
+  eb: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 },
+  ebT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
   dots: { flexDirection: 'row', gap: 6, alignSelf: 'center' },
   dot: { height: 8, borderRadius: 4 },
 });

@@ -246,7 +246,7 @@ export const MODE_LEGEND = (st: Settings): [ModeInfo['k'], string, string][] => 
   [
     'quit',
     'Quitting',
-    'Starts on Day 1. A day with no slip logged counts, and your count grows. Away more than two days, and the days after wait until you say how they went; your count waits with them. Your points, badges and longest run always stay.',
+    'Starts on Day 1. A night counts as free when you say so, and your count grows. A night you have not told me about waits until you do; your count waits with it. Your points, badges and longest run always stay.',
   ],
   [
     'step',

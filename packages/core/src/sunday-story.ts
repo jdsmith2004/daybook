@@ -8,8 +8,8 @@
    Hope first: a hard week is never shown as a fall. The trend over the weeks says when a week was better, and on a harder
    week it says what held instead. Every number here is one the log already has; nothing is guessed. Checked by
    test/sunday-story.test.ts. */
-import { addDays, didText, eventsOf, evMs, slipMoments, sumDay, trigText } from './legacy/core.js';
-import { dayUntold } from './away';
+import { addDays, didText, eventsOf, evMs, logicalKey, slipMoments, sumDay, trigText } from './legacy/core.js';
+import { dayUntold, untoldDays } from './away';
 import { logStart } from './log-start';
 import { patWhen, type PatWhen } from './pattern';
 import { urTool } from './sos';
@@ -68,6 +68,7 @@ export function storyDays(days: Days, st: Settings, sun: DayKey, tk: DayKey): St
   });
 }
 
+const tk = (st: Settings, now: number): DayKey => logicalKey(now, st.rollover);
 /** the longest stretch with no slip inside the week (from Monday's start up to now, or the end of Sunday), in hours */
 export function storyBest(days: Days, st: Settings, sun: DayKey, now: number): number {
   const roll = st.rollover;
@@ -75,12 +76,22 @@ export function storyBest(days: Days, st: Settings, sun: DayKey, now: number): n
   const a = Math.max(at(addDays(sun, -6)), at(logStart(days, st)));
   const b = Math.min(now, at(addDays(sun, 1)));
   if (b <= a) return 0;
-  const sl = slipMoments(days, st, b).filter((t) => t >= a && t <= b);
+  /* a night nobody told Daybook about (truth.ts) breaks a stretch like a slip does: a stretch is never claimed across one. Its
+     evening (6 PM) ends the stretch, and the next one starts when the new day does */
+  const marks: [number, number][] = slipMoments(days, st, b)
+    .filter((t) => t >= a && t <= b)
+    .map((t) => [t, t] as [number, number]);
+  for (const k of untoldDays(days, st, tk(st, now))) {
+    const lo = evMs(k, '18:00', roll);
+    const hi = at(addDays(k, 1));
+    if (hi > a && lo < b) marks.push([Math.max(a, lo), Math.min(b, hi)]);
+  }
+  marks.sort((x, y) => x[0] - y[0]);
   let best = 0;
   let from = a;
-  for (const t of sl) {
-    best = Math.max(best, t - from);
-    from = t;
+  for (const [lo, hi] of marks) {
+    best = Math.max(best, lo - from);
+    from = Math.max(from, hi);
   }
   best = Math.max(best, b - from);
   return best / 3600000;

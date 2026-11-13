@@ -910,7 +910,11 @@ a defence that works with the app closed, a record that is true, a day small eno
 - **Done looks like.** Every step of the script passes on the phone, or the failure is written down with what Apple did. Then, and
   only then, ask the owner for the yes for one `production-pull` store build, naming the profile and that it uses one of the 15.
 - **Checked by:** the core pull, proof and lock-screen tests; the device script, signed off by the owner, in the notes folder.
-- **Built (November 12, 2026), steps 1 to 9; step 10 waits for the owner's iPhone.** None of the ten was on main before this
+- **Merged November 13, 2026, without step 10, by the owner's choice** ("after you qa just merge i'm not gonna run the sim on my
+  phone"). Nothing of it has run on an iPhone: what only Apple can show (callbacks early or late, the 6:05 check, the adult filter's
+  page, the browsers, the stale Live Activity) is still unproven, and `docs/screen-time/test-on-iphone.md` is the test for when a
+  phone is at hand. A `production-pull` TestFlight build still needs the owner's own yes (one of the 15).
+- **Built (November 12, 2026), steps 1 to 9.** None of the ten was on main before this
   (only "not gone through" in the proof, from `086e0664`). What was built:
   1. Core `pullParts` decides Apple's schedules (the evening part, after midnight, a heartbeat 5 minutes after the start, a morning
      check at 6:05) and they ride in the bridge; the night's own callbacks read the clock 2 minutes ahead (`PULL_GRACE`). Every

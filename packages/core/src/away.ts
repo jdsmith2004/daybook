@@ -112,14 +112,30 @@ function work(days: Days, st: Settings, tk: DayKey): Cache {
   const from = isKey(st.start) && st.start > begin ? st.start : begin;
   const answers = awayOf(st);
   const last = addDays(tk, -1);
+  const toldGaps = new Map<AwayEntry, AwayGap>();
   /* the quiet runs before today; one longer than the grace is a gap */
   const runs: { from: DayKey; to: DayKey; away: boolean }[] = [];
   let run: { from: DayKey; to: DayKey; away: boolean } | null = null;
   let k = from;
   for (let i = 0; k < tk && i < 20000; i++, k = addDays(k, 1)) {
     const truth = !!tf && k >= tf;
+    /* under the true record, a day an answer covers was told by that answer: it is the answer's for good, and later nights not
+       told never join it (an answer for four nights must never spread over nine) */
+    const ans = truth ? answers.find((x) => x.from <= k && k <= x.to) : null;
     /* a day under neither rule (before awayFrom, before truthFrom) counts as it always did */
-    const here = truth ? toldOn(days, k) != null : !on || k < on || presentDay(days[k]);
+    const here = truth ? !!ans || toldOn(days, k) != null : !on || k < on || presentDay(days[k]);
+    if (ans) {
+      const told = toldOn(days, k);
+      /* its last n days carry its slips, unless the day says otherwise itself */
+      if (told == null && k > addDays(ans.to, -Math.min(ans.n, daysIn(ans.from, ans.to)))) c.slips.add(k);
+      let g = toldGaps.get(ans);
+      if (!g) {
+        g = { from: ans.from, to: ans.to, len: daysIn(ans.from, ans.to), n: ans.n, away: false };
+        toldGaps.set(ans, g);
+        c.gaps.push(g);
+      }
+      c.at.set(k, g);
+    }
     if (here || (truth && k === last)) {
       if (run) runs.push(run);
       run = null;
@@ -130,14 +146,15 @@ function work(days: Days, st: Settings, tk: DayKey): Cache {
     } else run = { from: k, to: k, away: !presentDay(days[k]) };
   }
   if (run) runs.push(run);
+  c.gaps.sort((a, b) => (a.from < b.from ? -1 : 1));
   for (const r of runs) {
     const len = daysIn(r.from, r.to);
     if (len <= QUIET_GRACE) {
       for (let d = r.from; d <= r.to; d = addDays(d, 1)) if (tf && d >= tf) c.untold.add(d);
       continue;
     }
-    /* an answer covers the gap it was given for: the one it overlaps */
-    const a = answers.find((x) => x.from <= r.to && x.to >= r.from) || null;
+    /* an answer covers the gap it was given for: the one it overlaps (under the true record its days were taken out above) */
+    const a = answers.find((x) => x.from <= r.to && x.to >= r.from && !(tf && x.from >= tf)) || null;
     const g: AwayGap = { from: r.from, to: r.to, len, n: a ? Math.min(a.n, len) : null, ...(r.away ? {} : { away: false }) };
     c.gaps.push(g);
     for (let d = r.from, i = 0; d <= r.to; d = addDays(d, 1), i++) {
@@ -149,6 +166,7 @@ function work(days: Days, st: Settings, tk: DayKey): Cache {
       } else if (i >= len - g.n) c.slips.add(d);
     }
   }
+  c.gaps.sort((a, b) => (a.from < b.from ? -1 : 1));
   return c;
 }
 
@@ -164,6 +182,17 @@ export function dayKnown(days: Days, st: Settings, k: DayKey, tk: DayKey): boole
 export function dayUntold(days: Days, st: Settings, k: DayKey, tk: DayKey): boolean {
   if (k >= tk) return false;
   return work(days, st, tk).untold.has(k);
+}
+
+/** the days a stretch of hours cannot run through: nights not told, days away not known, and the days that carry a slip from an
+    answer (which has no time). Each with how much of it: 'night' (from 6 PM) or 'day' (all of it). */
+export function stretchBreaks(days: Days, st: Settings, tk: DayKey): { k: DayKey; whole: boolean }[] {
+  const c = work(days, st, tk);
+  const out = new Map<DayKey, boolean>();
+  c.untold.forEach((k) => out.set(k, false));
+  c.unknown.forEach((k) => out.set(k, true));
+  c.slips.forEach((k) => out.set(k, true));
+  return [...out].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([k, whole]) => ({ k, whole }));
 }
 
 /** the nights not told, oldest first */

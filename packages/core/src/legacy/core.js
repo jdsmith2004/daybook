@@ -11,7 +11,7 @@ import { normMorning } from '../morning-norm';
 import { normHabit } from '../habit';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 import { normTalks } from '../talk';
-import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown, dayUntold, untoldDays } from '../away';
+import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown, dayUntold, stretchBreaks } from '../away';
 
 /* ------------------------------------------------------------------------------------------------
    logic: data model, counting, run saves, step down, points, badges, quests, rhythm
@@ -656,10 +656,12 @@ function fmtStretch(h){
 const fmtStretchShort=h=>h<1?'0 h':h<72?Math.floor(h)+' h':Math.floor(h/24)+' d';
 /* the true record (truth.ts): a night nobody told Daybook about is not known, so the hours of a stretch never run through one.
    From its evening (6 PM) to the new day it neither counts nor ends the stretch: the stretch waits. Empty before truthFrom. */
-function untoldWins(days,st,tk){const roll=st.rollover;return untoldDays(days,st,tk).map(k=>[evMs(k,'18:00',roll),evMs(addDays(k,1),p2(roll)+':00',roll)])}
+function untoldWins(days,st,tk){const roll=st.rollover;return stretchBreaks(days,st,tk).map(b=>[evMs(b.k,b.whole?p2(roll)+':00':'18:00',roll),evMs(addDays(b.k,1),p2(roll)+':00',roll)])}
 function toldMs(a,b,w){let t=b-a;w.forEach(x=>{const lo=Math.max(a,x[0]),hi=Math.min(b,x[1]);if(hi>lo)t-=hi-lo});return Math.max(0,t)}
 /* the longest part of a stretch with no night not told inside it: what a best or a badge can be earned on */
 function toldSpan(a,b,w){let best=0,from=a;w.filter(x=>x[1]>a&&x[0]<b).sort((x,y)=>x[0]-y[0]).forEach(x=>{best=Math.max(best,Math.min(x[0],b)-from);from=Math.max(from,x[1])});return Math.max(0,best,b-from)}
+/* a week's slips with the ones an answer about nights not told or days away carries (they have no entry) */
+function slipsInWeekAll(days,st,w,tk){const r=weekRange(w,st);let n=slipsInWeek(days,st,w);for(let k=r[0];k<=r[1];k=addDays(k,1))if(!sumDay(days[k]).slipped&&awaySlipDay(days,st,k,tk))n++;return n}
 function weekUntold(days,st,w,tk){const r=weekRange(w,st);for(let k=r[0];k<=r[1];k=addDays(k,1))if(dayUntold(days,st,k,tk))return true;return false}
 function slipsInWeek(days,st,w){const r=weekRange(w,st);let n=0;for(let k=r[0];k<=r[1];k=addDays(k,1))n+=sumDay(days[k]).slipped;return n}
 function stepView(days,st,nowMs){
@@ -701,7 +703,7 @@ function stepView(days,st,nowMs){
  }
  /* ready to count days: a stretch of a week since the plan started, or a whole week since then with one slip or none */
  let weekOk=false;
- for(let w=0;w<cw;w++){if(weekRange(w,st)[0]>=stepAt&&slipsInWeek(days,st,w)<=1&&!weekUntold(days,st,w,tk)){weekOk=true;break}}
+ for(let w=0;w<cw;w++){if(weekRange(w,st)[0]>=stepAt&&slipsInWeekAll(days,st,w,tk)<=1&&!weekUntold(days,st,w,tk)){weekOk=true;break}}
  const ready=bestSince>=168||weekOk;
  /* more help: the setup self-check pointed that way, or three weeks in, this week is no better than the first one */
  const hist=st.onb&&st.onb.hist,score=hist&&hist.length?hist[hist.length-1].s:null;
@@ -1043,7 +1045,7 @@ function gameStats(days,st,reviews,today){
   const now=Date.now(),sl=slipMoments(days,st,now),uw=untoldWins(days,st,today);
   for(let i=1;i<sl.length&&!S.stretch48;i++)if(toldSpan(sl[i-1],sl[i],uw)>=48*36e5)S.stretch48=1;
   if(sl.length&&toldSpan(sl[sl.length-1],now,uw)>=48*36e5)S.stretch48=1;
-  for(let w=1;w<cw;w++){const a=slipsInWeek(days,st,w-1);if(a>=1&&slipsInWeek(days,st,w)<a&&!weekUntold(days,st,w,today))S.lowerWeeks++}
+  for(let w=1;w<cw;w++){const a=slipsInWeekAll(days,st,w-1,today);if(a>=1&&slipsInWeekAll(days,st,w,today)<a&&!weekUntold(days,st,w,today))S.lowerWeeks++}
   S.grad=st.stepGrad?1:0;
  }
  return S;

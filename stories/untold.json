@@ -1,0 +1,65 @@
+{
+  "about": "Sam (the Fable review's first person, November 12, 2026): slips on most nights, opens Daybook now and then, tells some mornings and answers Welcome back honestly. The record shows only what he told: no badge across a night he did not tell, and honesty is never followed by embers",
+  "settings": {
+    "start": "2026-10-12",
+    "day1": "2026-10-12",
+    "truthFrom": "2026-10-12",
+    "awayFrom": "2026-10-12",
+    "countFrom": "2026-10-12",
+    "cleanMode": "gentle",
+    "becoming": "I am becoming someone who is free of this.",
+    "rollover": 4,
+    "screensOff": "23:00"
+  },
+  "fill": false,
+  "never": [
+    "48 hours",
+    "Three clear days",
+    "A lower week",
+    "Stepped up",
+    "This is what free looks like",
+    "every one logged",
+    "Counting days now",
+    "\\d+ hours since your last slip"
+  ],
+  "visits": [
+    {
+      "day": "2026-10-13",
+      "open": "20:00",
+      "what": "told last night's slip this morning: the chip says when, not made-up hours",
+      "before": [{ "night": "slip" }],
+      "expect": ".",
+      "absent": ["embers", "dimming"]
+    },
+    {
+      "day": "2026-10-16",
+      "open": "20:00",
+      "what": "told one free night; the two before it were never told, so Today counts one",
+      "before": [{ "night": "free" }],
+      "expect": ".",
+      "absent": ["\\b[2-7] of the last"]
+    },
+    {
+      "day": "2026-10-21",
+      "open": "20:00",
+      "what": "four nights not told, answered honestly in the catch-up (3 slips): the fire is lit, not embers",
+      "before": [{ "settings": { "away": [{ "from": "2026-10-16", "to": "2026-10-19", "n": 3, "on": "2026-10-21" }] } }],
+      "expect": ".",
+      "absent": ["embers", "nothing done", "smouldering"]
+    },
+    {
+      "day": "2026-10-26",
+      "open": "20:00",
+      "what": "nothing told for days: the fire says what was not told, and how to light it",
+      "expect": "not told|nothing done"
+    },
+    {
+      "day": "2026-10-27",
+      "open": "20:00",
+      "what": "told a free night: the fire is lit again at once",
+      "before": [{ "night": "free" }],
+      "expect": ".",
+      "absent": ["embers", "smouldering", "dimming"]
+    }
+  ]
+}

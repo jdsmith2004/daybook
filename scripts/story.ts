@@ -14,6 +14,10 @@
      { "small": true }                   one small thing done after the day's slip
      { "sunrise": true, "keep": true }   the sunrise check for the latest slip that still waits for one (keep: the run's answer)
      { "settings": { "wk1": "..." } }    a change to the settings, as if made in the app
+     { "night": "free" }                 the morning's "How was last night?" answered for the night before ("slip" adds the slip,
+                                         with no time, told the next morning)
+   A story with "fill": false lives its unvisited days with nothing in them (no check-in), and its visits get no check-in after
+   the picture: the person who only opens the app now and then (the true record, core truth.ts).
    A visit's "tap" lists buttons tapped on Today after the picture, by their words (a real tap, through the app).
    The log carries over: every day from the start to the first visit gets a check-in (so the app keeps the start date),
    and after each picture the app's own storage (days it marked opened, celebrations seen, settings it moved) is read back
@@ -45,6 +49,7 @@ type Action = {
   sunrise?: boolean;
   keep?: boolean;
   settings?: Record<string, unknown>;
+  night?: 'free' | 'slip';
 };
 interface Visit {
   /** the logical day, YYYY-MM-DD (the app's day rolls over at settings.rollover o'clock) */
@@ -67,6 +72,8 @@ interface Story {
   never?: string[];
   /** what happened on days before the first visit (or between visits), by day: the person lived them without a picture */
   history?: Record<string, Action[]>;
+  /** false: no check-in on the days in between, nor after each visit */
+  fill?: boolean;
   visits: Visit[];
 }
 type Store = Record<string, string>;
@@ -132,6 +139,26 @@ function apply(s: Store, k: string, acts: Action[], roll: number, tag: string) {
         return;
       }
       throw new Error(`${tag}: a sunrise check, but no slip waits for one`);
+    }
+    if (a.night) {
+      const y = addDays(k, -1);
+      const t = +at(k, '08:00', roll);
+      let ev: string | undefined;
+      if (a.night === 'slip') {
+        const yd = dayOf(s, y);
+        ev = `${tag}-${i}-mn`;
+        yd.events.push({ id: ev, time: null, outcome: 'slipped', trigger: null, paused: null, did: null, recovered: false, note: '', mn: true });
+        yd.u = Date.now();
+        s[DAY(y)] = JSON.stringify(yd);
+      }
+      const x = dayOf(s, k);
+      const p = { ...PLAY, ...(x.p || {}) };
+      p.m = true;
+      p.ms = { ...(p.ms || {}), at: t, n: a.night, ...(ev ? { ev } : {}) };
+      x.p = p;
+      x.u = Date.now();
+      s[DAY(k)] = JSON.stringify(x);
+      return;
     }
     const x = dayOf(s, k);
     if (a.checkin) x.checkin = { m: 6, c: 6, e: 6, s: 4, h: 7, so: 'Y', ro: null, n: '', done: true, at: +at(k, '21:30', roll) };
@@ -234,15 +261,15 @@ for (const f of files) {
 
   /* the log before the first visit: a check-in on every day from the start */
   let s: Store = { 'daybook:settings': JSON.stringify({ u: 1, ...story.settings }) };
+  const fill = story.fill === false ? [] : [{ checkin: true }];
   for (let k = story.settings.start; k < story.visits[0].day; k = addDays(k, 1))
-    apply(s, k, [{ checkin: true }, ...(story.history?.[k] || [])], roll, `${name}-${k}-fill`);
+    apply(s, k, [...fill, ...(story.history?.[k] || [])], roll, `${name}-${k}-fill`);
 
   for (const [i, v] of story.visits.entries()) {
     const n = String(i + 1).padStart(2, '0');
     const prev = i ? story.visits[i - 1].day : null;
     /* days the story skips over were lived too: a check-in each */
-    if (prev)
-      for (let k = addDays(prev, 1); k < v.day; k = addDays(k, 1)) apply(s, k, [{ checkin: true }, ...(story.history?.[k] || [])], roll, `${name}-${k}-fill`);
+    if (prev) for (let k = addDays(prev, 1); k < v.day; k = addDays(k, 1)) apply(s, k, [...fill, ...(story.history?.[k] || [])], roll, `${name}-${k}-fill`);
     apply(s, v.day, v.before || [], roll, `${name}-${v.day}-${n}b`);
 
     const ctx = await browser.newContext({
@@ -311,7 +338,7 @@ for (const f of files) {
     if (!ok && text) console.log('         The card said: ' + card.replace(/\s+/g, ' ').slice(0, 400));
     await ctx.close();
 
-    apply(s, v.day, [...(v.checkin === false ? [] : [{ checkin: true }]), ...(v.after || [])], roll, `${name}-${v.day}-${n}a`);
+    apply(s, v.day, [...(v.checkin === false || story.fill === false ? [] : [{ checkin: true }]), ...(v.after || [])], roll, `${name}-${v.day}-${n}a`);
   }
 }
 await browser.close();

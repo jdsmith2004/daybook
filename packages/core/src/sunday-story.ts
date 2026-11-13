@@ -9,7 +9,7 @@
    week it says what held instead. Every number here is one the log already has; nothing is guessed. Checked by
    test/sunday-story.test.ts. */
 import { addDays, didText, eventsOf, evMs, logicalKey, recordFrom, slipMoments, sumDay, trigText } from './legacy/core.js';
-import { dayUntold, untoldDays } from './away';
+import { dayUntold, stretchBreaks } from './away';
 import { logStart } from './log-start';
 import { patWhen, type PatWhen } from './pattern';
 import { urTool } from './sos';
@@ -81,8 +81,8 @@ export function storyBest(days: Days, st: Settings, sun: DayKey, now: number): n
   const marks: [number, number][] = slipMoments(days, st, b)
     .filter((t) => t >= a && t <= b)
     .map((t) => [t, t] as [number, number]);
-  for (const k of untoldDays(days, st, tk(st, now))) {
-    const lo = evMs(k, '18:00', roll);
+  for (const { k, whole } of stretchBreaks(days, st, tk(st, now))) {
+    const lo = whole ? at(k) : evMs(k, '18:00', roll);
     const hi = at(addDays(k, 1));
     if (hi > a && lo < b) marks.push([Math.max(a, lo), Math.min(b, hi)]);
   }

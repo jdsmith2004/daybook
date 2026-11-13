@@ -109,6 +109,24 @@ describe('a night nobody told Daybook about', () => {
     expect(core.nightState(d, st2, day(9), day(10))).toBe('untold');
   });
 
+  it('an answer covers only the nights it was given for, and its slips break a stretch (Sam, days 4 to 15)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(at(16, 20));
+    const st = truth(1, { away: [{ from: day(5), to: day(7), n: 3, on: day(10) }] });
+    let d = core.addEvent({}, day(1), 'slipped', null, { mn: true }, at(2, 8)).days;
+    d = tellFree(d, st, 4, 4);
+    /* nights 8 to 15 never told: they stay untold, and the answer's three slips stay on nights 5, 6 and 7 */
+    expect(core.nightState(d, st, day(5), day(16))).toBe('slip');
+    expect(core.nightState(d, st, day(7), day(16))).toBe('slip');
+    expect(core.nightState(d, st, day(8), day(16))).toBe('untold');
+    expect(core.nightState(d, st, day(12), day(16))).toBe('untold');
+    const S = core.gameCompute(d, st, {}, day(16)).S;
+    expect(S.longest).toBe(1);
+    expect(S.stretch48).toBe(0);
+    expect(S.lowerWeeks).toBe(0);
+    vi.useRealTimers();
+  });
+
   it('days away say "away"; nights not told while here do not', () => {
     expect(core.awayLine({ from: day(3), to: day(8), n: null, away: false })).toBe('Nov 3 to 8 · not told yet');
     expect(core.awayLine({ from: day(3), to: day(8), n: 2, away: false })).toBe('Nov 3 to 8 · told, 2 slips');

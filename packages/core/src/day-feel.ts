@@ -59,6 +59,7 @@ export function dayFeelSet(prev: Day | undefined | null, tk: DayKey, n: number, 
     (logged today, or a Rekindle still open). The app adds the first open and keeps it to Today. */
 export function dayFeelDue(days: Days, st: Settings | null, tk: DayKey): boolean {
   if (!st) return false;
+  if (st.dayFeel === false) return false;
   if (dayFeelOf(days[tk])) return false;
   /* the morning set asked about this morning already (morning-set.ts), so the day does not ask again */
   if (days[tk]?.p?.ms) return false;

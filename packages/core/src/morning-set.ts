@@ -144,7 +144,11 @@ export function morningReasons(days: Days, st: Settings, tk: DayKey): string[] {
     if (s && out.length < 3 && !out.some((x) => x.toLowerCase() === s.toLowerCase())) out.push(s);
   };
   const last = lastSet(days, tk, CARRY_DAYS)?.ms.r;
-  const own = [...(st.reasons || []), st.becoming || ''].filter((x) => x.trim());
+  /* faith on (D10 (a)): "My faith" is one of the person's own reasons; with it off, nothing about faith */
+  const a = st.onb?.a as { faith?: string } | undefined;
+  const faith = a && (a.faith === 'big' || a.faith === 'some') ? ['My faith'] : [];
+  const rs = st.reasons || [];
+  const own = [...rs.slice(0, 1), ...faith, ...rs.slice(1), st.becoming || ''].filter((x) => x.trim());
   if (last && own.some((x) => x.trim().toLowerCase() === last.toLowerCase())) add(last);
   own.forEach(add);
   if (!out.length) ['Becoming someone I am proud of', 'Being fully present with the people I love', 'Clear mornings and steady energy'].forEach(add);

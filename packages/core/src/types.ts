@@ -252,6 +252,9 @@ export interface Settings {
   /** when the night's wait starts, 'HH:MM': the last time the morning set (or setup) chose, and tomorrow morning's starting time
       (morning-set.ts). Optional. */
   nightAt?: Clock;
+  /** "How are you feeling today?": false when switched off. New people start with it off (two-moments.ts freshSettings); people who
+      had it keep it. Optional. */
+  dayFeel?: boolean;
   u: number;
 }
 

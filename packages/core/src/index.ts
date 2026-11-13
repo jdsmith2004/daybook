@@ -18,6 +18,7 @@ export * from './walk';
 export * from './feelings';
 export * from './day-feel';
 export * from './morning-set';
+export * from './two-moments';
 export * from './risk';
 export * from './pull';
 export * from './unlock';

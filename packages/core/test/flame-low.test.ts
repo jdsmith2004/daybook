@@ -82,7 +82,7 @@ describe('the words', () => {
 
   it('the step open now on Your day says it lights the fire again, and only while it burns low', () => {
     const later = new Date(2026, 9, 20, 11, 0).getTime();
-    const open = (d: Days) => core.stopTiles(d, st, tk, later).tiles.find((t) => t.state === 'now' || t.state === 'due');
+    const open = (d: Days) => core.stopTiles(d, st, tk, later).tiles.find((t) => t.k !== 'morning' && (t.state === 'now' || t.state === 'due'));
     expect(open(lessons(['2026-10-12']))!.eyebrow).toBe(core.LOW_LEAD);
     expect(open(lessons(['2026-10-19']))!.eyebrow).not.toBe(core.LOW_LEAD);
   });

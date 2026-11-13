@@ -502,8 +502,8 @@ const s = StyleSheet.create({
   ptsWord: { fontFamily: font.bodyBold, fontSize: 20, color: GOLD },
   levelBox: { alignSelf: 'center', width: '100%', maxWidth: 360, gap: 8 },
   levelHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  levelText: { fontFamily: font.display, fontSize: 18, color: nightInk.ink },
-  levelLeft: { fontFamily: font.bodySemi, fontSize: 14, color: nightInk.muted },
+  levelText: { fontFamily: font.display, fontSize: 17, color: nightInk.ink },
+  levelLeft: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted },
   track: { height: 20, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
   fill: { height: 20, borderRadius: 10, backgroundColor: GOLD, paddingTop: 4, paddingHorizontal: 8 },
   shine: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.45)' },
@@ -517,6 +517,6 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   btnDown: { borderBottomWidth: 0, marginTop: 5 },
-  btnText: { fontFamily: font.display, fontSize: 19, color: '#3A2A00' },
+  btnText: { fontFamily: font.display, fontSize: 20, color: '#3A2A00' },
   spark: { position: 'absolute', left: 0, top: 0, width: 18, height: 18 },
 });

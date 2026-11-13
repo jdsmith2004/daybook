@@ -97,6 +97,7 @@ import { lessonLook, PAPER, PAPER_INK, SUN_CARD, SUN_INK, type Look, type LookKi
 import { count } from '@/lib/pulse';
 import { track } from '@/lib/events';
 import { close, closeAll } from '@/lib/nav';
+import { phoneCrisisLine } from '@/lib/crisis';
 import { useStore } from '@/lib/store';
 import { useSos } from '@/lib/sos';
 import { copyText } from '@/lib/words';
@@ -912,10 +913,12 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
 /* ---------- small pieces ---------- */
 /** where help is, on a lesson that can stir up something heavy */
 function Help988() {
+  /* the free line for where the phone is (core crisis.ts) */
+  const crisis = phoneCrisisLine();
   return (
     <T v="small" tone="muted">
-      If this stirs up something heavy, you can call or text <Text style={{ fontFamily: font.bodyBold }}>988</Text>, the Suicide &amp; Crisis Lifeline, any
-      time, day or night (US). It is open to anyone who is struggling.
+      If this stirs up something heavy, you can {crisis.text ? 'call or text' : 'call'} <Text style={{ fontFamily: font.bodyBold }}>{crisis.num}</Text>,{' '}
+      {crisis.called}, any time, day or night ({crisis.where}). It is open to anyone who is struggling.
     </T>
   );
 }

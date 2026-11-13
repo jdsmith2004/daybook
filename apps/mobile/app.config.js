@@ -7,13 +7,17 @@
    not granted yet: until Apple approves the distribution request, only a development build on the owner's own iPhone has it.
    APPLE_TEAM_ID is the team the extensions are signed with (Xcode shows it under Signing). */
 const PULL = process.env.DAYBOOK_PULL === '1';
+/* The scripture library (docs/review-plan.md, D9) is the owner's own: only a build made with DAYBOOK_SCRIPTURE=1 sets
+   DaybookScripture in Info.plist, which turns modules/scripture-vault on. A store build never has it, so nobody else sees it. */
+const SCRIPTURE = process.env.DAYBOOK_SCRIPTURE === '1';
 const GROUP = 'group.com.jdsmith2004.daybook';
 
 module.exports = ({ config }) => {
-  const out = {
+  const base = {
     ...config,
     experiments: { ...config.experiments, baseUrl: process.env.EXPO_BASE_URL || '' },
   };
+  const out = SCRIPTURE ? { ...base, ios: { ...base.ios, infoPlist: { ...base.ios?.infoPlist, DaybookScripture: true } } } : base;
   if (!PULL) return out;
   return {
     ...out,

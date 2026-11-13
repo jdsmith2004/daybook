@@ -6,7 +6,6 @@ import {
   blankP,
   changeDay,
   clockOf,
-  FREE_LINES,
   gameCompute,
   messageTexts,
   MOVE_MS,
@@ -44,6 +43,7 @@ import { play } from '@/lib/sound';
 import { useSendText } from '@/components/safe-text';
 import { Packed } from '@/components/packed';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { useCrisis } from '@/lib/crisis';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, useTheme, type Palette } from '@/lib/theme';
@@ -528,7 +528,7 @@ export function Halt({ finish, now }: ToolProps & { now: number }) {
 /* ---------- reach a person ---------- */
 /* the three texts at the top, each one big button that opens the messages app (hold to copy); "I sent it" docked where
    the thumb is. Writing your own and
-   the free lines (988, the Crisis Text Line) open in place from quiet links, so the page stays short enough for the
+   the free lines for where the phone is (core crisis.ts: the crisis line, and a text line where there is one) open in place from quiet links, so the page stays short enough for the
    button to sit low. */
 export function Message({ finish }: ToolProps) {
   const c = useTheme();
@@ -540,6 +540,11 @@ export function Message({ finish }: ToolProps) {
   const [writing, setWriting] = useState(false);
   const [lines, setLines] = useState(false);
   const send = useSendText();
+  const { line, text } = useCrisis();
+  const free: [string, string, string, string][] = [
+    ...(text ? [[text.name, text.how, text.sub, text.num] as [string, string, string, string]] : []),
+    [line.name, line.how, line.sub, line.dial],
+  ];
   return (
     <>
       <T v="title" style={s.c} accessibilityRole="header">
@@ -551,7 +556,7 @@ export function Message({ finish }: ToolProps) {
           <T v="eyebrow" tone="muted">
             No one to text right now?
           </T>
-          {FREE_LINES.map(([name, how, sub, num]) => (
+          {free.map(([name, how, sub, num]) => (
             <Card key={name} style={{ alignSelf: 'stretch' }}>
               <T v="label">{name}</T>
               <T v="label" tone="accentText">

@@ -3,6 +3,10 @@
 //   pull.long             every day, one event "long" at the person's hours of use (1, 2 or 3)
 //   pull.night.a / .b     the night, from the morning's time to 23:59 and from midnight to 6 AM (two, so nothing rests on an
 //                         interval across midnight); events "1", "2" at 10 and 20 minutes of use, "3" at 30 (the notes ignored)
+//   pull.night.h          the heartbeat, five minutes after the night's start: asks again, in case the start did not come
+//   pull.morning          6:05 AM: the filter is lifted even if 6 AM's end did not come, and the night just gone is checked as held
+// The parts are core pullParts, handed over in the bridge. The night's own callbacks read the clock two minutes ahead
+// (Pull.grace), so one that comes a few seconds early still sets or lifts the filter it was set for.
 //   pull.open             the few minutes open after the short wait, event "open" at those minutes of use
 //   pull.relock           10 minutes after adult sites opened from the long wait: the filter is back
 //   pull.unlift           when Lift every wait now ends: the waits are back
@@ -19,7 +23,14 @@ import ManagedSettings
 class DeviceActivityMonitorExtension: DeviceActivityMonitor {
   override func intervalDidStart(for activity: DeviceActivityName) {
     super.intervalDidStart(for: activity)
-    Pull.guardNow()
+    Pull.guardNow(boundary: Pull.isBoundary(activity.rawValue))
+    if activity.rawValue == "pull.morning" { morning() }
+  }
+
+  /// the night just gone held, if it got here with the waits on: Apple stops the schedules when access is taken back, so a night
+  /// switched off in Settings never comes here. The app checks the same on its first open after 6 AM.
+  private func morning() {
+    Pull.confirmNight(allowed: AuthorizationCenter.shared.authorizationStatus != .denied)
   }
 
   override func intervalDidEnd(for activity: DeviceActivityName) {
@@ -31,7 +42,9 @@ class DeviceActivityMonitorExtension: DeviceActivityMonitor {
       if Pull.nowMs < at + Pull.openSpan - 60_000 { return }
       Pull.defaults?.set(0.0, forKey: Pull.openKey)
     }
-    Pull.guardNow()
+    let name = activity.rawValue
+    Pull.guardNow(boundary: Pull.isBoundary(name))
+    if name == "pull.night.b" || name == "pull.morning" { morning() }
   }
 
   override func eventDidReachThreshold(_ event: DeviceActivityEvent.Name, activity: DeviceActivityName) {

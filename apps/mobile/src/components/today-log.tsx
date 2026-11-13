@@ -2,7 +2,7 @@
    (WaitingPlan), the pause banner, and the actions a card can ask for. Words from @daybook/core. */
 import { changeDay, clockOf, fmtClock, talkPlanNow, withDay, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
@@ -36,8 +36,10 @@ export function useLogActions() {
    itself is the round button by the tab bar, in reach of the thumb on every page. */
 export function LogLink() {
   const c = useTheme();
+  /* on a 320-wide phone the two share too little room and "Already happened" is cut: they stack there */
+  const narrow = useWindowDimensions().width < 360;
   return (
-    <View style={s.pair}>
+    <View style={[s.pair, narrow && { flexDirection: 'column' }]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Already happened? Log what happened."

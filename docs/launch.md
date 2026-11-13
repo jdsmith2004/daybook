@@ -235,6 +235,14 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   > with and without a slip. The nights stay on the device: they are never sent to our server, synced, backed up or used
   > for anything else. To see it, connect Apple Health in More with sleep data in the simulator's Health app.
   >
+  > Journal Insights (new in 1.3.4): open the journal and tap the chart at the top.
+  >
+  > Bringing a Mithras journal (new in 1.3.4): Mithras is our other app, from the same developer. People moving from it can bring
+  > their own journal and streak into Daybook from More, Save a copy, Bring a Mithras journal (Mithras also opens this page with a
+  > link). It signs in to Mithras with that person's own Mithras sign-in (Sign in with Apple, or email and password), reads only
+  > their own journal and streak once, straight onto the phone, and keeps no Mithras sign-in afterwards. It needs a Mithras
+  > account, so without one the page stops at the sign-in.
+  >
   > The app has no ads, sells nothing, and counts only anonymous totals of how it is used. Reminders are local notifications made on the device, with plain words that do
   > not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
 

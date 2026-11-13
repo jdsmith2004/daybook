@@ -43,6 +43,9 @@ import {
   type ObOpt,
   type RecordId,
   type SetupAnswers,
+  addDays,
+  lessonStop,
+  type DayKey,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -117,9 +120,10 @@ export default function Setup() {
   const voice = obSay(pg.id, f.redo, habit);
   /* the sky goes from night to dawn across setup; the lighting is on the violet night until the flame is lit */
   const [lit, setLit] = useState(false);
-  const kind: LookKind = pg.k === 'light' || pg.k === 'account' ? 'sun' : 'sky';
+  const kind: LookKind = pg.k === 'account' ? 'sun' : 'sky';
   const p = P.length > 1 ? i / (P.length - 1) : 1;
-  const look = lessonLook(kind, p, base.scheme);
+  /* the goal stays under the night the flame was just lit in, as Duolingo's streak goal stays on its streak's screen */
+  const look = pg.k === 'light' ? lessonLook('sky', 0.1, 'dark') : lessonLook(kind, p, base.scheme);
   const c = look.c;
   /* the flame grows a little as setup goes on */
   const want = (SHORT ? 190 : 230) + (SHORT ? 40 : 70) * p;
@@ -171,7 +175,14 @@ export default function Setup() {
       return { ...x, i: to };
     });
   };
-  /* the end of a new person's setup: Today, with the first lesson waiting on it */
+  /* the end of a new person's setup: a small "Great job" with two ways on, the first lesson or Today (the owner, November 13, 2026:
+     "a minor celebration like the popup good job in duolingo ... keep going and go to the lesson or say go home give them both options") */
+  const [cheer, setCheer] = useState(false);
+  const done = () => {
+    if (busy()) return;
+    buzz('lit');
+    setCheer(true);
+  };
   const finish = () => {
     setupKeep.flow = null;
     storeSetup(null);
@@ -444,6 +455,7 @@ export default function Setup() {
     case 'light': {
       body = (
         <FirstGoal
+          tk={tk}
           goal={st?.fwGoal ?? null}
           onGoal={(n) => {
             if (st) apply({ st: setFirstGoal(st, n) });
@@ -454,9 +466,13 @@ export default function Setup() {
       );
       foot = st?.fwGoal ? (
         <Appear key="n" delay={200} style={s.footOne}>
-          <Next label={i < P.length - 1 ? 'Keep going' : 'Go to Today'} noIcon onPress={() => (i < P.length - 1 ? go(1) : finish())} />
+          <Next label="Commit to my goal" noIcon onPress={() => (i < P.length - 1 ? go(1) : done())} />
         </Appear>
-      ) : null;
+      ) : (
+        <View key="n0" style={s.footOne}>
+          <Next label="Commit to my goal" noIcon off onPress={() => {}} />
+        </View>
+      );
       break;
     }
     case 'account': {
@@ -489,7 +505,7 @@ export default function Setup() {
               if (busy()) return;
               /* a choice, kept: Today does not ask again for a week (accounts.ts) */
               if (st) apply(accountLater(st, tk));
-              finish();
+              done();
             }}
           />
         </View>
@@ -570,33 +586,78 @@ export default function Setup() {
   const noBack = i === 0 || f.saved;
   const barLabel = fin ? 'Setup complete' : (f.redo ? 'How Daybook works: ' : 'Set up Daybook: ') + 'page ' + (i + 1) + ' of ' + P.length;
   return (
-    <Shell
-      look={look}
-      level={flameLevel}
-      /* before it is lit, the flame is the ember on the lighting page, not the gliding flame */
-      flameOn
-      pulse={pulse}
-      inset={inset}
-      scroll={scroll}
-      fit={fit}
-      bodyKey={pg.id}
-      prog={<Prog total={P.length} i={i} all={fin} look={look} label={barLabel} />}
-      onBack={noBack ? undefined : () => go(-1)}
-      onClose={fin ? finish : exit}
-      foot={foot}
-      topRight={
-        /* help is one tap away on every page; setup waits underneath, where it was left */
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="SOS. Help with an urge right now. No setup needed. Setup waits for you."
-          onPress={() => router.push('/sos')}
-          style={({ pressed }) => [s.sosPill, { backgroundColor: c.sos, opacity: pressed ? 0.85 : 1 }]}>
-          <Icon name="life" size={17} color={c.sosInk} />
-          <Text style={[s.sosPillT, { color: c.sosInk }]}>SOS</Text>
-        </Pressable>
-      }>
-      {body}
-    </Shell>
+    <View style={{ flex: 1 }}>
+      <Shell
+        look={look}
+        level={flameLevel}
+        /* before it is lit, the flame is the ember on the lighting page, not the gliding flame */
+        flameOn
+        pulse={pulse}
+        inset={inset}
+        scroll={scroll}
+        fit={fit}
+        bodyKey={pg.id}
+        prog={<Prog total={P.length} i={i} all={fin} look={look} label={barLabel} />}
+        onBack={noBack ? undefined : () => go(-1)}
+        onClose={fin ? finish : exit}
+        foot={foot}
+        topRight={
+          /* help is one tap away on every page; setup waits underneath, where it was left */
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="SOS. Help with an urge right now. No setup needed. Setup waits for you."
+            onPress={() => router.push('/sos')}
+            style={({ pressed }) => [s.sosPill, { backgroundColor: c.sos, opacity: pressed ? 0.85 : 1 }]}>
+            <Icon name="life" size={17} color={c.sosInk} />
+            <Text style={[s.sosPillT, { color: c.sosInk }]}>SOS</Text>
+          </Pressable>
+        }>
+        {body}
+      </Shell>
+      {cheer ? (
+        <Cheer
+          onLesson={() => {
+            const id = snap.settings ? lessonStop(snap.days, snap.settings, tk).L?.id : null;
+            finish();
+            if (id) setTimeout(() => router.push({ pathname: '/lesson/[id]', params: { id } }), 50);
+          }}
+          onHome={finish}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+/* ---------- the end: a small celebration from the bottom, as Duolingo's "Awesome!" banner, with both ways on ---------- */
+function Cheer({ onLesson, onHome }: { onLesson: () => void; onHome: () => void }) {
+  const c = useTheme();
+  const inset = useSafeAreaInsets();
+  const still = useReducedMotion();
+  const up = useRef(new Animated.Value(still ? 1 : 0)).current;
+  useEffect(() => {
+    if (!still) Animated.spring(up, { toValue: 1, friction: 7, tension: 70, useNativeDriver: NATIVE }).start();
+  }, [still, up]);
+  return (
+    <View style={StyleSheet.absoluteFill} accessibilityViewIsModal>
+      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(8,6,24,0.45)', opacity: up }]} />
+      {still ? null : <Confetti big={false} />}
+      <Animated.View
+        style={[
+          s.cheer,
+          { backgroundColor: c.mintSoft, paddingBottom: Math.max(16, inset.bottom + 8) },
+          { transform: [{ translateY: up.interpolate({ inputRange: [0, 1], outputRange: [320, 0] }) }] },
+        ]}>
+        <View style={s.cheerTop} accessible accessibilityRole="header" accessibilityLabel="Great job! Tonight is set.">
+          <Icon name="check" size={28} color={c.mint} />
+          <Text style={[s.cheerH, { color: c.mintText }]}>Great job!</Text>
+        </View>
+        <T style={{ color: c.mintText }}>Tonight is set. Your first lesson takes two minutes.</T>
+        <View style={{ gap: 2, marginTop: 6 }}>
+          <Next label="Keep going" noIcon onPress={onLesson} />
+          <Ghost label="Go home" onPress={onHome} />
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -604,31 +665,31 @@ export default function Setup() {
    The lighting itself is WP8's Ignition (components/ignite.tsx), shown as the whole screen before this. Then the flame, big, asks
    for a first goal, and the person picks it: three nights or seven, nothing bigger before a clean week (CLAUDE.md). Picking is the
    commitment (Duolingo found an active choice, with nothing picked for you, holds better), so the button waits for it. */
-function FirstGoal({ goal, onGoal }: { goal: number | null; onGoal: (n: number) => void }) {
+function FirstGoal({ goal, onGoal, tk }: { goal: number | null; onGoal: (n: number) => void; tk: DayKey }) {
+  /* the morning the goal is kept: the person tells the last night of it that morning */
+  const by = (n: number) => new Date(addDays(tk, n) + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }) + ' morning';
   return (
     <>
-      <Head h="Your first goal." />
-      <FlameSlot size={SHORT ? 220 : 280} min={SHORT ? 150 : 190} />
-      <View style={{ gap: 10, alignSelf: 'stretch' }}>
-        <Bubble
-          text={
-            goal
-              ? goal === 3
-                ? 'Three nights. Then we go for seven.'
-                : 'A whole week. I will light up every morning you tell me.'
-              : 'Pick one. Small is how it starts.'
-          }
-        />
-        <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
-          {OB_FIRST.map((n) => (
-            <Answer key={n} sel={goal === n} right={goal === n} onPress={() => onGoal(n)} style={s.goal} label={n + ' free nights'}>
-              <Text style={[s.goalN, { color: goal === n ? '#FFFFFF' : PAPER_INK }]}>{n}</Text>
-              <AnswerText right={goal === n} center>
-                free nights
-              </AnswerText>
-            </Answer>
-          ))}
-        </View>
+      <Bubble
+        text={
+          goal
+            ? goal === 3
+              ? 'Three nights. Then we go for seven.'
+              : 'A whole week. I will light up every morning you tell me.'
+            : 'Let us set your first goal. Small is how it starts.'
+        }
+      />
+      <FlameSlot size={SHORT ? 240 : 330} min={SHORT ? 160 : 220} />
+      <View style={{ gap: 10, alignSelf: 'stretch' }} accessibilityRole="radiogroup">
+        {OB_FIRST.map((n) => (
+          <Answer key={n} sel={goal === n} right={goal === n} onPress={() => onGoal(n)} style={s.goalRow} label={n + ' free nights, kept by ' + by(n)}>
+            <Text style={[s.goalN, { color: goal === n ? '#FFFFFF' : PAPER_INK }]}>{n}</Text>
+            <View style={{ flex: 1 }}>
+              <AnswerText right={goal === n}>{n === 3 ? 'Three free nights' : 'A free week'}</AnswerText>
+              <Text style={[s.optSub, { color: goal === n ? '#FFFFFF' : PAPER_INK }]}>Kept by {by(n)}</Text>
+            </View>
+          </Answer>
+        ))}
       </View>
     </>
   );
@@ -765,6 +826,19 @@ const s = StyleSheet.create({
   big: { fontFamily: font.displayBold, fontSize: SHORT ? 64 : 84, lineHeight: SHORT ? 70 : 92, fontVariant: ['tabular-nums'] },
   week: { flexDirection: 'row', justifyContent: 'space-between', alignSelf: 'stretch', paddingHorizontal: 8 },
   dot: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  goal: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 12, paddingLeft: 4, paddingRight: 4 },
+  goalRow: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 12 },
+  cheer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    gap: 8,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  cheerTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  cheerH: { fontFamily: font.displayBold, fontSize: 28, lineHeight: 34 },
   goalN: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 40 },
 });

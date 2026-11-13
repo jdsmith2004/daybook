@@ -86,7 +86,7 @@ import { Bubble, FlameSlot } from '@/components/lesson-flame';
 import { Answer, Question, Quiet, Shell } from '@/components/lesson-parts';
 import { LessonFinish } from '@/components/lesson-finish';
 import { Bar, PickLine, Praise, praiseFor, React2 } from '@/components/lesson-play';
-import { SwipeCard } from '@/components/lesson-swipe';
+import { FlashCard } from '@/components/lesson-flash';
 import { Next, Rich } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
@@ -566,7 +566,7 @@ export default function LessonScreen() {
       body = (
         <>
           {head}
-          <SwipeCard
+          <FlashCard
             think={b.h || card.h}
             see={b.p || card.see || ''}
             felt={felt}
@@ -650,10 +650,7 @@ export default function LessonScreen() {
       <LineEditor key={editing} it={ed} t={t} onAdd={(x) => add(editing!, x)} onCancel={() => setEditing(null)} />
     ) : (
       <>
-        <T style={[s.h, s.hsm]} accessibilityRole="header">
-          {a.h}
-        </T>
-        <Rich text={a.p} st={st} style={s.p} />
+        {/* no words above the flame (the owner, November 13, 2026): the lines to add say it themselves */}
         {a.write ? (
           <WriteBox label={L.np} value={note} examples={a.write} t={t} onChange={write} />
         ) : !items.length && !(a.go || []).length ? (
@@ -759,6 +756,7 @@ export default function LessonScreen() {
       fit={fit}
       bodyKey={stg + ':' + i + (lockKey ? ':lock' : '')}
       praise={praise}
+      floatFoot
       foot={foot}
       over={sheet ? <SheetOver sheet={sheet} L={L} st={st} onClose={() => setSheet(null)} onSrc={(i0) => setSheet({ t: 'src', i: i0 })} /> : null}>
       {body}

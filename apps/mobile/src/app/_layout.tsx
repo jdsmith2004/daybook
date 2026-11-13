@@ -352,6 +352,7 @@ function Shell() {
             'pause',
             'morning',
             'unlock',
+            'day-list',
             'ignite',
             'becoming',
           ].map((name) => (

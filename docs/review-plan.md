@@ -1336,7 +1336,16 @@ Anything not named here was approved as recommended ("if I didn't mention it, it
 - **D4:** (a), with the owner's condition: setup stays motivating and emotional. Keep the well-built "you are here, this is different,
   this is actually going to work" piece; what moves to the first week is the training and the parts of the app.
 - **D5:** (a).
-- **D6, D7, D14:** asked again in plainer words; waiting.
+- **D6:** (a), all three rungs, each by choice.
+- **D7: the owner's own rule, not (a). More celebration, not less.** In the owner's words: "i honestly want constant celebrations and i
+  have it on my list i want the celebrations to be better and to show them getting points just like duolingo". The owner shared a
+  one-minute Duolingo recording as the model for celebrations, lessons and tracking (frames and video in the coordinator's notes folder,
+  `duolingo/`). So WP8 is no longer "Quiet the game"; it is "Celebrations like Duolingo" (show first): a celebration after every lesson
+  and every win, points shown being earned and flying into the flame, a day row that ticks, small goals that grow. The owner's other
+  rules still bound it: no big goals before a clean week, nothing in the hours after a slip except celebrating the honesty and the comeback,
+  earned things stay earned, and the tip ask stays at earned moments.
+- **D14:** (a), taken as a yes by the owner's rule "if I didn't mention it, it's just a yes" after it was explained a second time; the
+  owner can still reverse it before WP1 merges.
 - **D8:** (a), seven free lessons, and the free account ask after them stays: the owner, "the lessons are free so they need to sign up
   we can't take that away".
 - **D9:** (a). **D10:** (a). **D11:** finish it ("let's finish it you do it"); the branch is pushed. **D12:** yes; the four branches are

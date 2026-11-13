@@ -14,7 +14,19 @@
    - Apple Health: Apple's own sheet, for sleep only;
    - the night pack: its page in Settings, where each automation is walked through;
    - the app lock: Face ID or the passcode once, and the lock is on. */
-import { gameCompute, isKey, obPlanLine, ROUTINE_SHOWN, setField, setPlanLine, setRoutine, UNLOCK_ORDER, UNLOCK_WORDS, type UnlockId } from '@daybook/core';
+import {
+  gameCompute,
+  isKey,
+  obPlanLine,
+  ROUTINE_SHOWN,
+  setField,
+  setPlanLine,
+  setRoutine,
+  stopTiles,
+  UNLOCK_ORDER,
+  UNLOCK_WORDS,
+  type UnlockId,
+} from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -26,6 +38,7 @@ import { confirmUnlock } from '@/components/lock';
 import { Dock, Finish, SceneFrame } from '@/components/scene';
 import { Button, Icon, T } from '@/components/ui';
 import { UnlockSheet } from '@/components/unlocked';
+import { DayPreview } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
 import { connectHealth } from '@/lib/health';
 import { close } from '@/lib/nav';
@@ -33,6 +46,7 @@ import { setLockPref, setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { PULL_DENIED, pullStart, setPullPrefs } from '@/lib/pull';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { useStore } from '@/lib/store';
+import { useAccount } from '@/lib/sync';
 import { PAPER_INK } from '@/lib/lesson-look';
 import { font, nightInk, useTheme, type Sky } from '@/lib/theme';
 import { useUnlockMark } from '@/lib/unlock';
@@ -52,6 +66,10 @@ const SKY: Record<UnlockId, Sky> = {
 };
 
 /* the short wait all day is the one with the evidence (one sec), so it comes first; notes only stays a choice */
+/* the daily list's parts by the names Today gives them (the routine's Wind-down is Good night on Today) */
+const ON_TODAY: Record<string, string> = { wind: 'Good night', reach: 'Reach out' };
+const todayName = (x: { k: string; name: string }) => ON_TODAY[x.k] || x.name;
+
 const WAYS: [boolean, string, string][] = [
   [true, 'A short wait first', 'Ten seconds before each one opens, all day'],
   [false, 'Notes only', 'A note after two hours, and at night'],
@@ -62,7 +80,8 @@ export default function Unlocked() {
   const { s: sun } = useLocalSearchParams<{ s?: string }>();
   const id: UnlockId = UNLOCK_ORDER.includes(raw as UnlockId) ? (raw as UnlockId) : 'bed';
   const w = UNLOCK_WORDS[id];
-  const { snap, tk, apply, say } = useStore();
+  const { snap, tk, now, apply, say } = useStore();
+  const account = useAccount();
   const mark = useUnlockMark();
   const c = useTheme();
   const st = snap.settings;
@@ -218,10 +237,27 @@ export default function Unlocked() {
             <Button label={w.btn} onPress={saveName} disabled={!name.trim()} />
           </View>
         ) : null}
-        <View style={s.mid}>
-          <Bubble text={said} style={{ alignSelf: 'center', maxWidth: 320 }} />
-          <Finish level={level} alive always least={0.6} size={w.how ? 160 : 190} zoom={1.25} />
-        </View>
+        {id === 'routine' && st ? (
+          /* the daily list: the very list on Today, drawn as Today draws it, changing as the person adds or takes off a part
+             (the owner, November 13, 2026: "it should look the same as home ... it's hard to tell they're editing the home screen") */
+          <View style={s.mid}>
+            <DayPreview
+              tiles={stopTiles(snap.days, { ...st, routine: { ...st.routine, ...list } }, tk, now, snap.journal, !!account).tiles}
+              label={
+                'Your day on Today: ' +
+                ROUTINE_SHOWN.filter((x) => list[x.k])
+                  .map(todayName)
+                  .join(', ') +
+                '.'
+              }
+            />
+          </View>
+        ) : (
+          <View style={s.mid}>
+            <Bubble text={said} style={{ alignSelf: 'center', maxWidth: 320 }} />
+            <Finish level={level} alive always least={0.6} size={w.how ? 160 : 190} zoom={1.25} />
+          </View>
+        )}
         {id === 'person' ? null : (
           <Dock>
             {id === 'plan' && line ? (
@@ -240,13 +276,24 @@ export default function Unlocked() {
                     key={x.k}
                     sel={list[x.k]}
                     right={list[x.k]}
-                    onPress={() => setList((l) => ({ ...l, [x.k]: !l[x.k] }))}
+                    onPress={() => {
+                      buzz('tap');
+                      setList((l) => ({ ...l, [x.k]: !l[x.k] }));
+                    }}
                     style={s.cell}
-                    label={x.name + (list[x.k] ? ', on Today' : ', off')}>
-                    <AnswerText right={list[x.k]}>{x.name}</AnswerText>
+                    label={list[x.k] ? todayName(x) + ', on Today. Tap to take it off.' : 'Add ' + todayName(x) + ' to Today'}>
+                    <View style={s.cellIn}>
+                      {list[x.k] ? null : <Icon name="plus" size={16} color={PAPER_INK} />}
+                      <AnswerText right={list[x.k]}>{todayName(x)}</AnswerText>
+                    </View>
                   </Answer>
                 ))}
               </View>
+            ) : null}
+            {id === 'routine' ? (
+              <T v="small" tone="muted" style={s.mid0}>
+                {w.say}
+              </T>
             ) : null}
             {id === 'doors' ? (
               <View style={{ gap: 8 }}>
@@ -281,6 +328,7 @@ const s = StyleSheet.create({
   opt: { paddingVertical: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   cell: { paddingVertical: 12, flexGrow: 1, flexBasis: '45%' },
+  cellIn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   how: { gap: 10, marginTop: 14, alignSelf: 'stretch', width: '100%' },
   step: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   stepN: { fontFamily: font.displayBold, fontSize: 22, lineHeight: 26, minWidth: 18 },

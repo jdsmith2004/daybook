@@ -231,6 +231,19 @@ export function DayPicture({ wind }: { wind: string }) {
   );
 }
 
+/** today's own stops, drawn exactly as Today draws them, as a picture: for the daily list's unlock (app/unlock.tsx), so the person
+    sees the very list they are changing. Nothing in it is a button. */
+export function DayPreview({ tiles, label }: { tiles: StopTile[]; label: string }) {
+  const glass = useTheme().scheme === 'dark';
+  return (
+    <View pointerEvents="none" accessible accessibilityRole="image" accessibilityLabel={label}>
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Stops key={tiles.map((t) => t.k).join(' ')} tiles={tiles} big={null} glass={glass} />
+      </View>
+    </View>
+  );
+}
+
 /* ---------- the line down the left, with each stop's mark on it ---------- */
 const RAIL = 24;
 const MARK = 20;

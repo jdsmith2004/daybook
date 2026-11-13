@@ -216,10 +216,10 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
   routine: {
     eb: 'Unlocked',
     h: 'Your daily list',
-    title: 'Your day is yours to shape',
+    title: 'Your list on Today',
     line: 'Choose what shows on Today, every day.',
-    say: 'Keep what helps you and switch off what does not. A part you switch off still earns its points when you do it.',
-    how: ['To change only today, tap Change on Today.'],
+    how: ['This is your day, just as Today shows it. Add a part, or tap one to take it off.'],
+    say: 'To change only one day, tap Change on Today.',
     btn: 'Keep my list',
   },
   health: {

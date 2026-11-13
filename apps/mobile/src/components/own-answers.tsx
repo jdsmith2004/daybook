@@ -39,7 +39,7 @@ export function OwnAnswers() {
   return (
     <>
       {one('trig', 'What set it off')}
-      {one('did', 'What did you do', 'To add one, tap “Add your own” on a check-in question. Removing one hides it; entries that used it keep their words.')}
+      {one('did', 'What did you do', 'To add one, tap “Write my own” on a check-in question. Removing one hides it; entries that used it keep their words.')}
     </>
   );
 }

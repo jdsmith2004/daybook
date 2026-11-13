@@ -944,7 +944,8 @@ function Part({ icon, tone, title, children }: { icon: string; tone: string; tit
         <Icon name={icon} size={16} color={t.text} />
         <T v="label">{title}</T>
       </View>
-      <ChipWrap>{children}</ChipWrap>
+      {/* every part ends with its "Write my own" chip, which stays last */}
+      <ChipWrap last={1}>{children}</ChipWrap>
     </View>
   );
 }

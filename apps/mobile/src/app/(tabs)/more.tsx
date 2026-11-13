@@ -9,6 +9,7 @@ import { HelpFoot } from '@/components/help-foot';
 import { skyInk } from '@/components/hero';
 import { SetGroup, SetRow } from '@/components/settings-ui';
 import { PulseRows } from '@/components/pulse';
+import { PreviewRows } from '@/components/preview-rows';
 import { Screen } from '@/components/screen';
 import { SettingsSections } from '@/components/settings-sections';
 import { TipRow } from '@/components/support';
@@ -63,6 +64,7 @@ export default function More() {
       <SettingsSections
         lead={
           <>
+            <PreviewRows />
             <SetGroup>
               <SetRow icon="pencil" label="Journal" onPress={() => router.push('/journal')} />
               <SetRow icon="shield" label="My plan" onPress={() => router.push('/plan')} />

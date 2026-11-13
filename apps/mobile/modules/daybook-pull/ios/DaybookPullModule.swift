@@ -51,9 +51,10 @@ public final class DaybookPullModule: Module {
       }
     }
 
-    /// whether access was taken back (Settings, Screen Time). Only a plain no counts: the status loads late after a launch and
-    /// reads "not determined" until it does, which must never turn it off.
-    AsyncFunction("allowed") { () async -> Bool in
+    /// Apple's answer now: "approved", "denied" (taken back in Settings) or "notDetermined" (after a restore to a new phone, the
+    /// ask was never made on this one). The status loads late after a launch and reads "not determined" until it does, so it is
+    /// read for up to three seconds before that is believed.
+    AsyncFunction("status") { () async -> String in
       var st = AuthorizationCenter.shared.authorizationStatus
       var tries = 0
       while st == .notDetermined && tries < 15 {
@@ -61,7 +62,29 @@ public final class DaybookPullModule: Module {
         st = AuthorizationCenter.shared.authorizationStatus
         tries += 1
       }
-      return st != .denied
+      return st == .approved ? "approved" : st == .denied ? "denied" : "notDetermined"
+    }
+
+    /// what is not working, for core pullTrouble: schedules Apple would not start, picked apps that cannot be read back, and how
+    /// many single apps are picked (Apple holds at most 50)
+    Function("health") { () -> [String: Any] in
+      let sel = Pull.selection()
+      return [
+        "failed": (self.defaults?.stringArray(forKey: Pull.failedKey)) ?? [],
+        "decodeFail": (self.defaults?.double(forKey: Pull.decodeFailKey) ?? 0) > 0,
+        "apps": sel?.applicationTokens.count ?? 0,
+      ]
+    }
+
+    /// Try again: every schedule is set again from the last bridge
+    AsyncFunction("retry") { () in
+      self.defaults?.removeObject(forKey: schedKey)
+      self.rewrite()
+    }.runOnQueue(Self.queue)
+
+    /// the app's own morning check, on its first open after 6 AM with access still given (the monitor's may not have come)
+    Function("confirm") { () in
+      Pull.confirmNight(allowed: true)
     }
 
     /// Apple's app list, starting from what was chosen; how many apps, kinds and sites are chosen, or null when it was closed.
@@ -113,22 +136,14 @@ public final class DaybookPullModule: Module {
     /// hands the extensions core pullBridge's JSON (written on every open and change), sets what is held now, and sets Apple's
     /// schedules to match
     AsyncFunction("write") { (json: String) in
-      self.defaults?.set(json, forKey: Pull.bridgeKey)
-      guard let b = Pull.parse(json) else { return }
-      let p = Pull.prefs(b)
-      if (p["on"] as? Bool) != true {
-        self.stopAll(forget: false)
-        return
-      }
-      /* a smaller pick whose morning has come */
-      if Pull.decode(Pull.selectionNextKey) != nil, (self.defaults?.double(forKey: Pull.selectionAtKey) ?? 0) <= self.nowMs {
-        if let d = self.defaults?.data(forKey: Pull.selectionNextKey) { self.defaults?.set(d, forKey: Pull.selectionKey) }
-        self.defaults?.removeObject(forKey: Pull.selectionNextKey)
-        self.defaults?.removeObject(forKey: Pull.selectionAtKey)
-        self.defaults?.removeObject(forKey: schedKey)
-      }
-      Pull.guardNow(b)
-      self.schedule(b, prefs: p)
+      self.apply(json)
+    }.runOnQueue(Self.queue)
+
+    /// Good night (core pullArmNow): the same write, with the night starting now; whether adult sites wait now, so the flame can
+    /// say only what is true
+    AsyncFunction("armNow") { (json: String) -> Bool in
+      self.apply(json)
+      return Pull.bridge().map { Pull.wanted($0).web } ?? false
     }.runOnQueue(Self.queue)
 
     /// Lift every wait now: nothing is held until `until` ms (core pullLiftUntil: tonight's start by day, 6 AM at night)
@@ -140,9 +155,11 @@ public final class DaybookPullModule: Module {
       Pull.tick("pull.unlift", at: Date(timeIntervalSince1970: until / 1000).addingTimeInterval(60))
     }.runOnQueue(Self.queue)
 
-    /// After the short wait: the apps open for this many minutes of use (inside Apple's shortest schedule), then the wait is back
-    AsyncFunction("openFor") { (minutes: Int) in
+    /// After the short wait: the apps open for this many minutes of use (inside Apple's shortest schedule), then the wait is back.
+    /// In the night, `through`: tonight goes in the week as a night the person went through (the stake was said first).
+    AsyncFunction("openFor") { (minutes: Int, through: Bool) in
       guard let s = Pull.selection() else { return }
+      if through { Pull.markNight(2) }
       /* stamped before the old one stops: its end then reads as a restart, not as time up (the monitor) */
       self.defaults?.set(self.nowMs, forKey: Pull.openAtKey)
       self.defaults?.set(Double(max(1, minutes)), forKey: Pull.openMinsKey)
@@ -218,11 +235,15 @@ public final class DaybookPullModule: Module {
       Pull.countDown()
     }
 
-    /// whether a shield's button asked for Daybook in the last two minutes (its wait screen opens), taken once
-    Function("takeWant") { () -> Bool in
+    /// when a shield's button asked for Daybook in the last two minutes (its wait screen opens, the wait counted from that tap),
+    /// and whether it was over a site in the night (the long wait); taken once. Null when none.
+    Function("takeWant") { () -> [String: Any]? in
       let v = self.defaults?.double(forKey: Pull.wantKey) ?? 0
+      let long = self.defaults?.bool(forKey: Pull.wantLongKey) ?? false
       self.defaults?.removeObject(forKey: Pull.wantKey)
-      return v > 0 && self.nowMs - v < 120_000
+      self.defaults?.removeObject(forKey: Pull.wantLongKey)
+      guard v > 0 && self.nowMs - v < 120_000 && v <= self.nowMs else { return nil }
+      return ["at": v, "long": long]
     }
   }
 
@@ -253,12 +274,16 @@ public final class DaybookPullModule: Module {
   // MARK: Apple's schedules
 
   /// one schedule per piece, each set again only when what it is set from changes (restarting a schedule ends it, and Apple counts
-  /// use only from then): pull.long, and the night's two parts (pull.night.a from its start to 23:59, pull.night.b from midnight,
-  /// or its start when that is after midnight, to 6 AM). The night's starts and ends are where the extensions catch up with the
-  /// clock (Pull.guardNow), so they run whenever Screen Time is on.
+  /// use only from then): pull.long, and the night's parts exactly as core pullParts made them (the bridge's `parts`: its evening
+  /// part to 23:59, its part after midnight to 6 AM, the heartbeat a few minutes after its start, the morning check at 6:05). The
+  /// night's starts and ends are where the extensions catch up with the clock (Pull.guardNow), so they run whenever Screen Time is
+  /// on. A schedule Apple will not start is kept by name (More and Today say so) and tried again on the next write.
   private func schedule(_ b: [String: Any], prefs p: [String: Any]) {
-    guard let s = Pull.selection() else { return }
-    let long = (p["long"] as? Int) ?? 0
+    /* the picked apps, for the minutes of use. Without them (unreadable after an update) the night still runs: the adult filter
+       needs no apps, only the night's starts and ends */
+    let s = Pull.selection() ?? FamilyActivitySelection()
+    let apps = Pull.count(s) > 0
+    let long = apps ? ((p["long"] as? Int) ?? 0) : 0
     let hard = (p["hard"] as? Bool) != false
     /* a hash that stays the same from launch to launch (String's own does not) */
     let sel = defaults?.data(forKey: Pull.selectionKey).map { $0.reduce(5381) { ($0 &* 33) &+ Int($1) } } ?? 0
@@ -273,30 +298,17 @@ public final class DaybookPullModule: Module {
         [DeviceActivityEvent.Name("long"): ev(DateComponents(hour: long))]
       )
     }
-    if let f = Pull.nightNext(b) {
-      var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
-      if hard { for (i, m) in hardAt.enumerated() { events[DeviceActivityEvent.Name(String(i + 1))] = ev(DateComponents(minute: m)) } }
-      let key = "\(f)|\(hard)|\(sel)"
-      let end = Pull.nightEnd
-      /* the evening part, when the night starts before midnight and leaves Apple's shortest schedule before 23:59 */
-      if f > end && 23 * 60 + 59 - f >= 15 {
-        want["pull.night.a"] = (
-          key,
-          DeviceActivitySchedule(
-            intervalStart: DateComponents(hour: f / 60, minute: f % 60), intervalEnd: DateComponents(hour: 23, minute: 59), repeats: true),
-          events
-        )
-      }
-      let b0 = f < end ? f : 0
-      if end - b0 >= 15 {
-        want["pull.night.b"] = (
-          key,
-          DeviceActivitySchedule(
-            intervalStart: DateComponents(hour: b0 / 60, minute: b0 % 60), intervalEnd: DateComponents(hour: end / 60, minute: end % 60),
-            repeats: true),
-          events
-        )
-      }
+    var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
+    if hard { for (i, m) in hardAt.enumerated() { events[DeviceActivityEvent.Name(String(i + 1))] = ev(DateComponents(minute: m)) } }
+    for part in (b["parts"] as? [[String: Any]]) ?? [] {
+      guard let n = part["n"] as? String, let a = part["a"] as? Int, let e = part["b"] as? Int, e > a else { continue }
+      let watch = (part["ev"] as? Bool) == true && hard && apps
+      want[n] = (
+        "\(a)|\(e)|\(watch)|\(sel)",
+        DeviceActivitySchedule(
+          intervalStart: DateComponents(hour: a / 60, minute: a % 60), intervalEnd: DateComponents(hour: e / 60, minute: e % 60), repeats: true),
+        watch ? events : [:]
+      )
     }
     var keys = (defaults?.dictionary(forKey: schedKey) as? [String: String]) ?? [:]
     let center = DeviceActivityCenter()
@@ -306,17 +318,20 @@ public final class DaybookPullModule: Module {
       center.stopMonitoring([DeviceActivityName(name)])
       keys[name] = nil
     }
+    var failed: [String] = []
     for (name, w) in want where keys[name] != w.key {
       do {
         try center.startMonitoring(DeviceActivityName(name), during: w.during, events: w.events)
         keys[name] = w.key
         stamp(name)
       } catch {
-        /* tried again on the next write */
+        /* said in More and on Today (core pullTrouble), and tried again on the next write */
         keys[name] = nil
+        failed.append(name)
       }
     }
     defaults?.set(keys, forKey: schedKey)
+    Pull.setFailed(failed)
   }
 
   /// sets the schedules again from the last bridge written, and what is held now (after a new pick)
@@ -335,10 +350,30 @@ public final class DaybookPullModule: Module {
     defaults?.set(started, forKey: Pull.startedKey)
   }
 
+  /// the write: the bridge kept for the extensions, what is held now, and the schedules
+  private func apply(_ json: String) {
+    defaults?.set(json, forKey: Pull.bridgeKey)
+    guard let b = Pull.parse(json) else { return }
+    let p = Pull.prefs(b)
+    if (p["on"] as? Bool) != true {
+      stopAll(forget: false)
+      return
+    }
+    /* a smaller pick whose morning has come */
+    if Pull.decode(Pull.selectionNextKey) != nil, (defaults?.double(forKey: Pull.selectionAtKey) ?? 0) <= nowMs {
+      if let d = defaults?.data(forKey: Pull.selectionNextKey) { defaults?.set(d, forKey: Pull.selectionKey) }
+      defaults?.removeObject(forKey: Pull.selectionNextKey)
+      defaults?.removeObject(forKey: Pull.selectionAtKey)
+      defaults?.removeObject(forKey: schedKey)
+    }
+    Pull.guardNow(b)
+    schedule(b, prefs: p)
+  }
+
   private func stopAll(forget: Bool) {
     DeviceActivityCenter().stopMonitoring()
     Pull.store.clearAllSettings()
-    for k in [schedKey, Pull.startedKey, Pull.liftKey, Pull.openKey, Pull.webKey, "pull.rest"] { defaults?.removeObject(forKey: k) }
+    for k in [schedKey, Pull.startedKey, Pull.liftKey, Pull.openKey, Pull.webKey, Pull.failedKey, "pull.rest"] { defaults?.removeObject(forKey: k) }
     if forget {
       for k in [Pull.selectionKey, Pull.selectionNextKey, Pull.selectionAtKey, Pull.ignoredKey] { defaults?.removeObject(forKey: k) }
     }

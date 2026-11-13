@@ -5,7 +5,11 @@
    The card is the widget's campfire night, and the picture is the flame standing in its fire, cut in close (core campfire.ts).
    One small flame picture, the same everywhere (lib/flame-widget), and few layers: a Live Activity has little memory.
    This function runs on its own inside the widget (expo-widgets): every color and size is written inside it. Nothing in it says
-   what Daybook is for. */
+   what Daybook is for.
+
+   It ends itself in all but name: the app starts and updates it with its end as Apple's stale date (core livePlan `to`), and once
+   that has passed (the app closed, so nothing ended it) it draws only the flame, with no words, no time and no bar, until the
+   app ends it on its next open or iPhone takes it away. A frozen "Screens off at 10:30 PM" at 3 AM is never left on the Lock Screen. */
 import { HStack, Image, Link, ProgressView, Spacer, Text, VStack } from '@expo/ui/swift-ui';
 import {
   activityBackgroundTint,
@@ -70,6 +74,11 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
     ) : (
       <Image systemName="flame.fill" size={size * 0.7} color={WARM} />
     );
+  /* past its end with nothing to end it: only the flame, small, and nothing that reads as a time or a message */
+  if (environment.isStale) {
+    const still = <VStack modifiers={card}>{flame(44)}</VStack>;
+    return { banner: still, compactLeading: flame(22), compactTrailing: flame(18), minimal: flame(22), expandedBottom: still };
+  }
   /* a clean glyph for the small places, where the mascot would only blur: a flame, or a moon once it is asleep (no short time) */
   const glyph = (size: number, color = WARM) => <Image systemName={props.short ? 'flame.fill' : 'moon.zzz.fill'} size={size} color={color} />;
   /* the end of the bar: a warm round badge with the flame in it, like the pin at the end of a ride */

@@ -69,9 +69,9 @@ describe('effortProofs', () => {
 });
 
 describe('effortCounts, nights the lock held', () => {
-  it('counts nights before today whose waits were on and held, never one gone through or tonight', () => {
+  it('counts nights before today that held to the morning, never one only started, gone through, or tonight', () => {
     const tk = '2026-10-21';
-    const e = core.effortCounts({}, tk, { '2026-10-18': 1, '2026-10-19': 2, '2026-10-20': 1, '2026-10-21': 1 });
+    const e = core.effortCounts({}, tk, { '2026-10-17': 1, '2026-10-18': 3, '2026-10-19': 2, '2026-10-20': 3, '2026-10-21': 3 });
     expect(e?.lockHeld).toBe(2);
     expect(core.effortProofs(e)).toEqual(['Lock held 2 nights']);
     expect(core.effortCounts({}, tk, {})).toBeNull();

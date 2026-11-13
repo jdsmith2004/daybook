@@ -39,6 +39,7 @@ import {
 } from './legacy/core.js';
 import { changeSettings } from './actions';
 import { OB_CREED } from './faith';
+import { FREE_WAIT } from './north';
 import { habitIn, habitMedical, habitOf, habitSay, normHabit, OB_HABIT, type Habit } from './habit';
 import type { CountMode, DayKey, Settings } from './types';
 
@@ -68,8 +69,12 @@ export interface SetupAnswers {
   person?: string;
   /** who I am becoming: a starter sentence or the person's own */
   be?: string;
-  /** the north star's first answer, 0 to 10, while its page is open (kept in st.free, north.ts) */
+  /** the north star's first answer, 0 to 10 (north.ts); no longer asked in setup */
   free?: number;
+  /** who it is for (OB_FOR ids, up to three): kept as reasons */
+  for?: string[];
+  /** the first small goal, picked once the flame is lit: 3 or 7 free nights (CLAUDE.md: no big goals before a clean week) */
+  first?: number;
   [k: string]: unknown;
 }
 
@@ -151,6 +156,9 @@ export function obReasonOpts(a: SetupAnswers, st: Settings | null, redo: boolean
 /** the reasons picked, with the one written in */
 export function obReasonList(a: SetupAnswers): string[] {
   const list = (a.rs || []).slice();
+  obForReasons(a).forEach((t) => {
+    if (!list.some((x) => sameReason(x, t))) list.push(t);
+  });
   const own = cleanReason(a.own || '');
   if (own && !list.some((x) => sameReason(x, own))) list.push(own);
   return list.slice(0, REASON_MAX);
@@ -175,259 +183,116 @@ export function obThenPick(a: SetupAnswers, st: Settings | null, redo: boolean, 
 }
 
 /* ---------- the pages ---------- */
-export type PageKind =
-  | 'hello'
-  | 'account'
-  | 'night'
-  | 'how'
-  | 'tiles'
-  | 'years'
-  | 'slide'
-  | 'bps'
-  | 'heard'
-  | 'multi'
-  | 'guess'
-  | 'hours'
-  | 'loop'
-  | 'so'
-  | 'waves'
-  | 'breathe'
-  | 'tour'
-  | 'curve'
-  | 'tries'
-  | 'slip'
-  | 'goal'
-  | 'reasons'
-  | 'then'
-  | 'becoming'
-  | 'review'
-  | 'remind'
-  | 'star'
-  | 'done';
+/* Setup in two minutes (WP10, the owner's decisions D4 and D14, November 12, 2026). A new person answers four things, feels
+   why this time is different, says who it is for, sets tonight, and lights their flame for the first time; then the account
+   ask. What used to be taught here (the wave, the loop, a day in Daybook, the plan, the five statements) moves into the first
+   week, one part a day, each set up by using it (unlock.ts). Duolingo is the model (the owner, November 12, 2026): the flame
+   talks in its bubble and answers each pick, one question a page with big answers low, a bar across the top, the first win
+   inside setup, and the flame lit by the person at the end. Every question can be skipped; setup itself cannot. */
+export type PageKind = 'hello' | 'account' | 'tiles' | 'multi' | 'breathe' | 'promise' | 'tonight' | 'light' | 'review' | 'done';
 export interface ObPage {
   id: string;
-  s: string;
   k: PageKind;
   key?: string;
   list?: ObOpt[];
   h?: string;
   sub?: string;
   cols?: number;
-  auto?: 1;
+  /** the most that can be picked on a many-answer page */
+  max?: number;
   keep?: 1;
-  /** the small picture over a one-tap question: the flame, or an icon */
-  art?: 'flame' | string;
-  lo?: string;
-  hi?: string;
-  own?: string;
-  n?: number;
   need?: (a: SetupAnswers, env: ObEnv) => boolean;
 }
 /** what the device can do: notify (a phone app; a web page cannot remind once it is closed) */
 export interface ObEnv {
   notify?: boolean;
-  /** true when this build has accounts and the person is not signed in: the account page shows once the plan is built */
+  /** true when this build has accounts and the person is not signed in: the account page shows once the flame is lit */
   account?: boolean;
-  /** true when the north star is asked here: no answer yet, and not in the hours after a slip or an SOS (north.ts freeAtSetup) */
-  free?: boolean;
-  /** true when this iPhone build has Screen Time and no apps are picked yet (pull.ts) */
-  pull?: boolean;
+  /** a walk-through ("How Daybook works" in More): the same questions, then the changes to keep */
+  redo?: boolean;
 }
-/** said most days (or more): step-down counting, and Screen Time's waits offered at the end of setup, not unlocked on day 7 */
+/** said most days (or more): step-down counting */
 export const obMostDays = (a: SetupAnswers): boolean => a.freq === 'f3' || a.freq === 'f4';
-/** the three acts of the setup: id, name, tone and icon. Every page points at its act with `s`. */
-export const OB_SECS: [string, string, string, string][] = [
-  ['you', 'You', 'violet', 'compass'],
-  ['hour', 'Your hardest hour', 'mint', 'life'],
-  ['plan', 'Your plan', 'sun', 'shield'],
+
+/** how often, as four big answers (the mockup's words). Most days is the legacy "about once a day" (step down counts it). */
+export const OB_FREQ4: ObOpt[] = [
+  ['f3', 'Most days', 'flame'],
+  ['f2', 'A few times a week', 'calendar'],
+  ['f1', 'About once a week', 'leaf'],
+  ['f0', 'Less than that', 'sunrise'],
 ];
-/** the five statements (the Brief Pornography Screen) and the page after them are for porn only */
-const forPorn = (a: SetupAnswers) => habitIn(a) === 'porn';
-/* The order is a story in three acts (the owner, October 22, 2026): you, your hardest hour, your plan. */
+/** who it is for: up to three, each kept as one of the person's reasons (shown in SOS and the morning) */
+export const OB_FOR: [string, string, string, string][] = [
+  ['love', 'The people I love', 'heart', 'Being fully present with the people I love'],
+  ['partner', 'A future marriage', 'sun', 'Being ready for a real, honest relationship'],
+  ['faith', 'My faith', 'star', 'Living by my faith'],
+  ['focus', 'My time and focus', 'bolt', 'Doing my best work without a fog'],
+  ['health', 'My health', 'leaf', 'Clear mornings and steady energy'],
+  ['me', 'Who I am becoming', 'sparkle', 'Becoming someone I am proud of'],
+];
+export const FOR_MAX = 3;
+/** the reasons the "who for" picks keep */
+export const obForReasons = (a: SetupAnswers): string[] =>
+  (Array.isArray(a.for) ? (a.for as string[]) : []).map((id) => (OB_FOR.find((x) => x[0] === id) || [])[3]).filter((x): x is string => !!x);
+
+const isRedo = (_a: SetupAnswers, env: ObEnv) => !!env.redo;
+const isNew = (_a: SetupAnswers, env: ObEnv) => !env.redo;
 export const OB_PAGES: ObPage[] = [
-  { id: 'hello', s: 'you', k: 'hello' },
-  { id: 'how', s: 'you', k: 'how' },
-  /* what the person is quitting (habit.ts, the owner, November 8, 2026): first, so every question after it uses its words */
+  { id: 'hello', k: 'hello' },
+  /* what the person is quitting (habit.ts): first, so every word after it is theirs */
+  { id: 'habit', k: 'tiles', key: 'habit', list: OB_HABIT, h: 'What are you quitting?', keep: 1 },
+  { id: 'freq', k: 'tiles', key: 'freq', list: OB_FREQ4, h: 'How often does it happen?', keep: 1 },
+  { id: 'when', k: 'multi', key: 'when', list: OB_WHEN, h: 'When does it pull hardest?', sub: 'Pick any.', cols: 2, keep: 1 },
+  /* the first win, inside setup: thirty seconds of the breathing SOS starts with, done once */
+  { id: 'breathe', k: 'breathe', need: isNew },
+  /* the heart of setup (the owner's condition on D4): you are here, this is different, it is going to work */
+  { id: 'promise', k: 'promise', need: isNew },
   {
-    id: 'habit',
-    s: 'you',
-    k: 'tiles',
-    key: 'habit',
-    list: OB_HABIT,
-    h: 'What do you want to quit?',
-    sub: 'Every tool works the same for each one.',
+    id: 'for',
+    k: 'multi',
+    key: 'for',
+    list: OB_FOR.map((x) => [x[0], x[1], x[2]] as ObOpt),
+    h: 'Who are you doing this for?',
+    sub: 'Pick up to three.',
     cols: 1,
-    auto: 1,
-    keep: 1,
-    art: 'flame',
-  },
-  {
-    id: 'aim',
-    s: 'you',
-    k: 'tiles',
-    key: 'aim',
-    list: OB_AIM,
-    h: 'What do you want most from Daybook?',
-    sub: 'Pick the closest one.',
-    cols: 2,
-    auto: 1,
-    keep: 1,
-    art: 'flame',
-  },
-  {
-    id: 'years',
-    s: 'you',
-    k: 'years',
-    key: 'years',
-    list: OB_YEARS,
-    h: 'How long have you been struggling with porn?',
-    sub: 'Your best guess is fine.',
-    auto: 1,
-    keep: 1,
-    art: 'calendar',
-  },
-  {
-    id: 'freq',
-    s: 'you',
-    k: 'slide',
-    key: 'freq',
-    list: OB_FREQ,
-    h: 'In a typical week, how often do you watch porn?',
-    sub: 'Rough is fine. Only you see this.',
-    lo: 'Rarely',
-    hi: 'Several a day',
+    max: FOR_MAX,
     keep: 1,
   },
-  {
-    id: 'mins',
-    s: 'you',
-    k: 'slide',
-    key: 'mins',
-    list: OB_MINS,
-    h: 'When you do, how long does it usually last?',
-    sub: 'Count from when you start until you stop.',
-    lo: 'Minutes',
-    hi: 'Hours',
-    keep: 1,
-  },
-  {
-    id: 'faith',
-    s: 'you',
-    k: 'tiles',
-    key: 'faith',
-    list: OB_FAITH,
-    h: 'Does faith play a part in this for you?',
-    sub: 'Yes or Somewhat adds lessons that speak of God, and a Faith and recovery page in Get help. No leaves them all out.',
-    cols: 1,
-    auto: 1,
-    keep: 1,
-    art: 'star',
-  },
+  { id: 'faith', k: 'tiles', key: 'faith', list: OB_FAITH, h: 'Does faith play a part in this for you?', keep: 1 },
   /* after a Yes or a Somewhat: which faith the God lessons speak from (faith.ts) */
-  {
-    id: 'creed',
-    s: 'you',
-    k: 'tiles',
-    key: 'creed',
-    list: OB_CREED,
-    h: 'Which faith is yours?',
-    sub: 'The lessons that speak of God use its words.',
-    cols: 1,
-    auto: 1,
-    keep: 1,
-    art: 'star',
-    need: (a) => a.faith === 'big' || a.faith === 'some',
-  },
-  { id: 'b0', s: 'you', k: 'bps', n: 0, need: forPorn },
-  { id: 'b1', s: 'you', k: 'bps', n: 1, need: forPorn },
-  { id: 'b2', s: 'you', k: 'bps', n: 2, need: forPorn },
-  { id: 'b3', s: 'you', k: 'bps', n: 3, need: forPorn },
-  { id: 'b4', s: 'you', k: 'bps', n: 4, need: forPorn },
-  { id: 'heard', s: 'you', k: 'heard', need: forPorn },
-  {
-    id: 'costs',
-    s: 'you',
-    k: 'multi',
-    key: 'costs',
-    list: OB_COST,
-    h: 'What has porn cost you so far?',
-    sub: 'Tap all that apply.',
-    cols: 2,
-    keep: 1,
-    own: 'ownCost',
-  },
-  { id: 'guess', s: 'you', k: 'guess', need: (a) => !!obHours(a) },
-  { id: 'hours', s: 'you', k: 'hours', need: (a) => !!obHours(a) },
-  {
-    id: 'when',
-    s: 'hour',
-    k: 'multi',
-    key: 'when',
-    list: OB_WHEN,
-    h: 'When does the urge pull hardest?',
-    sub: 'Tap all that apply. Daybook gets ready for these.',
-    cols: 2,
-    keep: 1,
-  },
-  { id: 'wave', s: 'hour', k: 'waves' },
-  /* thirty seconds of slow breathing, the way SOS starts (a placeholder until the real breath is built) */
-  { id: 'breathe', s: 'hour', k: 'breathe' },
-  { id: 'loop', s: 'hour', k: 'loop' },
-  /* the safe person left the setup on November 9, 2026: it is asked a week in (unlock.ts) */
-  /* one page in place of the five tour pages: SOS, lessons, your day, the pattern, the flame */
-  { id: 'tour', s: 'hour', k: 'tour' },
-  { id: 'curve', s: 'plan', k: 'curve' },
-  {
-    id: 'tried',
-    s: 'plan',
-    k: 'tiles',
-    key: 'tried',
-    list: OB_TRIED,
-    h: 'Have you tried to quit before?',
-    sub: 'There is no wrong answer here.',
-    cols: 1,
-    auto: 1,
-    keep: 1,
-    art: 'flag',
-  },
-  { id: 'tries', s: 'plan', k: 'tries' },
-  { id: 'slip', s: 'plan', k: 'slip' },
-  { id: 'goal', s: 'plan', k: 'goal', key: 'goal' },
-  { id: 'reasons', s: 'plan', k: 'reasons', key: 'rs' },
-  { id: 'ifthen', s: 'plan', k: 'then', key: 'then' },
-  { id: 'so', s: 'plan', k: 'so', key: 'so' },
-  { id: 'becoming', s: 'plan', k: 'becoming', key: 'be' },
-  { id: 'review', s: 'plan', k: 'review' },
-  /* when to check in, with the phone's one permission prompt (nudges.ts); only where the device can notify */
-  { id: 'remind', s: 'plan', k: 'remind', need: (_a, env) => !!env.notify },
-  /* Screen Time's waits, for people who said most days (docs/plan.md, "The morning, not the moment", step 2): the night is met
-     with defenses set now, not with willpower then. Skip records the choice; it is in More any time. */
-  { id: 'night', s: 'plan', k: 'night', need: (a, env) => !!env.pull && obMostDays(a) },
-  /* the north star's starting point (north.ts): how much the person sees themselves as free of this, 0 to 10, on the page before
-     the account ask, which stays last */
-  { id: 'star', s: 'plan', k: 'star', need: (_a, env) => !!env.free },
-  /* a free account, asked for at the best moment there is: the plan was just built, and nothing has gone wrong yet
-     (accounts.ts). It comes last, so it is the one ask left in mind. Never required: "Keep it on this phone" goes on. */
-  { id: 'account', s: 'plan', k: 'account', need: (_a, env) => !!env.account },
-  { id: 'done', s: 'plan', k: 'done' },
+  { id: 'creed', k: 'tiles', key: 'creed', list: OB_CREED, h: 'Which faith is yours?', keep: 1, need: (a) => a.faith === 'big' || a.faith === 'some' },
+  /* tonight, set before it starts: the phone-down time, and (on a phone) the note an hour before it. Only for porn: the
+     screens-off time and the phone plans are about the phone in bed, which other habits do not share (the owner, via WP3,
+     November 13, 2026) */
+  { id: 'tonight', k: 'tonight', need: (a, env) => !env.redo && habitIn(a) === 'porn' },
+  /* the person lights their flame: the plan is saved, counting starts tonight (D14), and the first small goal is picked */
+  { id: 'light', k: 'light', need: isNew },
+  /* a free account, asked for last (CLAUDE.md): the flame was just lit. Never required: "Keep it on this phone" goes on. */
+  { id: 'account', k: 'account', need: (_a, env) => !env.redo && !!env.account },
+  /* a walk-through ends on the changes to keep, then a short done */
+  { id: 'review', k: 'review', need: isRedo },
+  { id: 'done', k: 'done', need: isRedo },
 ];
 export const obPages = (a: SetupAnswers, env: ObEnv = {}) => OB_PAGES.filter((pg) => !pg.need || pg.need(a, env)).map((pg) => obPageIn(pg, habitIn(a)));
+/** the questions asked, for the line the flame says first ("Five quick questions, then tonight is set") */
+export const obAskCount = (a: SetupAnswers, env: ObEnv = {}) => obPages(a, env).filter((p) => p.k === 'tiles' || p.k === 'multi').length;
 /** a page in the words of the habit chosen: the questions name it, and for another habit the first question carries the
     doctor line (habit.ts habitMedical) */
 function obPageIn(pg: ObPage, h: Habit): ObPage {
   if (h === 'porn' || !pg.h) return pg;
   const out = { ...pg, h: habitSay(pg.h, h) };
-  if (pg.id === 'years' && habitMedical(h)) out.sub = habitMedical(h)!;
   return out;
 }
 
+const OB_PREFILL = ['habit', 'aim', 'years', 'freq', 'mins', 'faith', 'creed', 'costs', 'when', 'tried'];
 /** a walk-through starts from the last answers and the plan as it is now */
 export function obPrefill(st: Settings | null): SetupAnswers {
   if (!st) return {};
   const prev = ((st.onb && st.onb.a) || {}) as SetupAnswers;
   const a: SetupAnswers = {};
-  OB_PAGES.forEach((pg) => {
-    if (pg.keep && pg.key && prev[pg.key] != null) a[pg.key] = Array.isArray(prev[pg.key]) ? (prev[pg.key] as string[]).slice() : prev[pg.key];
+  /* every answer a walk-through carries over: the ones asked now, and the ones the long setup asked that its record keeps */
+  OB_PREFILL.forEach((k) => {
+    if (prev[k] != null) a[k] = Array.isArray(prev[k]) ? (prev[k] as string[]).slice() : prev[k];
   });
   if (prev.ownCost) a.ownCost = prev.ownCost;
   if (prev.goal) a.goal = prev.goal;
@@ -436,6 +301,9 @@ export function obPrefill(st: Settings | null): SetupAnswers {
     a.then = prev.then;
     if (OB_THEN[prev.thenT][3].indexOf(prev.then) < 0) a.thenOwn = prev.then;
   }
+  /* who it is for: the picks the reasons still hold */
+  const fr = OB_FOR.filter((x) => (st.reasons || []).indexOf(x[3]) >= 0).map((x) => x[0]);
+  if (fr.length) a.for = fr.slice(0, FOR_MAX);
   a.so = st.screensOff;
   a.person = st.safePerson || '';
   a.be = st.becoming || '';
@@ -540,7 +408,7 @@ export function obRecord(a: SetupAnswers, st: Settings | null, tk: DayKey, now =
   const prev = (st && st.onb) || null;
   const r = obScore(a);
   const keep: Record<string, unknown> = {};
-  OB_KEYS.forEach((k) => {
+  [...OB_KEYS, 'for', 'first'].forEach((k) => {
     const v = a[k];
     if (v != null && v !== '') keep[k] = Array.isArray(v) ? v.slice() : v;
   });
@@ -566,6 +434,108 @@ export function obSave(a: SetupAnswers, st: Settings | null, keep: string[] | nu
     now,
   );
   return { st: next, changed: use.length };
+}
+
+/* ---------- a new person's start (D14: counting starts tonight; the tracking week is no longer offered) ---------- */
+/** the goal a new person's setup sets, in their habit's words */
+export const obBeginGoal = (h: Habit) => habitSay('Quit porn. Log honestly, slips included.', h);
+/** the day of the first ask of "how free do you see yourself", for someone who came through the short setup */
+export const FREE_AT = 30;
+/** the small goals offered once the flame is lit: three nights, then a week. Nothing bigger before a clean week (CLAUDE.md). */
+export const OB_FIRST = [3, 7] as const;
+/** the phone-down time setup starts on: half past ten for someone whose hardest hour is late at night (get there first),
+    eleven for everyone else */
+export const obTonightAt = (a: SetupAnswers): string =>
+  isTime(a.so) ? (a.so as string) : (a.when || []).some((w) => w === 'late' || w === 'tired' || w === 'scroll') ? '22:30' : '23:00';
+
+/** a new person's settings, from what setup asked. Day 1 is today and tonight is the first night counted (D14). How days count
+    follows how often (obMode). The reasons are who it is for. The phone-down time is tonight's. The first week starts today
+    (fw, unlock.ts), which also marks this person as one who came through the short setup: people who finished the long one
+    never see the first-week parts. */
+export function obBegin(a: SetupAnswers, tk: DayKey, now = Date.now()): Settings {
+  const h = habitIn(a);
+  const mode = obMode(a);
+  const rs = obReasonList(a);
+  const rec = obRecord(a, null, tk, now);
+  return changeSettings(
+    defaultSettings(tk),
+    (s) => {
+      s.goal = obBeginGoal(h);
+      s.day1 = tk;
+      s.cleanMode = mode;
+      if (mode === 'step') s.stepAt = tk;
+      s.cleanNote = null;
+      s.cleanHold = null;
+      if (rs.length) {
+        s.reasons = rs.slice();
+        s.why = rs.join('. ') + '.';
+        s.rmeta = rs.map((t) => ({ t, c: reasonGuess(t).id }));
+      }
+      s.screensOff = obTonightAt(a);
+      s.onb = rec;
+      s.fw = tk;
+      /* the "how free do you see yourself" question (north.ts) is no longer asked in setup: it waits until day 30 (C7), so
+         it never crowds the first week. freeNo is when a closed ask was let go; it is due FREE_WAIT days after. */
+      s.freeNo = addDays(tk, FREE_AT - FREE_WAIT);
+      if (a.first === 3 || a.first === 7) s.fwGoal = a.first;
+    },
+    now,
+  );
+}
+
+/** the first small goal, picked once the flame is lit (3 or 7 nights), kept with the first week */
+export const setFirstGoal = (st: Settings, n: number, now = Date.now()): Settings =>
+  n === 3 || n === 7 ? changeSettings(st, (s) => void (s.fwGoal = n as 3 | 7), now) : st;
+
+/** the first line of the plan (the first week, day 4): for the hardest moment setup heard, the "then" picked. Kept in the
+    plan row and in setup's record, so the first week knows it is done. */
+/** the hard moments whose plans are about the phone in bed: offered for porn only (the owner, via WP3, November 13, 2026) */
+const PHONE_TOPS = ['late', 'tired', 'scroll'];
+export function obPlanLine(st: Settings): { top: string; when: string; ask: string; opts: string[] } {
+  const a = ((st.onb && st.onb.a) || {}) as SetupAnswers;
+  const porn = habitOf(st) === 'porn';
+  const rest = (a.when || []).filter((w) => PHONE_TOPS.indexOf(w) < 0);
+  const top = porn ? obTop(a) : rest.length ? obTop({ when: rest }) : 'stress';
+  const T = OB_THEN[top];
+  return { top, when: T[1], ask: T[2], opts: T[3].slice() };
+}
+export function setPlanLine(st: Settings, then: string, now = Date.now()): Settings {
+  const x = obPlanLine(st);
+  const T = OB_THEN[x.top];
+  const th = then.trim().slice(0, 140);
+  if (!th) return st;
+  return changeSettings(
+    st,
+    (s) => {
+      s.plan[T[0]] = { when: T[1], then: th };
+      if (s.onb) s.onb.a = { ...s.onb.a, thenT: x.top, then: th };
+    },
+    now,
+  );
+}
+
+/** the page that is the heart of setup: what the person said, read back with hope, and the three things that make this time
+    different, each tied to what they told it. The flame says the last line. */
+export function obPromise(a: SetupAnswers): { h: string; rows: [string, string][]; say: string } {
+  const porn = habitIn(a) === 'porn';
+  const late = porn && (a.when || []).some((w) => w === 'late' || w === 'tired' || w === 'scroll');
+  const most = obMostDays(a);
+  return {
+    h: 'You are here. This time is different.',
+    rows: [
+      [
+        'moon',
+        late
+          ? 'Your hardest hour is at night. Tonight, we get there first.'
+          : porn
+            ? 'Tonight is set before it starts, not fought when it comes.'
+            : 'When the hard hour comes, the plan is already there.',
+      ],
+      ['sunrise', 'Each morning, one honest tap. A slip is something to learn from, never a reset.'],
+      ['flame', 'One short lesson a day. Everything you do feeds your fire, and you watch it grow.'],
+    ],
+    say: most ? 'Most days is where many people start. They get free from right here.' : 'It works because the plan is ready before the hard hour is.',
+  };
 }
 
 /* ---------- the words on the pages that answer what was said ---------- */
@@ -758,29 +728,17 @@ export const obLast = (st: Settings | null, redo: boolean, key: string, list: Ob
     in a cream bubble. On most pages it says what the small line under the question used to say, so nothing new is asked of anyone;
     on a one-tap question it answers what was picked. Plain words, no contractions, never shame. */
 const OB_SAY: Record<string, string> = {
-  hello: 'I am your flame. I grow every time you show up.',
-  how: 'I will be with you through all three.',
+  hello: 'Hi. I am your flame. Answer a few quick questions, and tonight is set.',
   habit: 'Pick the closest one. I can help with each.',
-  aim: 'Pick the closest one. Whatever you choose, I am with you.',
-  years: 'Your best guess is fine.',
   freq: 'Rough is fine. Only you see this.',
-  mins: 'Count from when you start until you stop.',
-  faith: 'It changes which lessons come up, and whether a faith page shows in Get help.',
-  b0: 'Your answers stay private. A quick, tested check.',
-  costs: 'Tap all that apply.',
-  guess: 'Guess first. Then see your number.',
-  when: 'Tap all that apply. I will get ready for these.',
-  breathe: 'Breathe with me. This is what SOS starts with.',
-  tried: 'There is no wrong answer here.',
-  goal: 'I picked the one that fits your answers. Any of them works.',
-  reasons: 'Pick what matters most. I will show them to you on hard nights.',
-  ifthen: 'A plan made ahead is easier to follow.',
-  so: 'An hour before, a short wind-down starts.',
-  becoming: 'One sentence about who you are growing into. I will show it to you on hard days.',
-  star: 'This is your starting point. Once a month you answer again, and we watch it move.',
-  review: 'This plan is yours. Hold, and I will light up.',
-  remind: 'One short reminder a day, so the check-in becomes part of your evening.',
+  when: 'Pick any. I will be ready for these.',
+  breathe: 'Breathe with me. This is how SOS starts.',
+  for: 'On a hard night, I will remind you.',
+  faith: 'It changes which lessons come up.',
+  tonight: 'Set it now, while it is easy.',
+  light: 'Swipe up. Light me.',
   account: 'Look at me now. You did that.',
+  review: 'Tick what to keep. The rest stays as it is.',
 };
 /** a walk-through: the flame has grown, and says so */
 const OB_SAY_REDO: Record<string, string> = {
@@ -788,7 +746,7 @@ const OB_SAY_REDO: Record<string, string> = {
 };
 /** what the flame says first on a page, or null */
 export const obSay = (id: string, redo = false, h: Habit = 'porn'): string | null =>
-  (redo && OB_SAY_REDO[id]) || (id === 'years' ? habitMedical(h) : null) || OB_SAY[id] || null;
+  (redo && OB_SAY_REDO[id]) || (id === 'freq' ? habitMedical(h) : null) || OB_SAY[id] || null;
 
 /** the flame's answer to a one-tap pick, by the question's key and the answer's id */
 export const OB_REPLY: Record<string, Record<string, string>> = {
@@ -798,17 +756,11 @@ export const OB_REPLY: Record<string, Record<string, string>> = {
     gambling: 'Then we work on gambling. Every tool here is ready for it.',
     other: 'Then we work on it together. Every tool here is ready for it.',
   },
-  aim: {
-    quit: 'Quit for good. Then that is what we build toward, one day at a time.',
-    less: 'Less is a real start. Every hour you take back counts.',
-    nights: 'Nights are where it pulls hardest for most people. We start there.',
-    learn: 'Good. Knowing your pattern is how you get ahead of it.',
-  },
-  years: {
-    y0: 'You are catching it early. That is a real head start.',
-    y1: 'A few years makes a habit, and habits change.',
-    y2: 'That is a long time to carry this. You are here now, and that matters.',
-    y3: 'All these years, and you are still fighting for yourself. That says a lot about you.',
+  freq: {
+    f3: 'Most days. Then we go one night at a time, and every one counts.',
+    f2: 'A few times a week. Then there are already free days to build on.',
+    f1: 'About once a week. You already have more free days than not.',
+    f0: 'Less than that. Then we catch it before it grows.',
   },
   faith: {
     big: 'Then your faith will be part of this. Some lessons are written for it.',
@@ -819,11 +771,6 @@ export const OB_REPLY: Record<string, Record<string, string>> = {
     lds: 'Then I will speak of Heavenly Father and the Savior, in the words you know.',
     christian: 'Then I will lean on the Bible and on Jesus Christ, in the words you know.',
     other: 'Then I will speak of God plainly, in words your faith can hold.',
-  },
-  tried: {
-    t0: 'A first try, with a plan. That is a strong place to start.',
-    t1: 'Each try taught you something. This time you have me.',
-    t2: 'You keep coming back. That is the part that wins in the end.',
   },
 };
 /** the flame's answer to a pick, or null */

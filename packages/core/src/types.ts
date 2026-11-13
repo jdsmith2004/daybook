@@ -225,6 +225,11 @@ export interface Settings {
   /** the day the flame was first seen on the Home Screen or the Lock Screen (flame-widget.ts): WIDGET_PTS, once, kept for good.
       Set once and never cleared. Optional, so older records need no change. */
   widget?: DayKey;
+  /** the day a new person's first week began (setup.ts obBegin): set only by the short setup (November 12, 2026), so people who
+      finished the long one never see the first-week parts (unlock.ts). Set once. Optional, so older records need no change. */
+  fw?: DayKey;
+  /** the first small goal picked when the flame was first lit: 3 or 7 free nights */
+  fwGoal?: 3 | 7;
   /** the day the widget was offered (flame-widget.ts widgetAskDue): offered once. Optional, so older records need no change. */
   widgetAsk?: DayKey;
   /** the day graduation was earned (see graduate.ts). Set once and never cleared. Optional, so older records need no change. */

@@ -1,31 +1,34 @@
-/* Unlocked (core unlock.ts; the owner, November 9, 2026): a part that waited out of the setup, opened on its own page once the
-   person has used the app a while. The flame pops in on its burst, says what the part is for, and the one thing to do sits
-   low. Opening the page is enough to put Today's card away; the part then lives where it always lives.
+/* The first week (core unlock.ts; WP10, November 12, 2026): one new part a day, each set up by using it once. The flame pops
+   in on its burst, says what the part is for, and the one thing to do sits low.
 
-   - the journal: on the night sky, like the journal itself. Write the first one opens a new entry; a quiet link puts it on the
-     day as an any-time stop.
-   - the apps that pull you in (Screen Time, iPhone only, core pull.ts): the two ways low (the short wait all day first, notes
-     only by choice), and Choose the apps opens Apple's ask, then Apple's own list. It is all in More, too. */
-import { gameCompute, setField, setRoutine, UNLOCK_ORDER, UNLOCK_WORDS, type UnlockId } from '@daybook/core';
+   - the phone's bed (day 2): the note an hour before phone-down (on a phone), then the wind-down itself, to put the flame to bed;
+   - one person (day 3): a first name, kept in My plan;
+   - the plan's first line (day 4): for the hardest moment setup heard, three "then"s low, one tap, and it is the plan;
+   - the other doors (day 5, an iPhone with Screen Time): the two ways low, and Choose the apps opens Apple's ask;
+   - your own voice (day 6): Future you, where the note is left;
+   - the first Sunday review keeps its own card (moment.ts), which opens here first. */
+import { gameCompute, obPlanLine, setField, setPlanLine, UNLOCK_ORDER, UNLOCK_WORDS, type UnlockId } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Field, Link } from '@/components/choices';
+import { Field } from '@/components/choices';
 import { Answer, AnswerText } from '@/components/lesson-parts';
 import { Bubble } from '@/components/lesson-flame';
 import { Dock, Finish, SceneFrame } from '@/components/scene';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
+import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { PULL_DENIED, pullStart, setPullPrefs } from '@/lib/pull';
+import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { useStore } from '@/lib/store';
 import { PAPER_INK } from '@/lib/lesson-look';
 import { font, nightInk, useTheme, type Sky } from '@/lib/theme';
 import { useUnlockMark } from '@/lib/unlock';
 
-/* each part on its own sky: the journal on the night, like the journal itself; Planning a slip? in its violet */
-const SKY: Record<UnlockId, Sky> = { journal: 'night', plan: 'violet', person: 'coral', pull: 'sky', reach: 'mint', sunday: 'sun' };
+/* each part on its own sky: the phone's bed on the night, like the night itself */
+const SKY: Record<UnlockId, Sky> = { bed: 'night', person: 'coral', plan: 'violet', doors: 'sky', voice: 'mint', sunday: 'sun' };
 
 /* the short wait all day is the one with the evidence (one sec), so it comes first; notes only stays a choice */
 const WAYS: [boolean, string, string][] = [
@@ -36,14 +39,17 @@ const WAYS: [boolean, string, string][] = [
 export default function Unlocked() {
   const { id: raw } = useLocalSearchParams<{ id?: string }>();
   const { s: sun } = useLocalSearchParams<{ s?: string }>();
-  const id: UnlockId = UNLOCK_ORDER.includes(raw as UnlockId) ? (raw as UnlockId) : 'journal';
+  const id: UnlockId = UNLOCK_ORDER.includes(raw as UnlockId) ? (raw as UnlockId) : 'bed';
   const w = UNLOCK_WORDS[id];
   const { snap, tk, apply, say } = useStore();
   const mark = useUnlockMark();
   const c = useTheme();
   const st = snap.settings;
   const level = st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1;
-  const night = id === 'journal';
+  const night = id === 'bed';
+  const rem = useReminderPrefs();
+  const line = st ? obPlanLine(st) : null;
+  const [then, setThen] = useState<string | null>(null);
   const sky = SKY[id];
   const [name, setName] = useState('');
   const ink = night ? nightInk.ink : undefined;
@@ -57,17 +63,17 @@ export default function Unlocked() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const write = () => router.replace({ pathname: '/journal', params: { new: '1' } });
-  const onDay = () => {
-    if (st) apply({ st: setRoutine(st, 'journal', true) });
-    say('It is on your day now.');
-    close();
-  };
-  const onReach = () => {
-    if (st) apply({ st: setRoutine(st, 'reach', true) });
+  /* the phone's bed: the note an hour before phone-down (asked once, on a phone), then the wind-down itself */
+  const bed = async () => {
+    if (asking.current) return;
+    if (remindersOffered && !rem.wind) {
+      asking.current = true;
+      const ok = await allowReminders().catch(() => false);
+      asking.current = false;
+      if (ok) setReminderPrefs({ ...rem, wind: true });
+    }
     buzz('lit');
-    say('It is on your day now.');
-    close();
+    router.replace('/wind');
   };
   const saveName = () => {
     const v = name.trim().slice(0, 80);
@@ -77,12 +83,19 @@ export default function Unlocked() {
     say('Kept in My plan.');
     close();
   };
+  const savePlan = () => {
+    if (!then || !st) return;
+    apply({ st: setPlanLine(st, then) });
+    buzz('lit');
+    say('It is the first line of your plan.');
+    close();
+  };
   const main: Record<UnlockId, () => void> = {
-    journal: write,
-    plan: () => router.replace('/trail'),
+    bed: () => void bed(),
     person: saveName,
-    pull: () => void choose(),
-    reach: onReach,
+    plan: savePlan,
+    doors: () => void choose(),
+    voice: () => router.replace('/future'),
     sunday: () => (sun ? router.replace({ pathname: '/review', params: { s: sun } }) : close()),
   };
   const choose = async () => {
@@ -106,7 +119,7 @@ export default function Unlocked() {
         <Text style={[s.ebT, { color: night ? '#FFE27A' : c.accent }]}>{w.eb}</Text>
       </View>
       <T v="title" style={[s.mid0, ink ? { color: ink } : null]} accessibilityRole="header">
-        {w.title}
+        {id === 'plan' && line ? 'When ' + line.ask + ', what will you do?' : w.title}
       </T>
       {w.line ? (
         <T tone={night ? undefined : 'muted'} style={[s.mid0, { marginTop: 8 }, soft ? { color: soft } : null]}>
@@ -133,7 +146,16 @@ export default function Unlocked() {
       </View>
       {id === 'person' ? null : (
         <Dock>
-          {id === 'pull' ? (
+          {id === 'plan' && line ? (
+            <View style={{ gap: 8 }}>
+              {line.opts.map((t) => (
+                <Answer key={t} sel={then === t} right={then === t} onPress={() => setThen(t)} style={s.opt}>
+                  <AnswerText right={then === t}>{t}</AnswerText>
+                </Answer>
+              ))}
+            </View>
+          ) : null}
+          {id === 'doors' ? (
             <View style={{ gap: 8 }}>
               {WAYS.map(([v, t, sub]) => (
                 <Answer key={t} sel={pause === v} right={pause === v} onPress={() => setPause(v)} style={s.opt}>
@@ -145,12 +167,7 @@ export default function Unlocked() {
               ))}
             </View>
           ) : null}
-          <Button label={w.btn} onPress={main[id]} kind={night ? 'warm' : 'primary'} />
-          {id === 'journal' ? (
-            <View style={s.c}>
-              <Link label="Put it on my day" onPress={onDay} color={nightInk.ink} />
-            </View>
-          ) : null}
+          <Button label={w.btn} onPress={main[id]} kind={night ? 'warm' : 'primary'} disabled={id === 'plan' && !then} />
         </Dock>
       )}
     </SceneFrame>

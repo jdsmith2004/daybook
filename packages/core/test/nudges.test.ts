@@ -553,10 +553,10 @@ it('the words never say what Daybook is for, and use no contractions', () => {
   expect(all).not.toMatch(/n['’]t|['’](re|ll|ve|d|m)\b|\b(it|that|there|what)['’]s\b/i);
 });
 
-it('the setup asks when to check in only where the device can notify, right after the review', () => {
-  expect(core.obPages({}).some((p) => p.id === 'remind')).toBe(false);
+it('the setup sets tonight for every new person, before the flame is lit (the note an hour before is asked there, on a phone)', () => {
   const ids = core.obPages({}, { notify: true }).map((p) => p.id);
-  expect(ids.indexOf('remind')).toBe(ids.indexOf('review') + 1);
+  expect(ids.indexOf('light')).toBe(ids.indexOf('tonight') + 1);
+  expect(core.obPages({}, { redo: true }).some((p) => p.id === 'tonight')).toBe(false);
 });
 
 describe('the lesson reminder (Lessons first, C2)', () => {

@@ -99,6 +99,7 @@ import { track } from '@/lib/events';
 import { close, closeAll } from '@/lib/nav';
 import { phoneCrisisLine } from '@/lib/crisis';
 import { useStore } from '@/lib/store';
+import { useUnlock } from '@/lib/unlock';
 import { useSos } from '@/lib/sos';
 import { copyText } from '@/lib/words';
 import { useAccount } from '@/lib/sync';
@@ -125,6 +126,8 @@ interface Got {
 export default function LessonScreen() {
   const { id, at } = useLocalSearchParams<{ id: string; at?: string }>();
   const { snap, tk, update, apply, say } = useStore();
+  /* the first week's part for today (WP10, unlock.ts): it opens after the lesson, never on a care lesson */
+  const part = useUnlock();
   const account = useAccount();
   /* fixed when the page opens: whether this is today's lesson and the morning set has not been done yet */
   const [morningFirst] = useState(() =>
@@ -739,7 +742,7 @@ export default function LessonScreen() {
         keep={beats?.key || L.key}
         next={nx ? { id: nx.L.id, title: nx.L.title } : null}
         onNext={() => nx && router.replace({ pathname: '/lesson/[id]', params: { id: nx.L.id } })}
-        onDone={closeAll}
+        onDone={() => (part && !care ? router.replace({ pathname: '/unlock', params: { id: part } }) : closeAll())}
       />
     );
   }

@@ -1,22 +1,32 @@
-/* Unlocked (core unlock.ts): which part opens now, from this device's memory, and marking it seen and opened. The memory is
-   kept with the SOS memory (lib/sos.tsx), on this device only, like the first pattern. */
+/* The first week (core unlock.ts): which part is today's, from this device's memory, and marking it seen and opened. The memory
+   is kept with the SOS memory (lib/sos.tsx), on this device only. */
 import { normUnlockMem, unlockNow, type UnlockId, type UnlockMem } from '@daybook/core';
 
+import { useFuture } from '@/lib/future';
+import { useReminderPrefs } from '@/lib/prefs';
 import { pullOffered, usePullPrefs } from '@/lib/pull';
 import { useQuietAsks } from '@/lib/quiet-asks';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 
-/** the part unlocked now, or null */
+/** today's first-week part, or null */
 export function useUnlock(): UnlockId | null {
   const { snap, tk } = useStore();
   const sos = useSos();
   const quiet = useQuietAsks();
   const pull = usePullPrefs();
+  const rem = useReminderPrefs();
+  const future = useFuture();
   const st = snap.settings;
   if (!st) return null;
-  const journalUsed = Object.keys(snap.journal || {}).length > 0 || !!st.routine?.journal;
-  return unlockNow(snap.days, st, tk, normUnlockMem(sos.mem.unl), { journalUsed, pull: pullOffered && pull.asked !== 'picked', quiet });
+  /* the phone has been put to bed once (the wind-down done, or the phone put away), or its note is on */
+  const bedUsed = rem.wind || Object.values(snap.days).some((d) => !!(d && d.p && (d.p.wd || d.p.po)));
+  return unlockNow(snap.days, st, tk, normUnlockMem(sos.mem.unl), {
+    bedUsed,
+    voiceUsed: future.notes.length > 0,
+    pull: pullOffered && pull.asked !== 'picked',
+    quiet,
+  });
 }
 
 /** what to keep: the day it was first the card, and once its page is opened */

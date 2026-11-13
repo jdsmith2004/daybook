@@ -1,6 +1,6 @@
 # What is planned next
 
-## Mithras people come to Daybook, and a journal Insights page (the owner, November 13, 2026; planned, waiting on the owner's answers)
+## Mithras people come to Daybook, and a journal Insights page (the owner, November 13, 2026; built on `claude/mithras-import-685ea3`, show first)
 
 The owner, November 13, 2026: "push users to come use this app instead and offer to transfer all their logs and journal data over to
 the new app ... it would remember there streak all there journal entries etc... also we'd start them from campfire". The owner also
@@ -123,33 +123,63 @@ From top to bottom, all from Daybook's own `Journal` (and the feelings the journ
 It follows "The look": one type scale (the numbers 34, labels 13), no capitals, no tinted icon circles, no card inside a card. The
 chart reads in two seconds: one shared baseline, the number on the mark, no second meaning.
 
-### Steps, each with its effort
+### Built (November 13, 2026, on `claude/mithras-import-685ea3`; not merged until the owner has seen it on the simulator)
 
-1. The owner checks Mithras's row-level security and rotates the two keys (the owner; no effort level).
-2. Core: `mithras.ts`, Mithras rows to Daybook records (entries, slips, `day1`, `seen.longest`, the Campfire floor), the emotion table,
-   and tests with made-up rows, including a second import that changes nothing. **High** (it lands in what a person has earned).
-3. The import sheet in Daybook: sign in (Apple and email), preview, Yes, the one Campfire moment, the Mithras session thrown away; the
-   `import` event with counts only, and the privacy page saying Mithras data goes only from Mithras to the phone. **High**.
-4. The emotion table itself (about 190 Mithras ids to `FEELINGS`): mechanical, to a Sonnet subagent. **Low**.
-5. The Mithras build: the hand-off moment, the Settings row, the account delete. In the DeepWork repository, its own session. **Medium**
-   (the account delete **high**).
-6. The Insights page: core counts (`jnInsights`), the screen, the empty state, the route in `EV_ROUTES`. **Medium**.
-7. QA on the web and the simulator with a made-up Mithras account of a few hundred entries, then the owner sees it on the simulator
-   before it merges. **Medium**.
+The owner accepted the recommendations (B, the import inside Daybook; Campfire for real history; goals and reflections left; the
+feelings bars count everything the journal shows) and asked for it to be "more obscure": it is not a feature Daybook shows everyone.
 
-### Questions for the owner
+- **Where it opens.** Only from Mithras's link, `daybook://import/mithras` (Expo Router route `app/import/mithras.tsx`), and from one
+  quiet row in More, Save a copy, "Bring a Mithras journal", under Restore. No row in setup, no card on Today. A link that comes
+  before setup is remembered on the device (`lib/mithras.ts`, never synced): the person signs in and says yes first, setup then
+  starts from Mithras's habit and how often (they can change them), and as setup ends Today opens the import again, which lands
+  at once and shows the moment. If the app closed in between, it asks for the Mithras sign-in once more (what was read is held in
+  memory only). The X closes it for good; the Settings row stays.
+- **The pages.** Sign in: Continue with Apple low by the thumb, "Use my Mithras email" as the quiet second way (the email and
+  password and their button sit at the top, the flame under them). Then what was found: the number of entries big, the streak
+  days, the longest run, "Your fire starts as a Campfire" in the sun's color, and "Your goals, reflections and coach chats stay in
+  Mithras". Bring it over. Then the moment: the finish burst at the new form, "Your fire came with you." A second import says
+  "Everything was already here." when nothing changed.
+- **Core** (`mithras.ts`, `mithras-feelings.ts`, checked by `test/mithras.test.ts`): plain fetch to Supabase auth (password and
+  Apple `id_token` grants, with Daybook's nonce) and REST, every read filtered on the signed-in id and every row checked again on
+  the phone, 500 rows a page, signed out after reading. The mapping is the table above, with these decisions made in building:
+  - Entry ids are `mi` plus the uuid's first 8 and last 14 characters, so a second import finds them. An entry the person changed in
+    Daybook since the last import is never overwritten; one changed in Mithras comes again. A deleted entry comes back on a second
+    import (nothing remembers the deletion).
+  - A win day is a new mark on the day, `Play.mw` ("a win logged in Mithras"): it earns nothing, starts the log, and tells the
+    night free (truth.ts `toldOn`, log-start.ts `loggedDay`, normP, sync's mergePlay). A setback is a slip with no time, "From
+    Mithras", one per day, never added to a day that already has a slip.
+  - The start, Day 1, the step-down start, `awayFrom` and `countFrom` move back to the first Mithras day only when the person's own
+    Daybook days all sit after the quiet-day and one-count rules began (true for everyone who started Daybook after October 30), so
+    no old rule changes under their own record. So the weeks between Mithras and Daybook are not made up as free days: they are a
+    gap, and Welcome back asks about it, after the import's moment has closed.
+  - **The Campfire welcome is points that come with the import, not only a floor** (`Settings.mith.pts`, added once in legacy
+    `totalPoints`, never more than 270, kept by keepEarned). A floor alone (`seen.pts` 270) would have frozen the flame for about
+    six days, since the first Daybook points would only fill up to it. The first import with real history adds whatever brings the
+    total to exactly Campfire's first step; everything after shows on top. The level, badges and quests it reaches are marked seen
+    in the same change: one moment.
+  - **The fire's memory starts at the import** (flame-low.ts `fireStart`): without it, a person who just arrived met "Your fire is
+    down to embers. 14 days with nothing done." on their first Today, because the weeks after Mithras read as days they let the fire
+    go.
+- **Insights** (`app/insights.tsx`, core `journal-insights.ts`): the chart mark in the journal's header, the journal's own night
+  page, three numbers, the month with dots and arrows (or a swipe) for the months before, the five feelings as bars on one baseline
+  with the count at the end, and the empty state drawn in gray. A small living flame (the person's form) sits by the words written
+  and grows a little with them.
+- **Tracked**: the `import` event (stage: link, open, signed_in, read, landed, closed, failed; how; entries and days in bands only),
+  and `from: mithras` on a cold open through the link. On the fixed lists and the privacy page; the privacy page has a "Bringing a
+  Mithras journal" section and Supabase under other companies. The App Store privacy label does not change (nothing new is
+  collected by Daybook). The sync Lambda takes the new names once it deploys; until then only those events are dropped.
+- **QA builds** answer from a made-up Mithras (`lib/mithras-fake.ts`) when built with `EXPO_PUBLIC_MITHRAS_FAKE=1`: any email with
+  the password "test", and Apple. No real Mithras account was used to test.
 
-1. Is `jdsmith2004/DeepWork` (one commit, January 2026, version 1.0.15) the code of the Mithras in the store? Options: yes; no, the
-   newer code is somewhere else; not sure. Recommendation: confirm before step 5, since the Mithras build is made from it.
-2. The way across. Options: B, the import inside Daybook; A, an export file; both. Recommendation: B alone.
-3. Campfire for whom. Options: every import with real history (7 days or 3 entries) starts at Campfire 1; every import, even empty;
-   scaled by history (Campfire up to Torch). Recommendation: the first.
-4. The Mithras goals and deeper reflections. Options: leave them (listed in the summary as not brought); bring the reflections as journal
-   entries. Recommendation: leave them.
-5. The feelings bars on Insights. Options: everything the journal shows (entries, Name the feeling, the feeling before a slip); journal
-   entries only. Recommendation: everything the journal shows, since that is the journal the person reads.
-6. When the Mithras server stops. Options: six months after the new Mithras build; never (keep it for the import); the owner picks a
-   date. Recommendation: six months, said in the Mithras app.
+### For the owner before it ships
+
+1. **Sign in with Apple for Mithras inside Daybook:** in the Supabase dashboard for Mithras, Authentication, Sign In / Providers,
+   Apple, add `com.jdsmith2004.daybook` to the Client IDs (comma separated, after the IDs already there, which should include Mithras's own `com.jeff.deepwork`), and Save. For
+   the Daybook website, add Daybook's web Services ID there too. Until then Apple answers "Mithras did not take this Apple sign-in"
+   and the email way still works.
+2. See it on the simulator, then merge with `[deploy]` (the website and the sync Lambda's event lists).
+3. Row-level security: the owner decided on November 13 to leave it off ("we're gonna port over users then shut down the app"). The
+   import never reads anyone else's rows: every read names the person's own id, and the phone drops any row that is not theirs.
 
 ## Lessons like Duolingo, and lessons that meet the night (the owner, November 12, 2026: "heavily use this for inspiration everywhere in the app"; WP11 in docs/review-plan.md; built on `claude/lessons-redesign-22657d`, show first)
 

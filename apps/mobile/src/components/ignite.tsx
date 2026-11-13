@@ -296,8 +296,18 @@ export function Ignition({
 
           <View style={s.count} pointerEvents="none" accessible accessibilityLabel={(beat ? m.to : m.from) + ' ' + m.unit}>
             <View style={s.numBox}>
-              <Reanimated.Text style={[s.num, { color: changes ? GREY : beat ? ORANGE : GREY }, changes ? old : null]}>{m.from}</Reanimated.Text>
-              {changes ? <Reanimated.Text style={[s.num, s.over, { color: ORANGE }, neu]}>{m.to}</Reanimated.Text> : null}
+              <Reanimated.Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.4}
+                style={[s.num, { color: changes ? GREY : beat ? ORANGE : GREY }, changes ? old : null]}>
+                {m.from}
+              </Reanimated.Text>
+              {changes ? (
+                <Reanimated.Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4} style={[s.num, s.over, { color: ORANGE }, neu]}>
+                  {m.to}
+                </Reanimated.Text>
+              ) : null}
             </View>
             <Reanimated.Text style={[s.unit, unitIn]}>{m.unit}</Reanimated.Text>
           </View>
@@ -479,8 +489,9 @@ const s = StyleSheet.create({
   x: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: nightInk.btn },
   col: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingTop: 56 },
   bubble: { minHeight: 92, maxWidth: 340, alignSelf: 'stretch', justifyContent: 'flex-end', marginBottom: 4 },
-  count: { alignItems: 'center', marginTop: -8 },
-  numBox: { height: SHORT ? 76 : 96, justifyContent: 'center', alignItems: 'center', minWidth: 120 },
+  /* the number shrinks to fit on one line, so a word in it ("Day 1") never breaks (WP10, November 13, 2026) */
+  count: { alignItems: 'center', marginTop: -8, alignSelf: 'stretch' },
+  numBox: { height: SHORT ? 76 : 96, justifyContent: 'center', alignItems: 'center', minWidth: 120, alignSelf: 'stretch' },
   num: { fontFamily: font.display, fontSize: SHORT ? 72 : 92, lineHeight: SHORT ? 80 : 100, textAlign: 'center' },
   over: { position: 'absolute', left: 0, right: 0 },
   unit: { fontFamily: font.bodyBold, fontSize: 20, color: ORANGE, marginTop: -2 },

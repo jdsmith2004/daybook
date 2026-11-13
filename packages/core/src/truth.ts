@@ -42,6 +42,8 @@ export const truthOn = (st: Settings | null | undefined, k: DayKey): boolean => 
 export function toldOn(days: Days, k: DayKey): 'free' | 'slip' | null {
   const d = days[k];
   if (d?.events?.some((e) => e.outcome === 'slipped')) return 'slip';
+  /* a win logged in Mithras that day (mithras.ts) told it */
+  if (d?.p?.mw) return 'free';
   const n1 = days[next(k, 1)]?.p?.ms?.n;
   if (n1) return n1;
   const n2 = days[next(k, 2)]?.p?.ms?.n2;

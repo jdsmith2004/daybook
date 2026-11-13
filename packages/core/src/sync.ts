@@ -180,6 +180,7 @@ export function mergePlay(newer: Day['p'], older: Day['p']): Day['p'] {
   const lt = Math.max(newer.lt || 0, older.lt || 0);
   if (lt) p.lt = lt;
   if (newer.o || older.o) p.o = true;
+  if (newer.mw || older.mw) p.mw = true;
   const df = later(newer.df, older.df, (x) => x[1]);
   if (df) p.df = df;
   const ms = later(newer.ms, older.ms, (x) => x.at);

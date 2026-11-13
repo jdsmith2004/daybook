@@ -82,6 +82,8 @@ export function keepEarned(win: Settings, lose: Settings): Settings {
   /* the true record's first day (truth.ts) is set once: the earlier of the two copies, so it is never moved later */
   const tf = [win.truthFrom, lose.truthFrom].filter((x): x is string => isKey(x)).sort()[0];
   if (tf) out.truthFrom = tf;
+  /* the Mithras welcome (mithras.ts) came once and stays: the copy with points keeps them, and the later run */
+  if (lose.mith && (!out.mith || lose.mith.pts > out.mith.pts)) out.mith = { ...lose.mith, at: Math.max(lose.mith.at, out.mith?.at || 0) };
   if (lose.seen) {
     const s = out.seen || { badges: [], quests: [], level: 1, full: null, lad: lose.seen.lad };
     s.badges = [...new Set([...s.badges, ...lose.seen.badges])];

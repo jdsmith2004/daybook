@@ -121,6 +121,8 @@ export interface Play {
   df?: [1 | 2 | 3 | 4 | 5, number];
   /** the morning set (morning-set.ts), on the day it was done */
   ms?: MorningSet;
+  /** a win logged in Mithras that day (mithras.ts): the night was told free. It earns nothing. */
+  mw?: true;
 }
 
 export interface Day {
@@ -270,6 +272,9 @@ export interface Settings {
   /** "How are you feeling today?": false when switched off. New people start with it off (two-moments.ts freshSettings); people who
       had it keep it. Optional. */
   dayFeel?: boolean;
+  /** the Mithras import (mithras.ts): when it last ran (ms), the log day it first ran, and the points the first one came with (a
+      Campfire welcome, added once to the total, never more than Campfire's first step). Kept for good once set. Optional. */
+  mith?: { at: number; d: DayKey; pts: number };
   u: number;
 }
 

@@ -6,10 +6,10 @@
 import { allKeys } from './legacy/core.js';
 import type { Day, DayKey, Days, Settings } from './types';
 
-/** an urge or slip logged that day, or a check-in or the morning questions answered */
+/** an urge or slip logged that day, or a check-in or the morning questions answered, or a win logged in Mithras (mithras.ts) */
 export function loggedDay(d: Day | null | undefined): boolean {
   if (!d) return false;
-  if ((d.events && d.events.length) || (d.p && d.p.m)) return true;
+  if ((d.events && d.events.length) || (d.p && (d.p.m || d.p.mw))) return true;
   const c = d.checkin;
   return !!(
     c &&

@@ -371,6 +371,8 @@ function normSettings(s){
  o.onb=normOnb(o.onb);
  /* widget: the day the flame was first seen on the Home Screen or Lock Screen (flame-widget.ts). Set once and never cleared. */
  if(!isKey(o.widget))delete o.widget;
+ /* mith: the Mithras import (mithras.ts): when, the day it first ran, and the welcome points, never more than Campfire's first step */
+ if(o.mith&&typeof o.mith==='object'&&isKey(o.mith.d)&&Number.isFinite(o.mith.at))o.mith={at:o.mith.at,d:o.mith.d,pts:Math.max(0,Math.min(270,parseInt(o.mith.pts,10)||0))};else delete o.mith;
  return o;
 }
 function normEvent(e){
@@ -435,11 +437,13 @@ function normP(p){
  if(typeof p.lt==='number'&&isFinite(p.lt)&&p.lt>0)q.lt=p.lt;
  /* o: the app was opened that day (away.ts). It keeps the day as present, and is not something done. */
  if(p.o===true)q.o=true;
+ /* mw: a win logged in Mithras that day (mithras.ts). It keeps the day as told, and is not something done. */
+ if(p.mw===true)q.mw=true;
  /* df: the answer to "How are you feeling today?" (day-feel.ts): a step from 1 to 5, and when (ms) */
  if(Array.isArray(p.df)&&[1,2,3,4,5].includes(p.df[0])&&typeof p.df[1]==='number'&&isFinite(p.df[1])&&p.df[1]>=0)q.df=[p.df[0],p.df[1]];
  /* ms: the morning set (morning-set.ts): last night's answer, this morning's feel, tonight's reason and wait time */
  const ms=normMorning(p.ms);if(ms)q.ms=ms;
- return pEmpty(q)&&!Object.keys(ov).length&&!q.o&&!q.fe&&!q.df&&!q.ms?null:q;
+ return pEmpty(q)&&!Object.keys(ov).length&&!q.o&&!q.mw&&!q.fe&&!q.df&&!q.ms?null:q;
 }
 function blankP(){return {w:[],wd:false,r:false,c:0,m:false,tl:[],po:null,ls:[],lv:[],ov:{}}}
 /* a day counts as active when something was done, not when only the routine was edited */
@@ -999,7 +1003,7 @@ function totalPoints(days,st,reviews,today){
  for(let k=0;k<=cw;k++)questsFor(days,st,k).forEach(q=>{if(q.done)qd++});
  let rv=0;Object.keys(reviews||{}).forEach(id=>{const r=reviews[id];if(r&&r.a&&Object.keys(r.a).some(f=>r.a[f]&&String(r.a[f]).trim()))rv++});
  /* the steps' deeds, done in real life (steps.ts), counted like the quests and reviews */
- return {pts:pts+qd*15+rv*20+deedCount(st&&st.learn)*DEED_PTS+(st&&st.onb&&st.onb.n>0?SETUP_PTS:0)+(st&&st.widget?WIDGET_PTS:0),perDay,quests:qd,reviews:rv};
+ return {pts:pts+qd*15+rv*20+deedCount(st&&st.learn)*DEED_PTS+(st&&st.onb&&st.onb.n>0?SETUP_PTS:0)+(st&&st.widget?WIDGET_PTS:0)+(st&&st.mith?st.mith.pts:0),perDay,quests:qd,reviews:rv};
 }
 function gameStats(days,st,reviews,today){
  const S={entries:0,rode:0,slips:0,pauses:0,recovered:0,lateRide:0,checkins:0,reachDays:0,lightsYes:0,windDays:0,calm:0,morning:0,tools:0,

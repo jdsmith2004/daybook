@@ -3,8 +3,9 @@
    The pills stay in their real order as views, so a screen reader reads them in that order, and a radiogroup role on the
    group still holds them; only where each one is drawn changes.
    First draw: the pills are laid out by plain wrapping, unseen, to measure them; then they are placed and shown. After that
-   a change of width (rotation), of a pill's size (text size, a check mark) or of the list repacks in place. */
-import { packRows } from '@daybook/core';
+   a change of width (rotation), of a pill's size (text size, a check mark) or of the list repacks in place.
+   A pill is never wider than the row: a long one wraps onto a second line inside itself instead of running off. */
+import { packRows, wrapRows } from '@daybook/core';
 import { Children, isValidElement, useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
 
@@ -17,6 +18,7 @@ export function Packed({
   rowGap,
   center,
   last = 0,
+  ordered,
   style,
   ...rest
 }: ViewProps & {
@@ -28,6 +30,8 @@ export function Packed({
   center?: boolean;
   /** how many items at the end stay in the last row ("Nothing", "None of these", "Add your own"); core noneTail counts them */
   last?: number;
+  /** the order carries meaning (a scale, steps, times of day): wrap in order, never move a pill up */
+  ordered?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const items = Children.toArray(children).filter(isValidElement);
@@ -63,19 +67,21 @@ export function Packed({
   const shown = useRef(false);
   const ready = width > 0 && (shown.current ? keys.some((k) => sizes[k]) : keys.length > 0 && keys.every((k) => sizes[k]));
   const sig = ready
-    ? width + '|' + last + '|' + keys.map((k) => k + ':' + (sizes[k] ? sizes[k].w.toFixed(1) + 'x' + sizes[k].h.toFixed(1) : '?')).join(',')
+    ? width +
+      '|' +
+      last +
+      '|' +
+      (ordered ? 'o' : '') +
+      '|' +
+      keys.map((k) => k + ':' + (sizes[k] ? sizes[k].w.toFixed(1) + 'x' + sizes[k].h.toFixed(1) : '?')).join(',')
     : '';
   const place = useMemo(() => {
     if (!ready) return null;
     // only measured pills are placed; "last" counts from the end of those
     const idx = keys.map((k, i) => (sizes[k] ? i : -1)).filter((i) => i >= 0);
     const tail = keys.slice(keys.length - last).filter((k) => sizes[k]).length;
-    const rows = packRows(
-      idx.map((i) => sizes[keys[i]].w),
-      width,
-      gap,
-      tail,
-    ).map((r) => r.map((j) => idx[j]));
+    const ws = idx.map((i) => sizes[keys[i]].w);
+    const rows = (ordered ? wrapRows(ws, width, gap) : packRows(ws, width, gap, tail)).map((r) => r.map((j) => idx[j]));
     const at: ({ x: number; y: number } | undefined)[] = [];
     let y = 0;
     rows.forEach((r) => {
@@ -92,7 +98,7 @@ export function Packed({
     return { at, height: Math.max(0, y - down) };
     // sig holds everything the packing reads
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sig, gap, down, center, last]);
+  }, [sig, gap, down, center, last, ordered]);
 
   if (place) shown.current = true;
   if (!place) {
@@ -103,7 +109,7 @@ export function Packed({
         onLayout={onBox}
         style={[s.box, style, s.wrap, { columnGap: gap, rowGap: down, justifyContent: center ? 'center' : 'flex-start', opacity: 0 }]}>
         {items.map((el, i) => (
-          <View key={keys[i]} onLayout={measure(keys[i])}>
+          <View key={keys[i]} onLayout={measure(keys[i])} style={s.fit}>
             {el}
           </View>
         ))}
@@ -118,7 +124,7 @@ export function Packed({
           <View
             key={keys[i]}
             onLayout={measure(keys[i])}
-            style={[s.item, p ? { transform: [{ translateX: p.x }, { translateY: p.y }] } : s.unseen]}
+            style={[s.item, { maxWidth: width }, p ? { transform: [{ translateX: p.x }, { translateY: p.y }] } : s.unseen]}
             pointerEvents={p ? 'auto' : 'none'}>
             {el}
           </View>
@@ -135,4 +141,6 @@ const s = StyleSheet.create({
   // placed by a move, not by left and top, so a pill near the right edge is still measured at its own width
   item: { position: 'absolute', left: 0, top: 0 },
   unseen: { opacity: 0 },
+  // a pill never runs past the row: a long one wraps its words onto a second line inside itself
+  fit: { maxWidth: '100%' },
 });

@@ -8,6 +8,7 @@ import { KeepAbove } from '@/components/keyboard';
 import { Text, TextInput } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { font, useTheme, type Tone } from '@/lib/theme';
 
 const ICON: Record<PItem['k'], string> = {
@@ -223,7 +224,10 @@ export function GoRow({ label, ic, went, onPress }: { label: string; ic?: string
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label + (went ? '. Done. Open it again.' : '')}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.go, { backgroundColor: c.accentSoft, opacity: pressed ? 0.75 : 1 }]}>
       <Icon name={went ? 'check' : ic || 'next'} size={20} color={c.accentText} />
       <Text style={[s.goT, { color: c.accentText }]}>{label}</Text>

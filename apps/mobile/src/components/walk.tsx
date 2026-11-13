@@ -594,7 +594,7 @@ export function Walk({
         opts={WALK_STAGES.map(([id, w]) => ({ id, label: w }))}
         on={stage ? [stage] : []}
         onPick={(x) => {
-          buzz('lit');
+          buzz('tap');
           setStage(x);
           setAt(walkPlace(x, need));
         }}

@@ -338,7 +338,7 @@ export function Surprise({ finish, exit, sos: fromSos }: ToolProps) {
         setSpinning(false);
         setPick(final);
         settle();
-        buzz('lit');
+        buzz('land');
         return;
       }
       setPick(menu[Math.floor(Math.random() * menu.length)]);

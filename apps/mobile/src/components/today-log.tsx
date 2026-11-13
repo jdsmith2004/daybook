@@ -89,7 +89,10 @@ function CareButton({
       ref={ref}
       accessibilityRole="button"
       accessibilityLabel={label}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.log, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
       <Icon name={icon} size={20} color={c.accentText} />
       <View style={{ flexShrink: 1 }}>
@@ -155,7 +158,10 @@ export function PauseBanner() {
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={() => router.push({ pathname: '/tool/[id]', params: { id: 'pause' } })}
+      onPress={() => {
+        buzz('tap');
+        router.push({ pathname: '/tool/[id]', params: { id: 'pause' } });
+      }}
       style={[s.banner, { backgroundColor: done ? c.mintSoft : c.violetSoft }]}>
       <T v="label" style={{ flex: 1, color: done ? c.mintText : c.violetText }}>
         {done

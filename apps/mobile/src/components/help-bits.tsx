@@ -9,6 +9,7 @@ import { Text } from '@/components/text';
 import { LinkCard } from '@/components/link-card';
 import { Icon, T } from '@/components/ui';
 import { useStore } from '@/lib/store';
+import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 import { copyText, WORDS } from '@/lib/words';
 
@@ -24,7 +25,10 @@ export function ChipBtn({ icon, label, onPress, a11y }: { icon?: string; label: 
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={a11y || label}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       hitSlop={4}
       style={({ pressed }) => [s.chip, { opacity: pressed ? 0.7 : 1 }]}>
       {icon ? <Icon name={icon} size={16} color={c.accentText} /> : null}

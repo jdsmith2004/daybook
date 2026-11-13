@@ -100,21 +100,21 @@ export default function Unlocked() {
       asking.current = false;
       if (ok) setReminderPrefs({ ...rem, wind: true });
     }
-    buzz('lit');
+    buzz('save');
     router.replace('/wind');
   };
   const saveName = () => {
     const v = name.trim().slice(0, 80);
     if (!v || !st) return;
     apply({ st: setField(st, 'safePerson', v) });
-    buzz('lit');
+    buzz('save');
     say('Kept in My plan.');
     close();
   };
   const savePlan = () => {
     if (!then || !st) return;
     apply({ st: setPlanLine(st, then) });
-    buzz('lit');
+    buzz('save');
     say('It is the first line of your plan.');
     close();
   };
@@ -123,7 +123,7 @@ export default function Unlocked() {
     let next = st;
     for (const x of ROUTINE_SHOWN) if (!!st.routine[x.k] !== list[x.k]) next = setRoutine(next, x.k, list[x.k]);
     if (next !== st) apply({ st: next });
-    buzz('lit');
+    buzz('save');
     say('Your list is set. Change it any time in Settings.');
     close();
   };
@@ -133,7 +133,7 @@ export default function Unlocked() {
     const ok = await connectHealth(st.rollover).catch(() => false);
     asking.current = false;
     if (!ok) return say('Apple Health did not open. Try again in a moment.');
-    buzz('lit');
+    buzz('save');
     say('Daybook can read your sleep now.');
     close();
   };
@@ -144,7 +144,7 @@ export default function Unlocked() {
     asking.current = false;
     if (!r.ok) return r.why ? say(r.why) : undefined;
     setLockPref(true);
-    buzz('lit');
+    buzz('save');
     say('The lock is on. Only you can open Daybook.');
     close();
   };
@@ -169,7 +169,7 @@ export default function Unlocked() {
     if (r !== 'on') return;
     /* notes only arms nothing: no wait before the apps, and no wait before adult sites at night either */
     setPullPrefs(pause ? { feeds: true } : { feeds: false, adult: false });
-    buzz('lit');
+    buzz('save');
     say('I am watching for it now.');
     close();
   };

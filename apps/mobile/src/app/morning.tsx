@@ -177,7 +177,7 @@ export default function Morning() {
       },
       { noWin: true },
     );
-    buzz('lit');
+    buzz('save');
     say(W.done);
     /* then the lesson: the one this was opened in front of, or today's next one when it is open */
     const lid = then || lessonDue(snap.days, st, tk, account);

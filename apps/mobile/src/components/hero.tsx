@@ -125,7 +125,10 @@ function LowLines({ w, ink, warm, tell }: { w: { h: string; p: string; fix: stri
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${w.h}. ${w.p} ${w.fix}`}
-        onPress={() => router.push('/morning')}
+        onPress={() => {
+          buzz('tap');
+          router.push('/morning');
+        }}
         style={({ pressed }) => [s.low, pressed && { opacity: 0.75 }]}>
         {body}
       </Pressable>
@@ -385,7 +388,10 @@ function Sky({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={h.say + ' Opens your days.'}
-            onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'days' } })}
+            onPress={() => {
+              buzz('tap');
+              router.navigate({ pathname: '/pattern', params: { pane: 'days' } });
+            }}
             style={({ pressed }) => [s.num, pressed && { opacity: 0.8 }]}>
             {/* with the week's marks shown, the label sits beside them under the number, so the block stays low on the hills and the
                 label is never cut by the hills' edge (the owner, November 13, 2026: "quitting gets cutoff here") */}
@@ -427,7 +433,10 @@ function Sky({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Level ${lvl.n}, ${lvl.name}.${proof ? ' ' + proof + '.' : ''} Opens your level and points.`}
-          onPress={() => router.push('/points')}
+          onPress={() => {
+            buzz('tap');
+            router.push('/points');
+          }}
           onLayout={(e) => setLvH(e.nativeEvent.layout.height)}
           style={({ pressed }) => [s.lv, pressed && { opacity: 0.8 }]}>
           <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>

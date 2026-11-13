@@ -203,13 +203,15 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
         </T>
         <T style={s.c}>{room}</T>
         <Middle>
-          {/* Move's timer: the squiggle ring fills as the ten minutes pass, and a soft shape inside breathes slowly by
-              itself (4 in, 6 out) */}
+          {/* Move's timer: the squiggle ring fills as the ten minutes pass, and a soft shape inside breathes slowly
+              (4 in, 6 out) */}
           <ToolTimer
             p={1 - left / t.dur}
             left={left}
             sec={el}
             beat={BEAT_BREATH}
+            /* the first minute of the wait is felt too (six slow breaths), then the shape breathes on quietly by itself */
+            touch={60}
             label="Waiting it out"
             color={c.scheme === 'dark' ? c.sun : c.accent}
             ink={c.accentText}

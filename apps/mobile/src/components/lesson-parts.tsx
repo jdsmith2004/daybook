@@ -15,6 +15,7 @@ import { Text } from '@/components/text';
 import { Icon, T } from '@/components/ui';
 import { PAPER, PAPER_INK, PAPER_LIP, RIGHT, RIGHT_LIP, type Look } from '@/lib/lesson-look';
 import { useHoldsBar } from '@/lib/nav';
+import { buzz } from '@/lib/feel';
 import { font, PaletteOverride } from '@/lib/theme';
 
 /** the color of quiet words low on the screen, where the sky is brightest */
@@ -268,7 +269,10 @@ export function Answer({
       accessibilityRole="button"
       accessibilityState={{ selected: sel }}
       accessibilityLabel={label}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [
         s.opt,
         right

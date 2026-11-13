@@ -217,6 +217,9 @@ export interface Settings {
   routine: Record<string, boolean>;
   note: string;
   urPin: string | null;
+  /** my line: what counts as a slip for me and what counts as a clean day, in the person's own words (plan.ts myLineOf). Shown
+      where a slip is logged, so "does that count?" is settled by their own words. Synced with the plan; never in an event. */
+  myLine?: string;
   /** SOS: the tools not to suggest ("Not for me"), and what was said after using each ("Would you use this again?", -3 to 3).
       Optional, so older records need no change; read them with urOffOf and urLikeOf. */
   urOff?: string[];

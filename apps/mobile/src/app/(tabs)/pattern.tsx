@@ -16,6 +16,7 @@ import {
   DOING_MIN,
   patDoing,
   patFeels,
+  patFeelSlip,
   patFelt,
   patGaps,
   patInsights,
@@ -191,6 +192,8 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const kinds = (by: number[]) => by.filter(Boolean).length;
   const feltAll = useMemo(() => kinds(patFelt(snap.days, allPer, tk).by) >= 2, [snap.days, allPer, tk]);
   const namedAll = useMemo(() => patFeels(snap.journal, snap.days, allPer, tk).n, [snap.journal, snap.days, allPer, tk]);
+  /* the feelings before a slip against days it held: slips are few, so the whole log, whatever the range */
+  const feelSlip = useMemo(() => patFeelSlip(snap.journal, snap.days, tk), [snap.journal, snap.days, tk]);
   const g = patGaps(snap.days, st, tk);
   const lastSlip = Object.keys(snap.days)
     .filter((k) => k <= tk && (snap.days[k]?.events || []).some((e) => e.outcome === 'slipped'))
@@ -337,12 +340,17 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
       title: 'What you have felt',
       head: feels.n ? feels.head : 'Nothing named',
       say:
-        feels.line || feels.fresh ? (
-          <Say>
-            {feels.line}
-            {feels.line && feels.fresh ? ' ' : ''}
-            {feels.fresh}
-          </Say>
+        feels.line || feels.fresh || feelSlip ? (
+          <>
+            {feels.line || feels.fresh ? (
+              <Say>
+                {feels.line}
+                {feels.line && feels.fresh ? ' ' : ''}
+                {feels.fresh}
+              </Say>
+            ) : null}
+            {feelSlip ? <Say>{feelSlip.line}</Say> : null}
+          </>
         ) : null,
       chart: <Room>{(w, h) => <FeelField words={feels.words} w={w} h={h} label={feels.head + '. ' + feels.line} />}</Room>,
       foot:
@@ -351,7 +359,19 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
             {feels.kinds} different words named so far.
           </T>
         ) : null,
-      numbers: feels.n ? <NumbersTable cap="What you named" head={['Feeling', 'Times']} rows={feels.words.map((x) => [x.w, String(x.n)])} /> : null,
+      numbers:
+        feels.n || feelSlip ? (
+          <>
+            {feels.n ? <NumbersTable cap="What you named" head={['Feeling', 'Times']} rows={feels.words.map((x) => [x.w, String(x.n)])} /> : null}
+            {feelSlip ? (
+              <NumbersTable
+                cap={'Before a slip, from ' + plural(feelSlip.slipN, 'feeling') + ', and on days it held, from ' + feelSlip.heldN}
+                head={['Feeling', 'Before a slip', 'Days it held']}
+                rows={feelSlip.before.map((x) => [x.w, String(x.slip), String(x.held)])}
+              />
+            ) : null}
+          </>
+        ) : null,
     });
   else ghost('named', 'What you have felt');
   if (whenAll.timed)

@@ -12,7 +12,7 @@ import { awaySlipDay, dayKnown } from './away';
 import { sleepOn, type Nights } from './health';
 import { dayFeelOf, type DayFeelStep } from './day-feel';
 import { FEEL_MID } from './feelings';
-import { jnTimeline, type Journal } from './journal-entries';
+import { jnTimeline, onDay, type Journal } from './journal-entries';
 import { logStart } from './log-start';
 import { inTen, patDiffs, patKeys, sleepLine, type PatDiff, type PatRange } from './pattern';
 import { feelPos } from './slip';
@@ -441,6 +441,65 @@ export function patFeels(jn: Journal | undefined, days: Days, per: PatPeriod, tk
       : [];
   const kinds = Object.keys(tallyFeels(byDay, [...byDay.keys()]).words).length;
   return { n: all.n, quads, words, head, line, fresh: fresh.length ? 'New ' + per.word + ': ' + andList(fresh) + '.' : '', kinds };
+}
+
+/* ---------- the feelings before a slip ---------- */
+/** feelings named on each side (before a slip, and on days it held) before anything is said */
+export const FEEL_SLIP_MIN = 5;
+export interface PatFeelSlip {
+  /** feelings counted before a slip, and on days with no slip */
+  slipN: number;
+  heldN: number;
+  /** the words that come before a slip more than on days it held, the most named first (at most three) */
+  before: { w: string; slip: number; held: number }[];
+  /** the words named most on days it held (at most two) */
+  held: string[];
+  line: string;
+}
+const lowWord = (w: string) => w.charAt(0).toLowerCase() + w.slice(1);
+/** which feelings tend to come before a slip, against the days it held, from the whole log. On a slip day only what was named
+    before the slip counts (the slip's own "felt before", and anything named earlier that day), so the shame after a slip is
+    never read as its cause. Null until FEEL_SLIP_MIN feelings on each side and one word that leans toward slips. */
+export function patFeelSlip(jn: Journal | undefined, days: Days, tk: DayKey): PatFeelSlip | null {
+  const slip: Record<string, number> = {};
+  const held: Record<string, number> = {};
+  let slipN = 0;
+  let heldN = 0;
+  for (const g of jnTimeline(jn, days, tk)) {
+    const evs = (days[g.k]?.events || []).filter((e) => e.outcome === 'slipped');
+    if (evs.length) {
+      const times = evs.filter((e) => e.time).map((e) => onDay(g.k, e.time!));
+      const first = times.length ? Math.min(...times) : null;
+      for (const f of g.feels)
+        if (f.from === 'slip' || (first != null && f.at < first)) {
+          slip[f.w] = (slip[f.w] || 0) + 1;
+          slipN++;
+        }
+    } else if (g.k < tk) {
+      for (const f of g.feels) {
+        held[f.w] = (held[f.w] || 0) + 1;
+        heldN++;
+      }
+    }
+  }
+  if (slipN < FEEL_SLIP_MIN || heldN < FEEL_SLIP_MIN) return null;
+  const before = Object.keys(slip)
+    .filter((w) => slip[w] >= 2 && slip[w] / slipN > (held[w] || 0) / heldN)
+    .sort((a, b) => slip[b] - slip[a] || (a < b ? -1 : 1))
+    .slice(0, 3)
+    .map((w) => ({ w, slip: slip[w], held: held[w] || 0 }));
+  if (!before.length) return null;
+  const keep = Object.keys(held)
+    .filter((w) => !before.some((x) => x.w === w) && held[w] / heldN >= (slip[w] || 0) / slipN)
+    .sort((a, b) => held[b] - held[a] || (a < b ? -1 : 1))
+    .slice(0, 2);
+  const line =
+    'Before a slip, you most often felt ' +
+    andList(before.map((x) => lowWord(x.w))) +
+    '. ' +
+    (keep.length ? 'On days it held: ' + andList(keep.map(lowWord)) + '. ' : '') +
+    (before.length > 1 ? 'Those are the ones to watch for.' : 'That is the one to watch for.');
+  return { slipN, heldN, before, held: keep, line };
 }
 
 /* ---------- what is different on hard days ---------- */

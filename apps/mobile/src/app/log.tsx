@@ -58,6 +58,7 @@ import {
   rkLesson,
   lmin,
   roughPatch,
+  myLineOf,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -321,6 +322,15 @@ export default function Log() {
         <T tone="muted" style={s.center}>
           One tap. You can stop after that.
         </T>
+        {/* my line (My plan, If I slip): their own words settle "does that count?" before they answer */}
+        {myLineOf(st) ? (
+          <View style={s.mine} accessible accessibilityLabel={'My line: ' + myLineOf(st)}>
+            <T v="small" tone="muted" style={s.center}>
+              My line
+            </T>
+            <T style={[s.center, s.kind]}>{myLineOf(st)}</T>
+          </View>
+        ) : null}
         {/* the flame in the open middle: whatever the answer is, it stays lit */}
         <Middle>
           <FitArt min={0.55}>
@@ -487,6 +497,7 @@ const s = StyleSheet.create({
   plan: { alignSelf: 'stretch' },
   planLinks: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
   center: { textAlign: 'center' },
+  mine: { alignSelf: 'center', alignItems: 'center', gap: 2, maxWidth: 340, marginTop: 4 },
   kind: { fontFamily: font.bodySemi, maxWidth: 340 },
   words: { alignSelf: 'stretch', alignItems: 'center', gap: 8, marginTop: -8 },
   gapLine: { alignSelf: 'stretch', minHeight: 64 },

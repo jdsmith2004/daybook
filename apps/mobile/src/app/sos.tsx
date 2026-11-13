@@ -148,7 +148,7 @@ export default function Sos() {
   const hasFuture = !practice && future.notes.length > 0;
   /* It is written, for people who said faith plays a part (core written.ts) */
   const faith = godOn(st);
-  const can = useMemo(() => ({ words, faith, future: hasFuture }), [words, faith, hasFuture]);
+  const can = useMemo(() => ({ words, faith, future: hasFuture, object: !practice }), [words, faith, hasFuture, practice]);
   const moveName = (x: string) => (x === 'written' ? writtenWords(faithVoice(st) || 'plain').name : MOVE_NAME[x] || urTool(x)?.name || x);
   /* the first move, once there is an urge: always the sun */
   useEffect(() => {

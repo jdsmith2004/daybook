@@ -29,12 +29,30 @@ export const RIDE_KIND: Record<string, 'calm' | 'body' | 'eyes' | 'mind'> = {
   reasons: 'mind',
   written: 'mind',
   future: 'mind',
+  object: 'mind',
 };
 /** It is written (written.ts): a ride move only for people who said faith plays a part, so it is not in RIDE_MOVES */
 export const RIDE_FAITH = 'written';
 /** Future you (future.ts): the person's own note from a good day, the page right after the first breath when there is one.
     It is shown once a ride, so it is not in RIDE_MOVES either */
 export const RIDE_FUTURE = 'future';
+/** If it were a thing: one quick, optional question, "If the urge were an object, what would it be?", with things to tap
+    (never typing). Seeing the urge as a thing out there helps a person step back from it: watching an urge from a little way
+    off, instead of being it, lowers craving (Westbrook and others 2013), and naming a thing gives the mind something to hold apart from itself. Shown once a ride, after
+    the first move that follows the breath, and never in a practice ride. Next passes it like any move; passed over three
+    times (sos.ts urNote) it stops coming, since it is optional. Not in RIDE_MOVES. */
+export const RIDE_OBJECT = 'object';
+/** passes before If it were a thing stops coming */
+export const OBJECT_PASS_MAX = 3;
+/** the things to tap, each with how it is said in a sentence */
+export const URGE_OBJECTS: [string, string][] = [
+  ['knot', 'A tight knot'],
+  ['stone', 'A hot stone'],
+  ['wave', 'A big wave'],
+  ['wire', 'A buzzing wire'],
+  ['weight', 'A heavy weight'],
+  ['cloud', 'A storm cloud'],
+];
 /** the first move of every SOS */
 export const RIDE_FIRST = 'breathe';
 
@@ -45,6 +63,8 @@ export interface RideCan {
   faith?: boolean;
   /** Future you: a note from a good day is kept on this phone */
   future?: boolean;
+  /** If it were a thing (RIDE_OBJECT): a real SOS, not a practice ride */
+  object?: boolean;
 }
 
 /** the moves this person can be shown, best for them first, each with how often it should come round (the best about
@@ -89,8 +109,11 @@ export function rideNext(
   /* a note from a good day comes right after the breath, before the urge peaks: early is when calm words still land */
   if (can.future && shown.length === 1) return RIDE_FUTURE;
   if (can.faith && shown.length === (can.future ? 2 : 1) && writtenEarly(days, st, mem)) return RIDE_FAITH;
-  const ws = rideWeights(sc, days, st, tk, now, mem, can);
   const last = shown[shown.length - 1];
+  /* If it were a thing: once, right after the first real move (after the breath and any note or It is written) */
+  if (can.object && shown.indexOf(RIDE_OBJECT) < 0 && RIDE_MOVES.indexOf(last) >= 0 && last !== RIDE_FIRST && objectPass(mem) < OBJECT_PASS_MAX)
+    return RIDE_OBJECT;
+  const ws = rideWeights(sc, days, st, tk, now, mem, can);
   const due = (id: string, w: number) => {
     const at = shown.lastIndexOf(id);
     /* a move not shown yet is due before most second turns; the breath opened the ride, so it comes back less */
@@ -105,6 +128,8 @@ export function rideNext(
   return open.slice().sort((a, b) => due(b.id, b.w) - due(a.id, a.w) || b.w - a.w)[0].id;
 }
 
+const objectPass = (mem: UrMem) => (mem.pass && typeof mem.pass === 'object' ? mem.pass[RIDE_OBJECT] | 0 : 0);
+
 /** why a move works, in one line, and the lesson that says more (read later, when it is calm) */
 export const RIDE_WHY: Record<string, { t: string; l?: string }> = {
   breathe: { t: 'A long breath out slows the heart. A calmer body makes the pull easier to wait out.', l: 'l14' },
@@ -115,6 +140,7 @@ export const RIDE_WHY: Record<string, { t: string; l?: string }> = {
   forward: { t: 'Picturing the hour after makes later weigh more than right now. That is the skill: you looked past the urge.', l: 'l44' },
   thought: { t: 'A thought said fast, over and over, turns into sounds. It is still there, but it stops giving orders.', l: 'l16' },
   reasons: { t: 'Your own words, from a calm day, speak for the part of you that wants this.', l: 'l45' },
+  object: { t: 'A thing you can picture is a thing you can watch from a step back. The urge is there, and you are the one looking at it.', l: 'l2' },
   future: { t: 'You left this on a good day, when you could see clearly. In an urge it is hard to see that far, so you said it for yourself.', l: 'l45' },
   written: {
     t: 'A temptation is one of a few old moves, not a verdict on you. Named, it loses its surprise, and an answer said out loud is ready the next time it comes.',

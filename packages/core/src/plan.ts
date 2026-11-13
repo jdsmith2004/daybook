@@ -94,6 +94,20 @@ export const resetSlip = (st: Settings): Change => ({
   toast: 'Back to the starter plan.',
 });
 
+/* ---------- my line ---------- */
+/** my line: the person's own rule for what is a slip and what is a clean day, written once. A vague rule ("does that count?")
+    feeds "I already blew it"; their own words settle it at the moment of logging (log.tsx, the If I slip chapter). */
+export const MY_LINE_LEN = 240;
+export const myLineOf = (st: Pick<Settings, 'myLine'> | null | undefined): string => String(st?.myLine || '').trim();
+export const setMyLine = (st: Settings, v: string) =>
+  changeSettings(
+    st,
+    (s) =>
+      void (s.myLine = String(v || '')
+        .trim()
+        .slice(0, MY_LINE_LEN)),
+  );
+
 /* ---------- the urge plan (if this, then I will) ---------- */
 /** the urge plan holds its five starting lines in their places (setup and Rekindle write to them by place), then the
     lines a person adds, up to PLAN_MAX in all */
@@ -268,6 +282,8 @@ export function playbookText(
   o.push('');
   const rule = (st.rule || '').trim();
   if (rule) o.push('My rule', rule, '');
+  const line = myLineOf(st);
+  if (line) o.push('My line', line, '');
   const plan = (st.plan || []).filter((r) => !planBlank(r));
   if (plan.length) {
     o.push('If this, then that');

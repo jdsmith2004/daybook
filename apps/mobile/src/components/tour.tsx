@@ -71,7 +71,7 @@ export function tourSteps({ lessonDone, lessonId }: { lessonDone: boolean; lesso
   if (!lessonDone && lessonId)
     steps.push({
       at: ['lesson'],
-      say: 'Start here: your lesson for today. It takes about two minutes.',
+      say: 'And this is your lesson for today. It takes about two minutes. Start here.',
       btn: 'Start lesson 1',
       go: () => router.push({ pathname: '/lesson/[id]', params: { id: lessonId } }),
     });
@@ -288,7 +288,7 @@ export function FirstTour({
               style={[
                 StyleSheet.absoluteFill,
                 {
-                  borderRadius: 999,
+                  borderRadius: hole.r,
                   borderWidth: 3,
                   borderColor: c.sun,
                   opacity: ring.interpolate({ inputRange: [0, 1], outputRange: [1, 0.45] }),

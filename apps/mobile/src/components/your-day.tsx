@@ -323,7 +323,8 @@ export const StopCard = ({ m, t }: { m: BigCard; t: StopTile }) => <Hero m={m} t
 function Hero({ m, t, first }: { m: BigCard; t: StopTile; first?: boolean }) {
   const c = useTheme();
   const pill = m.btn && m.btn.length <= 14 ? m.btn : PILL[m.go || ''] || 'Start';
-  const eb = first ? 'Start here · ' + m.eb : m.eb;
+  /* the first lesson's card says where to start; the rest of its small line goes, so it is never cut off */
+  const eb = first ? 'Start here · ' + (m.eb || '').split(' · ')[0] : m.eb;
   const card = (
     <Pressable
       accessibilityRole="button"

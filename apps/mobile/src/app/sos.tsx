@@ -81,7 +81,7 @@ export default function Sos() {
   const sos = useSos();
   const st = useCareSettings();
   const future = useFuture();
-  const { practice: pq, won: wq } = useLocalSearchParams<{ practice?: string; won?: string }>();
+  const { practice: pq, won: wq, setup: sq } = useLocalSearchParams<{ practice?: string; won?: string; setup?: string }>();
   const [practice] = useState(() => pq === '1');
   /* a practice ride is not counted as an SOS */
   useEffect(() => {
@@ -182,7 +182,7 @@ export default function Sos() {
   const title = practice ? 'Practice' : 'SOS';
 
   if (won) return <RodeOut won={won} night={night} level={level} />;
-  if (practice && seq.length > PRACTICE_N) return <PracticeDone sky={sky} level={level} />;
+  if (practice && seq.length > PRACTICE_N) return <PracticeDone sky={sky} level={level} setup={sq === '1'} />;
   if (!ur || !seq.length)
     return (
       <SceneFrame title={title} sky={sky} onClose={close}>
@@ -598,7 +598,7 @@ function More({
 }
 
 /* ---------- the end of a practice ride ---------- */
-function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }) {
+function PracticeDone({ sky, level, setup }: { sky: 'night' | 'violet'; level: number; setup?: boolean }) {
   const { tk, update } = useStore();
   const sos = useSos();
   const done = () => {
@@ -615,13 +615,28 @@ function PracticeDone({ sky, level }: { sky: 'night' | 'violet'; level: number }
     });
     sos.setMem((m) => ({ ...m, prac: (typeof m.prac === 'number' ? m.prac : 0) + 1 }));
     buzz('save');
+    /* from setup: back to it, where SOS is unlocked (app/setup.tsx) */
+    if (setup) {
+      setupKeep.sos = true;
+      close();
+      return;
+    }
     closeAll();
   };
   return (
     <SceneFrame title="Practice" sky={sky} onClose={close}>
-      <Finish level={level} size={130} title="Practice done." text="Run it while calm, and it runs itself when it counts. It always starts with the sun." />
+      <Finish
+        level={level}
+        size={130}
+        title={setup ? 'You just used SOS.' : 'Practice done.'}
+        text={
+          setup
+            ? 'When an urge comes, it starts the same way: the sun, then a move at a time until it passes.'
+            : 'Run it while calm, and it runs itself when it counts. It always starts with the sun.'
+        }
+      />
       <Dock>
-        <Button label="Done" onPress={done} />
+        <Button label={setup ? 'Next' : 'Done'} onPress={done} />
       </Dock>
     </SceneFrame>
   );

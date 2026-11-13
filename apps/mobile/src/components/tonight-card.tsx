@@ -149,7 +149,18 @@ export function TonightCard({
       <View style={s.bubbles}>
         {lines.length ? (
           lines.map((p, i) => (
-            <Bubble key={i} i={i} when={whenOf(p.when)} then={p.then} label={whenOf(p.when) + ', ' + p.then + ' Opens My plan.'} onPress={() => go('/plan')} />
+            <Bubble
+              key={i}
+              i={i}
+              when={whenOf(p.when)}
+              then={p.then}
+              label={whenOf(p.when) + ', ' + p.then + ' Opens this line in My plan.'}
+              onPress={() => {
+                /* straight to this line in the urge plan, open to change */
+                const at = (st.plan || []).findIndex((x) => x.when === p.when && x.then === p.then);
+                go('/plan/[part]', at >= 0 ? { part: 'urge', line: String(at) } : { part: 'urge' });
+              }}
+            />
           ))
         ) : (
           <Bubble i={0} then="Make a plan, while it is calm" label="Make a plan for your hard moments" onPress={() => go('/trail')} />

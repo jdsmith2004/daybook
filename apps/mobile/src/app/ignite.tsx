@@ -1,6 +1,7 @@
-/* Lighting the night: the morning's Free of it opens this over the morning (app/morning.tsx), and its button goes back to it. The
+/* Lighting the night: the morning's Free of it opens this over the morning (app/morning.tsx) when the person comes back to it or
+   keeps a small goal (core igniteWhy), and its button goes back to it. The
    moment itself is the shared `Ignition` (components/ignite.tsx); this page only reads the count and the words (core ignite.ts). */
-import { freeRun, gameCompute, goalStep, heroNumber, igniteLine, igniteRow } from '@daybook/core';
+import { freeRun, gameCompute, goalStep, igniteCount, igniteLine, igniteRow } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
@@ -13,13 +14,12 @@ export default function Ignite() {
   /* what it says is fixed when it opens */
   const [m] = useState(() => {
     const st = snap.settings;
-    const hn = st ? heroNumber(snap.days, st, tk, now) : null;
-    const to = hn?.n ?? '';
+    const c = st ? igniteCount(snap.days, st, tk, now) : { from: '', to: '', unit: '' };
     return {
       level: st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1,
-      from: p.from ?? to,
-      to,
-      unit: hn?.unit ?? '',
+      from: p.from ?? c.from,
+      to: c.to,
+      unit: c.unit,
       line: st ? igniteLine(snap.days, st, tk) : '',
       row: st ? igniteRow(snap.days, st, tk) : [],
       /* the small goal: 3 free nights, then 7, then each week (no big goal before a clean week) */

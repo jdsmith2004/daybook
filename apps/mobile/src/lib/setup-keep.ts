@@ -14,7 +14,8 @@ export interface SetupFlow {
   saved: boolean;
   changed: number;
 }
-export const setupKeep: { flow: SetupFlow | null; shut: boolean } = { flow: null, shut: false };
+/** sos: the practice SOS in setup ended with Next (app/sos.tsx), and setup unlocks SOS when it is back in front */
+export const setupKeep: { flow: SetupFlow | null; shut: boolean; sos?: boolean } = { flow: null, shut: false };
 
 const KEY = 'daybook.setup';
 let loaded = false;

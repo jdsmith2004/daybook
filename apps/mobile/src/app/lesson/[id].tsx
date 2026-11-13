@@ -1051,15 +1051,25 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
           {(bn ? 'From lesson ' + bn : 'From') + ', ' + B.title}
         </T>
       ) : null}
+      {/* the lesson's move: what to do today, said as the person's own steps (the owner, November 13, 2026: the steps "feel like
+          buttons" and it is "hard to tell that these are action items") */}
+      {card.e === 'move' ? (
+        <View style={s.moveEb}>
+          <Icon name="flame" size={16} color={look.dashOn} />
+          <Text style={[s.moveEbT, { color: look.dashOn }]}>Your move today</Text>
+        </View>
+      ) : null}
       <T style={[s.h, SHORT && h.length > 40 && s.hsm]} accessibilityRole="header">
         {h}
       </T>
       {beat.p ? <Rich text={beat.p} st={st} style={s.p} /> : null}
       {beat.l ? (
-        <View style={{ gap: 8, marginTop: 4 }}>
+        /* steps, not buttons: a number and the words, nothing that looks tappable */
+        <View style={{ gap: 14, marginTop: 10 }} accessibilityRole="list">
           {beat.l.map((x, j) => (
-            <View key={j} style={[s.line, { backgroundColor: look.row }]}>
-              <Rich text={x} st={st} style={{ fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: look.rowInk }} />
+            <View key={j} style={s.step}>
+              <Text style={[s.stepN, { color: look.dashOn }]}>{j + 1}</Text>
+              <Rich text={x} st={st} style={[s.p, { flex: 1 }]} />
             </View>
           ))}
         </View>
@@ -1260,6 +1270,10 @@ const s = StyleSheet.create({
   quiets: { width: '100%', flexDirection: 'row' },
   len: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20 },
   line: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 20 },
+  moveEb: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
+  moveEbT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
+  step: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
+  stepN: { fontFamily: font.displayBold, fontSize: 28, lineHeight: 28, minWidth: 22 },
   number: { gap: 12, paddingTop: SHORT ? 8 : 40 },
   quote: { paddingVertical: 4 },
   flipRoom: { paddingTop: SHORT ? 8 : 24, paddingHorizontal: 8 },

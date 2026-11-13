@@ -189,7 +189,7 @@ export function obThenPick(a: SetupAnswers, st: Settings | null, redo: boolean, 
    week, one part a day, each set up by using it (unlock.ts). Duolingo is the model (the owner, November 12, 2026): the flame
    talks in its bubble and answers each pick, one question a page with big answers low, a bar across the top, the first win
    inside setup, and the flame lit by the person at the end. Every question can be skipped; setup itself cannot. */
-export type PageKind = 'hello' | 'account' | 'tiles' | 'multi' | 'breathe' | 'promise' | 'tonight' | 'light' | 'review' | 'done';
+export type PageKind = 'hello' | 'how' | 'sos' | 'account' | 'tiles' | 'multi' | 'promise' | 'tonight' | 'light' | 'review' | 'done';
 export interface ObPage {
   id: string;
   k: PageKind;
@@ -238,13 +238,19 @@ export const obForReasons = (a: SetupAnswers): string[] =>
 const isRedo = (_a: SetupAnswers, env: ObEnv) => !!env.redo;
 const isNew = (_a: SetupAnswers, env: ObEnv) => !env.redo;
 export const OB_PAGES: ObPage[] = [
-  { id: 'hello', k: 'hello' },
+  /* a walk-through opens with a hello; a new person starts on the first question, where the flame says hello (the owner,
+     November 13, 2026: the welcome page "feels kind of pointless") */
+  { id: 'hello', k: 'hello', need: isRedo },
+  /* a new person starts here: the flame says hello and how Daybook helps, one line each for SOS, the lessons and the mornings
+     (the owner, November 13, 2026: "onboarding doesn't explain lessons what sos is ... i don't know how the app is going to help me") */
+  { id: 'how', k: 'how', need: isNew },
   /* what the person is quitting (habit.ts): first, so every word after it is theirs */
   { id: 'habit', k: 'tiles', key: 'habit', list: OB_HABIT, h: 'What are you quitting?', keep: 1 },
   { id: 'freq', k: 'tiles', key: 'freq', list: OB_FREQ4, h: 'How often does it happen?', keep: 1 },
   { id: 'when', k: 'multi', key: 'when', list: OB_WHEN, h: 'When does it pull hardest?', sub: 'Pick any.', cols: 2, keep: 1 },
-  /* the first win, inside setup: thirty seconds of the breathing SOS starts with, done once */
-  { id: 'breathe', k: 'breathe', need: isNew },
+  /* the first win, inside setup: the real SOS, a short practice ride with its swipes, then SOS is unlocked (the owner, November 13,
+     2026: "the sos preview should literally be sos with the swipe gestures and stuff and when theyre done press next") */
+  { id: 'sos', k: 'sos', need: isNew },
   /* the heart of setup (the owner's condition on D4): you are here, this is different, it is going to work */
   { id: 'promise', k: 'promise', need: isNew },
   {
@@ -274,7 +280,7 @@ export const OB_PAGES: ObPage[] = [
   { id: 'done', k: 'done', need: isRedo },
 ];
 export const obPages = (a: SetupAnswers, env: ObEnv = {}) => OB_PAGES.filter((pg) => !pg.need || pg.need(a, env)).map((pg) => obPageIn(pg, habitIn(a)));
-/** the questions asked, for the line the flame says first ("Five quick questions, then tonight is set") */
+/** the questions setup asks */
 export const obAskCount = (a: SetupAnswers, env: ObEnv = {}) => obPages(a, env).filter((p) => p.k === 'tiles' || p.k === 'multi').length;
 /** a page in the words of the habit chosen: the questions name it, and for another habit the first question carries the
     doctor line (habit.ts habitMedical) */
@@ -441,8 +447,17 @@ export function obSave(a: SetupAnswers, st: Settings | null, keep: string[] | nu
 export const obBeginGoal = (h: Habit) => habitSay('Quit porn. Log honestly, slips included.', h);
 /** the day of the first ask of "how free do you see yourself", for someone who came through the short setup */
 export const FREE_AT = 30;
-/** the small goals offered once the flame is lit: three nights, then a week. Nothing bigger before a clean week (CLAUDE.md). */
+/** the small goals offered once the flame is lit, from how often it happens (the owner, November 13, 2026: "for me my first goal
+    would be two and 5 would be a stretch maybe this number should be based off of how often they slip"): a close one and a
+    stretch. Nothing past a week before a clean week (CLAUDE.md). */
 export const OB_FIRST = [3, 7] as const;
+export function obFirstGoals(a: SetupAnswers): [number, number] {
+  if (obMostDays(a)) return [2, 5];
+  if (a.freq === 'f1' || a.freq === 'f0') return [5, 7];
+  return [3, 7];
+}
+/** a first goal a person can hold: two nights up to a week */
+export const okFirst = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 2 && n <= 7;
 /** the phone-down time setup starts on: half past ten for someone whose hardest hour is late at night (get there first),
     eleven for everyone else */
 export const obTonightAt = (a: SetupAnswers): string =>
@@ -477,15 +492,14 @@ export function obBegin(a: SetupAnswers, tk: DayKey, now = Date.now()): Settings
       /* the "how free do you see yourself" question (north.ts) is no longer asked in setup: it waits until day 30 (C7), so
          it never crowds the first week. freeNo is when a closed ask was let go; it is due FREE_WAIT days after. */
       s.freeNo = addDays(tk, FREE_AT - FREE_WAIT);
-      if (a.first === 3 || a.first === 7) s.fwGoal = a.first;
+      if (okFirst(a.first)) s.fwGoal = a.first;
     },
     now,
   );
 }
 
-/** the first small goal, picked once the flame is lit (3 or 7 nights), kept with the first week */
-export const setFirstGoal = (st: Settings, n: number, now = Date.now()): Settings =>
-  n === 3 || n === 7 ? changeSettings(st, (s) => void (s.fwGoal = n as 3 | 7), now) : st;
+/** the first small goal, picked once the flame is lit (two nights up to seven), kept with the first week */
+export const setFirstGoal = (st: Settings, n: number, now = Date.now()): Settings => (okFirst(n) ? changeSettings(st, (s) => void (s.fwGoal = n), now) : st);
 
 /** the first line of the plan (the first week, day 4): for the hardest moment setup heard, the "then" picked. Kept in the
     plan row and in setup's record, so the first week knows it is done. */
@@ -729,10 +743,11 @@ export const obLast = (st: Settings | null, redo: boolean, key: string, list: Ob
     on a one-tap question it answers what was picked. Plain words, no contractions, never shame. */
 const OB_SAY: Record<string, string> = {
   hello: 'Hi. I am your flame. Answer a few quick questions, and tonight is set.',
+  how: 'Hi. I am your flame. You came here, and that is the hardest step.',
+  sos: 'When an urge hits, tap SOS. Try it now, while it is calm. Swipe up for the next move.',
   habit: 'Pick the closest one. I can help with each.',
   freq: 'Rough is fine. Only you see this.',
   when: 'Pick any. I will be ready for these.',
-  breathe: 'Breathe with me. This is how SOS starts.',
   for: 'On a hard night, I will remind you.',
   faith: 'It changes which lessons come up.',
   tonight: 'Set it now, while it is easy.',

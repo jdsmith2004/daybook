@@ -120,11 +120,11 @@ describe('the goal it suggests', () => {
 
 describe('setup in two minutes (WP10)', () => {
   it('asks a new person a few things, sets tonight, lights the flame, then asks for the account', () => {
-    expect(core.obPages({}).map((p) => p.id)).toEqual(['hello', 'habit', 'freq', 'when', 'breathe', 'promise', 'for', 'faith', 'tonight', 'light']);
+    expect(core.obPages({}).map((p) => p.id)).toEqual(['how', 'habit', 'freq', 'when', 'sos', 'promise', 'for', 'faith', 'tonight', 'light']);
     expect(core.obPages({ faith: 'big' }, { account: true }).map((p) => p.id)).toEqual(
-      'hello habit freq when breathe promise for faith creed tonight light account'.split(' '),
+      'how habit freq when sos promise for faith creed tonight light account'.split(' '),
     );
-    expect(core.obAskCount({})).toBe(5);
+    expect(core.obPages({}, { redo: true })[0].id).toBe('hello');
   });
   it('asks the phone-down time only of people quitting porn (the owner, via WP3)', () => {
     for (const habit of ['alcohol', 'gambling', 'other']) {
@@ -186,4 +186,21 @@ it("names the person's hardest moment on the wave page", () => {
   expect(w(['tired'])).toBe('Tired at the end of the day, an urge rises, peaks, and passes.');
   expect(w(['scroll'])).toBe('Scrolling your phone, an urge rises, peaks, and passes.');
   expect(core.obWave({}).h).toBe('Urges rise, peak, and pass.');
+});
+
+describe('the first goal follows how often it happens (the owner, November 13, 2026)', () => {
+  it('offers a close goal and a stretch, never past a week', () => {
+    expect(core.obFirstGoals({ freq: 'f3' })).toEqual([2, 5]);
+    expect(core.obFirstGoals({ freq: 'f2' })).toEqual([3, 7]);
+    expect(core.obFirstGoals({ freq: 'f1' })).toEqual([5, 7]);
+    expect(core.obFirstGoals({ freq: 'f0' })).toEqual([5, 7]);
+    expect(core.obFirstGoals({})).toEqual([3, 7]);
+  });
+  it('keeps a pick from two to seven, and nothing else', () => {
+    const st = core.freshSettings('2026-11-13');
+    expect(core.setFirstGoal(st, 2).fwGoal).toBe(2);
+    expect(core.setFirstGoal(st, 5).fwGoal).toBe(5);
+    expect(core.setFirstGoal(st, 30).fwGoal).toBeUndefined();
+    expect(core.setFirstGoal(st, 1).fwGoal).toBeUndefined();
+  });
 });

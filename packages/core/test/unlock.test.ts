@@ -122,9 +122,9 @@ describe('on Today', () => {
     expect(open.card.k).not.toBe('unlock');
     expect(open.more?.k).toBe('unlock');
   });
-  it('speaks plainly, with no contractions and never "unlocked"', () => {
+  it('speaks plainly, with no contractions, and says Unlocked (the owner, November 13, 2026: "there\'s no unlock for the sos and lessons")', () => {
     for (const w of Object.values(UNLOCK_WORDS)) for (const t of Object.values(w)) expect(t).not.toMatch(/[a-z]['’][a-z]/i);
-    for (const w of Object.values(UNLOCK_WORDS)) expect(w.eb).not.toMatch(/unlock/i);
+    for (const id of ['bed', 'person', 'plan', 'doors', 'voice'] as const) expect(UNLOCK_WORDS[id].eb).toMatch(/^Unlocked/);
   });
 });
 

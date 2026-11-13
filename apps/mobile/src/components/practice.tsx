@@ -65,53 +65,49 @@ export function PLine({
   const c = useTheme();
   const copy = it.k === 'copy';
   const on = !!state;
+  const where = cap(copy ? it.label || 'To send' : ITEM_WHERE[it.k]);
+  /* one compact row (the owner, November 13, 2026: "it should just have an add to my reasons + sign to the right or edit ... these
+     cards have a bunch of wasted space"): where it goes in small words, the line, and on the right a pencil and a round +.
+     Once added, the + turns to a check, and Undo sits under the line. */
   return (
     <View style={[s.card, { backgroundColor: c.surface }]}>
-      <View style={s.eye}>
-        <Icon name={on ? 'check' : ICON[it.k]} size={15} color={on ? c.mintText : t.text} />
+      <View style={{ flex: 1, gap: 4 }}>
         <Text style={[s.eyeT, { color: on ? c.mintText : t.text }]} numberOfLines={1}>
-          {cap(copy ? it.label || 'To send' : ITEM_WHERE[it.k])}
+          {on && !copy ? (state === 'had' ? 'Already ' + itemDone(it).replace(/^On/, 'on').replace(/^Your/, 'your') : itemDone(it)) : where}
         </Text>
+        <LineWords it={it} />
+        {replaces && !on ? (
+          <T v="small" tone="muted">
+            In place of: “{replaces}”
+          </T>
+        ) : null}
+        {state === 'added' && !copy ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Undo. Take it back off." onPress={onUndo} hitSlop={8} style={s.undo}>
+            <Text style={[s.linkT, { color: c.accentText }]}>Undo</Text>
+          </Pressable>
+        ) : null}
       </View>
-      <LineWords it={it} />
-      {replaces && !on ? (
-        <T v="small" tone="muted">
-          In place of: “{replaces}”
-        </T>
-      ) : null}
-      {on && !copy ? (
-        <View style={s.doneRow} accessibilityLiveRegion="polite">
-          <View style={[s.done, { backgroundColor: c.mintSoft }]}>
-            <Icon name="check" size={18} color={c.mintText} />
-            <Text style={[s.btnT, { color: c.mintText }]} numberOfLines={1}>
-              {state === 'had' ? 'Already ' + itemDone(it).replace(/^On/, 'on').replace(/^Your/, 'your') : itemDone(it)}
-            </Text>
+      <View style={s.side}>
+        {!on && !copy ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Change the words first" onPress={onEdit} hitSlop={6} style={s.pen}>
+            <Icon name="pencil" size={18} color={c.accentText} />
+          </Pressable>
+        ) : null}
+        {on && !copy ? (
+          <View style={[s.round, { backgroundColor: c.mintSoft }]} accessibilityLiveRegion="polite" accessible accessibilityLabel={itemDone(it)}>
+            <Icon name="check" size={22} color={c.mintText} />
           </View>
-          {state === 'added' ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Undo. Take it back off." onPress={onUndo} hitSlop={6} style={s.undo}>
-              <Text style={[s.linkT, { color: c.accentText }]}>Undo</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      ) : (
-        <>
+        ) : (
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={copy ? (on ? 'Copied. Copy again' : 'Copy') : itemButton(it)}
             onPress={copy ? onCopy : onAdd}
-            style={({ pressed }) => [s.btn, { backgroundColor: on ? c.mintSoft : c.accentSoft, opacity: pressed ? 0.75 : 1 }]}>
-            <Icon name={on ? 'check' : copy ? 'copy' : 'plus'} size={18} color={on ? c.mintText : c.accentText} />
-            <Text style={[s.btnT, { color: on ? c.mintText : c.accentText }]} numberOfLines={1}>
-              {on ? 'Copied · copy again' : itemButton(it)}
-            </Text>
+            hitSlop={4}
+            style={({ pressed }) => [s.round, { backgroundColor: on ? c.mintSoft : c.accent, transform: [{ scale: pressed ? 0.92 : 1 }] }]}>
+            <Icon name={on ? 'check' : copy ? 'copy' : 'plus'} size={22} color={on ? c.mintText : c.accentInk} />
           </Pressable>
-          {copy ? null : (
-            <Pressable accessibilityRole="button" onPress={onEdit} hitSlop={4} style={s.link}>
-              <Icon name="pencil" size={15} color={c.accentText} />
-              <Text style={[s.linkT, { color: c.accentText }]}>Change the words first</Text>
-            </Pressable>
-          )}
-        </>
-      )}
+        )}
+      </View>
     </View>
   );
 }
@@ -237,7 +233,10 @@ export function GoRow({ label, ic, went, onPress }: { label: string; ic?: string
 }
 
 const s = StyleSheet.create({
-  card: { gap: 12, padding: 16, borderRadius: 20 },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingLeft: 16, paddingRight: 12, borderRadius: 20 },
+  side: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  pen: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  round: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   eye: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   eyeT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   words: { fontFamily: font.bodyMedium, fontSize: 17, lineHeight: 24 },
@@ -249,7 +248,7 @@ const s = StyleSheet.create({
   btnT: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   doneRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   done: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingHorizontal: 16, borderRadius: 999 },
-  undo: { minHeight: 48, minWidth: 64, alignItems: 'center', justifyContent: 'center' },
+  undo: { alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' },
   link: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44 },
   linkT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   in: { fontFamily: font.body, fontSize: 17, lineHeight: 23, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, minHeight: 48 },

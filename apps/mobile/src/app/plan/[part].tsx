@@ -51,7 +51,7 @@ import { useStore } from '@/lib/store';
 import { font, PaletteOverride, useTheme } from '@/lib/theme';
 
 export default function ChapterPage() {
-  const params = useLocalSearchParams<{ part?: string; fresh?: string; add?: string }>();
+  const params = useLocalSearchParams<{ part?: string; fresh?: string; add?: string; line?: string }>();
   const { snap } = useStore();
   const base = useTheme();
   const part = partOf(params.part);
@@ -66,7 +66,7 @@ export default function ChapterPage() {
         backdrop={<LinearGradient colors={m.grad} locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill} />}>
         <Appear style={{ gap: 24 }}>
           {part === 'urge' ? (
-            <Urge fresh={params.fresh} add={params.add} />
+            <Urge fresh={params.fresh} add={params.add} line={params.line} />
           ) : part === 'why' ? (
             <Why fresh={params.fresh} add={params.add} />
           ) : part === 'slip' ? (
@@ -107,11 +107,11 @@ const THEN_IDEAS = [
   'Put the phone on its charger in another room.',
 ];
 
-function Urge({ fresh, add }: { fresh?: string; add?: string }) {
+function Urge({ fresh, add, line }: { fresh?: string; add?: string; line?: string }) {
   return (
     <>
       <View style={{ gap: 8 }}>
-        <Lines />
+        <Lines at={line} />
         <Rows>
           <RelLesson id="l9" />
         </Rows>
@@ -144,11 +144,16 @@ function Urge({ fresh, add }: { fresh?: string; add?: string }) {
 }
 
 /** the if-then lines, each one big: If in the heading face, then under it. Tap one to change it in place, or add one. */
-function Lines() {
+function Lines({ at }: { at?: string }) {
   const c = useTheme();
   const { snap, apply, say } = useStore();
   const st = snap.settings!;
-  const [open, setOpen] = useState<number | 'new' | null>(null);
+  /* opened from a line on Today's tonight card: that line, already open to change (the owner, November 13, 2026: "it should take me
+     to the correlating spot in my plan not the whole plan and make me find it") */
+  const [open, setOpen] = useState<number | 'new' | null>(() => {
+    const n = Number(at);
+    return at != null && Number.isInteger(n) && st.plan[n] && !planBlank(st.plan[n]) ? n : null;
+  });
   const rows = st.plan.map((r, i) => ({ ...r, i })).filter((r) => !planBlank(r));
   const full = st.plan.length >= PLAN_MAX;
   return (

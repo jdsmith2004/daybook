@@ -1317,6 +1317,26 @@ offer to shrink the app to the morning tap and Sunday. Recommended: yes, later.
 **Not a design question, but it waits for you:** WP2 needs about an hour with your iPhone plugged in for a local build (no EAS build),
 and after the device script passes, your yes for one `production-pull` store build.
 
+## 4b. The owner's answers (November 12, 2026)
+
+Anything not named here was approved as recommended ("if I didn't mention it, it's just a yes").
+
+- **D1:** (a). From a set date, a night counts as free only when the person says so.
+- **D2: the owner's own rule, not (a).** In the owner's words: "you feed a fire it grows you don't feed it it dims then when it's dimmer
+  feeding is more rewarding and you want to do it more". So everything good feeds the fire: a morning told, a free night, the phone put
+  to bed, a lesson, an urge ridden out. A day with nothing fed dims it, and a low fire grows visibly more from one feed than a full one
+  does. Two guardrails carried from the review, so it still serves the true record: a night not told dims it more than a slip that was
+  told (not telling must never pay better), and it never dims in the hours after a slip (CLAUDE.md).
+- **D3:** (a).
+- **D4:** (a), with the owner's condition: setup stays motivating and emotional. Keep the well-built "you are here, this is different,
+  this is actually going to work" piece; what moves to the first week is the training and the parts of the app.
+- **D5:** (a).
+- **D6, D7, D14:** asked again in plainer words; waiting.
+- **D8:** (a), seven free lessons, and the free account ask after them stays: the owner, "the lessons are free so they need to sign up
+  we can't take that away".
+- **D9:** (a). **D10:** (a). **D11:** finish it ("let's finish it you do it"); the branch is pushed. **D12:** yes; the four branches are
+  saved as `archive/*` tags, and deleting them waits for a permission the owner grants. **D13:** yes, later.
+
 ## 5. Where the evidence is
 
 All in the shared notes folder for this group of sessions, under `review-nov-12/` (outside the repository, so nothing personal or

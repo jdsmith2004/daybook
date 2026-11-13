@@ -670,10 +670,10 @@ function WrittenStand({ w, on, onFull }: { w: WrittenWords; on: boolean; onFull:
 /* ---------- if it were a thing (core ride.ts RIDE_OBJECT) ---------- */
 /** each thing's shape and color */
 const OBJ_LOOK: Record<string, { k: ShapeKind; tone: (c: Palette) => string }> = {
-  knot: { k: 'clover8', tone: (c) => c.coral },
+  knot: { k: 'softBoom', tone: (c) => c.coral },
   stone: { k: 'oval', tone: (c) => c.sun2 },
   wave: { k: 'cookie12', tone: (c) => c.sky },
-  wire: { k: 'burst', tone: (c) => c.violet },
+  wire: { k: 'boom', tone: (c) => c.violet },
   weight: { k: 'bun', tone: (c) => c.violet },
   cloud: { k: 'puffy', tone: (c) => c.sky },
 };
@@ -691,7 +691,11 @@ export function ObjectMove({ on, onDone }: MoveProps) {
     return (
       <View style={s.move}>
         <Words head="If the urge were a thing, what would it be?" sub="Pick the closest. Or swipe on." />
-        <View style={[s.mid, s.low]}>
+        {/* the thing it might be, shapeless still, in the open middle */}
+        <View style={s.mid}>
+          <MorphShape kind="softBurst" size={150} color={c.line} />
+        </View>
+        <View style={s.low}>
           <Tiles
             list={URGE_OBJECTS}
             cur={null}

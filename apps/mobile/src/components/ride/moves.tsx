@@ -10,6 +10,8 @@
      really felt after the last slips (core slipFeltLine), never in a practice ride or the first 30 seconds of an SOS.
    - Say it fast: the loudest thought, said fast for 20 seconds, then let go.
    - Your words: your note or a reason, read slowly, and your voice note.
+   - If it were a thing: once a ride, "If the urge were an object, what would it be?" One tap (a tight knot, a hot stone),
+     then the thing is watched from a step back while it softens and shrinks (core ride.ts RIDE_OBJECT). Next skips it.
    - It is written: for faith people only (core written.ts). Are you facing a temptation, hold to say no, the three pulls
      each answered as Jesus answered them in Matthew 4, then it left; then Matthew 5: it starts in the heart, cast away
      one real thing now, and you are the light, with your own flame. */
@@ -24,6 +26,7 @@ import {
   scrWrittenLabel,
   SCR_WRITTEN,
   THOUGHTS,
+  URGE_OBJECTS,
   urFromYou,
   WRITTEN_CAST,
   writtenWords,
@@ -664,6 +667,66 @@ function WrittenStand({ w, on, onFull }: { w: WrittenWords; on: boolean; onFull:
   );
 }
 
+/* ---------- if it were a thing (core ride.ts RIDE_OBJECT) ---------- */
+/** each thing's shape and color */
+const OBJ_LOOK: Record<string, { k: ShapeKind; tone: (c: Palette) => string }> = {
+  knot: { k: 'softBoom', tone: (c) => c.coral },
+  stone: { k: 'oval', tone: (c) => c.sun2 },
+  wave: { k: 'cookie12', tone: (c) => c.sky },
+  wire: { k: 'boom', tone: (c) => c.violet },
+  weight: { k: 'bun', tone: (c) => c.violet },
+  cloud: { k: 'puffy', tone: (c) => c.sky },
+};
+const OBJ_WATCH = 16;
+export function ObjectMove({ on, onDone }: MoveProps) {
+  const c = useTheme();
+  const reduce = useReducedMotion();
+  const [o, setO] = useState<string | null>(null);
+  const sec = useClock(on && !!o);
+  const p = Math.min(1, sec / OBJ_WATCH);
+  useDoneAfter(!!o && sec >= OBJ_WATCH, 1800, onDone);
+  const name = o ? (URGE_OBJECTS.find((x) => x[0] === o) || [o, o])[1] : '';
+  useSay(o ? name + '. Look at it from a step back.' : '', on);
+  if (!o)
+    return (
+      <View style={s.move}>
+        <Words head="If the urge were a thing, what would it be?" sub="Pick the closest. Or swipe on." />
+        {/* the thing it might be, shapeless still, in the open middle */}
+        <View style={s.mid}>
+          <MorphShape kind="softBurst" size={150} color={c.line} />
+        </View>
+        <View style={s.low}>
+          <Tiles
+            list={URGE_OBJECTS}
+            cur={null}
+            onPick={(v) => {
+              setO(v);
+              buzz('tap');
+            }}
+          />
+        </View>
+      </View>
+    );
+  const look = OBJ_LOOK[o] || OBJ_LOOK.stone;
+  const size = reduce ? 170 : Math.round(220 - 90 * p);
+  return (
+    <View style={s.move}>
+      <Words
+        head={p < 1 ? name + '. Look at it.' : 'It is out there, not you.'}
+        sub={
+          p < 1 ? 'Where does it sit in your body? Watch it from a step back. You are the one looking.' : 'You can watch an urge without doing what it says.'
+        }
+      />
+      <View style={s.mid}>
+        <MorphShape kind={look.k} to="circle" t={reduce ? 0.5 : p} size={size} color={look.tone(c)} turn={reduce ? 0 : p * 40} />
+      </View>
+      <View style={s.line}>
+        <WavyLine width={220} p={p} color={look.tone(c)} track={look.tone(c) + '33'} />
+      </View>
+    </View>
+  );
+}
+
 /* ---------- the parts ---------- */
 /** the words above a move: what to do, big, and how, small. A live region, so a screen reader hears each change. */
 function Words({ head, sub }: { head: string; sub?: string }) {
@@ -707,6 +770,7 @@ export const MOVES: Record<string, (p: MoveProps) => React.ReactElement> = {
   reasons: WordsMove,
   written: WrittenMove,
   future: FutureMove,
+  object: ObjectMove,
 };
 
 /** the short name of a move, as the ride shows it */
@@ -721,6 +785,7 @@ export const MOVE_NAME: Record<string, string> = {
   reasons: 'Your words',
   written: 'It is written',
   future: 'Your note',
+  object: 'If it were a thing',
 };
 
 /** the icon for a move */
@@ -735,6 +800,7 @@ export const MOVE_ICON: Record<string, string> = {
   reasons: 'star',
   written: 'shield',
   future: 'mic',
+  object: 'sparkle',
 };
 
 export const moveTint = (c: Palette, id: string) =>
@@ -749,6 +815,7 @@ export const moveTint = (c: Palette, id: string) =>
     reasons: c.sun2,
     written: c.sun2,
     future: c.sun2,
+    object: c.coral,
   })[id] || c.accent;
 
 const s = StyleSheet.create({

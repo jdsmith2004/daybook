@@ -3,6 +3,7 @@
    a person's own choice, and a record that lost its mode must not land on the one count a slip puts to 0. The legacy file keeps its
    own default for the frozen golden fixtures, which all name their mode. */
 import { normSettings as normLegacy } from './legacy/core.js';
+import { MY_LINE_LEN } from './plan';
 import type { Settings } from './types';
 
 const MODES = ['strict', 'gentle', 'step'];
@@ -11,5 +12,8 @@ export function normSettingsLoaded(s: unknown): Settings {
   const o = normLegacy(s as Settings);
   const m = s && typeof s === 'object' ? (s as { cleanMode?: unknown }).cleanMode : undefined;
   if (!MODES.includes(m as string)) o.cleanMode = 'gentle';
+  /* my line (plan.ts): a string, or nothing at all */
+  if (typeof o.myLine === 'string' && o.myLine.trim()) o.myLine = o.myLine.trim().slice(0, MY_LINE_LEN);
+  else delete o.myLine;
   return o;
 }

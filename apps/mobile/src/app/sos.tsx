@@ -83,6 +83,10 @@ export default function Sos() {
   const future = useFuture();
   const { practice: pq, won: wq, setup: sq } = useLocalSearchParams<{ practice?: string; won?: string; setup?: string }>();
   const [practice] = useState(() => pq === '1');
+  /* from setup, the practice is one move and one press of the arrow, then back (the owner, November 13, 2026: "it takes to long
+     just make it more obvious they have to press the down button and only make them press it once") */
+  const quick = practice && sq === '1';
+  const practiceN = quick ? 1 : PRACTICE_N;
   /* a practice ride is not counted as an SOS */
   useEffect(() => {
     if (practice) return;
@@ -148,7 +152,7 @@ export default function Sos() {
   const hasFuture = !practice && future.notes.length > 0;
   /* It is written, for people who said faith plays a part (core written.ts) */
   const faith = godOn(st);
-  const can = useMemo(() => ({ words, faith, future: hasFuture }), [words, faith, hasFuture]);
+  const can = useMemo(() => ({ words, faith, future: hasFuture, object: !practice }), [words, faith, hasFuture, practice]);
   const moveName = (x: string) => (x === 'written' ? writtenWords(faithVoice(st) || 'plain').name : MOVE_NAME[x] || urTool(x)?.name || x);
   /* the first move, once there is an urge: always the sun */
   useEffect(() => {
@@ -160,7 +164,7 @@ export default function Sos() {
      practice ride ends after its few moves) */
   const peek = useMemo(
     () =>
-      !ur || !seq.length ? null : practice && seq.length >= PRACTICE_N ? 'end' : rideNext(ur, snap.days, st, tk, Date.now(), sos.mem, can, seq, lead.current),
+      !ur || !seq.length ? null : practice && seq.length >= practiceN ? 'end' : rideNext(ur, snap.days, st, tk, Date.now(), sos.mem, can, seq, lead.current),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [seq, can],
   );
@@ -182,7 +186,7 @@ export default function Sos() {
   const title = practice ? 'Practice' : 'SOS';
 
   if (won) return <RodeOut won={won} night={night} level={level} />;
-  if (practice && seq.length > PRACTICE_N) return <PracticeDone sky={sky} level={level} setup={sq === '1'} />;
+  if (practice && seq.length > practiceN) return <PracticeDone sky={sky} level={level} setup={sq === '1'} />;
   if (!ur || !seq.length)
     return (
       <SceneFrame title={title} sky={sky} onClose={close}>
@@ -336,7 +340,7 @@ export default function Sos() {
     else if (!practice && !back) sos.setMem((m) => urNote(m, id, null));
     buzz('tap');
     if (back) return setBack(back - 1);
-    if (practice && n >= PRACTICE_N) return setSeq(seq.concat('end'));
+    if (practice && n >= practiceN) return setSeq(seq.concat('end'));
     const nx = peek && peek !== 'end' && !lead.current ? peek : rideNext(u, snap.days, st, tk, Date.now(), sos.mem, can, seq, lead.current);
     lead.current = null;
     setSeq(seq.concat(nx));
@@ -462,13 +466,15 @@ export default function Sos() {
               {moveName(near !== null && pages[near] && pages[near] !== 'end' ? pages[near] : id)}
             </Text>
             <View style={s.why}>
-              <Icon name={hint ? 'up' : 'book'} size={13} color={c.muted} />
-              <Text style={[s.whyT, { color: c.muted }]}>{hint ? 'Swipe up for the next one' : 'Why it works'}</Text>
+              <Icon name={quick ? 'down' : hint ? 'up' : 'book'} size={quick ? 17 : 13} color={quick ? c.ink : c.muted} />
+              <Text style={[s.whyT, quick ? s.quickT : null, { color: quick ? c.ink : c.muted }]}>
+                {quick ? 'Now tap the arrow' : hint ? 'Swipe up for the next one' : 'Why it works'}
+              </Text>
             </View>
           </Pressable>
           <View style={s.rail}>
             <Bare icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
-            <Bare icon="down" label="Next move" fill loud={hint} onPress={() => next(false)} />
+            <Bare icon="down" label="Next move" fill loud={hint || quick} onPress={() => next(false)} />
           </View>
         </View>
       </View>
@@ -746,6 +752,7 @@ const s = StyleSheet.create({
   segT: { fontFamily: font.bodySemi, fontSize: 15 },
   why: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   whyT: { fontFamily: font.bodySemi, fontSize: 13 },
+  quickT: { fontSize: 15, lineHeight: 20 },
   center: { alignItems: 'center' },
   /* the four big choices: two rows of two, big enough for a shaking thumb */
   bigGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },

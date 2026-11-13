@@ -19,6 +19,8 @@ import {
   safeName,
   SAFETY,
   setField,
+  setMyLine,
+  MY_LINE_LEN,
   slipSteps,
   toggleHelpStep,
   toggleSafety,
@@ -409,11 +411,25 @@ function Why({ fresh, add }: { fresh?: string; add?: string }) {
 
 function Slip() {
   const c = useTheme();
-  const { snap } = useStore();
+  const { snap, apply } = useStore();
   const slip = slipSteps(snap.settings);
   const [edit, setEdit] = useState(false);
   return (
     <View style={{ gap: 8 }}>
+      {/* my line: what counts, in their own words, written once and shown where a slip is logged (log.tsx) */}
+      <Card>
+        <T v="label">My line</T>
+        <Editable
+          value={snap.settings?.myLine || ''}
+          prompt="Write what counts as a slip for me"
+          placeholder="A slip is watching it on purpose. An urge, or seeing something by accident, is not a slip."
+          maxLength={MY_LINE_LEN}
+          onSave={(v) => apply((cur) => ({ st: setMyLine(cur, v) }))}
+        />
+        <T v="small" tone="muted">
+          Already happened shows it, so you never have to wonder if a hard moment counts.
+        </T>
+      </Card>
       <Card>
         {edit ? (
           <Appear by={4} duration={180} style={{ gap: 12 }}>

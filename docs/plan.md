@@ -181,6 +181,23 @@ feelings bars count everything the journal shows) and asked for it to be "more o
 3. Row-level security: the owner decided on November 13 to leave it off ("we're gonna port over users then shut down the app"). The
    import never reads anyone else's rows: every read names the person's own id, and the phone drops any row that is not theirs.
 
+### Three small ideas from Mithras, added (November 13, 2026)
+
+The owner: "add this stuff to daybook if we can make it fit easily and well". All three fit, each in a place that already existed:
+
+- **My line.** The person's own words for what counts as a slip and what is a clean day, written once in My plan, If I slip
+  (`settings.myLine`, core `plan.ts`), and shown quietly under "What happened?" on Already happened, so "does that count?" is
+  settled before they answer. Synced with the plan like every other plan line, never in an event. No setup page and no prompt in
+  the log: the moment of logging is one tap, and a link there would pull a person away from it.
+- **The feelings before a slip.** Pattern already showed what was named ("What you have felt") but not which feelings come before
+  a slip. One more sentence on that card, from the whole log (core `patFeelSlip`): only what was named before the slip counts on a
+  slip day (so the shame after is never read as the cause), at least five feelings on each side, and a word must lean toward slips.
+  A sentence, not a chart: it reads in two seconds. The numbers sit in the card's table.
+- **If the urge were a thing.** A page in the SOS ride, once a ride, right after the first real move (core `ride.ts` RIDE_OBJECT):
+  six things to tap (a tight knot, a hot stone), then the thing is watched from a step back while it softens into a circle, and the
+  ride flows on. Next skips it; passed over three times it stops coming. Never in a practice ride, nothing typed, and the event
+  value is `object` only (never which thing).
+
 ## Lessons like Duolingo, and lessons that meet the night (the owner, November 12, 2026: "heavily use this for inspiration everywhere in the app"; WP11 in docs/review-plan.md; built on `claude/lessons-redesign-22657d`, show first)
 
 Why: Fable's review found the lessons do not meet the person where they are (C8), and the owner made Duolingo the model for lessons.

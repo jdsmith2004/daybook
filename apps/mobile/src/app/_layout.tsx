@@ -149,6 +149,8 @@ function Reminders() {
    its points (core WIDGET_PTS), once and for good */
 function FlameWidgetKeeper() {
   const { ready, snap, tk, now, update, say } = useStore();
+  /* while SOS is open, the Live Activity is the ride (core livePlan) */
+  const sos = useSos();
   return useFlameWidget(
     snap,
     tk,
@@ -170,6 +172,7 @@ function FlameWidgetKeeper() {
           if (widgetTold(days, st, [{ told: 'free', toldK: t.k, toldAt: t.at }], tk).length) days = tellNight(days, st, addDays(t.k, -1), 'free', tk, t.at);
         return days === s.days ? s : { ...s, days };
       }),
+    sos.ur?.t0 ?? null,
   );
 }
 

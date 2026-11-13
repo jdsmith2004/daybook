@@ -180,7 +180,7 @@ export const EV_PROPS: Record<string, Prop> = {
   from: one(() => ['today', 'door', 'nudge', 'widget', 'mithras', 'settings', 'other']),
   outcome: one(() => ['rode', 'slipped', 'closed', 'resisted', 'strong', 'other']),
   str: int(0, 10),
-  tool: one(() => [...(TOOLS as { id: string }[]).map((t) => t.id), 'other']),
+  tool: one(() => [...(TOOLS as { id: string }[]).map((t) => t.id), 'object', 'other']),
   trigger: one(() => (TRIGGERS as [string, string][]).map((t) => t[0])),
   hrs: one(() => ['h0_24', 'd1_3', 'd4_7', 'd8_30', 'd31', 'first']),
   step: one(() => ['small', 'phone', 'plan', 'learn', 'other']),

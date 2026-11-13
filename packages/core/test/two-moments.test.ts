@@ -34,6 +34,12 @@ describe('the night hour', () => {
     expect(afterNightHour({}, st, tk, at(1, 0, addDays(tk, 1)))).toBe(true);
     expect(afterNightHour({}, st, tk, at(12, 0))).toBe(false);
   });
+  it('waits for Good night to open, so the two never disagree', () => {
+    /* screens off at 3 AM: Good night counts from 9 PM, so a night set for 8 PM opens at 9 */
+    const late = { ...st, screensOff: '03:00' as const, nightAt: '20:00' as const };
+    expect(afterNightHour({}, late, tk, at(20, 30))).toBe(false);
+    expect(afterNightHour({}, late, tk, at(21, 0))).toBe(true);
+  });
   it('follows the time the morning set', () => {
     const d = setTonight({}, st, tk, { r: 'x', nt: '21:00' }, 1).days;
     expect(afterNightHour(d, st, tk, at(21, 15))).toBe(true);

@@ -234,6 +234,8 @@ function Sky({
   const [due, setDue] = useState(false);
   const dueRef = useRef(false);
   const [grew, setGrew] = useState(false);
+  /* the level block's height, so the pill sits just over it */
+  const [lvH, setLvH] = useState(50);
   useFocusEffect(
     useCallback(() => {
       const was = seen.current;
@@ -418,6 +420,7 @@ function Sky({
           accessibilityRole="button"
           accessibilityLabel={`Level ${lvl.n}, ${lvl.name}.${proof ? ' ' + proof + '.' : ''} Opens your level and points.`}
           onPress={() => router.push('/points')}
+          onLayout={(e) => setLvH(e.nativeEvent.layout.height)}
           style={({ pressed }) => [s.lv, pressed && { opacity: 0.8 }]}>
           <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
             Level {lvl.n} · {lvl.name} ›
@@ -435,14 +438,14 @@ function Sky({
           ) : null}
         </Pressable>
         {relit ? (
-          <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
+          <View style={[s.grew, { backgroundColor: glass, bottom: 18 + lvH + 8 }]} pointerEvents="none">
             <Icon name="flame" size={13} color={ink} />
             <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: ink }]}>
               {fl.step === 0 ? RELIT : FED}
             </Text>
           </View>
         ) : grew ? (
-          <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
+          <View style={[s.grew, { backgroundColor: glass, bottom: 18 + lvH + 8 }]} pointerEvents="none">
             <Icon name="star" size={13} color={ink} />
             <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: ink }]}>
               Your flame grew
@@ -479,11 +482,11 @@ const s = StyleSheet.create({
   low: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 4, gap: 4 },
   lowH: { fontFamily: font.display, fontSize: 28, lineHeight: 33 },
   lowP: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 23 },
-  /* just over the level it belongs to, clear of the flame's face */
+  /* just over the level it belongs to, clear of the flame's face: its bottom is set from the level block's height, which grows with the
+     finish line and with larger text */
   grew: {
     position: 'absolute',
     right: 16,
-    bottom: 68,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,

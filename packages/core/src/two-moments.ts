@@ -12,7 +12,7 @@
 import { addDays, defaultSettings, fmtClock, isTime, sumDay } from './legacy/core.js';
 import { faithVoice } from './faith';
 import { gradInfo, GRAD_DAYS } from './graduate';
-import { phoneNights } from './day';
+import { phoneNights, windCounts } from './day';
 import { morningOf, tonightOf } from './morning-set';
 import type { Clock, DayKey, Days, Settings } from './types';
 
@@ -32,7 +32,10 @@ export function afterNightHour(days: Days, st: Settings, tk: DayKey, now: number
   const at = nightHour(days, st, tk);
   if (!isTime(at)) return false;
   const roll = st.rollover ?? 4;
-  return rel(nowMin(now), roll) >= rel(clockMin(at), roll);
+  if (rel(nowMin(now), roll) < rel(clockMin(at), roll)) return false;
+  /* and only once Good night can count the night (day.ts windCounts), so Today never says "open now" while Good night says it opens later */
+  const n = nowMin(now);
+  return !isTime(st.screensOff) || windCounts(st, `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`);
 }
 
 export type SkyPhase = 'dawn' | 'day' | 'dusk' | 'night';

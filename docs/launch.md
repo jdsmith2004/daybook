@@ -486,6 +486,8 @@ web, only when the storefront is the United States. Anywhere else, or while the 
 is Apple's in-app purchase alone (core `tipWaysFor`, tested in `packages/core/test/supporter.test.ts`). Care, logging and every free
 part work the same in every country.
 
+**Prices in the words.** Off the US storefront the asks name the tips in Apple's own price there ("A tip of £4.99 or more"), not in dollars (core `localTipWords`).
+
 **Which build.** The builds already out hide the web link off the US storefront. Three lines in them still mention paying on the web
 (Restore finding nothing, on the tip sheet and on the Daybook Pattern sheet, and the line under "I already tipped"); the next build
 makes them neutral. Open the countries with the next build: it is the cleanest, and it is the one App Review sees with the new note.

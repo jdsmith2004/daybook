@@ -23,7 +23,7 @@ import { PayRow, Perks } from '@/components/tip-parts';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
-import { buyTip, refreshPrices, restoreTips, TIP_TIERS, tipError, tipPrice, tipWays, tipWords, type TipTier, type TipVia } from '@/lib/tip';
+import { buyTip, refreshPrices, restoreTips, TIP_TIERS, tipError, tipLocal, tipPrice, tipWays, tipWords, type TipTier, type TipVia } from '@/lib/tip';
 
 export default function Tip() {
   /* the anonymous counts: the tip page was opened (a tip itself is never counted) */
@@ -183,7 +183,7 @@ function TipSheet() {
     );
 
   return (
-    <SheetFrame title={w.title} sub={w.line}>
+    <SheetFrame title={w.title} sub={tipLocal(w.line)}>
       <View style={s.mid}>
         <Flame level={level} size={150} alive />
         <Perks list={supPerks()} />

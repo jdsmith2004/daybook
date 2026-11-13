@@ -31,6 +31,7 @@ import {
   tipLink,
   TIP_TIER_IDS,
   tipWaysFor,
+  localTipWords,
   webTipStorefront,
   type Supporter,
 } from '../src/supporter';
@@ -346,6 +347,29 @@ describe('the web tip page by App Store storefront', () => {
     const shown = JSON.stringify([{ ...core.TIP_WORDS, sheet }, sync]);
     expect(shown).not.toMatch(/(tip|tipped|pay|paid) (on|through) the web|web tip|stripe|website|tip page/i);
     expect(core.SUP_SYNC_WORDS.none).toMatch(/stripe/i);
+  });
+  it('the asks name the tips in the person own currency off the United States storefront', () => {
+    const gbp = (t: string) => ({ kind: '£4.99', generous: '£9.99', amazing: '£19.99' })[t];
+    expect(localTipWords('A tip of $5 or more unlocks sync.', 'GBR', gbp)).toBe('A tip of £4.99 or more unlocks sync.');
+    expect(localTipWords('Open everything for $10.', 'AUS', () => 'A$15.99')).toBe('Open everything for A$15.99.');
+    /* the United States, a storefront not known yet, and a price not known yet: unchanged */
+    for (const sf of ['USA', null, undefined, '']) expect(localTipWords('A tip of $5 or more', sf, gbp)).toBe('A tip of $5 or more');
+    expect(localTipWords('A tip of $5 or more', 'GBR', () => undefined)).toBe('A tip of $5 or more');
+    /* a dollar figure that is no tip's price, and a price with cents, are left alone */
+    expect(localTipWords('$7 and $5.00', 'GBR', gbp)).toBe('$7 and $5.00');
+    /* every ask a non-US iPhone shows comes out with no dollar tip price left in it */
+    const L = core.TIP_WORDS.lock;
+    const asks = [
+      core.TIP_WORDS.h,
+      core.TIP_WORDS.p,
+      core.TIP_WORDS.row.sub,
+      core.TIP_WORDS.sheet.line,
+      ...Object.values(core.TIP_WORDS.moment),
+      L.btn,
+      L.stats.p,
+      L.sync.p,
+    ];
+    for (const a of asks) expect(localTipWords(a, 'GBR', gbp), a).not.toMatch(/\$\d/);
   });
   it('the Daybook Pattern sheet off the United States storefront: no web, and no dollar amounts in its words', () => {
     /* web, webTitle, webLine, webClosed and termsWeb show only with the web page itself (pattern-sheet.tsx) */

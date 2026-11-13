@@ -287,6 +287,17 @@ export function tipWaysFor(os: string, iap: boolean, storefront: string | null |
   return ways;
 }
 
+/** The ask's words in the person's own currency. The words name the tips in dollars ("A tip of $5 or more"); on an iPhone
+    whose App Store storefront is known and is not the United States, each dollar figure that is a tip's price becomes that
+    tip's price as Apple shows it there ("£4.99"). Anywhere else, or while a price is not known, the words are unchanged. */
+export function localTipWords(text: string, storefront: string | null | undefined, price: (tier: TipTierId) => string | undefined): string {
+  if (!storefront || !String(storefront).trim() || webTipStorefront(storefront)) return text;
+  return text.replace(/\$(\d+)(?!\d|[.,]\d)/g, (all, n: string) => {
+    const tier = TIP_TIER_IDS.find((t) => TIP_USD[t] === Number(n));
+    return (tier && price(tier)) || all;
+  });
+}
+
 /** Accounts made before this moment keep sync with no tip (src 'grandfather'): the end of the day tips opened sync,
     October 23, 2026, in Chicago. Accounts that hold synced data when the server first checks them keep it too, whenever
     they were made (services/api supporter.ts). */

@@ -33,6 +33,7 @@ import {
   TIP_WORDS,
   type PatRec,
   tipWaysFor,
+  localTipWords,
   type Supporter,
   type TipTierId,
   type TipVia,
@@ -76,6 +77,10 @@ export type { TipVia };
     every other storefront with Apple's in-app purchase alone. (Android is not shipped; the Play Store would not allow the
     web page for this, so ask before shipping it there.) */
 export const tipWays = (): TipVia[] => tipWaysFor(Platform.OS, iapAvailable, storefront());
+
+/** the ask's words in this person's currency: off the United States storefront, "$5" becomes Apple's price there (core
+    localTipWords); unchanged on the web, on the US storefront, and until the store has answered */
+export const tipLocal = (text: string): string => localTipWords(text, storefront(), storePrice);
 
 /** asks the store for its prices again (the tip sheet, as it opens); resolves once it has answered or failed */
 export const refreshPrices = (): Promise<void> => (iapAvailable ? loadPrices().catch(() => undefined) : Promise.resolve());

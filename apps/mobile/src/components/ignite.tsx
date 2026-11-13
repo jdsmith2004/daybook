@@ -819,15 +819,16 @@ export function StepUp({ from, to, unit, color }: { from: string; to: string; un
     const id = setTimeout(() => knock(Haptics.ImpactFeedbackStyle.Medium), 220);
     return () => clearTimeout(id);
   }, [still, from, to, t]);
-  const oldSt = useAnimatedStyle(() => ({ opacity: Math.max(0, 1 - t.value * 2.5), transform: [{ translateY: 22 * Math.min(1, t.value) }] }));
+  /* the same roll as the lighting: the old count goes up and out, the new one comes up from below */
+  const oldSt = useAnimatedStyle(() => ({ opacity: Math.max(0, 1 - t.value * 3), transform: [{ translateY: -26 * Math.min(1, t.value) }] }));
   const newSt = useAnimatedStyle(() => ({
-    opacity: Math.min(1, t.value * 2),
-    transform: [{ translateY: -14 * (1 - t.value) }, { scale: 1.5 - 0.5 * t.value }],
+    opacity: Math.max(0, Math.min(1, (t.value - 0.25) * 2)),
+    transform: [{ translateY: 26 * (1 - t.value) }, { scale: 0.8 + 0.2 * t.value }],
   }));
   return (
     <View style={s.step} accessible accessibilityLabel={to + ' ' + unit}>
       <View style={s.stepNum}>
-        {from !== to ? <Reanimated.Text style={[s.stepN, { color, opacity: 0.5 }, oldSt]}>{from}</Reanimated.Text> : null}
+        {from !== to ? <Reanimated.Text style={[s.stepN, s.over, { color }, oldSt]}>{from}</Reanimated.Text> : null}
         <Reanimated.Text style={[s.stepN, s.over, { color }, newSt]}>{to}</Reanimated.Text>
       </View>
       <Text style={[s.stepU, { color }]}>{unit}</Text>

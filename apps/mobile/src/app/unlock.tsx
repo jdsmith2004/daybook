@@ -281,7 +281,7 @@ const s = StyleSheet.create({
   opt: { paddingVertical: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   cell: { paddingVertical: 12, flexGrow: 1, flexBasis: '45%' },
-  how: { gap: 10, marginTop: 14 },
+  how: { gap: 10, marginTop: 14, alignSelf: 'stretch', width: '100%' },
   step: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   stepN: { fontFamily: font.displayBold, fontSize: 22, lineHeight: 26, minWidth: 18 },
   sub: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },

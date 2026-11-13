@@ -70,7 +70,8 @@ import { LogLink, WaitingPlan } from '@/components/today-log';
 import { Welcome } from '@/components/welcome';
 import { StopCard, YourDay } from '@/components/your-day';
 import { FirstTour, tourSteps } from '@/components/tour';
-import { markTourDone, tourDue, useSpot } from '@/lib/tour';
+import { markTourDone, markWalkOpen, tourDue, useSpot, walkLocked } from '@/lib/tour';
+import { WalkUnlock } from '@/components/walk-unlock';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
 import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
@@ -286,6 +287,34 @@ export default function Today() {
     return () => clearTimeout(t);
   }, [tourNow, touring]);
   const skySpot = useSpot('sky');
+  /* Walk it through, unlocked: after the tour, the first time Today is in front with a lesson done (lib/tour.ts), on the same calm
+     terms as the tour. Its button on Today waits until then. */
+  const walkWaits = walkLocked(sos.mem);
+  const [walkOpen, setWalkOpen] = useState(false);
+  const walkNow =
+    walkWaits &&
+    !tourWaits &&
+    !touring &&
+    ready &&
+    !!st &&
+    !syncing &&
+    focused &&
+    !quiet &&
+    !backNow &&
+    !gradNow &&
+    !morningNow &&
+    !celebrating &&
+    !sos.ur &&
+    !sos.timer &&
+    lessonsDone(snap.days).size > 0;
+  useEffect(() => {
+    if (!walkNow || walkOpen) return;
+    const t = setTimeout(() => {
+      if (!focusRef.current || sheetOnTop()) return;
+      setWalkOpen(true);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [walkNow, walkOpen]);
   /* the sky runs under the clock: the clock takes the sky's ink until the page has scrolled past it */
   const [past, setPast] = useState(false);
   /* the line under Your day sits behind the iPhone's glass tab bar until the page moves, so it waits until then */
@@ -330,7 +359,7 @@ export default function Today() {
   /* the day: the care row, then the day's line and what waits under it */
   const dayPage = (
     <>
-      <LogLink />
+      <LogLink walk={!walkWaits} />
       <NotifyBanner />
       <PullTroubleStrip />
       <WaitingPlan snap={snap} tk={tk} now={now} />
@@ -404,7 +433,7 @@ export default function Today() {
                 t={nightTile}
               />
             ) : null}
-            <LogLink />
+            <LogLink walk={!walkWaits} />
             {/* Screen Time not working: said here too, since the night is when it matters (WP2) */}
             <PullTroubleStrip />
             <WaitingPlan snap={snap} tk={tk} now={now} />
@@ -414,6 +443,15 @@ export default function Today() {
         )}
       </Screen>
       {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
+      {walkOpen ? (
+        <WalkUnlock
+          onDone={(tryIt) => {
+            sos.setMem(markWalkOpen);
+            setWalkOpen(false);
+            if (tryIt) router.push('/trail');
+          }}
+        />
+      ) : null}
       {touring && g ? (
         <FirstTour
           steps={tourSteps({

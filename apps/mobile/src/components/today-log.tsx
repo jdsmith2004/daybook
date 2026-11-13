@@ -2,7 +2,7 @@
    (WaitingPlan), the pause banner, and the actions a card can ask for. Words from @daybook/core. */
 import { changeDay, clockOf, fmtClock, talkPlanNow, withDay, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View, type ViewInstance } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
@@ -32,41 +32,77 @@ export function useLogActions() {
   return { didSmall };
 }
 
-/* the two quiet buttons under the next step: it already happened (log it), or it keeps coming back or is being planned (Walk it
-   through, on the trail: it took the place of Planning a slip, the owner, November 4, 2026). SOS
-   itself is the round button by the tab bar, in reach of the thumb on every page. */
-export function LogLink() {
-  const c = useTheme();
-  /* on a 320-wide phone the two share too little room and "Already happened" is cut: they stack there */
+/* the two quiet buttons under the next step: it already happened (log it, with no shame), or it keeps coming back or is being
+   planned (Walk it through, on the trail: it took the place of Planning a slip, the owner, November 4, 2026). Each says in a second
+   line what it is for (the owner, November 13, 2026: "already happened should be clearer"). SOS itself is the round button by the
+   tab bar, in reach of the thumb on every page. Walk it through waits here for its unlock after a new person's first lesson
+   (lib/tour.ts); until then Already happened has the row, and Walk it through is always in SOS. */
+export function LogLink({ walk = true }: { walk?: boolean }) {
+  /* on a 320-wide phone the two share too little room: they stack there */
   const narrow = useWindowDimensions().width < 360;
   /* the first tour points at these two (lib/tour.ts) */
   const logSpot = useSpot('log');
-  const trailSpot = useSpot('trail');
+  const trailSpot = useSpot('trail', walk);
   return (
     <View style={[s.pair, narrow && { flexDirection: 'column' }]}>
-      <Pressable
+      <CareButton
         ref={logSpot}
-        accessibilityRole="button"
-        accessibilityLabel="Already happened? Log what happened."
+        icon="check"
+        title="Already happened?"
+        sub="Log a slip, no shame"
+        label="Already happened? Log a slip here, with no shame."
         onPress={() => router.push('/log')}
-        style={({ pressed }) => [s.log, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
-        <Icon name="check" size={16} color={c.accentText} />
-        <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
-          Already happened
-        </Text>
-      </Pressable>
-      <Pressable
-        ref={trailSpot}
-        accessibilityRole="button"
-        accessibilityLabel="Walk it through: when it keeps coming back, or you are planning it."
-        onPress={() => router.push('/trail')}
-        style={({ pressed }) => [s.log, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
-        <Icon name="compass" size={16} color={c.accentText} />
-        <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
-          Walk it through
-        </Text>
-      </Pressable>
+      />
+      {walk ? (
+        <CareButton
+          ref={trailSpot}
+          icon="compass"
+          title="Walk it through"
+          sub="When an urge keeps coming"
+          label="Walk it through: when an urge keeps coming back, or you are planning a slip."
+          onPress={() => router.push('/trail')}
+        />
+      ) : null}
     </View>
+  );
+}
+
+/** one of the care buttons: what it is, and under it what it is for. With no onPress it is a picture of the button (the unlock's art). */
+export function CareButton({
+  ref,
+  icon,
+  title,
+  sub,
+  label,
+  onPress,
+}: {
+  ref?: React.Ref<ViewInstance>;
+  icon: string;
+  title: string;
+  sub: string;
+  label?: string;
+  onPress?: () => void;
+}) {
+  const c = useTheme();
+  return (
+    <Pressable
+      ref={ref}
+      disabled={!onPress}
+      accessible={!!onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [s.log, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
+      <Icon name={icon} size={20} color={c.accentText} />
+      <View style={{ flexShrink: 1 }}>
+        <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+          {title}
+        </Text>
+        <Text style={[s.logS, { color: c.muted }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+          {sub}
+        </Text>
+      </View>
+    </Pressable>
   );
 }
 
@@ -143,8 +179,9 @@ const s = StyleSheet.create({
   chip: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999 },
   chipT: { fontFamily: font.bodyBold, fontSize: 13 },
   pair: { flexDirection: 'row', gap: 8 },
-  log: { flex: 1, flexDirection: 'row', gap: 5, alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingHorizontal: 4, borderRadius: 999 },
-  logT: { fontFamily: font.bodySemi, fontSize: 15, flexShrink: 1, textAlign: 'center' },
+  log: { flex: 1, flexDirection: 'row', gap: 10, alignItems: 'center', minHeight: 60, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 20 },
+  logT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  logS: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
   plan: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 20 },
   planH: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   planT: { fontFamily: font.body, fontSize: 15, lineHeight: 20 },

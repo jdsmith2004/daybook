@@ -64,8 +64,19 @@ export function onSpots(f: () => void) {
 /** the tour is waiting for Today: set by setup's end, as a time */
 export const tourDue = (mem: UrMem): boolean => typeof mem.tour === 'number';
 
-/** setup's end: the tour waits for Today (never when it was already given) */
-export const markTourDue = (m: UrMem): UrMem => (m.tour === 'done' ? m : { ...m, tour: Date.now() });
+/** setup's end: the tour waits for Today (never when it was already given), and Walk it through waits on Today for its unlock */
+export const markTourDue = (m: UrMem): UrMem => (m.tour === 'done' ? m : { ...m, tour: Date.now(), walk: m.walk === 'open' ? 'open' : 'locked' });
+
+/* ---------- Walk it through, unlocked after a lesson (the owner, November 13, 2026: "they should unlock walk it through after a
+   lesson just on the home page it's like you unlocked walk it through!! have it give a quick overview and then have them try it").
+   Only a person who came through the new setup waits for it; everyone else has it as before. Care is never locked: until then
+   only its button on Today waits, and Walk it through is always one of SOS's four big choices. ---------- */
+
+/** its button on Today waits for the unlock */
+export const walkLocked = (mem: UrMem): boolean => mem.walk === 'locked';
+
+/** unlocked: the button is on Today for good */
+export const markWalkOpen = (m: UrMem): UrMem => ({ ...m, walk: 'open' });
 
 /** finished or skipped: never again */
 export const markTourDone = (m: UrMem): UrMem => ({ ...m, tour: 'done' });

@@ -3,7 +3,7 @@
    away.ts. Checked by test/away.test.ts. */
 import { changeSettings } from './actions';
 import { awayFromOf, withAway } from './away';
-import { blankP } from './legacy/core.js';
+import { blankP, logicalKey } from './legacy/core.js';
 import { changeDay, withDay } from './mutate';
 import type { DayKey, Days, Settings } from './types';
 
@@ -15,7 +15,9 @@ export function awayStart(st: Settings, tk: DayKey, now = Date.now()): Settings 
 
 /** the answer: n slips while away (0 or more). No entries are made: the days and times are not known. */
 export function answerAwaySlips(st: Settings, gap: { from: DayKey; to: DayKey }, n: number, now = Date.now()): Settings {
-  return changeSettings(st, (s) => void (s.away = withAway(s, gap, n)), now);
+  /* the day it was answered, for the fire (telling is the day's part); a clock before the log began is not a day */
+  const on = logicalKey(now, st.rollover);
+  return changeSettings(st, (s) => void (s.away = withAway(s, gap, n, on >= st.start ? on : undefined)), now);
 }
 
 /** today marked as a day the app was opened (p.o), or the same log when it already is */

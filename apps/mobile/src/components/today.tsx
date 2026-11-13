@@ -48,7 +48,8 @@ function Figure({ big, small, first }: { big: string | number; small: string; fi
 function Chips({ v }: { v: CleanView }) {
   const ch = runChips(v);
   const all = [
-    ch.hours ? (['Since your last slip', ch.hours] as const) : null,
+    /* a slip told with no time has no true hours: when it was instead (core view.ts slipWhen) */
+    ch.hours ? ([v.slipWhen ? 'Last slip' : 'Since your last slip', ch.hours] as const) : null,
     ch.longest ? (['Longest run', ch.longest] as const) : null,
     ch.noSlip ? (['No-slip days', ch.noSlip] as const) : null,
     ch.next ? (['Next goal', ch.next] as const) : null,

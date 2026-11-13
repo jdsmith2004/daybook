@@ -320,9 +320,10 @@ describe('the migration: slips up to countFrom keep the rule they were made unde
 
 describe('what the count keeps', () => {
   it('writes nothing when nothing moved, and waits for seen before the floor', () => {
-    const noSeen = core.normSettings({ ...base });
+    /* truthFrom stamped already (truth.ts), so only the floor can move */
+    const noSeen = core.normSettings({ ...base, truthFrom: day(9) });
     expect(core.keepCounts({}, noSeen, day(9))).toBeNull();
-    const seen = { ...strict, seen: { badges: [], quests: [], level: 1, full: null, lad: 4 } };
+    const seen = { ...strict, truthFrom: day(9), seen: { badges: [], quests: [], level: 1, full: null, lad: 4 } };
     const once = core.keepCounts({}, seen, day(9))!;
     expect(once.seen!.longest).toBe(9);
     expect(core.keepCounts({}, once, day(9))).toBeNull();

@@ -10,6 +10,7 @@
    ("w3", by the person's own weeks), which stay readable in the Journal. Its answers are also written into the record's
    text fields, so older copies of the app can read them too. */
 import { addDays, didIds, didText, eventsOf, fmtClock, sumDay, trigText } from './legacy/core.js';
+import { dayUntold } from './away';
 import { planRows } from './lessons';
 import { logStart } from './log-start';
 import { talksOf } from './talk';
@@ -138,6 +139,8 @@ export interface SunWeek {
   /** days of the week that count (from the start of the log, up to today) */
   days: number;
   noSlip: number;
+  /** nights nobody told Daybook about (truth.ts): neither a no-slip day nor a slip */
+  untold: number;
   rode: number;
   slipped: number;
   checkins: number;
@@ -163,6 +166,7 @@ export function sunWeek(days: Days, st: Settings, sun: DayKey, tk: DayKey, night
     sun,
     days: 0,
     noSlip: 0,
+    untold: 0,
     rode: 0,
     slipped: 0,
     checkins: 0,
@@ -187,7 +191,11 @@ export function sunWeek(days: Days, st: Settings, sun: DayKey, tk: DayKey, night
     const d = days[k];
     const s = sumDay(d);
     w.days++;
-    if (!s.slipped) w.noSlip++;
+    /* a night not told is not a no-slip day (truth.ts) */
+    if (!s.slipped) {
+      if (dayUntold(days, st, k, tk)) w.untold++;
+      else w.noSlip++;
+    }
     if (ci(d)?.done) w.checkins++;
     if (ci(d)?.so === 'N') w.screensLate++;
     const h = sleepOn(days, nights, k);

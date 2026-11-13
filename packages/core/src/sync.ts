@@ -688,7 +688,7 @@ export function joinRecords(here: Snapshot, recs: SyncRecord[]): { recs: SyncRec
 
 /** the marks set once and never cleared: the account's copy keeps its own, and takes this phone's where it has none. The
     one-count rule's day is the earlier of the two, so slips before either keep the rule they were made under. */
-const ONCE = ['widget', 'awayFrom', 'wk1', 'toldStart', 'likeAsk', 'acctNo', 'tipAsk', 'tipMo', 'freeNo', 'nightAt', 'jnTags', 'free'] as const;
+const ONCE = ['widget', 'widgetAsk', 'awayFrom', 'wk1', 'toldStart', 'likeAsk', 'acctNo', 'tipAsk', 'tipMo', 'freeNo', 'nightAt', 'jnTags', 'free'] as const;
 
 /** the account's settings to use on this phone, with what this phone earned kept on them (keepEarned) and the marks it set
     once that the account's copy lacks; null when there is nothing to keep (no settings here, or nothing changes). The
@@ -699,6 +699,9 @@ export function accountHere(theirs: Settings | null, mine: Settings | null): Set
   for (const k of ONCE) if (out[k] == null && mine[k] != null) out[k] = JSON.parse(JSON.stringify(mine[k]));
   const cf = [theirs.countFrom, mine.countFrom].filter((x): x is string => isKey(x)).sort()[0];
   if (cf) out.countFrom = cf;
+  /* the true record's first day is the earlier of the two too, so a night already counted the new way is never counted the old */
+  const tf = [theirs.truthFrom, mine.truthFrom].filter((x): x is string => isKey(x)).sort()[0];
+  if (tf) out.truthFrom = tf;
   if (same({ ...out, u: 0 }, { ...theirs, u: 0 })) return null;
   return { ...out, u: Math.max(theirs.u || 0, mine.u || 0) + 1 };
 }

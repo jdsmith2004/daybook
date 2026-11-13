@@ -214,7 +214,7 @@ describe('Day 1', () => {
   it('moves, starts and stops the way the legacy buttons do', () => {
     expect(core.setDay1(st, 'later', '2026-10-15').st.day1).toBe('2026-10-24');
     expect(core.setDay1(st, 'tomorrow', '2026-10-15').st.day1).toBe('2026-10-16');
-    expect(core.setDay1(st, 'today', '2026-10-15')).toMatchObject({ toast: 'Day 1 is today. Days with no slip logged will count.' });
+    expect(core.setDay1(st, 'today', '2026-10-15')).toMatchObject({ toast: 'Day 1 is today. Every night you tell me was free will count.' });
     expect(core.setDay1(st, 'none', '2026-10-15')).toMatchObject({ toast: 'Just tracking. Nothing is counted, and you can start a Day 1 any time.' });
     expect(core.setDay1(st, 'week', '2026-10-15').toast).toBe('Day 1 is Thursday, Oct 22.');
   });

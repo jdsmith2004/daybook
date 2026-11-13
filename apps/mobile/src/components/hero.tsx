@@ -22,7 +22,10 @@ import {
   effortCounts,
   heroProof,
   LOW_OF,
-  LOW_WARN,
+  lowWarn,
+  FED,
+  lastNights,
+  truthOn,
   lowWords,
   pullDrift,
   RELIT,
@@ -47,6 +50,7 @@ import { SvgXml } from 'react-native-svg';
 
 import { BigFlame, DOUSE_MS, DOUSE_WAIT, RELIGHT_CATCH, RELIGHT_MS } from '@/components/big-flame';
 import { useCelebrating } from '@/components/celebrate';
+import { NightMarks } from '@/components/night-marks';
 import { Icon } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
 import { pullIgnoredAt, pullNights } from '@/lib/pull';
@@ -106,13 +110,29 @@ export function skyInk(level: number, phase?: SkyPhase) {
 }
 
 /** the words under the sky while the fire burns low, or the day before it does */
-function LowLines({ w, ink, warm }: { w: { h: string; p: string; fix: string }; ink: string; warm: string }) {
-  return (
-    <View style={s.low} accessible accessibilityLabel={`${w.h}. ${w.p} ${w.fix}`}>
+function LowLines({ w, ink, warm, tell }: { w: { h: string; p: string; fix: string }; ink: string; warm: string; tell?: boolean }) {
+  const body = (
+    <>
       <Text style={[s.lowH, { color: ink }]}>{w.h}</Text>
       <Text style={[s.lowP, { color: ink }]}>
         {w.p} <Text style={{ color: warm }}>{w.fix}</Text>
       </Text>
+    </>
+  );
+  /* last night not told (core truth.ts): the way to light it again is one tap away, the morning's own question */
+  if (tell)
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${w.h}. ${w.p} ${w.fix}`}
+        onPress={() => router.push('/morning')}
+        style={({ pressed }) => [s.low, pressed && { opacity: 0.75 }]}>
+        {body}
+      </Pressable>
+    );
+  return (
+    <View style={s.low} accessible accessibilityLabel={`${w.h}. ${w.p} ${w.fix}`}>
+      {body}
     </View>
   );
 }
@@ -247,7 +267,8 @@ function Sky({
   const words = lowWords(fl);
   const focused = useIsFocused();
   /* what the fire shows: it goes lower at once, but it is lit again only where the person sees it */
-  const [shown, setShown] = useState(() => (fl.step === 0 && fl.was > 0 && relitOn !== tk ? LOW_OF[fl.was] : fl.low));
+  /* lit again, or grown from lower (core flame-low.ts: under the true record one feed lifts a low fire part of the way) */
+  const [shown, setShown] = useState(() => (fl.step < fl.was && relitOn !== tk ? LOW_OF[fl.was] : fl.low));
   const [douse] = useState(() => {
     const d = fl.step > 0 && dousedOn !== tk;
     if (d) dousedOn = tk;
@@ -272,7 +293,7 @@ function Sky({
       relitOn = tk;
       setShown(fl.low);
       setRelit(true);
-      AccessibilityInfo.announceForAccessibility(RELIT + '.');
+      AccessibilityInfo.announceForAccessibility((fl.step === 0 ? RELIT : FED) + '.');
       if (reduce) return buzz('lit');
       knock(Haptics.ImpactFeedbackStyle.Soft);
       setTimeout(() => knock(Haptics.ImpactFeedbackStyle.Light), RELIGHT_CATCH);
@@ -286,7 +307,7 @@ function Sky({
       setTimeout(() => buzz('lit'), RELIGHT_CATCH + RELIGHT_MS);
     }, 450);
     return () => clearTimeout(t);
-  }, [fl.low, shown, focused, busy, reduce, tk]);
+  }, [fl.low, fl.step, shown, focused, busy, reduce, tk]);
   useEffect(() => {
     if (!relit) return;
     const t = setTimeout(() => setRelit(false), 3400);
@@ -377,6 +398,12 @@ function Sky({
                 </Text>
               ) : null}
             </View>
+            {/* the last seven nights, one mark each (core truth.ts): the count above is made of these */}
+            {snap.settings && truthOn(snap.settings, tk) ? (
+              <View style={s.marks}>
+                <NightMarks marks={lastNights(snap.days, snap.settings, tk)} size={9} gap={4} ink={soft} dark />
+              </View>
+            ) : null}
             {h.chip ? (
               <View style={s.chip}>
                 {h.star ? <Icon name="star" size={13} color={soft} /> : null}
@@ -411,7 +438,7 @@ function Sky({
           <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
             <Icon name="flame" size={13} color={ink} />
             <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: ink }]}>
-              {RELIT}
+              {fl.step === 0 ? RELIT : FED}
             </Text>
           </View>
         ) : grew ? (
@@ -426,7 +453,7 @@ function Sky({
       {/* burning low: one firm line under the sky, clear of the flame, read before the next step */}
       {words || (fl.warn && !relit) ? (
         /* big and few: what is happening, then what it cost, and in the one warm color the way to light it again */
-        <LowLines w={words ?? LOW_WARN} ink={c.ink} warm={c.sunText} />
+        <LowLines w={words ?? lowWarn(fl)} ink={c.ink} warm={c.sunText} tell={!!fl.tell} />
       ) : null}
     </>
   );
@@ -445,6 +472,7 @@ const s = StyleSheet.create({
   unit: { flexShrink: 1, fontFamily: font.display, fontSize: 17, lineHeight: 22, paddingBottom: 6 },
   lv: { position: 'absolute', right: 16, bottom: 18, alignItems: 'flex-end', gap: 1, maxWidth: '40%' },
   chip: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 4 },
+  marks: { alignSelf: 'flex-start', marginTop: 4, marginBottom: 2 },
   small: { flexShrink: 1, fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
   lvT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'right' },
   /* under the sky, off the flame */

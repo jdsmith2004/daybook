@@ -43,7 +43,7 @@ const addDays = (k: string, n: number) => {
 const TODAY = '2026-11-12';
 const at = (k: string, hm: string) => new Date(`${+hm.slice(0, 2) < 4 ? addDays(k, 1) : k}T${hm}:00`);
 type Seed = Record<string, string>;
-function person(o: { slipLastNight?: string; faith?: string; safe?: string } = {}): Seed {
+function person(o: { slipLastNight?: string; faith?: string; safe?: string; truthFrom?: string; bare?: string } = {}): Seed {
   const s: Seed = {
     'daybook:settings': JSON.stringify({
       u: 1,
@@ -57,6 +57,7 @@ function person(o: { slipLastNight?: string; faith?: string; safe?: string } = {
       onb: o.faith ? { n: 1, at: 1, a: { faith: o.faith, creed: 'lds' }, hist: [] } : null,
       routine: { lesson: true, calm: true, reach: false, checkin: false, wind: true, journal: false },
       dayFeel: false,
+      ...(o.truthFrom ? { truthFrom: o.truthFrom } : {}),
     }),
     'daybook.seenVersion': version,
   };
@@ -67,6 +68,8 @@ function person(o: { slipLastNight?: string; faith?: string; safe?: string } = {
         : [];
     /* a check-in on every day, so the app keeps the start date (core startFromLog), as the stories do */
     const checkin = { m: 6, c: 6, e: 6, s: 4, h: 7, so: 'Y', ro: null, n: '', done: true, at: +at(k, '21:30') };
+    /* a day nobody told Daybook anything about */
+    if (k === o.bare) continue;
     s['daybook:days/' + k] = JSON.stringify({
       d: k,
       events,
@@ -127,6 +130,18 @@ await walk('good', person({ safe: 'Dana' }), async (page) => {
   await openAt(page, '07:45');
   await shot(page, 'good-1-morning');
   await tap(page, 'Free of it');
+  /* WP8's lighting opens over the morning: swipe up to light it, then its button comes back */
+  await shot(page, 'good-2a-lighting');
+  await page.mouse.move(195, 700);
+  await page.mouse.down();
+  for (let y = 700; y >= 200; y -= 50) await page.mouse.move(195, y);
+  await page.mouse.up();
+  await settle(page, 4000);
+  await shot(page, 'good-2b-lit');
+  const back = page.getByRole('button').filter({ hasText: /Continue|Keep going|Done/ });
+  if (await back.count()) await back.first().evaluate((el) => (el as HTMLElement).click());
+  else await page.goBack();
+  await settle(page, 2000);
   await shot(page, 'good-2-told');
   await tap(page, 'Set tonight');
   await shot(page, 'good-3-after-set');
@@ -163,6 +178,14 @@ await walk('logged', person({ slipLastNight: '23:10', faith: 'some' }), async (p
   await shot(page, 'logged-1b-morning-later');
   await openAt(page, '22:40', '/night');
   await shot(page, 'logged-2-goodnight-faith');
+});
+/* a night before last nobody told (WP1): "And Tuesday night?" in the quiet row's place */
+await walk('missed', person({ truthFrom: '2026-11-09', bare: '2026-11-10' }), async (page) => {
+  await openAt(page, '08:05');
+  await settle(page, 3000);
+  await shot(page, 'missed-1-morning');
+  await tap(page, 'It happened');
+  await shot(page, 'missed-2-before-told');
 });
 /* a narrow phone */
 await walk(

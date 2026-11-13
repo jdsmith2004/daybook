@@ -75,6 +75,8 @@ export * from './calendar';
 export * from './hero';
 export * from './week';
 export * from './away';
+export * from './truth';
+export * from './settings-norm';
 export * from './health';
 export * from './back';
 export * from './night-win';

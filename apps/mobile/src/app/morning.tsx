@@ -14,6 +14,9 @@
    and nothing breaks by the letter. The X skips it for today, which costs nothing. */
 import {
   answerNight,
+  answerNightBefore,
+  nightBeforeAsk,
+  nightBeforeDue,
   gameCompute,
   habitOf,
   heroNumber,
@@ -91,10 +94,14 @@ export default function Morning() {
       f: ms?.f ?? null,
       reasons: st ? morningReasons(snap.days, st, tk) : [],
       nt: st ? nightAtStart(st) : '22:30',
+      /* the night before last, when nobody told Daybook about it (WP1, core nightBeforeDue): one quiet row to catch it up */
+      before: st ? nightBeforeDue(snap.days, st, tk) : null,
+      n2: ms?.n2 ?? null,
     };
   });
   const [n, setN] = useState<'free' | 'slip' | null>(start.n);
   const [f, setF] = useState<1 | 2 | 3 | null>(start.f);
+  const [n2, setN2] = useState<'free' | 'slip' | null>(start.n2);
   const [r, setR] = useState<string>(start.reasons[0] || '');
   const [nt, setNt] = useState<Clock>(start.nt);
   /* tonight's reason opens in place; the time has its own page, under the night sky */
@@ -130,6 +137,14 @@ export default function Morning() {
     /* a free night: the person lights their own flame over the morning (WP8, app/ignite.tsx), with the count from before the answer
        so it turns over; its button comes back here, to tonight */
     if (v === 'free' && n !== 'free') router.push({ pathname: '/ignite', params: before ? { from: before } : {} });
+  };
+  /* the night before last, told with a tap and kept at once (WP1, core answerNightBefore); the same answer again changes nothing */
+  const answerBefore = (v: 'free' | 'slip') => {
+    if (!st || !start.before || leaving.current || n2 === v) return;
+    const t = Date.now();
+    update((s0) => (s0.settings ? { ...s0, days: answerNightBefore(s0.days, s0.settings, tk, v, t) } : s0), { noWin: true });
+    setN2(v);
+    buzz('save');
   };
   const set = () => {
     if (!st || leaving.current || !n) return;
@@ -270,14 +285,26 @@ export default function Morning() {
                 <Choice label={W.free} on={false} onPress={() => answer('free')} />
                 <Choice label={W.slip} on={false} onPress={() => answer('slip')} />
               </View>
-              <View style={s.feel} accessibilityRole="radiogroup" accessibilityLabel={W.feel}>
-                <Text style={s.feelL}>{W.feel}</Text>
-                <View style={s.pills}>
-                  {MORNING_FEEL.map((o) => (
-                    <Pill key={o.n} label={o.w} on={f === o.n} onPress={() => setF(f === o.n ? null : o.n)} />
-                  ))}
+              {/* a night before last nobody told Daybook about (mockup m1, the third page): asked in the quiet row's place */}
+              {start.before ? (
+                <View style={s.feel} accessibilityRole="radiogroup" accessibilityLabel={nightBeforeAsk(start.before)}>
+                  <Text style={s.feelL}>{nightBeforeAsk(start.before)}</Text>
+                  <View style={s.pills}>
+                    <Pill label={W.free} on={n2 === 'free'} onPress={() => answerBefore('free')} />
+                    <Pill label={W.slip} on={n2 === 'slip'} onPress={() => answerBefore('slip')} />
+                  </View>
                 </View>
-              </View>
+              ) : null}
+              {!start.before || n2 ? (
+                <View style={s.feel} accessibilityRole="radiogroup" accessibilityLabel={W.feel}>
+                  <Text style={s.feelL}>{W.feel}</Text>
+                  <View style={s.pills}>
+                    {MORNING_FEEL.map((o) => (
+                      <Pill key={o.n} label={o.w} on={f === o.n} onPress={() => setF(f === o.n ? null : o.n)} />
+                    ))}
+                  </View>
+                </View>
+              ) : null}
             </>
           )}
           {told && trouble ? (

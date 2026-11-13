@@ -14,13 +14,18 @@ they are actually in? The one condition was that the app stays extremely simple.
    away, not to add.
 5. What is missing is mostly outside the screen: where the phone sleeps, one other person, and the other devices.
 
+All three 30-day walks and the setup walks are complete (the last two finished on the evening of November 12 and added F18, F19 and
+decision D14).
+
 ## 0. How this was done, and what was not checked
 
 - **Lived.** Three made-up people were walked through 30 days on the web build of main (`086e0664`), by real taps, with the app's own
   storage carried from day to day: Sam (slips most nights, never logs, opens it less and less), Maya (the middle; logs half her slips),
   Dan (does everything; one slip on day 12). A release build was made locally and walked on an iPhone simulator (first open, a seeded
   three-week person, dark, the largest text size, Reduce Motion, iPad). `npm run journey` was run. About 1,500 pictures were taken; I
-  looked at the contact sheets of the journey, Sam's month, the iPhone build, Settings, Maya's month and Dan's key days myself.
+  looked at the contact sheets of the journey, Sam's month, the iPhone build, Settings, Maya's month, Dan's month and the setup walks
+  myself. Setup was also walked as a brand-new person four ways: answering everything, skipping everything, closing it halfway, and
+  for alcohol and gambling.
 - **Read and run.** Sonnet agents mapped every notification (and ran the real planner over each person's month), every unlock (and ran
   the real rules day by day), Screen Time, the widgets and Live Activities, the lessons as a path, every route and switch, sync and
   accounts, and the unmerged branches. Three research passes covered the evidence for lasting recovery, what counsellors, sponsors and
@@ -34,9 +39,9 @@ they are actually in? The one condition was that the app stays extremely simple.
 
 - **Anything on a real iPhone:** Screen Time (the night wait, the shield, the filter in other browsers and inside other apps), real
   notifications and their timing, widgets on a Home Screen, Live Activities, haptics, the account and the tip purchase.
-- **Dan's days 21 to 30 and the onboarding walker's last three walks** (the fastest way through setup, alcohol and gambling setup, closing
-  setup halfway). Both agents stopped when the Sonnet usage limit was reached. Setup itself was tapped through in full three times (Sam,
-  Maya, the iPhone build), so the gap is those three variations and Dan's last ten days. They can be resumed after 4:50 PM today.
+- **Setup on a real iPhone build with Screen Time and accounts.** The walks were on the web build, which has neither, so setup's night
+  wait page, the system prompts and the account ask were read in code, not seen.
+- **Lessons beyond the first for alcohol and gambling**, and Pattern and More in those habits' words.
 - **Android.**
 - Research figures come mostly from summaries of papers, not the papers; each is marked in its file.
 
@@ -99,14 +104,25 @@ hours held", "every one logged" and "N days free of it" (a total, shown beside a
 
 ### F5. Setup is eight minutes and leaves nothing set for tonight (seen, three times)
 
-About 38 pages and 55 taps. Five pages in a row are the same three buttons under "In the last 6 months..." (one asks the person to rate
+About 38 pages and 55 taps (36 screens and 56 taps on the web build; 39 on an iPhone with reminders, the night wait and the account
+ask). Skipping every question saves nothing: 32 screens and 32 taps, because each skipped question still shows its page. Eight pages in a
+row have only "Next". The first thing that helps, a 30-second breath, is page 21. The page that shows "A day in Daybook" has tiles that
+look like buttons and do nothing. Five pages in a row are the same three buttons under "In the last 6 months..." (one asks the person to rate
 their guilt, and the next page says "This has a real hold"); "hours a year" is a guess and then a reveal ("1,600 hours"); a
 starting-point page offers choices a new person cannot compare; goal chips jump when tapped; the finish page gives "Level 1 → Level 2,
 +20 points" and asks "Do you like Daybook so far?". The first Today then shows two different "Day 1"s (the tracking week's and the
-plan's). The tabs are hidden until setup is done and it reopens every time the app comes back.
+plan's). The tabs are hidden until setup is done and it reopens every time the app comes back. Closing and coming back works: the X
+leads to "Your plan is waiting", a reload keeps the page and the answers, SOS and Already happened work before setup is finished, and
+there is no way to be stuck (seen).
+
+For alcohol and gambling the questions are in the habit's own words and the doctor-first line for alcohol is there. Still assuming a
+screen habit: the welcome says "Get free of porn" before the habit is asked, the plan offers "phone in another room", everyone is asked a
+"screens off" time, and the Screen Time page says it "starts with scrolling" for any habit.
 
 After all of it, Sam (setup at 9 PM, "most days", "late at night in bed") slipped that midnight. Nothing in the app was set to act:
-on a store build there is no wait, and no note is sent after 10 PM. None of what setup collected was ever checked again: "I will log
+on a store build there is no wait, and no note is sent after 10 PM. Setup told him "I will get ready for these" about his hard hours;
+the heads-up that would do it needs logs he never makes. The goal it suggested to a man who slips nightly was "Quit, after a tracking
+week", with Day 1 a week away. None of what setup collected was ever checked again: "I will log
 honestly", "Charge my phone in another room", and My plan's "Getting ready: 0 of 13 set up" on day 30.
 
 ### F6. The unlock path does not reach the people who need it, and crowds the others (run; `review-nov-12/unlocks.md`)
@@ -241,6 +257,26 @@ one note" and "The good week" were approved on November 11 and are not built.
 `npm run journey` is what every session and every critic looks at. Since the morning set landed, its "Today" and "What's new" pictures
 are both the morning set, its "setup" pictures are the welcome, and its two lesson scenes fail. So no session has had a picture of
 Today in the morning, a setup question or a lesson since November 12.
+
+### F18. The tracking week hides the first week's days (seen, Dan). Ranks beside F4.
+
+Setup suggests "Quit, after a tracking week" to most people (the owner's choice of November 2), so counting starts on day 7. Dan was
+free for 12 days and slipped. Today, Rekindle and Pattern all said five: "Your 5 days stay yours." The 12 appears only on the October
+recap page. The owner's own rule is that a slip after a long stretch is a huge win compared with where the person started, and that the
+app says so. It cannot, because the first seven days were never counted. His Sunday review on day 27 says "Your longest stretch: 6 days,
+6 hours" while Pattern says 18 days. The first Today also shows two different "Day 1"s.
+
+### F19. Nothing eases, and nothing says where it ends (seen, Dan). Ranks beside F11.
+
+Dan did everything for 30 days: 28 to 32 taps and five to seven minutes a day, the same morning answers after 30 free mornings, the same
+four sliders every evening, a Sunday review of 12 pages with the same structure each week. By day 30 he is level 30 with 1,790 points, has
+seen badge sheets on 12 days ("Fortnight: 14 days in a row with no slip" among them), and the only forward line on his screen is "100
+more points and your flame turns into a Sunrise". The one finish line, "22 of 90 toward graduation", is on Pattern and Milestones and
+never on Today. He would not leave because it is too much. He would leave because nothing changes as he does.
+
+Smaller, from the same month: the account card showed on day 2 (it is tied to level 6, and levels come daily); without an account the
+day-10 lesson silently became "Read it again" with no word about a lock; "5 of 4 nights this week" under the day line; a page error
+("startTime") on the web build when the slip was logged.
 
 ### Smaller faults
 
@@ -531,7 +567,9 @@ when tapped. After all of it, Sam slipped the same midnight, and none of it was 
 Meanwhile the parts meant to arrive later arrive badly: five things on day 1, cards on the morning after a slip, and for Sam never (F6).
 
 **The design.** Setup asks only what tonight needs, and ends with tonight set. Counting starts tonight for everyone: the "tracking
-week" choice goes (it gives a new person two different "Day 1"s on their first screen, and a third a week later).
+week" choice goes (decision D14). It gives a new person two different "Day 1"s on their first screen, and it hides the first week from
+the record: the test person who was free for 12 days and slipped was told "Your 5 days stay yours" (F18). For people already in or past
+a tracking week, their free days in it count in the record (WP1).
 
 ![Setup in eight pages](review/m5-setup-in-eight.png)
 
@@ -704,8 +742,12 @@ quiet everywhere when it is off, and present in the daily rhythm when it is on.
 
 Nothing in the app tells a person what "free for good" looks like in daily life, or lets the app get smaller as they get freer;
 graduation is a celebration and then Today is the same. A recovery app that wants to be opened every day forever is treating the person
-as a patient. After graduation, or 60 days with the mornings told and few slips, Daybook offers once: "You can keep this small. One tap
-in the morning, Sunday once a week. Everything else stays here when you want it." The notes drop to the morning one. Care never moves.
+as a patient. Dan's month shows it (F19): the same 30 taps on day 30 as on day 1, and the finish line never on Today. Two parts:
+
+- **The finish line is on Today.** For someone past their first clear week, the hero's proof line can be "22 of 90 toward free of it,
+  for good" (the graduation count that exists, which never drops). The owner's rule holds: no long goal before a week with no slip.
+- **The app gets smaller.** After graduation, or 60 days with the mornings told and few slips, Daybook offers once: "You can keep this small. One tap
+  in the morning, Sunday once a week. Everything else stays here when you want it." The notes drop to the morning one. Care never moves.
 
 ---
 
@@ -762,9 +804,9 @@ pictures). Read the named file before starting; it has the `file:line` for each 
  any time, first        WP3 Fixes sweep (Sonnet)      WP4 Sync keeps both phones' day      WP14 One way to talk it through
                         WP16 Scripture library (D9)   WP18 Tips outside the US (D11)
 
- lane A (the record)    WP1 The true record (D1, D2) -> WP5 Two moments a day (D3) -> WP9 Sunday in three pages
+ lane A (the record)    WP1 The true record (D1, D2, D14) -> WP5 Two moments a day (D3) -> WP9 Sunday in three pages
                           -> WP6 Notes for the two moments -> WP7 One person (D6) -> WP8 Quiet the game (D7)
-                          -> WP11 Lessons that meet the night (D8) -> WP10 Setup and the first week (D4)
+                          -> WP11 Lessons that meet the night (D8) -> WP10 Setup and the first week (D4, D14)
                           -> WP13 The other doors and more help -> WP19 Daybook steps back (D13)
 
  lane B (the phone)     WP2 Night wait on a real iPhone -> WP12 The phone's bed (D5)
@@ -804,7 +846,7 @@ a defence that works with the app closed, a record that is true, a day small eno
 ### WP1. Daybook: The true record
 
 - **Model and effort:** Opus, high (it changes the count, proofs and badges: what a person earned).
-- **Waits on:** decisions D1 and D2. **Depends on:** nothing. **Runs beside:** WP2, WP3, WP4, WP14.
+- **Waits on:** decisions D1, D2 and D14. **Depends on:** nothing. **Runs beside:** WP2, WP3, WP4, WP14.
 - **Goal (C1, C2).** A night nobody told Daybook about is never counted as free, the fire is fed by the truth and the nights instead of
   by lessons, and nothing a person earned before the change moves.
 - **Read first:** `review-nov-12/sam.md` (what a false record does, day by day), `unlocks.md`, `notifications.md` item 1.
@@ -829,7 +871,10 @@ a defence that works with the app closed, a record that is true, a day small eno
   8. Closing the morning with the X leaves the night untold. The "you got through your hardest hours" line and its points
      (`riskToKeep`, `keepHard`, said from `(tabs)/index.tsx`) and the proof "gets through the hard hours" wait for the night to be told
      free. For a slip with no time the hero says "last night", never a number of hours.
-  9. One line in What's new: "From today a night counts as free when you say so. Everything you earned stays."
+  9. If D14 says so: free nights inside a tracking week count in the record (days free of it, the longest run, graduation's count) for
+     everyone, from their first day, so a run is never shorter on screen than it was in life. The Sunday review's "longest stretch" and
+     Pattern's "longest run" read one function.
+  10. One line in What's new: "From today a night counts as free when you say so. Everything you earned stays."
 - **Done looks like.** A story `stories/untold.json` (Sam's month from `review-nov-12/sam.md`): Today never shows more free nights
   than he told; no badge is earned across untold nights; day 18's honest "3 slips" is followed by a lit fire, not embers; the Weeks
   picture matches mockup `docs/review/m4-the-true-week.png`. The upgrade test proves a 1.2.1 save and a save from November 11 keep
@@ -894,7 +939,12 @@ a defence that works with the app closed, a record that is true, a day small eno
       `/^Lesson/` times out). Seed the morning as done, fix the scenes, exit 1 when one fails, and add scenes for the morning set, a
       setup question, Good night, the wait page and Welcome back.
   12. Rekindle's "Saved" toast has a green tick (a slip is never green).
-  13. `docs/plan.md`: the headings that still say "not merged" or "being built" for work that is on main (the list is in
+  13. Setup's words for other habits: the welcome says "Get free of porn" before the habit is asked; the plan offers "phone in another
+      room" and everyone is asked a "screens off" time; the Screen Time page says it "starts with scrolling" for any habit
+      (`review-nov-12/onboarding.md`).
+  14. Under the day line the week's goal can read "5 of 4 nights this week"; and the web build throws a page error ("startTime") when a
+      slip is logged from Already happened (`review-nov-12/dan.md`): find the cause of each.
+  15. `docs/plan.md`: the headings that still say "not merged" or "being built" for work that is on main (the list is in
       `review-nov-12/branches.md`, part 4).
 - **Done looks like:** each item gone in a before-and-after picture or a test; `craft.test.ts` gains the contrast and the two word rules
   it can check.
@@ -999,8 +1049,8 @@ a defence that works with the app closed, a record that is true, a day small eno
 - **Model and effort:** Opus, medium (earned things must not move).
 - **Waits on:** D7. **Depends on:** WP5.
 - **Goal (C10).** Points and level numbers show on one page; the flame's forms carry the progress; sheets open for true firsts only.
-- **Read first:** `review-nov-12/seams.md` (the twelve places points show; Milestones, Points and Growth), `critic-more.md`, and the
-  pictures of Dan's days 3, 7 and 12 in `review-nov-12/shots/dan-key/`.
+- **Read first:** `review-nov-12/seams.md` (the twelve places points show; Milestones, Points and Growth), `critic-more.md`, and
+  `dan.md` (a month of doing everything: every number and celebration he was shown, day by day).
 - **What to build.** Remove every "+N points" and level number outside Milestones (lesson end, check-in end, Goodnight, Today's row
   chips, the widget toast, the rode-out chip, the Sunday review); the hero and More say the form by name; Milestones leads with "Who you
   are becoming" and holds the level, points and badges under it, with Points and Growth folded in; a celebration sheet only for a new
@@ -1027,10 +1077,11 @@ a defence that works with the app closed, a record that is true, a day small eno
 ### WP10. Daybook: Setup in two minutes, and the first week (show first)
 
 - **Model and effort:** Opus, high for what setup writes (settings that other parts compare against: `normSettings`), medium for screens.
-- **Waits on:** D4. **Depends on:** WP5, WP11, WP7.
+- **Waits on:** D4 and D14. **Depends on:** WP5, WP11, WP7.
 - **Goal (C7).** A new person is on Today in eight pages with tonight set, and meets one new part a day for a week by using it.
-- **Read first:** `review-nov-12/critic-setup.md` (setup page by page, and the eight pages a critic would keep), `ios.md` and its
-  three `setup-overview` pictures (all 38 pages on an iPhone), `unlocks.md`, mockups `m5` and `m7`.
+- **Read first:** `review-nov-12/onboarding.md` (setup as built, page by page, four ways through it, and every promise it makes
+  checked against the first night), `critic-setup.md` (the eight pages a critic would keep), `ios.md` and its three `setup-overview`
+  pictures (all 38 pages on an iPhone), `unlocks.md`, mockups `m5` and `m7`.
 - **What to build.** Setup as the eight pages of mockup m5 (cannot be skipped; every question can; ends on the account ask with "Keep
   it on this phone"; no "tracking week" choice: counting starts tonight; no rating ask on the finish page); `core/first-week.ts`: days 1 to 7, each naming a lesson and a set-up card shown as that lesson's last card (the
   table in C7), one a day, moved a day when the morning said "It happened" or an SOS was used that day; the widget on day 14 and the
@@ -1039,9 +1090,9 @@ a defence that works with the app closed, a record that is true, a day small eno
   who already finished setup see none of this.
 - **Done looks like:** a fresh install reaches Today in under two minutes; the three test people's timelines match the "proposed" row
   of mockup m7, with never two new things on a day and none on a morning after "It happened".
-- **Checked by:** the unlock simulator from `review-nov-12/unlocks/` kept as a core test; a fresh walk of setup three ways (answering
-  everything, skipping everything, closing it halfway), for porn, alcohol and gambling, which this review did not finish; the owner on
-  the simulator.
+- **Checked by:** the unlock simulator from `review-nov-12/unlocks/` kept as a core test; the four setup walks in `onboarding.md` done again (answering
+  everything, skipping everything, closing it halfway, alcohol and gambling): under two minutes, and a skipped question costs no page;
+  the owner on the simulator.
 
 ### WP11. Daybook: Lessons that meet the night
 
@@ -1056,7 +1107,9 @@ a defence that works with the app closed, a record that is true, a day small eno
   free alone; When the habit is carrying something heavier, with the alcohol version naming that medicines exist); lesson 4 moves after
   the first week for people who said most days; no Quick-or-Full page (the short cards, with More on each); one ending page (today three or four follow the last card, and "Put it in words" puts its text
   box at the top and its button at the bottom); the gate
-  after seven lessons on every path, with words that say the real number, and "Next" never opening a sign-up sheet on a day a slip was told.
+  after seven lessons on every path, with words that say the real number, and "Next" never opening a sign-up sheet on a day a slip was
+  told; a locked lesson says it is locked (today the day's lesson silently becomes "Read it again"); the account card first shows after
+  the first week, not at level 6, which is day 2 for someone doing everything (`accountAsk`).
 - **Done looks like:** Sam's first four lessons are about his night; every path's gate falls after lesson seven; a lesson ends in one page.
 - **Checked by:** the path script from `review-nov-12/lessons/` kept as a core test; pictures of a whole lesson.
 
@@ -1138,7 +1191,9 @@ a defence that works with the app closed, a record that is true, a day small eno
 ### WP19. Daybook: Daybook steps back (later)
 
 - **Model and effort:** Opus, medium. **Waits on:** D13. **Depends on:** WP6, WP9.
-- **Goal (C15).** After graduation, or 60 days of mornings told with few slips, one offer to keep the app small: the morning tap and
+- **Read first:** `review-nov-12/dan.md` (what a month of doing everything looks like, and its five answers).
+- **Goal (C15).** The finish line shows on Today once a person is past a clear week (the graduation count as the hero's proof line).
+  And after graduation, or 60 days of mornings told with few slips, one offer to keep the app small: the morning tap and
   Sunday. Care never moves.
 
 ### WP20. Daybook: The morning from the Home Screen (later)
@@ -1159,7 +1214,7 @@ a defence that works with the app closed, a record that is true, a day small eno
 
 ## 4. My decisions
 
-Only the real design questions. Each has options and my recommendation, and says which packages wait on it. Answering D1, D2 and D3 lets
+Only the real design questions. Each has options and my recommendation, and says which packages wait on it. Answering D1, D2, D3 and D14 lets
 the first lane start; WP2, WP3, WP4 and WP14 wait on nothing.
 
 **D1. The record: is a night nobody told Daybook about a free night?** (waits: WP1, and everything after it in lane A)
@@ -1246,8 +1301,18 @@ pushed first. I have no recommendation; it is a money and store question.
 
 **D12. Four dead branches** (housekeeping): delete them? Recommended: yes.
 
-**D13. Daybook steps back** (waits: WP19): after graduation or sixty steady days, offer to shrink the app to the morning tap and Sunday.
-Recommended: yes, later.
+**D13. Daybook steps back** (waits: WP19): show the finish line on Today after a clear week, and after graduation or sixty steady days
+offer to shrink the app to the morning tap and Sunday. Recommended: yes, later.
+
+**D14. The tracking week** (waits: WP1 for the record, WP10 for setup)
+
+- (a) **New people start counting tonight; the tracking week is no longer offered. For everyone, free days inside a tracking week
+  count in the record.** (recommended)
+- (b) Keep it as a choice in setup, no longer the suggestion; count its free days in the record.
+- (c) Leave it.
+- This reverses your choice of November 2 (the tracking week first, for most people). The reason is what it did to the test person
+  who used the app best: free for 12 days, then a slip, and every screen said 5. The rule you care most about, that a slip after a long
+  run is a huge win and the app says so, cannot be kept while the first week is not counted.
 
 **Not a design question, but it waits for you:** WP2 needs about an hour with your iPhone plugged in for a local build (no EAS build),
 and after the device script passes, your yes for one `production-pull` store build.
@@ -1257,17 +1322,17 @@ and after the device script passes, your yes for one `production-pull` store bui
 All in the shared notes folder for this group of sessions, under `review-nov-12/` (outside the repository, so nothing personal or
 bulky is committed). The mockups in this plan are in `docs/review/`.
 
-| File                                                                              | What is in it                                                                                                           |
-| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `sam.md`, `maya.md`, `maya-notes.md`                                              | Two of the three 30-day walks, visit by visit; their picture sheets are in `shots/sam/sheets/` and `shots/maya/sheets/` |
-| `shots/dan-key/`                                                                  | Dan's days 3, 7, 8, 12, 13 and 14 as pictures (his walk stopped at day 20 with no written report)                       |
-| `ios.md`, `shots/ios/`                                                            | The local release build on the simulator: first open, a seeded person, dark, the largest text, Reduce Motion, iPad      |
-| `notifications.md`, `notifications/`                                              | Every note, its words and rules, and the planner run over each person's month                                           |
-| `unlocks.md`, `unlocks-sub-a.md`, `unlocks-sub-b.md`, `unlocks/`                  | Every unlock and its rule, and the day-by-day run                                                                       |
-| `native.md`                                                                       | Screen Time, Live Activities and widgets, with the 17-step test for a real iPhone                                       |
-| `lessons.md`, `lessons/`                                                          | The paths in full for every habit and faith answer, the gate, the gaps                                                  |
-| `seams.md`                                                                        | Every route, everything Today and More can show, the overlaps, sizes                                                    |
-| `settings.md`, `settings-privacy.md`, `settings-money-sync.md`, `shots/settings/` | Every switch, sync and accounts, the habit and faith checks, contrast, the money asks                                   |
-| `branches.md`                                                                     | Every unmerged branch, and the true state of each plan item marked "not merged"                                         |
-| `research-evidence.md`, `research-wisdom.md`, `research-platform.md`              | The three research passes, with links and how strong each claim is                                                      |
-| `critic-*.md`                                                                     | The six hostile critics                                                                                                 |
+| File                                                                              | What is in it                                                                                                                         |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `sam.md`, `maya.md`, `maya-notes.md`, `dan.md`                                    | The three 30-day walks, visit by visit; their picture sheets are in `shots/sam/sheets/`, `shots/maya/sheets/` and `shots/dan/sheets/` |
+| `onboarding.md`, `onboarding-transcript-*.md`, `shots/onboarding/sheets/`         | Setup as a brand-new person, four ways, with the page-by-page transcript and the promises checked                                     |
+| `ios.md`, `shots/ios/`                                                            | The local release build on the simulator: first open, a seeded person, dark, the largest text, Reduce Motion, iPad                    |
+| `notifications.md`, `notifications/`                                              | Every note, its words and rules, and the planner run over each person's month                                                         |
+| `unlocks.md`, `unlocks-sub-a.md`, `unlocks-sub-b.md`, `unlocks/`                  | Every unlock and its rule, and the day-by-day run                                                                                     |
+| `native.md`                                                                       | Screen Time, Live Activities and widgets, with the 17-step test for a real iPhone                                                     |
+| `lessons.md`, `lessons/`                                                          | The paths in full for every habit and faith answer, the gate, the gaps                                                                |
+| `seams.md`                                                                        | Every route, everything Today and More can show, the overlaps, sizes                                                                  |
+| `settings.md`, `settings-privacy.md`, `settings-money-sync.md`, `shots/settings/` | Every switch, sync and accounts, the habit and faith checks, contrast, the money asks                                                 |
+| `branches.md`                                                                     | Every unmerged branch, and the true state of each plan item marked "not merged"                                                       |
+| `research-evidence.md`, `research-wisdom.md`, `research-platform.md`              | The three research passes, with links and how strong each claim is                                                                    |
+| `critic-*.md`                                                                     | The six hostile critics                                                                                                               |

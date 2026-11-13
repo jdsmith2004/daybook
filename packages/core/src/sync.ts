@@ -132,10 +132,79 @@ export function keepNewer(day: Day, had: Day | undefined): Day {
   return filled ? { ...day, events, checkin, p } : day;
 }
 
+const union = <T>(a: T[] | undefined, b: T[] | undefined): T[] => [...new Set([...(a || []), ...(b || [])])];
+const later = <T>(a: T | undefined, b: T | undefined, at: (x: T) => number): T | undefined =>
+  a === undefined ? b : b === undefined ? a : at(b) > at(a) ? b : a;
+
+/* Two phones used on one day before they synced (WP4, November 12, 2026): before this, the day's play record came whole from
+   the newer copy, so a lesson finished on the other phone that day was lost, with its points. Now the two are joined field by
+   field, leaning toward keeping what was done: a lesson finished, a tool used, a tick, a feeling named or a talk on either
+   phone stays. The one cost is that a wind-down tick taken off on one phone while the other phone still had it comes back;
+   that is a tick, never a loss of something earned. Choices that are a single answer (the phone-away time, a routine switch,
+   the hard hour) come from the newer copy where it has one. */
+
+/** the day's play record from two copies, field by field (see above); the newer copy's answer wins where only one can stand */
+export function mergePlay(newer: Day['p'], older: Day['p']): Day['p'] {
+  if (!newer || !older) return newer ?? older;
+  const p: NonNullable<Day['p']> = {
+    w: union(newer.w, older.w).sort((x, y) => x - y),
+    wd: newer.wd || older.wd,
+    r: newer.r || older.r,
+    c: Math.max(newer.c || 0, older.c || 0),
+    m: newer.m || older.m,
+    tl: union(newer.tl, older.tl),
+    po: newer.po ?? older.po,
+    ls: union(newer.ls, older.ls),
+    lv: union(newer.lv, older.lv).slice(0, 8),
+    ov: { ...(older.ov || {}), ...(newer.ov || {}) },
+  };
+  if (newer.tt || older.tt) {
+    const byId = new Map<string, NonNullable<typeof newer.tt>[number]>();
+    for (const t of [...(older.tt || []), ...(newer.tt || [])]) byId.set(t.id, t);
+    p.tt = [...byId.values()].sort((x, y) => x.t - y.t);
+  }
+  if (newer.fe || older.fe) {
+    const seen = new Set<string>();
+    p.fe = [...(older.fe || []), ...(newer.fe || [])]
+      .filter((f) => {
+        const k = f[0] + '|' + f[1];
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      })
+      .sort((x, y) => x[1] - y[1])
+      .slice(-50);
+  }
+  const hw = newer.hw ?? older.hw;
+  if (hw !== undefined) p.hw = hw;
+  const lt = Math.max(newer.lt || 0, older.lt || 0);
+  if (lt) p.lt = lt;
+  if (newer.o || older.o) p.o = true;
+  const df = later(newer.df, older.df, (x) => x[1]);
+  if (df) p.df = df;
+  const ms = later(newer.ms, older.ms, (x) => x.at);
+  if (ms) p.ms = ms;
+  return p;
+}
+
+/** the check-in from two copies: the one saved last, with any number or note it left empty taken from the other, so what was
+    answered on one phone is not lost to an unanswered field on the other */
+export function mergeCheckin(newer: Day['checkin'], older: Day['checkin']): Day['checkin'] {
+  if (!newer || !older) return newer ?? older;
+  const [base, other] = (older.at || 0) > (newer.at || 0) ? [older, newer] : [newer, older];
+  const out = { ...base } as Record<string, unknown>;
+  for (const [k, v] of Object.entries(other)) {
+    const has = out[k];
+    if ((has === undefined || has === null || has === '') && v !== undefined && v !== null && v !== '') out[k] = v;
+  }
+  out.done = base.done || other.done;
+  return out as unknown as NonNullable<Day['checkin']>;
+}
+
 /** Two copies of one day, both changed (two devices logged on the same day before syncing): joined entry by entry, so no
     entry is lost. An entry in both is taken from the newer copy; an entry in one only is kept, unless the other copy
-    deleted it (Day.gone): a delete wins over an older copy. The check-in and the day's plan come from the newer copy, or
-    from the older one when the newer has none. What only a newer app version knows is kept from either copy (keepNewer).
+    deleted it (Day.gone): a delete wins over an older copy. The check-in and the day's play record are joined field by field
+    (mergeCheckin, mergePlay). What only a newer app version knows is kept from either copy (keepNewer).
     The joined day gets a change time past both, so it wins everywhere. Gives back null when nothing is left in it. */
 export function mergeDay(a: Day, b: Day): Day | null {
   const [newer, older] = (b.u || 0) > (a.u || 0) ? [b, a] : [a, b];
@@ -148,8 +217,8 @@ export function mergeDay(a: Day, b: Day): Day | null {
     seen.add(e.id);
     events.push(e);
   }
-  const checkin = newer.checkin ?? older.checkin;
-  const p = newer.p ?? older.p;
+  const checkin = mergeCheckin(newer.checkin, older.checkin);
+  const p = mergePlay(newer.p, older.p);
   if (!events.length && !checkin && !p) return null;
   const day: Day = { d: newer.d, events, checkin, p, u: Math.max(a.u || 0, b.u || 0) + 1 };
   if (gone.length) day.gone = gone;

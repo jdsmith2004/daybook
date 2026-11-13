@@ -75,7 +75,7 @@ import {
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, Easing, Linking, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Animated, Easing, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { BigFlame } from '@/components/big-flame';
@@ -84,9 +84,10 @@ import { Bubble } from '@/components/lesson-flame';
 import { Mirror, useMirror } from '@/components/mirror';
 import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Slider } from '@/components/slider';
-import { Text } from '@/components/text';
+import { KeepAbove } from '@/components/keyboard';
+import { Text, TextInput } from '@/components/text';
 import { DoCard, DoorArt, DriftArt, PreviewArt, Rise, SparkArt, StepsArt, TrailMap, TW, WaveLine } from '@/components/trail-art';
-import { Button } from '@/components/ui';
+import { Button, Icon } from '@/components/ui';
 import { Packed } from '@/components/packed';
 import { buzz } from '@/lib/feel';
 import { NATIVE } from '@/lib/motion';
@@ -164,6 +165,9 @@ export function Walk({
   );
   const [mine, setMine] = useState<string[]>([]);
   const holdWords = mine;
+  /* writing what holds it down in their own words: the box opens in place of the question */
+  const [ownHold, setOwnHold] = useState(false);
+  const [holdDraft, setHoldDraft] = useState('');
   /* the first number of the walk: a second round starts from the number after the first, and the record keeps both ends */
   const [first, setFirst] = useState<number | null>(null);
   const [where, setWhere] = useState<string | null>(null);
@@ -251,6 +255,10 @@ export function Walk({
     } else go('hold');
   };
   const back = () => {
+    /* a box for their own words, open: back closes it, to the chips */
+    if (part === 'hold' && ownHold) return setOwnHold(false);
+    if (part === 'plan' && ownMove) return setOwnMove(false);
+    if (part === 'line' && ownLine) return setOwnLine(false);
     const i = ORDER.indexOf(part);
     if (i <= 0) return;
     /* a skipped beat is skipped going back too */
@@ -320,37 +328,81 @@ export function Walk({
   /* ---------- 2b. why a 6, and not a 9? ---------- */
   if (part === 'hold' && n0 != null && whyNot != null) {
     const any = holds.length > 0 || holdWords.length > 0;
-    words = (
-      <Rise>
-        <Text style={s.title} accessibilityRole="header">
-          {'Why a ' + n0 + ', and not a ' + whyNot + '?'}
-        </Text>
-      </Rise>
-    );
-    middle = <Coach level={level} say={any ? walkHoldBack(n0, holds, holdWords) : WALK_COACH.hold.say} beat="hold" pulse={holds.length + mine.length} />;
-    dock = (
-      <>
-        {reasons.length ? (
-          <Chips
-            label="Your reasons"
-            multi
-            opts={reasons.map((r) => ({ id: r, label: r }))}
-            on={mine}
-            onPick={(r) => setMine((l) => (l.indexOf(r) >= 0 ? l.filter((x) => x !== r) : l.concat(r)))}
+    /* their own words, written here, are chips of their own beside their reasons */
+    const written = mine.filter((r) => reasons.indexOf(r) < 0);
+    const saveOwn = () => {
+      const t = holdDraft.trim().replace(/\s+/g, ' ');
+      if (t && mine.indexOf(t) < 0) setMine((l) => l.concat(t));
+      setHoldDraft('');
+      setOwnHold(false);
+    };
+    if (ownHold) {
+      /* the box and its button stay at the top, above the keyboard */
+      words = (
+        <Rise>
+          <Text style={s.over}>{'Why a ' + n0 + ', and not a ' + whyNot + '?'}</Text>
+          <Text style={s.title} accessibilityRole="header">
+            What is holding it down?
+          </Text>
+          <TextInput
+            accessibilityLabel="What is holding it down, in your words"
+            autoFocus
+            maxLength={60}
+            value={holdDraft}
+            onChangeText={setHoldDraft}
+            onSubmitEditing={saveOwn}
+            returnKeyType="done"
+            placeholder="Like: I promised myself"
+            placeholderTextColor={TW.muted}
+            style={s.box}
           />
-        ) : null}
-        <Chips
-          label="What is holding it down"
-          multi
-          opts={walkHolds(faith)
-            .filter(([id]) => !(id === 'reasons' && reasons.length))
-            .map(([id, w]) => ({ id, label: w }))}
-          on={holds}
-          onPick={(id) => setHolds((h) => (h.indexOf(id) >= 0 ? h.filter((x) => x !== id) : h.concat(id)))}
-        />
-        <Button label="Next" onPress={() => go('body')} />
-      </>
-    );
+          <View style={s.write}>
+            <Button label="Add it" disabled={!holdDraft.trim()} onPress={saveOwn} />
+          </View>
+        </Rise>
+      );
+      middle = null;
+      dock = null;
+    } else {
+      words = (
+        <Rise>
+          <Text style={s.title} accessibilityRole="header">
+            {'Why a ' + n0 + ', and not a ' + whyNot + '?'}
+          </Text>
+        </Rise>
+      );
+      middle = <Coach level={level} say={any ? walkHoldBack(n0, holds, holdWords) : WALK_COACH.hold.say} beat="hold" pulse={holds.length + mine.length} />;
+      dock = (
+        <>
+          {/* the person's reasons, their own words and what else holds it down, as one group, so the rows pack together */}
+          <Chips
+            label="What is holding it down"
+            multi
+            opts={reasons
+              .concat(written)
+              .map((r): { id: string; label: string; own?: boolean } => ({ id: 'r:' + r, label: r }))
+              .concat(
+                walkHolds(faith)
+                  .filter(([id]) => !(id === 'reasons' && reasons.length))
+                  .map(([id, w]) => ({ id: id as string, label: w })),
+              )
+              .concat([{ id: 'own', label: OWN, own: true }])}
+            on={mine.map((r) => 'r:' + r).concat(holds)}
+            onPick={(id) => {
+              if (id === 'own') {
+                setOwnHold(true);
+              } else if (id.startsWith('r:')) {
+                const r = id.slice(2);
+                setMine((l) => (l.indexOf(r) >= 0 ? l.filter((x) => x !== r) : l.concat(r)));
+              } else {
+                setHolds((l) => (l.indexOf(id) >= 0 ? l.filter((x) => x !== id) : l.concat(id)));
+              }
+            }}
+          />
+          <Button label="Next" onPress={() => go('body')} />
+        </>
+      );
+    }
   }
 
   /* ---------- 3. notice it in the body ---------- */
@@ -465,24 +517,21 @@ export function Walk({
       <>
         <Chips
           label="What it is telling you"
-          opts={WALK_LINES.map((x) => ({ id: x.id, label: x.line }))}
-          on={line ? [line] : []}
+          opts={WALK_LINES.map((x): { id: WalkLine | 'own'; label: string; own?: boolean } => ({ id: x.id, label: x.line })).concat([
+            { id: 'own', label: lineOwn.trim() || OWN, own: true },
+          ])}
+          on={line ? [line] : lineOwn.trim() ? ['own'] : []}
           onPick={(x) => {
+            if (x === 'own') {
+              setLine(null);
+              setOwnLine(true);
+              return;
+            }
             setLine(x);
             setLineOwn('');
           }}
         />
         <Button label={L ? 'Now answer it' : 'Next'} onPress={() => go('answer')} />
-        <View style={s.center}>
-          <Link
-            label="It says something else"
-            tone="muted"
-            onPress={() => {
-              setLine(null);
-              setOwnLine(true);
-            }}
-          />
-        </View>
       </>
     );
   }
@@ -591,6 +640,7 @@ export function Walk({
     ) : (
       <Chips
         label="Where you are with it"
+        ordered
         opts={WALK_STAGES.map(([id, w]) => ({ id, label: w }))}
         on={stage ? [stage] : []}
         onPick={(x) => {
@@ -633,12 +683,14 @@ export function Walk({
   /* ---------- 8. explain it back ---------- */
   if (part === 'explain') {
     const chain = walkChain({ n0, where: whereW, feel: feelW, line: heard, need, at });
-    words = (
-      <Rise>
-        <Text style={s.over}>Explain it back</Text>
-        <Text style={s.title} accessibilityRole="header">
-          In your words: what happened in you just now?
-        </Text>
+    /* what they found is the hero: the chain they just walked, link by link, ending on the win, with one Why for the whole of it
+       (the owner, November 13, 2026: "fix this it just looks dinky"). Their own words and Next sit low, together, and come up
+       above the keyboard as one. */
+    words = <Found chain={chain} />;
+    middle = <FlameRoom level={level} pulse={1} />;
+    dock = (
+      <KeepAbove style={s.write}>
+        <Text style={s.ask2}>Now in your words: what happened in you just now?</Text>
         <TextInput
           accessibilityLabel="What happened in you, in your words"
           multiline
@@ -647,26 +699,10 @@ export function Walk({
           onChangeText={setExplain}
           placeholder="Like: work stress, then it said I earned it, and I caught it while I was arguing with it."
           placeholderTextColor={TW.muted}
-          style={s.box}
+          style={[s.box, s.boxTight]}
         />
-        <View style={s.write}>
-          <Button label="Next" onPress={() => go('after')} />
-        </View>
-        <Text style={s.over2}>What you found</Text>
-        <View accessible accessibilityLabel={'What you found: ' + chain.join(', then ')}>
-          {chain.map((c, i) => (
-            <View key={i} style={s.link}>
-              <View style={s.linkRail}>
-                <View style={[s.linkLine, i === 0 && s.linkNone]} />
-                <View style={[s.linkDot, i === chain.length - 1 && { backgroundColor: TW.mint }]} />
-                <View style={[s.linkLine, i === chain.length - 1 && s.linkNone]} />
-              </View>
-              <WhyLine beat="chain" />
-              <Text style={s.linkT}>{c}</Text>
-            </View>
-          ))}
-        </View>
-      </Rise>
+        <Button label="Next" onPress={() => go('after')} />
+      </KeepAbove>
     );
   }
 
@@ -770,6 +806,7 @@ export function Walk({
           <Text style={s.ask}>When</Text>
           <Chips
             label="When it may come back"
+            ordered
             opts={when}
             on={mo ? [mo] : []}
             onPick={(x) => {
@@ -785,8 +822,12 @@ export function Walk({
             label="What you will do"
             multi
             opts={offered
-              .map((m) => ({ id: m as string, label: TALK_MOVES[m][0], tag: talkHeldTag(held, m) || undefined }))
-              .concat([{ id: 'own', label: moveOwn.trim() || 'My own idea', tag: undefined }])}
+              .map((m): { id: string; label: string; tag?: string; own?: boolean } => ({
+                id: m,
+                label: TALK_MOVES[m][0],
+                tag: talkHeldTag(held, m) || undefined,
+              }))
+              .concat([{ id: 'own', label: moveOwn.trim() || OWN, own: true }])}
             on={(moves as string[]).concat(moveOwn.trim() ? ['own'] : [])}
             onPick={(m) => {
               if (m === 'own') {
@@ -1005,36 +1046,51 @@ function WaveOnce() {
   return <WaveLine p={p} />;
 }
 
-/** a wrap of choices in the trail's look: tap one (or several) */
+/** a wrap of choices in the trail's look: tap one (or several). An option marked own is the person's own answer: a pencil
+    and a dashed edge set it apart, it always packs last, and it reads "Write my own" until they have written one. */
 function Chips<K extends string>({
   label,
   opts,
   on,
   onPick,
   multi,
+  ordered,
 }: {
   label: string;
-  opts: { id: K; label: string; tag?: string }[];
+  opts: { id: K; label: string; tag?: string; own?: boolean }[];
+  /** the order carries meaning (steps, times of day): keep it, and only wrap */
+  ordered?: boolean;
   on: string[];
   onPick: (id: K) => void;
   multi?: boolean;
 }) {
+  let ownTail = 0;
+  while (ownTail < opts.length && opts[opts.length - 1 - ownTail].own) ownTail++;
+  const tail = ownTail + noneTail(opts.slice(0, opts.length - ownTail).map((o) => o.label));
   return (
-    <Packed last={noneTail(opts.map((o) => o.label))} accessibilityRole={multi ? undefined : 'radiogroup'} accessibilityLabel={label}>
+    <Packed last={tail} ordered={ordered} accessibilityRole={multi ? undefined : 'radiogroup'} accessibilityLabel={label}>
       {opts.map((o) => {
         const sel = on.indexOf(o.id) >= 0;
+        const ink = sel ? '#06352A' : o.own ? TW.mint : TW.ink;
         return (
           <Pressable
             key={o.id}
-            accessibilityRole={multi ? 'checkbox' : 'radio'}
-            accessibilityState={{ checked: sel }}
+            accessibilityRole={o.own && !sel ? 'button' : multi ? 'checkbox' : 'radio'}
+            accessibilityState={o.own && !sel ? undefined : { checked: sel }}
             accessibilityLabel={o.tag ? o.label + '. ' + o.tag : o.label}
             onPress={() => {
               buzz('tick');
               onPick(o.id);
             }}
-            style={({ pressed }) => [s.chip, sel ? s.chipOn : null, { opacity: pressed ? 0.85 : 1 }]}>
-            <Text style={[s.chipT, { color: sel ? '#06352A' : TW.ink }]}>{o.label}</Text>
+            style={({ pressed }) => [s.chip, o.own && !sel ? s.chipOwn : null, sel ? s.chipOn : null, { opacity: pressed ? 0.85 : 1 }]}>
+            {o.own ? (
+              <View style={s.ownRow}>
+                <Icon name="pencil" size={16} color={ink} />
+                <Text style={[s.chipT, s.ownT, { color: ink }]}>{o.label}</Text>
+              </View>
+            ) : (
+              <Text style={[s.chipT, { color: ink }]}>{o.label}</Text>
+            )}
             {o.tag ? <Text style={[s.chipTag, { color: sel ? '#06352A' : TW.mint }]}>{o.tag}</Text> : null}
           </Pressable>
         );
@@ -1042,6 +1098,9 @@ function Chips<K extends string>({
     </Packed>
   );
 }
+
+/** the words on a "write my own" chip: theirs once written */
+const OWN = 'Write my own';
 
 /** the coach: the person's own flame in the middle, saying one short line in a bubble, as in a lesson. It leaps when an
     answer is picked (pulse). "Why this works" turns the bubble to the reason, with the papers under it, a tap away. */
@@ -1076,67 +1135,132 @@ function Coach({
   useEffect(() => setOpen(false), [say]);
   return (
     <View style={s.coach}>
-      <Rise key={open ? 'why' : say}>
-        <Bubble text={open ? reason : say} />
-      </Rise>
+      <View style={s.bubbleOver}>
+        <Rise key={open ? 'why' : say}>
+          <Bubble text={open ? reason : say} />
+        </Rise>
+      </View>
       {/* the room is only the space the page leaves; the flame is drawn over it, so it never holds the room open and never
           pushes the buttons down when the words above grow */}
       <View style={s.flameRoom} onLayout={(e) => setRoom(e.nativeEvent.layout.height)}>
         <View style={s.flameIn} pointerEvents="none">
-          <BigFlame level={level} size={Math.round(Math.max(84, Math.min(big ? 280 : 230, room || 0)))} pulse={pulse} />
+          {/* drawn larger than its room: the figure is about half its box (the rest is glow), so the flame itself reads big, the way
+              it does in a lesson (the owner, November 13, 2026: "flames too small") */}
+          <BigFlame level={level} size={Math.round(Math.max(170, Math.min(big ? 340 : 300, (room || 0) * 1.35)))} pulse={pulse} />
         </View>
+        {/* Why this works: a small quiet button in the corner, off the flame and out of the way of the answers (the owner: "i don't
+            like the why it works being there") */}
+        {reason ? <WhyButton open={open} onPress={() => setOpen(!open)} /> : null}
       </View>
-      {reason ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ expanded: open }}
-          hitSlop={8}
-          onPress={() => {
-            buzz('tap');
-            setOpen(!open);
-          }}
-          style={({ pressed }) => [s.whyB, { opacity: pressed ? 0.7 : 1 }]}>
-          <Text style={s.whyT}>{open ? 'Back' : 'Why this works'}</Text>
-        </Pressable>
-      ) : null}
       {open && papers.length ? <Papers keys={papers} /> : null}
       {children}
     </View>
   );
 }
 
-/** a quiet "Why this works" under words that have no coach: opens the beat's reason and its papers in place */
+/** the flame alone in the room the page leaves (the found list): drawn over the room, never holding it open, and left out when
+    the room is too small for it to read as the flame */
+function FlameRoom({ level, pulse }: { level: number; pulse: number }) {
+  const [room, setRoom] = useState(0);
+  return (
+    <View style={[s.flameRoom, s.flameRoomAlone]} onLayout={(e) => setRoom(e.nativeEvent.layout.height)}>
+      {room >= 90 ? (
+        <View style={s.flameIn} pointerEvents="none">
+          <BigFlame level={level} size={Math.round(Math.min(280, room * 1.2))} pulse={pulse} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** the small Why button the walk uses everywhere (book icon, Why; an X and Back when open), so the reason is a tap away and
+    never sits between the words and the answers as a link (the owner, November 13, 2026: "i don't like the why it works being
+    there") */
+function WhyButton({ open, onPress, style }: { open: boolean; onPress: () => void; style?: object }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={open ? 'Back' : 'Why this works'}
+      accessibilityState={{ expanded: open }}
+      hitSlop={10}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      style={({ pressed }) => [s.whyB, style, { opacity: pressed ? 0.7 : 1 }]}>
+      <Icon name={open ? 'x' : 'book'} size={15} color={TW.muted} />
+      <Text style={s.whyBT}>{open ? 'Back' : 'Why'}</Text>
+    </Pressable>
+  );
+}
+
+/** Why for words that have no coach: the small button, and the beat's reason and papers opening under the words */
 function WhyLine({ beat }: { beat: WalkBeat }) {
   const [open, setOpen] = useState(false);
   const { snap } = useStore();
   const c = walkCoach(beat, habitOf(snap.settings));
   return (
     <View style={s.whyLine}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        hitSlop={8}
-        onPress={() => {
-          buzz('tap');
-          setOpen(!open);
-        }}>
-        <Text style={s.whyT}>Why this works</Text>
-      </Pressable>
+      <WhyButton open={open} onPress={() => setOpen(!open)} style={s.whyInline} />
       {open ? (
         <Rise>
           <Text style={s.whyBody}>{c.why}</Text>
-          <Papers keys={c.src} />
+          <Papers keys={c.src} left />
         </Rise>
       ) : null}
     </View>
   );
 }
 
+/** what they found, as the hero: the chain they walked, link by link, ending on the win. One Why for the whole of it: it turns
+    the line under the chain into the reason and its papers, in place, so nothing moves (the owner, November 13, 2026: "fix
+    this it just looks dinky") */
+function Found({ chain }: { chain: string[] }) {
+  const [open, setOpen] = useState(false);
+  const { snap } = useStore();
+  const c = walkCoach('chain', habitOf(snap.settings));
+  return (
+    <Rise>
+      <View style={s.foundHead}>
+        <Text style={[s.over, s.foundOver]} accessibilityRole="header">
+          What you found
+        </Text>
+        <WhyButton open={open} onPress={() => setOpen(!open)} style={s.whyInline} />
+      </View>
+      <View style={s.found} accessible accessibilityLabel={'What you found: ' + chain.join(', then ')}>
+        {chain.map((t, i) => {
+          const last = i === chain.length - 1;
+          return (
+            <View key={i} style={s.link}>
+              <View style={s.linkRail}>
+                <View style={[s.linkLine, i === 0 && s.linkNone]} />
+                <View style={[s.linkDot, last && s.linkWin]}>{last ? <Icon name="check" size={13} color="#06352A" /> : null}</View>
+                <View style={[s.linkLine, last && s.linkNone]} />
+              </View>
+              <Text style={[s.linkT, last && s.linkTWin]}>{t}</Text>
+            </View>
+          );
+        })}
+      </View>
+      <Rise key={open ? 'why' : 'say'}>
+        {open ? (
+          <View style={s.foundWhy}>
+            <Text style={s.whyBody}>{c.why}</Text>
+            <Papers keys={c.src} left />
+          </View>
+        ) : (
+          <Text style={s.foundSay}>{c.say}</Text>
+        )}
+      </Rise>
+    </Rise>
+  );
+}
+
 /** the papers, as one small line of names, each opening its paper */
-function Papers({ keys }: { keys: string[] }) {
+function Papers({ keys, left }: { keys: string[]; left?: boolean }) {
   const ks = keys.filter((k) => WALK_SRC[k]);
   return (
-    <View style={s.papers}>
+    <View style={[s.papers, left && s.papersLeft]}>
       {ks.map((k) => (
         <Pressable
           key={k}
@@ -1230,11 +1354,26 @@ const s = StyleSheet.create({
   flameRoom: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 84, maxHeight: 300, alignSelf: 'stretch' },
   flameIn: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
-  whyB: { paddingVertical: 2 },
-  whyT: { fontFamily: font.bodySemi, fontSize: 15, color: TW.mint, textDecorationLine: 'underline' },
+  flameRoomAlone: { minHeight: 0 },
+  bubbleOver: { alignSelf: 'stretch', zIndex: 2 },
+  whyB: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  whyBT: { fontFamily: font.bodySemi, fontSize: 15, color: TW.muted },
+  whyInline: { position: 'relative', alignSelf: 'flex-start' },
   whyLine: { marginTop: 8, gap: 6 },
   whyBody: { fontFamily: font.body, fontSize: 15, lineHeight: 21, color: TW.muted },
   papers: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 10, rowGap: 2 },
+  papersLeft: { justifyContent: 'flex-start' },
   paperT: { fontFamily: font.body, fontSize: 13, color: TW.muted, textDecorationLine: 'underline' },
   words: { alignSelf: 'stretch', marginTop: 8 },
   grow: { flex: 1 },
@@ -1277,6 +1416,10 @@ const s = StyleSheet.create({
   write: { marginTop: 14, gap: 10 },
   chip: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22, backgroundColor: TW.bubble, justifyContent: 'center' },
   chipOn: { backgroundColor: TW.mint },
+  // the person's own answer: no fill, a dashed mint edge, so it reads as a different kind of choice
+  chipOwn: { backgroundColor: 'transparent', borderWidth: 1.5, borderStyle: 'dashed', borderColor: TW.mint, paddingHorizontal: 12.5, paddingVertical: 8.5 },
+  ownRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  ownT: { flexShrink: 1 },
   chipT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   chipTag: { fontFamily: font.body, fontSize: 13, lineHeight: 17 },
   num: { alignItems: 'center' },
@@ -1288,11 +1431,20 @@ const s = StyleSheet.create({
   numU: { fontFamily: font.bodySemi, fontSize: 15, color: TW.muted },
   mapBox: { alignSelf: 'stretch', alignItems: 'center', marginVertical: -44, transform: [{ scale: 0.8 }] },
   link: { flexDirection: 'row', alignItems: 'stretch', gap: 12 },
-  linkRail: { width: 12, alignItems: 'center' },
   linkLine: { flex: 1, width: 2, backgroundColor: TW.dim },
   linkNone: { backgroundColor: 'transparent' },
+  linkRail: { width: 22, alignItems: 'center' },
   linkDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: TW.sun },
-  linkT: { flex: 1, fontFamily: font.body, fontSize: 17, lineHeight: 23, color: TW.ink, paddingVertical: 6 },
+  linkWin: { width: 22, height: 22, borderRadius: 11, backgroundColor: TW.mint, alignItems: 'center', justifyContent: 'center' },
+  linkT: { flex: 1, fontFamily: font.display, fontSize: 22, lineHeight: 29, color: TW.ink, paddingVertical: 8 },
+  linkTWin: { color: TW.mint },
+  found: { marginTop: 6 },
+  foundWhy: { marginTop: 14, gap: 6, alignItems: 'flex-start' },
+  foundOver: { color: TW.sun, marginBottom: 0 },
+  foundHead: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' },
+  foundSay: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 21, color: TW.warm, marginTop: 14 },
+  ask2: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 23, color: TW.ink },
+  boxTight: { marginTop: 0 },
   art: { alignSelf: 'stretch', alignItems: 'center' },
   hidden: { opacity: 0 },
   mirror: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },

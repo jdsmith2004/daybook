@@ -140,6 +140,9 @@ describe('setup in two minutes (WP10)', () => {
     expect(st.screensOff).toBe('22:30');
     expect(st.onb!.n).toBe(1);
     expect(st.onb!.a.habit).toBe('alcohol');
+    /* "how free do you see yourself" waits for day 30, not the first morning */
+    for (const n of [0, 1, 7, 29]) expect(core.freeDue({}, st, core.addDays(tk, n) as core.DayKey, null), 'day ' + n).toBe(false);
+    expect(core.freeDue({}, st, core.addDays(tk, 30) as core.DayKey, null)).toBe(true);
     /* the record reads the same after the settings are cleaned */
     const again = core.normSettings(JSON.parse(JSON.stringify(st)));
     expect(again.fw).toBe(tk);

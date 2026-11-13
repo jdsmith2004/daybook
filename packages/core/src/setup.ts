@@ -38,6 +38,7 @@ import {
 } from './legacy/core.js';
 import { changeSettings } from './actions';
 import { OB_CREED } from './faith';
+import { FREE_WAIT } from './north';
 import { habitIn, habitMedical, habitOf, habitSay, normHabit, OB_HABIT, type Habit } from './habit';
 import type { CountMode, DayKey, Settings } from './types';
 
@@ -434,6 +435,8 @@ export function obSave(a: SetupAnswers, st: Settings | null, keep: string[] | nu
 /* ---------- a new person's start (D14: counting starts tonight; the tracking week is no longer offered) ---------- */
 /** the goal a new person's setup sets, in their habit's words */
 export const obBeginGoal = (h: Habit) => habitSay('Quit porn. Log honestly, slips included.', h);
+/** the day of the first ask of "how free do you see yourself", for someone who came through the short setup */
+export const FREE_AT = 30;
 /** the small goals offered once the flame is lit: three nights, then a week. Nothing bigger before a clean week (CLAUDE.md). */
 export const OB_FIRST = [3, 7] as const;
 /** the phone-down time setup starts on: half past ten for someone whose hardest hour is late at night (get there first),
@@ -467,6 +470,9 @@ export function obBegin(a: SetupAnswers, tk: DayKey, now = Date.now()): Settings
       s.screensOff = obTonightAt(a);
       s.onb = rec;
       s.fw = tk;
+      /* the "how free do you see yourself" question (north.ts) is no longer asked in setup: it waits until day 30 (C7), so
+         it never crowds the first week. freeNo is when a closed ask was let go; it is due FREE_WAIT days after. */
+      s.freeNo = addDays(tk, FREE_AT - FREE_WAIT);
       if (a.first === 3 || a.first === 7) s.fwGoal = a.first;
     },
     now,

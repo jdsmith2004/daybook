@@ -227,7 +227,7 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   /* a part unlocked (unlock.ts): as low as the five questions, so it never pushes the lesson off the flame */
   if (dev.unlock) {
     const w = UNLOCK_WORDS[dev.unlock];
-    m('unlock', w.eb, w.h, '', 'See it', 'unlock', 'something you unlocked', dev.unlock);
+    m('unlock', w.eb, w.h, '', 'See it', 'unlock', 'one new thing', dev.unlock);
   }
   if (cur) return out;
   if (dev.nudge && dev.nudge.k !== 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');

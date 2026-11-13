@@ -56,6 +56,7 @@ import '@/lib/setup-keep';
 import { HealthKeeper } from '@/lib/health';
 import { notesCame, track, trackNudge, useKeepEvents, useTrackScreens } from '@/lib/events';
 import { DayEvents, FlameEvents } from '@/lib/events-day';
+import { NightPackKeeper } from '@/lib/night-pack';
 import { PullKeeper } from '@/lib/pull';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
 import { SyncProvider, useAccount } from '@/lib/sync';
@@ -303,6 +304,7 @@ function Shell() {
       <NavKeeper />
       <HealthKeeper rollover={snap.settings?.rollover ?? 4} />
       <PullKeeper />
+      <NightPackKeeper />
       <SetupGate />
       <LockGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>

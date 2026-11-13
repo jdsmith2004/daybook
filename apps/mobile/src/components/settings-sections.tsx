@@ -65,6 +65,7 @@ import {
   habitMedical,
   OB_HABIT,
   PULL_NAME,
+  packLitCount,
 } from '@daybook/core';
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
@@ -107,6 +108,8 @@ import {
 } from '@/lib/prefs';
 import { useNotifyEnv } from '@/lib/notify-env';
 import { allowReminders, exactAlarmsAsk, exactAlarmsOk, remindersOffered } from '@/lib/reminders';
+import { NightPackBody } from '@/components/night-pack';
+import { packOffered, usePack } from '@/lib/night-pack';
 import { Pull, PULL_DENIED, pullLiftAll, pullOffered, pullPick, pullSet, pullStart, pullStop, setPullPrefs, usePullPrefs } from '@/lib/pull';
 import { connectHealth, forgetHealth, healthOffered, useNights } from '@/lib/health';
 import { play } from '@/lib/sound';
@@ -151,6 +154,7 @@ export type PartId =
   | 'answers'
   | 'sos'
   | 'pull'
+  | 'nightpack'
   | 'look'
   | 'lock'
   | 'health'
@@ -163,7 +167,7 @@ export type PartId =
 const GROUPS: [string, Tone, PartId[]][] = [
   ['Your quit', 'coral', ['habit', 'count', 'faith']],
   ['Your days', 'sky', ['routine', 'bed', 'remind']],
-  ['When it hits', 'violet', ['sos', 'pull', 'answers']],
+  ['When it hits', 'violet', ['sos', 'pull', 'nightpack', 'answers']],
   ['This phone', 'mint', ['look', 'lock', 'health', 'notes']],
   ['Your log', 'accent', ['sync', 'copy']],
 ];
@@ -218,6 +222,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
   }, []);
   const lock = useLockPref();
   const pull = usePullPrefs();
+  const pack = usePack();
   const health = useNights();
   const nightsN = Object.keys(health.nights).length;
   const [busy, setBusy] = useState(false);
@@ -579,6 +584,9 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
       ? { icon: 'phone', title: PULL_NAME, value: pull.on ? 'On' : 'Off', body: <PullBody pull={pull} days={snap.days} st={st} now={now} say={say} /> }
       : null,
 
+    /* the night pack (WP21, core night-pack.ts): its own part, since Screen Time is not in every build and the pack is */
+    nightpack: packOffered ? { icon: 'moon', title: 'The night pack', value: packLitCount(pack) + ' of 4', body: <NightPackBody /> } : null,
+
     answers: {
       icon: 'pencil',
       title: 'Check-in answers',
@@ -899,6 +907,7 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
           (night && !quiet ? 'Tonight, lifting every wait or turning this off counts as a night you went through. ' : '') +
           'You can also turn this off in the phone’s Settings, under Screen Time.'
         }>
+        {packOffered ? <SetRow label="The night pack, for the whole phone" onPress={() => router.push('/settings/nightpack')} /> : null}
         <SetRow
           label="Lift every wait now"
           act="accent"

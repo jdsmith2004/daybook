@@ -41,6 +41,7 @@ import { useClock, WavyRing } from '@/components/shapes';
 import { Button, T } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
 import { close } from '@/lib/nav';
+import { packOpenFor } from '@/lib/night-pack';
 import { Pull, pullCountDown, pullLongEnd, pullLongStart, usePullPrefs } from '@/lib/pull';
 import { useStore } from '@/lib/store';
 import { font, nightInk, useTheme } from '@/lib/theme';
@@ -171,7 +172,12 @@ export default function PullPause() {
       pullLongEnd();
       /* the stake was said before the choice, so it counts; in the quiet after a slip it was not said, so it does not */
       await Pull?.openWeb(PULL_WEB_OPEN, !quiet);
-    } else await Pull?.openFor(prefs.open);
+    } else if (Pull) await Pull.openFor(prefs.open);
+    else {
+      /* the night pack's wait (no Screen Time in this build): the action lets the apps through for the same minutes */
+      packOpenFor(prefs.open);
+      say('It opens for ' + prefs.open + ' minutes. Go back to it.');
+    }
     close();
   };
   const ink = dark ? nightInk.ink : c.ink;

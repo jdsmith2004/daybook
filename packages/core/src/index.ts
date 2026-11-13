@@ -89,3 +89,4 @@ export * from './whats-new';
 export * from './live-activity';
 export * from './campfire';
 export * from './pack';
+export * from './night-pack';

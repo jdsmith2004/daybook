@@ -109,13 +109,13 @@ export function Welcome() {
       }>
       <ErasedNote />
       <T style={lessonText.h} accessibilityRole="header">
-        {started ? 'Your plan is waiting.' : 'Get free, one honest day at a time.'}
+        {started ? 'Your first night is waiting.' : 'Get free of it, one honest night at a time.'}
       </T>
       <Bubble
         text={
           started
-            ? 'We stopped part way. A few more minutes, and your plan is built from your answers.'
-            : 'I am your flame. About 8 minutes builds your plan, from your own answers. Every question can be skipped.'
+            ? 'We stopped part way. Two more minutes, and tonight is set and I am lit.'
+            : 'I am your flame. Two minutes, and tonight is set. Every question can be skipped.'
         }
       />
       <FlameSlot size={SHORT ? 260 : 330} min={SHORT ? 140 : 180} />

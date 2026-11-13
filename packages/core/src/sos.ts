@@ -42,6 +42,8 @@ export type Rand = () => number;
 
 /** what this device remembers between SOS uses. Never synced, never part of the log. */
 export interface UrMem {
+  /** Good night offers to text the safe person good night (two-moments.ts goodNightText); false when the person switched it off. On this phone only. */
+  gnText?: boolean;
   pass?: Record<string, number>;
   last?: { t: number; tool: string | null; out: string };
   off?: Record<string, number>;

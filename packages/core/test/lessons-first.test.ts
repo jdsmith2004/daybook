@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import * as core from '../src/index';
 import type { Days } from '../src/index';
 /* the stops with a time of day; the any-time ones (calm move, reached out, the journal) have their own tests in routine-stops.test.ts */
-const timed = (t: { k: string }) => !['calm', 'reach', 'journal'].includes(t.k);
+/* the rhythm's own stops; the morning (two-moments.test.ts) is left out here */
+const timed = (t: { k: string }) => !['calm', 'reach', 'journal', 'morning'].includes(t.k);
 
 /* 2026-10-14 is a Wednesday; the tests run in America/Chicago time */
 const tk = '2026-10-14';

@@ -18,6 +18,7 @@
                                          with no time, told the next morning)
    A story with "fill": false lives its unvisited days with nothing in them (no check-in), and its visits get no check-in after
    the picture: the person who only opens the app now and then (the true record, core truth.ts).
+   A visit's morning is seeded as closed (its X) so the picture is of Today; "morning": true lets the morning page open as it would.
    A visit's "tap" lists buttons tapped on Today after the picture, by their words (a real tap, through the app).
    The log carries over: every day from the start to the first visit gets a check-in (so the app keeps the start date),
    and after each picture the app's own storage (days it marked opened, celebrations seen, settings it moved) is read back
@@ -61,6 +62,9 @@ interface Visit {
   before?: Action[];
   after?: Action[];
   checkin?: boolean;
+  /** the morning page opens as it would for the person (two moments, WP5). Without it the visit's morning is seeded as closed with
+      its X (core skipMorning: it costs nothing and tells nothing), so the picture is of Today. */
+  morning?: boolean;
   /** buttons tapped on Today after the picture (by their words), before the log is read back */
   tap?: string[];
   expect: string;
@@ -271,6 +275,15 @@ for (const f of files) {
     /* days the story skips over were lived too: a check-in each */
     if (prev) for (let k = addDays(prev, 1); k < v.day; k = addDays(k, 1)) apply(s, k, [...fill, ...(story.history?.[k] || [])], roll, `${name}-${k}-fill`);
     apply(s, v.day, v.before || [], roll, `${name}-${v.day}-${n}b`);
+    if (!v.morning) {
+      const x = dayOf(s, v.day);
+      const p = x.p || { ...PLAY };
+      if (!p.ms) {
+        x.p = { ...p, ms: { at: 1, x: 1 } };
+        x.u = Date.now();
+        s[DAY(v.day)] = JSON.stringify(x);
+      }
+    }
 
     const ctx = await browser.newContext({
       viewport: { width: 390, height: 844 },

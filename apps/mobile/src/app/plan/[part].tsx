@@ -34,6 +34,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Appear } from '@/components/appear';
 import { Editable, Hair, PageLink, PageSec } from '@/components/editable';
 import { Check } from '@/components/form';
+import { useGoodNightPerson } from '@/lib/person';
 import { RelLesson } from '@/components/help-bits';
 import { KeepAbove } from '@/components/keyboard';
 import { Rows } from '@/components/link-card';
@@ -443,6 +444,8 @@ function People() {
   const st = snap.settings!;
   const set = (k: Parameters<typeof setField>[1]) => (v: string) => apply((cur) => ({ st: setField(cur, k, v) }));
   const name = safeName(st);
+  /* Good night's text to them (WP5, lib/person.ts) */
+  const gp = useGoodNightPerson();
   return (
     <>
       <PageSec icon="chat" title="My safe person">
@@ -462,6 +465,7 @@ function People() {
           Text {name || 'them'} then opens your messages with the words ready. The number stays on this device and is never synced.
         </T>
         {name ? <PageLink icon="chat" label={'Text ' + name} onPress={() => router.push({ pathname: '/tool/[id]', params: { id: 'message' } })} /> : null}
+        {gp ? <Check label={'Offer to text ' + gp.name + ' good night at Good night'} on={gp.on} onPress={() => gp.set(!gp.on)} /> : null}
       </PageSec>
       <Rows>
         <RelLesson id="l7" />

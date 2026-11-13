@@ -9,7 +9,8 @@ import { moments } from '../src/moment';
 import { changeDay, withDay } from '../src/mutate';
 import type { Days } from '../src/types';
 /* the stops with a time of day; the any-time ones (calm move, reached out, the journal) have their own tests in routine-stops.test.ts */
-const timed = (t: { k: string }) => !['calm', 'reach', 'journal'].includes(t.k);
+/* the rhythm's own stops; the morning (two-moments.test.ts) is left out here */
+const timed = (t: { k: string }) => !['calm', 'reach', 'journal', 'morning'].includes(t.k);
 
 const st = normSettings({ start: '2026-10-01', day1: '2026-10-08', screensOff: '22:30' });
 const tk = '2026-10-18';
@@ -79,7 +80,7 @@ describe('the stops as tiles', () => {
     expect(r.tiles.filter(timed)[0].cur).toBe(true);
     expect(r.tiles.filter(timed)[0].right).toBe('From 9:00 AM');
     expect(r.tiles.filter(timed)[1].line).toBe('Three quick numbers and your sleep, then good night');
-    expect(r.tiles.filter(timed)[2].line).toBe('Screens off at 10:30 PM');
+    expect(r.tiles.filter(timed)[2].line).toBe('Phone to bed at 10:30 PM');
   });
   it('in the evening, done stops say what was done, and the check-in is open', () => {
     let d: Days = {};
@@ -99,7 +100,7 @@ describe('the stops as tiles', () => {
     d = phoneAway(d, tk, '22:41', 2);
     const r = stopTiles(d, st, tk, at(22, 45));
     expect(r.tiles.find((t) => t.k === 'evening')!.line).toBe('Motivation 7 · Stress 3');
-    expect(r.tiles.find((t) => t.k === 'night')!.line).toBe('Phone away at 10:41 PM');
+    expect(r.tiles.find((t) => t.k === 'night')!.line).toBe('Phone to bed at 10:41 PM');
   });
   it('a lesson still to come keeps the capitals of its time', () => {
     const r = stopTiles({}, st, tk, at(8, 40));

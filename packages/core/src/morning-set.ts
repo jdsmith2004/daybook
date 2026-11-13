@@ -191,7 +191,11 @@ export function morningReasons(days: Days, st: Settings, tk: DayKey): string[] {
     if (s && out.length < 3 && !out.some((x) => x.toLowerCase() === s.toLowerCase())) out.push(s);
   };
   const last = lastSet(days, tk, CARRY_DAYS)?.ms.r;
-  const own = [...(st.reasons || []), st.becoming || ''].filter((x) => x.trim());
+  /* faith on (D10 (a)): "My faith" is one of the person's own reasons; with it off, nothing about faith */
+  const a = st.onb?.a as { faith?: string } | undefined;
+  const faith = a && (a.faith === 'big' || a.faith === 'some') ? ['My faith'] : [];
+  const rs = st.reasons || [];
+  const own = [...rs.slice(0, 1), ...faith, ...rs.slice(1), st.becoming || ''].filter((x) => x.trim());
   if (last && own.some((x) => x.trim().toLowerCase() === last.toLowerCase())) add(last);
   own.forEach(add);
   if (!out.length) ['Becoming someone I am proud of', 'Being fully present with the people I love', 'Clear mornings and steady energy'].forEach(add);
@@ -371,5 +375,5 @@ export const morningHello = (now: number): string => MORNING_WORDS.title + ' · 
     from then (the feeds wait all day, so they are not the night's); without it, the time the phone goes down, which is the
     person's own plan. The night wait is only for porn, so any other habit keeps the plan's words. */
 export function tonightLine(o: { waits: boolean; habit: 'porn' | 'alcohol' | 'gambling' | 'other' }): string {
-  return o.waits && o.habit === 'porn' ? 'Adult sites wait from' : 'Phone down tonight at';
+  return o.waits && o.habit === 'porn' ? 'Adult sites wait from' : 'Phone down at';
 }

@@ -11,7 +11,10 @@ import type { Days, Settings } from '../src/types';
 const st = normSettings({ start: '2026-10-01', day1: '2026-10-08', screensOff: '22:30' }) as Settings;
 const tk = '2026-10-18';
 const at = (h: number, m = 0) => new Date(2026, 9, 18, h, m).getTime();
-const keys = (d: Days, s: Settings = st, h = 12, jn?: Parameters<typeof stopTiles>[4]) => stopTiles(d, s, tk, at(h), jn).tiles.map((t) => t.k);
+const keys = (d: Days, s: Settings = st, h = 12, jn?: Parameters<typeof stopTiles>[4]) =>
+  stopTiles(d, s, tk, at(h), jn)
+    .tiles.map((t) => t.k)
+    .filter((k) => k !== 'morning');
 
 describe('the any-time stops', () => {
   it('the usual routine: reaching out and the journal off, so the day is the lesson, the check-in and the wind-down', () => {

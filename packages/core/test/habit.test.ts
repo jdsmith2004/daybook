@@ -29,7 +29,7 @@ describe('the habit', () => {
   });
   it('setup asks it right after how it works, and keeps the answer', () => {
     const ids = core.obPages({}).map((p) => p.id);
-    expect(ids.indexOf('habit')).toBe(ids.indexOf('how') + 1);
+    expect(ids.indexOf('habit')).toBe(ids.indexOf('hello') + 1);
     const r = core.obSave({ habit: 'gambling', faith: 'big', creed: 'lds' }, null, null, TK, 0);
     expect(core.habitOf(r.st)).toBe('gambling');
     /* the faith chosen in setup is kept too (it was dropped before November 8, 2026) */
@@ -37,23 +37,14 @@ describe('the habit', () => {
     const again = core.obSave({ habit: 'gambling' }, r.st, [], TK, 0);
     expect(core.habitOf(again.st)).toBe('gambling');
   });
-  it('the questions after it use its words, and the five porn statements are left out', () => {
-    const page = (habit: string, id: string) => core.obPages({ habit }).find((p) => p.id === id)!;
-    expect(page('porn', 'years').h).toBe('How long have you been struggling with porn?');
-    expect(page('gambling', 'years').h).toBe('How long have you been struggling with gambling?');
-    expect(page('gambling', 'freq').h).toBe('In a typical week, how often do you gamble?');
-    expect(page('other', 'freq').h).toBe('In a typical week, how often does it happen?');
-    expect(page('gambling', 'costs').h).toBe('What has gambling cost you so far?');
-    /* another habit: the first question says to see a doctor before stopping alcohol or a daily drug */
-    expect(page('other', 'years').sub).toBe(core.HABIT_MEDICAL);
-    expect(core.obSay('years', false, 'other')).toBe(core.HABIT_MEDICAL);
-    expect(core.obSay('years', false, 'gambling')).toBe(core.obSay('years'));
-    for (const h of ['gambling', 'other']) {
-      const ids = core.obPages({ habit: h }).map((p) => p.id);
-      ['b0', 'b1', 'b2', 'b3', 'b4', 'heard'].forEach((id) => expect(ids).not.toContain(id));
+  it('the questions after it use its words, and nothing in setup says porn for another habit', () => {
+    /* another habit: the first question after it says to see a doctor before stopping alcohol or a daily drug */
+    expect(core.obSay('freq', false, 'other')).toBe(core.HABIT_MEDICAL);
+    expect(core.obSay('freq', false, 'gambling')).toBe(core.obSay('freq'));
+    for (const h of ['gambling', 'other', 'alcohol']) {
       core.obPages({ habit: h }).forEach((p) => expect(String(p.h || '') + (p.sub || '')).not.toMatch(/porn/i));
+      expect(core.obBegin({ habit: h }, TK, 0).goal).not.toMatch(/porn/i);
     }
-    expect(core.obPages({}).map((p) => p.id)).toContain('b0');
   });
   it('the goal says the habit', () => {
     const goals = (habit: string) => core.obGoals(null, TK, core.habitIn({ habit })).map((g) => g.goal);
@@ -66,11 +57,7 @@ describe('the habit', () => {
   });
   it('alcohol has its own words and a doctor line before stopping', () => {
     expect(core.habitOf(withA({ habit: 'alcohol' }))).toBe('alcohol');
-    const page = (id: string) => core.obPages({ habit: 'alcohol' }).find((p) => p.id === id)!;
-    expect(page('years').h).toBe('How long have you been struggling with drinking?');
-    expect(page('freq').h).toBe('In a typical week, how often do you drink?');
-    expect(page('years').sub).toBe(core.ALCOHOL_MEDICAL);
-    expect(core.obSay('years', false, 'alcohol')).toBe(core.ALCOHOL_MEDICAL);
+    expect(core.obSay('freq', false, 'alcohol')).toBe(core.ALCOHOL_MEDICAL);
     expect(core.habitMedical('porn')).toBeNull();
     expect(core.habitMedical('gambling')).toBeNull();
     const ids = core.obPages({ habit: 'alcohol' }).map((p) => p.id);

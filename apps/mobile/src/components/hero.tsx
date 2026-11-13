@@ -31,6 +31,10 @@ import {
   RELIT,
   type GameState,
   type Snapshot,
+  finishLine,
+  PHASE_SKY,
+  skyPhase,
+  type SkyPhase,
 } from '@daybook/core';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -91,10 +95,11 @@ export function Hero({
   return <Sky g={g} snap={snap} tk={tk} now={now} height={sky} flame={flame} title={title} action={action} lead={lead} />;
 }
 
-/** the colors of the words on the sky at this level */
-export function skyInk(level: number) {
+/** the colors of the words on the sky at this level. With the hour's sky (`phase`, WP5: the sky follows the clock), the words on a form
+    with no hills of its own take the sky's ink; on hills they keep the hills' ink. */
+export function skyInk(level: number, phase?: SkyPhase) {
   const sc = emblemScene(level);
-  const light = sc.ink === 'light';
+  const light = phase && !sc.land ? PHASE_SKY[phase].light : sc.ink === 'light';
   return {
     light,
     ink: light ? '#FFFFFF' : '#14112E',
@@ -183,7 +188,14 @@ function Sky({
     () => (snap.settings ? heroProof(snap.days, snap.settings, snap.reviews, tk, effortCounts(snap.days, tk, pullNights())) : null),
     [snap, tk],
   );
-  const sc = useMemo(() => emblemScene(lvl.n), [lvl.n]);
+  /* the sky follows the clock (D3, core two-moments.ts skyPhase): dawn, day, dusk, night. The flame's form carries the level. */
+  const phase = snap.settings ? skyPhase(snap.days, snap.settings, tk, now) : null;
+  const sc = useMemo(() => {
+    const own = emblemScene(lvl.n);
+    return phase ? { ...own, sky: PHASE_SKY[phase].sky, stars: PHASE_SKY[phase].stars } : own;
+  }, [lvl.n, phase]);
+  /* the finish line, once a clean week is behind the person (WP5, from docs/big-ideas.md idea 11) */
+  const finish = snap.settings ? finishLine(snap.days, snap.settings, tk) : null;
   const inset = useSafeAreaInsets();
   const SCENE_H = height;
   const FLAME = flame;
@@ -191,7 +203,7 @@ function Sky({
      lower, between the number and the level, so their faces sit low too (the owner, November 1, 2026) */
   const FLAME_TOP = SCENE_H - FLAME - FOOT + 18 + Math.round(FLAME * (SINK[formOfLevel(lvl.n)] ?? 0.03));
   const h = heroNumber(snap.days, snap.settings!, tk, now);
-  const { light, ink, soft, glass } = skyInk(lvl.n);
+  const { light, ink, soft, glass } = skyInk(lvl.n, phase ?? undefined);
   /* the sky is alive: three slow twinkles shared by the stars */
   const tw = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
   const [pulse, setPulse] = useState(0);
@@ -222,6 +234,8 @@ function Sky({
   const [due, setDue] = useState(false);
   const dueRef = useRef(false);
   const [grew, setGrew] = useState(false);
+  /* the level block's height, so the pill sits just over it */
+  const [lvH, setLvH] = useState(50);
   useFocusEffect(
     useCallback(() => {
       const was = seen.current;
@@ -406,6 +420,7 @@ function Sky({
           accessibilityRole="button"
           accessibilityLabel={`Level ${lvl.n}, ${lvl.name}.${proof ? ' ' + proof + '.' : ''} Opens your level and points.`}
           onPress={() => router.push('/points')}
+          onLayout={(e) => setLvH(e.nativeEvent.layout.height)}
           style={({ pressed }) => [s.lv, pressed && { opacity: 0.8 }]}>
           <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
             Level {lvl.n} · {lvl.name} ›
@@ -416,16 +431,21 @@ function Sky({
               {proof}
             </Text>
           ) : null}
+          {finish ? (
+            <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft, textAlign: 'right' }]}>
+              {finish}
+            </Text>
+          ) : null}
         </Pressable>
         {relit ? (
-          <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
+          <View style={[s.grew, { backgroundColor: glass, bottom: 18 + lvH + 8 }]} pointerEvents="none">
             <Icon name="flame" size={13} color={ink} />
             <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: ink }]}>
               {fl.step === 0 ? RELIT : FED}
             </Text>
           </View>
         ) : grew ? (
-          <View style={[s.grew, { backgroundColor: glass }]} pointerEvents="none">
+          <View style={[s.grew, { backgroundColor: glass, bottom: 18 + lvH + 8 }]} pointerEvents="none">
             <Icon name="star" size={13} color={ink} />
             <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: ink }]}>
               Your flame grew
@@ -462,11 +482,11 @@ const s = StyleSheet.create({
   low: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 4, gap: 4 },
   lowH: { fontFamily: font.display, fontSize: 28, lineHeight: 33 },
   lowP: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 23 },
-  /* just over the level it belongs to, clear of the flame's face */
+  /* just over the level it belongs to, clear of the flame's face: its bottom is set from the level block's height, which grows with the
+     finish line and with larger text */
   grew: {
     position: 'absolute',
     right: 16,
-    bottom: 68,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,

@@ -29,6 +29,7 @@ import {
 import { fireLow, LOW_LEAD } from './flame-low';
 import { LEARN_FREE, lessonStop, lmin } from './lessons';
 import { todayMeasure } from './graduate';
+import { morningDue, morningOf, tonightOf } from './morning-set';
 import { changeDay, withDay } from './mutate';
 import type { Journal } from './journal-entries';
 import type { Checkin, DayKey, Days, Play, Settings } from './types';
@@ -252,7 +253,7 @@ export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): 
 /* ---------- the stops of Your day, as tiles ---------- */
 /* Each stop has the color of its full-screen moment (sky). The open one (cur) shows as a tile with a few words and its
    button; the others are one line each, a done one saying what was done. Every stop opens with one tap, at any time. */
-export type StopGo = 'lesson' | 'checkin' | 'wind' | 'reach' | 'journal';
+export type StopGo = 'lesson' | 'checkin' | 'wind' | 'reach' | 'journal' | 'morning';
 export interface StopTile {
   k: string;
   state: RhythmStop['state'];
@@ -278,7 +279,7 @@ export interface StopTile {
   /** the lesson waits behind a free account: opening it shows the sign-up */
   locked?: boolean;
 }
-const NAME: Record<string, string> = { lesson: 'Lesson', evening: 'Evening', night: 'Night' };
+const NAME: Record<string, string> = { lesson: 'Lesson', evening: 'Evening', night: 'Good night', morning: 'Morning' };
 const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
 /* Parts of the routine with no time of day (reached out, the journal) are stops too, so every switch in "Change" shows on
    the line (the owner, November 2, 2026: "when i switch it nothing happens"). They sit after the lesson, say "Any time", and are never
@@ -314,6 +315,34 @@ function anyTimeTiles(days: Days, st: Settings, tk: DayKey, journal: Journal | u
     btn: say[k].btn,
     go: k,
   }));
+}
+
+/** the morning on the line: done once tonight is set (or last night was told); open in the morning hours; after them, still open
+    until it is done, as a quiet row. It is never the big card: it opens by itself on the morning's first open (Today), and the lesson
+    stays the next step. Before the first day after setup there is no morning to tell. */
+function morningTile(days: Days, st: Settings, tk: DayKey, nowMs: number): StopTile | null {
+  if (!st.start || tk <= st.start) return null;
+  const ms = morningOf(days[tk]);
+  const done = !!ms?.set;
+  const due = morningDue(days, st, tk, nowMs);
+  const told = ms?.n === 'free' ? 'A free night, told' : ms?.n === 'slip' ? 'Last night, told' : '';
+  return {
+    k: 'morning',
+    state: done ? 'done' : due ? 'now' : 'due',
+    done,
+    cur: false,
+    sky: 'sun',
+    ic: 'sunrise',
+    title: 'Morning',
+    line: done ? (told ? told + ' · tonight set' : 'Tonight set') : told ? told + ' · set tonight' : 'How was last night?',
+    right: done ? '' : due ? 'Open now' : 'Still open',
+    eyebrow: done ? 'Morning · done' : due ? 'Morning · open now' : 'Morning · still open',
+    head: 'How was last night?',
+    body: 'One tap, then tonight is set.',
+    chips: [],
+    btn: 'Start',
+    go: 'morning',
+  };
 }
 
 /** account: signed in, or no accounts in this copy. Without one, a lesson that waits behind one says so (lessons.ts lessonStop). */
@@ -405,21 +434,28 @@ export function stopTiles(
       ...base,
       sky: 'night',
       ic: 'moon',
-      title: 'Wind-down',
-      line: s.done ? (p && p.po ? 'Phone away at ' + fmtClock(p.po) : 'Wound down') : 'Screens off at ' + fmtClock(st.screensOff),
-      head: 'Time to wind down',
-      body: windLine(st, r.leftToOff, p),
-      chips: [HX_NEXT.night.s || '', pts('night')],
-      btn: 'Start the wind-down',
+      /* the day's second moment (two-moments.ts): the phone goes to bed, and the night's waits start */
+      title: 'Good night',
+      /* it opens at tonight's time (two-moments.ts afterNightHour), not the old wind-down hour before screens off */
+      right: s.done ? '' : s.state === 'now' || s.state === 'due' ? status : 'From ' + fmtClock(tonightOf(days, st, tk).at),
+      line: s.done ? (p && p.po ? 'Phone to bed at ' + fmtClock(p.po) : 'Phone to bed') : 'Phone to bed at ' + fmtClock(tonightOf(days, st, tk).at),
+      head: 'Phone to bed',
+      body: 'One tap, and the flame sleeps.',
+      chips: [pts('night')],
+      btn: 'Start',
       go: 'wind',
     };
   });
   /* after the lesson (or first, with no lesson stop), before the evening */
   const at = tiles.findIndex((t) => t.k !== 'lesson');
   const all = [...tiles];
+  /* the day's first moment: the morning (morning-set.ts), first on the line */
+  const mt = morningTile(days, st, tk, nowMs);
   const night = r.stops.find((x) => x.k === 'night');
   const slipNight = !!night && !!night.started && sumDay(days[tk]).slipped > 0;
   all.splice(at < 0 ? all.length : at, 0, ...anyTimeTiles(days, st, tk, journal, slipNight));
+  /* the night of a slip leaves only what was done, the morning too */
+  if (mt && (mt.done || !slipNight)) all.unshift(mt);
   /* while the fire burns low, the step that is open now says what it does (flame-low.ts) */
   if (fireLow(days, st, tk, nowMs).step) for (const t of all) if (t.k === r.cur && !t.done && (t.state === 'now' || t.state === 'due')) t.eyebrow = LOW_LEAD;
   return { tiles: all, cur: r.cur, done: all.filter((t) => t.done).length };
@@ -429,7 +465,10 @@ export function stopTiles(
 export function lineOrder(tiles: StopTile[], big: string | null): StopTile[] {
   const card = tiles.find((t) => t.k === big);
   if (!card) return tiles;
-  return [...tiles.filter((t) => t.done && t !== card), card, ...tiles.filter((t) => !t.done && t !== card)];
+  /* the morning is the day's first moment, so it stays first, done or not (WP5) */
+  const first = tiles.filter((t) => t.k === 'morning' && t !== card);
+  const rest = tiles.filter((t) => t.k !== 'morning' && t !== card);
+  return [...first, ...rest.filter((t) => t.done), card, ...rest.filter((t) => !t.done)];
 }
 
 /* ---------- the wind-down ---------- */

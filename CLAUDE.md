@@ -141,15 +141,23 @@ need, without letting the screen turn into a list of features.
     owner asks whether you know these standards, answer plainly, then go on.
   - **Ask the real questions early,** each with the options and a recommendation, then build without stopping. When the
     owner says to use your judgment, decide and say what you chose.
-  - **Build it on a feature branch, look at it on the web and on the iOS simulator, and show the owner on the simulator**
-    (a release build, so it runs at real speed). Never merge it before the owner has seen it; this overrides "merge when
-    the tests pass" above.
+  - **Build it on a feature branch, look at it on the web, and show the owner on the web** (the simulator only when the
+    part is native and the web cannot show it; see "Web first" below). Never merge it before the owner has seen it; this
+    overrides "merge when the tests pass" above.
 - **Merge to main, then archive; the iPhone check is TestFlight from main (the owner, November 13, 2026: "i want the chats
   to merge to main then archive alot of these chats keep not merging to main bc it's not tested on iphone, we will test it on
   iphone by making a build from main and publishing it to testflight").** A chat whose work is done (tests pass, QA on the web
-  and the simulator done) merges it to `main` and is archived. A check only a real iPhone can do (Health, Face ID, Screen
+  done) merges it to `main` and is archived. A check only a real iPhone can do (Health, Face ID, Screen
   Time, widgets, notifications) never holds a merge: write it in the chat's hand-over note, and it is checked on the TestFlight
   build made from `main`. That build still needs the owner's yes when it uses one of the 15 EAS builds.
+- **Web first; one testing chat builds the app (the owner, November 13, 2026: "i'd rather move back to relying on web
+  testing and then only test on the app if we need to bc it's burning alot of credits and taking alot of time", and "we should
+  have a testing chat instead where all the branches get merged the testing chat does one build tests everything then sends
+  status back").** Chats QA on the web (`npx expo start --web` or `npx expo export --platform web`) and make no simulator or
+  Xcode build of their own. Only a part the web cannot run (Health, widgets, Live Activities, Screen Time, Face ID, haptics,
+  native modules) needs the app: write what to check in the hand-over note and leave it to the testing chat. The testing chat
+  makes one local Release build from `main` (no EAS build), walks every hand-over note's checks on the simulator, fixes or
+  sends back what fails, and reports one status to the owner.
 - **The icon follows the calendar (the owner, October 26, 2026).** Before every App Store build, run `npm run icons --
 --auto`: it sets the app icon to the look for that time of year (Halloween, autumn, winter, New Year, Valentine's) or
   the plain flame, by date, with no need to ask. Commit the icon and say which one the update carries. The calendar and
@@ -219,7 +227,7 @@ cd apps/mobile && npx expo start
 - Before calling a change done: `npm run format`, `npm run typecheck`, `npm test`, and for app changes `npx expo export --platform web` and a look at the result, against docs/craft-checklist.md.
 - **QA the experience before calling anything done, without being asked (the owner, November 11, 2026: "if you didn't qa
   means other chats aren't doing qa either and missing the experience part").** Passing tests is not QA. Walk the whole flow
-  as the person would, on the web and the simulator (and the phone when only the phone can run it), from the moment it first
+  as the person would, on the web (the simulator or the phone only when the web cannot run it; see "Web first" below), from the moment it first
   appears to the way out, and look at a picture of every screen and every note. For each one ask: is it clear on first sight
   with nothing to read twice, is it easy to use one-handed, does it come up at a good moment and cleanly, does it feel alive
   and made with care, does it move the person toward seeing themselves as free, and could it annoy them enough to delete the

@@ -214,20 +214,23 @@ export function weekRead(
   sun: DayKey,
   tk: DayKey,
   w: SunWeek,
-  weeks: { sun: DayKey; days: number; noSlip: number }[],
+  weeks: { sun: DayKey; days: number; noSlip: number; untold?: number }[],
   when: PatWhen,
 ): WeekRead {
-  const D = w.days;
+  /* only the nights the person told count (truth.ts): a night not told is neither free nor a slip, and is said plainly */
+  const U = w.untold || 0;
+  const D = w.days - U;
   const S = D - w.noSlip;
   const R = w.rode;
   const first = weeks.length < 2;
   const logged = loggedDays(days, st, sun, tk);
-  const quiet = !S && !w.slipped && !R && D >= 4 && logged <= 2;
+  const quiet = (!S && !w.slipped && !R && D >= 4 && logged <= 2) || (!D && U > 0);
 
   /* last week, by the share of days with a slip */
   const p = weeks.length >= 2 ? weeks[weeks.length - 2] : null;
-  const pS = p && p.sun === addDays(sun, -7) && p.days >= 3 ? p.days - p.noSlip : null;
-  const vs: WeekRead['vs'] = pS == null || !D ? null : S * p!.days < pS * D ? 'better' : S * p!.days > pS * D ? 'worse' : 'same';
+  const pD = p ? p.days - (p.untold || 0) : 0;
+  const pS = p && p.sun === addDays(sun, -7) && pD >= 3 ? pD - p.noSlip : null;
+  const vs: WeekRead['vs'] = pS == null || !D ? null : S * pD < pS * D ? 'better' : S * pD > pS * D ? 'worse' : 'same';
 
   /* the run before this week's first slip, in whole days */
   let gap: number | null = null;
@@ -259,18 +262,29 @@ export function weekRead(
   let held = '';
   switch (kind) {
     case 'quiet':
+      if (!D) {
+        says = 'Not one night told this week.';
+        held = 'A night counts once you tell me how it went. One tap each morning.';
+        break;
+      }
       says = 'No slips logged, and not much else.';
       held = logged ? logged + ' of ' + D + ' days have anything in the log.' : 'Nothing else is in the log this week.';
       break;
     case 'clean':
-      says = D === 7 ? 'Not one slip all week.' : 'Not one slip in ' + plural(D, 'day') + '.';
-      held = first
-        ? 'Your first week, free of it.'
-        : R >= 3
-          ? cap(rodeLine) + ' to get here.'
-          : vs === 'better'
-            ? 'Last week had ' + plural(pS!, 'day') + ' with a slip.'
-            : 'This is what free looks like, one day at a time.';
+      says = U
+        ? 'Free on every night you told me about: ' + plural(D, 'night') + '.'
+        : D === 7
+          ? 'Not one slip all week.'
+          : 'Not one slip in ' + plural(D, 'day') + '.';
+      held = U
+        ? plural(U, 'night') + ' not told. Tell me each morning, and every free night counts.'
+        : first
+          ? 'Your first week, free of it.'
+          : R >= 3
+            ? cap(rodeLine) + ' to get here.'
+            : vs === 'better'
+              ? 'Last week had ' + plural(pS!, 'day') + ' with a slip.'
+              : 'This is what free looks like, one day at a time.';
       break;
     case 'after':
       says = S + ' of ' + D + ' days had a slip, the first in ' + plural(gap!, 'day') + '.';
@@ -309,6 +323,11 @@ export function weekRead(
   }
   if (first && (kind === 'few' || kind === 'most' || kind === 'all'))
     held = 'Your first week, logged honestly. Now you can see the pattern, and that is where change starts.';
+  /* "every slip logged" is only said of a week with every night told */
+  if (U && kind !== 'clean' && kind !== 'quiet') {
+    held = held.replace(/ and logged every slip honestly/, '').replace(/^You logged every slip honestly\. /, '');
+    held += ' ' + plural(U, 'night') + ' not told.';
+  }
 
   const title = kind === 'clean' ? 'Keep what worked' : kind === 'most' || kind === 'all' ? 'One thing to change' : 'One thing for next week';
   return { kind, days: D, slipDays: S, first, vs, gap, says, held, title, step: weekStep(days, st, sun, tk, w, when, quiet) };

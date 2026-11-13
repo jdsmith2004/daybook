@@ -144,7 +144,7 @@ export const TIP_WORDS = {
   top: 'Support',
   /** the line and button under a moment of earned value (tipMoment) */
   moment: {
-    level: 'Your flame is growing. Grow with it: ' + (LIVE ? ONCE : 'a tip of ' + M + ' or more unlocks ' + SHORT + '.'),
+    level: 'Your flame took a new form. Grow with it: ' + (LIVE ? ONCE : 'a tip of ' + M + ' or more unlocks ' + SHORT + '.'),
     badge: 'You earned that. ' + (LIVE ? ONCE : 'A tip of ' + M + ' or more unlocks ' + SHORT + '.'),
     week: 'A whole week of showing up. ' + (LIVE ? ONCE : 'A tip of ' + M + ' or more unlocks ' + SHORT + '.'),
     go: 'See the tips',

@@ -353,7 +353,7 @@ export default function Today() {
         <TodayBelow snap={snap} tk={tk} now={now} />
         <SyncStrip />
         <NightWinCard snap={snap} tk={tk} />
-        {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false)} /> : null}
+        {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false, st)} /> : null}
         {tip ? <TipCard /> : null}
         <HomeScreenCard />
       </Screen>

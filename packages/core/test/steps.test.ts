@@ -35,7 +35,9 @@ describe('the steps', () => {
   it('the deed comes after the last lesson of its step on this person’s path', () => {
     expect(core.deedAfter(L('l22'), st0())).toBe(0);
     expect(core.deedAfter(L('l1'), st0())).toBe(-1);
-    expect(core.deedAfter(L('l4'), st0())).toBe(2);
+    /* step 3 ends in the filter lesson now (l56, WP11); l4 is no longer its last */
+    expect(core.deedAfter(L('l4'), st0())).toBe(-1);
+    expect(core.deedAfter(L('l56'), st0())).toBe(2);
     /* someone who said No to faith: the step's last lesson that is on their path */
     expect(core.deedAfter(L('l12'), st0('no'))).toBe(6);
     expect(core.deedAfter(L('l26'), st0())).toBe(-1);

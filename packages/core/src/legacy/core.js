@@ -3,6 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
+import { NIGHT, NIGHT_AT } from '../lessons-night';
 import { GOD, TURNS, turnLesson } from '../lesson-turns';
 import { HABIT_ONLY, HABIT_TURNS } from '../lesson-habit';
 import { DEED_PTS, deedCount, normDeeds } from '../steps';
@@ -11,7 +12,7 @@ import { normMorning } from '../morning-norm';
 import { normHabit } from '../habit';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 import { normTalks } from '../talk';
-import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown } from '../away';
+import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown, dayUntold, stretchBreaks } from '../away';
 
 /* ------------------------------------------------------------------------------------------------
    logic: data model, counting, run saves, step down, points, badges, quests, rhythm
@@ -111,7 +112,7 @@ const TOOL_IDS=['pause','breathe','curious','ground','halt','surprise','message'
 /* l1 to l32 are here; l33 on are in lessons-more.ts */
 /* l1 to l49, then the twelve God lessons, g1 to g12 (lesson-turns.ts GOD) */
 /* then l50 to l53, the lessons of one habit only (lesson-habit.ts HABIT_TURNS) */
-const LESSON_IDS=[...Array.from({length:49},(_,i)=>'l'+(i+1)),...Array.from({length:12},(_,i)=>'g'+(i+1)),...Object.keys(HABIT_TURNS)],LNOTE_LEN=400;
+const LESSON_IDS=[...Array.from({length:49},(_,i)=>'l'+(i+1)),...Array.from({length:12},(_,i)=>'g'+(i+1)),...Object.keys(HABIT_TURNS),...Object.keys(NIGHT)],LNOTE_LEN=400;
 /* The last unit is the faith lessons (l29 to l32). They come last in the daily order unless the person picks another order in Learn > Lessons
    (settings.learn.faith, kept once the person has chosen it: faithSet). They speak plainly of God without belonging to any one church or denomination, and each rests on a well-known
    program (the 12 steps, mindfulness-based relapse prevention) or on published research. */
@@ -465,6 +466,11 @@ function sumDay(day){
  return {n:ev.length,rode,slipped,checked:!!(day&&day.checkin&&day.checkin.done)};
 }
 function sortedEvents(day,roll){return ((day&&day.events)||[]).slice().sort((a,b)=>sortMin(a.time,roll)-sortMin(b.time,roll))}
+/* D14 (the owner, November 12, 2026): once there is a Day 1, the free days of the tracking week before it count in the record (the
+   run, the longest run, the no-slip days, graduation), from the first day, so a run is never shorter on screen than it was in life.
+   It holds for every record this version has opened: keepCounts writes truthFrom on the first open (truth.ts), and the tracking
+   week counts from then on, back to the start. A log with no truthFrom (the frozen golden fixtures) counts from Day 1 as it did. */
+function recordFrom(st){return st.day1&&isKey(st.truthFrom)&&st.start<st.day1?st.start:st.day1}
 function phaseOf(key,st){
  if(key<st.start)return {p:'before',n:0};
  if(!st.day1||key<st.day1)return {p:'tracking',n:diffDays(key,st.start)+1};
@@ -477,7 +483,9 @@ function statusOf(key,day,st,today,days){
  /* from Day 1 on, a day with no slip logged counts, whether or not a check-in was saved, unless the person was away long
     enough that Daybook does not know (away.ts) */
  /* a day inside a gap away (away.ts) is not shown as a day of its own: the gap has one look, and one line with its slips */
- if(phaseOf(key,st).p==='quitting')return days&&awayGapAt(days,st,key,today)?'unknown':'clean';
+ /* from truthFrom on, a night nobody told Daybook about is not a free night (truth.ts): it is drawn hollow */
+ /* the tracking week's days count too once there is a Day 1 (D14, recordFrom), up to yesterday */
+ if(phaseOf(key,st).p==='quitting'||(st.day1&&key>=recordFrom(st)&&key<today))return days&&dayUntold(days,st,key,today)?'untold':days&&awayGapAt(days,st,key,today)?'unknown':'clean';
  if(s.checked)return 'tracked';
  if(s.n)return 'events';
  return 'empty';
@@ -498,7 +506,7 @@ const cleanLimit=(st,mode)=>(mode||(st&&st.cleanMode))==='gentle'?1:0;
    or unknown: nothing logged while the person was away long enough that Daybook does not know (away.ts; only when the log is given) */
 function dayKind(key,day,st,today,mode,days){
  if(key>today)return 'ahead';
- if(!st.day1||key<st.day1)return 'before';
+ if(!st.day1||key<recordFrom(st))return 'before';
  let n=sumDay(day).slipped;
  if(n===0&&days){
   if(!dayKnown(days,st,key,today))return 'unknown';
@@ -550,7 +558,7 @@ function runLedger(days,st,today,mode,noSave){
  const L={cur:0,longest:0,clean:0,counted:0,saves:0,kind:{},open:null};
  if(!st.day1)return L;
  const canSave=!noSave&&(mode==='strict'||mode==='gentle'),full=canSave?rkFullDays(days):{};
- for(let k=st.day1;k<=today;k=addDays(k,1)){
+ for(let k=recordFrom(st);k<=today;k=addDays(k,1)){
   let dk=dayKind(k,days[k],st,today,mode,days);
   /* one slip kept a gentle run going until countFrom; since then a slip ends the run in every mode, so the longest run means the same everywhere */
   if(dk==='one'&&st.countFrom&&k>st.countFrom)dk='slip';
@@ -560,7 +568,7 @@ function runLedger(days,st,today,mode,noSave){
   if(dk!=='slip'){L.cur++;L.clean++}
   else{
    let s=null;const run=L.cur;
-   if(full[k]&&(!st.countFrom||k<=st.countFrom)&&run>=(k<RUN_ASK_FROM?1:RUN_ASK)&&rkKeepOf(days[k])!==false){
+   if(full[k]&&k>=st.day1&&(!st.countFrom||k<=st.countFrom)&&run>=(k<RUN_ASK_FROM?1:RUN_ASK)&&rkKeepOf(days[k])!==false){
     const r=rkOf(days,k,st),deep=run>=RUN_DEEP,dl=addDays(k,BACK_DAYS);
     const done=!!(r&&r.m3&&r.ev.rk.at<=dl&&((r.m1&&r.m2&&(!deep||r.m4))||(k>=RK_BACK_FROM&&rkThirdOf(days,k,st,today))));
     s=done?'saved':today<=dl?'open':null;
@@ -647,6 +655,15 @@ function fmtStretch(h){
  const d=Math.floor(h/24);return d+(d===1?' day':' days');
 }
 const fmtStretchShort=h=>h<1?'0 h':h<72?Math.floor(h)+' h':Math.floor(h/24)+' d';
+/* the true record (truth.ts): a night nobody told Daybook about is not known, so the hours of a stretch never run through one.
+   From its evening (6 PM) to the new day it neither counts nor ends the stretch: the stretch waits. Empty before truthFrom. */
+function untoldWins(days,st,tk){const roll=st.rollover;return stretchBreaks(days,st,tk).map(b=>[evMs(b.k,b.whole?p2(roll)+':00':'18:00',roll),evMs(addDays(b.k,1),p2(roll)+':00',roll)])}
+function toldMs(a,b,w){let t=b-a;w.forEach(x=>{const lo=Math.max(a,x[0]),hi=Math.min(b,x[1]);if(hi>lo)t-=hi-lo});return Math.max(0,t)}
+/* the longest part of a stretch with no night not told inside it: what a best or a badge can be earned on */
+function toldSpan(a,b,w){let best=0,from=a;w.filter(x=>x[1]>a&&x[0]<b).sort((x,y)=>x[0]-y[0]).forEach(x=>{best=Math.max(best,Math.min(x[0],b)-from);from=Math.max(from,x[1])});return Math.max(0,best,b-from)}
+/* a week's slips with the ones an answer about nights not told or days away carries (they have no entry) */
+function slipsInWeekAll(days,st,w,tk){const r=weekRange(w,st);let n=slipsInWeek(days,st,w);for(let k=r[0];k<=r[1];k=addDays(k,1))if(!sumDay(days[k]).slipped&&awaySlipDay(days,st,k,tk))n++;return n}
+function weekUntold(days,st,w,tk){const r=weekRange(w,st);for(let k=r[0];k<=r[1];k=addDays(k,1))if(dayUntold(days,st,k,tk))return true;return false}
 function slipsInWeek(days,st,w){const r=weekRange(w,st);let n=0;for(let k=r[0];k<=r[1];k=addDays(k,1))n+=sumDay(days[k]).slipped;return n}
 function stepView(days,st,nowMs){
  const roll=st.rollover,tk=logicalKey(nowMs,roll),sl=slipMoments(days,st,nowMs);
@@ -654,16 +671,16 @@ function stepView(days,st,nowMs){
  const last=sl.length?sl[sl.length-1]:null;
  /* after days Daybook does not know about (away.ts), the stretch it can vouch for starts when the person came back; the best
     stretch already shown stays as it is */
- const af=awayStretchFrom(days,st,tk),ukEnd=af?evMs(af,p2(roll)+':00',roll):-Infinity;
- const curH=Math.max(0,(nowMs-Math.max(last!=null?last:startMs,ukEnd))/36e5);
+ const af=awayStretchFrom(days,st,tk),ukEnd=af?evMs(af,p2(roll)+':00',roll):-Infinity,uw=untoldWins(days,st,tk);
+ const curH=toldMs(Math.max(last!=null?last:startMs,ukEnd),nowMs,uw)/36e5;
  let bestPast=0,bestSince=0;const recent=[];
  for(let i=1;i<sl.length;i++){
-  const g=(sl[i]-sl[i-1])/36e5;
+  const g=toldSpan(sl[i-1],sl[i],uw)/36e5;
   if(g>bestPast)bestPast=g;
-  if(sl[i]>stepMs)bestSince=Math.max(bestSince,(sl[i]-Math.max(sl[i-1],stepMs))/36e5);
+  if(sl[i]>stepMs)bestSince=Math.max(bestSince,toldSpan(Math.max(sl[i-1],stepMs),sl[i],uw)/36e5);
   if(sl[i]>=nowMs-30*864e5)recent.push(g);
  }
- bestSince=Math.max(bestSince,(nowMs-Math.max(last!=null?last:stepMs,stepMs))/36e5);
+ bestSince=Math.max(bestSince,toldSpan(Math.max(last!=null?last:stepMs,stepMs),nowMs,uw)/36e5);
  const best=Math.max(bestPast,curH);
  recent.sort((a,b)=>a-b);
  const usual=recent.length>=3?recent[Math.floor(recent.length/2)]:null;
@@ -687,7 +704,7 @@ function stepView(days,st,nowMs){
  }
  /* ready to count days: a stretch of a week since the plan started, or a whole week since then with one slip or none */
  let weekOk=false;
- for(let w=0;w<cw;w++){if(weekRange(w,st)[0]>=stepAt&&slipsInWeek(days,st,w)<=1){weekOk=true;break}}
+ for(let w=0;w<cw;w++){if(weekRange(w,st)[0]>=stepAt&&slipsInWeekAll(days,st,w,tk)<=1&&!weekUntold(days,st,w,tk)){weekOk=true;break}}
  const ready=bestSince>=168||weekOk;
  /* more help: the setup self-check pointed that way, or three weeks in, this week is no better than the first one */
  const hist=st.onb&&st.onb.hist,score=hist&&hist.length?hist[hist.length-1].s:null;
@@ -1025,10 +1042,11 @@ function gameStats(days,st,reviews,today){
  /* the comeback badges: runs saved, a 48-hour stretch between slips (once a slip is logged), a week lower than the one before, the step-down plan finished */
  {const L=runLedger(days,st,today);S.saves=Object.keys(L.kind).filter(k=>L.kind[k]==='saved').length}
  {
-  const now=Date.now(),sl=slipMoments(days,st,now);
-  for(let i=1;i<sl.length&&!S.stretch48;i++)if(sl[i]-sl[i-1]>=48*36e5)S.stretch48=1;
-  if(sl.length&&now-sl[sl.length-1]>=48*36e5)S.stretch48=1;
-  for(let w=1;w<cw;w++){const a=slipsInWeek(days,st,w-1);if(a>=1&&slipsInWeek(days,st,w)<a)S.lowerWeeks++}
+  /* never earned across nights not told (truth.ts): the hours through one do not count, and a lower week has every night told */
+  const now=Date.now(),sl=slipMoments(days,st,now),uw=untoldWins(days,st,today);
+  for(let i=1;i<sl.length&&!S.stretch48;i++)if(toldSpan(sl[i-1],sl[i],uw)>=48*36e5)S.stretch48=1;
+  if(sl.length&&toldSpan(sl[sl.length-1],now,uw)>=48*36e5)S.stretch48=1;
+  for(let w=1;w<cw;w++){const a=slipsInWeekAll(days,st,w-1,today);if(a>=1&&slipsInWeekAll(days,st,w,today)<a&&!weekUntold(days,st,w,today))S.lowerWeeks++}
   S.grad=st.stepGrad?1:0;
  }
  return S;
@@ -2736,6 +2754,8 @@ LESSONS.forEach((L,i)=>{if(TURNS[L.id])LESSONS[i]=turnLesson(TURNS[L.id],L).L});
    They sit on the path only for someone who said faith plays a part (lessons.ts godOn, steps.ts god). */
 Object.values(GOD).forEach(T=>LESSONS.push(turnLesson(T,{id:T.id,u:7,f:1,tag:T.ask}).L));
 Object.values(HABIT_TURNS).forEach(T=>LESSONS.push(turnLesson(T,{id:T.id,u:HABIT_ONLY[T.id].u}).L));
+/* lessons 54 to 58, the lessons that meet the night (lessons-night.ts), after them so nothing already in the list moves */
+Object.values(NIGHT).forEach(T=>LESSONS.push(turnLesson(T,{id:T.id,...NIGHT_AT[T.id]}).L));
 
 
 /* ------------------------------------------------------------------------------------------------
@@ -3121,7 +3141,7 @@ function obTool(t){
 }
 const CHEERS=['Hi! I get brighter every time you take a step.','You showed up. That is the whole thing.','Slow and steady is still moving.','Honest with yourself. I like that.','A calm minute counts. So does this one.','Warm and glowing over here.','One small thing next?','Proud of you for being here.'];
 
-export {
+export {recordFrom,
   TRIGGERS,
   DIDS,
   BUCKETS,

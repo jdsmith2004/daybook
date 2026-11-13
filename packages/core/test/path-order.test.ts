@@ -138,7 +138,9 @@ describe('lessons read early (before this rule)', () => {
     const d = rec(ids(core.LEARN_FREE), [path[19].id]);
     for (let h = 0; h < 24; h++) {
       const o = core.nextUp(d, st0(), tk, new Date(2026, 9, 20, h, 30).getTime(), false);
-      if (o.act === 'lesson') expect(ids(core.LEARN_FREE)).toContain(o.v);
+      /* the next one says it waits for a free account (WP11); anything else offered is a free one */
+      if (o.act === 'lesson' && o.s === 'Opens with a free account') expect(o.v).toBe(path[core.LEARN_FREE].id);
+      else if (o.act === 'lesson') expect(ids(core.LEARN_FREE)).toContain(o.v);
     }
     const r = core.riskLesson(d, st0(), tk, false)!;
     expect(ids(core.LEARN_FREE)).toContain(r.L.id);
@@ -389,10 +391,11 @@ describe('the God lessons on the path (November 2, 2026)', () => {
     expect([...w.passed]).toEqual(['g2', 'g1']);
     expect(core.lessonGate(core.lessonById('g1')!, w)).toBe('open');
     expect(core.lessonGate(core.lessonById('g3')!, w)).toBe('key');
-    expect(core.lessonCount(w)).toEqual({ done: 9, of: 61 - 2 });
+    /* 64: five lessons that meet the night joined the path (WP11, November 12, 2026) */
+    expect(core.lessonCount(w)).toEqual({ done: 9, of: 66 - 2 });
     const w2 = core.lessonWalk(fin('l1', 'l2', 'l3', 'l22', 'l33', 'l34', 'l20', 'l46', 'l10', 'g1'), st);
     expect(w2.passed.has('g1')).toBe(false);
-    expect(core.lessonCount(w2)).toEqual({ done: 10, of: 59 });
+    expect(core.lessonCount(w2)).toEqual({ done: 10, of: 64 });
     expect(core.walkOf(w.done, st).next!.id).toBe('l9');
   });
   it('the step deed comes after the God lesson for those who read it, and after the step for everyone else', () => {
@@ -430,5 +433,6 @@ it('a God lesson in another voice sits on the path where its own does', () => {
   expect(core.lessonGate(V, w)).toBe('open');
   expect(core.nextAfter(V, w)!.id).toBe('l33');
   expect(core.deedAfter(V, st)).toBe(0);
-  expect(core.lessonOpen(V, new Set(), false)).toBe(true);
+  /* g1 is lesson 5 of this path, among the first seven open without an account */
+  expect(core.lessonOpen(V, new Set(), false, st)).toBe(true);
 });

@@ -12,6 +12,7 @@
    Nothing here imports lessons.ts at load, so lessons.ts and legacy/core.js can both read it. */
 import type { Habit } from './habit';
 import type { Turn, VoicePart } from './lesson-turns';
+import { NIGHT_OPEN, NIGHT_PORN_ONLY } from './lessons-night';
 
 export type OtherHabit = Exclude<Habit, 'porn'>;
 /** 'say' when habitSay's words are enough, or the parts written again for that habit */
@@ -82,6 +83,7 @@ export const PORN_ONLY = new Set([
   'g10',
   'g11',
   'g12',
+  ...NIGHT_PORN_ONLY,
 ]);
 
 const ALL: Open = { alcohol: 'say', gambling: 'say', other: 'say' };
@@ -97,6 +99,7 @@ export const HABIT_OPEN: Record<string, Open> = {
   g10: ALL,
   g11: ALL,
   g12: ALL,
+  ...NIGHT_OPEN,
 
   l34: {
     alcohol: {

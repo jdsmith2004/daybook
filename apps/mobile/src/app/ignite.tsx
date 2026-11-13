@@ -1,6 +1,6 @@
 /* Lighting the night: the morning's Free of it opens this over the morning (app/morning.tsx), and its button goes back to it. The
    moment itself is the shared `Ignition` (components/ignite.tsx); this page only reads the count and the words (core ignite.ts). */
-import { gameCompute, heroNumber, igniteLine, igniteRow } from '@daybook/core';
+import { freeRun, gameCompute, goalStep, heroNumber, igniteLine, igniteRow } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
@@ -22,6 +22,8 @@ export default function Ignite() {
       unit: hn?.unit ?? '',
       line: st ? igniteLine(snap.days, st, tk) : '',
       row: st ? igniteRow(snap.days, st, tk) : [],
+      /* the small goal: 3 free nights, then 7, then each week (no big goal before a clean week) */
+      goal: st ? goalStep(freeRun(snap.days, st, tk), (st as { fwGoal?: number }).fwGoal) : undefined,
     };
   });
   const close = () => {

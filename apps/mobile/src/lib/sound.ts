@@ -4,13 +4,14 @@ import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-aud
 
 import { getSoundPref } from './prefs';
 
-export type SoundName = 'in' | 'in2' | 'out' | 'on' | 'chime';
+export type SoundName = 'in' | 'in2' | 'out' | 'on' | 'chime' | 'ding';
 const FILES: Record<SoundName, number> = {
   in: require('../../assets/sounds/in.wav'),
   in2: require('../../assets/sounds/in2.wav'),
   out: require('../../assets/sounds/out.wav'),
   on: require('../../assets/sounds/on.wav'),
   chime: require('../../assets/sounds/chime.wav'),
+  ding: require('../../assets/sounds/ding.wav'),
 };
 const players: Partial<Record<SoundName, AudioPlayer>> = {};
 let ready = false;

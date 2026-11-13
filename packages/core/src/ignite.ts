@@ -4,7 +4,9 @@
    apps/mobile/src/app/ignite.tsx. Modeled on Duolingo's streak ignition, translated: the flame is both the streak and the mascot,
    and the words are about who the person is becoming, never only the number. */
 import { addDays, sumDay } from './legacy/core.js';
+import { nightState } from './away';
 import { morningOf, nightTold } from './morning-set';
+import { truthOn } from './truth';
 import type { DayKey, Days, Settings } from './types';
 
 /** a mark on the row: told free, a slip, not told, before the log began, or still to come (the first lighting's week) */
@@ -24,6 +26,8 @@ export function firstTold(days: Days, tk: DayKey): DayKey | null {
 /** what one night was: a slip logged on it, told free the next morning, or not told */
 export function nightMark(days: Days, st: Settings, k: DayKey, first: DayKey | null = firstTold(days, addDays(k, 1))): NightMark {
   if (k < st.start) return 'none';
+  /* the true record (truth.ts, WP1): from truthFrom on a night is what was told about it, the same as Today and Days draw it */
+  if (truthOn(st, k)) return nightState(days, st, k, addDays(k, 1));
   if (sumDay(days[k]).slipped > 0) return 'slip';
   if (nightTold(days, k) === 'free') return 'free';
   /* before the person ever told a morning, a night with no slip counted as free, as it always had (WP1 moves this to truthFrom) */
@@ -79,4 +83,15 @@ export function igniteGoal(run: number): number {
   if (run < 3) return 3;
   if (run < 7) return 7;
   return (Math.floor(run / 7) + 1) * 7;
+}
+
+/** the small goal as the lighting shows it (first: the goal picked in setup, 3 or 7): the goal this run is working toward (or just kept, on the night it is reached), how
+    many segments the bar has (the goal itself up to a week, then the week being built) and how many are lit */
+export function goalStep(run: number, first?: number): { of: number; kept: boolean; segs: number; lit: number } {
+  /* a person who picked 7 in setup (WP10, settings fwGoal) works toward 7 from the start, not 3 */
+  const week = first === 7 && run < 7;
+  const kept = (run === 3 && first !== 7) || (run >= 7 && run % 7 === 0);
+  const of = kept ? run : week ? 7 : igniteGoal(run);
+  const segs = Math.min(of, 7);
+  return { of, kept, segs, lit: Math.max(0, Math.min(segs, run - (of - segs))) };
 }

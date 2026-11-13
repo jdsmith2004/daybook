@@ -230,17 +230,11 @@ function Card({ group, more, onClose }: { group: CelItem[]; more: boolean; onClo
     title = it.title || 'Nice';
     sub = it.sub || '';
   }
-  /* a new level or a new badge can carry a short tip ask (core tipMoment); the preview in Settings (from 0) never does,
-     nor a sheet after a slip, on the day the person came back, or in the hours after an SOS */
+  /* the one warm tip ask rides only on a new flame form (WP8, the owner's rule: at most one ask, at an earned moment, on a new
+     form; core tipMoment); never the preview in Settings (from 0), a sheet after a slip, the day the person came back, or the
+     hours after an SOS */
   const quiet = group.some((x) => !!x.quiet);
-  const why =
-    !more && !quiet && !quietAsks
-      ? group.some((x) => x.type === 'level' && x.from > 0)
-        ? 'level'
-        : group.some((x) => x.type === 'badge' && x.b.id !== 'honest')
-          ? 'badge'
-          : null
-      : null;
+  const why = !more && !quiet && !quietAsks && group.some((x) => x.type === 'level' && x.from > 0 && x.evolve) ? 'level' : null;
   const ask = useTipMoment(why || 'level', !why);
   /* Future you: a new level or form, with no tip ask riding on it, can invite a note for the next hard moment. Never on a
      sheet after a slip, on the day the person came back, or in the hours after an SOS (the same quiet as the tip) */

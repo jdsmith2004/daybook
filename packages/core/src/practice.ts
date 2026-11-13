@@ -10,6 +10,7 @@ import { listAdd, listRemove, LISTS, planAdd, planFind, planRemove, PLAN_THEN_LE
 import { BE_LEN } from './setup';
 import type { Settings } from './types';
 import { habitOf, habitSay } from './habit';
+import { NIGHT_PRACTICE } from './lessons-night';
 
 /** where a ready-made line goes: the urge plan (when + text), reasons, calm moves, the wind-down, words that steady me,
     the slip plan, who I am becoming, the note for hard moments. A copy line is copied, to send to someone. */
@@ -785,6 +786,9 @@ export const PRACTICE: Record<string, PStep> = {
     go: [help('Look at free groups', 'groups', '', 'dots'), scene('Reach a person', 'message', 'chat')],
     ok: 'That is a real step toward people.',
   },
+
+  /* ---------- lessons 54 to 58, the lessons that meet the night (lessons-night.ts) ---------- */
+  ...NIGHT_PRACTICE,
 };
 
 /** the practice step at the end of a lesson */

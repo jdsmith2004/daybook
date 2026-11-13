@@ -46,6 +46,8 @@ export function Shell({
   bodyKey,
   foot,
   over,
+  praise,
+  floatFoot,
   children,
 }: {
   look: Look;
@@ -65,16 +67,23 @@ export function Shell({
   foot: ReactNode;
   /** something over the whole screen, like the sources sheet (outside the padded column, so it reaches the edges) */
   over?: ReactNode;
+  /** the bar that slides up once a card is answered (components/lesson-play Praise): it takes the foot's place, edge to edge */
+  praise?: ReactNode;
+  /** the foot floats over the card's bottom, and what scrolls goes on behind it (the lesson player) */
+  floatFoot?: boolean;
   children: ReactNode;
 }) {
   const c = look.c;
   const holdsBar = useHoldsBar();
+  /* the foot floats over the bottom of the card, so what scrolls goes on behind it instead of being cut off at a line; the card
+     keeps room under its last thing for the foot (the owner, November 13, 2026) */
+  const [footH, setFootH] = useState(0);
   return (
     <PaletteOverride.Provider value={c}>
       <View style={{ flex: 1, backgroundColor: c.bg }}>
         {holdsBar ? <StatusBar style={look.bar} /> : null}
         <LessonBackdrop look={look} />
-        <View style={{ flex: 1, paddingTop: inset.top + 8, paddingBottom: inset.bottom + 12, paddingHorizontal: 16 }}>
+        <View style={{ flex: 1, paddingTop: inset.top + 8, paddingBottom: praise ? 8 : inset.bottom + 12, paddingHorizontal: 16 }}>
           <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 8 }}>
             <View style={s.top}>
               {onBack ? (
@@ -95,7 +104,7 @@ export function Shell({
               onLayout={fit.onLayout}
               onContentSizeChange={fit.onContentSizeChange}
               style={s.card}
-              contentContainerStyle={s.cardIn}
+              contentContainerStyle={[s.cardIn, floatFoot && foot && !praise ? { paddingBottom: footH + 8 } : null]}
               automaticallyAdjustKeyboardInsets
               keyboardShouldPersistTaps="handled">
               <FitProvider value={fit.ctx}>
@@ -108,13 +117,16 @@ export function Shell({
                 </KeyboardRoom>
               </FitProvider>
             </ScrollView>
-            {foot ? (
+            {foot && !praise ? (
               <LowInk.Provider value={look.low}>
-                <View style={s.foot}>{foot}</View>
+                <View style={floatFoot ? s.footOver : s.foot} onLayout={floatFoot ? (e) => setFootH(e.nativeEvent.layout.height) : undefined}>
+                  {foot}
+                </View>
               </LowInk.Provider>
             ) : null}
           </View>
         </View>
+        {praise}
         {over}
       </View>
     </PaletteOverride.Provider>
@@ -334,6 +346,7 @@ const s = StyleSheet.create({
   cardIn: { paddingHorizontal: 16, paddingTop: SHORT ? 8 : 16, paddingBottom: 8, flexGrow: 1 },
   cardBody: { gap: 12, flexGrow: 1 },
   foot: { flexDirection: 'row', gap: 12 },
+  footOver: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: 12 },
   quiet: { width: '100%', minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   quietHalf: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   quietT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },

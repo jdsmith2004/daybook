@@ -104,7 +104,9 @@ describe('the first week', () => {
       for (const n of when) {
         expect(n).toBeGreaterThanOrEqual(2);
         /* never the day of a slip or the morning after */
-        expect(!!(days[day(n)] || days[day(n - 1)]) && [day(n), day(n - 1)].some((k) => (days[k]?.events || []).some((e) => e.outcome === 'slipped'))).toBe(false);
+        expect(!!(days[day(n)] || days[day(n - 1)]) && [day(n), day(n - 1)].some((k) => (days[k]?.events || []).some((e) => e.outcome === 'slipped'))).toBe(
+          false,
+        );
       }
     }
   });
@@ -119,5 +121,18 @@ describe('on Today', () => {
   it('speaks plainly, with no contractions and never "unlocked"', () => {
     for (const w of Object.values(UNLOCK_WORDS)) for (const t of Object.values(w)) expect(t).not.toMatch(/[a-z]['’][a-z]/i);
     for (const w of Object.values(UNLOCK_WORDS)) expect(w.eb).not.toMatch(/unlock/i);
+  });
+});
+
+describe('the first line of the plan', () => {
+  it('asks about the hardest moment setup heard, and once kept, the first week counts it as done', async () => {
+    const { obPlanLine, setPlanLine } = await import('../src/setup');
+    const withLate = { ...st, onb: { n: 1, at: 1, a: { when: ['lonely'] }, hist: [] } } as Settings;
+    const x = obPlanLine(withLate);
+    expect(x.ask).toBe('you feel lonely or low');
+    const kept = setPlanLine(withLate, x.opts[0], 0);
+    expect(kept.plan[1]).toEqual({ when: 'I am lonely or low', then: x.opts[0] });
+    expect(unlockNow({}, kept, day(4), { bed: { d: day(2), o: 1 }, person: { d: day(3), o: 1 } }, {})).toBeNull();
+    expect(unlockNow({}, withLate, day(4), { bed: { d: day(2), o: 1 }, person: { d: day(3), o: 1 } }, {})).toBe('plan');
   });
 });

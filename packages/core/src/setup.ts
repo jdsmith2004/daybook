@@ -187,17 +187,7 @@ export function obThenPick(a: SetupAnswers, st: Settings | null, redo: boolean, 
    week, one part a day, each set up by using it (unlock.ts). Duolingo is the model (the owner, November 12, 2026): the flame
    talks in its bubble and answers each pick, one question a page with big answers low, a bar across the top, the first win
    inside setup, and the flame lit by the person at the end. Every question can be skipped; setup itself cannot. */
-export type PageKind =
-  | 'hello'
-  | 'account'
-  | 'tiles'
-  | 'multi'
-  | 'breathe'
-  | 'promise'
-  | 'tonight'
-  | 'light'
-  | 'review'
-  | 'done';
+export type PageKind = 'hello' | 'account' | 'tiles' | 'multi' | 'breathe' | 'promise' | 'tonight' | 'light' | 'review' | 'done';
 export interface ObPage {
   id: string;
   k: PageKind;
@@ -232,7 +222,7 @@ export const OB_FREQ4: ObOpt[] = [
 /** who it is for: up to three, each kept as one of the person's reasons (shown in SOS and the morning) */
 export const OB_FOR: [string, string, string, string][] = [
   ['love', 'The people I love', 'heart', 'Being fully present with the people I love'],
-  ['partner', 'A future marriage', 'ring', 'Being ready for a real, honest relationship'],
+  ['partner', 'A future marriage', 'sun', 'Being ready for a real, honest relationship'],
   ['faith', 'My faith', 'star', 'Living by my faith'],
   ['focus', 'My time and focus', 'bolt', 'Doing my best work without a fog'],
   ['health', 'My health', 'leaf', 'Clear mornings and steady energy'],
@@ -255,7 +245,17 @@ export const OB_PAGES: ObPage[] = [
   { id: 'breathe', k: 'breathe', need: isNew },
   /* the heart of setup (the owner's condition on D4): you are here, this is different, it is going to work */
   { id: 'promise', k: 'promise', need: isNew },
-  { id: 'for', k: 'multi', key: 'for', list: OB_FOR.map((x) => [x[0], x[1], x[2]] as ObOpt), h: 'Who are you doing this for?', sub: 'Pick up to three.', cols: 1, max: FOR_MAX, keep: 1 },
+  {
+    id: 'for',
+    k: 'multi',
+    key: 'for',
+    list: OB_FOR.map((x) => [x[0], x[1], x[2]] as ObOpt),
+    h: 'Who are you doing this for?',
+    sub: 'Pick up to three.',
+    cols: 1,
+    max: FOR_MAX,
+    keep: 1,
+  },
   { id: 'faith', k: 'tiles', key: 'faith', list: OB_FAITH, h: 'Does faith play a part in this for you?', keep: 1 },
   /* after a Yes or a Somewhat: which faith the God lessons speak from (faith.ts) */
   { id: 'creed', k: 'tiles', key: 'creed', list: OB_CREED, h: 'Which faith is yours?', keep: 1, need: (a) => a.faith === 'big' || a.faith === 'some' },
@@ -473,22 +473,46 @@ export function obBegin(a: SetupAnswers, tk: DayKey, now = Date.now()): Settings
   );
 }
 
+/** the first small goal, picked once the flame is lit (3 or 7 nights), kept with the first week */
+export const setFirstGoal = (st: Settings, n: number, now = Date.now()): Settings =>
+  n === 3 || n === 7 ? changeSettings(st, (s) => void (s.fwGoal = n as 3 | 7), now) : st;
+
+/** the first line of the plan (the first week, day 4): for the hardest moment setup heard, the "then" picked. Kept in the
+    plan row and in setup's record, so the first week knows it is done. */
+export function obPlanLine(st: Settings): { top: string; when: string; ask: string; opts: string[] } {
+  const a = ((st.onb && st.onb.a) || {}) as SetupAnswers;
+  const top = obTop(a);
+  const T = OB_THEN[top];
+  return { top, when: T[1], ask: T[2], opts: T[3].slice() };
+}
+export function setPlanLine(st: Settings, then: string, now = Date.now()): Settings {
+  const x = obPlanLine(st);
+  const T = OB_THEN[x.top];
+  const th = then.trim().slice(0, 140);
+  if (!th) return st;
+  return changeSettings(
+    st,
+    (s) => {
+      s.plan[T[0]] = { when: T[1], then: th };
+      if (s.onb) s.onb.a = { ...s.onb.a, thenT: x.top, then: th };
+    },
+    now,
+  );
+}
+
 /** the page that is the heart of setup: what the person said, read back with hope, and the three things that make this time
     different, each tied to what they told it. The flame says the last line. */
 export function obPromise(a: SetupAnswers): { h: string; rows: [string, string][]; say: string } {
   const late = (a.when || []).some((w) => w === 'late' || w === 'tired' || w === 'scroll');
   const most = obMostDays(a);
   return {
-    h: 'You are here. That matters.',
+    h: 'You are here. This time is different.',
     rows: [
-      [
-        'moon',
-        late ? 'Your hardest hour is at night. Tonight, we get there first.' : 'Tonight is set before it starts, not fought when it comes.',
-      ],
+      ['moon', late ? 'Your hardest hour is at night. Tonight, we get there first.' : 'Tonight is set before it starts, not fought when it comes.'],
       ['sunrise', 'Each morning, one honest tap. A slip is something to learn from, never a reset.'],
       ['flame', 'One short lesson a day. Everything you do feeds your fire, and you watch it grow.'],
     ],
-    say: most ? 'Most days is where many people start. They get free from right here.' : 'This is not about willpower. It is a plan that is ready first.',
+    say: most ? 'Most days is where many people start. They get free from right here.' : 'It works because the plan is ready before the hard hour is.',
   };
 }
 

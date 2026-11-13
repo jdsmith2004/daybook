@@ -416,7 +416,10 @@ export default function Today() {
       {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
       {touring && g ? (
         <FirstTour
-          steps={tourSteps({ lessonDone: lessonsDone(snap.days).size > 0, lessonId: lessonsDone(snap.days).size ? null : (lessonStop(snap.days, st, tk).L?.id ?? null) })}
+          steps={tourSteps({
+            lessonDone: lessonsDone(snap.days).size > 0,
+            lessonId: lessonsDone(snap.days).size ? null : (lessonStop(snap.days, st, tk).L?.id ?? null),
+          })}
           level={Math.max(1, g.level.n)}
           onEnd={() => {
             sos.setMem(markTourDone);

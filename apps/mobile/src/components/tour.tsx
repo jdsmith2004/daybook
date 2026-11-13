@@ -20,9 +20,10 @@ import {
   View,
   type ViewInstance,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { initialWindowMetrics, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
-import { Flame } from '@/components/flame';
+import { BigFlame } from '@/components/big-flame';
 import { Next } from '@/components/lx';
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
@@ -59,10 +60,8 @@ export function tourSteps({ lessonDone, lessonId }: { lessonDone: boolean; lesso
         ? 'Lesson one, done, and your flame felt it. Each morning, tell me how the night went, and I keep growing.'
         : 'This is your flame. Each morning, tell me how the night went. Every honest answer and every lesson makes me grow.',
     },
-    {
-      at: ['log', 'trail'],
-      say: 'Slipped? Tap Already happened and tell it straight, with no shame. Planning one, or the urge keeps coming back? Walk it through.',
-    },
+    { at: ['log'], say: 'Slipped? Tap Already happened and tell it straight. No shame here: a slip is something we learn from.' },
+    { at: ['trail'], say: 'Planning a slip, or the urge keeps coming back? Walk it through, and we talk it down together.' },
     { at: ['sos'], say: 'When an urge hits, tap SOS. I will help you ride it out, day or night.' },
     {
       at: ['learn'],
@@ -83,9 +82,11 @@ export function tourSteps({ lessonDone, lessonId }: { lessonDone: boolean; lesso
 /* The system draws the bar (app-tabs.ios.tsx), so there is nothing to measure: on iOS 26 it is a glass capsule holding the four tabs
    from the left edge, and SOS in its own glass circle at the right, both resting just over the home indicator. Measured from the
    simulator (November 13, 2026). */
-const IOS_BAR = { side: 21, h: 62, gap: 10, lift: 0 };
+const IOS_BAR = { side: 22, h: 60, gap: 11 };
+/** how far the bar rests above the screen's bottom edge: a little inside the home indicator's room, or just off the edge on a phone with a Home button */
+const iosBarBottom = (bottom: number) => (bottom > 0 ? Math.max(8, bottom - 12) : 8);
 function iosTab(key: SpotKey, W: number, H: number, bottom: number): Rect | null {
-  const y = H - Math.max(bottom, 16) - IOS_BAR.h + IOS_BAR.lift;
+  const y = H - iosBarBottom(bottom) - IOS_BAR.h;
   const circle = { x: W - IOS_BAR.side - IOS_BAR.h, y, w: IOS_BAR.h, h: IOS_BAR.h };
   if (key === 'sos') return circle;
   const left = IOS_BAR.side;
@@ -98,6 +99,20 @@ function iosTab(key: SpotKey, W: number, H: number, bottom: number): Rect | null
 async function rectOf(key: SpotKey, W: number, H: number, bottom: number): Promise<Rect | null> {
   if (Platform.OS === 'ios' && (key === 'sos' || key === 'learn')) return iosTab(key, W, H, bottom);
   return measureSpot(key);
+}
+
+/** the guide, beside its words: big enough to be the flame, not an icon */
+const FLAME = 104;
+
+/** the dim over the whole screen with a rounded hole cut out of it */
+function dimPath(W: number, H: number, h: Rect & { r: number }) {
+  const outer = `M0 0H${W}V${H}H0Z`;
+  if (h.w <= 0 || h.h <= 0) return outer;
+  const r = Math.max(0, Math.min(h.r, h.w / 2, h.h / 2));
+  const { x, y, w } = h;
+  const b = y + h.h;
+  const inner = `M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${b - r}A${r} ${r} 0 0 1 ${x + w - r} ${b}H${x + r}A${r} ${r} 0 0 1 ${x} ${b - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`;
+  return outer + inner;
 }
 
 const union = (rs: Rect[]): Rect => {
@@ -125,7 +140,9 @@ export function FirstTour({
 }) {
   const c = useTheme();
   const { width: W, height: H } = useWindowDimensions();
-  const inset = useSafeAreaInsets();
+  /* the device's own insets: inside a tab, the safe area already counts the tab bar */
+  const ctx = useSafeAreaInsets();
+  const inset = initialWindowMetrics?.insets ?? ctx;
   const still = useReducedMotion();
   const [i, setI] = useState(0);
   /* the parts lit on this step, where they are */
@@ -136,18 +153,15 @@ export function FirstTour({
   const step = steps[i];
 
   /* the spotlight: a frame of dim with a hole, drawn as one view with a border far wider than the screen, so the hole's corners round */
-  const hx = useRef(new Animated.Value(W / 2)).current;
-  const hy = useRef(new Animated.Value(H / 2)).current;
-  const hw = useRef(new Animated.Value(0)).current;
-  const hh = useRef(new Animated.Value(0)).current;
-  const hr = useRef(new Animated.Value(20)).current;
+  const [hole, setHole] = useState<Rect & { r: number }>({ x: W / 2, y: H / 2, w: 0, h: 0, r: 20 });
+  const holeRef = useRef(hole);
+  holeRef.current = hole;
   const fade = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;
   const say = useRef(new Animated.Value(1)).current;
-  const B = Math.max(W, H) * 2;
 
   /* the panel: just over the tab bar */
-  const barTop = Platform.OS === 'ios' ? Math.max(inset.bottom, 16) + IOS_BAR.h + 14 : inset.bottom + 74;
+  const barTop = Platform.OS === 'ios' ? iosBarBottom(inset.bottom) + IOS_BAR.h + 16 : inset.bottom + 74;
   const panelTop = H - barTop - panelH;
 
   const end = (then?: () => void) => {
@@ -206,15 +220,22 @@ export function FirstTour({
     const round = lit.parts.length === 1 && lit.parts[0].k === 'sos';
     const to = { x: u.x - PAD, y: u.y - PAD, w: u.w + PAD * 2, h: u.h + PAD * 2 };
     const r = round ? to.h / 2 : lit.parts[0].k === 'sky' ? 28 : 26;
-    const ms = still ? 0 : 420;
-    const ease = Easing.out(Easing.cubic);
-    Animated.parallel([
-      Animated.timing(hx, { toValue: to.x, duration: ms, easing: ease, useNativeDriver: false }),
-      Animated.timing(hy, { toValue: to.y, duration: ms, easing: ease, useNativeDriver: false }),
-      Animated.timing(hw, { toValue: to.w, duration: ms, easing: ease, useNativeDriver: false }),
-      Animated.timing(hh, { toValue: to.h, duration: ms, easing: ease, useNativeDriver: false }),
-      Animated.timing(hr, { toValue: r, duration: ms, easing: ease, useNativeDriver: false }),
-    ]).start();
+    /* the hole glides from where it was (from the middle, the first time) */
+    const from = holeRef.current;
+    const goal = { ...to, r };
+    let raf = 0;
+    if (still || from.w === 0) setHole(goal);
+    else {
+      const t0 = Date.now();
+      const ease = Easing.out(Easing.cubic);
+      const tick = () => {
+        const k = ease(Math.min(1, (Date.now() - t0) / 420));
+        const mix = (a: number, b: number) => a + (b - a) * k;
+        setHole({ x: mix(from.x, goal.x), y: mix(from.y, goal.y), w: mix(from.w, goal.w), h: mix(from.h, goal.h), r: mix(from.r, goal.r) });
+        if (k < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    }
     if (!still) {
       say.setValue(0);
       Animated.spring(say, { toValue: 1, friction: 6, tension: 90, useNativeDriver: NATIVE }).start();
@@ -223,6 +244,7 @@ export function FirstTour({
     const h = Platform.OS === 'web' ? null : findNodeHandle(bubble.current);
     if (h) setTimeout(() => AccessibilityInfo.setAccessibilityFocus(h), 120);
     else AccessibilityInfo.announceForAccessibility?.(steps[i].say);
+    return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lit, i]);
 
@@ -256,22 +278,12 @@ export function FirstTour({
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade }]} accessibilityViewIsModal>
         {/* the dim, with its hole; a tap on the dim goes on */}
         <Pressable accessible={false} style={StyleSheet.absoluteFill} onPress={next}>
-          <Animated.View
+          <Svg width={W} height={H} style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Path d={dimPath(W, H, hole)} fill="rgba(10,7,30,0.74)" fillRule="evenodd" />
+          </Svg>
+          <View
             pointerEvents="none"
-            style={{
-              position: 'absolute',
-              left: Animated.subtract(hx, B),
-              top: Animated.subtract(hy, B),
-              width: Animated.add(hw, B * 2),
-              height: Animated.add(hh, B * 2),
-              borderWidth: B,
-              borderRadius: Animated.add(hr, B),
-              borderColor: 'rgba(10,7,30,0.72)',
-            }}
-          />
-          <Animated.View
-            pointerEvents="none"
-            style={{ position: 'absolute', left: hx, top: hy, width: hw, height: hh, borderRadius: hr, opacity: shown.length ? 1 : 0 }}>
+            style={{ position: 'absolute', left: hole.x, top: hole.y, width: hole.w, height: hole.h, borderRadius: hole.r, opacity: shown.length ? 1 : 0 }}>
             <Animated.View
               style={[
                 StyleSheet.absoluteFill,
@@ -284,7 +296,7 @@ export function FirstTour({
                 },
               ]}
             />
-          </Animated.View>
+          </View>
         </Pressable>
 
         {/* the lit parts open, as on Today */}
@@ -341,8 +353,8 @@ export function FirstTour({
                 transform: [{ translateY: say.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }],
               },
             ]}>
-            <View style={s.flame}>
-              <Flame level={level} size={92} alive label="" />
+            <View style={s.flame} accessible={false} importantForAccessibility="no-hide-descendants">
+              <BigFlame level={level} size={FLAME} noLand label="" />
             </View>
             <View ref={bubble} accessible accessibilityLabel={step.say} style={[s.bubble, { backgroundColor: BUBBLE }]}>
               <View style={[s.tail, { backgroundColor: BUBBLE }]} />
@@ -374,7 +386,7 @@ const s = StyleSheet.create({
   },
   panel: { position: 'absolute', left: 16, right: 16, gap: 12, alignSelf: 'center', maxWidth: 560 },
   talk: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
-  flame: { width: 92, height: 92, marginBottom: -6 },
+  flame: { width: FLAME, height: FLAME, marginBottom: -8, marginLeft: -8 },
   bubble: { flex: 1, borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16 },
   tail: { position: 'absolute', left: -6, bottom: 22, width: 16, height: 16, borderRadius: 3, transform: [{ rotate: '45deg' }] },
   sayT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 23, color: PAPER_INK },

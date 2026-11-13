@@ -291,3 +291,54 @@ describe('kept through clean-up and sync', () => {
     expect(back.days['2026-03-11'].p?.mw).toBe(true);
   });
 });
+
+describe('nothing lost, nothing doubled (the owner, November 13, 2026: "all there data intact")', () => {
+  const words = (t: string) => t.split(/\s+/).filter(Boolean);
+  it('every non-deleted entry lands once, with its day, its time and every word, and the streak lands day for day', () => {
+    const long = Array.from({ length: 9000 }, (_, i) => 'word' + i).join(' ');
+    const js: MJournal[] = Array.from({ length: 1234 }, (_, i) => journal(i, { content: 'Line one ' + i + '\nLine two, with an emoji 🔥 and "quotes".' }));
+    js[10] = journal(10, { content: long, title: 'A very long night' });
+    js[11] = journal(11, { created_at: iso(2026, 12, 25) });
+    js[12] = journal(12, { is_deleted: true });
+    js[13] = journal(13, { title: null, content: '', emotions: [] });
+    /* the same row twice (a page read twice) is still one entry */
+    js.push({ ...js[20] });
+    /* two rows whose short ids meet: the same first 8 and last 14 characters */
+    js.push(journal(1300, { id: 'aaaaaaaa-1111-4000-8000-000000000020' }));
+    const rows: MithrasRows = { journals: js, streak: streakRow(200, ['2026-04-01', '2026-05-15', '2026-07-04']), profile: null };
+    const plan = core.mithrasPlan(rows, 4, tk, now);
+    const live = new Set(js.filter((r) => !r.is_deleted).map((r) => r.id));
+    expect(plan.rows).toBe(live.size);
+    const r = core.mithrasApply(fresh(), plan, tk, now);
+    const jn = r.snap.journal!;
+    expect(Object.keys(jn)).toHaveLength(plan.entries.length);
+    expect(r.added).toBe(plan.entries.length);
+    /* each row, read back from the journal: its parts in order, every word of the title, the text and the where lines */
+    for (const row of js) {
+      if (row.is_deleted) continue;
+      const id = plan.entries.find((e) => e.at === Date.parse(row.created_at) && e.t.startsWith((row.title || row.content || '').slice(0, 20)))?.id;
+      expect(id, row.id).toBeTruthy();
+      const parts = Object.values(jn)
+        .filter((e) => e.id === id || (/^m[1-9]/.test(e.id) && e.id.slice(2) === id!.slice(2)))
+        .sort((a, b) => b.at - a.at);
+      const got = words(parts.map((e) => e.t).join(' '));
+      const want = words([row.title || '', row.content || '', 'Where: Home', 'Doing: Scrolling', 'With: Alone'].join(' '));
+      expect(got, row.id).toEqual(want);
+      expect(parts[0].at).toBe(Date.parse(row.created_at));
+    }
+    /* the long one is several entries on one day, none over the limit */
+    const longParts = Object.values(jn).filter((e) => e.t.includes('word4500') || e.t.includes('word10 '));
+    expect(longParts.length).toBeGreaterThan(1);
+    expect(Object.values(jn).every((e) => e.t.length <= core.JN_TEXT_MAX)).toBe(true);
+    /* a clock that was ahead: kept, on today */
+    expect(Object.values(jn).some((e) => e.at === Date.parse(iso(2026, 12, 25)) && e.d === tk)).toBe(true);
+    /* the streak: every win a told day, every setback one slip */
+    expect(r.wins + r.slips).toBe(200);
+    for (const k of ['2026-04-01', '2026-05-15', '2026-07-04']) expect(r.snap.days[k].events.filter((e) => e.outcome === 'slipped')).toHaveLength(1);
+    expect(Object.values(r.snap.days).filter((d) => d.p?.mw).length).toBe(197);
+    /* and a second import of the same rows adds nothing */
+    const two = core.mithrasApply(r.snap, core.mithrasPlan(rows, 4, tk, now + 1000), tk, now + 1000);
+    expect([two.added, two.replaced, two.slips, two.wins]).toEqual([0, 0, 0, 0]);
+    expect(Object.keys(two.snap.journal!)).toHaveLength(plan.entries.length);
+  });
+});

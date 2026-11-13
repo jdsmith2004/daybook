@@ -53,6 +53,8 @@ export default function MithrasImport() {
   const [rows, setRows] = useState<MithrasRows | null>(null);
   const [done, setDone] = useState<MithrasDone | null>(null);
   const how = useRef<'apple' | 'email'>('email');
+  /* the Mithras entries that came (a very long one lands as several Daybook entries, but is one entry to the person) */
+  const rowsIn = useRef(0);
   const fromLink = params.from !== 'settings';
 
   useEffect(() => {
@@ -80,6 +82,7 @@ export default function MithrasImport() {
       const cur = current().snap;
       const p = mithrasPlan(r, cur.settings?.rollover ?? 4, tk);
       const out = mithrasApply(cur, p, tk);
+      rowsIn.current = out.added + out.replaced ? p.rows : 0;
       await replace(out.snap, out.changed);
       mithrasHeld.rows = null;
       setMithrasPending(false);
@@ -187,7 +190,7 @@ export default function MithrasImport() {
 
   /* ---------- the pages ---------- */
   if (step === 'done' && done) {
-    const n = done.added + done.replaced;
+    const n = rowsIn.current;
     const words = done.campfire
       ? {
           h: 'Your fire came with you.',
@@ -258,7 +261,7 @@ export default function MithrasImport() {
               <T style={s.num} accessibilityLabel={entries(look.entries || look.days)}>
                 {look.entries || look.days}
               </T>
-              <T v="h2" style={s.c}>
+              <T v="label" style={s.c}>
                 {look.entries ? (look.entries === 1 ? 'entry' : 'entries') : look.days === 1 ? 'day kept' : 'days kept'}
               </T>
               <View style={s.facts}>

@@ -186,52 +186,88 @@ export function mithrasFeel(e: unknown): string | null {
 }
 
 /** a Daybook entry id from a Mithras row id: the same row always gives the same id */
-export function mithrasEntryId(rowId: string): string {
-  const s = String(rowId || '')
-    .toLowerCase()
-    .replace(/[^0-9a-z]/g, '');
+export function mithrasEntryId(rowId: string, hashed = false): string {
+  const s = hashed
+    ? ''
+    : String(rowId || '')
+        .toLowerCase()
+        .replace(/[^0-9a-z]/g, '');
   /* a uuid's first 8 and last 14: 88 bits, more than enough to tell one person's rows apart */
   if (s.length >= 22) return 'mi' + s.slice(0, 8) + s.slice(-14);
   if (s.length >= 8) return 'mi' + s;
-  /* not a uuid: a short code of it */
+  /* not a uuid (or a second row whose short id was taken): a code of the whole id, from two hashes */
   let h = 2166136261;
-  for (const ch of String(rowId)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
-  return 'mi' + h.toString(36).padStart(7, '0');
+  let g = 5381;
+  for (const ch of String(rowId)) {
+    h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+    g = (Math.imul(g, 33) + ch.charCodeAt(0)) >>> 0;
+  }
+  return 'mh' + h.toString(36).padStart(7, '0') + g.toString(36).padStart(7, '0');
 }
 
-const clip = (v: unknown, n: number) =>
-  typeof v === 'string'
-    ? v
-        .replace(/\u0000/g, '')
-        .trim()
-        .slice(0, n)
-    : '';
+/** a string from a row, with only the null characters a database cannot keep taken out, and its ends trimmed */
+const clip = (v: unknown) => (typeof v === 'string' ? v.replace(/\u0000/g, '').trim() : '');
 
-/** one Mithras journal row as a Daybook entry, or null when it is not one (deleted, no date) */
-export function mithrasEntry(row: MJournal, roll: number, tk: DayKey, u: number): JEntry | null {
-  if (!row || typeof row !== 'object' || row.is_deleted === true || typeof row.id !== 'string') return null;
-  const at = Date.parse(row.created_at);
-  if (!Number.isFinite(at)) return null;
-  const d = logicalKey(at, roll);
-  if (!isKey(d) || d > tk) return null;
-  const id = mithrasEntryId(row.id);
-  if (!isJnId(id)) return null;
+/** the id of part k (from 0) of an entry too long for one Daybook entry: part 0 is the entry's own id, the rest swap its second letter for k */
+export const mithrasPartId = (id: string, k: number) => (k ? 'm' + k + id.slice(2) : id);
+/** the most parts one entry is split into: 180,000 characters, far past anything written in a phone app */
+const MAX_PARTS = 9;
+
+/** one Mithras journal row as Daybook entries, or [] when it is not one (deleted, no date). Nothing in it is cut: the title, every
+    word of the text and the where, doing and with lines come over whole. An entry longer than one Daybook entry holds
+    (JN_TEXT_MAX) is split at a line or a space into parts, each its own entry on the same day, one millisecond earlier than the part
+    before, so they read in order. An entry dated after today (a clock that was ahead) is kept on today. */
+export function mithrasEntries(
+  row: MJournal,
+  roll: number,
+  tk: DayKey,
+  u: number,
+  id = row && typeof row.id === 'string' ? mithrasEntryId(row.id) : '',
+): JEntry[] {
+  if (!row || typeof row !== 'object' || row.is_deleted === true || typeof row.id !== 'string') return [];
+  const at0 = Date.parse(row.created_at);
+  const at = Number.isFinite(at0) ? at0 : Date.parse(String(row.updated_at || ''));
+  if (!Number.isFinite(at) || !isJnId(id)) return [];
+  const d0 = logicalKey(at, roll);
+  if (!isKey(d0)) return [];
+  const d = d0 > tk ? tk : d0;
   const feels = (Array.isArray(row.emotions) ? row.emotions : []).map(mithrasFeel).filter((w): w is string => !!w);
   const w = feels[0] || MITHRAS_FEEL_NONE;
-  const title = clip(row.title, 200);
-  const body = clip(row.content, JN_TEXT_MAX);
+  const title = clip(row.title);
+  const body = clip(row.content);
   const r = (row.reflection_data && typeof row.reflection_data === 'object' ? row.reflection_data : {}) as Record<string, unknown>;
   const lines = [
-    ['Where', clip(r.location, 200)],
-    ['Doing', clip(r.activity, 200)],
-    ['With', clip(r.people, 200)],
+    ['Where', clip(r.location)],
+    ['Doing', clip(r.activity)],
+    ['With', clip(r.people)],
   ]
     .filter((x) => x[1])
     .map((x) => x[0] + ': ' + x[1]);
   const head = title && !body.startsWith(title) ? title : '';
-  const t = [head, body, lines.join('\n')].filter(Boolean).join('\n\n').slice(0, JN_TEXT_MAX);
   const tags = cleanTags([...feels.slice(1), MITHRAS_TAG]);
-  return { id, d, at, w, t, tags, u };
+  return splitText([head, body, lines.join('\n')].filter(Boolean).join('\n\n'))
+    .slice(0, MAX_PARTS)
+    .map((t, k) => ({ id: mithrasPartId(id, k), d, at: at - k, w, t, tags, u }));
+}
+
+/** a text in pieces of at most JN_TEXT_MAX, cut at a line break or a space where there is one; '' stays one empty piece */
+function splitText(t: string): string[] {
+  const out: string[] = [];
+  let rest = t;
+  while (rest.length > JN_TEXT_MAX) {
+    const win = rest.slice(0, JN_TEXT_MAX);
+    const cut = Math.max(win.lastIndexOf('\n'), win.lastIndexOf(' '));
+    const at = cut > JN_TEXT_MAX / 2 ? cut : JN_TEXT_MAX;
+    out.push(rest.slice(0, at).trimEnd());
+    rest = rest.slice(at).trimStart();
+  }
+  out.push(rest);
+  return out;
+}
+
+/** one Mithras journal row as a Daybook entry (its first part), or null when it is not one */
+export function mithrasEntry(row: MJournal, roll: number, tk: DayKey, u: number): JEntry | null {
+  return mithrasEntries(row, roll, tk, u)[0] || null;
 }
 
 /** Mithras's streak days as Daybook days: the wins and the setbacks, each sorted, none after today. A day that is both is a setback. */
@@ -269,6 +305,8 @@ export function mithrasProfile(p: MProfile | null): { habit?: Habit; freq?: stri
 /** everything an import would bring, worked out before anything changes */
 export interface MithrasPlan {
   entries: JEntry[];
+  /** the Mithras rows those entries came from (an entry too long for one Daybook entry is several) */
+  rows: number;
   wins: DayKey[];
   slips: DayKey[];
   /** the first Mithras day (a win or a setback), or null */
@@ -287,13 +325,19 @@ export interface MithrasPlan {
 export const wordCount = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0);
 
 export function mithrasPlan(rows: MithrasRows, roll: number, tk: DayKey, now = Date.now()): MithrasPlan {
-  const seen = new Set<string>();
+  /* every row lands once: the same row read twice is one entry, and two rows whose short ids meet get the second its own id */
+  const byId = new Map<string, string>();
+  const rowsIn = new Set<string>();
   const entries: JEntry[] = [];
   for (const row of rows.journals || []) {
-    const e = mithrasEntry(row, roll, tk, now);
-    if (!e || seen.has(e.id)) continue;
-    seen.add(e.id);
-    entries.push(e);
+    if (!row || typeof row.id !== 'string' || rowsIn.has(row.id)) continue;
+    let id = mithrasEntryId(row.id);
+    for (let n = 1; byId.has(id) && byId.get(id) !== row.id; n++) id = mithrasEntryId(row.id + '#' + n, true);
+    const es = mithrasEntries(row, roll, tk, now, id);
+    if (!es.length) continue;
+    rowsIn.add(row.id);
+    byId.set(id, row.id);
+    entries.push(...es);
   }
   const { wins, slips } = mithrasDays(rows.streak, tk);
   const first = [wins[0], slips[0]].filter((x): x is DayKey => !!x).sort()[0] || null;
@@ -302,6 +346,7 @@ export function mithrasPlan(rows: MithrasRows, roll: number, tk: DayKey, now = D
   const days = wins.length + slips.length;
   return {
     entries,
+    rows: rowsIn.size,
     wins,
     slips,
     first,
@@ -309,7 +354,7 @@ export function mithrasPlan(rows: MithrasRows, roll: number, tk: DayKey, now = D
     words: entries.reduce((n, e) => n + wordCount(e.t), 0),
     daysWritten: new Set(entries.map((e) => e.d)).size,
     profile: mithrasProfile(rows.profile),
-    real: days >= MITHRAS_REAL.days || entries.length >= MITHRAS_REAL.entries,
+    real: days >= MITHRAS_REAL.days || rowsIn.size >= MITHRAS_REAL.entries,
   };
 }
 
@@ -466,7 +511,7 @@ export function mithrasPreview(snap: Snapshot, plan: MithrasPlan, tk: DayKey): {
   const st = snap.settings;
   const pts = st ? gameCompute(snap.days, st, snap.reviews || {}, tk).pts : 0;
   const lands = plan.real && !(st && st.mith) && pts < CAMPFIRE_PTS ? levelOf(CAMPFIRE_PTS) : null;
-  return { entries: plan.entries.length, longest: plan.longest, days: plan.wins.length + plan.slips.length, form: lands ? lands.name : null };
+  return { entries: plan.rows, longest: plan.longest, days: plan.wins.length + plan.slips.length, form: lands ? lands.name : null };
 }
 
 /* the feelings list is read here so a word in the table that left FEELINGS is caught by the tests, not shown */

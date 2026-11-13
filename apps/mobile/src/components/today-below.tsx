@@ -11,7 +11,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Shape } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { TonightCard } from '@/components/tonight-card';
-import { Icon, T } from '@/components/ui';
+import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { usePullDowns } from '@/lib/pull';
 import { font, useTheme } from '@/lib/theme';
@@ -25,26 +25,46 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
   const all = (st.plan || []).filter((p) => !planBlank(p) && String(p.then || '').trim()).length;
   const be = String(st.becoming || '').trim();
   const proof = rodeProof(snap.days, st, tk) || newest(snap, tk, downs);
+  const openBe = () => {
+    buzz('tap');
+    router.push('/becoming');
+  };
   return (
     <View style={s.all}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={be ? 'Who you are becoming: ' + be + '. Opens My plan.' : 'Who are you becoming? Write it in one sentence.'}
-        onPress={() => {
-          buzz('tap');
-          router.push('/plan');
-        }}
-        style={({ pressed }) => [s.be, { opacity: pressed ? 0.85 : 1 }]}>
-        <T v="small" tone="muted">
-          Who you are becoming
-        </T>
-        <Text style={[be ? s.beT : s.beAsk, { color: be ? c.sunText : c.accentText }]}>{be || 'Write it in one sentence'}</Text>
-        {proof ? (
-          <Text style={[s.proof, { color: c.muted }]}>
-            {proof.t} <Text style={{ color: c.mintText, fontFamily: font.bodySemi }}>{proof.n.replace(/ /g, ' ')}</Text>
-          </Text>
-        ) : null}
-      </Pressable>
+      {/* who you are becoming: plainly a thing to tap (the owner, November 13, 2026: "is it a button? it's hard to tell what it
+          wants"). Unwritten, it asks the question and has one button; written, the sentence with Change beside its name. Both open
+          app/becoming.tsx, the page the setup had. */}
+      {be ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={'Who you are becoming: ' + be.replace(/[.!]+$/, '') + '. Change it.'}
+          onPress={openBe}
+          style={({ pressed }) => [s.be, { opacity: pressed ? 0.85 : 1 }]}>
+          <View style={s.beTop}>
+            <T v="small" tone="muted">
+              Who you are becoming
+            </T>
+            <View style={s.change}>
+              <Icon name="pencil" size={16} color={c.accentText} />
+              <Text style={[s.changeT, { color: c.accentText }]}>Change</Text>
+            </View>
+          </View>
+          <Text style={[s.beT, { color: c.sunText }]}>{be}</Text>
+          {proof ? (
+            <Text style={[s.proof, { color: c.muted }]}>
+              {proof.t} <Text style={{ color: c.mintText, fontFamily: font.bodySemi }}>{proof.n.replace(/ /g, '\u00a0')}</Text>
+            </Text>
+          ) : null}
+        </Pressable>
+      ) : (
+        <View style={s.be}>
+          <T v="h2">Who are you becoming?</T>
+          <T tone="muted">One sentence about who you are growing into. The flame holds on to it for the hard days.</T>
+          <View style={s.beBtn}>
+            <Button label="Write my sentence" icon="pencil" onPress={openBe} />
+          </View>
+        </View>
+      )}
 
       {evs.length ? (
         <View style={s.sec}>
@@ -97,6 +117,9 @@ const s = StyleSheet.create({
   moment: { flexDirection: 'row', alignItems: 'center', gap: 16, minHeight: 56 },
   be: { gap: 8, paddingBottom: 16 },
   beT: { fontFamily: font.display, fontSize: 34, lineHeight: 41 },
-  beAsk: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
+  beTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  change: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 32 },
+  changeT: { fontFamily: font.bodySemi, fontSize: 15 },
+  beBtn: { marginTop: 4 },
   proof: { fontFamily: font.body, fontSize: 15, lineHeight: 21, marginTop: 4 },
 });

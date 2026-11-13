@@ -354,6 +354,7 @@ function Shell() {
             'unlock',
             'day-list',
             'ignite',
+            'becoming',
           ].map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
           ))}

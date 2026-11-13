@@ -86,7 +86,7 @@ import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Slider } from '@/components/slider';
 import { Text } from '@/components/text';
 import { DoCard, DoorArt, DriftArt, PreviewArt, Rise, SparkArt, StepsArt, TrailMap, TW, WaveLine } from '@/components/trail-art';
-import { Button } from '@/components/ui';
+import { Button, Icon } from '@/components/ui';
 import { Packed } from '@/components/packed';
 import { buzz } from '@/lib/feel';
 import { NATIVE } from '@/lib/motion';
@@ -1076,29 +1076,37 @@ function Coach({
   useEffect(() => setOpen(false), [say]);
   return (
     <View style={s.coach}>
-      <Rise key={open ? 'why' : say}>
-        <Bubble text={open ? reason : say} />
-      </Rise>
+      <View style={s.bubbleOver}>
+        <Rise key={open ? 'why' : say}>
+          <Bubble text={open ? reason : say} />
+        </Rise>
+      </View>
       {/* the room is only the space the page leaves; the flame is drawn over it, so it never holds the room open and never
           pushes the buttons down when the words above grow */}
       <View style={s.flameRoom} onLayout={(e) => setRoom(e.nativeEvent.layout.height)}>
         <View style={s.flameIn} pointerEvents="none">
-          <BigFlame level={level} size={Math.round(Math.max(84, Math.min(big ? 280 : 230, room || 0)))} pulse={pulse} />
+          {/* drawn larger than its room: the figure is about half its box (the rest is glow), so the flame itself reads big, the way
+              it does in a lesson (the owner, November 13, 2026: "flames too small") */}
+          <BigFlame level={level} size={Math.round(Math.max(170, Math.min(big ? 340 : 300, (room || 0) * 1.35)))} pulse={pulse} />
         </View>
+        {/* Why this works: a small quiet button in the corner, off the flame and out of the way of the answers (the owner: "i don't
+            like the why it works being there") */}
+        {reason ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={open ? 'Back' : 'Why this works'}
+            accessibilityState={{ expanded: open }}
+            hitSlop={10}
+            onPress={() => {
+              buzz('tap');
+              setOpen(!open);
+            }}
+            style={({ pressed }) => [s.whyB, { opacity: pressed ? 0.7 : 1 }]}>
+            <Icon name={open ? 'x' : 'book'} size={15} color={TW.muted} />
+            <Text style={s.whyBT}>{open ? 'Back' : 'Why'}</Text>
+          </Pressable>
+        ) : null}
       </View>
-      {reason ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ expanded: open }}
-          hitSlop={8}
-          onPress={() => {
-            buzz('tap');
-            setOpen(!open);
-          }}
-          style={({ pressed }) => [s.whyB, { opacity: pressed ? 0.7 : 1 }]}>
-          <Text style={s.whyT}>{open ? 'Back' : 'Why this works'}</Text>
-        </Pressable>
-      ) : null}
       {open && papers.length ? <Papers keys={papers} /> : null}
       {children}
     </View>
@@ -1230,7 +1238,20 @@ const s = StyleSheet.create({
   flameRoom: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 84, maxHeight: 300, alignSelf: 'stretch' },
   flameIn: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center' },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
-  whyB: { paddingVertical: 2 },
+  bubbleOver: { alignSelf: 'stretch', zIndex: 2 },
+  whyB: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  whyBT: { fontFamily: font.bodySemi, fontSize: 15, color: TW.muted },
   whyT: { fontFamily: font.bodySemi, fontSize: 15, color: TW.mint, textDecorationLine: 'underline' },
   whyLine: { marginTop: 8, gap: 6 },
   whyBody: { fontFamily: font.body, fontSize: 15, lineHeight: 21, color: TW.muted },

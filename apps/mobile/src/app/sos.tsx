@@ -633,7 +633,7 @@ function PracticeDone({ sky, level, setup }: { sky: 'night' | 'violet'; level: n
     <SceneFrame title="Practice" sky={sky} onClose={close}>
       <Finish
         level={level}
-        size={130}
+        size={170}
         title={setup ? 'You just used SOS.' : 'Practice done.'}
         text={
           setup

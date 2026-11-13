@@ -56,7 +56,7 @@ import { Appear } from '@/components/appear';
 import { FitArt, SHORT } from '@/components/fit';
 import { Field, Link } from '@/components/choices';
 import { CountUp } from '@/components/count-up';
-import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { Rows } from '@/components/link-card';
 import { OwnChip, OwnField } from '@/components/own';
 import { Hours } from '@/components/pattern-charts';
@@ -212,7 +212,7 @@ export default function Review() {
           </Text>
           <FitArt>
             <Appear delay={200} by={10}>
-              <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={200} />
+              <FlameMedallion level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={200} />
             </Appear>
           </FitArt>
           <T tone="muted" style={[s.c, s.lead]}>

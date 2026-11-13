@@ -13,7 +13,7 @@ export function StackTool({ finish, level }: ToolProps) {
   if (done)
     return (
       <Stage key="done" dir={0}>
-        <Finish level={level} tone="sky" title="Eyes busy, urge quieter." text="Notice how it feels now. The pictures in your head had less room." />
+        <Finish level={level} title="Eyes busy, urge quieter." text="Notice how it feels now. The pictures in your head had less room." />
         <Dock>
           <Button label="Done" onPress={() => finish('stack', { msg: 'Eyes busy, urge quieter.' })} />
         </Dock>

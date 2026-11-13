@@ -97,7 +97,6 @@ export function Move({ finish, level }: ToolProps) {
       <Stage key="done" dir={0}>
         <Finish
           level={level}
-          tone="coral"
           title="Nice. Notice your breath."
           text={
             sit

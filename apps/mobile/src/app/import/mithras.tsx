@@ -207,7 +207,7 @@ export default function MithrasImport() {
         <Stage key="done" dir={0}>
           {/* the first import is a celebration: the fire pops in at its new form and the shapes burst out once (scene.tsx Finish) */}
           {done.campfire ? (
-            <Finish level={done.level.n} size={Math.min(win.width - 140, 220)} title={words.h} text={words.p} alive always least={0.7} />
+            <Finish level={done.level.n} size={Math.min(win.width - 140, 220)} title={words.h} text={words.p} always least={0.7} />
           ) : (
             <>
               {flame(done.level.n, 1)}

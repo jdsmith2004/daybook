@@ -1,11 +1,14 @@
 /* One urge ridden out, one ending (the UX audit of October 27, 2026). The ride's "It passed", the 10-minute pause's "It
    passed" and Already happened's "I rode it out" all end on this page, so riding out an urge feels the same wherever it
-   is logged. Its headline names what this one proved, from the record (core rodeHeadline: "You rode it out. Now you know you
-   can." the first time). The flame pops in with its burst, confetti bursts out with a run of buzzes and then a shower falls; then
-   the lines fill as gold stars fly into them: the urges ridden out toward the next small mark, and the points into the level; what helped (the moves of an SOS, with one line on why that one
-   works and its lesson for later, or what you did, for one logged afterwards); and what set it off. Each answer is one tap
-   or none, and saved as it is tapped. Done is pinned at the bottom, in reach on every phone while the card scrolls, with
-   Undo under it for an entry logged by hand. With celebrations off it is the same page, quietly. */
+   is logged. Rebuilt on November 13, 2026 (the owner: "the screen just doesn't match the app and doesn't look that good"):
+   it is Daybook's night, the same as the lesson finish, a proud moment and nothing else. Beats, one at a time: the opener
+   (the band, the flame huge, "Rode it out!", confetti) hands the flame over, and it stands big on the night with gold stars
+   twinkling; the headline that names what this one proved rises (core rodeHeadline: "You rode it out. Now you know you can."
+   the first time); the lines fill as gold stars fly into them (the urges ridden out toward the next small mark, and the
+   points into the level); then the two questions come up low, with no card around them: what helped (the moves of an SOS,
+   with one line on why that one works and its lesson for later, or what you did, for one logged afterwards) and what set it
+   off. Each answer is one tap or none, and saved as it is tapped. Done comes in last, pinned at the bottom, with Undo under
+   it for an entry logged by hand. With celebrations off or Reduce Motion, the same page, all in place at once. */
 import {
   didIds,
   didToggle,
@@ -26,19 +29,19 @@ import {
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Link } from '@/components/choices';
 import { Appear } from '@/components/appear';
-import { Confetti } from '@/components/celebrate';
+import { BigFlame } from '@/components/big-flame';
 import { FutureInvite, useFutureInvite } from '@/components/future-invite';
 import { MOVE_ICON, MOVE_NAME } from '@/components/ride/moves';
 import { Packed } from '@/components/packed';
-import { Meter, meterTime, type MeterSpec } from '@/components/reward-kit';
+import { btnStyle, Meter, meterTime, Sparkles, type MeterSpec } from '@/components/reward-kit';
 import { Opener } from '@/components/opener';
-import { Finish, SceneFrame } from '@/components/scene';
+import { SceneFrame } from '@/components/scene';
 import { Text } from '@/components/text';
-import { Button, Icon, T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useFuture } from '@/lib/future';
 import { close, closeAll } from '@/lib/nav';
@@ -62,7 +65,8 @@ export interface Rode {
 
 const moveName = (x: string) => MOVE_NAME[x] || urTool(x)?.name || x;
 
-type RodeProps = { won: Rode; night: boolean; level: number; title?: string; onUndo?: () => void };
+/* `night` is kept for the callers: the page is always on the night now */
+type RodeProps = { won: Rode; night?: boolean; level: number; title?: string; onUndo?: () => void };
 
 /** the ending: first the big opener every win gets (components/opener.tsx: the band, the flame huge, "Rode it out!", confetti),
     then this page shows under it as it leaves. With celebrations off or Reduce Motion, the page alone, as before. */
@@ -78,8 +82,9 @@ export function RodeOut(props: RodeProps) {
   );
 }
 
-function RodeOutPage({ won, night, level, title = 'SOS', onUndo, after }: RodeProps & { after: boolean }) {
-  const c = useSkyTheme(night ? 'night' : 'mint');
+function RodeOutPage({ won, level, title = 'SOS', onUndo, after }: RodeProps & { after: boolean }) {
+  const c = useSkyTheme('night');
+  const win = useWindowDimensions();
   const { snap, tk, update, apply } = useStore();
   const st = useCareSettings();
   const sos = useSos();
@@ -101,24 +106,15 @@ function RodeOutPage({ won, night, level, title = 'SOS', onUndo, after }: RodePr
   const invite = useFutureInvite();
   const firstNote = useFuture().notes.length === 0;
   const cel = st.celebrate !== false;
-  const [rain, setRain] = useState(false);
+  /* the beats play only after the opener; with celebrations off or Reduce Motion everything is in place at once */
+  const still = !after;
+  const [pulse, setPulse] = useState(0);
   useEffect(() => {
     if (!cel) return void buzz('save');
-    /* after the opener, which had its own burst, only the shower falls */
-    if (after) {
-      const t0 = setTimeout(() => setRain(true), 300);
-      return () => clearTimeout(t0);
-    }
-    buzz('lit');
-    const t = [
-      setTimeout(() => buzz('land'), 170),
-      setTimeout(() => buzz('land'), 340),
-      setTimeout(() => {
-        buzz('lit');
-        setRain(true);
-      }, 760),
-    ];
-    return () => t.forEach(clearTimeout);
+    if (still) return void buzz('lit');
+    /* the opener had its burst; as it leaves, the flame it handed over leaps once */
+    const t0 = setTimeout(() => setPulse(1), 250);
+    return () => clearTimeout(t0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -152,15 +148,28 @@ function RodeOutPage({ won, night, level, title = 'SOS', onUndo, after }: RodePr
   };
 
   const mins = won.mins == null ? '' : won.mins < 1 ? 'under a minute' : won.mins === 1 ? '1 minute' : won.mins + ' minutes';
+  const faster = won.mins != null && rec.faster && rec.med ? 'Faster than your usual ' + rec.med + ' minutes.' : '';
+  const sub = (mins ? 'It passed in ' + mins + '. ' : '') + (faster || 'Every one you ride out makes the next one easier.');
   /* the lines, the way the lesson finish shows them (the owner, November 13, 2026: "i liked the previous celebration lines"):
-     the urges ridden out, toward the next small mark (1, 5, 15, 40, then every ten), and the points filling the level line,
-     turning over when they make a new level */
+     the urges ridden out, toward the next small mark (5, 15, 40, then every ten), and the points filling the level line,
+     turning over when they make a new level. The very first ride has no line of its own: "1 of 1" says nothing the
+     headline does not. */
   const [lines] = useState<MeterSpec[]>(() => {
     const n = rec.n;
     const goal = [1, 5, 15, 40].find((x) => x >= n) ?? Math.ceil(n / 10) * 10;
-    const out: MeterSpec[] = [
-      { label: 'Ridden out', right: n + ' of ' + goal, from: Math.max(0, n - 1) / goal, to: n / goal, stars: 3, a11y: n + ' urges ridden out, of ' + goal },
-    ];
+    const out: MeterSpec[] =
+      goal > 1
+        ? [
+            {
+              label: 'Ridden out',
+              right: n + ' of ' + goal,
+              from: Math.max(0, n - 1) / goal,
+              to: n / goal,
+              stars: 3,
+              a11y: n + ' urges ridden out, of ' + goal,
+            },
+          ]
+        : [];
     if (won.gain > 0 && snap.settings) {
       const pts = gameCompute(snap.days, snap.settings, snap.reviews, tk).pts;
       const was = levelOf(Math.max(0, pts - won.gain));
@@ -174,104 +183,105 @@ function RodeOutPage({ won, night, level, title = 'SOS', onUndo, after }: RodePr
     }
     return out;
   });
-  const lineAt = lines.map((_, i) => 650 + lines.slice(0, i).reduce((s0, l) => s0 + meterTime(l) - 250, 0));
-  const linesEnd = 650 + lines.reduce((s0, l) => s0 + meterTime(l) - 250, 0);
-  const faster = won.mins != null && rec.faster && rec.med ? 'Faster than your usual ' + rec.med + ' min' : '';
+  /* the beats: the flame is already there (the opener handed it over), the headline rises, the lines fill one after another,
+     then the questions come up low, and Done comes in last */
+  const T_HEAD = 150;
+  const T_LINES = 650;
+  const lineAt = lines.map((_, i) => T_LINES + lines.slice(0, i).reduce((s0, l) => s0 + meterTime(l) - 250, 0));
+  const linesEnd = lines.length ? T_LINES + lines.reduce((s0, l) => s0 + meterTime(l) - 250, 0) : T_LINES;
+  const T_ASK = still ? 0 : linesEnd;
+  const T_DONE = still ? 0 : T_ASK + 450;
+  const F = Math.round(Math.min(win.width - 150, win.height * 0.25, 230));
+
+  const pick = (on: boolean) => [s.pick, { backgroundColor: on ? c.accent : c.accentSoft }];
+  const pickT = (on: boolean) => [s.pickT, { color: on ? c.accentInk : c.accentText }];
   return (
-    <View style={s.full}>
-      <SceneFrame
-        title={title}
-        sky={night ? 'night' : 'mint'}
-        onClose={close}
-        pin={
-          <>
-            <Button label="Done" onPress={closeAll} />
-            {onUndo ? (
-              <View style={s.c}>
-                <Link label="Undo this entry" tone="muted" onPress={onUndo} />
+    <SceneFrame
+      title={title}
+      sky="night"
+      onClose={close}
+      pin={
+        <Appear delay={T_DONE} by={16} duration={still ? 0 : 320} style={s.pinCol}>
+          {/* the gold button with its lip, the one way on from an earned moment (the lesson finish, a level) */}
+          <Pressable accessibilityRole="button" onPress={closeAll}>
+            {({ pressed }) => (
+              <View style={[btnStyle.btn, pressed && btnStyle.down]}>
+                <Text style={btnStyle.text}>Done</Text>
               </View>
-            ) : null}
-          </>
-        }>
-        <Finish
-          level={level}
-          size={170}
-          least={0.8}
-          tone="mint"
-          alive
-          always
-          title={head.h}
-          text={(mins ? 'It passed in ' + mins + '. ' : 'The urge came, and you did not act on it. ') + 'Every one you ride out makes the next one easier.'}
-        />
+            )}
+          </Pressable>
+          {onUndo ? (
+            <View style={s.c}>
+              <Link label="Undo this entry" tone="muted" onPress={onUndo} />
+            </View>
+          ) : null}
+        </Appear>
+      }>
+      {/* the flame, standing big on the night with gold stars twinkling around it, as at the end of a lesson */}
+      <View style={[s.flame, { width: F, height: F }]} accessible accessibilityRole="image" accessibilityLabel={'Your flame, level ' + level}>
+        <Sparkles size={F} at={still ? 0 : 200} still={still || !cel} />
+        <BigFlame level={level} size={F} pulse={pulse} noLand label="" />
+      </View>
+      <Appear delay={still ? 0 : T_HEAD} by={12} duration={still ? 0 : 380} style={s.words}>
+        <T v="title" style={s.center} accessibilityRole="header">
+          {head.h}
+        </T>
+        <T style={[s.center, { color: c.muted }]}>{sub}</T>
+      </Appear>
+      {lines.length ? (
         <View style={s.lines}>
           {lines.map((l, i) => (
-            <Meter key={l.label} m={l} at={lineAt[i]} still={!cel} ink={c.ink} muted={c.muted} track="rgba(30,22,70,0.1)" />
+            <Meter key={l.label} m={l} at={lineAt[i]} still={still} />
           ))}
         </View>
-        {faster ? (
-          <Appear delay={linesEnd} style={s.chips}>
-            <View style={[s.chip, { backgroundColor: c.scBtn }]}>
-              <Text style={[s.chipT, { color: c.ink }]}>{faster}</Text>
-            </View>
-          </Appear>
-        ) : null}
-        <Appear delay={linesEnd + 100} by={22} duration={420} style={[s.card, { backgroundColor: c.surface }]}>
-          {won.moves.length ? (
-            <>
-              <Text style={[s.q, { color: c.ink }]}>What helped most?</Text>
-              <Packed accessibilityRole="radiogroup">
-                {won.moves.map((x) => {
-                  const on = helped === x;
-                  return (
-                    <Pressable
-                      key={x}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: on }}
-                      onPress={() => pickHelped(x)}
-                      style={[s.pick, { backgroundColor: on ? c.accent : c.accentSoft }]}>
-                      <Icon name={MOVE_ICON[x] || urTool(x)?.ic || 'check'} size={16} color={on ? c.accentInk : c.accentText} />
-                      <Text style={[s.pickT, { color: on ? c.accentInk : c.accentText }]}>{moveName(x)}</Text>
-                    </Pressable>
-                  );
-                })}
-              </Packed>
-            </>
-          ) : (
-            <>
-              <Text style={[s.q, { color: c.ink }]}>
-                What helped? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
-              </Text>
-              <Packed last={noneTail(dids.map((d) => d[1]))}>
-                {dids.map(([v, label]) => {
-                  const on = did.indexOf(v) >= 0;
-                  return (
-                    <Pressable
-                      key={v}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: on }}
-                      onPress={() => pickDid(v)}
-                      style={[s.pick, { backgroundColor: on ? c.accent : c.accentSoft }]}>
-                      {on ? <Icon name="check" size={15} color={c.accentInk} /> : null}
-                      <Text style={[s.pickT, { color: on ? c.accentInk : c.accentText }]}>{label}</Text>
-                    </Pressable>
-                  );
-                })}
-              </Packed>
-            </>
-          )}
-          {why ? (
-            <Appear key={why.id} by={4} duration={220} style={{ gap: 4 }}>
-              <T v="small" style={{ lineHeight: 20 }}>
-                {why.t}
-              </T>
-              {lesson ? (
-                <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: lesson.id } })} hitSlop={8}>
-                  <Text style={[s.lesson, { color: c.accentText }]}>Later, when it is calm: {lesson.title} ›</Text>
-                </Pressable>
-              ) : null}
-            </Appear>
-          ) : null}
-          <View style={[s.rule, { backgroundColor: c.line }]} />
+      ) : null}
+      <Appear delay={T_ASK} by={20} duration={still ? 0 : 400} style={s.ask}>
+        {won.moves.length ? (
+          <View style={s.group}>
+            <Text style={[s.q, { color: c.ink }]}>What helped most?</Text>
+            <Packed accessibilityRole="radiogroup">
+              {won.moves.map((x) => {
+                const on = helped === x;
+                return (
+                  <Pressable key={x} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => pickHelped(x)} style={pick(on)}>
+                    <Icon name={MOVE_ICON[x] || urTool(x)?.ic || 'check'} size={16} color={on ? c.accentInk : c.accentText} />
+                    <Text style={pickT(on)}>{moveName(x)}</Text>
+                  </Pressable>
+                );
+              })}
+            </Packed>
+            {why ? (
+              <Appear key={why.id} by={4} duration={220} style={{ gap: 4 }}>
+                <T v="small" style={{ lineHeight: 20, color: c.muted }}>
+                  {why.t}
+                </T>
+                {lesson ? (
+                  <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: lesson.id } })} hitSlop={8}>
+                    <Text style={[s.lesson, { color: c.accentText }]}>Later, when it is calm: {lesson.title} ›</Text>
+                  </Pressable>
+                ) : null}
+              </Appear>
+            ) : null}
+          </View>
+        ) : (
+          <View style={s.group}>
+            <Text style={[s.q, { color: c.ink }]}>
+              What helped? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
+            </Text>
+            <Packed last={noneTail(dids.map((d) => d[1]))}>
+              {dids.map(([v, label]) => {
+                const on = did.indexOf(v) >= 0;
+                return (
+                  <Pressable key={v} accessibilityRole="checkbox" accessibilityState={{ checked: on }} onPress={() => pickDid(v)} style={pick(on)}>
+                    {on ? <Icon name="check" size={15} color={c.accentInk} /> : null}
+                    <Text style={pickT(on)}>{label}</Text>
+                  </Pressable>
+                );
+              })}
+            </Packed>
+          </View>
+        )}
+        <View style={s.group}>
           <Text style={[s.q, { color: c.ink }]}>
             What set it off? <Text style={[s.opt, { color: c.muted }]}>Optional</Text>
           </Text>
@@ -279,54 +289,37 @@ function RodeOutPage({ won, night, level, title = 'SOS', onUndo, after }: RodePr
             {trigs.map(([v, label]) => {
               const on = trig === v;
               return (
-                <Pressable
-                  key={v}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: on }}
-                  onPress={() => pickTrig(v)}
-                  style={[s.pick, { backgroundColor: on ? c.ink : c.bg }]}>
-                  <Text style={[s.pickT, { color: on ? c.surface : c.ink }]}>{label}</Text>
+                <Pressable key={v} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => pickTrig(v)} style={pick(on)}>
+                  <Text style={pickT(on)}>{label}</Text>
                 </Pressable>
               );
             })}
           </Packed>
-        </Appear>
-        {invite ? (
-          <Appear delay={1150} by={16} duration={380} style={{ alignSelf: 'stretch' }}>
-            <FutureInvite first={firstNote} />
-          </Appear>
-        ) : null}
+        </View>
+        {invite ? <FutureInvite first={firstNote} /> : null}
         {askPrac ? (
-          <T v="small" tone="muted" style={s.center}>
+          <T v="small" style={[s.center, { color: c.muted }]}>
             Run a practice ride on a calm day (Learn, then Tools). Practiced calm, it comes easier when it counts.
           </T>
         ) : null}
-      </SceneFrame>
-      {/* the confetti is wider than the screen: it is clipped here, so the page never scrolls sideways */}
-      {cel ? (
-        <View pointerEvents="none" style={s.clip}>
-          <Confetti big />
-          {rain ? <Confetti big rain /> : null}
-        </View>
-      ) : null}
-    </View>
+      </Appear>
+    </SceneFrame>
   );
 }
 
 const s = StyleSheet.create({
   full: { flex: 1, overflow: 'hidden' },
-  clip: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, overflow: 'hidden' },
   c: { alignItems: 'center' },
   center: { textAlign: 'center' },
-  lines: { alignSelf: 'stretch', gap: 14, paddingHorizontal: 4 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
-  chip: { paddingHorizontal: 12, minHeight: 30, justifyContent: 'center', borderRadius: 15 },
-  chipT: { fontFamily: font.bodyBold, fontSize: 13 },
-  card: { alignSelf: 'stretch', gap: 12, padding: 16, borderRadius: 20 },
+  pinCol: { gap: 10 },
+  flame: { alignSelf: 'center', marginTop: 4 },
+  words: { gap: 8, paddingHorizontal: 8 },
+  lines: { alignSelf: 'stretch', gap: 14, marginTop: 8 },
+  ask: { alignSelf: 'stretch', gap: 24, marginTop: 16 },
+  group: { gap: 12 },
   q: { fontFamily: font.display, fontSize: 17, lineHeight: 22 },
   opt: { fontFamily: font.body, fontSize: 13 },
   pick: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 16, borderRadius: 22 },
   pickT: { fontFamily: font.bodySemi, fontSize: 15 },
   lesson: { fontFamily: font.bodySemi, fontSize: 13 },
-  rule: { height: 1, marginVertical: 2 },
 });

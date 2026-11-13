@@ -228,7 +228,7 @@ export default function Unlocked() {
         ) : (
           <View style={s.mid}>
             <Bubble text={said} style={{ alignSelf: 'center', maxWidth: 320 }} />
-            <Finish level={level} alive always least={0.6} size={w.how ? 160 : 190} zoom={1.25} />
+            <Finish level={level} always least={0.6} size={w.how ? 160 : 190} />
           </View>
         )}
         {id === 'person' ? null : (

@@ -1,5 +1,9 @@
 /* The flame in a round sky of its own, drawn big (big-flame.tsx: every form the same size, the growth shown in the form):
-   for the moments away from Today that show the flame, like the end of a lesson and Welcome back. The sky is the form's
+   the one round flame for every moment away from Today that shows it on a pale sky or a page: Welcome back, the first week,
+   the end of every tool and moment (scene.tsx Finish), the tip and pattern sheets, the pause, the month. The figure fills the
+   round, never a small spark in a big sky ringed with shapes (the owner, November 13, 2026: "the random shapes look weird the
+   avatar is too smal and that combo is all over the app"). On the night (the lesson finish, a level, riding out an urge) the
+   flame stands on its own with BigFlame instead, with no round around it. The sky is the form's
    own, with a few small stars at night, and the flame moves and blooms like the one on Today (still under Reduce Motion). */
 import { emblemScene } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';

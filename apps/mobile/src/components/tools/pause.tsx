@@ -25,7 +25,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { BigOption, Link } from '@/components/choices';
-import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { useSeconds } from '@/components/orb';
 import { Button, Card, T } from '@/components/ui';
 import { Dock, Middle, Stage } from '@/components/scene';
@@ -179,7 +179,7 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
     return (
       <Stage key="ready" dir={0}>
         <Middle>
-          <Flame level={level} size={140} />
+          <FlameMedallion level={level} size={140} />
           <T v="title" style={s.c} accessibilityRole="header">
             Ten minutes. That is all.
           </T>
@@ -245,7 +245,7 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
   if (again)
     return (
       <Stage key="again" dir={1}>
-        <Flame level={level} size={flame} />
+        <FlameMedallion level={level} size={flame} />
         <T v="title" style={s.c} accessibilityRole="header">
           That is okay. Waves can come back.
         </T>
@@ -269,7 +269,7 @@ export function Pause({ level, now: openedAt, won }: ToolProps & { now: number }
     );
   return (
     <Stage key="after" dir={1}>
-      <Flame level={level} size={flame} />
+      <FlameMedallion level={level} size={flame} />
       <T v="title" style={s.c} accessibilityRole="header">
         {t?.early ? 'You paused. That counts.' : 'You made it through ten minutes.'}
       </T>

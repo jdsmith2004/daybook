@@ -14,7 +14,7 @@ import { track } from '@/lib/events';
 import { AccessibilityInfo, ActionSheetIOS, ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Link } from '@/components/choices';
-import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { HelpLine } from '@/components/help-line';
 import { PatternSheet } from '@/components/pattern-sheet';
 import { Dock, Finish } from '@/components/scene';
@@ -149,7 +149,7 @@ function TipSheet() {
   if (won)
     return (
       <SheetFrame title={w.thanksTitle}>
-        <Finish level={level} title={w.doneTitle} text={w.doneLine} size={120} alive />
+        <Finish level={level} title={w.doneTitle} text={w.doneLine} size={160} />
         <Perks list={supPerks(PATTERN_FROM == null || patOpen(st))} open />
         <Dock>
           <Button label={w.done} onPress={closeSheet} />
@@ -162,7 +162,7 @@ function TipSheet() {
     return (
       <SheetFrame title={w.thanksTitle} sub={w.thanksLine}>
         <View style={s.mid}>
-          {again ? null : <Flame level={level} size={120} alive />}
+          {again ? null : <FlameMedallion level={level} size={140} />}
           <Perks list={supPerks(PATTERN_FROM == null || patOpen(st))} open />
           {st?.sup?.since ? (
             <T v="small" tone="muted" style={s.c}>
@@ -185,7 +185,7 @@ function TipSheet() {
   return (
     <SheetFrame title={w.title} sub={tipLocal(w.line)}>
       <View style={s.mid}>
-        <Flame level={level} size={150} alive />
+        <FlameMedallion level={level} size={150} />
         <Perks list={supPerks()} />
       </View>
       <Dock>

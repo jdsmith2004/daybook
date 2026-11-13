@@ -1,7 +1,6 @@
 /* The frame for a full-screen moment (logging, Rekindle, the sunrise check, SOS): a soft sky, a top bar with Back and Close,
    progress dots, the card, and a quiet link at the bottom, or a sheet along the bottom edge (SOS). Like the legacy "scene".
    A dark sky (night, ember) gives everything inside it the night colors, in either theme. */
-import { emblemLayers } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -10,8 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
 import { FitArt, FitProvider, SHORT, useFitRoom } from '@/components/fit';
-import { Flame } from '@/components/flame';
-import { Shape, type ShapeKind } from '@/components/shapes';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { KeyboardRoom } from '@/components/keyboard';
 import { Icon, InkContext, T } from '@/components/ui';
 import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
@@ -250,113 +248,81 @@ export function Middle({ children }: { children: ReactNode }) {
   return <View style={s.middle}>{children}</View>;
 }
 
-/** the finish of a tool or a moment: the flame pops in on a soft ring that widens once, in the middle of the screen, with
-    the words under it. The Dock with Done goes after it. */
-/* the shapes that fly out from behind the flame and settle around it: where each lands (x, y from the center), its kind,
-   size, turn and color slot. Fixed, so every Finish is the same loose, hand-placed ring. */
-const BURST: { x: number; y: number; kind: ShapeKind; size: number; turn: number; tint: number }[] = [
-  { x: -98, y: -40, kind: 'cookie4', size: 30, turn: 12, tint: 0 },
-  { x: -62, y: -88, kind: 'pill', size: 20, turn: -35, tint: 1 },
-  { x: 4, y: -106, kind: 'sunny', size: 24, turn: 0, tint: 2 },
-  { x: 66, y: -82, kind: 'clover4', size: 30, turn: 20, tint: 3 },
-  { x: 108, y: -22, kind: 'gem', size: 20, turn: 10, tint: 1 },
-  { x: 98, y: 46, kind: 'cookie6', size: 27, turn: -14, tint: 0 },
-  { x: 58, y: 92, kind: 'triangle', size: 16, turn: 24, tint: 2 },
-  { x: -102, y: 42, kind: 'softBurst', size: 24, turn: 4, tint: 2 },
-  { x: -66, y: 90, kind: 'heart', size: 17, turn: -10, tint: 3 },
-];
-
-/** the end of a tool: the flame pops in and a few shapes burst out from behind it and settle around it, once. `tone` is the
-    tool's color (sky, mint, accent, sun, violet, coral); without it the shapes are warm. */
+/** the finish of a tool or a moment (the owner, November 13, 2026: "the random shapes look weird the avatar is too smal"): the
+    flame in its round sky, drawn big (FlameMedallion, the same as Welcome back and the first week), pops in, and its own light
+    answers: two soft rings of warm light widen out from it and fade, and the fire leaps and blooms once. No shapes are thrown
+    around it: what moves belongs to the flame. The words come in under it, and the Dock with Done goes after. Still under
+    Reduce Motion. */
 export function Finish({
   level,
   title,
   text,
-  tone,
-  alive,
-  size = 150,
+  size: want,
   always,
   least,
-  zoom,
 }: {
   level: number;
   title?: string;
   text?: string;
-  tone?: string;
-  /** the flame moves gently (the end of the setup) */
-  alive?: boolean;
+  /** how wide the round sky is; by default as big as the screen allows, up to 240 */
   size?: number;
-  /** the flame and its burst shrink to fit a short phone, never step aside (the end of the setup) */
+  /** the flame shrinks to fit a short phone, never steps aside (the end of the setup) */
   always?: boolean;
   /** with always: the smallest the flame gets, as a share of its size (a celebration keeps it big and lets the rest scroll) */
   least?: number;
-  /** the flame drawn this many times bigger, centered on the figure and cut to a round window of `size`, so the figure
-      itself fills most of it (the end of the setup: the flame big, never a small spark in a big sky) */
-  zoom?: number;
 }) {
-  const c = useTheme();
   const reduce = useReducedMotion();
-  const pop = useRef(new Animated.Value(0)).current;
-  /* each shape on its own spring (Material's default spatial spring: a touch of overshoot), leaving one after another */
-  const fly = useRef(BURST.map(() => new Animated.Value(0))).current;
+  const win = useWindowDimensions();
+  const size = want ?? Math.round(Math.min(win.width - 120, 240));
+  const pop = useRef(new Animated.Value(reduce ? 1 : 0)).current;
+  const rings = useRef([new Animated.Value(0), new Animated.Value(0)]).current;
+  const [pulse, setPulse] = useState(0);
   useEffect(() => {
-    if (reduce) {
-      pop.setValue(1);
-      fly.forEach((v) => v.setValue(1));
-      return;
-    }
-    Animated.parallel([
+    if (reduce) return;
+    const a = Animated.parallel([
       Animated.spring(pop, { toValue: 1, ...SPRING.fast, useNativeDriver: NATIVE }),
       Animated.stagger(
-        45,
-        fly.map((v) => Animated.spring(v, { toValue: 1, ...SPRING.default, delay: 80, useNativeDriver: NATIVE })),
+        260,
+        rings.map((v) => Animated.timing(v, { toValue: 1, duration: 1300, delay: 160, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE })),
       ),
-    ]).start();
-  }, [reduce, pop, fly]);
-  const own = tone ? ({ sky: c.sky, mint: c.mint, accent: c.accent, sun: c.sun, violet: c.violet, coral: c.coral } as Record<string, string>)[tone] : undefined;
-  const tints = own ? [own, c.sun, c.sun2, own] : [c.sun, c.sun2, c.coral, c.violet];
-  const at = useMemo(() => (zoom ? (emblemLayers(level, false)?.at ?? { x: 0.5, y: 0.5 }) : null), [zoom, level]);
-  const big = zoom ? size * zoom : size;
+    ]);
+    a.start();
+    /* the fire leaps as it lands */
+    const t = setTimeout(() => setPulse(1), 220);
+    return () => {
+      a.stop();
+      clearTimeout(t);
+    };
+  }, [reduce, pop, rings]);
+  const room = Math.round(size * 1.12);
   return (
     <View style={s.middle}>
       <FitArt drop={always ? undefined : 0.4} min={always ? (least ?? 0.5) : undefined}>
-        <View style={s.finArt}>
-          {BURST.map((b, i) => {
-            const f = fly[i];
-            const out = f.interpolate({ inputRange: [0, 1], outputRange: [0, 1], extrapolate: 'clamp' });
-            return (
-              <Animated.View
-                key={i}
-                style={[
-                  s.finShape,
-                  {
-                    opacity: out.interpolate({ inputRange: [0, 0.25, 1], outputRange: [0, 0.9, 0.9] }),
-                    transform: [
-                      { translateX: f.interpolate({ inputRange: [0, 1], outputRange: [0, b.x] }) },
-                      { translateY: f.interpolate({ inputRange: [0, 1], outputRange: [10, b.y] }) },
-                      { scale: out.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }) },
-                      { rotate: out.interpolate({ inputRange: [0, 1], outputRange: [b.turn - 90 + 'deg', b.turn + 'deg'] }) },
-                    ],
-                  },
-                ]}>
-                <Shape kind={b.kind} size={b.size} color={tints[b.tint]} />
-              </Animated.View>
-            );
-          })}
+        <View style={[s.finArt, { width: room, height: room }]}>
+          {reduce
+            ? null
+            : rings.map((v, i) => (
+                <Animated.View
+                  key={i}
+                  pointerEvents="none"
+                  style={[
+                    s.finRing,
+                    {
+                      width: size,
+                      height: size,
+                      borderRadius: size / 2,
+                      opacity: v.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.75, 0] }),
+                      transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1.42 - i * 0.1] }) }],
+                    },
+                  ]}
+                />
+              ))}
           <Animated.View
             style={{
               opacity: pop.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }),
               transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }],
             }}>
-            {at ? (
-              <View style={[s.window, { width: size, height: size, borderRadius: size / 2, borderColor: tints[0] }]}>
-                <View style={{ position: 'absolute', left: size / 2 - at.x * big, top: size / 2 - at.y * big }}>
-                  <Flame level={level} size={big} alive={alive} />
-                </View>
-              </View>
-            ) : (
-              <Flame level={level} size={size} alive={alive} />
-            )}
+            <FlameMedallion level={level} size={size} pulse={pulse} />
           </Animated.View>
         </View>
       </FitArt>
@@ -433,10 +399,9 @@ const s = StyleSheet.create({
   stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 8 },
   center: { textAlign: 'center' },
-  finArt: { width: 250, height: 220, alignItems: 'center', justifyContent: 'center' },
-  window: { overflow: 'hidden', borderWidth: 4 },
-  /* every burst shape starts at the middle, behind the flame */
-  finShape: { position: 'absolute', left: 125 - 17, top: 110 - 17, width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  finArt: { alignItems: 'center', justifyContent: 'center' },
+  /* the light that widens out from the flame as it lands: warm, the color of its glow */
+  finRing: { position: 'absolute', borderWidth: 4, borderColor: '#FFC857' },
   sheet: {
     alignSelf: 'stretch',
     gap: 14,

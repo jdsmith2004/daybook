@@ -288,6 +288,12 @@ export const rateUrTool = (st: Settings, id: string, d: number): Settings =>
     if (id !== 'written' && !(TOOLS as { id: string }[]).some((t) => t.id === id)) return;
     s.urLike = { ...(s.urLike && typeof s.urLike === 'object' ? s.urLike : {}), [id]: Math.max(-3, Math.min(3, urLikeOf(s, id) + d)) };
   });
+/** haptics on (the setting is left out) or off */
+export const setHaptics = (st: Settings, on: boolean): Settings =>
+  changeSettings(st, (s) => {
+    if (on) delete s.haptics;
+    else s.haptics = false;
+  });
 export const setCelebrate = (st: Settings, on: boolean): Settings => changeSettings(st, (s) => void (s.celebrate = on));
 /** a clock time moved by some minutes, around the clock (for the screens-off stepper) */
 export function stepClock(t: string, d: number): string {

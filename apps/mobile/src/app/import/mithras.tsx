@@ -76,7 +76,12 @@ export default function MithrasImport() {
   const level = useMemo(() => (st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1), [snap, st, tk]);
 
   /* ---------- landing it ---------- */
+  /* one landing at a time: saving it changes the settings, which wakes the effect below again before this one has finished; a second
+     landing would find everything already here and put "Everything was already here" over the real moment */
+  const landing = useRef(false);
   const land = async (r: MithrasRows) => {
+    if (landing.current) return;
+    landing.current = true;
     setStep('landing');
     try {
       const cur = current().snap;
@@ -92,6 +97,9 @@ export default function MithrasImport() {
       setStep('done');
     } catch {
       track('import', { stage: 'failed' });
+      landing.current = false;
+      /* back on the found page with what was read, so Bring it over can be tried again (after setup, the page began with none) */
+      setRows(r);
       setErr(SAVE_FAILED);
       setStep('found');
     }
@@ -207,7 +215,7 @@ export default function MithrasImport() {
         <Stage key="done" dir={0}>
           {/* the first import is a celebration: the fire pops in at its new form and the shapes burst out once (scene.tsx Finish) */}
           {done.campfire ? (
-            <Finish level={done.level.n} size={Math.min(win.width - 140, 220)} title={words.h} text={words.p} alive always least={0.7} />
+            <Finish level={done.level.n} size={Math.min(win.width - 140, 220)} title={words.h} text={words.p} always least={0.7} />
           ) : (
             <>
               {flame(done.level.n, 1)}

@@ -68,7 +68,7 @@ import { Text } from '@/components/text';
 import { Appear } from '@/components/appear';
 import { BigOption, Link } from '@/components/choices';
 import { FitArt } from '@/components/fit';
-import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { Hearth, HoldButton, useHearthHold } from '@/components/hearth';
 import { Dock, Middle, SceneFrame } from '@/components/scene';
 import { RodeOut } from '@/components/rode-out';
@@ -334,7 +334,7 @@ export default function Log() {
         {/* the flame in the open middle: whatever the answer is, it stays lit */}
         <Middle>
           <FitArt min={0.55}>
-            <Flame level={Math.max(1, g.level.n)} size={180} alive />
+            <FlameMedallion level={Math.max(1, g.level.n)} size={180} />
           </FitArt>
         </Middle>
         <Dock>

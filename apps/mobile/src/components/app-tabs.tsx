@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SosButton } from '@/components/sos-button';
 import { Icon } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { keepTab } from '@/lib/nav';
 import { useSpot, type SpotKey } from '@/lib/tour';
 import { font, MAX_WIDTH, useTheme } from '@/lib/theme';
@@ -64,6 +65,10 @@ function TabButton({ children, isFocused, icon, spot, ...props }: TabTriggerSlot
   return (
     <Pressable
       {...(props as PressableProps)}
+      onPress={(e) => {
+        if (!isFocused) buzz('tap');
+        (props as PressableProps).onPress?.(e);
+      }}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
       style={({ pressed }) => [s.tab, pressed && { opacity: 0.7 }]}>

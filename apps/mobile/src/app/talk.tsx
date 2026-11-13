@@ -65,7 +65,7 @@ import { Text } from '@/components/text';
 import { Answer, AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
 import { FitArt } from '@/components/fit';
-import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { OwnField } from '@/components/own';
 import { SafeTextButton } from '@/components/safe-text';
 import { SosPill } from '@/components/sos-pill';
@@ -691,7 +691,7 @@ export default function TalkIt() {
         {/* the flame in the open middle: it is still lit, whichever answer comes next */}
         <Middle>
           <FitArt min={0.55}>
-            <Flame level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={170} alive />
+            <FlameMedallion level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={170} />
           </FitArt>
         </Middle>
         <Dock>

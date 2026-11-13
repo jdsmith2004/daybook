@@ -107,6 +107,7 @@ export const BigFlame = memo(function BigFlame({
   calm,
   asleep,
   heart,
+  relight,
 }: {
   level: number;
   size: number;
@@ -126,6 +127,8 @@ export const BigFlame = memo(function BigFlame({
   asleep?: boolean;
   /** something drawn at the figure's heart, centered on it (the ember of app/ignite.tsx) */
   heart?: ReactNode;
+  /** lit again faster than the usual catch and climb: [when it catches, how long it climbs] in ms (the lighting, components/ignite.tsx) */
+  relight?: [number, number];
 }) {
   const still = useReducedMotion();
   const { snap } = useStore();
@@ -156,10 +159,12 @@ export const BigFlame = memo(function BigFlame({
     if (low > lv.value) lv.value = withDelay(DOUSE_WAIT, withTiming(low, { duration: DOUSE_MS, easing: REasing.out(REasing.quad) }));
     else if (low < lv.value) {
       /* lit again */
-      lv.value = withDelay(RELIGHT_CATCH, withTiming(low, { duration: RELIGHT_MS, easing: REasing.out(REasing.cubic) }));
+      const [at, ms] = relight ?? [RELIGHT_CATCH, RELIGHT_MS];
+      lv.value = withDelay(at, withTiming(low, { duration: ms, easing: REasing.out(REasing.cubic) }));
       burst.value = 0;
-      burst.value = withDelay(RELIGHT_CATCH, withTiming(1, { duration: 1500, easing: REasing.linear }));
+      burst.value = withDelay(at, withTiming(1, { duration: 1500, easing: REasing.linear }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the relight timing is read when it is lit, never a reason to light again
   }, [low, still, lv, burst]);
   const dimmed = useAnimatedStyle(() => ({ opacity: lv.value }));
   const glowLow = useAnimatedStyle(() => ({ opacity: 1 - 0.8 * lv.value }));

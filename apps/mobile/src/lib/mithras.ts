@@ -12,7 +12,13 @@ import { Platform } from 'react-native';
 
 import { APPLE_SERVICES_ID, MITHRAS_ANON, MITHRAS_URL } from '@/lib/config';
 
-export const mithras = mithrasClient(MITHRAS_URL, MITHRAS_ANON);
+/* a QA build can answer from a made-up Mithras instead (lib/mithras-fake.ts), so a real account is never used to test */
+const FAKE = process.env.EXPO_PUBLIC_MITHRAS_FAKE === '1';
+export const mithras = FAKE
+  ? mithrasClient('https://fake.mithras.test', 'fake', (url, init) =>
+      (require('./mithras-fake') as typeof import('./mithras-fake')).fakeMithrasFetch(url, init),
+    )
+  : mithrasClient(MITHRAS_URL, MITHRAS_ANON);
 
 const KEY = 'daybook.mithras';
 let pending = false;
@@ -44,6 +50,24 @@ export const useMithrasPending = () =>
     sub,
     () => pending,
     () => pending,
+  );
+
+/* whether the import page is open now: Today opens nothing else over it (Welcome back would cover the moment) */
+let open = false;
+const openSubs = new Set<() => void>();
+export function setMithrasOpen(on: boolean) {
+  if (open === on) return;
+  open = on;
+  openSubs.forEach((f) => f());
+}
+export const useMithrasOpen = () =>
+  useSyncExternalStore(
+    (f) => {
+      openSubs.add(f);
+      return () => void openSubs.delete(f);
+    },
+    () => open,
+    () => open,
   );
 
 /** what was read from Mithras and said yes to before setup, in memory only: setup's first answers come from it, and it lands as setup ends */

@@ -9,7 +9,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Flame } from '@/components/flame';
+import { BigFlame } from '@/components/big-flame';
 import { feelColor, JN } from '@/components/journal';
 import { closeSheet } from '@/components/sheet';
 import { Text } from '@/components/text';
@@ -31,8 +31,8 @@ export default function Insights() {
   const level = useMemo(() => (st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1), [snap, st, tk]);
   const empty = !ins.days && !ins.top.length;
   const colW = Math.min(W, MAX_WIDTH) - 32;
-  /* the flame by the words grows a little with them: 26 points at none, about 44 at ten thousand */
-  const flameSize = Math.round(26 + Math.min(18, Math.log10(1 + ins.words) * 4.5));
+  /* the flame by the words grows a little with them: 34 points at none, about 56 at ten thousand */
+  const flameSize = Math.round(34 + Math.min(22, Math.log10(1 + ins.words) * 5.5));
 
   return (
     <View style={[s.page, { paddingTop: inset.top + 10 }]}>
@@ -51,7 +51,15 @@ export default function Insights() {
           <View style={s.nums}>
             <Num n={ins.year} word="entries this year" />
             <Num n={ins.days} word="days written" />
-            <Num n={ins.words} word="words written" flame={<Flame level={level} size={flameSize} locked={!ins.words} label="Your flame" />} />
+            <Num
+              n={ins.words}
+              word="words written"
+              flame={
+                <View style={[s.flame, { width: flameSize, height: flameSize, marginTop: 40 - flameSize }, !ins.words && { opacity: 0.35 }]}>
+                  <BigFlame level={level} size={flameSize} noLand calm={!ins.words} label="Your flame" />
+                </View>
+              }
+            />
           </View>
 
           <Months months={months} tk={tk} width={colW} snap={snap.journal} />
@@ -203,8 +211,9 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   nums: { flexDirection: 'row', gap: 12 },
-  num: { flex: 1, gap: 2 },
-  numRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 2 },
+  num: { flexGrow: 1, flexShrink: 1, gap: 2 },
+  numRow: { flexDirection: 'row', alignItems: 'flex-end' },
+  flame: { marginLeft: -4, marginBottom: -2 },
   big: { fontFamily: font.display, fontSize: 34, lineHeight: 40, color: JN.ink },
   word: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 17, color: JN.quiet },
   h: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22, color: JN.ink },
@@ -213,7 +222,7 @@ const s = StyleSheet.create({
   arrows: { flexDirection: 'row', gap: 4 },
   arrow: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   dowRow: { flexDirection: 'row' },
-  dow: { flex: 1, textAlign: 'center', fontFamily: font.bodyMedium, fontSize: 12, color: JN.quiet },
+  dow: { flex: 1, textAlign: 'center', fontFamily: font.bodyMedium, fontSize: 13, color: JN.quiet },
   week: { flexDirection: 'row' },
   day: { height: 46, alignItems: 'center', justifyContent: 'center', gap: 4 },
   dayN: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 19, color: 'rgba(235, 235, 245, 0.7)' },
@@ -222,7 +231,7 @@ const s = StyleSheet.create({
   feels: { gap: 14 },
   bars: { gap: 10 },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  barW: { width: 96, fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 19, color: JN.ink },
+  barW: { width: 116, fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 19, color: JN.ink },
   track: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   bar: { height: 26, borderRadius: 8 },
   barN: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 19, color: JN.ink },

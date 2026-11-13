@@ -196,6 +196,9 @@ describe('landing it', () => {
     /* the months after Mithras are not made up as free days: they are a gap, and Welcome back asks about it */
     expect(core.dayKnown(r.snap.days, st, '2026-06-01', tk)).toBe(false);
     expect(core.awayDue(r.snap.days, st, tk)).toMatchObject({ from: '2026-04-10' });
+    /* a person who just arrived never meets a fire burning low: the weeks after Mithras are not days they let this fire go */
+    expect(core.fireLow(r.snap.days, st, tk, now).step).toBe(0);
+    expect(core.fireLow(r.snap.days, st, '2026-11-17', now + 4 * 864e5).step).toBeGreaterThan(0);
     /* changed records: settings, each day, each entry */
     expect(r.changed[0]).toBe('settings');
     expect(r.changed.filter((x) => x.startsWith('days/'))).toHaveLength(40);

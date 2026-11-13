@@ -52,6 +52,14 @@ export function partDone(days: Days, st: Settings, k: DayKey): boolean {
   return !!p && ((p.tl?.length ?? 0) > 0 || (p.tt?.length ?? 0) > 0 || (p.fe?.length ?? 0) > 0);
 }
 
+/** where the fire's memory starts: the start of the log, or the day a Mithras journal first came over (mithras.ts), when that is later.
+    The days an import brings are a record of work done somewhere else: the weeks between Mithras and Daybook are never days the
+    person let this fire go, so a person who just arrived never meets a fire burning low. */
+export function fireStart(st: Settings): DayKey {
+  const m = st.mith && st.mith.d;
+  return m && m > st.start ? m : st.start;
+}
+
 const stepOf = (idle: number): LowStep => (idle >= LOW_AT[2] ? 3 : idle >= LOW_AT[1] ? 2 : idle >= LOW_AT[0] ? 1 : 0);
 
 /** the latest slip logged, in ms (for a slip told with no time, when it was told: hero.ts slipAt), looking back far enough for SLIP_HOURS */
@@ -91,7 +99,7 @@ function heatAfter(days: Days, st: Settings, tk: DayKey, k: DayKey, v: number, p
   return past ? Math.min(HEAT_CAP, v + 1) : v;
 }
 function fireTruth(days: Days, st: Settings, tk: DayKey, nowMs: number): FireLow {
-  const back = Math.min(LOOK_BACK, diffDays(tk, st.start));
+  const back = Math.min(LOOK_BACK, diffDays(tk, fireStart(st)));
   let v = 0;
   for (let i = back; i >= 1; i--) v = heatAfter(days, st, tk, addDays(tk, -i), v, true);
   let idle = 0;
@@ -112,11 +120,11 @@ function fireTruth(days: Days, st: Settings, tk: DayKey, nowMs: number): FireLow
 
 /** how low the fire burns today */
 export function fireLow(days: Days, st: Settings | null, tk: DayKey, nowMs: number): FireLow {
-  if (st && st.start && tk > st.start && truthOn(st, tk)) return fireTruth(days, st, tk, nowMs);
+  if (st && st.start && tk > fireStart(st) && truthOn(st, tk)) return fireTruth(days, st, tk, nowMs);
   const none: FireLow = { step: 0, low: 0, idle: 0, was: 0, warn: false };
-  if (!st || !st.start || tk <= st.start) return none;
+  if (!st || !st.start || tk <= fireStart(st)) return none;
   /* the days before today with nothing done, back to the start */
-  const back = Math.min(LOOK_BACK, diffDays(tk, st.start));
+  const back = Math.min(LOOK_BACK, diffDays(tk, fireStart(st)));
   let idle = 0;
   while (idle < back && !partDone(days, st, addDays(tk, -1 - idle))) idle++;
   const at = lastSlipMs(days, st, tk);

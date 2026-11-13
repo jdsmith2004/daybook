@@ -81,7 +81,7 @@ import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { useCameBack, useQuietAsks } from '@/lib/quiet-asks';
 import { useStore } from '@/lib/store';
-import { useMithrasPending } from '@/lib/mithras';
+import { useMithrasOpen, useMithrasPending } from '@/lib/mithras';
 import { useUnlock } from '@/lib/unlock';
 import { useNights } from '@/lib/health';
 import { LEAD_ROOM, NOTE_ROOM, useTodaySize } from '@/lib/today-size';
@@ -144,12 +144,15 @@ export default function Today() {
   const due = st && !syncing ? awayDue(snap.days, st, tk) : null;
   const asked = (sos.mem.backAsk && typeof sos.mem.backAsk === 'object' ? sos.mem.backAsk : null) as { from: string; n: number; d: string } | null;
   const askAgain = !!due && (!asked || asked.from !== due.from || (asked.n < 2 && asked.d !== tk));
+  /* the Mithras import (lib/mithras.ts) comes first: Welcome back waits until it is done and its moment has closed */
+  const miPending = useMithrasPending();
+  const miOpen = useMithrasOpen();
   useEffect(() => {
-    if (!ready || !due || !askAgain) return;
+    if (!ready || !due || !askAgain || miPending || miOpen) return;
     sos.setMem((m) => ({ ...m, backAsk: { from: due.from, n: asked && asked.from === due.from ? asked.n + 1 : 1, d: tk } }));
     router.push('/back');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, due?.from, askAgain, tk]);
+  }, [ready, due?.from, askAgain, tk, miPending, miOpen]);
 
   /* How are you feeling today? (core day-feel.ts, lib/day-open.ts): on the day's first open only, and only over Today:
      once Today is the screen in front, with no sheet on it and nothing else about to open (Welcome back, graduation).
@@ -163,7 +166,6 @@ export default function Today() {
   focusRef.current = focused;
   /* the link from Mithras came (lib/mithras.ts), and the import is not done or closed: it opens over Today once setup is done, first of all,
      since the person came here for it. Nothing else opens until it is answered. */
-  const miPending = useMithrasPending();
   const miNow = ready && !!st && miPending && !syncing && !sos.ur && !sos.timer;
   useEffect(() => {
     if (!miNow || !focused) return;

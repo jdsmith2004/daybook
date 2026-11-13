@@ -27,12 +27,12 @@ import { AppleButton } from '@/components/apple-button';
 import { Appear } from '@/components/appear';
 import { Field, Link } from '@/components/choices';
 import { FlameMedallion } from '@/components/flame-medallion';
-import { Dock, SceneFrame, Stage } from '@/components/scene';
+import { Dock, Finish, SceneFrame, Stage } from '@/components/scene';
 import { Button, T } from '@/components/ui';
 import { askApple } from '@/lib/apple';
 import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
-import { mithras, mithrasAppleOffered, mithrasHeld, setMithrasPending } from '@/lib/mithras';
+import { mithras, mithrasAppleOffered, mithrasHeld, setMithrasOpen, setMithrasPending } from '@/lib/mithras';
 import { close, closeAll } from '@/lib/nav';
 import { SAVE_FAILED, useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -55,6 +55,10 @@ export default function MithrasImport() {
   const how = useRef<'apple' | 'email'>('email');
   const fromLink = params.from !== 'settings';
 
+  useEffect(() => {
+    setMithrasOpen(true);
+    return () => setMithrasOpen(false);
+  }, []);
   useEffect(() => {
     mithrasAppleOffered().then(setApple, () => setApple(false));
     /* the link: remembered until the journal lands or this is closed, so a setup that must come first does not lose it */
@@ -198,13 +202,20 @@ export default function MithrasImport() {
     return (
       <SceneFrame title="From Mithras" sky="ember" onClose={closeAll}>
         <Stage key="done" dir={0}>
-          {flame(done.level.n, 1)}
-          <Appear by={12} delay={260} duration={420}>
-            <T v="title" style={s.c} accessibilityRole="header">
-              {words.h}
-            </T>
-            <T style={[s.c, s.gap]}>{words.p}</T>
-          </Appear>
+          {/* the first import is a celebration: the fire pops in at its new form and the shapes burst out once (scene.tsx Finish) */}
+          {done.campfire ? (
+            <Finish level={done.level.n} size={Math.min(win.width - 140, 220)} title={words.h} text={words.p} alive always least={0.7} />
+          ) : (
+            <>
+              {flame(done.level.n, 1)}
+              <Appear by={12} delay={260} duration={420}>
+                <T v="title" style={s.c} accessibilityRole="header">
+                  {words.h}
+                </T>
+                <T style={[s.c, s.gap]}>{words.p}</T>
+              </Appear>
+            </>
+          )}
           <Dock>
             <Button label="Done" onPress={closeAll} />
             {n ? <Link label="Open the journal" onPress={() => (closeAll(), setTimeout(() => router.push('/journal'), 350))} /> : null}
@@ -217,10 +228,10 @@ export default function MithrasImport() {
   if (step === 'reading' || step === 'landing')
     return (
       <SceneFrame title="From Mithras" sky="night" onClose={shut}>
-        {flame(level)}
         <T v="title" style={s.c} accessibilityRole="header">
           {step === 'reading' ? 'Finding your journal.' : 'Bringing it over.'}
         </T>
+        {flame(level)}
         <Dock>
           <ActivityIndicator color={c.sun} />
         </Dock>
@@ -235,9 +246,11 @@ export default function MithrasImport() {
           <T v="title" style={s.c} accessibilityRole="header">
             {empty ? 'This Mithras account is empty.' : look.entries ? 'Your journal is here.' : 'Your streak is here.'}
           </T>
-          <T tone="muted" style={s.c}>
-            {empty ? 'It has no journal entries and no streak to bring.' : 'Your goals, reflections and coach chats stay in Mithras.'}
-          </T>
+          {empty ? (
+            <T tone="muted" style={s.c}>
+              It has no journal entries and no streak to bring.
+            </T>
+          ) : null}
           {empty ? (
             flame(level)
           ) : (
@@ -253,6 +266,9 @@ export default function MithrasImport() {
                 {look.longest ? <T style={s.c}>Your longest run, {look.longest + (look.longest === 1 ? ' day' : ' days')}</T> : null}
                 {look.form ? <T style={[s.c, { color: c.sun }]}>Your fire starts as a {look.form}</T> : null}
               </View>
+              <T v="small" tone="muted" style={[s.c, s.stay]}>
+                Your goals, reflections and coach chats stay in Mithras.
+              </T>
             </View>
           )}
           {error}
@@ -308,6 +324,7 @@ export default function MithrasImport() {
             {error}
             <Button label="Find my journal" onPress={withEmail} disabled={!email.trim() || !pw} />
           </View>
+          {flame(level)}
         </Stage>
       </SceneFrame>
     );
@@ -340,5 +357,6 @@ const s = StyleSheet.create({
   mid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 4 },
   num: { fontFamily: font.display, fontSize: 88, lineHeight: 96, textAlign: 'center' },
   facts: { marginTop: 18, gap: 6 },
-  form: { gap: 14, marginTop: 20 },
+  stay: { marginTop: 16 },
+  form: { gap: 14, marginTop: 20, alignSelf: 'stretch' },
 });

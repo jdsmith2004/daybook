@@ -260,8 +260,10 @@ export const OB_PAGES: ObPage[] = [
   { id: 'faith', k: 'tiles', key: 'faith', list: OB_FAITH, h: 'Does faith play a part in this for you?', keep: 1 },
   /* after a Yes or a Somewhat: which faith the God lessons speak from (faith.ts) */
   { id: 'creed', k: 'tiles', key: 'creed', list: OB_CREED, h: 'Which faith is yours?', keep: 1, need: (a) => a.faith === 'big' || a.faith === 'some' },
-  /* tonight, set before it starts: the phone-down time, and (on a phone) the note an hour before it */
-  { id: 'tonight', k: 'tonight', need: isNew },
+  /* tonight, set before it starts: the phone-down time, and (on a phone) the note an hour before it. Only for porn: the
+     screens-off time and the phone plans are about the phone in bed, which other habits do not share (the owner, via WP3,
+     November 13, 2026) */
+  { id: 'tonight', k: 'tonight', need: (a, env) => !env.redo && habitIn(a) === 'porn' },
   /* the person lights their flame: the plan is saved, counting starts tonight (D14), and the first small goal is picked */
   { id: 'light', k: 'light', need: isNew },
   /* a free account, asked for last (CLAUDE.md): the flame was just lit. Never required: "Keep it on this phone" goes on. */
@@ -485,9 +487,13 @@ export const setFirstGoal = (st: Settings, n: number, now = Date.now()): Setting
 
 /** the first line of the plan (the first week, day 4): for the hardest moment setup heard, the "then" picked. Kept in the
     plan row and in setup's record, so the first week knows it is done. */
+/** the hard moments whose plans are about the phone in bed: offered for porn only (the owner, via WP3, November 13, 2026) */
+const PHONE_TOPS = ['late', 'tired', 'scroll'];
 export function obPlanLine(st: Settings): { top: string; when: string; ask: string; opts: string[] } {
   const a = ((st.onb && st.onb.a) || {}) as SetupAnswers;
-  const top = obTop(a);
+  const porn = habitOf(st) === 'porn';
+  const rest = (a.when || []).filter((w) => PHONE_TOPS.indexOf(w) < 0);
+  const top = porn ? obTop(a) : rest.length ? obTop({ when: rest }) : 'stress';
   const T = OB_THEN[top];
   return { top, when: T[1], ask: T[2], opts: T[3].slice() };
 }
@@ -509,12 +515,20 @@ export function setPlanLine(st: Settings, then: string, now = Date.now()): Setti
 /** the page that is the heart of setup: what the person said, read back with hope, and the three things that make this time
     different, each tied to what they told it. The flame says the last line. */
 export function obPromise(a: SetupAnswers): { h: string; rows: [string, string][]; say: string } {
-  const late = (a.when || []).some((w) => w === 'late' || w === 'tired' || w === 'scroll');
+  const porn = habitIn(a) === 'porn';
+  const late = porn && (a.when || []).some((w) => w === 'late' || w === 'tired' || w === 'scroll');
   const most = obMostDays(a);
   return {
     h: 'You are here. This time is different.',
     rows: [
-      ['moon', late ? 'Your hardest hour is at night. Tonight, we get there first.' : 'Tonight is set before it starts, not fought when it comes.'],
+      [
+        'moon',
+        late
+          ? 'Your hardest hour is at night. Tonight, we get there first.'
+          : porn
+            ? 'Tonight is set before it starts, not fought when it comes.'
+            : 'When the hard hour comes, the plan is already there.',
+      ],
       ['sunrise', 'Each morning, one honest tap. A slip is something to learn from, never a reset.'],
       ['flame', 'One short lesson a day. Everything you do feeds your fire, and you watch it grow.'],
     ],

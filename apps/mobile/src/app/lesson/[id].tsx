@@ -12,7 +12,6 @@
    come back", and the path goes on either way. The first lesson of the next step asks once more, before its cover, unless
    the deed was done, was asked about already, or there was a slip today or yesterday. */
 import {
-  UNLOCK_WORDS,
   type Block,
   type Beat,
   type Card,
@@ -102,7 +101,6 @@ import { useStore } from '@/lib/store';
 import { useSos } from '@/lib/sos';
 import { copyText } from '@/lib/words';
 import { useAccount } from '@/lib/sync';
-import { useUnlock } from '@/lib/unlock';
 import { font, MAX_WIDTH, PaletteOverride, toneOf, useTheme, type Tone } from '@/lib/theme';
 
 /** deed: a step's deed, after its last lesson (core steps.ts) */
@@ -139,8 +137,6 @@ export default function LessonScreen() {
   const L = found && lessonTo(found, st);
   /* back from a tool or a page the practice step sent the person to: straight to the result, nothing is replayed */
   const [stage, setStage] = useState<Stage>(at === 'practiced' ? 'practiced' : 'cover');
-  /* the first week (core unlock.ts; WP10): today's new part is this lesson's last card, set up right there */
-  const part = useUnlock();
   const [i, setI] = useState(0);
   /* what Daybook learns: when it opened, each part reached, and a lesson left before its end (lib/events.ts) */
   const opened = useRef(Date.now());
@@ -752,9 +748,7 @@ export default function LessonScreen() {
     );
     foot = (
       <View style={s.footCol}>
-        {part && !care ? (
-          <Next label={'One more: ' + UNLOCK_WORDS[part].h} onPress={() => router.replace({ pathname: '/unlock', params: { id: part } })} />
-        ) : next && !care ? (
+        {next && !care ? (
           <Next label={'Next: ' + next.title} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: next.id } })} />
         ) : (
           <Next label="Done" noIcon onPress={closeAll} />

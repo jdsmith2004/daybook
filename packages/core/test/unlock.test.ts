@@ -83,6 +83,10 @@ describe('the first week', () => {
     expect(got.person).toBe(5);
     expect(unlockNow({}, st, day(2), {}, { ...all, quiet: true })).toBeNull();
   });
+  it("brings the phone's bed only to people quitting porn", () => {
+    const drink = { ...st, onb: { n: 1, at: 1, a: { habit: 'alcohol' }, hist: [] } } as Settings;
+    expect(walk({}, drink, () => all).bed).toBeUndefined();
+  });
   it('skips a part already in use', () => {
     const named = { ...st, safePerson: 'Sam' } as Settings;
     const got = walk({}, named, () => ({ bedUsed: true, voiceUsed: true }));

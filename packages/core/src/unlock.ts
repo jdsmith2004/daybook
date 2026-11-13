@@ -22,6 +22,7 @@
    Once shown it stays the card for that day until opened, and is gone the next day: it lives where it always lives. The parts
    used to be the "Unlocked" cards (November 9, 2026); those are retired. Checked by test/unlock.test.ts. */
 import { addDays, diffDays, isKey, sumDay } from './legacy/core.js';
+import { habitOf } from './habit';
 import { safeName } from './rekindle';
 import type { DayKey, Days, Settings } from './types';
 
@@ -69,7 +70,8 @@ export const firstWeekDay = (st: Settings | null, tk: DayKey): number | null => 
 function used(id: UnlockId, st: Settings, env: UnlockEnv): boolean {
   switch (id) {
     case 'bed':
-      return !!env.bedUsed;
+      /* the phone's bed is for porn only (the owner, via WP3, November 13, 2026) */
+      return !!env.bedUsed || habitOf(st) !== 'porn';
     case 'person':
       return !!safeName(st);
     case 'plan': {

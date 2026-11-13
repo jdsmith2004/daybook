@@ -17,6 +17,7 @@ import {
   fmtDate,
   FOR_MAX,
   gameCompute,
+  igniteStartRow,
   isTime,
   keyOfDate,
   LEARN_FREE,
@@ -50,7 +51,8 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Appear } from '@/components/appear';
 import { Confetti } from '@/components/celebrate';
-import { FitArt, SHORT, useFitRoom } from '@/components/fit';
+import { SHORT, useFitRoom } from '@/components/fit';
+import { Ignition } from '@/components/ignite';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
 import { Answer, AnswerText, BESIDE, Prog, Question, Shell } from '@/components/lesson-parts';
 import { Ghost, Next } from '@/components/lx';
@@ -114,7 +116,7 @@ export default function Setup() {
   const voice = obSay(pg.id, f.redo, habit);
   /* the sky goes from night to dawn across setup; the lighting is on the violet night until the flame is lit */
   const [lit, setLit] = useState(false);
-  const kind: LookKind = pg.k === 'light' && !lit ? 'violet' : pg.k === 'light' || pg.k === 'account' ? 'sun' : 'sky';
+  const kind: LookKind = pg.k === 'light' || pg.k === 'account' ? 'sun' : 'sky';
   const p = P.length > 1 ? i / (P.length - 1) : 1;
   const look = lessonLook(kind, p, base.scheme);
   const c = look.c;
@@ -440,10 +442,8 @@ export default function Setup() {
     }
     case 'light': {
       body = (
-        <Lighting
-          lit={lit || f.saved}
+        <FirstGoal
           goal={st?.fwGoal ?? null}
-          onLight={light}
           onGoal={(n) => {
             if (st) apply({ st: setFirstGoal(st, n) });
             setPulse((x) => x + 1);
@@ -451,12 +451,11 @@ export default function Setup() {
           }}
         />
       );
-      foot =
-        (lit || f.saved) && st?.fwGoal ? (
-          <Appear key="n" delay={200} style={s.footOne}>
-            <Next label={i < P.length - 1 ? 'Keep going' : 'Go to Today'} noIcon onPress={() => (i < P.length - 1 ? go(1) : finish())} />
-          </Appear>
-        ) : null;
+      foot = st?.fwGoal ? (
+        <Appear key="n" delay={200} style={s.footOne}>
+          <Next label={i < P.length - 1 ? 'Keep going' : 'Go to Today'} noIcon onPress={() => (i < P.length - 1 ? go(1) : finish())} />
+        </Appear>
+      ) : null;
       break;
     }
     case 'account': {
@@ -549,6 +548,23 @@ export default function Setup() {
     }
   }
 
+  /* the first lighting is WP8's Ignition, the whole screen: from 0 to Day 1, with the coming week as its row. The plan is saved as
+     the person goes on from it (counting starts tonight), and the goal step follows on this same page. */
+  if (pg.k === 'light' && !f.saved)
+    return (
+      <Ignition
+        level={1}
+        from="0"
+        to="Day 1"
+        unit="is today"
+        line="You lit me. Tonight is the first night, and I am with you for it."
+        row={igniteStartRow(tk)}
+        pop={0}
+        button="Keep going"
+        onDone={() => void light()}
+        onClose={exit}
+      />
+    );
   const fin = f.saved && !f.redo;
   const noBack = i === 0 || f.saved;
   const barLabel = fin ? 'Setup complete' : (f.redo ? 'How Daybook works: ' : 'Set up Daybook: ') + 'page ' + (i + 1) + ' of ' + P.length;
@@ -557,7 +573,7 @@ export default function Setup() {
       look={look}
       level={flameLevel}
       /* before it is lit, the flame is the ember on the lighting page, not the gliding flame */
-      flameOn={!(pg.k === 'light' && !lit && !f.saved)}
+      flameOn
       pulse={pulse}
       inset={inset}
       scroll={scroll}
@@ -583,159 +599,37 @@ export default function Setup() {
   );
 }
 
-/* ---------- lighting the flame (Duolingo's streak ignition, translated: the person lights their own fire) ----------
-   The beats: the screen waits dark with an ember in the flame's place, pulsing, and one line: swipe up to light it. The person
-   swipes (or taps twice, or a screen reader's activate). The ember flares, confetti falls, the flame is there, big and alive;
-   then "1" lands, "Tonight is night one."; the week's row comes in with tonight's dot; and last, the first small goal, picked
-   by the person (three nights or seven: no big goals before a clean week). The button waits until a goal is picked, so
-   nobody taps past the moment. Built here until the celebrations kit (WP8) has its own ignition; then this uses that. */
-function Lighting({ lit, goal, onLight, onGoal }: { lit: boolean; goal: number | null; onLight: () => void; onGoal: (n: number) => void }) {
-  const c = useTheme();
-  const { tk } = useStore();
-  const [rain] = useState(() => Date.now());
-  const week = Array.from({ length: 7 }, (_, j) => {
-    const d = new Date(tk + 'T12:00:00');
-    d.setDate(d.getDate() + j);
-    return ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()];
-  });
-  if (!lit)
-    return (
-      <>
-        <T v="title" style={[s.title26, { color: nightInk.ink, textAlign: 'center' }]} accessibilityRole="header">
-          Light your flame.
-        </T>
-        <Ember onLight={onLight} />
-      </>
-    );
+/* ---------- the first small goal, after the flame is lit (core ignite.ts igniteGoal: three nights, then seven) ----------
+   The lighting itself is WP8's Ignition (components/ignite.tsx), shown as the whole screen before this. Then the flame, big, asks
+   for a first goal, and the person picks it: three nights or seven, nothing bigger before a clean week (CLAUDE.md). Picking is the
+   commitment (Duolingo found an active choice, with nothing picked for you, holds better), so the button waits for it. */
+function FirstGoal({ goal, onGoal }: { goal: number | null; onGoal: (n: number) => void }) {
   return (
     <>
-      <Confetti key={rain} big rain />
+      <Head h="Your first goal." />
       <FlameSlot size={SHORT ? 220 : 280} min={SHORT ? 150 : 190} />
-      <Appear delay={500} by={16}>
-        <View style={{ alignItems: 'center' }} accessible accessibilityLabel="Night 1. Tonight is night one.">
-          <Text style={[s.big, { color: c.ink }]}>1</Text>
-          <T v="label">Tonight is night one.</T>
-        </View>
-      </Appear>
-      <Appear delay={1100} by={10}>
-        <View style={s.week} accessible accessibilityLabel="Your first week starts tonight.">
-          {week.map((d, j) => (
-            <View key={j} style={{ alignItems: 'center', gap: 6 }}>
-              <T v="small" tone={j === 0 ? undefined : 'muted'}>
-                {d}
-              </T>
-              <View style={[s.dot, j === 0 ? { backgroundColor: c.sun, borderColor: c.sun } : { borderColor: c.line }]}>
-                {j === 0 ? <Icon name="flame" size={14} color="#33240A" /> : null}
-              </View>
-            </View>
+      <View style={{ gap: 10, alignSelf: 'stretch' }}>
+        <Bubble
+          text={
+            goal
+              ? goal === 3
+                ? 'Three nights. Then we go for seven.'
+                : 'A whole week. I will light up every morning you tell me.'
+              : 'Pick one. Small is how it starts.'
+          }
+        />
+        <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
+          {OB_FIRST.map((n) => (
+            <Answer key={n} sel={goal === n} right={goal === n} onPress={() => onGoal(n)} style={s.goal} label={n + ' free nights'}>
+              <Text style={[s.goalN, { color: goal === n ? '#FFFFFF' : PAPER_INK }]}>{n}</Text>
+              <AnswerText right={goal === n} center>
+                free nights
+              </AnswerText>
+            </Answer>
           ))}
         </View>
-      </Appear>
-      <Appear delay={1700} by={10}>
-        <View style={{ gap: 10, alignSelf: 'stretch' }}>
-          <Bubble
-            text={
-              goal
-                ? goal === 3
-                  ? 'Three nights. Then we go for seven.'
-                  : 'A whole week. I will light up every morning you tell me.'
-                : 'You lit me. Now pick your first goal.'
-            }
-          />
-          <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
-            {OB_FIRST.map((n) => (
-              <Answer key={n} sel={goal === n} right={goal === n} onPress={() => onGoal(n)} style={s.goal} label={n + ' free nights'}>
-                <Text style={[s.goalN, { color: goal === n ? '#FFFFFF' : PAPER_INK }]}>{n}</Text>
-                <AnswerText right={goal === n} center>
-                  free nights
-                </AnswerText>
-              </Answer>
-            ))}
-          </View>
-        </View>
-      </Appear>
+      </View>
     </>
-  );
-}
-
-/** the unlit flame: a dark drop with an ember in it, pulsing, that the person swipes up to light. A tap says how; a second
-    tap lights it too, and a screen reader's activate lights it. */
-function Ember({ onLight }: { onLight: () => void }) {
-  const reduce = useReducedMotion();
-  const k = useRef(new Animated.Value(0)).current;
-  const lift = useRef(new Animated.Value(0)).current;
-  const [hint, setHint] = useState('Swipe up to light it');
-  const tapped = useRef(false);
-  const done = useRef(false);
-  const go = () => {
-    if (done.current) return;
-    done.current = true;
-    onLight();
-  };
-  useEffect(() => {
-    if (reduce) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(k, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
-        Animated.timing(k, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [reduce, k]);
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 6,
-        onPanResponderGrant: () => buzz('tick'),
-        onPanResponderMove: (_e, g) => lift.setValue(Math.max(-90, Math.min(0, g.dy))),
-        onPanResponderRelease: (_e, g) => {
-          if (g.dy < -50 || g.vy < -0.6) return go();
-          Animated.spring(lift, { toValue: 0, useNativeDriver: NATIVE }).start();
-          if (Math.abs(g.dy) < 8) {
-            if (tapped.current) return go();
-            tapped.current = true;
-            setHint('Swipe up, or tap again');
-          }
-        },
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-  const glow = k.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] });
-  return (
-    <View style={s.emberWrap}>
-      <View
-        {...pan.panHandlers}
-        accessible
-        accessibilityRole="button"
-        accessibilityLabel="Light your flame"
-        accessibilityHint="Swipe up, or tap twice"
-        accessibilityActions={[{ name: 'activate' }]}
-        onAccessibilityAction={go}
-        style={s.ember}>
-        <Animated.View style={{ transform: [{ translateY: lift }] }}>
-          <FitArt min={0.6}>
-            <Svg width={180} height={220} viewBox="0 0 180 220">
-              <Path d="M90 8 C 120 60 165 95 165 140 A 75 75 0 0 1 15 140 C 15 95 60 60 90 8 Z" fill="#2B2350" stroke="#4A3F7A" strokeWidth={3} />
-            </Svg>
-          </FitArt>
-          <Animated.View style={[s.coal, { opacity: glow, transform: [{ scale: glow }] }]}>
-            <Svg width={56} height={56} viewBox="0 0 56 56">
-              <Circle cx={28} cy={28} r={26} fill="#FF9F43" opacity={0.35} />
-              <Circle cx={28} cy={28} r={14} fill="#FFC857" />
-            </Svg>
-          </Animated.View>
-        </Animated.View>
-      </View>
-      <View style={{ alignItems: 'center', gap: 4 }}>
-        <Icon name="up" size={22} color={nightInk.ink} />
-        <Text style={[s.hint, { color: nightInk.ink }]} accessibilityLiveRegion="polite">
-          {hint}
-        </Text>
-      </View>
-    </View>
   );
 }
 

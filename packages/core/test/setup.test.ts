@@ -123,6 +123,15 @@ describe('setup in two minutes (WP10)', () => {
     );
     expect(core.obAskCount({})).toBe(5);
   });
+  it('asks the phone-down time only of people quitting porn (the owner, via WP3)', () => {
+    for (const habit of ['alcohol', 'gambling', 'other']) {
+      expect(core.obPages({ habit }).map((p) => p.id)).not.toContain('tonight');
+      expect(core.obPromise({ habit, when: ['late'] }).rows[0][1]).not.toMatch(/night|phone/i);
+      const st = core.obBegin({ habit, when: ['late', 'scroll'] }, '2026-11-12' as core.DayKey, 0);
+      for (const t of core.obPlanLine(st).opts) expect(t).not.toMatch(/phone|bed/i);
+    }
+    expect(core.obPages({ habit: 'porn' }).map((p) => p.id)).toContain('tonight');
+  });
   it('asks the same questions on a walk-through, then the changes to keep', () => {
     expect(core.obPages({}, { redo: true, account: true }).map((p) => p.id)).toEqual(['hello', 'habit', 'freq', 'when', 'for', 'faith', 'review', 'done']);
   });

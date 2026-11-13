@@ -165,6 +165,9 @@ export function Walk({
   );
   const [mine, setMine] = useState<string[]>([]);
   const holdWords = mine;
+  /* writing what holds it down in their own words: the box opens in place of the question */
+  const [ownHold, setOwnHold] = useState(false);
+  const [holdDraft, setHoldDraft] = useState('');
   /* the first number of the walk: a second round starts from the number after the first, and the record keeps both ends */
   const [first, setFirst] = useState<number | null>(null);
   const [where, setWhere] = useState<string | null>(null);
@@ -252,6 +255,10 @@ export function Walk({
     } else go('hold');
   };
   const back = () => {
+    /* a box for their own words, open: back closes it, to the chips */
+    if (part === 'hold' && ownHold) return setOwnHold(false);
+    if (part === 'plan' && ownMove) return setOwnMove(false);
+    if (part === 'line' && ownLine) return setOwnLine(false);
     const i = ORDER.indexOf(part);
     if (i <= 0) return;
     /* a skipped beat is skipped going back too */
@@ -321,37 +328,81 @@ export function Walk({
   /* ---------- 2b. why a 6, and not a 9? ---------- */
   if (part === 'hold' && n0 != null && whyNot != null) {
     const any = holds.length > 0 || holdWords.length > 0;
-    words = (
-      <Rise>
-        <Text style={s.title} accessibilityRole="header">
-          {'Why a ' + n0 + ', and not a ' + whyNot + '?'}
-        </Text>
-      </Rise>
-    );
-    middle = <Coach level={level} say={any ? walkHoldBack(n0, holds, holdWords) : WALK_COACH.hold.say} beat="hold" pulse={holds.length + mine.length} />;
-    dock = (
-      <>
-        {reasons.length ? (
-          <Chips
-            label="Your reasons"
-            multi
-            opts={reasons.map((r) => ({ id: r, label: r }))}
-            on={mine}
-            onPick={(r) => setMine((l) => (l.indexOf(r) >= 0 ? l.filter((x) => x !== r) : l.concat(r)))}
+    /* their own words, written here, are chips of their own beside their reasons */
+    const written = mine.filter((r) => reasons.indexOf(r) < 0);
+    const saveOwn = () => {
+      const t = holdDraft.trim().replace(/\s+/g, ' ');
+      if (t && mine.indexOf(t) < 0) setMine((l) => l.concat(t));
+      setHoldDraft('');
+      setOwnHold(false);
+    };
+    if (ownHold) {
+      /* the box and its button stay at the top, above the keyboard */
+      words = (
+        <Rise>
+          <Text style={s.over}>{'Why a ' + n0 + ', and not a ' + whyNot + '?'}</Text>
+          <Text style={s.title} accessibilityRole="header">
+            What is holding it down?
+          </Text>
+          <TextInput
+            accessibilityLabel="What is holding it down, in your words"
+            autoFocus
+            maxLength={60}
+            value={holdDraft}
+            onChangeText={setHoldDraft}
+            onSubmitEditing={saveOwn}
+            returnKeyType="done"
+            placeholder="Like: I promised myself"
+            placeholderTextColor={TW.muted}
+            style={s.box}
           />
-        ) : null}
-        <Chips
-          label="What is holding it down"
-          multi
-          opts={walkHolds(faith)
-            .filter(([id]) => !(id === 'reasons' && reasons.length))
-            .map(([id, w]) => ({ id, label: w }))}
-          on={holds}
-          onPick={(id) => setHolds((h) => (h.indexOf(id) >= 0 ? h.filter((x) => x !== id) : h.concat(id)))}
-        />
-        <Button label="Next" onPress={() => go('body')} />
-      </>
-    );
+          <View style={s.write}>
+            <Button label="Add it" disabled={!holdDraft.trim()} onPress={saveOwn} />
+          </View>
+        </Rise>
+      );
+      middle = null;
+      dock = null;
+    } else {
+      words = (
+        <Rise>
+          <Text style={s.title} accessibilityRole="header">
+            {'Why a ' + n0 + ', and not a ' + whyNot + '?'}
+          </Text>
+        </Rise>
+      );
+      middle = <Coach level={level} say={any ? walkHoldBack(n0, holds, holdWords) : WALK_COACH.hold.say} beat="hold" pulse={holds.length + mine.length} />;
+      dock = (
+        <>
+          {/* the person's reasons, their own words and what else holds it down, as one group, so the rows pack together */}
+          <Chips
+            label="What is holding it down"
+            multi
+            opts={reasons
+              .concat(written)
+              .map((r): { id: string; label: string; own?: boolean } => ({ id: 'r:' + r, label: r }))
+              .concat(
+                walkHolds(faith)
+                  .filter(([id]) => !(id === 'reasons' && reasons.length))
+                  .map(([id, w]) => ({ id: id as string, label: w })),
+              )
+              .concat([{ id: 'own', label: OWN, own: true }])}
+            on={mine.map((r) => 'r:' + r).concat(holds)}
+            onPick={(id) => {
+              if (id === 'own') {
+                setOwnHold(true);
+              } else if (id.startsWith('r:')) {
+                const r = id.slice(2);
+                setMine((l) => (l.indexOf(r) >= 0 ? l.filter((x) => x !== r) : l.concat(r)));
+              } else {
+                setHolds((l) => (l.indexOf(id) >= 0 ? l.filter((x) => x !== id) : l.concat(id)));
+              }
+            }}
+          />
+          <Button label="Next" onPress={() => go('body')} />
+        </>
+      );
+    }
   }
 
   /* ---------- 3. notice it in the body ---------- */
@@ -466,24 +517,21 @@ export function Walk({
       <>
         <Chips
           label="What it is telling you"
-          opts={WALK_LINES.map((x) => ({ id: x.id, label: x.line }))}
-          on={line ? [line] : []}
+          opts={WALK_LINES.map((x): { id: WalkLine | 'own'; label: string; own?: boolean } => ({ id: x.id, label: x.line })).concat([
+            { id: 'own', label: lineOwn.trim() || OWN, own: true },
+          ])}
+          on={line ? [line] : lineOwn.trim() ? ['own'] : []}
           onPick={(x) => {
+            if (x === 'own') {
+              setLine(null);
+              setOwnLine(true);
+              return;
+            }
             setLine(x);
             setLineOwn('');
           }}
         />
         <Button label={L ? 'Now answer it' : 'Next'} onPress={() => go('answer')} />
-        <View style={s.center}>
-          <Link
-            label="It says something else"
-            tone="muted"
-            onPress={() => {
-              setLine(null);
-              setOwnLine(true);
-            }}
-          />
-        </View>
       </>
     );
   }
@@ -592,6 +640,7 @@ export function Walk({
     ) : (
       <Chips
         label="Where you are with it"
+        ordered
         opts={WALK_STAGES.map(([id, w]) => ({ id, label: w }))}
         on={stage ? [stage] : []}
         onPick={(x) => {
@@ -757,6 +806,7 @@ export function Walk({
           <Text style={s.ask}>When</Text>
           <Chips
             label="When it may come back"
+            ordered
             opts={when}
             on={mo ? [mo] : []}
             onPick={(x) => {
@@ -772,8 +822,12 @@ export function Walk({
             label="What you will do"
             multi
             opts={offered
-              .map((m) => ({ id: m as string, label: TALK_MOVES[m][0], tag: talkHeldTag(held, m) || undefined }))
-              .concat([{ id: 'own', label: moveOwn.trim() || 'My own idea', tag: undefined }])}
+              .map((m): { id: string; label: string; tag?: string; own?: boolean } => ({
+                id: m,
+                label: TALK_MOVES[m][0],
+                tag: talkHeldTag(held, m) || undefined,
+              }))
+              .concat([{ id: 'own', label: moveOwn.trim() || OWN, own: true }])}
             on={(moves as string[]).concat(moveOwn.trim() ? ['own'] : [])}
             onPick={(m) => {
               if (m === 'own') {
@@ -992,36 +1046,51 @@ function WaveOnce() {
   return <WaveLine p={p} />;
 }
 
-/** a wrap of choices in the trail's look: tap one (or several) */
+/** a wrap of choices in the trail's look: tap one (or several). An option marked own is the person's own answer: a pencil
+    and a dashed edge set it apart, it always packs last, and it reads "Write my own" until they have written one. */
 function Chips<K extends string>({
   label,
   opts,
   on,
   onPick,
   multi,
+  ordered,
 }: {
   label: string;
-  opts: { id: K; label: string; tag?: string }[];
+  opts: { id: K; label: string; tag?: string; own?: boolean }[];
+  /** the order carries meaning (steps, times of day): keep it, and only wrap */
+  ordered?: boolean;
   on: string[];
   onPick: (id: K) => void;
   multi?: boolean;
 }) {
+  let ownTail = 0;
+  while (ownTail < opts.length && opts[opts.length - 1 - ownTail].own) ownTail++;
+  const tail = ownTail + noneTail(opts.slice(0, opts.length - ownTail).map((o) => o.label));
   return (
-    <Packed last={noneTail(opts.map((o) => o.label))} accessibilityRole={multi ? undefined : 'radiogroup'} accessibilityLabel={label}>
+    <Packed last={tail} ordered={ordered} accessibilityRole={multi ? undefined : 'radiogroup'} accessibilityLabel={label}>
       {opts.map((o) => {
         const sel = on.indexOf(o.id) >= 0;
+        const ink = sel ? '#06352A' : o.own ? TW.mint : TW.ink;
         return (
           <Pressable
             key={o.id}
-            accessibilityRole={multi ? 'checkbox' : 'radio'}
-            accessibilityState={{ checked: sel }}
+            accessibilityRole={o.own && !sel ? 'button' : multi ? 'checkbox' : 'radio'}
+            accessibilityState={o.own && !sel ? undefined : { checked: sel }}
             accessibilityLabel={o.tag ? o.label + '. ' + o.tag : o.label}
             onPress={() => {
               buzz('tick');
               onPick(o.id);
             }}
-            style={({ pressed }) => [s.chip, sel ? s.chipOn : null, { opacity: pressed ? 0.85 : 1 }]}>
-            <Text style={[s.chipT, { color: sel ? '#06352A' : TW.ink }]}>{o.label}</Text>
+            style={({ pressed }) => [s.chip, o.own && !sel ? s.chipOwn : null, sel ? s.chipOn : null, { opacity: pressed ? 0.85 : 1 }]}>
+            {o.own ? (
+              <View style={s.ownRow}>
+                <Icon name="pencil" size={16} color={ink} />
+                <Text style={[s.chipT, s.ownT, { color: ink }]}>{o.label}</Text>
+              </View>
+            ) : (
+              <Text style={[s.chipT, { color: ink }]}>{o.label}</Text>
+            )}
             {o.tag ? <Text style={[s.chipTag, { color: sel ? '#06352A' : TW.mint }]}>{o.tag}</Text> : null}
           </Pressable>
         );
@@ -1029,6 +1098,9 @@ function Chips<K extends string>({
     </Packed>
   );
 }
+
+/** the words on a "write my own" chip: theirs once written */
+const OWN = 'Write my own';
 
 /** the coach: the person's own flame in the middle, saying one short line in a bubble, as in a lesson. It leaps when an
     answer is picked (pulse). "Why this works" turns the bubble to the reason, with the papers under it, a tap away. */
@@ -1344,6 +1416,10 @@ const s = StyleSheet.create({
   write: { marginTop: 14, gap: 10 },
   chip: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 22, backgroundColor: TW.bubble, justifyContent: 'center' },
   chipOn: { backgroundColor: TW.mint },
+  // the person's own answer: no fill, a dashed mint edge, so it reads as a different kind of choice
+  chipOwn: { backgroundColor: 'transparent', borderWidth: 1.5, borderStyle: 'dashed', borderColor: TW.mint, paddingHorizontal: 12.5, paddingVertical: 8.5 },
+  ownRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  ownT: { flexShrink: 1 },
   chipT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   chipTag: { fontFamily: font.body, fontSize: 13, lineHeight: 17 },
   num: { alignItems: 'center' },

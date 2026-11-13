@@ -43,18 +43,20 @@ export function OwnField({ placeholder, max, onSave, onCancel }: { placeholder: 
   );
 }
 
-export function OwnChip({ onPress, label = 'Your own' }: { onPress: () => void; label?: string }) {
+/** "Write my own": the choice that opens a box for the person's own answer. A pencil and a dashed edge set it apart from
+    the answers beside it, and it stays last in its group (Packed last). */
+export function OwnChip({ onPress, label = 'Write my own' }: { onPress: () => void; label?: string }) {
   const c = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label === 'Your own' ? 'Add your own' : label}
+      accessibilityLabel={label}
       onPress={() => {
         buzz('tap');
         onPress();
       }}
-      style={({ pressed }) => [s.ownChip, { borderColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
-      <Icon name="plus" size={16} color={c.accentText} />
+      style={({ pressed }) => [s.ownChip, { borderColor: c.accent, opacity: pressed ? 0.7 : 1 }]}>
+      <Icon name="pencil" size={16} color={c.accentText} />
       <Text style={[s.ownChipT, { color: c.accentText }]}>{label}</Text>
     </Pressable>
   );
@@ -74,5 +76,5 @@ const s = StyleSheet.create({
     borderWidth: 2,
     borderStyle: 'dashed',
   },
-  ownChipT: { fontFamily: font.bodySemi, fontSize: 15 },
+  ownChipT: { fontFamily: font.bodySemi, fontSize: 15, flexShrink: 1 },
 });

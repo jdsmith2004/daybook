@@ -141,7 +141,7 @@ export function landXml(l: MapLand, m: LessonMap, o: { dark: boolean; bg: string
       `<path transform="translate(${right ? 24 : 318} ${l.top + 318}) scale(.46)" d="${CLOUD}" fill="#fff" opacity=".7"/>`;
   x += `<ellipse cx="${l.pic.x}" cy="${l.pic.y + 56}" rx="74" ry="20" fill="${land.hill}"/>`;
   /* a land still wholly ahead keeps its picture, drawn quiet */
-  x += l.ahead ? `<g opacity="${o.dark ? 0.32 : 0.4}">` : `<circle cx="${l.pic.x}" cy="${l.pic.y}" r="84" fill="url(#${id}g)"/><g>`;
+  x += l.ahead ? `<g opacity="${o.dark ? 0.6 : 0.62}">` : `<circle cx="${l.pic.x}" cy="${l.pic.y}" r="84" fill="url(#${id}g)"/><g>`;
   x += `<g transform="translate(${l.pic.x - 66} ${l.pic.y - 66}) scale(1.1)">${sectionArtInner(l.u, id + 'a')}</g></g>`;
   x += tree(l.tree.x, l.tree.y, crown, o.dark ? mix(land.hill, '#000000', 0.3) : '#C49A70');
   const fx = right ? l.pic.x - 64 : l.pic.x + 34;

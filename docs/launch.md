@@ -115,7 +115,7 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 - **Category:** Health & Fitness. Second: Lifestyle.
 - **Keywords:** `habit,quit,urges,recovery,relapse,self control,addiction,tracker,clean,sober,journal,accountability`
   (no other app's name or trademark, by the store's rules)
-- **Promotional text:** Free, with no ads and no tracking. Care is free for everyone. A slip is data, not a reset.
+- **Promotional text:** Free, with no ads and nothing sold. A slip is data, not a reset.
 - **What's New in This Version** (only once a version has been released before; a first version has no such box):
 
   > Your flame is bigger, in a clear sky, with nothing written over it. Lessons have a new look, and the fire moves at its
@@ -137,7 +137,7 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   > • Graduation: a permanent award at 90 days with no slip.
   >
   > Private by design
-  > • No ads. No tracking. Nothing is sold.
+  > • No ads. Nothing is sold. Anonymous counts only.
   > • Your log stays on your phone. A free account is optional: sign in with Apple or an email, and it opens every
   > lesson. Delete my account removes everything.
   > • Face ID lock, and a plain name and icon on your home screen.
@@ -235,7 +235,7 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   > with and without a slip. The nights stay on the device: they are never sent to our server, synced, backed up or used
   > for anything else. To see it, connect Apple Health in More with sleep data in the simulator's Health app.
   >
-  > The app has no ads and no tracking. Reminders are local notifications made on the device, with plain words that do
+  > The app has no ads, sells nothing, and counts only anonymous totals of how it is used. Reminders are local notifications made on the device, with plain words that do
   > not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
 
 - **Sign-in for App Review:** make a test account in the TestFlight app first (More, then Sync between devices), with a

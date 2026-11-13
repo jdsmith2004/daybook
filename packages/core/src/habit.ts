@@ -33,6 +33,9 @@ export const HABIT_NAME: Record<Habit, string> = { porn: 'Porn', alcohol: 'Alcoh
 /** a line written for porn, in this habit's words. Only the fixed phrases below change; any other line is left as it is.
     Order matters: the longer phrase goes first. */
 const SWAPS: [string, Record<Exclude<Habit, 'porn'>, string>][] = [
+  /* the five-question check (OB_BPS): "pornography" must go before the plain "porn" swaps cut it in half */
+  ['using pornography', { alcohol: 'drinking', gambling: 'gambling', other: 'doing it' }],
+  ['use pornography', { alcohol: 'drink', gambling: 'gamble', other: 'do it' }],
   ['compulsive porn use', { alcohol: 'problem drinking', gambling: 'compulsive gambling', other: 'a compulsive habit' }],
   ['struggling with porn', { alcohol: 'struggling with drinking', gambling: 'struggling with gambling', other: 'struggling with a habit' }],
   ['how often do you watch porn', { alcohol: 'how often do you drink', gambling: 'how often do you gamble', other: 'how often does it happen' }],

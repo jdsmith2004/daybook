@@ -343,9 +343,9 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
             }>
             <SetPick
               options={[
-                ['gentle', 'Gentle'],
-                ['strict', 'Strict'],
-                ['step', 'Step down'],
+                ['gentle', 'Gentle', 'Counts the no-slip days in the last 7. A slip takes one day off.'],
+                ['strict', 'Strict', 'Counts days in a row. A slip puts it back to 0.'],
+                ['step', 'Step down', 'Counts the hours since your last slip, for when it happens often.'],
               ]}
               value={st.cleanMode === 'gentle' ? 'gentle' : st.cleanMode === 'step' ? 'step' : 'strict'}
               onPick={(v) => apply(setCountMode(st, v, tk))}
@@ -377,7 +377,9 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
           value: fa === 'no' ? 'Off' : cr === 'lds' ? 'Latter-day Saint' : cr === 'christian' ? 'Christian' : 'On',
           body: (
             <>
-              <SetGroup head="Does faith play a part in this for you?" foot="Yes or Somewhat adds lessons that speak of God. Every tool stays the same.">
+              <SetGroup
+                head="Does faith play a part in this for you?"
+                foot="Yes or Somewhat adds lessons that speak of God, and a Faith and recovery page in Get help. No leaves them all out.">
                 <SetPick
                   options={[
                     ['big', 'Yes'],
@@ -536,7 +538,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
             head="SOS suggests first"
             foot={
               pin
-                ? 'SOS puts ' + pin.name + ' first every time. It still keeps track of what helps.'
+                ? 'SOS puts ' + pin.name + ' first when it can. It still keeps track of what helps.'
                 : 'SOS learns which tools help you, and picks the best fit for the moment.'
             }>
             <SetPick

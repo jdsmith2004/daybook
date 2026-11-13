@@ -24,6 +24,7 @@ import {
   toggleSafety,
   habitOf,
   safetyFor,
+  faithOut,
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
@@ -386,11 +387,11 @@ function Why({ fresh, add }: { fresh?: string; add?: string }) {
       <ListCard
         k="words"
         title="Words that steady me"
-        sub="A verse, a prayer, or a line. They show in Get help and in the faith lessons."
+        sub={faithOut(st) ? 'A line that steadies you. It shows in Get help.' : 'A verse, a prayer, or a line. They show in Get help and in the faith lessons.'}
         icon="star"
         tone="violet"
         addLabel="Add words"
-        placeholder="A verse, a prayer, or a line that steadies you"
+        placeholder={faithOut(st) ? 'A line that steadies you' : 'A verse, a prayer, or a line that steadies you'}
         fresh={litRow(fresh, 'words')}
         openAdd={add === 'words'}
       />

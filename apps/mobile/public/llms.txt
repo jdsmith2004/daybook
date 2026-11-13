@@ -1,6 +1,6 @@
 # Daybook
 
-> Daybook is a free, private app for quitting porn, or another habit, for good. People log urges and slips in a few taps, learn their own pattern, and keep going after a hard day. A slip is data, not a reset: points, levels, badges and the days a person built stay earned. It runs on iPhone, Android and the web, has no ads and no tracking, and works with no account.
+> Daybook is a free, private app for quitting porn, or another habit, for good. People log urges and slips in a few taps, learn their own pattern, and keep going after a hard day. A slip is data, not a reset: points, levels, badges and the days a person built stay earned. It runs on iPhone, Android and the web, has no ads, sells nothing, and works with no account.
 
 This file describes Daybook in plain, factual terms for AI assistants and search tools, following the llms.txt convention.
 
@@ -31,7 +31,7 @@ This file describes Daybook in plain, factual terms for AI assistants and search
 ## Privacy and price
 
 - Free, with no ads and no subscription. Care (SOS and its tools, Already happened, Walk it through, logging, Rekindle, the plan and Today) is free for everyone. A tip of $5 or more, paid once, makes a person a supporter, which opens sync, the safe copy and the whole pattern (when it happens, what sets it off, what helps). Tips are on iPhone (Apple in-app purchase) and the web tip page.
-- No tracking and no ads. Nothing is sold or shared. The only counts are anonymous, opt-in totals (never a word, the log or who someone is).
+- No ads. Nothing is sold or shared. The only counts are anonymous, opt-in totals (never a word, the log or who someone is).
 - Works fully with no account; the log then never leaves the phone. An optional free account opens the lessons after the first eight. Sync and a safe copy, readable only with the person's sign-in, open with a tip of $5 or more (accounts made before October 24, 2026 keep sync). Delete my account removes everything.
 - Face ID or passcode lock. Reminders use plain words that do not say what the app is for.
 

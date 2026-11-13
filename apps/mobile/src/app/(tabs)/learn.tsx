@@ -7,6 +7,7 @@ import {
   blankP,
   changeSettings,
   gameCompute,
+  faithOut,
   lcheckAbout,
   lcheckDue,
   lcheckNo,
@@ -15,7 +16,6 @@ import {
   type Lesson,
   LESSONS,
   lessonCount,
-  faithOut,
   lessonMap,
   lmin,
   lessonNo,
@@ -290,7 +290,6 @@ function LessonsPane({
   const sync = useSync();
   const open = (L: Lesson) => lessonOpen(L, done, account);
   const waiting = lessonsLocked(lessonPathFor(st), done, account);
-  const [faith, setFaith] = useState(false);
   const [more, setMore] = useState(false);
   /* the map's place in the pane and its scale arrive in either order; pass them on once both are known */
   const at = useRef({ y: -1, k: 0 });
@@ -347,22 +346,6 @@ function LessonsPane({
         />
       </View>
 
-      {/* said No to faith in the setup: these lessons are off the path, and still here to find */}
-      {faithOut(st) ? (
-        <Collapse
-          title="Faith and recovery"
-          sub="Off your path, by your answer in the setup. Here if you ever want them."
-          icon="star"
-          open={faith}
-          onToggle={() => setFaith(!faith)}>
-          <View>
-            {LESSONS.filter((L) => L.f).map((L) => (
-              <LessonRow key={L.id} L={L} done={done.has(L.id)} locked={!open(L)} side={done.has(L.id) ? 'Done' : lmin(L)} sub={lessonTo(L, st).tag} />
-            ))}
-          </View>
-        </Collapse>
-      ) : null}
-
       {/* the lessons on no step of the path (core steps.ts OFF_PATH): still here to find, and counted once finished */}
       <Collapse title="Two more programs" sub="Not on the twelve steps. Here whenever you want them." icon="book" open={more} onToggle={() => setMore(!more)}>
         <View>
@@ -403,8 +386,8 @@ function LessonsPane({
         onPress={() => router.push('/learned')}
       />
       <T v="small" tone="muted">
-        The lessons put research into plain words and stay within what each study found. They are not medical advice. Each one lists its sources. The faith
-        lessons rest on the 12 steps and on research, not on any one church’s teaching.
+        The lessons put research into plain words and stay within what each study found. They are not medical advice. Each one lists its sources.
+        {faithOut(st) ? '' : ' The faith lessons rest on the 12 steps and on research, not on any one church’s teaching.'}
       </T>
     </View>
   );
@@ -487,7 +470,7 @@ function ToolsPane() {
       <Collapse title="My go-to in SOS" sub={pinT ? pinT.name : 'The best fit for the moment'} open={pinOpen} onToggle={() => setPinOpen(!pinOpen)}>
         <T v="small" tone="muted">
           {pinT
-            ? 'SOS puts ' + pinT.name + ' first every time. It still keeps track of what helps.'
+            ? 'SOS puts ' + pinT.name + ' first when it can. It still keeps track of what helps.'
             : 'SOS learns which tools help you, and picks the best fit for the moment.'}
         </T>
         <Packed>

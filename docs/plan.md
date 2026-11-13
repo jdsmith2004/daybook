@@ -1,6 +1,6 @@
 # What is planned next
 
-## Mithras people come to Daybook, and a journal Insights page (the owner, November 13, 2026; built on `claude/mithras-import-685ea3`, show first)
+## Mithras people come to Daybook, and a journal Insights page (the owner, November 13, 2026; built and merged November 13, web-tested, the app checks with the testing chat)
 
 The owner, November 13, 2026: "push users to come use this app instead and offer to transfer all their logs and journal data over to
 the new app ... it would remember there streak all there journal entries etc... also we'd start them from campfire". The owner also
@@ -123,7 +123,7 @@ From top to bottom, all from Daybook's own `Journal` (and the feelings the journ
 It follows "The look": one type scale (the numbers 34, labels 13), no capitals, no tinted icon circles, no card inside a card. The
 chart reads in two seconds: one shared baseline, the number on the mark, no second meaning.
 
-### Built (November 13, 2026, on `claude/mithras-import-685ea3`; not merged until the owner has seen it on the simulator)
+### Built (November 13, 2026, on `claude/mithras-import-685ea3`, merged to main under "Web first")
 
 The owner accepted the recommendations (B, the import inside Daybook; Campfire for real history; goals and reflections left; the
 feelings bars count everything the journal shows) and asked for it to be "more obscure": it is not a feature Daybook shows everyone.
@@ -177,7 +177,9 @@ feelings bars count everything the journal shows) and asked for it to be "more o
    Apple, add `com.jdsmith2004.daybook` to the Client IDs (comma separated, after the IDs already there, which should include Mithras's own `com.jeff.deepwork`), and Save. For
    the Daybook website, add Daybook's web Services ID there too. Until then Apple answers "Mithras did not take this Apple sign-in"
    and the email way still works.
-2. See it on the simulator, then merge with `[deploy]` (the website and the sync Lambda's event lists).
+2. The app-only checks (the link cold and warm, Apple's sheet, the keyboard, the moment at real speed) are in the testing chat's
+   hand-over note, `mithras-import-checks.md`. Nothing is lost or doubled: `test/mithras.test.ts` lands 1,236 made-up rows (a very
+   long entry split into parts, one dated ahead, one read twice, two with clashing short ids) and checks every word and time.
 3. Row-level security: the owner decided on November 13 to leave it off ("we're gonna port over users then shut down the app"). The
    import never reads anyone else's rows: every read names the person's own id, and the phone drops any row that is not theirs.
 

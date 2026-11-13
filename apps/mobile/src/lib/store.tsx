@@ -35,7 +35,7 @@ import {
   mergeDirty,
   normDay,
   normReview,
-  normSettings,
+  normSettingsLoaded,
   restampRecords,
   type Change,
   type DayKey,
@@ -84,7 +84,7 @@ async function load(): Promise<{ snap: Snapshot; dirty: Record<string, number>; 
       if (t) snap.tomb = t;
     } else if (k === BASE) {
       if (v && typeof v === 'object') for (const [id, u] of Object.entries(v)) if (typeof u === 'number' && Number.isFinite(u)) base[id] = u;
-    } else if (id === 'settings') snap.settings = normSettings(v);
+    } else if (id === 'settings') snap.settings = normSettingsLoaded(v);
     else if (id.startsWith('days/') && isKey(id.slice(5))) snap.days[id.slice(5)] = normDay(v, id.slice(5));
     else if (id.startsWith('reviews/') && isReviewKey(id.slice(8))) snap.reviews[id.slice(8)] = normReview(v, id.slice(8));
     else if (id.startsWith('journal/') && isJnId(id.slice(8))) {

@@ -43,7 +43,7 @@ function load(storage: Record<string, string>): { snap: core.Snapshot; dirty: Re
     else if (k === TOMB) {
       const t = core.cleanTombs(v);
       if (t) snap.tomb = t;
-    } else if (id === 'settings') snap.settings = core.normSettings(v);
+    } else if (id === 'settings') snap.settings = core.normSettingsLoaded(v);
     else if (id.startsWith('days/') && core.isKey(id.slice(5))) snap.days[id.slice(5)] = core.normDay(v, id.slice(5));
     else if (id.startsWith('reviews/') && core.isReviewKey(id.slice(8))) snap.reviews[id.slice(8)] = core.normReview(v, id.slice(8));
     else if (id.startsWith('journal/') && core.isJnId(id.slice(8))) {

@@ -15,6 +15,7 @@ import { addDays, blankP, diffDays, eventsOf, LESSONS } from './legacy/core.js';
 import { lessonNo, lessonStop, lessonWalk, reviewPick, type Lesson } from './lessons';
 import { changeDay, withDay } from './mutate';
 import { talksOf } from './talk';
+import { toldOn, truthOn } from './truth';
 import type { DayKey, Days, Settings } from './types';
 
 const HOUR = 3600000;
@@ -187,9 +188,11 @@ export function riskLesson(days: Days, st: Settings, tk: DayKey, account = true)
   return { L: R, n: lessonNo(R, st), again: true };
 }
 
-/** hard hours held on today or yesterday that are not recorded yet (the latest first) */
+/** hard hours held on today or yesterday that are not recorded yet (the latest first). From truthFrom on (truth.ts), only once
+    the night was told free: nothing is praised before the answer, and a night not told is never "held". */
 export function riskToKeep(days: Days, st: Settings, tk: DayKey, now: number): { k: DayKey; r: RiskDay } | null {
   for (const k of [tk, addDays(tk, -1)]) {
+    if (truthOn(st, k) && toldOn(days, k) !== 'free') continue;
     const r = riskDay(days, st, k, now);
     if (r && r.held && !r.kept) return { k, r };
   }

@@ -17,7 +17,9 @@
 
    Other parts read it through the functions at the bottom: tonightOf (Screen Time's hours and the wait screen's reason), nightTold and
    morningsSet (the effort record), lastNightSlip (Rekindle's quiet way in). Checked by test/morning-set.test.ts. */
-import { addDays, diffDays, isTime, sumDay } from './legacy/core.js';
+import { addDays, diffDays, fmtDate, isTime, sumDay } from './legacy/core.js';
+import { awayGapAt, dayUntold } from './away';
+import { truthOn } from './truth';
 import { changeSettings } from './actions';
 import { addEvent, changeDay, removeEvent, withDay } from './mutate';
 import { normMorning } from './morning-norm';
@@ -125,6 +127,41 @@ export function answerNight(days: Days, st: Settings, tk: DayKey, n: 'free' | 's
   });
 }
 
+/** the catch-up row ("And Tuesday night?", C1): the night before last, when it was not told and is not part of a longer stretch that
+    Welcome back asks about (truth.ts, away.ts). Its log day, or null. */
+export function nightBeforeDue(days: Days, st: Settings, tk: DayKey): DayKey | null {
+  const k = addDays(tk, -2);
+  if (!truthOn(st, k) || k < st.start) return null;
+  if (morningOf(days[tk])?.n2) return k;
+  if (!dayUntold(days, st, k, tk) || awayGapAt(days, st, k, tk)) return null;
+  return k;
+}
+/** the words of the catch-up row: "And Tuesday night?" */
+export const nightBeforeAsk = (k: DayKey): string => 'And ' + fmtDate(k, { weekday: 'long' }) + ' night?';
+
+/** the catch-up row answered (or changed): kept on today's morning as n2. It happened adds a slip with no time to that night,
+    unless one is already logged, the same as last night's answer; Free of it takes away only the slip this row added. */
+export function answerNightBefore(days: Days, st: Settings, tk: DayKey, n: 'free' | 'slip', now = Date.now()): Days {
+  const k = addDays(tk, -2);
+  const prev = morningOf(days[tk]);
+  let ev = prev?.ev2;
+  let next = days;
+  if (n === 'free' && ev) {
+    next = removeEvent(next, k, ev, now);
+    ev = undefined;
+  }
+  if (n === 'slip' && !ev && !nightSlips(next, st, k).length && k >= st.start) {
+    const r = addEvent(next, k, 'slipped', null, { mn: true }, now);
+    next = r.days;
+    ev = r.id;
+  }
+  return withMorning(next, tk, now, (ms) => {
+    ms.n2 = n;
+    if (ev) ms.ev2 = ev;
+    else delete ms.ev2;
+  });
+}
+
 /** "And this morning?" answered: kept on the morning, and also as the day's "How are you feeling today?" when that is not answered
     yet, so the day does not ask twice (Low is Low, Okay is Okay, Good is Good on its five steps). A second tap on the same answer clears it. */
 export function setMorningFeel(days: Days, tk: DayKey, f: 1 | 2 | 3 | null, now = Date.now()): Days {
@@ -217,9 +254,10 @@ export function tonightOf(days: Days, st: Settings, tk: DayKey): Tonight {
   return { at: s.ms.nt || nightAtStart(st), r: s.ms.r || null, rAt: s.ms.set || null, from: s.k, today: s.k === tk };
 }
 
-/** how a night went, as the morning after said: the night of log day k is answered on day k + 1. null when not answered. */
+/** how a night went, as the morning after said: the night of log day k is answered on day k + 1 (or by the catch-up row on day
+    k + 2). null when not answered. */
 export function nightTold(days: Days, k: DayKey): 'free' | 'slip' | null {
-  return morningOf(days[addDays(k, 1)])?.n || null;
+  return morningOf(days[addDays(k, 1)])?.n || morningOf(days[addDays(k, 2)])?.n2 || null;
 }
 
 /** the mornings that were set between two log days (both included) */

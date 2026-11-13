@@ -20,6 +20,7 @@
 
    This file imports nothing from legacy/core.js, because legacy/core.js imports it (dayKind and statusOf ask here).
    Checked by test/away.test.ts. */
+import { toldOn, truthFromOf, type NightState } from './truth';
 import type { DayKey, Days, Settings } from './types';
 
 /** quiet days in a row that still count, before the rest of an unanswered gap is not known */
@@ -32,6 +33,8 @@ export interface AwayEntry {
   from: DayKey;
   to: DayKey;
   n: number;
+  /** the log day it was answered: telling is the day's part, and lights the fire (flame-low.ts) */
+  on?: DayKey;
 }
 /** a gap away: its days, and its answer (null until answered) */
 export interface AwayGap {
@@ -41,6 +44,9 @@ export interface AwayGap {
   len: number;
   /** slips while away, or null when not answered yet */
   n: number | null;
+  /** false when the person was here on some of its days and only did not tell Daybook about the nights (truth.ts); absent when
+      they were away. Words say "while you were away" only when they were. */
+  away?: false;
 }
 
 const isKey = (k: unknown): k is DayKey => typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k);
@@ -65,7 +71,7 @@ export function awayOf(st: Settings | null): AwayEntry[] {
   for (const x of v as Record<string, unknown>[]) {
     if (!x || !isKey(x.from) || !isKey(x.to) || x.from > x.to) continue;
     const n = Number.isInteger(x.n) && (x.n as number) >= 0 ? Math.min(x.n as number, AWAY_MAX) : x.a === 'clean' || x.a === 'some' ? 0 : null;
-    if (n != null) out.push({ from: x.from, to: x.to, n });
+    if (n != null) out.push({ from: x.from, to: x.to, n, ...(isKey(x.on) ? { on: x.on } : {}) });
   }
   return out.slice(-200);
 }
@@ -80,55 +86,96 @@ interface Cache {
   st: Settings;
   tk: DayKey;
   unknown: Set<DayKey>;
+  /** from truthFrom on: nights nobody told Daybook about (truth.ts), not covered by an answer */
+  untold: Set<DayKey>;
   slips: Set<DayKey>;
   gaps: AwayGap[];
   at: Map<DayKey, AwayGap>;
 }
 let cache: Cache | null = null;
 
-/** the gaps, the not-known days and the days that carry a slip from an answer, worked out once per log, settings and day
-    (every count asks about one day at a time) */
+/** the gaps, the not-known days, the nights not told and the days that carry a slip from an answer, worked out once per log,
+    settings and day (every count asks about one day at a time).
+    Before truthFrom, a day is "here" when anything is in it (presentDay), as it always was. From truthFrom on, a day is here only
+    when its night was told (truth.ts toldOn): a night not told is untold, never a free night, and a run of more than QUIET_GRACE of
+    them is a gap that Welcome back asks about, the same as days away. Last night is the morning's to ask ("How was last night?"),
+    so it is untold until then but never part of a gap. */
 function work(days: Days, st: Settings, tk: DayKey): Cache {
   if (cache && cache.days === days && cache.st === st && cache.tk === tk) return cache;
-  const c: Cache = { days, st, tk, unknown: new Set(), slips: new Set(), gaps: [], at: new Map() };
+  const c: Cache = { days, st, tk, unknown: new Set(), untold: new Set(), slips: new Set(), gaps: [], at: new Map() };
   cache = c;
-  const on = (st as { awayFrom?: unknown }).awayFrom;
-  if (!isKey(on)) return c;
-  const from = isKey(st.start) && st.start > on ? st.start : on;
+  const onRaw = (st as { awayFrom?: unknown }).awayFrom;
+  const on = isKey(onRaw) ? onRaw : null;
+  const tf = truthFromOf(st);
+  if (!on && !tf) return c;
+  const begin = [on, tf].filter((x): x is DayKey => !!x).sort()[0];
+  const from = isKey(st.start) && st.start > begin ? st.start : begin;
   const answers = awayOf(st);
+  const last = addDays(tk, -1);
   /* the quiet runs before today; one longer than the grace is a gap */
-  const runs: { from: DayKey; to: DayKey }[] = [];
-  let run: { from: DayKey; to: DayKey } | null = null;
+  const runs: { from: DayKey; to: DayKey; away: boolean }[] = [];
+  let run: { from: DayKey; to: DayKey; away: boolean } | null = null;
   let k = from;
   for (let i = 0; k < tk && i < 20000; i++, k = addDays(k, 1)) {
-    if (presentDay(days[k])) {
+    const truth = !!tf && k >= tf;
+    /* a day under neither rule (before awayFrom, before truthFrom) counts as it always did */
+    const here = truth ? toldOn(days, k) != null : !on || k < on || presentDay(days[k]);
+    if (here || (truth && k === last)) {
       if (run) runs.push(run);
       run = null;
-    } else if (run) run.to = k;
-    else run = { from: k, to: k };
+      if (!here) c.untold.add(k);
+    } else if (run) {
+      run.to = k;
+      run.away = run.away && !presentDay(days[k]);
+    } else run = { from: k, to: k, away: !presentDay(days[k]) };
   }
   if (run) runs.push(run);
   for (const r of runs) {
     const len = daysIn(r.from, r.to);
-    if (len <= QUIET_GRACE) continue;
+    if (len <= QUIET_GRACE) {
+      for (let d = r.from; d <= r.to; d = addDays(d, 1)) if (tf && d >= tf) c.untold.add(d);
+      continue;
+    }
     /* an answer covers the gap it was given for: the one it overlaps */
     const a = answers.find((x) => x.from <= r.to && x.to >= r.from) || null;
-    const g: AwayGap = { from: r.from, to: r.to, len, n: a ? Math.min(a.n, len) : null };
+    const g: AwayGap = { from: r.from, to: r.to, len, n: a ? Math.min(a.n, len) : null, ...(r.away ? {} : { away: false }) };
     c.gaps.push(g);
     for (let d = r.from, i = 0; d <= r.to; d = addDays(d, 1), i++) {
       c.at.set(d, g);
       if (g.n == null) {
-        if (i >= QUIET_GRACE) c.unknown.add(d);
+        /* not answered: a night not told is untold from the first; days away before truthFrom keep their grace */
+        if (tf && d >= tf) c.untold.add(d);
+        else if (i >= QUIET_GRACE) c.unknown.add(d);
       } else if (i >= len - g.n) c.slips.add(d);
     }
   }
   return c;
 }
 
-/** whether Daybook knows how day k went (a day from Day 1 on that counts as a no-slip day when no slip is logged) */
+/** whether Daybook knows how day k went (a day from Day 1 on that counts as a no-slip day when no slip is logged). From truthFrom
+    on, a night not told is not known: it counts neither way. Today is known (it is still going). */
 export function dayKnown(days: Days, st: Settings, k: DayKey, tk: DayKey): boolean {
   if (k >= tk) return true;
-  return !work(days, st, tk).unknown.has(k);
+  const c = work(days, st, tk);
+  return !c.unknown.has(k) && !c.untold.has(k);
+}
+
+/** whether the night of day k was not told (truth.ts): drawn hollow, counted as nothing */
+export function dayUntold(days: Days, st: Settings, k: DayKey, tk: DayKey): boolean {
+  if (k >= tk) return false;
+  return work(days, st, tk).untold.has(k);
+}
+
+/** the nights not told, oldest first */
+export function untoldDays(days: Days, st: Settings, tk: DayKey): DayKey[] {
+  return [...work(days, st, tk).untold].sort();
+}
+
+/** the state of the night of day k, as every surface draws it (truth.ts): a slip, told free, or not told. Before truthFrom, and
+    for a day Daybook counts the old way, a day with no slip is free. Today, still going, is free until something says otherwise. */
+export function nightState(days: Days, st: Settings, k: DayKey, tk: DayKey): NightState {
+  if ((days[k]?.events || []).some((e) => e.outcome === 'slipped') || awaySlipDay(days, st, k, tk)) return 'slip';
+  return dayUntold(days, st, k, tk) ? 'untold' : 'free';
 }
 
 /** whether day k carries one of the slips from an answer about a gap (the last n days of the gap) */
@@ -161,9 +208,12 @@ export function awayStretchFrom(days: Days, st: Settings, tk: DayKey): DayKey | 
   return g ? addDays(g.to, 1) : null;
 }
 
+/** whether a Welcome back answer was given on log day k */
+export const awayAnsweredOn = (st: Settings, k: DayKey): boolean => awayOf(st).some((x) => x.on === k);
+
 /** the gap to ask about on coming back: the latest one not answered yet that reaches Day 1, as the whole time away (from
     Day 1 at the earliest). n: its days, and the most slips the question offers. null when there is nothing to ask. */
-export function awayDue(days: Days, st: Settings, tk: DayKey): { from: DayKey; to: DayKey; n: number; max: number } | null {
+export function awayDue(days: Days, st: Settings, tk: DayKey): { from: DayKey; to: DayKey; n: number; max: number; away?: false } | null {
   if (!isKey(st.day1)) return null;
   const d1 = st.day1 as DayKey;
   const g = work(days, st, tk)
@@ -172,14 +222,14 @@ export function awayDue(days: Days, st: Settings, tk: DayKey): { from: DayKey; t
   if (!g) return null;
   const from = g.from < d1 ? d1 : g.from;
   const n = daysIn(from, g.to);
-  return { from, to: g.to, n, max: Math.min(n, AWAY_MAX) };
+  return { from, to: g.to, n, max: Math.min(n, AWAY_MAX), ...(g.away === false ? { away: false as const } : {}) };
 }
 
 /** the answers with this one added (the caller saves it with changeSettings): n slips while away, from 0 */
-export function withAway(st: Settings, gap: { from: DayKey; to: DayKey }, n: number): AwayEntry[] {
+export function withAway(st: Settings, gap: { from: DayKey; to: DayKey }, n: number, on?: DayKey): AwayEntry[] {
   const rest = awayOf(st).filter((x) => x.to < gap.from || x.from > gap.to);
   const v = Math.max(0, Math.min(AWAY_MAX, Math.round(n) || 0));
-  return [...rest, { from: gap.from, to: gap.to, n: v }].sort((x, y) => (x.from < y.from ? -1 : 1));
+  return [...rest, { from: gap.from, to: gap.to, n: v, ...(on && isKey(on) ? { on } : {}) }].sort((x, y) => (x.from < y.from ? -1 : 1));
 }
 
 /** the day this version began marking opens, set once (the app does it the first time Today shows): the quiet-day rule

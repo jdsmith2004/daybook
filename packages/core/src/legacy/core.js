@@ -11,7 +11,7 @@ import { normMorning } from '../morning-norm';
 import { normHabit } from '../habit';
 import { LADDER_V, LEVELS, levelOf, moveSeenLevel } from '../levels';
 import { normTalks } from '../talk';
-import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown } from '../away';
+import { awayGapAt, awaySlipDay, awayStretchFrom, dayKnown, dayUntold, untoldDays } from '../away';
 
 /* ------------------------------------------------------------------------------------------------
    logic: data model, counting, run saves, step down, points, badges, quests, rhythm
@@ -477,7 +477,8 @@ function statusOf(key,day,st,today,days){
  /* from Day 1 on, a day with no slip logged counts, whether or not a check-in was saved, unless the person was away long
     enough that Daybook does not know (away.ts) */
  /* a day inside a gap away (away.ts) is not shown as a day of its own: the gap has one look, and one line with its slips */
- if(phaseOf(key,st).p==='quitting')return days&&awayGapAt(days,st,key,today)?'unknown':'clean';
+ /* from truthFrom on, a night nobody told Daybook about is not a free night (truth.ts): it is drawn hollow */
+ if(phaseOf(key,st).p==='quitting')return days&&dayUntold(days,st,key,today)?'untold':days&&awayGapAt(days,st,key,today)?'unknown':'clean';
  if(s.checked)return 'tracked';
  if(s.n)return 'events';
  return 'empty';
@@ -647,6 +648,13 @@ function fmtStretch(h){
  const d=Math.floor(h/24);return d+(d===1?' day':' days');
 }
 const fmtStretchShort=h=>h<1?'0 h':h<72?Math.floor(h)+' h':Math.floor(h/24)+' d';
+/* the true record (truth.ts): a night nobody told Daybook about is not known, so the hours of a stretch never run through one.
+   From its evening (6 PM) to the new day it neither counts nor ends the stretch: the stretch waits. Empty before truthFrom. */
+function untoldWins(days,st,tk){const roll=st.rollover;return untoldDays(days,st,tk).map(k=>[evMs(k,'18:00',roll),evMs(addDays(k,1),p2(roll)+':00',roll)])}
+function toldMs(a,b,w){let t=b-a;w.forEach(x=>{const lo=Math.max(a,x[0]),hi=Math.min(b,x[1]);if(hi>lo)t-=hi-lo});return Math.max(0,t)}
+/* the longest part of a stretch with no night not told inside it: what a best or a badge can be earned on */
+function toldSpan(a,b,w){let best=0,from=a;w.filter(x=>x[1]>a&&x[0]<b).sort((x,y)=>x[0]-y[0]).forEach(x=>{best=Math.max(best,Math.min(x[0],b)-from);from=Math.max(from,x[1])});return Math.max(0,best,b-from)}
+function weekUntold(days,st,w,tk){const r=weekRange(w,st);for(let k=r[0];k<=r[1];k=addDays(k,1))if(dayUntold(days,st,k,tk))return true;return false}
 function slipsInWeek(days,st,w){const r=weekRange(w,st);let n=0;for(let k=r[0];k<=r[1];k=addDays(k,1))n+=sumDay(days[k]).slipped;return n}
 function stepView(days,st,nowMs){
  const roll=st.rollover,tk=logicalKey(nowMs,roll),sl=slipMoments(days,st,nowMs);
@@ -654,16 +662,16 @@ function stepView(days,st,nowMs){
  const last=sl.length?sl[sl.length-1]:null;
  /* after days Daybook does not know about (away.ts), the stretch it can vouch for starts when the person came back; the best
     stretch already shown stays as it is */
- const af=awayStretchFrom(days,st,tk),ukEnd=af?evMs(af,p2(roll)+':00',roll):-Infinity;
- const curH=Math.max(0,(nowMs-Math.max(last!=null?last:startMs,ukEnd))/36e5);
+ const af=awayStretchFrom(days,st,tk),ukEnd=af?evMs(af,p2(roll)+':00',roll):-Infinity,uw=untoldWins(days,st,tk);
+ const curH=toldMs(Math.max(last!=null?last:startMs,ukEnd),nowMs,uw)/36e5;
  let bestPast=0,bestSince=0;const recent=[];
  for(let i=1;i<sl.length;i++){
-  const g=(sl[i]-sl[i-1])/36e5;
+  const g=toldSpan(sl[i-1],sl[i],uw)/36e5;
   if(g>bestPast)bestPast=g;
-  if(sl[i]>stepMs)bestSince=Math.max(bestSince,(sl[i]-Math.max(sl[i-1],stepMs))/36e5);
+  if(sl[i]>stepMs)bestSince=Math.max(bestSince,toldSpan(Math.max(sl[i-1],stepMs),sl[i],uw)/36e5);
   if(sl[i]>=nowMs-30*864e5)recent.push(g);
  }
- bestSince=Math.max(bestSince,(nowMs-Math.max(last!=null?last:stepMs,stepMs))/36e5);
+ bestSince=Math.max(bestSince,toldSpan(Math.max(last!=null?last:stepMs,stepMs),nowMs,uw)/36e5);
  const best=Math.max(bestPast,curH);
  recent.sort((a,b)=>a-b);
  const usual=recent.length>=3?recent[Math.floor(recent.length/2)]:null;
@@ -687,7 +695,7 @@ function stepView(days,st,nowMs){
  }
  /* ready to count days: a stretch of a week since the plan started, or a whole week since then with one slip or none */
  let weekOk=false;
- for(let w=0;w<cw;w++){if(weekRange(w,st)[0]>=stepAt&&slipsInWeek(days,st,w)<=1){weekOk=true;break}}
+ for(let w=0;w<cw;w++){if(weekRange(w,st)[0]>=stepAt&&slipsInWeek(days,st,w)<=1&&!weekUntold(days,st,w,tk)){weekOk=true;break}}
  const ready=bestSince>=168||weekOk;
  /* more help: the setup self-check pointed that way, or three weeks in, this week is no better than the first one */
  const hist=st.onb&&st.onb.hist,score=hist&&hist.length?hist[hist.length-1].s:null;
@@ -1025,10 +1033,11 @@ function gameStats(days,st,reviews,today){
  /* the comeback badges: runs saved, a 48-hour stretch between slips (once a slip is logged), a week lower than the one before, the step-down plan finished */
  {const L=runLedger(days,st,today);S.saves=Object.keys(L.kind).filter(k=>L.kind[k]==='saved').length}
  {
-  const now=Date.now(),sl=slipMoments(days,st,now);
-  for(let i=1;i<sl.length&&!S.stretch48;i++)if(sl[i]-sl[i-1]>=48*36e5)S.stretch48=1;
-  if(sl.length&&now-sl[sl.length-1]>=48*36e5)S.stretch48=1;
-  for(let w=1;w<cw;w++){const a=slipsInWeek(days,st,w-1);if(a>=1&&slipsInWeek(days,st,w)<a)S.lowerWeeks++}
+  /* never earned across nights not told (truth.ts): the hours through one do not count, and a lower week has every night told */
+  const now=Date.now(),sl=slipMoments(days,st,now),uw=untoldWins(days,st,today);
+  for(let i=1;i<sl.length&&!S.stretch48;i++)if(toldSpan(sl[i-1],sl[i],uw)>=48*36e5)S.stretch48=1;
+  if(sl.length&&toldSpan(sl[sl.length-1],now,uw)>=48*36e5)S.stretch48=1;
+  for(let w=1;w<cw;w++){const a=slipsInWeek(days,st,w-1);if(a>=1&&slipsInWeek(days,st,w)<a&&!weekUntold(days,st,w,today))S.lowerWeeks++}
   S.grad=st.stepGrad?1:0;
  }
  return S;

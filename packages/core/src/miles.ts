@@ -3,7 +3,7 @@
 import type { Badge } from './legacy/core.js';
 import type { Settings } from './types';
 import { addDays, computeMetrics, fmtDate, dayPoints, eventsOf, gameCompute, isKey, obHours, obRnd, runLedger, WIN_WHY, type Quest } from './legacy/core.js';
-import { awaySlipDay, dayKnown } from './away';
+import { awaySlipDay, dayKnown, untoldDays } from './away';
 import { noSlipDays } from './graduate';
 import { rkComebackCount } from './rekindle';
 import { hardHeld } from './risk';
@@ -107,16 +107,20 @@ export const celTitle = (it: CelItem) =>
           : it.title || 'Nice';
 
 /** what the count keeps, called whenever the log or the settings change: the day this person first opened the one-count rule
-    (countFrom: slips up to it keep the rule they were made under, runLedger), and the longest run ever shown, so that
+    (countFrom: slips up to it keep the rule they were made under, runLedger), the day the true record starts (truthFrom, truth.ts),
+    and the longest run ever shown, so that
     switching how days count never lowers it. Gives back the settings to save, or null when nothing moved. */
 export function keepCounts(days: Days, st: Settings, tk: DayKey): Settings | null {
   const longest = runLedger(days, st, tk).longest;
   const stamp = !isKey(st.countFrom);
+  /* the true record (truth.ts) starts on the first open after the update, once: nights before it count as they always did */
+  const truth = !isKey(st.truthFrom);
   /* the floor waits for seen (seenBaseline): a seen made up here would make every earned badge look new */
   const raise = !!st.seen && longest > (st.seen.longest || 0);
-  if (!stamp && !raise) return null;
+  if (!stamp && !truth && !raise) return null;
   return changeSettings(st, (s) => {
     if (stamp) s.countFrom = tk;
+    if (truth) s.truthFrom = tk;
     if (raise && s.seen) s.seen = { ...s.seen, longest };
   });
 }
@@ -201,7 +205,14 @@ export function identityLines(days: Days, st: Settings, reviews: Reviews, tk: Da
   const times = (n: number, one: string, many: string) => n + ' ' + (n === 1 ? one : many);
   const out: (IdLine | null)[] = [
     S.rode ? { ic: 'wave', who: 'You are someone who rides out urges.', n: times(S.rode, 'time', 'times') } : null,
-    S.slips ? { ic: 'leaf', who: 'You are someone who tells the truth, even about a slip.', n: times(S.slips, 'slip', 'slips') + ', every one logged' } : null,
+    /* "every one logged" only while every night since the true record began was told (truth.ts) */
+    S.slips
+      ? {
+          ic: 'leaf',
+          who: 'You are someone who tells the truth, even about a slip.',
+          n: times(S.slips, 'slip', 'slips') + (untoldDays(days, st, tk).length ? ' told' : ', every one logged'),
+        }
+      : null,
     comebacks ? { ic: 'sunrise', who: 'You are someone who comes back after a hard night.', n: times(comebacks, 'comeback', 'comebacks') } : null,
     downs > 0 ? { ic: 'phone', who: 'You are someone who puts it down.', n: times(downs, 'time', 'times') } : null,
     held ? { ic: 'shield', who: 'You are someone who gets through the hard hours.', n: times(held, 'time', 'times') } : null,

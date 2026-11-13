@@ -9,6 +9,7 @@
    week it says what held instead. Every number here is one the log already has; nothing is guessed. Checked by
    test/sunday-story.test.ts. */
 import { addDays, didText, eventsOf, evMs, slipMoments, sumDay, trigText } from './legacy/core.js';
+import { dayUntold } from './away';
 import { logStart } from './log-start';
 import { patWhen, type PatWhen } from './pattern';
 import { urTool } from './sos';
@@ -27,7 +28,8 @@ const WEEKDAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday
 const weekKeys = (sun: DayKey) => Array.from({ length: 7 }, (_, i) => addDays(sun, i - 6));
 
 /* ---------- the seven days ---------- */
-export type StoryDayState = 'clean' | 'slip' | 'ahead' | 'before';
+/** untold: a night nobody told Daybook about (truth.ts), drawn hollow */
+export type StoryDayState = 'clean' | 'slip' | 'ahead' | 'before' | 'untold';
 export interface StoryDay {
   k: DayKey;
   /** "M", and "Monday" */
@@ -48,7 +50,18 @@ export function storyDays(days: Days, st: Settings, sun: DayKey, tk: DayKey): St
       l: name[0],
       name,
       /* a day before Day 1 with no slip was logged, not yet a no-slip day (Days shows it the same way) */
-      state: k > tk ? 'ahead' : k < first ? 'before' : slipped ? 'slip' : st.day1 && st.day1 <= tk && k < st.day1 ? 'before' : 'clean',
+      state:
+        k > tk
+          ? 'ahead'
+          : k < first
+            ? 'before'
+            : slipped
+              ? 'slip'
+              : st.day1 && st.day1 <= tk && k < st.day1
+                ? 'before'
+                : dayUntold(days, st, k, tk)
+                  ? 'untold'
+                  : 'clean',
       rode: ev.length - slipped,
       slipped,
     };
@@ -168,6 +181,8 @@ export interface StoryWeek {
   sun: DayKey;
   days: number;
   noSlip: number;
+  /** nights not told (truth.ts) */
+  untold?: number;
   slipped: number;
   rode: number;
 }
@@ -181,8 +196,10 @@ export function storyWeeks(days: Days, st: Settings, sun: DayKey, tk: DayKey, n 
        a week counts only its days from Day 1, and a week all before it is left out */
     const pre = st.day1 && st.day1 <= tk ? weekKeys(s).filter((k) => k < st.day1! && k <= tk && k >= logStart(days, st)) : [];
     const before = pre.length;
-    const preClean = pre.filter((k) => !sumDay(days[k]).slipped).length;
-    if (w.days - before) out.push({ sun: s, days: w.days - before, noSlip: w.noSlip - preClean, slipped: w.slipped, rode: w.rode });
+    const preClean = pre.filter((k) => !sumDay(days[k]).slipped && !dayUntold(days, st, k, tk)).length;
+    const preUntold = pre.filter((k) => !sumDay(days[k]).slipped && dayUntold(days, st, k, tk)).length;
+    if (w.days - before)
+      out.push({ sun: s, days: w.days - before, noSlip: w.noSlip - preClean, untold: w.untold - preUntold, slipped: w.slipped, rode: w.rode });
   }
   return out;
 }
@@ -423,7 +440,7 @@ export function storyDeep(w: SunWeek, st: Settings, slips: { close: boolean }, q
   const pick = (id: StoryDeepId): StoryDeep => ({ id, ...((habitOf(st) !== 'porn' && DEEP_HABIT[id]) || DEEP[id]) });
   if (quiet) return pick('review');
   if (w.slipped >= 2 && slips.close) return pick('snowball');
-  if (!w.slipped && w.days >= 5) return pick('clean');
+  if (!w.slipped && !w.untold && w.days >= 5) return pick('clean');
   for (const c of sunChange(w, st)) {
     const id = c.id;
     if (id === 'late' || id === 'screens' || id === 'sleep' || id === 'trig:late' || id === 'trig:tired') return pick('late');

@@ -8,7 +8,7 @@
    sync; earning it does not change Today. Days Daybook does not know about (a long gap away, away.ts) count neither way. Checked by test/graduate.test.ts. */
 import { changeSettings, type Change } from './actions';
 import { addDays, computeMetrics, eventsOf, isKey, runLedger } from './legacy/core.js';
-import { awaySlipDay, dayKnown } from './away';
+import { awaySlipDay, dayKnown, dayUntold } from './away';
 import type { DayKey, Days, Settings } from './types';
 
 /** no-slip days needed, within the last GRAD_WINDOW days */
@@ -98,8 +98,9 @@ export interface TodayMeasure {
   of: string;
   /** a short warm line under it */
   sub: string;
-  /** the week: the last 7 finished days, oldest first, then today (open) */
-  cells?: ('ok' | 'slip' | 'none' | 'today')[];
+  /** the week: the last 7 finished days, oldest first, then today (open). untold: a night nobody told Daybook about (truth.ts),
+      drawn hollow; it is one of the nights, and counts as nothing. */
+  cells?: ('ok' | 'slip' | 'none' | 'untold' | 'today')[];
   /** the way to graduation, 0 to 1 */
   frac?: number;
 }
@@ -122,16 +123,23 @@ export function todayMeasure(days: Days, st: Settings, tk: DayKey): TodayMeasure
       .filter((e) => e.outcome === 'slipped')
       .map((e) => e.key),
   );
-  const cells: ('ok' | 'slip' | 'none' | 'today')[] = [];
+  const cells: ('ok' | 'slip' | 'none' | 'untold' | 'today')[] = [];
   let n = 0;
   let m = 0;
+  let slipped = false;
   for (let i = WEEK; i >= 1; i--) {
     const k = addDays(tk, -i);
-    if (k < first || !dayKnown(days, st, k, tk)) cells.push('none');
+    /* a night not told is one of the last nights, but not a free one: "3 of the last 7", with the four hollow */
+    if (k >= first && dayUntold(days, st, k, tk)) {
+      m++;
+      cells.push('untold');
+    } else if (k < first || !dayKnown(days, st, k, tk)) cells.push('none');
     else {
       m++;
-      if (slips.has(k) || awaySlipDay(days, st, k, tk)) cells.push('slip');
-      else {
+      if (slips.has(k) || awaySlipDay(days, st, k, tk)) {
+        slipped = true;
+        cells.push('slip');
+      } else {
         n++;
         cells.push('ok');
       }
@@ -140,6 +148,13 @@ export function todayMeasure(days: Days, st: Settings, tk: DayKey): TodayMeasure
   cells.push('today');
   if (!m) return { k: 'week', n: 0, of: 'Day 1 is today', sub: 'One day at a time is plenty.', cells };
   /* never a big zero the morning after a slip: today is the day that counts */
-  if (!n) return { k: 'week', n: 0, of: 'Today counts', sub: 'A slip is data, not a reset. Today is a fresh day.', cells };
+  if (!n)
+    return {
+      k: 'week',
+      n: 0,
+      of: 'Today counts',
+      sub: slipped ? 'A slip is data, not a reset. Today is a fresh day.' : 'A night counts once you tell me how it went.',
+      cells,
+    };
   return { k: 'week', n, of: `of the last ${m} ${m === 1 ? 'day' : 'days'} with no slip`, sub: 'Small and close: one day at a time.', cells };
 }

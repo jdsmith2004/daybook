@@ -751,7 +751,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
 const openPart = (id: PartId) => router.push({ pathname: '/settings/[part]', params: { part: id } });
 
 /** every setting, as groups, then Delete everything on its own. More puts its own groups in the same list: `lead` before the
-    settings (the journal, the plan, help, the tip) and `foot` after Delete everything (the 988 line). */
+    settings (the journal, the plan, help, the tip) and `foot` after Delete everything (the crisis line, core crisis.ts). */
 export function SettingsSections({ lead, foot }: { lead?: ReactNode; foot?: ReactNode }) {
   const parts = useParts();
   const { snap, tk, dirty } = useStore();

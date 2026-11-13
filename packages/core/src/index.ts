@@ -27,6 +27,7 @@ export * from './steps';
 export * from './faith';
 export * from './written';
 export * from './habit';
+export * from './crisis';
 export * from './lesson-beats';
 export * from './lesson-turns';
 export * from './practice';

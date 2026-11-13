@@ -20,7 +20,8 @@ import {
   trailNotes,
   WIDGET_PTS,
   widgetTold,
-  answerNight,
+  tellNight,
+  addDays,
   nudgeExt,
   nudgeQuietLeft,
 } from '@daybook/core';
@@ -158,15 +159,15 @@ function FlameWidgetKeeper() {
       update((s) => (s.settings && !s.settings.widget ? { ...s, settings: { ...s.settings, widget: tk } } : s));
       say('Your flame is on your screen. +' + WIDGET_PTS + ' points');
     },
-    /* a morning answered on the Home Screen (Free of it, core widgetTold): written the same way as on the morning page, once, and
-       only while that morning is still unanswered */
+    /* a morning answered on the Home Screen (Free of it, core widgetTold): the widget keeps the morning's day, so its night is the
+       day before; written through tellNight as on the morning page and Days, once, and only while that morning is still unanswered */
     (told) =>
       update((s) => {
         const st = s.settings;
         if (!st) return s;
         let days = s.days;
         for (const t of told)
-          if (widgetTold(days, st, [{ told: 'free', toldK: t.k, toldAt: t.at }], tk).length) days = answerNight(days, st, t.k, 'free', t.at);
+          if (widgetTold(days, st, [{ told: 'free', toldK: t.k, toldAt: t.at }], tk).length) days = tellNight(days, st, addDays(t.k, -1), 'free', tk, t.at);
         return days === s.days ? s : { ...s, days };
       }),
   );

@@ -3,7 +3,8 @@
    do is plain at a glance. When a bigger moment has the next step (a pause, the day of a slip, a talk-through, days
    away, the Sunday review, a one-time moment), its card sits above the line. Then last night's win, when an urge was ridden out in
    SOS at night (night-win.tsx), and the asks, one at a time, and none on the day the person came back or in the hours after an SOS
-   or a slip (lib/quiet-asks.ts). A plan talked through waits quietly under the line until its moment has passed (core talkPlanNow).
+   or a slip (lib/quiet-asks.ts). A plan talked through waits as one quiet line at the top of the day, under the sky, until its
+   moment has passed (core talkPlanNow).
    The sky takes the room the rest does not need (lib/today-size.ts). Pulling the page down past its top opens the journal
    (app/journal.tsx). Graduation (graduate.ts) is recorded here the
    first time it is earned, and its celebration opens. */
@@ -84,7 +85,7 @@ import { useStore } from '@/lib/store';
 import { useMithrasOpen, useMithrasPending } from '@/lib/mithras';
 import { useUnlock } from '@/lib/unlock';
 import { useNights } from '@/lib/health';
-import { LEAD_ROOM, NOTE_ROOM, useTodaySize } from '@/lib/today-size';
+import { LEAD_ROOM, NOTE_ROOM, skyTrim, useTodaySize } from '@/lib/today-size';
 import { useAccount, useSync } from '@/lib/sync';
 import { SyncStrip } from '@/components/sync-strip';
 import { font, useTheme } from '@/lib/theme';
@@ -379,16 +380,18 @@ export default function Today() {
   const ink = skyInk(g.level.n, skyPhase(snap.days, st, tk, now));
   /* after the night hour (tonight's time, core two-moments.ts), until the new day */
   const night = afterNightHour(snap.days, st, tk, now);
+  /* a long day's list takes a little of the empty sky over the flame (lib/today-size.ts skyTrim; the hero keeps the flame whole) */
+  const trim = night ? 0 : skyTrim(stopTiles(snap.days, st, tk, now, snap.journal, !!account).tiles.length);
   /* the Good night stop, even on a day its row is switched off: Phone to bed is always the night's one card */
   const nightTile = night ? stopTiles(snap.days, { ...st, routine: { ...st.routine, wind: true } }, tk, now).tiles.find((x) => x.k === 'night') || null : null;
   const bedAt = snap.days[tk]?.p?.po || null;
   /* the day: the care row, then the day's line and what waits under it */
   const dayPage = (
     <>
+      <WaitingPlan snap={snap} tk={tk} now={now} />
       <LogLink walk={!walkWaits} />
       <NotifyBanner />
       <PullTroubleStrip />
-      <WaitingPlan snap={snap} tk={tk} now={now} />
       {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
       {calm || done ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}
       {done ? (
@@ -421,7 +424,8 @@ export default function Today() {
         title={title}
         bare={!past}
         onScroll={(y) => {
-          if (y > size.sky - 60 !== scrolled.current > size.sky - 60) setPast(y > size.sky - 60);
+          const edge = size.sky - trim - 60;
+          if (y > edge !== scrolled.current > edge) setPast(y > edge);
           if (y > 12 === atRest) setAtRest(y <= 12);
           scrolled.current = y;
         }}
@@ -438,6 +442,7 @@ export default function Today() {
               now={now}
               sky={size.sky}
               flame={size.flame}
+              trim={trim}
               title={title}
               lead={<FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />}
             />
@@ -459,10 +464,10 @@ export default function Today() {
                 t={nightTile}
               />
             ) : null}
+            <WaitingPlan snap={snap} tk={tk} now={now} />
             <LogLink walk={!walkWaits} />
             {/* Screen Time not working: said here too, since the night is when it matters (WP2) */}
             <PullTroubleStrip />
-            <WaitingPlan snap={snap} tk={tk} now={now} />
           </>
         ) : (
           dayPage

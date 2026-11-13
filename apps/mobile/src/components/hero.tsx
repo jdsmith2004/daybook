@@ -57,10 +57,12 @@ import { pullIgnoredAt, pullNights } from '@/lib/pull';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
-import { FOOT } from '@/lib/today-size';
+import { FOOT, SKY_TRIM_MAX } from '@/lib/today-size';
 
 /** how far a form stands below the hills' line, as a share of its drawing: the torch and the beacon are tall and narrow enough to pass between the words; the kindling's and the campfire's logs are wide, so they stay clear above them */
 const SINK: Record<number, number> = { 1: -0.02, 2: 0, 3: 0.11, 4: 0.08 };
+/** the empty room at the top of the flame's drawing, over the tip of the fire, as a share of the drawing (big-flame.tsx) */
+const FIG_HEAD = 0.2;
 /** the star field was drawn for a sky this tall, and spreads with the real one */
 const STAR_SKY = 262;
 /** the day the fire was last seen going down, and lit again, in this run of the app: each is seen once a day */
@@ -74,6 +76,7 @@ export function Hero({
   now,
   sky,
   flame,
+  trim = 0,
   title,
   action,
   lead,
@@ -85,6 +88,8 @@ export function Hero({
   /** the sky's height and the flame's drawing (lib/today-size.ts) */
   sky: number;
   flame: number;
+  /** how much of the empty sky over the flame a long day's list asks for (lib/today-size.ts skyTrim); capped here */
+  trim?: number;
   /** the date, said by a screen reader */
   title: string;
   /** a small button at the top right */
@@ -92,7 +97,7 @@ export function Hero({
   /** a small button at the top left */
   lead?: React.ReactNode;
 }) {
-  return <Sky g={g} snap={snap} tk={tk} now={now} height={sky} flame={flame} title={title} action={action} lead={lead} />;
+  return <Sky g={g} snap={snap} tk={tk} now={now} height={sky} flame={flame} trim={trim} title={title} action={action} lead={lead} />;
 }
 
 /** the colors of the words on the sky at this level. With the hour's sky (`phase`, WP5: the sky follows the clock), the words on a form
@@ -168,6 +173,7 @@ function Sky({
   now,
   height,
   flame,
+  trim,
   title,
   action,
   lead,
@@ -178,6 +184,7 @@ function Sky({
   now: number;
   height: number;
   flame: number;
+  trim: number;
   title: string;
   action?: React.ReactNode;
   lead?: React.ReactNode;
@@ -205,6 +212,17 @@ function Sky({
   /* the drawing stands on the hills along the bottom, and the sky above it carries on up to the clock. The tall, narrow forms stand
      lower, between the number and the level, so their faces sit low too (the owner, November 1, 2026) */
   const FLAME_TOP = SCENE_H - FLAME - FOOT + 18 + Math.round(FLAME * (SINK[formOfLevel(lvl.n)] ?? 0.03));
+  /* a long list takes a little of the sky, from the top only: the whole scene is drawn at its full height and slides up under the
+     clock, so the flame keeps its size and its place on the hills. Never more than SKY_TRIM_MAX of the sky, and never so much that
+     the tip of the fire goes under the clock (FIG_HEAD: the empty room at the top of the flame's drawing) */
+  const cut = Math.round(Math.max(0, Math.min(trim, SCENE_H * SKY_TRIM_MAX, FLAME_TOP + FLAME * FIG_HEAD - inset.top - 6)));
+  const cutA = useRef(new Animated.Value(cut)).current;
+  useEffect(() => {
+    if (reduce) return cutA.setValue(cut);
+    const a = Animated.timing(cutA, { toValue: cut, duration: 520, easing: Easing.inOut(Easing.cubic), useNativeDriver: false });
+    a.start();
+    return () => a.stop();
+  }, [cut, cutA, reduce]);
   const h = heroNumber(snap.days, snap.settings!, tk, now);
   const marksOn = !!snap.settings && truthOn(snap.settings, tk);
   const { light, ink, soft, glass } = skyInk(lvl.n, phase ?? undefined);
@@ -321,59 +339,61 @@ function Sky({
   }, [relit]);
   return (
     <>
-      <View style={[s.sky, { height: SCENE_H }]}>
-        {/* the card's sky lines up with the drawing's own, so the drawing melts into it */}
-        <LinearGradient
-          colors={sc.sky}
-          locations={sc.at.map((o) => Math.max(0, FLAME_TOP + o * FLAME) / SCENE_H) as [number, number, number]}
-          style={StyleSheet.absoluteFill}
-        />
-        {/* the sky itself (stars and hills) opens Milestones: every form the flame grows into */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Milestones: every form your flame grows into"
-          onPress={() => {
-            buzz('tap');
-            router.push('/miles');
-          }}
-          style={StyleSheet.absoluteFill}>
-          {sc.stars
-            ? STARS.map(([x, y, r], i) => (
-                <Animated.View
-                  key={i}
-                  style={[
-                    s.star,
-                    {
-                      left: `${x}%`,
-                      top: (y * SCENE_H) / STAR_SKY,
-                      width: r,
-                      height: r,
-                      borderRadius: r / 2,
-                      opacity: reduce ? 0.8 : tw[i % 3].interpolate({ inputRange: [0, 1], outputRange: i % 2 ? [0.95, 0.3] : [0.3, 0.95] }),
-                    },
-                  ]}
-                />
-              ))
-            : null}
-          {/* the drawing's own hills, carried on across the card at the drawing's scale, so its hills fade into the same ones */}
-          {sc.land ? (
-            <SvgXml
-              xml={`<svg viewBox="${60 - 400} ${(-FLAME_TOP * 120) / FLAME} 800 ${(SCENE_H * 120) / FLAME}" preserveAspectRatio="xMidYMin slice">${sc.land}</svg>`}
-              style={StyleSheet.absoluteFill}
-              width="100%"
-              height={SCENE_H}
-              pointerEvents="none"
-            />
-          ) : null}
-        </Pressable>
-        <View style={[s.flame, { top: FLAME_TOP }]} pointerEvents="box-none">
+      <Animated.View style={[s.sky, { height: Animated.subtract(SCENE_H, cutA) }]}>
+        <Animated.View style={[s.scene, { height: SCENE_H, transform: [{ translateY: Animated.multiply(cutA, -1) }] }]} pointerEvents="box-none">
+          {/* the card's sky lines up with the drawing's own, so the drawing melts into it */}
+          <LinearGradient
+            colors={sc.sky}
+            locations={sc.at.map((o) => Math.max(0, FLAME_TOP + o * FLAME) / SCENE_H) as [number, number, number]}
+            style={StyleSheet.absoluteFill}
+          />
+          {/* the sky itself (stars and hills) opens Milestones: every form the flame grows into */}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${title}. Your flame, level ${lvl.n}.${words ? ' ' + words.h + '.' : ''} Tap to say hi.`}
-            onPress={hello}>
-            <BigFlame level={lvl.n} size={FLAME} pulse={pulse} low={shown} douse={douse} smoke={light ? '#C9C2DA' : '#6B6577'} />
+            accessibilityLabel="Milestones: every form your flame grows into"
+            onPress={() => {
+              buzz('tap');
+              router.push('/miles');
+            }}
+            style={StyleSheet.absoluteFill}>
+            {sc.stars
+              ? STARS.map(([x, y, r], i) => (
+                  <Animated.View
+                    key={i}
+                    style={[
+                      s.star,
+                      {
+                        left: `${x}%`,
+                        top: (y * SCENE_H) / STAR_SKY,
+                        width: r,
+                        height: r,
+                        borderRadius: r / 2,
+                        opacity: reduce ? 0.8 : tw[i % 3].interpolate({ inputRange: [0, 1], outputRange: i % 2 ? [0.95, 0.3] : [0.3, 0.95] }),
+                      },
+                    ]}
+                  />
+                ))
+              : null}
+            {/* the drawing's own hills, carried on across the card at the drawing's scale, so its hills fade into the same ones */}
+            {sc.land ? (
+              <SvgXml
+                xml={`<svg viewBox="${60 - 400} ${(-FLAME_TOP * 120) / FLAME} 800 ${(SCENE_H * 120) / FLAME}" preserveAspectRatio="xMidYMin slice">${sc.land}</svg>`}
+                style={StyleSheet.absoluteFill}
+                width="100%"
+                height={SCENE_H}
+                pointerEvents="none"
+              />
+            ) : null}
           </Pressable>
-        </View>
+          <View style={[s.flame, { top: FLAME_TOP }]} pointerEvents="box-none">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${title}. Your flame, level ${lvl.n}.${words ? ' ' + words.h + '.' : ''} Tap to say hi.`}
+              onPress={hello}>
+              <BigFlame level={lvl.n} size={FLAME} pulse={pulse} low={shown} douse={douse} smoke={light ? '#C9C2DA' : '#6B6577'} />
+            </Pressable>
+          </View>
+        </Animated.View>
         {lead ? (
           <View style={[s.lead, { top: inset.top + 10 }]} pointerEvents="box-none">
             {lead}
@@ -469,7 +489,7 @@ function Sky({
             </Text>
           </View>
         ) : null}
-      </View>
+      </Animated.View>
       {/* burning low: one firm line under the sky, clear of the flame, read before the next step */}
       {words || (fl.warn && !relit) ? (
         /* big and few: what is happening, then what it cost, and in the one warm color the way to light it again */
@@ -481,6 +501,8 @@ function Sky({
 
 const s = StyleSheet.create({
   sky: { overflow: 'hidden' },
+  /* the scene at its full height, slid up under the clock by a long list's trim */
+  scene: { position: 'absolute', left: 0, right: 0, top: 0 },
   star: { position: 'absolute', backgroundColor: '#FFF6D8' },
   action: { position: 'absolute', right: 16 },
   lead: { position: 'absolute', left: 16 },

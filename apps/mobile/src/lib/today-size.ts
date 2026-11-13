@@ -34,3 +34,14 @@ export function useTodaySize() {
   const inset = useSafeAreaInsets();
   return (extra = 0) => todaySize(height, width, inset.top, inset.bottom, extra);
 }
+
+/** the stops a day's list holds before the sky gives anything up: the big card and the two rows BELOW counts */
+const ROWS_IN_BELOW = 3;
+/** how much of the empty sky over the flame each stop past those gives up */
+const TRIM_PER_ROW = 28;
+/** a long day's list takes a little of the empty sky over the flame (the owner, November 13, 2026: "when they add more to todo the
+    avatar window should shrink to make room just a bit ... the upper half take off a little bit"). Only the top of the sky gives the
+    room; the hero caps it (SKY_TRIM_MAX of the sky, and never past the top of the flame), and the flame keeps its size and place. */
+export const skyTrim = (rows: number) => Math.max(0, rows - ROWS_IN_BELOW) * TRIM_PER_ROW;
+/** the most of the sky a long list takes */
+export const SKY_TRIM_MAX = 0.18;

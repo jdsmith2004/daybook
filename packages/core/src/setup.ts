@@ -458,7 +458,7 @@ export function obBegin(a: SetupAnswers, tk: DayKey, now = Date.now()): Settings
   const rs = obReasonList(a);
   const rec = obRecord(a, null, tk, now);
   return changeSettings(
-    defaultSettings(tk),
+    freshSettings(tk),
     (s) => {
       s.goal = obBeginGoal(h);
       s.day1 = tk;

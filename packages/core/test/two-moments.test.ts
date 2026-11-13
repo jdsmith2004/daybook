@@ -164,3 +164,12 @@ describe('the finish line', () => {
     expect(line === null || /^\d+ of 90 toward graduation$/.test(line)).toBe(true);
   });
 });
+
+describe('the new setup starts fresh', () => {
+  it('obBegin starts without the check-in and the day’s feeling', async () => {
+    const { obBegin } = await import('../src/setup');
+    const s = obBegin({} as never, tk, 1);
+    expect(s.routine.checkin).toBe(false);
+    expect(s.dayFeel).toBe(false);
+  });
+});

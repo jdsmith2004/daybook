@@ -457,6 +457,7 @@ export default function Today() {
           steps={tourSteps({
             lessonDone: lessonsDone(snap.days).size > 0,
             lessonId: lessonsDone(snap.days).size ? null : (lessonStop(snap.days, st, tk).L?.id ?? null),
+            walk: !walkWaits,
           })}
           level={Math.max(1, g.level.n)}
           onEnd={() => {

@@ -52,7 +52,7 @@ const OPEN: Partial<Record<SpotKey, { label: string; go: () => void }>> = {
 };
 
 /** the steps, from the top of the page down, then the tab bar, and last the lesson (only while lesson 1 waits on the page) */
-export function tourSteps({ lessonDone, lessonId }: { lessonDone: boolean; lessonId: string | null }): Step[] {
+export function tourSteps({ lessonDone, lessonId, walk = true }: { lessonDone: boolean; lessonId: string | null; walk?: boolean }): Step[] {
   const steps: Step[] = [
     {
       at: ['sky'],
@@ -68,6 +68,12 @@ export function tourSteps({ lessonDone, lessonId }: { lessonDone: boolean; lesso
       say: lessonDone ? 'Your lessons live in Learn. The next one opens tomorrow.' : 'Your lessons live in Learn. A new one opens every day.',
     },
   ];
+  /* Walk it through waits on Today for its own unlock after a lesson (lib/tour.ts): until then the tour leaves it out */
+  if (!walk)
+    steps.splice(
+      steps.findIndex((x) => x.at[0] === 'trail'),
+      1,
+    );
   if (!lessonDone && lessonId)
     steps.push({
       at: ['lesson'],

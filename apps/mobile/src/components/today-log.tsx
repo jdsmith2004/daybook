@@ -58,7 +58,7 @@ export function LogLink({ walk = true }: { walk?: boolean }) {
           ref={trailSpot}
           icon="compass"
           title="Walk it through"
-          sub="When an urge keeps coming"
+          sub="When it keeps coming back"
           label="Walk it through: when an urge keeps coming back, or you are planning a slip."
           onPress={() => router.push('/trail')}
         />
@@ -67,8 +67,8 @@ export function LogLink({ walk = true }: { walk?: boolean }) {
   );
 }
 
-/** one of the care buttons: what it is, and under it what it is for. With no onPress it is a picture of the button (the unlock's art). */
-export function CareButton({
+/** one of the care buttons: what it is, and under it what it is for */
+function CareButton({
   ref,
   icon,
   title,
@@ -80,15 +80,13 @@ export function CareButton({
   icon: string;
   title: string;
   sub: string;
-  label?: string;
-  onPress?: () => void;
+  label: string;
+  onPress: () => void;
 }) {
   const c = useTheme();
   return (
     <Pressable
       ref={ref}
-      disabled={!onPress}
-      accessible={!!onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}

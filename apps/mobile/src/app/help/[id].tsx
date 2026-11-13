@@ -9,6 +9,7 @@ import {
   habitOf,
   habitSay,
   HELP_PAGES,
+  faithOut,
   HELP_SRC,
   HELP_SUBS,
   LESSONS,
@@ -30,6 +31,7 @@ import { HelpFoot } from '@/components/help-foot';
 import { LinkCard, Rows } from '@/components/link-card';
 import { Screen } from '@/components/screen';
 import { Card, T } from '@/components/ui';
+import { useCrisis } from '@/lib/crisis';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -40,9 +42,11 @@ const urgePlan = () => router.push({ pathname: '/plan', params: { pane: 'plans',
 
 export default function HelpPageRoute() {
   const { id, sub } = useLocalSearchParams<{ id: string; sub?: string }>();
+  const { snap } = useStore();
   if (id === 'plan') return <Redirect href={{ pathname: '/plan', params: { pane: 'plans', ...(sub ? { sub } : {}) } }} />;
   if (id === 'playbook') return <Redirect href="/learned" />;
   if (id === 'sources') return <Sources />;
+  if (id === 'faith' && faithOut(snap.settings)) return <Redirect href="/help" />;
   if (!(id in HELP_PAGES)) return <Redirect href="/help" />;
   const pg = HELP_PAGES[id as HelpPage];
   return (
@@ -76,6 +80,8 @@ function People() {
   const { snap } = useStore();
   const nm = safeName(snap.settings);
   const habit = habitOf(snap.settings);
+  const { line, text, gambling } = useCrisis();
+  const us = line.region === 'us';
   return (
     <>
       <P>A real voice can take the edge off, even for a few minutes. You do not have to be in a crisis to call.</P>
@@ -91,64 +97,59 @@ function People() {
       </Sec>
       <Sec title="Any hour">
         <Card style={s.nums}>
-          <NumRow
-            first
-            name="988 Suicide & Crisis Lifeline"
-            num="988"
-            note="Call or text, or chat at 988lifeline.org. Free, 24/7. The name says suicide because it is there for that. It is also open to anyone who is struggling or needs to talk. A counselor starts by asking if you are safe. Answer honestly, then say what is going on."
-            copy="988"
-          />
-          {habit === 'gambling' ? (
+          <NumRow first name={line.name} num={line.num} note={line.note} copy={line.dial} />
+          {habit === 'gambling' && gambling ? <NumRow name={gambling.name} num={gambling.num} note={gambling.note} copy={gambling.dial} /> : null}
+          {text ? <NumRow name={text.name} num={text.how} note={text.note} copy={text.num} /> : null}
+          {us ? (
             <NumRow
-              name="National Problem Gambling Helpline"
-              num="1-800-MY-RESET (1-800-697-3738)"
-              note="Call, text or chat at 1800myreset.org. Free, confidential, 24/7. For anyone hurt by gambling, and for the people close to them."
-              copy="1-800-697-3738"
+              name="SAMHSA National Helpline"
+              num="1-800-662-4357"
+              note="Free, confidential, 24/7, in English and Spanish. Treatment referrals and information."
+              copy="1-800-662-4357"
             />
           ) : null}
-          <NumRow
-            name="Crisis Text Line"
-            num="Text HOME to 741741"
-            note="Free, 24/7. For anyone facing a hard time, whatever you are going through. A live volunteer counselor, usually within about 5 minutes. (Text HOLA for Spanish.) Message and data rates may apply. Volunteers are not medical professionals."
-            copy="741741"
-          />
-          <NumRow
-            name="SAMHSA National Helpline"
-            num="1-800-662-4357"
-            note="Free, confidential, 24/7, in English and Spanish. Treatment referrals and information."
-            copy="1-800-662-4357"
-          />
         </Card>
       </Sec>
-      <Sec title="Other helplines">
-        <T v="small" tone="muted">
-          Hours are more limited. Check each one before you call.
-        </T>
-        <Card style={s.nums}>
-          <NumRow
-            first
-            name="NAMI HelpLine"
-            num="1-800-950-6264"
-            note="Mental health information and referrals, Mon to Fri 10 AM to 10 PM Eastern. Or text “helpline” to 62640. Not a crisis line: for a crisis, call or text 988."
-            copy="1-800-950-6264"
-          />
-          <NumRow name="211" num="2-1-1" note="Dial 211 for local services and referrals. Free and confidential. Hours and services vary by area." copy="211" />
-          <View style={[s.warm, { borderColor: c.line }]}>
-            <T v="label">Warmlines</T>
-            <T v="small" tone="muted">
-              A warmline is a peer-run phone line that offers callers emotional support, answered by volunteers who are in recovery themselves. Which lines
-              there are, and their hours, depend on your state.
-            </T>
-            <Ext url="https://nami.org/Support-Education/NAMI-HelpLine/NAMI-Warmline-Directory" label="NAMI Warmline Directory" />
-          </View>
-        </Card>
-      </Sec>
-      {habitMedical(habit) ? (
-        <Sec title="Stopping safely">
-          <P>{habitMedical(habit)} The SAMHSA helpline above can point you to care near you, any hour.</P>
+      {/* the lines below answer in the US only */}
+      {us ? (
+        <Sec title="Other helplines">
+          <T v="small" tone="muted">
+            Hours are more limited. Check each one before you call.
+          </T>
+          <Card style={s.nums}>
+            <NumRow
+              first
+              name="NAMI HelpLine"
+              num="1-800-950-6264"
+              note="Mental health information and referrals, Mon to Fri 10 AM to 10 PM Eastern. Or text “helpline” to 62640. Not a crisis line: for a crisis, call or text 988."
+              copy="1-800-950-6264"
+            />
+            <NumRow
+              name="211"
+              num="2-1-1"
+              note="Dial 211 for local services and referrals. Free and confidential. Hours and services vary by area."
+              copy="211"
+            />
+            <View style={[s.warm, { borderColor: c.line }]}>
+              <T v="label">Warmlines</T>
+              <T v="small" tone="muted">
+                A warmline is a peer-run phone line that offers callers emotional support, answered by volunteers who are in recovery themselves. Which lines
+                there are, and their hours, depend on your state.
+              </T>
+              <Ext url="https://nami.org/Support-Education/NAMI-HelpLine/NAMI-Warmline-Directory" label="NAMI Warmline Directory" />
+            </View>
+          </Card>
         </Sec>
       ) : null}
-      {habit !== 'porn' ? null : (
+      {habitMedical(habit) ? (
+        <Sec title="Stopping safely">
+          <P>
+            {habitMedical(habit)}{' '}
+            {us ? 'The SAMHSA helpline above can point you to care near you, any hour.' : 'A doctor or your local health service can help you stop safely.'}
+          </P>
+        </Sec>
+      ) : null}
+      {habit !== 'porn' || !us ? null : (
         <Sec title="If your worries involve children">
           <P>
             Stop It Now is a confidential helpline for adults who are worried about their own sexual thoughts or behavior toward children, or about someone
@@ -169,11 +170,11 @@ function People() {
         Phone numbers are shown as text on purpose. Tap Copy, then paste it into your phone app.
       </T>
       <Links>
-        <Ext url="https://988lifeline.org/" label="988lifeline.org" />
-        <Ext url="https://www.crisistextline.org/text-us/" label="Crisis Text Line" />
-        <Ext url="https://www.samhsa.gov/find-help/helplines/national-helpline" label="SAMHSA helpline" />
-        {habit === 'gambling' ? <Ext url="https://www.1800myreset.org/" label="1-800-MY-RESET" /> : null}
-        {habit === 'porn' ? <Ext url="https://www.stopitnow.org/helpnow" label="Stop It Now" /> : null}
+        <Ext url={line.site.url} label={line.site.label} />
+        {text ? <Ext url={text.site.url} label={text.site.label} /> : null}
+        {us ? <Ext url="https://www.samhsa.gov/find-help/helplines/national-helpline" label="SAMHSA helpline" /> : null}
+        {habit === 'gambling' && gambling ? <Ext url={gambling.site.url} label={gambling.site.label} /> : null}
+        {habit === 'porn' && us ? <Ext url="https://www.stopitnow.org/helpnow" label="Stop It Now" /> : null}
       </Links>
       <HCard title="A person you already know">
         <P>
@@ -428,12 +429,14 @@ function Groups() {
           </HCard>
         </>
       )}
-      <HCard title="Celebrate Recovery" links={<Ext url="https://www.celebraterecovery.com/" label="Find a group" />}>
-        <P>
-          A Christ-centered program for “hurts, hang-ups and habits,” started at Saddleback Church in 1991. Since your faith matters to you, this may fit. Ask
-          the local group what they run and whether it covers {habit === 'porn' ? 'porn use' : habit === 'other' ? 'your habit' : HABIT_NOUN[habit]}.
-        </P>
-      </HCard>
+      {faithOut(snap.settings) ? null : (
+        <HCard title="Celebrate Recovery" links={<Ext url="https://www.celebraterecovery.com/" label="Find a group" />}>
+          <P>
+            A Christ-centered program for “hurts, hang-ups and habits,” started at Saddleback Church in 1991. Since your faith matters to you, this may fit. Ask
+            the local group what they run and whether it covers {habit === 'porn' ? 'porn use' : habit === 'other' ? 'your habit' : HABIT_NOUN[habit]}.
+          </P>
+        </HCard>
+      )}
       <HCard title="Your first meeting">
         <UL
           items={[

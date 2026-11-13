@@ -124,7 +124,7 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
     h: 'When you catch yourself planning it',
     title: 'Planning a slip?',
     line: 'You rode an urge out. Here is the tool for the night it starts earlier.',
-    say: 'A slip is often planned long before it happens: a late night, a closed door. When you notice that, tap Planning a slip? on Today. We talk it through, and you choose with your eyes open.',
+    say: 'A slip is often planned long before it happens: a late night, a closed door. When you notice that, tap Walk it through on Today. It takes you through it one step at a time, and you choose with your eyes open.',
     btn: 'See how it works',
   },
   person: {

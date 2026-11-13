@@ -8,8 +8,10 @@
    while the place's picture acts · 8 explain it back, written, under the chain built from their taps · 9 how strong now
    (still loud walks it again from the line) · 10 it may come back: when, and what they will do, saved as their plan.
 
-   Every answer is said back before the next question, and every fact ends with what changes it. The words sit at the top;
-   the choices sit low, under the thumb; a text box and its button stay together near the top (the keyboard). Very strong (8
+   Every answer but the two numbers and the place is optional (the review of November 12, 2026): Next works with nothing
+   picked or typed, so it can be walked mid-urge with one thumb, and the boxes do not open the keyboard by themselves. Every
+   answer is said back before the next question, and every fact ends with what changes it. The words sit at the top; the
+   choices sit low, under the thumb; a text box and its button stay together near the top (the keyboard). Very strong (8
    and up) puts SOS first. Nothing asks a person to reach out to anyone, and nothing sends them to bed in the day. */
 import {
   TRAIL,
@@ -21,6 +23,8 @@ import {
   TALK_MOVES,
   WALK_BAD,
   WALK_COACH,
+  walkCoach,
+  habitOf,
   WALK_SRC,
   WALK_LINES,
   WALK_NEEDS,
@@ -55,7 +59,6 @@ import {
   walkBodyAt,
   walkOpen,
   walkPlace,
-  walkPlanLine,
   walkTalk,
   walkWhere,
   walkWhyNot,
@@ -412,7 +415,7 @@ export function Walk({
     dock = (
       <>
         <Chips label="What is so bad about it" opts={WALK_BAD.map(([id, w]) => ({ id, label: w }))} on={bad ? [bad] : []} onPick={(x) => setBad(x)} />
-        <Button label="Next" disabled={!B} onPress={() => go('line')} />
+        <Button label="Next" onPress={() => go('line')} />
       </>
     );
   }
@@ -439,7 +442,7 @@ export function Walk({
               style={s.box}
             />
             <View style={s.write}>
-              <Button label="Next" disabled={!lineOwn.trim()} onPress={() => go('answer')} />
+              <Button label="Next" onPress={() => go('answer')} />
               <View style={s.center}>
                 <Link label="Pick from the list" tone="muted" onPress={() => setOwnLine(false)} />
               </View>
@@ -469,7 +472,7 @@ export function Walk({
             setLineOwn('');
           }}
         />
-        <Button label="Now answer it" disabled={!L} onPress={() => go('answer')} />
+        <Button label={L ? 'Now answer it' : 'Next'} onPress={() => go('answer')} />
         <View style={s.center}>
           <Link
             label="It says something else"
@@ -496,7 +499,6 @@ export function Walk({
         </Text>
         <TextInput
           accessibilityLabel="Your answer to it"
-          autoFocus
           multiline
           maxLength={160}
           defaultValue={answer}
@@ -506,7 +508,7 @@ export function Walk({
           style={s.box}
         />
         <View style={s.write}>
-          <Button label="Next" disabled={!answer.trim()} onPress={() => go('need')} />
+          <Button label="Next" onPress={() => go('need')} />
           {L ? (
             <View style={s.center}>
               <Link
@@ -548,7 +550,7 @@ export function Walk({
           }}
         />
         {N ? <DoCard over="Do this now">{walkNeedMove(N, night)}</DoCard> : null}
-        <Button label={N ? 'I did it' : 'Next'} disabled={!N} onPress={() => go('stage')} />
+        <Button label={N ? 'I did it' : 'Next'} onPress={() => go('stage')} />
       </>
     );
   }
@@ -639,7 +641,6 @@ export function Walk({
         </Text>
         <TextInput
           accessibilityLabel="What happened in you, in your words"
-          autoFocus
           multiline
           maxLength={240}
           defaultValue={explain}
@@ -649,7 +650,7 @@ export function Walk({
           style={s.box}
         />
         <View style={s.write}>
-          <Button label="Next" disabled={!explain.trim()} onPress={() => go('after')} />
+          <Button label="Next" onPress={() => go('after')} />
         </View>
         <Text style={s.over2}>What you found</Text>
         <View accessible accessibilityLabel={'What you found: ' + chain.join(', then ')}>
@@ -1068,7 +1069,8 @@ function Coach({
   const [open, setOpen] = useState(false);
   /* the flame takes the room the page leaves it, as in a lesson, and never less than it had */
   const [room, setRoom] = useState(0);
-  const c = beat ? WALK_COACH[beat] : null;
+  const { snap } = useStore();
+  const c = beat ? walkCoach(beat, habitOf(snap.settings)) : null;
   const reason = why || c?.why || '';
   const papers = src || (why ? [] : c?.src || []);
   useEffect(() => setOpen(false), [say]);
@@ -1106,7 +1108,8 @@ function Coach({
 /** a quiet "Why this works" under words that have no coach: opens the beat's reason and its papers in place */
 function WhyLine({ beat }: { beat: WalkBeat }) {
   const [open, setOpen] = useState(false);
-  const c = WALK_COACH[beat];
+  const { snap } = useStore();
+  const c = walkCoach(beat, habitOf(snap.settings));
   return (
     <View style={s.whyLine}>
       <Pressable

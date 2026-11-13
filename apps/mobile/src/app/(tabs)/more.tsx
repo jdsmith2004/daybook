@@ -14,12 +14,14 @@ import { SettingsSections } from '@/components/settings-sections';
 import { TipRow } from '@/components/support';
 import { Icon, T } from '@/components/ui';
 import { useCountFocus } from '@/lib/pulse';
+import { useScripture } from '@/lib/scripture';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 
 export default function More() {
   useCountFocus('tab_more');
   const { snap, tk } = useStore();
+  const lib = useScripture();
   const { width } = useWindowDimensions();
   const st = snap.settings;
   /* before setup the tabs wait behind the welcome page ((tabs)/_layout.tsx) */
@@ -65,6 +67,7 @@ export default function More() {
               <SetRow icon="pencil" label="Journal" onPress={() => router.push('/journal')} />
               <SetRow icon="shield" label="My plan" onPress={() => router.push('/plan')} />
               <SetRow icon="flag" label="Where I am" value={phaseLabel(tk, st)} onPress={() => router.push('/mode')} />
+              {lib.on ? <SetRow icon="book" label="Scriptures" onPress={() => router.push('/scripture')} /> : null}
             </SetGroup>
             <SetGroup>
               <TipRow />

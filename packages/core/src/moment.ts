@@ -278,7 +278,10 @@ export function standRow(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
   const f = formWord(form);
   /* the week's goal, set on Sunday, while it can still be counted */
   const g = isSunday(tk) ? null : sunGoalNow(days, reviews, tk, nights);
-  const goal = g && g.g.k && g.g.n && g.done != null ? g.done + ' of ' + g.g.n + ' ' + SUN_GOALS[g.g.k].unit + ' this week' : '';
+  const goal =
+    g && g.g.k && g.g.n && g.done != null
+      ? (g.done > g.g.n ? 'Goal kept: ' + g.done + ' ' + SUN_GOALS[g.g.k].unit : g.done + ' of ' + g.g.n + ' ' + SUN_GOALS[g.g.k].unit) + ' this week'
+      : '';
   const note = goal;
   const row = (big: string, ...line: (string | null | undefined)[]): StandRow => {
     const l = [...line.filter(Boolean), f].join(' · ');

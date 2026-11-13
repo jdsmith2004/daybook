@@ -20,7 +20,7 @@
    with the minutes they measured; the entry sheet saves a new one, or changes an entry to a slip; "I went ahead" in Talk it
    through saves it and comes straight here; and the morning set's "Look back on it" opens a slip told that morning. Once the
    hold is done, the go-ahead before it is settled, so Today does not ask again. SOS is one tap away in the corner.
-   The second slip in a week (core slipRepeat) gets the most care: the lesson on therapy leads, and the 988 line shows under
+   The second slip in a week (core slipRepeat) gets the most care: the lesson on therapy leads, and the crisis line (core crisis.ts) shows under
    Done, as it does in a rough stretch (core roughPatch).
    Rekindle's points come from the log itself (core rkOf): one small thing for the next hour waits on Today, and coming back
    the next morning is the sunrise check. Ported from the legacy SCENES.checkin. */
@@ -78,6 +78,7 @@ import { count } from '@/lib/pulse';
 import { armFor, track, trackAb, trackSlip } from '@/lib/events';
 import { close, closeAll } from '@/lib/nav';
 import { WhenPill, WhenSheet } from '@/components/when';
+import { phoneCrisisLine } from '@/lib/crisis';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, nightInk, useTheme, type Sky } from '@/lib/theme';
@@ -284,7 +285,8 @@ export default function Log() {
   ) : null;
   /* this slip is not the only one in its week, or the week has been a rough one: the most care (core slipRepeat, roughPatch) */
   const repeat = slipRepeat(snap.days, date, evId);
-  const close988 = !!repeat || roughPatch(snap.days, st, tk);
+  const closeLine = !!repeat || roughPatch(snap.days, st, tk);
+  const crisis = phoneCrisisLine();
   /* the one quiet "more" after the fire: a lesson for after a slip (core rkLesson) */
   const lesson = lessonFor(rkLesson(snap.days, st, !!repeat), st);
 
@@ -396,16 +398,16 @@ export default function Log() {
                   }}
                 />
               ) : null}
-              {close988 ? (
+              {closeLine ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Call or text 988, the Suicide and Crisis Lifeline"
-                  onPress={() => Linking.openURL('tel:988')}
+                  accessibilityLabel={crisis.how + ', ' + crisis.called.replace('&', 'and')}
+                  onPress={() => Linking.openURL('tel:' + crisis.dial)}
                   hitSlop={6}
                   style={({ pressed }) => [s.help, { opacity: pressed ? 0.6 : 1 }]}>
                   <Icon name="phone" size={16} color={nightInk.muted} />
                   <Text style={[s.helpT, { color: nightInk.muted }]}>
-                    Need someone right now? <Text style={{ fontFamily: font.bodyBold, fontSize: 13, color: nightInk.ink }}>Call or text 988</Text>
+                    Need someone right now? <Text style={{ fontFamily: font.bodyBold, fontSize: 13, color: nightInk.ink }}>{crisis.how}</Text>
                   </Text>
                 </Pressable>
               ) : null}
@@ -439,12 +441,12 @@ export default function Log() {
 /* a sentence's last word stays with the one before it, so "SOS." is not left alone on a line, and "I" stays with "will" */
 const keepLast = (line: string) => line.replace(', I will ', ', I\u00A0will ').replace(/ (\S+)$/, '\u00A0$1');
 
-/* "✓ Saved · Slipped at 11:40 PM  Undo": no points beside a slip (Becoming free, step 2; they are still earned) */
+/* "✓ Saved · Slipped at 11:40 PM  Undo": the tick is neutral, since a slip is never green; no points beside a slip (Becoming free, step 2; they are still earned) */
 function SavedPill({ text, onUndo }: { text: string; onUndo?: () => void }) {
   const c = useTheme();
   return (
     <View style={[s.pill, { backgroundColor: c.scBtn }]}>
-      <View style={[s.ck, { backgroundColor: c.mint }]}>
+      <View style={[s.ck, { backgroundColor: 'rgba(255,255,255,0.28)' }]}>
         <Icon name="check" size={14} color="#FFFFFF" />
       </View>
       <T v="label" style={{ flexShrink: 1 }}>

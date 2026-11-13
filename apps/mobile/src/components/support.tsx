@@ -2,7 +2,7 @@
    the card on Today, the row on More, and the card on a locked page. Every one opens the tip sheet (app/tip.tsx), where a
    tip of $5 or more makes the person a supporter (core supporter.ts). Once they are, the asks stop and the row on More
    says thank you. On iPhone the tip is Apple's in-app purchase first, with the web tip page as a second way (allowed on
-   the US storefront, Guidelines 3.1.1(a) and 3.1.3; Daybook is offered in the United States only, docs/launch.md). On
+   the United States storefront only, Guidelines 3.1.1(a) and 3.1.3; core tipWaysFor; other storefronts, docs/launch.md). On
    Android nothing about tips shows and nothing is locked, until Google Play's rules for it are checked (docs/plan.md). */
 import {
   extraLocked,
@@ -40,7 +40,7 @@ import { SHOTS_ANDROID } from '@/shots/boot';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
-import { tipWays } from '@/lib/tip';
+import { tipLocal, tipWays } from '@/lib/tip';
 import { font, useTheme } from '@/lib/theme';
 
 /** whether a tip can be paid on this device. Off on Android (see above). */
@@ -84,10 +84,10 @@ export function TipCard() {
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
         <Icon name="heart" size={22} color={c.sunText} />
         <T v="label" style={{ flex: 1 }}>
-          {TIP_WORDS.h}
+          {tipLocal(TIP_WORDS.h)}
         </T>
       </View>
-      <T v="small">{TIP_WORDS.p}</T>
+      <T v="small">{tipLocal(TIP_WORDS.p)}</T>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         <Button
           label={TIP_WORDS.go}
@@ -114,7 +114,7 @@ export function TipRow() {
   return (
     <>
       {offer ? <SetRow icon="chart" tone="accent" label={PAT_WORDS.row.title} sub={offer} onPress={openPattern} /> : null}
-      <SetRow icon="heart" tone="sun" label={w.title} sub={w.sub} onPress={openTip} />
+      <SetRow icon="heart" tone="sun" label={w.title} sub={tipLocal(w.sub)} onPress={openTip} />
     </>
   );
 }
@@ -162,7 +162,7 @@ export function MomentAsk({ why, onGo, center }: { why: TipMoment; onGo: () => v
   return (
     <View style={[s.moment, { backgroundColor: c.sunSoft }]}>
       <T v="small" style={center ? { textAlign: 'center' } : undefined}>
-        {TIP_WORDS.moment[why]}
+        {tipLocal(TIP_WORDS.moment[why])}
       </T>
       <Button
         kind="ghost"
@@ -191,8 +191,8 @@ export function UnlockCard({ extra }: { extra: 'stats' | 'sync' }) {
           {w.h}
         </T>
       </View>
-      <T v="small">{w.p}</T>
-      <Button label={TIP_WORDS.lock.btn} onPress={openTip} />
+      <T v="small">{tipLocal(w.p)}</T>
+      <Button label={tipLocal(TIP_WORDS.lock.btn)} onPress={openTip} />
     </Card>
   );
 }
@@ -206,8 +206,8 @@ export function LockAsk() {
   if (PATTERN_FROM == null)
     return (
       <>
-        <T v="small">{TIP_WORDS.lock.stats.p}</T>
-        <Button label={TIP_WORDS.lock.btn} onPress={openTip} />
+        <T v="small">{tipLocal(TIP_WORDS.lock.stats.p)}</T>
+        <Button label={tipLocal(TIP_WORDS.lock.btn)} onPress={openTip} />
       </>
     );
   const w = PAT_WORDS.card;

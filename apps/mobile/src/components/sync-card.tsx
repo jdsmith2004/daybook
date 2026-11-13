@@ -18,7 +18,7 @@ import { cognito, keepPerTrust } from '@/lib/auth';
 import { getTrust, setTrust, trustOffered } from '@/lib/secret';
 import { PREV_DAYS, useStore } from '@/lib/store';
 import { syncedAgo, useSync } from '@/lib/sync';
-import { syncTips, tipError } from '@/lib/tip';
+import { syncTips, tipError, tipWays } from '@/lib/tip';
 import { useTheme } from '@/lib/theme';
 
 /** words written for a phone, said for the place the log is kept: on the web it is this browser, not this phone */
@@ -109,7 +109,8 @@ function FindTip() {
         setBusy(true);
         const r = await syncTips(true).catch(() => null);
         setBusy(false);
-        if (!r || !r.open) say(tipError() && tipError() !== 'No tip was found.' ? tipError() : SUP_SYNC_WORDS.none);
+        if (!r || !r.open)
+          say(tipError() && tipError() !== 'No tip was found.' ? tipError() : tipWays().includes('web') ? SUP_SYNC_WORDS.none : SUP_SYNC_WORDS.noneNoWeb);
       }}
     />
   );
@@ -182,8 +183,8 @@ export function SyncBody() {
           <T v="label">Replace this phone’s log with your account’s?</T>
           <T v="small">
             {only
-              ? `This phone has ${days(only)} your account does not. They leave the log here. A copy is kept on this phone for ${PREV_DAYS} days, so you can bring them back in Settings.`
-              : `Every day on this phone is in your account too. A copy of this phone’s log is kept for ${PREV_DAYS} days all the same.`}
+              ? `This phone has ${days(only)} your account does not. They leave the log here. A copy is kept on this phone for ${PREV_DAYS} days, so you can bring them back in Settings. Your badges, level and points stay.`
+              : `Every day on this phone is in your account too. A copy of this phone’s log is kept for ${PREV_DAYS} days all the same. Your badges, level and points stay.`}
           </T>
           <Button kind="danger" label="Yes, use my account’s log" onPress={() => sync.choose('account')} />
           <Button kind="ghost" label="Combine them instead" onPress={() => sync.choose('combine')} />

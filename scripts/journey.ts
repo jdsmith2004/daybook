@@ -34,16 +34,25 @@ interface Scene {
   fresh?: boolean;
   /** a Sunday, for the Sunday review */
   day?: string;
+  /** the morning set is still waiting (every other scene has it done, since it opens over Today at 10 AM and covers what the scene is for) */
+  morning?: boolean;
+  /** the person has been away: the log stops four days before the scene, so Welcome back has a gap to ask about */
+  away?: boolean;
 }
 const SCENES: Scene[] = [
   { name: 'welcome', path: '/', fresh: true },
   { name: 'setup', path: '/setup', fresh: true },
   { name: 'setup-2', path: '/setup', fresh: true, tap: [/^Get started/] },
+  { name: 'setup-question', path: '/setup', fresh: true, tap: [/^Get started/, /^Next/] },
+  { name: 'morning', path: '/', morning: true, at: '07:30' },
   { name: 'today', path: '/' },
   { name: 'today-night', path: '/', at: '23:15' },
   { name: 'learn', path: '/learn' },
   { name: 'lesson', path: '/', tap: [/^Lesson/] },
   { name: 'lesson-2', path: '/', tap: [/^Lesson/, /^Full/] },
+  { name: 'good-night', path: '/night', at: '23:15' },
+  { name: 'wait-page', path: '/pause' },
+  { name: 'welcome-back', path: '/back', away: true },
   { name: 'sos', path: '/sos' },
   { name: 'sos-tools', path: '/sos', tap: [/^More/] },
   { name: 'tool-breathe', path: '/tool/breathe' },
@@ -94,7 +103,7 @@ const addDays = (k: string, n: number) => {
   return d.toISOString().slice(0, 10);
 };
 const START = addDays(TODAY, -21);
-function seed(upTo: string) {
+function seed(upTo: string, morning = false, away = false) {
   const s: Record<string, string> = {
     /* What's new was seen for this version, so Today opens on Today */
     'daybook.seenVersion': JSON.parse(readFileSync(join(app, 'app.json'), 'utf8')).expo.version,
@@ -110,12 +119,24 @@ function seed(upTo: string) {
       becoming: 'I am someone who keeps my word to myself.',
       rollover: 4,
       screensOff: '23:00',
+      ...(away ? { awayFrom: START } : {}),
     }),
   };
+  /* the day's morning set was done at 8 (ms.set): the set opens over Today at the script's 10 AM otherwise, and every scene after it
+     would be the set. A scene for the morning itself leaves it out. */
+  if (!morning && !away) {
+    const at = +new Date(`${upTo}T08:00:00`);
+    s['daybook:days/' + upTo] = JSON.stringify({
+      d: upTo,
+      events: [],
+      p: { w: [], wd: false, r: false, c: 0, m: true, tl: [], po: null, ls: [], lv: [], ov: {}, ms: { at, n: 'free', f: 3, set: at } },
+      u: 1,
+    });
+  }
   const slip = addDays(TODAY, -5);
   const rode = new Set([addDays(TODAY, -12), addDays(TODAY, -8), addDays(TODAY, -3), addDays(TODAY, -1)]);
   let n = 0;
-  for (let k = START; k < upTo; k = addDays(k, 1)) {
+  for (let k = START; k < (away ? addDays(upTo, -4) : upTo); k = addDays(k, 1)) {
     const events = [];
     /* a lesson a day, the first fourteen */
     const p = ++n <= 14 ? { w: [], wd: false, r: false, c: 0, m: false, tl: [], po: null, ls: ['l' + n], lv: [], ov: {} } : null;
@@ -210,7 +231,7 @@ for (const theme of themes) {
         sessionStorage.setItem('journey:seeded', '1');
         for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v);
       },
-      (sc.fresh ? {} : seed(day)) as Record<string, string>,
+      (sc.fresh ? {} : seed(day, !!sc.morning, !!sc.away)) as Record<string, string>,
     );
     const file = join(out, theme, `${String(i + 1).padStart(2, '0')}-${sc.name}`);
     try {

@@ -13,14 +13,14 @@ for more: past that, builds wait for the next month), and free GitHub Actions an
 
 ## 0. Decisions (in chat)
 
-| Decision               | Suggested                                                   | Why                                                                                                                                                       |
-| ---------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Bundle ID              | `com.jdsmith2004.daybook` (set in `apps/mobile/app.json`)   | It can never change once step 3 runs. Tell Claude before then if you want another.                                                                        |
-| Name on the App Store  | Daybook: Master Yourself                                    | The home screen still says Daybook. "Porn" stays out of the name, so it is not in anyone's purchase list.                                                 |
-| Where it is offered    | The United States only, for now                             | A link out to pay (the tip jar) is allowed on the US App Store only (Review Guidelines 3.1.1(a)).                                                         |
-| Tip service            | Apple in-app purchase first, three Stripe links second      | Kind $5, Generous $10, Amazing $20 (core `supporter.ts`); a tip of $5 or more makes a supporter. The statement says JEFFREY until Stripe accepts DAYBOOK. |
-| Support email          | jeffreydsmith.cs@gmail.com (the owner's choice, October 19) | On the support, privacy and terms pages. A Daybook-only address can replace it later: change `SUPPORT_EMAIL` and the three pages.                         |
-| Your developer account | Tell Claude: individual or organization                     | An individual account shows your legal name as the seller on the App Store.                                                                               |
+| Decision               | Suggested                                                                   | Why                                                                                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bundle ID              | `com.jdsmith2004.daybook` (set in `apps/mobile/app.json`)                   | It can never change once step 3 runs. Tell Claude before then if you want another.                                                                        |
+| Name on the App Store  | Daybook: Master Yourself                                                    | The home screen still says Daybook. "Porn" stays out of the name, so it is not in anyone's purchase list.                                                 |
+| Where it is offered    | The United States, then the UK, Canada, Australia and New Zealand (step 10) | The iPhone app shows the link out to pay on the web only on the US storefront (3.1.1(a)); everywhere else, Apple's in-app purchase alone.                 |
+| Tip service            | Apple in-app purchase first, three Stripe links second                      | Kind $5, Generous $10, Amazing $20 (core `supporter.ts`); a tip of $5 or more makes a supporter. The statement says JEFFREY until Stripe accepts DAYBOOK. |
+| Support email          | jeffreydsmith.cs@gmail.com (the owner's choice, October 19)                 | On the support, privacy and terms pages. A Daybook-only address can replace it later: change `SUPPORT_EMAIL` and the three pages.                         |
+| Your developer account | Tell Claude: individual or organization                                     | An individual account shows your legal name as the seller on the App Store.                                                                               |
 
 ## 1. The tip page (done, October 19)
 
@@ -73,7 +73,7 @@ The first iPhone build needs your Apple sign-in once, to make the signing certif
 
 ## 4. The App Store record (you or Claude in Chrome, about 10 minutes; done October 19)
 
-Made as "Daybook: Quit Without Shame", then "Daybook: Quit and Stay Free" (the owner, November 1, 2026), now "Daybook: Master Yourself" (the owner, November 2, 2026, from 1.3.1), free, United States only. Its Apple ID is `ascAppId` in `apps/mobile/eas.json`. Before
+Made as "Daybook: Quit Without Shame", then "Daybook: Quit and Stay Free" (the owner, November 1, 2026), now "Daybook: Master Yourself" (the owner, November 2, 2026, from 1.3.1), free, United States first (more countries: step 10). Its Apple ID is `ascAppId` in `apps/mobile/eas.json`. Before
 the first build, the Account Holder accepts the updated Apple Developer Program License Agreement in App Store Connect
 (Apple refuses uploads until then).
 
@@ -82,7 +82,7 @@ the first build, the Account Holder accepts the updated Apple Developer Program 
    - Bundle ID: `com.jdsmith2004.daybook` (it shows up after step 3). SKU: `daybook-ios`. User access: full.
 2. App Information: copy the **Apple ID** (a number) and send it to Claude. Claude adds it to `apps/mobile/eas.json` as
    `ascAppId`, which lets the button send builds to TestFlight on its own.
-3. Pricing and Availability: price **Free**; availability **United States** only (see step 0).
+3. Pricing and Availability: price **Free**; availability **United States**, plus the countries in step 10.
 
 ## 5. Build and test (you, from any computer or phone)
 
@@ -115,7 +115,7 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 - **Category:** Health & Fitness. Second: Lifestyle.
 - **Keywords:** `habit,quit,urges,recovery,relapse,self control,addiction,tracker,clean,sober,journal,accountability`
   (no other app's name or trademark, by the store's rules)
-- **Promotional text:** Free, with no ads and no tracking. Care is free for everyone. A slip is data, not a reset.
+- **Promotional text:** Free, with no ads and nothing sold. A slip is data, not a reset.
 - **What's New in This Version** (only once a version has been released before; a first version has no such box):
 
   > Your flame is bigger, in a clear sky, with nothing written over it. Lessons have a new look, and the fire moves at its
@@ -137,7 +137,7 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   > • Graduation: a permanent award at 90 days with no slip.
   >
   > Private by design
-  > • No ads. No tracking. Nothing is sold.
+  > • No ads. Nothing is sold. Anonymous counts only.
   > • Your log stays on your phone. A free account is optional: sign in with Apple or an email, and it opens every
   > lesson. Delete my account removes everything.
   > • Face ID lock, and a plain name and icon on your home screen.
@@ -226,15 +226,16 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   > $20). Any of them makes the person a supporter, which opens sync and a safe copy, and the full pattern page.
   > Restore is on the tip sheet ("I already tipped" on the sync card does the same). To try it: sign in with the demo
   > account below, open More, Support Daybook (or Sync between devices), and buy any tip with the sandbox account; sync then
-  > turns on. Under the in-app tips, a second link opens the same three tips on our web page (Stripe), as allowed on the
-  > United States storefront under guideline 3.1.1(a); Daybook is offered in the United States only.
+  > turns on. On the United States storefront only, a second link under the in-app tips opens the same three tips on our
+  > web page (Stripe), as guideline 3.1.1(a) allows there. On every other storefront the app reads the storefront from
+  > StoreKit and shows the in-app tips alone, with no link to or mention of paying on the web.
   >
   > Apple Health: on iPhone, a person can let Daybook read sleep (read only, sleep only), from More, Apple Health, or
   > the hard-days card on Pattern. It fills the check-in's sleep question and shows how their nights compare before days
   > with and without a slip. The nights stay on the device: they are never sent to our server, synced, backed up or used
   > for anything else. To see it, connect Apple Health in More with sleep data in the simulator's Health app.
   >
-  > The app has no ads and no tracking. Reminders are local notifications made on the device, with plain words that do
+  > The app has no ads, sells nothing, and counts only anonymous totals of how it is used. Reminders are local notifications made on the device, with plain words that do
   > not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
 
 - **Sign-in for App Review:** make a test account in the TestFlight app first (More, then Sync between devices), with a
@@ -269,8 +270,8 @@ costs money or is unclear. Tell me what you did at each step and anything that d
    number) and its status. It must say Ready to Submit / Testing, and be the one I tested.
 3. Monetization → In-App Purchases: check the three tips exist exactly as in step 6 ("In-app
    purchases": daybook.tip.kind, daybook.tip.generous, daybook.tip.amazing; Non-Consumable; $5, $10,
-   $20; Family Sharing off). Set each one's availability to United States only (they were made with
-   all countries). For each, tell me its status and whether it has a
+   $20; Family Sharing off). Set each one's availability to the same countries as the app (step 10 of
+   launch.md). For each, tell me its status and whether it has a
    review screenshot and review note. Create any that are missing, but STOP before saving a price.
    I upload docs/shots/tip-review.png myself if one is missing.
 4. Version 1.1.0 is live, so the update is a new version: the + next to iOS App, numbered exactly as the new
@@ -287,7 +288,7 @@ costs money or is unclear. Tell me what you did at each step and anything that d
 9. App Privacy: check the privacy policy URL, then make the data types match step 6 exactly,
    including the two that are new: Purchases → Purchase History, and the Apple ID under User ID
    (each: app functionality, linked to the user, not used for tracking). Publish it.
-10. Pricing and Availability: Free, United States only. Tell me if it is anything else.
+10. Pricing and Availability: Free, in the countries in step 10 of launch.md. Tell me if it is anything else.
 11. App Review Information: notes from step 6 (replace the old notes). Contact: my name and email
     (ask me for the phone number and let me type it). Sign-in required: yes, and STOP so I type the
     demo account myself.
@@ -316,7 +317,7 @@ what it always did and nobody sees the product. Turn it on only after every step
   | --------------- | ------------------------- | -------- | ----- | --------------- | ------------------------------------------------------ |
   | Pattern monthly | `daybook.pattern.monthly` | 1 month  | $3.00 | Daybook Pattern | Your whole pattern and a read of each month. Sync too. |
 
-- Availability: the United States. Family Sharing off. No introductory offer.
+- Availability: the same countries as the app (step 10). Family Sharing off. No introductory offer.
 - Review screenshot: the Daybook Pattern sheet on an iPhone (`docs/shots/pattern-review.png`). Review note: "Daybook is free
   and all care stays free. Daybook Pattern opens the deeper pages of the person's own pattern, a monthly read of what changed,
   and sync. To see it, use the demo account, log a few urges with a time, open Pattern, and tap See Daybook Pattern. Restore
@@ -475,3 +476,51 @@ totals in the run's summary; Claude runs it and reads the result. Each half says
    cd infra/bootstrap && AWS_PROFILE=daybook terraform apply
    gh secret set AWS_STATS_ROLE_ARN --body "$(AWS_PROFILE=daybook terraform output -raw AWS_STATS_ROLE_ARN)"
    ```
+
+## 10. More countries on the App Store (iPhone; the owner chose to finish this, November 12, 2026)
+
+Many people quitting live outside the United States, so opening more storefronts is free reach. What kept Daybook in the US alone
+was the link out to pay on the web: Apple allows it on the US storefront only (Review Guidelines 3.1.1(a) and 3.1.3). The app reads
+the storefront from StoreKit each time the tip or Daybook Pattern sheet opens, and shows that link, and any words about paying on the
+web, only when the storefront is the United States. Anywhere else, or while the storefront is not known yet, a tip or Daybook Pattern
+is Apple's in-app purchase alone (core `tipWaysFor`, tested in `packages/core/test/supporter.test.ts`). Care, logging and every free
+part work the same in every country.
+
+**Prices in the words.** Off the US storefront the asks name the tips in Apple's own price there ("A tip of £4.99 or more"), not in dollars (core `localTipWords`).
+
+**Which build.** The builds already out hide the web link off the US storefront. Three lines in them still mention paying on the web
+(Restore finding nothing, on the tip sheet and on the Daybook Pattern sheet, and the line under "I already tipped"); the next build
+makes them neutral. Open the countries with the next build: it is the cleanest, and it is the one App Review sees with the new note.
+
+**First, the crisis line.** The app's crisis line is 988, which works in the United States and Canada only. A person in the UK,
+Australia or New Zealand who opens it in a bad hour would reach nothing. Claude has a follow-up for it (the line for the phone's
+region: Samaritans 116 123 in the UK and Ireland, Lifeline 13 11 14 in Australia, 1737 in New Zealand, 988 by default). Recommended:
+add Canada now if you want, and the other three once that is in a build.
+
+**The countries.** The United Kingdom, Canada, Australia and New Zealand. All four are English-speaking storefronts with no extra
+paperwork for a free app with tips.
+
+**Ireland, and every EU country, need one decision first.** The EU's Digital Services Act makes App Store Connect ask whether the
+developer is a trader. An app that takes payments is likely a trader's, and a trader's address, phone number and email are shown on
+the app's EU App Store page. That is your choice (a business address or a PO box can be used). Until it is made, leave Ireland and
+the EU off; adding them later is the same steps.
+
+**What you set in App Store Connect** (you, or Claude in Chrome with you watching; about 15 minutes):
+
+1. Apps, Daybook: Master Yourself, **Pricing and Availability**: the price stays Free. Under Availability, add the countries above
+   (keep the United States). Save. Adding countries to an approved app needs no new review.
+2. **Monetization, In-App Purchases**, each of the three tips (`daybook.tip.kind`, `daybook.tip.generous`, `daybook.tip.amazing`):
+   **Availability**, the same countries as the app. Save each. The price stays on the US base ($5, $10, $20, and $30 for Amazing
+   once Daybook Pattern is on sale, step 7b); Apple sets each country's price from it (for example £4.99 or A$7.99) and the sheet
+   shows Apple's price. Any of the three makes a supporter in any country; a Generous or Amazing tip is lifetime in any currency,
+   because the app counts the tier, not the amount paid.
+3. **Monetization, Subscriptions**, Daybook Pattern, `daybook.pattern.monthly`: **Availability**, the same countries. Save.
+4. **App Review Information**, notes: the tip paragraph from step 6 (it now says the web link shows on the US storefront only).
+   Paste it with the next version.
+5. Check the listing's words in step 6 say nothing about the US alone. They do not today, except the line "If you are in crisis in
+   the US, call or text 988", which is true and can stay.
+
+**What could not be tested here.** A non-US storefront can only be seen on a real phone with a development build (TestFlight uses
+the country of your own Apple Account). In App Store Connect, Users and Access, Sandbox, make a tester whose country is the United
+Kingdom. On the phone, Settings, Developer, Sandbox Apple Account, sign in with it. Open Daybook and Support Daybook: the three tips
+show in pounds, with no "Prefer to tip on the web?" link. With a US sandbox tester the link is there.

@@ -80,6 +80,7 @@ import { SYNC_NEED_SHORT } from '@/components/support';
 import { STORAGE_LINE } from '@/components/home-screen';
 import { Stepper } from '@/components/form';
 import { Screen } from '@/components/screen';
+import { ScriptureSetting } from '@/components/scripture';
 import { SetCell, SetGroup, SetPick, SetRow, SetSwitch, useTone, type Tone } from '@/components/settings-ui';
 import { confirmUnlock, lockOffered } from '@/components/lock';
 import { SyncBody } from '@/components/sync-card';
@@ -215,6 +216,10 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
   const sos = useSos();
   const sync = useSync();
   const signedIn = sync.status.k !== 'off' && sync.status.k !== 'out';
+  /* Delete everything (WP4, November 12, 2026): it promises the account's 7-day copy only where the log reached the account,
+     and a sign-in that ran out gets a way through (sign in again, or this device only) instead of "could not reach" */
+  const wipeOut = sync.status.k === 'expired';
+  const wipeAcct = signedIn && !wipeOut && sync.status.k !== 'need';
   const theme = useThemePref();
   const sound = useSoundPref();
   const rem = useReminderPrefs();
@@ -355,9 +360,9 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
             }>
             <SetPick
               options={[
-                ['gentle', 'Gentle'],
-                ['strict', 'Strict'],
-                ['step', 'Step down'],
+                ['gentle', 'Gentle', 'Counts the no-slip days in the last 7. A slip takes one day off.'],
+                ['strict', 'Strict', 'Counts days in a row. A slip puts it back to 0.'],
+                ['step', 'Step down', 'Counts the hours since your last slip, for when it happens often.'],
               ]}
               value={st.cleanMode === 'gentle' ? 'gentle' : st.cleanMode === 'step' ? 'step' : 'strict'}
               onPick={(v) => apply(setCountMode(st, v, tk))}
@@ -389,7 +394,9 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
           value: fa === 'no' ? 'Off' : cr === 'lds' ? 'Latter-day Saint' : cr === 'christian' ? 'Christian' : 'On',
           body: (
             <>
-              <SetGroup head="Does faith play a part in this for you?" foot="Yes or Somewhat adds lessons that speak of God. Every tool stays the same.">
+              <SetGroup
+                head="Does faith play a part in this for you?"
+                foot="Yes or Somewhat adds lessons that speak of God, and a Faith and recovery page in Get help. No leaves them all out.">
                 <SetPick
                   options={[
                     ['big', 'Yes'],
@@ -409,6 +416,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
                   />
                 </SetGroup>
               )}
+              {fa === 'no' ? null : <ScriptureSetting />}
             </>
           ),
         }
@@ -548,7 +556,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
             head="SOS suggests first"
             foot={
               pin
-                ? 'SOS puts ' + pin.name + ' first every time. It still keeps track of what helps.'
+                ? 'SOS puts ' + pin.name + ' first when it can. It still keeps track of what helps.'
                 : 'SOS learns which tools help you, and picks the best fit for the moment.'
             }>
             <SetPick
@@ -711,24 +719,36 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
       title: 'Delete everything',
       body: (
         <SetGroup
-          head={signedIn ? `Delete ${wipeWhat}, on this device and in your account?` : `Delete ${wipeWhat}?`}
+          head={wipeAcct ? `Delete ${wipeWhat}, on this device and in your account?` : wipeOut ? `Delete ${wipeWhat} on this device?` : `Delete ${wipeWhat}?`}
           foot={
-            signedIn
-              ? 'Your other devices clear it too when they next sync. Your account keeps a copy for 7 days, so it can be brought back until then.' +
-                (voiceOk ? ' Voice notes are only on this phone and cannot be brought back.' : '')
-              : 'Your log is only on this device, so this cannot be undone.'
+            (wipeAcct
+              ? 'Your other devices clear it too when they next sync. Your account keeps a copy for 7 days, so it can be brought back until then.'
+              : wipeOut
+                ? 'Your sign-in ran out, so your account cannot be reached from here. Sign in again to delete it there too, or delete it on this device only: your account and your other devices keep their copy.'
+                : sync.status.k === 'need'
+                  ? 'Your log here has not been saved in your account, so this cannot be undone.'
+                  : 'Your log is only on this device, so this cannot be undone.') +
+            (wipeAcct && voiceOk ? ' Voice notes are only on this phone and cannot be brought back.' : '')
           }>
+          {wipeOut ? <SetRow label="Sign in again" act="accent" onPress={() => sync.signInNow({ why: 'in', email: sync.email })} /> : null}
           <SetRow
-            label={busy ? 'Deleting…' : 'Yes, delete everything'}
+            label={busy ? 'Deleting…' : wipeOut ? 'Delete on this device only' : 'Yes, delete everything'}
             act="danger"
             onPress={
               busy
                 ? undefined
                 : async () => {
                     setBusy(true);
-                    const ok = !signedIn || (await sync.eraseAccount());
+                    /* a person whose log reached the account erases it there first; one with no tip yet tries too (an
+                       older copy may be there), but nothing here waits on it */
+                    const got = wipeAcct || sync.status.k === 'need' ? await sync.eraseAccount() : 'ok';
                     setBusy(false);
-                    if (!ok) {
+                    if (wipeAcct && got === 'expired') {
+                      /* the sign-in ran out just now: the page turns to the way through */
+                      say('Your sign-in ran out, so nothing was deleted. Sign in again, or delete it on this device only.');
+                      return;
+                    }
+                    if (wipeAcct && got !== 'ok') {
                       say('Could not reach your account, so nothing was deleted. Check the connection and try again.');
                       return;
                     }
@@ -737,12 +757,12 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
                     await forgetDrafts();
                     dropVoice();
                     await forgetFuture();
-                    say('Everything was deleted.');
+                    say(wipeOut ? 'Everything on this device was deleted.' : 'Everything was deleted.');
                     router.replace('/');
                   }
             }
           />
-          <SetRow label="Keep my log" act="accent" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+          <SetRow label="Keep my log" act={wipeOut ? undefined : 'accent'} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
         </SetGroup>
       ),
     },
@@ -752,7 +772,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
 const openPart = (id: PartId) => router.push({ pathname: '/settings/[part]', params: { part: id } });
 
 /** every setting, as groups, then Delete everything on its own. More puts its own groups in the same list: `lead` before the
-    settings (the journal, the plan, help, the tip) and `foot` after Delete everything (the 988 line). */
+    settings (the journal, the plan, help, the tip) and `foot` after Delete everything (the crisis line, core crisis.ts). */
 export function SettingsSections({ lead, foot }: { lead?: ReactNode; foot?: ReactNode }) {
   const parts = useParts();
   const { snap, tk, dirty } = useStore();

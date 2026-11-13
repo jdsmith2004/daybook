@@ -83,3 +83,70 @@ describe('the words', () => {
     expect(hits).toEqual([]);
   });
 });
+
+/* ---------- contrast: the pairs a person reads or touches (WCAG: 4.5 for small text, 3 for a control against what it sits on) ---------- */
+const lum = (hex: string) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const ratio = (a: string, b: string) => {
+  const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+};
+describe('contrast', () => {
+  const theme = readFileSync(join(src, 'lib/theme.ts'), 'utf8');
+  const palette = (name: string) => {
+    const body = theme.slice(theme.indexOf('const ' + name));
+    const get = (k: string) => new RegExp('\\n  ' + k + ": '(#[0-9A-Fa-f]{6})'").exec(body)![1];
+    return { bg: get('bg'), surface: get('surface'), muted: get('muted'), ink: get('ink') };
+  };
+  for (const name of ['light', 'dark']) {
+    it('the ' + name + ' theme: ink and muted text read on the page and on a card', () => {
+      const p = palette(name);
+      for (const on of [p.bg, p.surface]) {
+        expect(ratio(p.ink, on)).toBeGreaterThanOrEqual(4.5);
+        expect(ratio(p.muted, on)).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+  }
+  it('the switch’s off track stands out from its card, light and dark', () => {
+    const m = /scheme === 'dark' \? '(#[0-9A-Fa-f]{6})' : '(#[0-9A-Fa-f]{6})', c\.accent/.exec(readFileSync(join(src, 'components/settings-ui.tsx'), 'utf8'));
+    expect(m).not.toBeNull();
+    expect(ratio(m![1], palette('dark').surface)).toBeGreaterThanOrEqual(3);
+    expect(ratio(m![2], palette('light').surface)).toBeGreaterThanOrEqual(3);
+  });
+  it('the night ink (chart axes, scene text) reads on the darkest and the lightest of the night skies', () => {
+    const m = /nightInk = \{ ink: '#[0-9A-Fa-f]{6}', muted: '(#[0-9A-Fa-f]{6})'/.exec(theme);
+    expect(m).not.toBeNull();
+    expect(ratio(m![1], '#1B1040')).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+/* ---------- words: the two rules a machine can check ---------- */
+describe('the words that must stay true', () => {
+  const pub = join(src, '../public');
+  const pages: { name: string; text: string }[] = [];
+  (function walk(d: string) {
+    for (const f of readdirSync(d)) {
+      const p = join(d, f);
+      if (statSync(p).isDirectory()) walk(p);
+      else if (/\.(html|txt)$/.test(f)) pages.push({ name: relative(pub, p), text: readFileSync(p, 'utf8') });
+    }
+  })(pub);
+  it('no page says "no tracking" or "collects nothing at all": Daybook counts how it is used, anonymously', () => {
+    const hits = pages.filter((f) => /no tracking|collects nothing at all/i.test(f.text)).map((f) => f.name);
+    expect(hits).toEqual([]);
+  });
+  it('nothing tells a person they need not pay', () => {
+    const hits = pages.filter((f) => /need not pay|do not need to pay|no need to pay/i.test(f.text)).map((f) => f.name);
+    expect(hits).toEqual([]);
+  });
+  it('setup does not say answers are "never tied to who you are" (an account is; the anonymous counts are)', () => {
+    const hits = code.filter((f) => f.name === 'app/setup.tsx' && /never tied to who you are/.test(f.text)).map((f) => f.name);
+    expect(hits).toEqual([]);
+  });
+  it('the app does not claim "every tool stays the same" or that SOS puts a tool first "every time"', () => {
+    const hits = code.filter((f) => /Every tool stays the same|first every time/.test(f.text)).map((f) => f.name);
+    expect(hits).toEqual([]);
+  });
+});

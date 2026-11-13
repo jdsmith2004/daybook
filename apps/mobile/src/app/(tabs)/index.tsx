@@ -148,12 +148,6 @@ export default function Today() {
   /* the Mithras import (lib/mithras.ts) comes first: Welcome back waits until it is done and its moment has closed */
   const miPending = useMithrasPending();
   const miOpen = useMithrasOpen();
-  useEffect(() => {
-    if (!ready || !due || !askAgain || miPending || miOpen) return;
-    sos.setMem((m) => ({ ...m, backAsk: { from: due.from, n: asked && asked.from === due.from ? asked.n + 1 : 1, d: tk } }));
-    router.push('/back');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, due?.from, askAgain, tk, miPending, miOpen]);
 
   /* How are you feeling today? (core day-feel.ts, lib/day-open.ts): on the day's first open only, and only over Today:
      once Today is the screen in front, with no sheet on it and nothing else about to open (Welcome back, graduation).
@@ -165,6 +159,19 @@ export default function Today() {
   const holdsBar = useHoldsBar();
   const focusRef = useRef(focused);
   focusRef.current = focused;
+  /* Welcome back opens over Today only: Today in front with no sheet on it, after a short settle. So "Open the journal" at the end of the
+     Mithras moment opens the journal, and Welcome back waits until the person is back on Today; and a burst of changes (the import
+     landing, its moment closing) cancels the wait instead of opening it twice. */
+  useEffect(() => {
+    if (!ready || !due || !askAgain || miPending || miOpen || !focused) return;
+    const t = setTimeout(() => {
+      if (!focusRef.current || sheetOnTop()) return;
+      sos.setMem((m) => ({ ...m, backAsk: { from: due.from, n: asked && asked.from === due.from ? asked.n + 1 : 1, d: tk } }));
+      router.push('/back');
+    }, 450);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, due?.from, askAgain, tk, miPending, miOpen, focused]);
   /* the link from Mithras came (lib/mithras.ts), and the import is not done or closed: it opens over Today once setup is done, first of all,
      since the person came here for it. Nothing else opens until it is answered. */
   const miNow = ready && !!st && miPending && !syncing && !sos.ur && !sos.timer;

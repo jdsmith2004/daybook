@@ -100,9 +100,10 @@ export default function Setup() {
     const redo = !!st;
     const k = setupKeep.flow;
     setupKeep.shut = false;
-    if (k && k.redo === redo && !k.saved) return { ...k };
-    /* a yes to the Mithras import before setup (app/import/mithras.tsx): the habit and how often come from Mithras, to change or keep */
+    /* a yes to the Mithras import before setup (app/import/mithras.tsx): the habit and how often come from Mithras, to change or keep.
+       A setup already begun keeps its place and its own answers; Mithras fills only what it has not answered yet. */
     const mi = !redo && mithrasHeld.rows ? mithrasProfile(mithrasHeld.rows.profile) : {};
+    if (k && k.redo === redo && !k.saved) return { ...k, a: { ...mi, ...k.a } };
     return { redo, i: 0, a: { ...mi, ...obPrefill(st) }, hg: null, keep: null, saved: false, changed: 0 };
   });
   /* opened straight onto this page (a Home Screen icon on the web): someone whose setup is done goes to Today instead */

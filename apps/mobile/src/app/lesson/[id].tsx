@@ -16,8 +16,6 @@ import {
   type Beat,
   type Card,
   cardArt,
-  FLIP_ASK,
-  FLIP_FEEL,
   cardBeat,
   cardLook,
   cardNumber,
@@ -75,7 +73,7 @@ import {
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { Animated, Easing, Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -85,15 +83,16 @@ import { Slider, SliderValue } from '@/components/slider';
 import { Field } from '@/components/choices';
 import { LessonArt, useCount } from '@/components/lesson-art';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
-import { Answer, AnswerText, Question, Quiet, Shell } from '@/components/lesson-parts';
+import { Answer, Question, Quiet, Shell } from '@/components/lesson-parts';
 import { LessonFinish } from '@/components/lesson-finish';
 import { Bar, PickLine, Praise, praiseFor, React2 } from '@/components/lesson-play';
+import { SwipeCard } from '@/components/lesson-swipe';
 import { Next, Rich } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
-import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { useReducedMotion } from '@/lib/motion';
 import { lessonLook, PAPER, PAPER_INK, SUN_CARD, SUN_INK, type Look, type LookKind } from '@/lib/lesson-look';
 import { count } from '@/lib/pulse';
 import { track } from '@/lib/events';
@@ -286,7 +285,8 @@ export default function LessonScreen() {
     p = (ix + 1) / (seq.length + 1);
     {
       const cl = cardLook(cur.c, cardBeat(L, cur.ci));
-      lockKey = (cl === 'guess' && !!gu[cur.ci]?.lock) || (cl === 'flip' && flip[cur.ci] != null);
+      /* a turn keeps its body as it is answered: the swipe animates in place */
+      lockKey = cl === 'guess' && !!gu[cur.ci]?.lock;
       /* a turn keeps the sky it has: the card itself turns over (a change of sky read as a flash, the owner, November 2, 2026) */
       kind = cl === 'sun' ? 'sun' : cl === 'number' || (cl === 'guess' && lockKey) ? 'violet' : 'sky';
     }
@@ -566,7 +566,7 @@ export default function LessonScreen() {
       body = (
         <>
           {head}
-          <FlipCard
+          <SwipeCard
             think={b.h || card.h}
             see={b.p || card.see || ''}
             felt={felt}
@@ -585,7 +585,6 @@ export default function LessonScreen() {
                 still ? 0 : 720,
               );
             }}
-            onLanded={() => undefined}
           />
         </>
       );
@@ -1139,100 +1138,6 @@ function TextCard({
                 <Rich text={x} st={st} style={{ fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: on ? '#FFFFFF' : PAPER_INK }} />
               )}
             />
-          </View>
-        </Dock>
-      ) : null}
-    </>
-  );
-}
-/** a turn, as a card held up between the person and the flame (the owner, November 9, 2026: the old flash cards were "really bad").
-    The front is the old thought, said in the person's voice, set a little crooked on warm paper. The flame asks how true it feels,
-    and the answer, in one tap, turns the card over: it lifts, turns and lands straight, sun yellow, with the other way to see it, and
-    the flame answers what was picked. After that, a tap on the card turns it back to compare, and again. Nothing is marked right or
-    wrong: the person's answer is theirs. With Reduce Motion on, the back simply shows. */
-function FlipCard({
-  think,
-  see,
-  felt,
-  want,
-  onFeel,
-  onLanded,
-}: {
-  think: string;
-  see: string;
-  felt: number | null;
-  want: number;
-  onFeel: (j: number) => void;
-  onLanded: () => void;
-}) {
-  const still = useReducedMotion();
-  /* 0 is the old thought up, 1 the new way to see it */
-  const a = useRef(new Animated.Value(felt != null ? 1 : 0)).current;
-  const [up, setUp] = useState<0 | 1>(felt != null ? 1 : 0);
-  const landed = useRef(felt != null);
-  /* the flame answers once the card has landed, not while it turns */
-  const [said, setSaid] = useState(felt != null);
-  const turnTo = (to: 0 | 1) => {
-    setUp(to);
-    const done = () => {
-      if (to === 1 && !landed.current) {
-        landed.current = true;
-        setSaid(true);
-        onLanded();
-      }
-    };
-    if (still) {
-      a.setValue(to);
-      return done();
-    }
-    Animated.timing(a, { toValue: to, duration: 640, easing: Easing.inOut(Easing.cubic), useNativeDriver: NATIVE }).start(done);
-  };
-  useEffect(() => {
-    if (felt != null && !landed.current) turnTo(1);
-  }, [felt]); // eslint-disable-line react-hooks/exhaustive-deps
-  const front = a.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
-  const back = a.interpolate({ inputRange: [0, 1], outputRange: ['-180deg', '0deg'] });
-  /* the faces trade places at the edge, for Android, which does not hide a card's back side */
-  const frontOn = a.interpolate({ inputRange: [0, 0.5, 0.501, 1], outputRange: [1, 1, 0, 0] });
-  const backOn = a.interpolate({ inputRange: [0, 0.5, 0.501, 1], outputRange: [0, 0, 1, 1] });
-  /* it lifts toward the person as it turns, and the crooked thought lands straight */
-  const lift = a.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.08, 1] });
-  const tilt = a.interpolate({ inputRange: [0, 1], outputRange: ['-2.5deg', '0deg'] });
-  const long = see.length > 90;
-  return (
-    <>
-      <Pressable
-        accessibilityRole={felt != null ? 'button' : undefined}
-        accessibilityLabel={up ? 'Another way to see it: ' + see : 'You may think: ' + think}
-        accessibilityHint={felt != null ? (up ? 'Turns it back to the old thought' : 'Turns it over again') : undefined}
-        disabled={felt == null}
-        onPress={() => {
-          buzz('tap');
-          turnTo(up ? 0 : 1);
-        }}
-        style={s.flipRoom}>
-        <Animated.View style={{ transform: [{ scale: lift }, { rotate: tilt }] }}>
-          <Animated.View style={[s.flip, s.flipFront, { opacity: frontOn, transform: [{ perspective: 1000 }, { rotateY: front }] }]}>
-            <Text style={s.flipMark}>“</Text>
-            <Text style={s.flipT}>{think}</Text>
-          </Animated.View>
-          <Animated.View style={[s.flip, s.flipBack, { opacity: backOn, transform: [{ perspective: 1000 }, { rotateY: back }] }]}>
-            <Text style={[s.flipT, s.flipSee, long && s.flipLong]}>{see}</Text>
-          </Animated.View>
-        </Animated.View>
-      </Pressable>
-      <Bubble text={felt != null && said ? FLIP_FEEL[felt].say : FLIP_ASK} style={{ marginTop: 8 }} />
-      <FlameSlot size={want * 0.85} min={84} />
-      {felt == null ? (
-        <Dock>
-          <View style={s.feel}>
-            {FLIP_FEEL.map((f, j) => (
-              <Answer key={j} sel={false} right={false} onPress={() => onFeel(j)} style={s.feelOpt}>
-                <AnswerText right={false} center>
-                  {f.o}
-                </AnswerText>
-              </Answer>
-            ))}
           </View>
         </Dock>
       ) : null}

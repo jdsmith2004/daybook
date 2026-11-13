@@ -2,8 +2,8 @@
    person picks their Obsidian vault in Settings, and on the web, on Android and on an older install there is no module, so nothing
    here runs or shows for anyone else.
 
-   What it knows stays on this device. That the library is on is kept under the log's keys, so "Delete everything" turns it off
-   (the next launch lets go of the vault too). A note that could not be written waits in its own key outside the log, so nothing
+   What it knows stays on this device. That the library is on is kept outside the log's keys, so "Use my account's log here" (which
+   replaces the log) leaves it on; "Delete everything" turns it off and lets go of the vault (forgetScripture, from store.tsx). A note that could not be written waits in its own key outside the log, so nothing
    that replaces the log takes it, and it is tried again each time the app opens; "Delete everything" clears it with the rest. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -31,7 +31,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 
 import { ScriptureVault } from '../../modules/scripture-vault';
 
-const KEY = 'daybook:scripture';
+const KEY = 'daybook~scripture';
 /** notes waiting to reach the vault; outside the log's keys on purpose (see above) */
 export const SCR_OUT_KEY = 'daybook~scripture-out';
 
@@ -58,7 +58,7 @@ async function load() {
   if (loaded || !ScriptureVault) return;
   loaded = true;
   const [kept, name] = await Promise.all([AsyncStorage.getItem(KEY).catch(() => null), ScriptureVault.folder().catch(() => null)]);
-  /* "Delete everything" cleared the key: let go of the vault as well */
+  /* the key is gone (an erase that stopped half way): let go of the vault as well */
   if (!kept) {
     if (name) await ScriptureVault.forget().catch(() => undefined);
     set({ on: false, name: null });

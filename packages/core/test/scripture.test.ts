@@ -15,6 +15,8 @@ import {
   scrSection,
   scrSplit,
   scrTracks,
+  scrSource,
+  SCR_LICENCE,
   scrUpsert,
   scrVerseAt,
   scrVerseList,
@@ -210,18 +212,28 @@ describe('the audio', () => {
         ross: { u: 'https://archive.org/download/x/127%20Alma%2032.mp3', d: 597, v: [2.7, 13.5, 24.7] },
         'church-male': { u: 'https://assets.example.org/a.mp3', d: 500, v: [1, 2] },
       },
-      'Matthew 1': { ross: { e: { u: 'https://anchor.example/ep.mp3', a: 40.1, b: 236.4 }, d: 196, v: [1, 9] } },
+      'Matthew 1': { ross: { e: { u: 'https://archive.org/download/ep/ep.mp3', a: 40.1, b: 236.4 }, d: 196, v: [1, 9] } },
+      'Matthew 2': { ross: { e: { u: 'https://anchor.example/ep.mp3', a: 1, b: 9 }, v: [1] } },
+      'Matthew 3': { ross: { u: 'https://archive.org.evil.example/x.mp3', v: [1] } },
+      'Matthew 5': { ross: { u: 'https://archive.org@evil.example/x.mp3', v: [1] } },
       'Matthew 4': { 'church-male': { u: 'https://assets.example.org/m.mp3', v: [1] } },
       'Bad 1': { ross: { u: 'http://not-secure.example/x.mp3', v: [1] } },
     },
   };
-  it('streams only Bradley Ross, and a chapter cut from an episode plays from its place in it', () => {
+  it('streams only Bradley Ross from archive.org, and a chapter cut from a longer recording plays from its place in it', () => {
     const t = scrTracks(TIMINGS);
     expect(Object.keys(t).sort()).toEqual(['Alma 32', 'Matthew 1']);
     expect(t['Alma 32']).toEqual({ url: 'https://archive.org/download/x/127%20Alma%2032.mp3', from: 0, to: null, verses: [2.7, 13.5, 24.7] });
-    expect(t['Matthew 1']).toMatchObject({ url: 'https://anchor.example/ep.mp3', from: 40.1, to: 236.4 });
+    expect(t['Matthew 1']).toMatchObject({ url: 'https://archive.org/download/ep/ep.mp3', from: 40.1, to: 236.4 });
     expect(scrTracks(null)).toEqual({});
     expect(scrTracks({ chapters: 'no' })).toEqual({});
+  });
+  it('links the recording to its page on archive.org', () => {
+    expect(scrSource('https://archive.org/download/TheBookOfMormonReadByBradleyRoss/127%20Alma%2032.mp3')).toBe(
+      'https://archive.org/details/TheBookOfMormonReadByBradleyRoss',
+    );
+    expect(scrSource('https://ia800.us.archive.org/odd/path.mp3')).toBe('https://archive.org');
+    expect(SCR_LICENCE.url).toBe('https://creativecommons.org/licenses/by-nd/3.0/');
   });
   it('follows the verse being read', () => {
     const tr = { verses: [2.7, 13.5, 24.7] };

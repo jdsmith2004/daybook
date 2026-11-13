@@ -1,8 +1,10 @@
 /* The scripture library's small parts (lib/scripture.ts): the switch in Settings under Faith, the page shown while it is off, and
-   the line shown when the vault cannot be reached. The switch is plain and shown to anyone on an iPhone whose faith is part of
-   their quit, off until they pick their own Obsidian vault: nothing in Daybook is hidden (App Review 2.5.19), it is only quiet. */
+   the line shown when the vault cannot be reached. It is the owner's own (docs/review-plan.md, D9): it shows only in a build made
+   with DAYBOOK_SCRIPTURE=1 (app.config.js), on an iPhone whose faith is part of the quit, off until they pick their vault. A store
+   build has none of it. */
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SetGroup, SetRow, SetSwitch } from '@/components/settings-ui';
 import { Text } from '@/components/text';
@@ -57,12 +59,17 @@ export function ScriptureSetting() {
   );
 }
 
-/** the library while it is off: a verse as the reader shows it, and the one way to turn it on */
+/** the library while it is off: a verse as the reader shows it and what turning it on does, at the top, and the one way to turn it
+    on at the bottom, where the thumb is. The page is at least as tall as the screen, so the button sits low on every phone. */
 export function ScrOff() {
   const c = useTheme();
   const pick = usePickVault();
+  const { height } = useWindowDimensions();
+  const safe = useSafeAreaInsets();
+  /* Screen's own room above (Back and the title) and below this page */
+  const room = Math.max(0, height - safe.top - safe.bottom - OFF_CHROME);
   return (
-    <View style={{ gap: 24 }}>
+    <View style={{ minHeight: room, gap: 24 }}>
       <View style={[s.sample, { backgroundColor: c.surface }]} accessible accessibilityLabel="Matthew 5, verse 14: Ye are the light of the world.">
         <T v="label" tone="muted">
           Matthew 5
@@ -72,16 +79,17 @@ export function ScrOff() {
           Ye are the light of the world. A city that is set on an hill cannot be hid.
         </Text>
       </View>
-      <View style={{ gap: 12 }}>
-        <T tone="muted" v="small">
-          Daybook reads the Scriptures folder in your Obsidian vault and writes your notes back into it. In the picker, go to iCloud Drive, then Obsidian, and
-          open your vault.
-        </T>
-        <Button label="Choose my vault" onPress={() => void pick()} />
-      </View>
+      <T tone="muted" v="small">
+        Daybook reads the Scriptures folder in your Obsidian vault and writes your notes back into it. In the picker, go to iCloud Drive, then Obsidian, and
+        open your vault.
+      </T>
+      <View style={{ flex: 1 }} />
+      <Button label="Choose my vault" onPress={() => void pick()} />
     </View>
   );
 }
+/** Back, the title and the page's padding above and below (components/screen.tsx), so the button lands at the bottom */
+const OFF_CHROME = 150;
 
 /** the vault could not be reached */
 export function ScrLost() {

@@ -26,13 +26,18 @@ public final class ScriptureVaultModule: Module {
   private let files = DispatchQueue(label: "daybook.scripture-vault", qos: .userInitiated)
   private var picking: Promise?
   private var pickerDelegate: VaultPickerDelegate?
+  private var on: Bool { (Bundle.main.object(forInfoDictionaryKey: "DaybookScripture") as? Bool) == true }
 
   public func definition() -> ModuleDefinition {
     Name("ScriptureVault")
 
+    /// whether this build has the library: only the owner's own builds, made with DAYBOOK_SCRIPTURE=1 (app.config.js); a store
+    /// build does not, and then nothing below does anything
+    Constant("on") { () -> Bool in self.on }
+
     /// shows the folder picker; the vault's name and whether it holds the library, or null when it was closed
     AsyncFunction("pick") { (promise: Promise) in
-      guard self.picking == nil, let top = self.topController() else {
+      guard self.on, self.picking == nil, let top = self.topController() else {
         promise.resolve(nil)
         return
       }
@@ -199,7 +204,7 @@ public final class ScriptureVaultModule: Module {
   }
 
   private func withVault<T>(_ work: (URL) throws -> T) throws -> T {
-    guard let data = UserDefaults.standard.data(forKey: bookmarkKey) else { throw VaultUnreachable() }
+    guard on, let data = UserDefaults.standard.data(forKey: bookmarkKey) else { throw VaultUnreachable() }
     var stale = false
     let vault: URL
     do {

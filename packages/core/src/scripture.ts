@@ -263,10 +263,19 @@ export interface ScrTrack {
 }
 /** the voice Daybook streams, and its credit (CC BY-ND 3.0 asks for the reader, the source and the license) */
 export const SCR_VOICE = 'ross';
-export const SCR_CREDIT = 'Read by Bradley Ross. archive.org, CC BY-ND 3.0';
+export const SCR_CREDIT = 'Read by Bradley Ross';
+/** the recordings' licence, named and linked beside the credit */
+export const SCR_LICENCE = { name: 'CC BY-ND 3.0', url: 'https://creativecommons.org/licenses/by-nd/3.0/' };
+/** archive.org's page for the recording a track streams (its source, linked beside the credit) */
+export function scrSource(url: string): string {
+  const m = /^https:\/\/(?:[a-z0-9-]+\.)*archive\.org\/(?:download|details)\/([^/?#]+)/i.exec(url);
+  return m ? 'https://archive.org/details/' + m[1] : 'https://archive.org';
+}
 
 const isNum = (x: unknown): x is number => typeof x === 'number' && isFinite(x);
-const isUrl = (x: unknown): x is string => typeof x === 'string' && /^https:\/\/[^\s]+$/.test(x);
+/* only archive.org, where Bradley Ross's recordings are published under their licence: a timings file that points anywhere else
+   (another host, a podcast feed, a plain http address) is not streamed, and that chapter offers Gospel Library instead */
+const isUrl = (x: unknown): x is string => typeof x === 'string' && /^https:\/\/(?:[a-z0-9-]+\.)*archive\.org\/[^\s@]*$/i.test(x);
 /** Bradley Ross's chapters from the audio plugin's timings.json, by chapter name. The Church's recordings in it are left out */
 export function scrTracks(json: unknown): Record<string, ScrTrack> {
   const out: Record<string, ScrTrack> = {};

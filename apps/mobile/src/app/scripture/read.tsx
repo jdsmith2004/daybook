@@ -3,7 +3,7 @@
    did not, Gospel Library is one tap away and plays the Church's own recording. A verse tapped is chosen for a note, which goes
    into the vault the way the Obsidian reader writes it; notes already there show under their verses, as the reader shows them.
    The highlights made in Obsidian show in their colors. Everything the thumb touches sits in the dock at the bottom. */
-import { scrGospelLibrary, scrLabel, scrVerseAt, scrVerseList, SCR_CREDIT, type ScrMark, type ScrTrack } from '@daybook/core';
+import { scrGospelLibrary, scrLabel, scrVerseAt, scrVerseList, scrSource, SCR_CREDIT, SCR_LICENCE, type ScrMark, type ScrTrack } from '@daybook/core';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Redirect, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -212,7 +212,15 @@ function Chapter({ chKey, marked }: { chKey: string; marked: number[] }) {
           })}
           {track && ch ? (
             <T v="small" tone="muted" style={{ marginTop: 16 }}>
-              {SCR_CREDIT}
+              {SCR_CREDIT}, from{' '}
+              <Text accessibilityRole="link" style={s.cite} onPress={() => Linking.openURL(scrSource(track.url)).catch(() => undefined)}>
+                archive.org
+              </Text>
+              , under{' '}
+              <Text accessibilityRole="link" style={s.cite} onPress={() => Linking.openURL(SCR_LICENCE.url).catch(() => undefined)}>
+                {SCR_LICENCE.name}
+              </Text>
+              .
             </T>
           ) : null}
         </View>
@@ -295,6 +303,7 @@ function useTint(): Record<ScrMark, string> {
 }
 
 const s = StyleSheet.create({
+  cite: { textDecorationLine: 'underline' },
   content: { paddingHorizontal: 16, alignItems: 'center' },
   col: { width: '100%', maxWidth: MAX_WIDTH },
   back: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignSelf: 'flex-start', marginLeft: -4 },

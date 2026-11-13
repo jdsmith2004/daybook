@@ -60,11 +60,13 @@ function NoteSheet({ chKey, verses }: { chKey: string; verses: number[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chKey, label]);
 
-  const save = async () => {
-    if (base === undefined) return;
+  /* `over`: the note in the vault the person chose to write over (Keep my words); otherwise the note as it was opened */
+  const save = async (over?: { base: string | null }) => {
+    const was = over ? over.base : base;
+    if (was === undefined) return;
     buzz('tap');
     setPhase({ k: 'saving' });
-    const r = await saveNote({ key: chKey, verses, body: text, base });
+    const r = await saveNote({ key: chKey, verses, body: text, base: was });
     if (r === 'saved' || r === 'same') {
       buzz('save');
       closeSheet();
@@ -85,10 +87,10 @@ function NoteSheet({ chKey, verses }: { chKey: string; verses: number[] }) {
     setBase(theirs);
     setPhase({ k: 'edit' });
   };
-  /* the person keeps their own words over the Obsidian note */
+  /* the person keeps their own words over the Obsidian note: saved at once, over that note only if it is still what was shown */
   const keepMine = (theirs: string | null) => {
     setBase(theirs);
-    setPhase({ k: 'edit' });
+    void save({ base: theirs });
   };
 
   const changed = phase.k === 'changed' ? phase : null;

@@ -14,6 +14,7 @@ import {
   answerNight,
   gameCompute,
   habitOf,
+  heroNumber,
   futureAsk,
   lastNightSlip,
   rkOpenFor,
@@ -107,6 +108,8 @@ export default function Morning() {
   };
   const next = () => {
     if (!n || !st) return;
+    /* the count as it stood before the night is told, so the lighting can turn it over */
+    const before = heroNumber(snap.days, st, tk, now)?.n;
     /* earned as usual, but nothing is said about points here: no ceremony after It happened (noWin) */
     const t = Date.now();
     update(
@@ -121,6 +124,8 @@ export default function Morning() {
     setSaid(n);
     buzz('save');
     go('why', 1);
+    /* a free night: the person lights their own flame over the morning (app/ignite.tsx), and its button comes back here */
+    if (n === 'free' && said !== 'free') router.push({ pathname: '/ignite', params: before ? { from: before } : {} });
   };
   const set = () => {
     if (!st || leaving.current) return;

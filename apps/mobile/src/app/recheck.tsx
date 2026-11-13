@@ -104,7 +104,7 @@ export default function Recheck() {
   const saveFree = () => {
     if (freeV == null || freeDone.current) return;
     freeDone.current = true;
-    buzz('lit');
+    buzz('save');
     apply((st) => ({ st: freeKeep(st, tk, freeV) }));
     /* what Daybook learns: the number, and the last 30 days as two counts (never words) */
     track('free', { free: freeV, ...freeCounts(snap.days, tk) });

@@ -15,5 +15,7 @@ export function normSettingsLoaded(s: unknown): Settings {
   /* my line (plan.ts): a string, or nothing at all */
   if (typeof o.myLine === 'string' && o.myLine.trim()) o.myLine = o.myLine.trim().slice(0, MY_LINE_LEN);
   else delete o.myLine;
+  /* haptics: off is false, on is left out */
+  if (o.haptics !== false) delete o.haptics;
   return o;
 }

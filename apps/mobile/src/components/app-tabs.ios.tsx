@@ -22,19 +22,19 @@ export default function AppTabs() {
   return (
     <View style={{ flex: 1 }}>
       <NativeTabs tintColor={c.accentText} minimizeBehavior="never">
-        <NativeTabs.Trigger disableAutomaticContentInsets name="index">
+        <NativeTabs.Trigger disableAutomaticContentInsets name="index" listeners={{ tabPress: () => buzz('tap') }}>
           <NativeTabs.Trigger.Icon sf={{ default: 'sun.max', selected: 'sun.max.fill' }} />
           <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
-        <NativeTabs.Trigger disableAutomaticContentInsets name="pattern">
+        <NativeTabs.Trigger disableAutomaticContentInsets name="pattern" listeners={{ tabPress: () => buzz('tap') }}>
           <NativeTabs.Trigger.Icon sf={{ default: 'calendar', selected: 'calendar' }} />
           <NativeTabs.Trigger.Label>Pattern</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
-        <NativeTabs.Trigger disableAutomaticContentInsets name="learn">
+        <NativeTabs.Trigger disableAutomaticContentInsets name="learn" listeners={{ tabPress: () => buzz('tap') }}>
           <NativeTabs.Trigger.Icon sf={{ default: 'book', selected: 'book.fill' }} />
           <NativeTabs.Trigger.Label>Learn</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
-        <NativeTabs.Trigger disableAutomaticContentInsets name="more">
+        <NativeTabs.Trigger disableAutomaticContentInsets name="more" listeners={{ tabPress: () => buzz('tap') }}>
           <NativeTabs.Trigger.Icon sf={{ default: 'ellipsis', selected: 'ellipsis' }} />
           <NativeTabs.Trigger.Label>More</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>

@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
 export function Next({ label, onPress, noIcon, off }: { label: string; onPress: () => void; noIcon?: boolean; off?: boolean }) {
@@ -14,7 +15,10 @@ export function Next({ label, onPress, noIcon, off }: { label: string; onPress: 
       accessibilityRole="button"
       accessibilityState={{ disabled: !!off }}
       disabled={off}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [
         s.next,
         off

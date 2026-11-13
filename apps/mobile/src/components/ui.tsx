@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View, type StyleProp, type TextProps, type TextS
 import { BIG_MAX, Text, TEXT_MAX } from '@/components/text';
 import { SvgXml } from 'react-native-svg';
 
+import { buzz } from '@/lib/feel';
 import { font, useTheme, type Palette } from '@/lib/theme';
 
 type Tone = 'ink' | 'muted' | keyof Palette;
@@ -51,7 +52,10 @@ export function Button({
       accessibilityRole="button"
       accessibilityState={{ disabled }}
       disabled={disabled}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [styles.btn, { backgroundColor: bg, borderColor: kind === 'ghost' ? c.line : bg, opacity: disabled ? 0.5 : pressed ? 0.8 : 1 }]}>
       {icon ? <Icon name={icon} size={18} color={fg} /> : null}
       <Text style={[styles.btnText, { color: fg }]}>{label}</Text>
@@ -66,7 +70,10 @@ export function Chip({ label, on, onPress, role }: { label: string; on: boolean;
     <Pressable
       accessibilityRole={role || 'button'}
       accessibilityState={role ? { checked: on } : { selected: on }}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [styles.chip, { backgroundColor: on ? c.accent : c.surface, borderColor: on ? c.accent : c.line, opacity: pressed ? 0.85 : 1 }]}>
       <Text style={[styles.chipText, { color: on ? c.accentInk : c.ink }]}>{label}</Text>
     </Pressable>

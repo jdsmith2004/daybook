@@ -451,7 +451,7 @@ export default function Setup() {
         if (busy() || asking.current) return;
         keep();
         if (!remindersOffered) {
-          buzz('lit');
+          buzz('save');
           return go(1);
         }
         asking.current = true;
@@ -461,7 +461,7 @@ export default function Setup() {
         until.current = 0;
         if (ok) {
           setReminderPrefs({ ...rem, wind: true });
-          buzz('lit');
+          buzz('save');
         } else say(WORDS.notifyOff);
         go(1);
       };

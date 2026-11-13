@@ -14,6 +14,7 @@ import {
   restoreBackup,
   ROUTINE_SHOWN,
   setCelebrate,
+  setHaptics,
   setCleanAuto,
   setCountMode,
   setDate,
@@ -128,6 +129,7 @@ import {
 } from '@/lib/pull';
 import { connectHealth, forgetHealth, healthOffered, useNights } from '@/lib/health';
 import { play } from '@/lib/sound';
+import { buzz, setHapticsOn } from '@/lib/feel';
 import { useSos } from '@/lib/sos';
 import { useSync } from '@/lib/sync';
 import { SAVE_FAILED, useStore } from '@/lib/store';
@@ -642,6 +644,20 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
               onPress={() =>
                 hooks.current.onCelebrate?.([{ type: 'level', level: gameCompute(snap.days, st, snap.reviews, tk).level, from: 0, evolve: false }])
               }
+            />
+          </SetGroup>
+          <SetGroup foot="A small buzz under your finger for taps, choices and wins. Your phone's own haptics setting still comes first.">
+            <SetSwitch
+              label="Haptics"
+              on={st.haptics !== false}
+              onChange={(on) => {
+                apply({ st: setHaptics(st, on) });
+                /* the switch's own tap was silent while haptics were off: give the first one now */
+                if (on) {
+                  setHapticsOn(true);
+                  buzz('tap');
+                }
+              }}
             />
           </SetGroup>
         </>

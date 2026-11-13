@@ -43,7 +43,6 @@ import {
   type RecordId,
   type SetupAnswers,
   addDays,
-  lessonStop,
   type DayKey,
 } from '@daybook/core';
 import { router, useFocusEffect } from 'expo-router';
@@ -175,14 +174,15 @@ export default function Setup() {
       return { ...x, i: to };
     });
   };
-  /* the end of a new person's setup: a small "Great job" with two ways on, the first lesson or Today (the owner, November 13, 2026:
-     "a minor celebration like the popup good job in duolingo ... keep going and go to the lesson or say go home give them both options") */
-  const [cheer, setCheer] = useState(false);
-  /* either way on, Today gives its first tour once the person lands there (lib/tour.ts) */
+  /* the end of a new person's setup: straight to Today, where the flame's first tour shows the page and ends on lesson 1, glowing
+     (lib/tour.ts, components/tour.tsx). No sheet and no lesson first (the owner, November 13, 2026: "after onboarding take them
+     home pls it shouldn't have them go into the lesson just take them home and it has the welcome walkthrough and then pushes
+     them to do a lesson") */
   const { setMem } = useSos();
   const done = () => {
     if (busy()) return;
-    setCheer(true);
+    setMem(markTourDue);
+    finish();
   };
   /* SOS, unlocked: the person came back from the practice ride with Next (app/sos.tsx sets setupKeep.sos) */
   const [sosOpen, setSosOpen] = useState(false);
@@ -680,29 +680,6 @@ export default function Setup() {
             onPress: () => {
               setSosOpen(false);
               go(1);
-            },
-          }}
-        />
-      ) : null}
-      {cheer ? (
-        <UnlockSheet
-          eb="Great job! You unlocked"
-          name="Lessons"
-          line="One a day, about two minutes. Each one changes how you see the urge, so the next one is easier. Your first is ready."
-          go={{
-            label: 'Keep going',
-            onPress: () => {
-              const id = snap.settings ? lessonStop(snap.days, snap.settings, tk).L?.id : null;
-              setMem(markTourDue);
-              finish();
-              if (id) setTimeout(() => router.push({ pathname: '/lesson/[id]', params: { id } }), 50);
-            },
-          }}
-          other={{
-            label: 'Go home',
-            onPress: () => {
-              setMem(markTourDue);
-              finish();
             },
           }}
         />

@@ -320,10 +320,11 @@ export default function LessonScreen() {
     finished.current = true;
     buzz(a ? 'save' : 'lit');
   };
-  const step = (d: number) => {
+  /* read: the card was just passed with Continue, so its mark is not in state yet */
+  const step = (d: number, read = false) => {
     const to = i + d;
     if (to < 0) return;
-    if (d > 0 && !answered(seq[i])) return;
+    if (d > 0 && !read && !answered(seq[i])) return;
     /* past the last card the lesson is read: it is recorded, then Put it to work, the deed, and the finish */
     if (to >= seq.length) {
       record();
@@ -612,7 +613,7 @@ export default function LessonScreen() {
           onPress={() => {
             buzz('tap');
             setAns((x) => ({ ...x, [ci]: 0 }));
-            step(1);
+            step(1, true);
           }}
         />
       );

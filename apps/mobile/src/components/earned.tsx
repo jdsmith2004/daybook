@@ -66,6 +66,10 @@ const SEE = 700;
 const GATHER = 1100;
 const FLASH = 380;
 const ROW_GAP = 320;
+/** the clear space between the words and the tiles under them */
+const AIR = 28;
+/** how far past full size the level's spring can carry the flame */
+const OVER = 1.2;
 
 export function Earned({ group, more, onClose }: { group: CelItem[]; more: boolean; onClose: () => void }) {
   const motionOff = useReducedMotion();
@@ -115,13 +119,13 @@ function Moment({
   /* the flame's size: big, the biggest thing on the screen, and a little less on a short phone so the tiles and button fit */
   /* with more earned at the same time, the rows need the room: the picture gives a little, so nothing overlaps */
   const crowd = Math.min(3, rest.length);
-  const art = Math.round(Math.min(win.width * (kind === 'form' ? 0.7 : 0.6), win.height * ((SHORT ? 0.26 : 0.32) - crowd * 0.045), 300));
+  const art0 = Math.min(win.width * (kind === 'form' ? 0.7 : 0.6), win.height * ((SHORT ? 0.26 : 0.32) - crowd * 0.045), 300);
 
   let shout = '';
   let title = '';
   let sub = '';
   let tiles: Tile[] = [];
-  let picture: React.ReactNode = null;
+  let picture: ((z: number) => React.ReactNode) | null = null;
   let turn: { from: number; to: number } | null = null;
   if (it.type === 'level') {
     const L = it.level;
@@ -138,10 +142,10 @@ function Moment({
       shout = 'Your flame grew!';
       title = L.name;
       sub = was + L.meaning + ' You built it, one day at a time.';
-      picture = <Grow from={from} to={L.n} size={art} still={still} quiet={quiet} />;
+      picture = (z: number) => <Grow from={from} to={L.n} size={z} still={still} quiet={quiet} />;
       tiles = [
-        { label: 'Level', value: L.n, icon: 'flame', color: TILE.sun },
-        { label: 'Points', value: g?.pts ?? L.floor, icon: 'star', color: TILE.coral },
+        /* no Level tile: the number turning over already says it */
+        { label: 'Points', value: g?.pts ?? L.floor, icon: 'star', color: TILE.sun },
         /* the form's number, not "of 12": no far goal is held up here */
         { label: 'Form', value: L.stage + 1, icon: 'sparkle', color: TILE.violet },
       ];
@@ -149,7 +153,7 @@ function Moment({
       shout = 'Level up!';
       title = '';
       sub = was + L.step + ' ' + (L.next == null ? 'This is as bright as it gets. Keep shining.' : nextLine(L));
-      picture = <Rise level={L.n} size={art} still={still} quiet={quiet} />;
+      picture = (z: number) => <Rise level={L.n} size={z} still={still} quiet={quiet} />;
       tiles = [
         { label: 'Points', value: g?.pts ?? L.floor, icon: 'star', color: TILE.sun },
         { label: L.name, value: L.tier + 1 + ' of 5', color: TILE.violet, a11y: L.name + ', step ' + (L.tier + 1) + ' of 5' },
@@ -160,15 +164,21 @@ function Moment({
     shout = it.b.id === 'honest' ? '' : rest.length ? 'New badges!' : 'New badge!';
     title = it.b.name;
     sub = it.b.desc;
-    picture = <Drop id={it.b.id} icon={it.b.icon} tone={it.b.tone} size={Math.min(art, 190)} still={still} quiet={quiet} />;
+    picture = (z: number) => <Drop id={it.b.id} icon={it.b.icon} tone={it.b.tone} size={Math.min(z, 190)} still={still} quiet={quiet} />;
     const n = g ? g.badges.filter((b) => b.done).length : 0;
     /* the count of badges, unless the rows of what else was earned already fill the space */
     tiles = n > 1 && !rest.length ? [{ label: 'Badges', value: n, icon: 'trophy', color: TILE.sun, a11y: n + ' badges earned' }] : [];
   } else {
     title = it.type === 'perfect' ? 'All ' + it.n + ' wins today' : it.type === 'more' ? it.title || 'Nice' : '';
     sub = it.type === 'more' ? it.sub || '' : '';
-    picture = <Rise level={Math.max(1, g?.level.n ?? 1)} size={art} still={still} quiet />;
+    picture = (z: number) => <Rise level={Math.max(1, g?.level.n ?? 1)} size={z} still={still} quiet />;
   }
+
+  /* the flame takes the room that is left once the shout and the words have theirs, measured on the screen, so the line above the
+     tiles always has air (the owner, November 13, 2026: "the boxes are too close to the words") */
+  const [box, setBox] = useState({ top: 0, shout: 0, words: 0 });
+  const room = box.top ? box.top - (inset.top + (SHORT ? 10 : 24)) - box.shout - 10 - box.words - 14 - 12 - AIR - 8 : art0;
+  const art = Math.round(Math.max(110, Math.min(art0, room)));
 
   /* the one warm tip ask rides only on a new flame form (core tipMoment), never when quiet, the day the person came back, or
      the hours after an SOS; Future you can be invited on a new level or form with no ask riding on it */
@@ -216,15 +226,33 @@ function Moment({
   return (
     <View style={StyleSheet.absoluteFill}>
       <Pressable style={StyleSheet.absoluteFill} accessible={false} onPress={() => !ready && onSkip()} />
-      <View style={[s.top, { paddingTop: inset.top + (SHORT ? 10 : 24) }]} pointerEvents="box-none">
-        <View style={s.shoutBox} pointerEvents="none">
+      <View
+        style={[s.top, { paddingTop: inset.top + (SHORT ? 10 : 24) }]}
+        pointerEvents="box-none"
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          setBox((b) => (b.top === h ? b : { ...b, top: h }));
+        }}>
+        <View
+          style={s.shoutBox}
+          pointerEvents="none"
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            setBox((b) => (b.shout === h ? b : { ...b, shout: h }));
+          }}>
           {shout && !quiet ? <Shout text={shout} at={B.shout} still={still} size={kind === 'form' ? 38 : 40} /> : null}
         </View>
         <View style={{ width: art, height: art }} pointerEvents="none">
           {quiet ? null : <Sparkles size={art} at={kind === 'form' ? B.shout : 300} still={still} />}
-          {picture}
+          {picture ? picture(art) : null}
         </View>
-        <View style={s.words} pointerEvents="none">
+        <View
+          style={s.words}
+          pointerEvents="none"
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            setBox((b) => (b.words === h ? b : { ...b, words: h }));
+          }}>
           {title ? <Title text={title} at={B.title} still={still} big={kind === 'form'} /> : null}
           {turn ? <Turn from={turn.from} to={turn.to} at={kind === 'form' ? B.title + 150 : B.title} still={still} quiet={quiet} /> : null}
           {sub ? (
@@ -365,10 +393,16 @@ function Rise({ level, size, still, quiet }: { level: number; size: number; stil
     const t = setTimeout(() => setPulse((p) => p + 1), BEATS.level.shout);
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const st = useAnimatedStyle(() => ({ opacity: Math.min(1, v.value * 2), transform: [{ scale: interpolate(v.value, [0, 1], [0.3, 1]) }] }));
+  /* drawn at its biggest (the top of the spring's overshoot) and only ever scaled down: iOS scales the drawn picture, so scaling
+     up past 1 made it soft (the owner, November 13, 2026: "super low resolution while it bounces") */
+  const D = Math.round(size * OVER);
+  const st = useAnimatedStyle(() => ({
+    opacity: Math.min(1, v.value * 2),
+    transform: [{ scale: Math.min(1, interpolate(v.value, [0, 1], [0.3, 1]) / OVER) }],
+  }));
   return (
-    <Reanimated.View style={[StyleSheet.absoluteFill, st]}>
-      <BigFlame level={level} size={size} pulse={pulse} noLand />
+    <Reanimated.View style={[{ position: 'absolute', width: D, height: D, left: (size - D) / 2, top: (size - D) / 2 }, st]}>
+      <BigFlame level={level} size={D} pulse={pulse} noLand />
     </Reanimated.View>
   );
 }
@@ -470,10 +504,15 @@ function Grow({ from, to, size, still, quiet }: { from: number; to: number; size
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const G = size * 1.6;
   const L = Math.max(win.width, win.height) * 1.6;
-  const oldIn = useAnimatedStyle(() => ({ transform: [{ rotate: `${shake.value * 2.5 * gather.value}deg` }, { scale: 1 + 0.08 * gather.value }] }));
+  /* the old form swells a little as it gathers: drawn at its biggest, scaled down */
+  const G0 = Math.round(size * 1.08);
+  const oldIn = useAnimatedStyle(() => ({ transform: [{ rotate: `${shake.value * 2.5 * gather.value}deg` }, { scale: (1 + 0.08 * gather.value) / 1.08 }] }));
   const glowIn = useAnimatedStyle(() => ({ opacity: gather.value, transform: [{ scale: 0.3 + 0.7 * gather.value }] }));
   const lightIn = useAnimatedStyle(() => ({ opacity: light.value, transform: [{ scale: 0.05 + 0.95 * light.value }] }));
-  const newIn = useAnimatedStyle(() => ({ transform: [{ scale: interpolate(land.value, [0, 1], [1.35, 1]) }] }));
+  /* the new form is drawn at the size it lands from and scaled down to rest, never up, so it stays sharp */
+  const LAND = 1.35;
+  const D = Math.round(size * LAND);
+  const newIn = useAnimatedStyle(() => ({ transform: [{ scale: Math.min(1, interpolate(land.value, [0, 1], [LAND, 1]) / LAND) }] }));
   return (
     <View style={[StyleSheet.absoluteFill, s.center]}>
       {still ? null : (
@@ -482,12 +521,12 @@ function Grow({ from, to, size, still, quiet }: { from: number; to: number; size
         </Reanimated.View>
       )}
       {turned ? (
-        <Reanimated.View style={[StyleSheet.absoluteFill, newIn]}>
-          <BigFlame level={to} size={size} pulse={pulse} noLand />
+        <Reanimated.View style={[{ position: 'absolute', width: D, height: D, left: (size - D) / 2, top: (size - D) / 2 }, newIn]}>
+          <BigFlame level={to} size={D} pulse={pulse} noLand />
         </Reanimated.View>
       ) : (
-        <Reanimated.View style={[StyleSheet.absoluteFill, oldIn]}>
-          <BigFlame level={from} size={size} noLand />
+        <Reanimated.View style={[{ position: 'absolute', width: G0, height: G0, left: (size - G0) / 2, top: (size - G0) / 2 }, oldIn]}>
+          <BigFlame level={from} size={G0} noLand />
         </Reanimated.View>
       )}
       {still ? null : (
@@ -528,7 +567,7 @@ function Glow({ size, warm }: { size: number; warm?: boolean }) {
 
 const s = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center' },
-  top: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 6 },
+  top: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingBottom: AIR, gap: 6 },
   shoutBox: { minHeight: 52, justifyContent: 'flex-end', marginBottom: 10 },
   words: { alignItems: 'center', gap: 6, marginTop: 14, alignSelf: 'stretch' },
   title: { fontFamily: font.display, fontSize: 34, lineHeight: 40, color: nightInk.ink, textAlign: 'center' },

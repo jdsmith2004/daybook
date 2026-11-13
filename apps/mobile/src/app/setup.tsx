@@ -1,7 +1,7 @@
 /* Setup in two minutes (WP10; the owner's decisions D4 and D14, November 12, 2026), with Duolingo as the model (the owner,
    November 12, 2026: "heavily use this for inspiration everywhere in the app for celebrations streaks onboarding lessons").
 
-   A new person: hello (the flame says how many quick questions), what they are quitting, how often, when it pulls hardest,
+   A new person: what they are quitting (the flame says hello on it), how often, when it pulls hardest,
    thirty seconds of breathing (the first win, the way SOS starts), the promise ("You are here. This time is different."),
    who it is for, faith, tonight (the phone-down time, and on a phone the note an hour before), then they light their flame
    for the first time, with a swipe up, and pick a small first goal. Then the free account ask, with "Keep it on this phone".
@@ -24,7 +24,6 @@ import {
   NUDGE_WORDS,
   OB_FIRST,
   OB_PAGES,
-  obAskCount,
   obBegin,
   obChanges,
   obGoal,
@@ -83,7 +82,6 @@ import { font, MAX_WIDTH, nightInk, skies, useTheme } from '@/lib/theme';
 import { restoredWords, WORDS } from '@/lib/words';
 
 type Flow = SetupFlow;
-const NUM = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'];
 
 export default function Setup() {
   const base = useTheme();
@@ -284,25 +282,7 @@ export default function Setup() {
           </>
         );
         foot = nextBtn('Start');
-        break;
       }
-      const n = obAskCount(a, env);
-      body = (
-        <>
-          <Head h="Get free of it, one honest night at a time." />
-          {/* the first thing a new person sees: the flame, big and alive, saying hello. It is the same one they will light. */}
-          <Talk text={`Hi. I am your flame. ${NUM[n] || n} quick questions, and tonight is set.`} want={want} />
-        </>
-      );
-      foot = (
-        <View key="h" style={[s.footOne, { gap: 2 }]}>
-          <Next label="Start" onPress={() => !busy() && go(1)} off={false} />
-          {sync.status.k !== 'off' && sync.status.k !== 'on' ? (
-            <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'I already have an account'} onPress={() => sync.signInNow({ why: 'in' })} />
-          ) : null}
-          {BACKUP_FILES ? <TextLink label="I have a backup file" onPress={restore} /> : null}
-        </View>
-      );
       break;
     }
     case 'tiles': {
@@ -325,6 +305,17 @@ export default function Setup() {
         />
       );
       foot = nextBtn(ans(a[key]) ? 'Next' : 'Skip', !ans(a[key]));
+      /* a new person's first page: the quiet ways in for someone who has been here before */
+      if (!f.redo && i === 0)
+        foot = (
+          <View key="first" style={{ gap: 2 }}>
+            {foot}
+            {sync.status.k !== 'off' && sync.status.k !== 'on' ? (
+              <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'I already have an account'} onPress={() => sync.signInNow({ why: 'in' })} />
+            ) : null}
+            {BACKUP_FILES ? <TextLink label="I have a backup file" onPress={restore} /> : null}
+          </View>
+        );
       break;
     }
     case 'multi': {

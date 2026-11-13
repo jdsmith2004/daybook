@@ -120,11 +120,11 @@ describe('the goal it suggests', () => {
 
 describe('setup in two minutes (WP10)', () => {
   it('asks a new person a few things, sets tonight, lights the flame, then asks for the account', () => {
-    expect(core.obPages({}).map((p) => p.id)).toEqual(['hello', 'habit', 'freq', 'when', 'breathe', 'promise', 'for', 'faith', 'tonight', 'light']);
+    expect(core.obPages({}).map((p) => p.id)).toEqual(['habit', 'freq', 'when', 'breathe', 'promise', 'for', 'faith', 'tonight', 'light']);
     expect(core.obPages({ faith: 'big' }, { account: true }).map((p) => p.id)).toEqual(
-      'hello habit freq when breathe promise for faith creed tonight light account'.split(' '),
+      'habit freq when breathe promise for faith creed tonight light account'.split(' '),
     );
-    expect(core.obAskCount({})).toBe(5);
+    expect(core.obPages({}, { redo: true })[0].id).toBe('hello');
   });
   it('asks the phone-down time only of people quitting porn (the owner, via WP3)', () => {
     for (const habit of ['alcohol', 'gambling', 'other']) {

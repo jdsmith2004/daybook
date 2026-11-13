@@ -238,7 +238,9 @@ export const obForReasons = (a: SetupAnswers): string[] =>
 const isRedo = (_a: SetupAnswers, env: ObEnv) => !!env.redo;
 const isNew = (_a: SetupAnswers, env: ObEnv) => !env.redo;
 export const OB_PAGES: ObPage[] = [
-  { id: 'hello', k: 'hello' },
+  /* a walk-through opens with a hello; a new person starts on the first question, where the flame says hello (the owner,
+     November 13, 2026: the welcome page "feels kind of pointless") */
+  { id: 'hello', k: 'hello', need: isRedo },
   /* what the person is quitting (habit.ts): first, so every word after it is theirs */
   { id: 'habit', k: 'tiles', key: 'habit', list: OB_HABIT, h: 'What are you quitting?', keep: 1 },
   { id: 'freq', k: 'tiles', key: 'freq', list: OB_FREQ4, h: 'How often does it happen?', keep: 1 },
@@ -274,7 +276,7 @@ export const OB_PAGES: ObPage[] = [
   { id: 'done', k: 'done', need: isRedo },
 ];
 export const obPages = (a: SetupAnswers, env: ObEnv = {}) => OB_PAGES.filter((pg) => !pg.need || pg.need(a, env)).map((pg) => obPageIn(pg, habitIn(a)));
-/** the questions asked, for the line the flame says first ("Five quick questions, then tonight is set") */
+/** the questions setup asks */
 export const obAskCount = (a: SetupAnswers, env: ObEnv = {}) => obPages(a, env).filter((p) => p.k === 'tiles' || p.k === 'multi').length;
 /** a page in the words of the habit chosen: the questions name it, and for another habit the first question carries the
     doctor line (habit.ts habitMedical) */
@@ -729,7 +731,7 @@ export const obLast = (st: Settings | null, redo: boolean, key: string, list: Ob
     on a one-tap question it answers what was picked. Plain words, no contractions, never shame. */
 const OB_SAY: Record<string, string> = {
   hello: 'Hi. I am your flame. Answer a few quick questions, and tonight is set.',
-  habit: 'Pick the closest one. I can help with each.',
+  habit: 'Hi. I am your flame. Pick the closest one, and I will help with it.',
   freq: 'Rough is fine. Only you see this.',
   when: 'Pick any. I will be ready for these.',
   breathe: 'Breathe with me. This is how SOS starts.',

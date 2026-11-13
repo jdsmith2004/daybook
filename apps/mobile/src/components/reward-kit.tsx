@@ -90,7 +90,8 @@ function TileView({ t, at, still, quiet, body, ink }: { t: Tile; at: number; sti
     tm.push(
       setTimeout(() => {
         if (!quiet) knock(Haptics.ImpactFeedbackStyle.Light);
-        v.value = withSpring(1, { damping: 9, stiffness: 190 });
+        /* Duolingo's tiles pop in place, quick and firm: a small grow, the lightest overshoot, no drop and no wobble */
+        v.value = withSpring(1, { damping: 16, stiffness: 320, mass: 0.8 });
         glint.value = withDelay(120, withSequence(withTiming(1, { duration: 260 }), withTiming(0, { duration: 420 })));
       }, at),
     );
@@ -112,7 +113,7 @@ function TileView({ t, at, still, quiet, body, ink }: { t: Tile; at: number; sti
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const inStyle = useAnimatedStyle(() => ({
     opacity: Math.min(1, v.value * 2),
-    transform: [{ translateY: 26 * (1 - v.value) }, { scale: interpolate(v.value, [0, 1], [0.5, 1]) }],
+    transform: [{ scale: interpolate(v.value, [0, 1], [0.82, 1]) }],
   }));
   const glintStyle = useAnimatedStyle(() => ({ opacity: glint.value, transform: [{ scale: 0.4 + glint.value * 0.8 }, { rotate: `${glint.value * 90}deg` }] }));
   const shown = (t.prefix || '') + String(n) + (t.suffix || '');

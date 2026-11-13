@@ -113,7 +113,9 @@ function Moment({
   const g = snap.settings ? gameCompute(snap.days, snap.settings, snap.reviews, tk) : null;
 
   /* the flame's size: big, the biggest thing on the screen, and a little less on a short phone so the tiles and button fit */
-  const art = Math.round(Math.min(win.width * (kind === 'form' ? 0.7 : 0.6), win.height * (SHORT ? 0.26 : 0.32), 300));
+  /* with more earned at the same time, the rows need the room: the picture gives a little, so nothing overlaps */
+  const crowd = Math.min(3, rest.length);
+  const art = Math.round(Math.min(win.width * (kind === 'form' ? 0.7 : 0.6), win.height * ((SHORT ? 0.26 : 0.32) - crowd * 0.045), 300));
 
   let shout = '';
   let title = '';
@@ -160,7 +162,8 @@ function Moment({
     sub = it.b.desc;
     picture = <Drop id={it.b.id} icon={it.b.icon} tone={it.b.tone} size={Math.min(art, 190)} still={still} quiet={quiet} />;
     const n = g ? g.badges.filter((b) => b.done).length : 0;
-    tiles = n > 1 ? [{ label: 'Badges', value: n, icon: 'trophy', color: TILE.sun, a11y: n + ' badges earned' }] : [];
+    /* the count of badges, unless the rows of what else was earned already fill the space */
+    tiles = n > 1 && !rest.length ? [{ label: 'Badges', value: n, icon: 'trophy', color: TILE.sun, a11y: n + ' badges earned' }] : [];
   } else {
     title = it.type === 'perfect' ? 'All ' + it.n + ' wins today' : it.type === 'more' ? it.title || 'Nice' : '';
     sub = it.type === 'more' ? it.sub || '' : '';
@@ -276,11 +279,11 @@ function Row({ it, at, still, quiet }: { it: CelItem; at: number; still: boolean
     if (still) return;
     const t = setTimeout(() => {
       if (!quiet) knock(Haptics.ImpactFeedbackStyle.Light);
-      v.value = withSpring(1, { damping: 10, stiffness: 190 });
+      v.value = withSpring(1, { damping: 16, stiffness: 320, mass: 0.8 });
     }, at);
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const st = useAnimatedStyle(() => ({ opacity: Math.min(1, v.value * 2), transform: [{ translateX: 40 * (1 - v.value) }] }));
+  const st = useAnimatedStyle(() => ({ opacity: Math.min(1, v.value * 2), transform: [{ scale: interpolate(v.value, [0, 1], [0.9, 1]) }] }));
   const art =
     it.type === 'badge' ? (
       <Medal id={it.b.id} icon={it.b.icon} tone={it.b.tone} size={40} earned />

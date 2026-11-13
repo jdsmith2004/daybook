@@ -51,7 +51,8 @@ describe('sync', () => {
     const g = await call(ev('GET', { query: { since: '0' } }));
     expect(g.body.records.map((r: { id: string }) => r.id).sort()).toEqual(['days/2026-10-14', 'settings']);
     const st = g.body.records.find((r: { id: string }) => r.id === 'settings');
-    expect(st.data.cleanMode).toBe('strict');
+    /* an invalid counting mode loads as gentle, never strict (core settings-norm.ts, WP1) */
+    expect(st.data.cleanMode).toBe('gentle');
     expect(st.data.u).toBe(600);
     expect(g.body.now).toBe(now);
   });

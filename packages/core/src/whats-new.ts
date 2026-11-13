@@ -29,6 +29,12 @@ export const WHATS_NEW: { v: string; items: NewItem[] }[] = [
        possible"); the next build's other news goes above it */
     v: '1.3.3',
     items: [
+      /* the true record (truth.ts, the owner's D1, November 12, 2026): said once, plainly */
+      {
+        t: 'A night counts when you say so',
+        line: 'From today a night counts as free when you say so. Everything you earned stays.',
+        art: 'week',
+      },
       {
         t: 'Your flame on your Home Screen',
         line: 'Add the Daybook widget and your flame burns there as it does in the app, even while Daybook stays closed.',

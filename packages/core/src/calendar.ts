@@ -12,9 +12,9 @@ import { talkAfterSlip } from './talk';
 import { eventRow, plural } from './view';
 import type { DayEvent, DayKey, Days, Settings } from './types';
 
-/** ok: no slip. saved: a slip the old rule saved (runLedger), which keeps its mark. slip, logged, none, before (the log had
+/** untold: from truthFrom on, a night nobody told Daybook about (truth.ts), drawn hollow and counted as nothing. ok: no slip. saved: a slip the old rule saved (runLedger), which keeps its mark. slip, logged, none, before (the log had
     not started), ahead (still to come). */
-export type CalKind = 'ok' | 'saved' | 'slip' | 'logged' | 'none' | 'before' | 'ahead' | 'away';
+export type CalKind = 'ok' | 'saved' | 'slip' | 'logged' | 'none' | 'before' | 'ahead' | 'away' | 'untold';
 export interface CalDay {
   k: DayKey;
   /** the day of the month */
@@ -46,7 +46,9 @@ export function awaySpan(from: DayKey, to: DayKey): string {
   return from.slice(0, 7) === to.slice(0, 7) ? d(from) + ' to ' + Number(to.slice(8)) : d(from) + ' to ' + d(to);
 }
 /** a gap away as one line (away.ts): its days, and the slips the person said they had, or that it is not known yet */
-export function awayLine(g: { from: DayKey; to: DayKey; n: number | null }): string {
+export function awayLine(g: { from: DayKey; to: DayKey; n: number | null; away?: boolean }): string {
+  /* nights not told while the person was here (truth.ts) are not "away" */
+  if (g.away === false) return awaySpan(g.from, g.to) + ' · ' + (g.n == null ? 'not told yet' : g.n === 0 ? 'told, no slips' : 'told, ' + plural(g.n, 'slip'));
   return awaySpan(g.from, g.to) + ' · away · ' + (g.n == null ? 'not known yet' : g.n === 0 ? 'no slips' : plural(g.n, 'slip'));
 }
 
@@ -90,8 +92,13 @@ export function calMonth(days: Days, st: Settings, tk: DayKey, ym?: string | nul
               ? 'logged'
               : status === 'unknown'
                 ? 'away'
-                : 'none';
+                : status === 'untold'
+                  ? 'untold'
+                  : 'none';
+      /* nights told through an answer while the person was here (truth.ts) are told nights, drawn as what they were, not as away */
+      if (kind === 'away' && awayGapAt(days, st, k, tk)?.away === false) kind = awaySlipDay(days, st, k, tk) ? 'slip' : 'ok';
       if (kind === 'ok') sum.noSlip++;
+      else if (kind === 'slip' && !s.slipped && awaySlipDay(days, st, k, tk)) sum.slips++;
       /* a gap answered: its slips and its no-slip days count with the rest */
       if (kind === 'away' && awaySlipDay(days, st, k, tk)) sum.slips++;
       else if (kind === 'away' && awayGapAt(days, st, k, tk)?.n != null) sum.noSlip++;
@@ -113,7 +120,7 @@ export function calMonth(days: Days, st: Settings, tk: DayKey, ym?: string | nul
       .filter((g) => g.to >= m + '-01' && g.from <= m + '-31' && g.to >= (st.day1 || g.to))
       .map((g) => {
         const from = st.day1 && g.from < st.day1 ? st.day1 : g.from;
-        return { from, to: g.to, n: g.n, line: awayLine({ from, to: g.to, n: g.n }) };
+        return { from, to: g.to, n: g.n, line: awayLine({ from, to: g.to, n: g.n, away: g.away }) };
       }),
   };
 }
@@ -157,17 +164,21 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
         ? 'No slip so far'
         : 'No slip'
       : kind === 'saved' || kind === 'slip'
-        ? plural(s.slipped, 'slip') + ', logged honestly'
+        ? s.slipped
+          ? plural(s.slipped, 'slip') + ', logged honestly'
+          : 'A slip, told honestly'
         : kind === 'logged'
           ? 'Logged'
           : kind === 'ahead'
             ? 'Still to come'
-            : kind === 'away'
-              ? (() => {
-                  const g = awayGapAt(days, st, key, tk);
-                  return g ? awayLine({ from: st.day1 && g.from < st.day1 ? st.day1 : g.from, to: g.to, n: g.n }) : 'You were away';
-                })()
-              : 'Nothing logged';
+            : kind === 'untold'
+              ? 'Not told'
+              : kind === 'away'
+                ? (() => {
+                    const g = awayGapAt(days, st, key, tk);
+                    return g ? awayLine({ from: st.day1 && g.from < st.day1 ? st.day1 : g.from, to: g.to, n: g.n, away: g.away }) : 'You were away';
+                  })()
+                : 'Nothing logged';
   const events = sortedEvents(d, st.rollover).map((e) => {
     const r = eventRow(e, st);
     return { id: e.id, outcome: e.outcome, time: r.time, what: r.what, meta: r.meta, sos: urSosLines(e), note: (e.note || '').trim() };

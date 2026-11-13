@@ -15,12 +15,14 @@ export function normMorning(x: unknown): MorningSet | undefined {
   const o: MorningSet = { at: isMs(s.at) ? s.at : 0 };
   if (s.n === 'free' || s.n === 'slip') o.n = s.n;
   if (typeof s.ev === 'string' && s.ev) o.ev = s.ev.slice(0, 40);
+  if (s.n2 === 'free' || s.n2 === 'slip') o.n2 = s.n2;
+  if (typeof s.ev2 === 'string' && s.ev2) o.ev2 = s.ev2.slice(0, 40);
   if (s.f === 1 || s.f === 2 || s.f === 3) o.f = s.f;
   if (typeof s.r === 'string' && s.r.trim()) o.r = s.r.trim().slice(0, MORNING_REASON_MAX);
   if (isClock(s.nt)) o.nt = s.nt;
   if (isMs(s.set)) o.set = s.set;
   if (isMs(s.x)) o.x = s.x;
-  if (!o.n && !o.f && !o.r && !o.nt && !o.set && !o.x) return undefined;
+  if (!o.n && !o.n2 && !o.f && !o.r && !o.nt && !o.set && !o.x) return undefined;
   if (!o.at) o.at = o.set || o.x || 1;
   return o;
 }

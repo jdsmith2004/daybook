@@ -71,7 +71,7 @@ moved (Supabase keeps hashes Cognito cannot take, and Daybook asks for 12 charac
 password against Supabase on first sign-in, but it needs a new Lambda that handles passwords and a role made in `infra/bootstrap`, for
 little gain. Instead:
 
-- Apple: if Mithras and Daybook are under the same Apple developer team, the person's Apple identity is the same in both, so "Continue
+- Apple: Mithras and Daybook are under the same Apple developer team (checked), so the person's Apple identity is the same in both, so "Continue
   with Apple" in Daybook just works, and the same Apple sign-in can open their Mithras rows once Daybook's bundle id is added to the
   Apple provider in Supabase (owner, in the Supabase dashboard).
 - Email: the person types their Mithras email and password once in the import sheet. After the import, the account ask offers a Daybook
@@ -79,10 +79,12 @@ little gain. Instead:
 
 ### Found in Mithras that needs the owner now (before anything ships)
 
-- **Row-level security is not visible.** The repository has no policies for `journals`, `streaks` or any other table, and a script
-  in it (`quick-fix-all.sh`) writes SQL that turns row-level security off on most tables. If it is off in the live project, anyone with
-  the anon key, which ships inside the Mithras app, can read every person's journal today. The owner checks in the Supabase dashboard
-  (Authentication, Policies) that every table has RLS on with "own rows only" policies. Plan B depends on it too.
+- **Row-level security is off on several tables (measured November 13, 2026).** A request with only the public anon key (which ships
+  inside the Mithras app) and no sign-in, asking for a row count and no contents, was shown: `users` 242 rows, `user_profiles` 242,
+  `streaks` 228, `profiles` 166. `journals`, `goals`, `tool_sessions`, `ai_interactions` and `streak_logs` showed 0 (protected, or
+  empty). So today anyone can read Mithras people's emails, onboarding answers (the habit, how often) and streaks. The owner turns
+  RLS on for those four tables with "own rows only" policies in the Supabase dashboard, first, before anything else. Plan B depends
+  on it too.
 - **Secrets are committed** in `.env`: the Stripe secret key and the DeepSeek key (whose `EXPO_PUBLIC_` copy is also inside the shipped
   app). Rotate both; the repository being private does not cover the copy in the app.
 - **No account delete.** The Settings button does nothing. Apple requires an in-app delete for apps with sign-up, so the new Mithras

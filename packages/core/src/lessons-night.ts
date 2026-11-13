@@ -108,14 +108,14 @@ export const NIGHT: Record<string, Turn> = {
   l54: {
     id: 'l54',
     title: 'The morning self and the night self',
-    tag: 'The one who decides at 8 AM can set the room for 11:45 PM.',
+    tag: 'The one who decides at 8 a.m. can set the room for 11:45 p.m.',
     ic: 'sunrise',
     ask: 'Why do my plans in the morning fall apart at night?',
     key: 'The night self is tired and the pull is loud. Let the morning self decide, and set the room before dark.',
     np: 'One thing my morning self will set up for tonight',
     hook: {
-      h: 'At 8 AM you are sure. Tonight will be different.',
-      say: 'Then 11:45 PM comes. What changed?',
+      h: 'At 8 a.m. you are sure. Tonight will be different.',
+      say: 'Then 11:45 p.m. comes, and that certainty is gone.',
       more: 'In the morning it is easy to mean it. Late at night you are tired, alone, and the phone is in your hand, and the same promise feels far away. This lesson is about why, and how the morning can help the night.',
     },
     ask1: {
@@ -130,7 +130,7 @@ export const NIGHT: Record<string, Turn> = {
     flip: {
       think: 'I just need more willpower at night.',
       see: 'The night self is tired and has the least to give. The morning self has more, so let it do the work.',
-      more: 'Willpower at 11:45 PM is the weakest it will be all day. You are tired, the room is dark, and the phone is right there. Asking more of that moment asks the tired one to carry everything. The person you are at 8 AM can decide for both of you, by setting the room so the night has less to fight.',
+      more: 'Willpower at 11:45 p.m. is the weakest it will be all day. You are tired, the room is dark, and the phone is right there. Asking more of that moment asks the tired one to carry everything. The person you are at 8 a.m. can decide for both of you, by setting the room so the night has less to fight.',
     },
     deep: [
       {
@@ -142,7 +142,7 @@ export const NIGHT: Record<string, Turn> = {
       {
         h: 'A tired brain holds back less.',
         p: 'After short or poor sleep, people act more on impulse and think less about later.',
-        art: ['chain', { n: ['8 AM: decide', '10 PM: the plan runs', '11:45 PM: less to fight'], i: ['sunrise', 'calendar', 'moon'] }],
+        art: ['chain', { n: ['8 a.m.: decide', '10 p.m.: the plan runs', '11:45 p.m.: less to fight'], i: ['sunrise', 'calendar', 'moon'] }],
         fact: { s: 'Review · Pilcher and colleagues, 2015', i: [1] },
         more: 'A review of research on sleep and self-control found the same pattern again and again. After short or poor sleep, people resist less, think less about later, and act more on impulse. Late at night, after a long day, the brake is at its weakest. That is not a flaw in you. It is a tired brain, and a tired brain can be planned for.',
       },
@@ -161,9 +161,9 @@ export const NIGHT: Record<string, Turn> = {
       more: 'Do it while you are clear, in the morning or right after dinner. The night self only has to follow what is already there.',
     },
     check: {
-      h: '9 AM. Last night went wrong again. What does the morning self do first?',
+      h: '9 a.m. Last night went wrong again. What does the morning self do first?',
       o: [
-        ['Promise to try harder tonight', 'That leaves it all to the tired one at 11:45 PM. Set something up instead.'],
+        ['Promise to try harder tonight', 'That leaves it all to the tired one at 11:45 p.m. Set something up instead.'],
         ['Set up the charger outside the bedroom now', 'Yes. The morning self did the work, so the night self has less to fight.'],
         ['Feel bad about it all day', 'Feeling bad drains the energy you need tonight. Use the morning to set the room.'],
         ['Wait and see how tonight goes', 'Then tonight is the same room as last night. One change now helps more.'],
@@ -185,7 +185,7 @@ export const NIGHT: Record<string, Turn> = {
     key: 'Most hard nights start with the phone in bed. Charge it outside the room, and the night ends at the door.',
     np: 'Where my phone will sleep tonight, and what I will use instead',
     hook: {
-      h: 'It is 11:30 PM. You are in bed, and the phone is in your hand.',
+      h: 'It is 11:30 p.m. You are in bed, and the phone is in your hand.',
       say: 'How did it get there?',
       more: 'For many people the hard part of the night does not start with a choice. It starts with a habit and a screen: in bed, scrolling, and then it is late. This lesson is about where the phone spends the night.',
     },
@@ -231,7 +231,7 @@ export const NIGHT: Record<string, Turn> = {
       more: 'If the first night feels strange, that is normal. It takes a few nights for the room to feel like a place to sleep again. If you share a home, tell someone why the charger moved. It helps it stay moved.',
     },
     check: {
-      h: '11 PM. The phone is in the kitchen, and you want to check one thing. What gives you the best night?',
+      h: '11 p.m. The phone is in the kitchen, and you want to check one thing. What gives you the best night?',
       o: [
         ['Get it, check one thing, and bring it back', 'One thing in bed is how most hard nights start. Let it wait for morning.'],
         ['Leave it, and let the one thing wait', 'Yes. The night ends at the door, and almost nothing needs you before morning.'],
@@ -256,7 +256,7 @@ export const NIGHT: Record<string, Turn> = {
     np: 'The doors my filter does not cover yet, and who could hold the code',
     hook: {
       h: 'You set up a filter. A week later you found a way around it.',
-      say: 'So is there any point?',
+      say: 'Does a wall have to be perfect to help?',
       more: 'Many people try a block once, find a gap at midnight, and decide filters do not work. This lesson is about what a filter can do, what it cannot, and how to make it count.',
     },
     ask1: {
@@ -299,7 +299,7 @@ export const NIGHT: Record<string, Turn> = {
       more: 'Most phones have built-in limits, like Screen Time on an iPhone, and a friend can set the passcode. You do not have to tell them everything. “Can you set a code I do not know?” is enough.',
     },
     check: {
-      h: '12:10 AM. The filter blocks a site, and a thought says, “There is always the other browser.” What now?',
+      h: '12:10 a.m. The filter blocks a site, and a thought says, “There is always the other browser.” What now?',
       o: [
         ['Try the other browser, just to see', 'That is the door the thought was pointing at. The wall gave you this minute.'],
         ['Put the phone down, and let the minute pass', 'Yes. The wall did its job. It bought the minute, and you used it.'],
@@ -324,7 +324,7 @@ export const NIGHT: Record<string, Turn> = {
     np: 'The one person I could tell, and the first sentence I would say',
     hook: {
       h: 'Nobody knows. You plan to fix this quietly, by yourself.',
-      say: 'How has doing it alone gone so far?',
+      say: 'Does it have to be done alone?',
       more: 'Many people keep the habit secret and try to beat it alone, because telling anyone feels worse than the habit. This lesson is about what changes when one person knows.',
     },
     ask1: {
@@ -474,7 +474,7 @@ export const NIGHT_PRACTICE: Record<string, PStep> = {
     p: 'Add the line that fits your nights while your head is clear. Tonight only has to follow it.',
     mins: 1,
     items: [
-      plan('it is 10 PM', 'Put the phone on its charger outside my room, and get ready for bed.'),
+      plan('it is 10 p.m.', 'Put the phone on its charger outside my room, and get ready for bed.'),
       plan('I am in bed and want my phone', 'Leave it where it is. Read, or lie still until sleep comes.'),
     ],
     go: [{ t: 'Set my screens-off time', a: 'tab', v: 'settings', open: 's-sched', ic: 'moon' }],

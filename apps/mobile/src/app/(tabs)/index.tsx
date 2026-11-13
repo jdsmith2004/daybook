@@ -367,9 +367,12 @@ export default function Today() {
           />
         }>
         {night ? (
-          /* after the night hour, Today is the night page: one card, Phone to bed, and the care row; nothing else (WP5, mockup m3) */
+          /* after the night hour, Today is the night page: one card, Phone to bed, and the care row; nothing else (WP5, mockup m3). On the
+             night of a slip, its own card is the one card instead (its Go to bed is the same act): bringing the person back is the job then. */
           <>
-            {nightTile ? (
+            {pick.card.k === 'slip-day' ? (
+              <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />
+            ) : nightTile ? (
               <StopCard
                 m={
                   bedAt

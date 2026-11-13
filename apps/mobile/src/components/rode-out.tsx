@@ -1,8 +1,8 @@
 /* One urge ridden out, one ending (the UX audit of October 27, 2026). The ride's "It passed", the 10-minute pause's "It
    passed" and Already happened's "I rode it out" all end on this page, so riding out an urge feels the same wherever it
    is logged. Its headline names what this one proved, from the record (core rodeHeadline: "You rode it out. Now you know you
-   can." the first time). The flame pops in with its burst, confetti bursts out with a run of buzzes and then a shower falls; how long
-   it took, how many you have ridden out and the points; what helped (the moves of an SOS, with one line on why that one
+   can." the first time). The flame pops in with its burst, confetti bursts out with a run of buzzes and then a shower falls; then
+   Duolingo's tiles land one at a time: how many you have ridden out, how long it took and the points, counting up; what helped (the moves of an SOS, with one line on why that one
    works and its lesson for later, or what you did, for one logged afterwards); and what set it off. Each answer is one tap
    or none, and saved as it is tapped. Done is pinned at the bottom, in reach on every phone while the card scrolls, with
    Undo under it for an entry logged by hand. With celebrations off it is the same page, quietly. */
@@ -33,6 +33,7 @@ import { Confetti } from '@/components/celebrate';
 import { FutureInvite, useFutureInvite } from '@/components/future-invite';
 import { MOVE_ICON, MOVE_NAME } from '@/components/ride/moves';
 import { Packed } from '@/components/packed';
+import { TILE, Tiles, type Tile } from '@/components/reward-kit';
 import { Opener } from '@/components/opener';
 import { Finish, SceneFrame } from '@/components/scene';
 import { Text } from '@/components/text';
@@ -151,11 +152,20 @@ function RodeOutPage({ won, night, level, title = 'SOS', onUndo, after }: RodePr
   };
 
   const mins = won.mins == null ? '' : won.mins < 1 ? 'under a minute' : won.mins === 1 ? '1 minute' : won.mins + ' minutes';
-  /* the count, unless the headline already says it */
-  const chips: string[] = head.kind === 'first' || head.kind === 'mark' ? [] : [rec.n + ' ridden out'];
-  if (won.mins != null && rec.faster && rec.med) chips.push('Faster than your usual ' + rec.med + ' min');
-  if (week > 1) chips.push(week + ' this week');
-  if (won.gain > 0) chips.push('+' + won.gain + ' points');
+  /* Duolingo's tiles, landing one at a time with their numbers counting up (components/reward-kit.tsx): how many ridden out,
+     how long this one took, and the points (or this week's count, when there were no points) */
+  const tiles: Tile[] = [
+    { label: 'Ridden out', value: rec.n, icon: 'shield', color: TILE.mint },
+    ...(won.mins != null
+      ? [{ label: 'It passed in', value: won.mins < 1 ? '<1' : won.mins, suffix: ' min', icon: 'timer', color: TILE.sky, a11y: 'It passed in ' + mins }]
+      : []),
+    ...(won.gain > 0
+      ? [{ label: 'Points', value: won.gain, prefix: '+', icon: 'star', color: TILE.sun }]
+      : week > 1
+        ? [{ label: 'This week', value: week, icon: 'calendar', color: TILE.violet }]
+        : []),
+  ];
+  const faster = won.mins != null && rec.faster && rec.med ? 'Faster than your usual ' + rec.med + ' min' : '';
   return (
     <View style={s.full}>
       <SceneFrame
@@ -182,14 +192,15 @@ function RodeOutPage({ won, night, level, title = 'SOS', onUndo, after }: RodePr
           title={head.h}
           text={(mins ? 'It passed in ' + mins + '. ' : 'The urge came, and you did not act on it. ') + 'Every one you ride out makes the next one easier.'}
         />
-        <Appear delay={650} style={s.chips}>
-          {chips.map((t) => (
-            <View key={t} style={[s.chip, { backgroundColor: c.scBtn }]}>
-              <Text style={[s.chipT, { color: c.ink }]}>{t}</Text>
+        <Tiles tiles={tiles} at={650} still={!cel} body={c.surface} ink={c.ink} />
+        {faster ? (
+          <Appear delay={650 + tiles.length * 380} style={s.chips}>
+            <View style={[s.chip, { backgroundColor: c.scBtn }]}>
+              <Text style={[s.chipT, { color: c.ink }]}>{faster}</Text>
             </View>
-          ))}
-        </Appear>
-        <Appear delay={950} by={22} duration={420} style={[s.card, { backgroundColor: c.surface }]}>
+          </Appear>
+        ) : null}
+        <Appear delay={750 + tiles.length * 380} by={22} duration={420} style={[s.card, { backgroundColor: c.surface }]}>
           {won.moves.length ? (
             <>
               <Text style={[s.q, { color: c.ink }]}>What helped most?</Text>

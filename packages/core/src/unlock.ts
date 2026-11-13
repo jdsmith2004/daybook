@@ -240,7 +240,7 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
     h: 'The night pack',
     title: 'Make the whole phone quiet at night',
     line: 'Four small automations, made once in Shortcuts.',
-    say: 'At your phone-down time the screen goes grey, the apps that pull you in wait first, the charger opens Good night, and your alarm opens the morning.',
+    say: 'At your phone-down time, the whole phone helps: the screen goes grey, and the apps that pull you in make you wait first.',
     how: [
       'Apple lets only you make an automation, so the next page walks you through each one in the Shortcuts app.',
       'Each one you set lights a flame. Start with one tonight.',

@@ -183,13 +183,18 @@ export default function Unlocked() {
         <T v="title" style={[s.mid0, ink ? { color: ink } : null]} accessibilityRole="header">
           {id === 'plan' && line ? 'When ' + line.ask + ', what will you do?' : w.title}
         </T>
-        {w.line ? (
+        {/* a part with a walk through said its line on the Unlocked moment already: the room goes to the steps */}
+        {w.line && !w.how ? (
           <T tone={night ? undefined : 'muted'} style={[s.mid0, { marginTop: 8 }, soft ? { color: soft } : null]}>
             {w.line}
           </T>
         ) : null}
         {/* the walk through: how it works and how to set it up, read at the top, steps and not buttons (a number and the words) */}
-        {w.how ? (
+        {w.how && w.how.length === 1 ? (
+          <T v="small" tone={night ? undefined : 'muted'} style={[s.mid0, { marginTop: 10 }, soft ? { color: soft } : null]}>
+            {w.how[0]}
+          </T>
+        ) : w.how ? (
           <View style={s.how} accessibilityRole="list">
             {w.how.map((x, j) => (
               <View key={j} style={s.step}>
@@ -229,14 +234,14 @@ export default function Unlocked() {
               </View>
             ) : null}
             {id === 'routine' ? (
-              <View style={{ gap: 8 }}>
+              <View style={s.grid}>
                 {ROUTINE_SHOWN.map((x) => (
                   <Answer
                     key={x.k}
                     sel={list[x.k]}
                     right={list[x.k]}
                     onPress={() => setList((l) => ({ ...l, [x.k]: !l[x.k] }))}
-                    style={s.row}
+                    style={s.cell}
                     label={x.name + (list[x.k] ? ', on Today' : ', off')}>
                     <AnswerText right={list[x.k]}>{x.name}</AnswerText>
                   </Answer>
@@ -274,7 +279,8 @@ const s = StyleSheet.create({
   mid: { flex: 1, justifyContent: 'center', gap: 4 },
   c: { alignItems: 'center' },
   opt: { paddingVertical: 12 },
-  row: { paddingVertical: 10 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  cell: { paddingVertical: 12, flexGrow: 1, flexBasis: '45%' },
   how: { gap: 10, marginTop: 14 },
   step: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   stepN: { fontFamily: font.displayBold, fontSize: 22, lineHeight: 26, minWidth: 18 },

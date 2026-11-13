@@ -22,7 +22,7 @@ import {
   keyOfDate,
   LEARN_FREE,
   NUDGE_WORDS,
-  OB_FIRST,
+  obFirstGoals,
   OB_PAGES,
   obBegin,
   obChanges,
@@ -447,6 +447,7 @@ export default function Setup() {
       body = (
         <FirstGoal
           tk={tk}
+          opts={obFirstGoals(a)}
           goal={st?.fwGoal ?? null}
           onGoal={(n) => {
             if (st) apply({ st: setFirstGoal(st, n) });
@@ -652,31 +653,36 @@ function Cheer({ onLesson, onHome }: { onLesson: () => void; onHome: () => void 
   );
 }
 
-/* ---------- the first small goal, after the flame is lit (core ignite.ts igniteGoal: three nights, then seven) ----------
+/* ---------- the first small goal, after the flame is lit (core setup.ts obFirstGoals: a close goal and a stretch, from how often it happens) ----------
    The lighting itself is WP8's Ignition (components/ignite.tsx), shown as the whole screen before this. Then the flame, big, asks
-   for a first goal, and the person picks it: three nights or seven, nothing bigger before a clean week (CLAUDE.md). Picking is the
+   for a first goal, and the person picks it: a close one or a stretch, never past a week before a clean week (CLAUDE.md). Picking is the
    commitment (Duolingo found an active choice, with nothing picked for you, holds better), so the button waits for it. */
-function FirstGoal({ goal, onGoal, tk }: { goal: number | null; onGoal: (n: number) => void; tk: DayKey }) {
+const NIGHTS = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
+const goalName = (n: number) => (n >= 7 ? 'A free week' : NIGHTS[n] + ' free nights');
+function FirstGoal({ goal, opts, onGoal, tk }: { goal: number | null; opts: [number, number]; onGoal: (n: number) => void; tk: DayKey }) {
   /* the morning the goal is kept: the person tells the last night of it that morning */
   const by = (n: number) => new Date(addDays(tk, n) + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }) + ' morning';
+  const [near, far] = opts;
   return (
     <>
       <Bubble
         text={
           goal
-            ? goal === 3
-              ? 'Three nights. Then we go for seven.'
-              : 'A whole week. I will light up every morning you tell me.'
+            ? goal >= 7
+              ? 'A whole week. I will light up every morning you tell me.'
+              : goal === near
+                ? `${NIGHTS[goal]} nights. Then we go for ${far >= 7 ? 'a week' : NIGHTS[far].toLowerCase()}.`
+                : `${NIGHTS[goal]} nights is a stretch. I will light up every morning you tell me.`
             : 'Let us set your first goal. Small is how it starts.'
         }
       />
       <FlameSlot size={SHORT ? 240 : 330} min={SHORT ? 160 : 220} />
       <View style={{ gap: 10, alignSelf: 'stretch' }} accessibilityRole="radiogroup">
-        {OB_FIRST.map((n) => (
+        {opts.map((n) => (
           <Answer key={n} sel={goal === n} right={goal === n} onPress={() => onGoal(n)} style={s.goalRow} label={n + ' free nights, kept by ' + by(n)}>
             <Text style={[s.goalN, { color: goal === n ? '#FFFFFF' : PAPER_INK }]}>{n}</Text>
             <View style={{ flex: 1 }}>
-              <AnswerText right={goal === n}>{n === 3 ? 'Three free nights' : 'A free week'}</AnswerText>
+              <AnswerText right={goal === n}>{goalName(n)}</AnswerText>
               <Text style={[s.optSub, { color: goal === n ? '#FFFFFF' : PAPER_INK }]}>Kept by {by(n)}</Text>
             </View>
           </Answer>

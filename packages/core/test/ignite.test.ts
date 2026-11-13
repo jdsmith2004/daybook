@@ -90,5 +90,11 @@ describe('the goal step', () => {
     expect(core.goalStep(3, 7)).toEqual({ of: 7, kept: false, segs: 7, lit: 3 });
     expect(core.goalStep(7, 7)).toEqual({ of: 7, kept: true, segs: 7, lit: 7 });
     expect(core.goalStep(3, 3)).toEqual({ of: 3, kept: true, segs: 3, lit: 3 });
+    /* most days: two nights first, then a week (the owner, November 13, 2026) */
+    expect(core.goalStep(0, 2)).toEqual({ of: 2, kept: false, segs: 2, lit: 0 });
+    expect(core.goalStep(2, 2)).toEqual({ of: 2, kept: true, segs: 2, lit: 2 });
+    expect(core.goalStep(3, 2)).toEqual({ of: 7, kept: false, segs: 7, lit: 3 });
+    expect(core.goalStep(4, 5)).toEqual({ of: 5, kept: false, segs: 5, lit: 4 });
+    expect(core.goalStep(5, 5)).toEqual({ of: 5, kept: true, segs: 5, lit: 5 });
   });
 });

@@ -443,8 +443,17 @@ export function obSave(a: SetupAnswers, st: Settings | null, keep: string[] | nu
 export const obBeginGoal = (h: Habit) => habitSay('Quit porn. Log honestly, slips included.', h);
 /** the day of the first ask of "how free do you see yourself", for someone who came through the short setup */
 export const FREE_AT = 30;
-/** the small goals offered once the flame is lit: three nights, then a week. Nothing bigger before a clean week (CLAUDE.md). */
+/** the small goals offered once the flame is lit, from how often it happens (the owner, November 13, 2026: "for me my first goal
+    would be two and 5 would be a stretch maybe this number should be based off of how often they slip"): a close one and a
+    stretch. Nothing past a week before a clean week (CLAUDE.md). */
 export const OB_FIRST = [3, 7] as const;
+export function obFirstGoals(a: SetupAnswers): [number, number] {
+  if (obMostDays(a)) return [2, 5];
+  if (a.freq === 'f1' || a.freq === 'f0') return [5, 7];
+  return [3, 7];
+}
+/** a first goal a person can hold: two nights up to a week */
+export const okFirst = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 2 && n <= 7;
 /** the phone-down time setup starts on: half past ten for someone whose hardest hour is late at night (get there first),
     eleven for everyone else */
 export const obTonightAt = (a: SetupAnswers): string =>
@@ -479,15 +488,14 @@ export function obBegin(a: SetupAnswers, tk: DayKey, now = Date.now()): Settings
       /* the "how free do you see yourself" question (north.ts) is no longer asked in setup: it waits until day 30 (C7), so
          it never crowds the first week. freeNo is when a closed ask was let go; it is due FREE_WAIT days after. */
       s.freeNo = addDays(tk, FREE_AT - FREE_WAIT);
-      if (a.first === 3 || a.first === 7) s.fwGoal = a.first;
+      if (okFirst(a.first)) s.fwGoal = a.first;
     },
     now,
   );
 }
 
-/** the first small goal, picked once the flame is lit (3 or 7 nights), kept with the first week */
-export const setFirstGoal = (st: Settings, n: number, now = Date.now()): Settings =>
-  n === 3 || n === 7 ? changeSettings(st, (s) => void (s.fwGoal = n as 3 | 7), now) : st;
+/** the first small goal, picked once the flame is lit (two nights up to seven), kept with the first week */
+export const setFirstGoal = (st: Settings, n: number, now = Date.now()): Settings => (okFirst(n) ? changeSettings(st, (s) => void (s.fwGoal = n), now) : st);
 
 /** the first line of the plan (the first week, day 4): for the hardest moment setup heard, the "then" picked. Kept in the
     plan row and in setup's record, so the first week knows it is done. */

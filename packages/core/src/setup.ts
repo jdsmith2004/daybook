@@ -744,7 +744,7 @@ export const obLast = (st: Settings | null, redo: boolean, key: string, list: Ob
 const OB_SAY: Record<string, string> = {
   hello: 'Hi. I am your flame. Answer a few quick questions, and tonight is set.',
   how: 'Hi. I am your flame. You came here, and that is the hardest step.',
-  sos: 'When an urge hits, tap SOS. Try it now, while it is calm. Swipe up for the next move.',
+  sos: 'When an urge hits, tap SOS. Try it now, while it is calm. It takes a few seconds.',
   habit: 'Pick the closest one. I can help with each.',
   freq: 'Rough is fine. Only you see this.',
   when: 'Pick any. I will be ready for these.',

@@ -6,10 +6,10 @@
    - A new form of the flame, the biggest moment of all (about 6 seconds): the old form stands big in the night, so the person
      sees what it was; it trembles and gathers its light, with knocks that come faster; a white flash fills the screen; the new
      form lands, huge, with a heavy knock and a burst of confetti and stars; "Your flame grew!" pops; the form's name lands and
-     the level number turns over; the form's meaning fades in; three tiles land one at a time (the level, the points counting
-     up, the form's number); then the button.
+     the level number turns over; the form's meaning fades in; the points line fills as gold stars fly into it and turns over
+     to the new level, then the form's own line steps on; then the button.
    - A level (about 4 seconds): the flame springs up and blooms, "Level up!" pops with confetti and a buzz, the number turns
-     over, the step of the form shows, the tiles land, then the button.
+     over, the step of the form shows, the points line fills and turns over, the form's line steps on, then the button.
    - A badge (about 4 seconds): rays turn behind an empty spot, "New badge!" pops, the medal drops in from above and bounces
      with a firm knock, the stars twinkle, its name lands, what it was for fades in, then the button.
 
@@ -17,7 +17,7 @@
    (CelebrateHost queues). A tap anywhere brings it all in at once. Reduce Motion: everything there, settled, one buzz.
    Quiet (anything that arrives in the hours after a slip, or the honesty badge): no shout, no confetti, no knocks, no ask; the
    moment is calm, and says what was earned. The tip ask rides only on a new form, never when quiet (core tipMoment). */
-import { addDays, gameCompute, nextLine, type CelItem } from '@daybook/core';
+import { addDays, gameCompute, nextLine, type CelItem, type Level } from '@daybook/core';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
@@ -41,7 +41,7 @@ import { SHORT } from '@/components/fit';
 import { Flame } from '@/components/flame';
 import { FutureInvite, useFutureInvite } from '@/components/future-invite';
 import { Medal } from '@/components/medal';
-import { btnStyle, Burst, GOLD, NIGHT, Shout, Sparkles, TILE, Tiles, type Tile } from '@/components/reward-kit';
+import { btnStyle, Burst, GOLD, Meter, meterTime, NIGHT, Shout, Sparkles, type MeterSpec } from '@/components/reward-kit';
 import { MomentAsk, useTipMoment } from '@/components/support';
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
@@ -55,18 +55,18 @@ import { font, nightInk } from '@/lib/theme';
 
 type Kind = 'form' | 'level' | 'badge' | 'other';
 /** when each beat starts, in ms, for each kind of moment */
-const BEATS: Record<Kind, { shout: number; title: number; sub: number; tiles: number; rows: number }> = {
-  form: { shout: 2350, title: 2850, sub: 3500, tiles: 4000, rows: 5300 },
-  level: { shout: 350, title: 950, sub: 1450, tiles: 1900, rows: 3100 },
-  badge: { shout: 250, title: 1250, sub: 1700, tiles: 2100, rows: 2100 },
-  other: { shout: 200, title: 500, sub: 900, tiles: 1300, rows: 1300 },
+const BEATS: Record<Kind, { shout: number; title: number; sub: number; lines: number; rows: number }> = {
+  form: { shout: 2350, title: 2850, sub: 3500, lines: 4000, rows: 5300 },
+  level: { shout: 350, title: 950, sub: 1450, lines: 1900, rows: 3100 },
+  badge: { shout: 250, title: 1250, sub: 1700, lines: 2100, rows: 2100 },
+  other: { shout: 200, title: 500, sub: 900, lines: 1300, rows: 1300 },
 };
 /** the form's change: the old form is seen, then gathers, then the flash */
 const SEE = 700;
 const GATHER = 1100;
 const FLASH = 380;
 const ROW_GAP = 320;
-/** the clear space between the words and the tiles under them */
+/** the clear space between the words and the lines under them */
 const AIR = 28;
 /** how far past full size the level's spring can carry the flame */
 const OVER = 1.2;
@@ -116,7 +116,7 @@ function Moment({
   const B = BEATS[kind];
   const g = snap.settings ? gameCompute(snap.days, snap.settings, snap.reviews, tk) : null;
 
-  /* the flame's size: big, the biggest thing on the screen, and a little less on a short phone so the tiles and button fit */
+  /* the flame's size: big, the biggest thing on the screen, and a little less on a short phone so the lines and button fit */
   /* with more earned at the same time, the rows need the room: the picture gives a little, so nothing overlaps */
   const crowd = Math.min(3, rest.length);
   const art0 = Math.min(win.width * (kind === 'form' ? 0.7 : 0.6), win.height * ((SHORT ? 0.26 : 0.32) - crowd * 0.045), 300);
@@ -124,7 +124,7 @@ function Moment({
   let shout = '';
   let title = '';
   let sub = '';
-  let tiles: Tile[] = [];
+  let lines: MeterSpec[] = [];
   let picture: ((z: number) => React.ReactNode) | null = null;
   let turn: { from: number; to: number } | null = null;
   if (it.type === 'level') {
@@ -143,22 +143,13 @@ function Moment({
       title = L.name;
       sub = was + L.meaning + ' You built it, one day at a time.';
       picture = (z: number) => <Grow from={from} to={L.n} size={z} still={still} quiet={quiet} />;
-      tiles = [
-        /* no Level tile: the number turning over already says it */
-        { label: 'Points', value: g?.pts ?? L.floor, icon: 'star', color: TILE.sun },
-        /* the form's number, not "of 12": no far goal is held up here */
-        { label: 'Form', value: L.stage + 1, icon: 'sparkle', color: TILE.violet },
-      ];
+      lines = levelLines(L, turn.from);
     } else {
       shout = 'Level up!';
       title = '';
       sub = was + L.step + ' ' + (L.next == null ? 'This is as bright as it gets. Keep shining.' : nextLine(L));
       picture = (z: number) => <Rise level={L.n} size={z} still={still} quiet={quiet} />;
-      tiles = [
-        { label: 'Points', value: g?.pts ?? L.floor, icon: 'star', color: TILE.sun },
-        { label: L.name, value: L.tier + 1 + ' of 5', color: TILE.violet, a11y: L.name + ', step ' + (L.tier + 1) + ' of 5' },
-        ...(L.next == null ? [] : [{ label: 'To go', value: L.toNext, icon: 'flame', color: TILE.coral, a11y: L.toNext + ' points to the next level' }]),
-      ];
+      lines = levelLines(L, turn.from);
     }
   } else if (it.type === 'badge') {
     shout = it.b.id === 'honest' ? '' : rest.length ? 'New badges!' : 'New badge!';
@@ -166,8 +157,12 @@ function Moment({
     sub = it.b.desc;
     picture = (z: number) => <Drop id={it.b.id} icon={it.b.icon} tone={it.b.tone} size={Math.min(z, 190)} still={still} quiet={quiet} />;
     const n = g ? g.badges.filter((b) => b.done).length : 0;
-    /* the count of badges, unless the rows of what else was earned already fill the space */
-    tiles = n > 1 && !rest.length ? [{ label: 'Badges', value: n, icon: 'trophy', color: TILE.sun, a11y: n + ' badges earned' }] : [];
+    const of = g ? g.badges.length : 0;
+    /* the badges line, one more filling in, unless the rows of what else was earned already fill the space */
+    lines =
+      of && rest.length < 2
+        ? [{ label: 'Badges', right: n + ' of ' + of, from: Math.max(0, n - 1) / of, to: n / of, stars: 3, a11y: n + ' of ' + of + ' badges earned' }]
+        : [];
   } else {
     title = it.type === 'perfect' ? 'All ' + it.n + ' wins today' : it.type === 'more' ? it.title || 'Nice' : '';
     sub = it.type === 'more' ? it.sub || '' : '';
@@ -175,7 +170,7 @@ function Moment({
   }
 
   /* the flame takes the room that is left once the shout and the words have theirs, measured on the screen, so the line above the
-     tiles always has air (the owner, November 13, 2026: "the boxes are too close to the words") */
+     lines always has air (the owner, November 13, 2026: "the boxes are too close to the words") */
   const [box, setBox] = useState({ top: 0, shout: 0, words: 0 });
   const room = box.top ? box.top - (inset.top + (SHORT ? 10 : 24)) - box.shout - 10 - box.words - 14 - 12 - AIR - 8 : art0;
   const art = Math.round(Math.max(110, Math.min(art0, room)));
@@ -188,7 +183,9 @@ function Moment({
   const invite = useFutureInvite(!lifted || !!(ask && why));
   const firstNote = useFuture().notes.length === 0;
 
-  const rowsAt = Math.max(B.rows, B.tiles + tiles.length * 380);
+  /* each line starts as the one before it settles */
+  const lineAt = lines.map((_, i) => B.lines + lines.slice(0, i).reduce((s0, l) => s0 + meterTime(l) - 250, 0));
+  const rowsAt = Math.max(B.rows, B.lines + lines.reduce((s0, l) => s0 + meterTime(l) - 250, 0));
   const btnAt = rowsAt + Math.min(3, rest.length) * ROW_GAP + 450;
   const [ready, setReady] = useState(still);
   const btn = useSharedValue(still ? 1 : 0);
@@ -264,7 +261,9 @@ function Moment({
       </View>
 
       <View style={[s.dock, { paddingBottom: inset.bottom + (SHORT ? 12 : 20) }]} pointerEvents="box-none">
-        {tiles.length ? <Tiles tiles={tiles} at={B.tiles} still={still} quiet={quiet} /> : null}
+        {lines.map((l, i) => (
+          <Meter key={l.label} m={l} at={lineAt[i]} still={still} quiet={quiet} />
+        ))}
         {rest.length ? (
           <View style={s.rows}>
             {rest.slice(0, 3).map((x, i) => (
@@ -287,6 +286,24 @@ function Moment({
       {!still && !quiet && shout ? <Burst fire={boom} x={win.width / 2} y={burstY} w={win.width} n={kind === 'form' ? 44 : 32} /> : null}
     </View>
   );
+}
+
+/** a level's lines: the points line filling up and turning over to the new level, then the form's own line, one step on */
+function levelLines(L: Level, from: number): MeterSpec[] {
+  const right = L.next == null ? 'As bright as it gets' : L.toNext + ' to the next';
+  const points: MeterSpec =
+    from < L.n
+      ? { label: 'Level ' + from, from: 0.55, to: 1, next: { label: 'Level ' + L.n, right, to: L.frac }, stars: 6, a11y: 'Level ' + L.n + ', ' + right }
+      : { label: 'Level ' + L.n, right, from: 0, to: L.frac, stars: 4 };
+  const form: MeterSpec = {
+    label: L.name,
+    right: 'Step ' + (L.tier + 1) + ' of 5',
+    from: L.tier / 5,
+    to: (L.tier + 1) / 5,
+    stars: 2,
+    a11y: L.name + ', step ' + (L.tier + 1) + ' of 5',
+  };
+  return [points, form];
 }
 
 const rowName = (it: CelItem) =>

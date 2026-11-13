@@ -5,15 +5,16 @@
    1. the opener: a tilted band sweeps in across a flat night, the flame huge inside it, "Lesson 4 done!" pops in sun yellow and
       confetti bursts (a chime when sound is on, a heavy knock);
    2. the band slides away and the flame settles into its place, gold stars twinkling around it, and the title rises;
-   3. the lesson's tiles land one at a time, Duolingo's way (the cards read and the time it took, components/reward-kit.tsx);
-      then the points pop in low (a star first, then the count), then the points themselves fly into the level bar and are gone into
+   3. the points pop in low (a star first, then the count), then the points themselves fly into the level bar and are gone into
       it, gold stars trailing, a tick as each lands, and the bar fills with them; a new level pops and the flame blooms;
-   4. the flame says the one line to keep, in its cream bubble;
-   5. only then the one button, Continue, back to wherever the lesson was opened.
-   About six seconds; a tap anywhere brings it all in at once. Reduce Motion: no opener, everything in, settled, one buzz.
+   4. then the lessons line: how many lessons are done, and one more star flies in for this one (the owner, November 13, 2026:
+      "then you see total lessons done as a line and experience goes to it");
+   5. the flame says the one line to keep, in its cream bubble;
+   6. only then the one button, Continue, back to wherever the lesson was opened.
+   About five seconds; a tap anywhere brings it all in at once. Reduce Motion: no opener, everything in, settled, one buzz.
    In the hours after a slip (core ptsQuiet) the points are not shown or flown, as everywhere else: the lesson itself is the win.
    A lesson read again earns no points, so nothing flies. */
-import { gameCompute, levelOf, ptsQuiet } from '@daybook/core';
+import { gameCompute, lessonCount, lessonWalk, levelOf, ptsQuiet } from '@daybook/core';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
@@ -36,7 +37,7 @@ import Svg, { Path } from 'react-native-svg';
 import { BigFlame } from '@/components/big-flame';
 import { SHORT } from '@/components/fit';
 import { Bubble } from '@/components/lesson-flame';
-import { TILE, TILE_GAP, Tiles, type Tile } from '@/components/reward-kit';
+import { Meter, meterTime, type MeterSpec } from '@/components/reward-kit';
 import { Text } from '@/components/text';
 import { buzz, knock } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
@@ -61,6 +62,7 @@ export interface LessonFinishProps {
   gain: number;
   /** a lesson read again */
   again: boolean;
+  /* kept for the lesson player; the page no longer shows them (the owner, November 13, 2026: cards and time do not matter) */
   stats: { cards: number; combo: number; secs: number };
   /** the one line to keep */
   keep: string;
@@ -70,8 +72,6 @@ export interface LessonFinishProps {
   onDone: () => void;
 }
 
-const fmtTime = (s: number) => Math.floor(s / 60) + ':' + String(Math.round(s) % 60).padStart(2, '0');
-
 /* when each beat of the opener starts, in ms; the rest starts at T0 */
 const OPEN = { title: 260, confetti: 300, out: 1700 };
 const T0 = OPEN.out + 300;
@@ -80,7 +80,7 @@ const FLY = 650;
 
 type Line = { x0: number; y0: number; x1: number; y1: number };
 
-export function LessonFinish({ title, n, gain, again, stats, keep, onDone }: LessonFinishProps) {
+export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFinishProps) {
   const { snap, tk, now } = useStore();
   const st = snap.settings;
   const win = useWindowDimensions();
@@ -98,14 +98,22 @@ export function LessonFinish({ title, n, gain, again, stats, keep, onDone }: Les
   const up = m.after.n > m.before.n;
   /* with the level bar hidden (the hours after a slip) nothing is shown; with it, the points end up inside it */
   const flying = m.shown > 0 && !m.quiet;
-  /* the tiles: the cards read, the longest run of answers in a row when there was one, and the time it took */
-  const tiles: Tile[] = [
-    { label: 'Cards', value: stats.cards, icon: 'book', color: TILE.violet },
-    ...(stats.combo >= 3 ? [{ label: 'In a row', value: stats.combo, icon: 'bolt', color: TILE.coral }] : []),
-    { label: 'Time', value: fmtTime(stats.secs), icon: 'timer', color: TILE.sky, a11y: 'Time: ' + fmtTime(stats.secs) },
-  ];
-  /* when the points start: after the tiles have landed */
-  const P0 = T0 + tiles.length * TILE_GAP;
+  /* the lessons line: done of the path, this one included (it is recorded before this page); a read again adds nothing */
+  const [lessons] = useState<MeterSpec | null>(() => {
+    if (!st) return null;
+    const c = lessonCount(lessonWalk(snap.days, st));
+    if (!c.of) return null;
+    const before = again ? c.done : Math.max(0, c.done - 1);
+    return {
+      label: 'Lessons',
+      right: c.done + ' of ' + c.of,
+      from: before / c.of,
+      to: c.done / c.of,
+      stars: again ? 1 : 3,
+      a11y: c.done + ' of ' + c.of + ' lessons done',
+    };
+  });
+  const [lessonsAt, setLessonsAt] = useState<number | null>(still ? 0 : null);
 
   const [beat, setBeat] = useState(0);
   const [pulse, setPulse] = useState(0);
@@ -160,9 +168,8 @@ export function LessonFinish({ title, n, gain, again, stats, keep, onDone }: Les
   const midY = win.height * 0.4;
   const dy = rest ? midY - rest.y : 0;
 
-  const [skipped, setSkipped] = useState(false);
   const all = () => {
-    setSkipped(true);
+    setLessonsAt(-1);
     timers.current.forEach(clearTimeout);
     timers.current = [];
     const q = { duration: still ? 0 : 200 };
@@ -212,19 +219,19 @@ export function LessonFinish({ title, n, gain, again, stats, keep, onDone }: Les
       head.value = withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) });
       twinkle.value = withTiming(1, { duration: 400 });
     });
-    let next = P0 + 300;
+    let next = T0 + 500;
     if (flying) {
       /* 3. a star pops, then the points, which count up */
-      at(P0 + 300, () => {
+      at(T0 + 300, () => {
         knock(Haptics.ImpactFeedbackStyle.Light);
         star.value = withSpring(1, { damping: 7, stiffness: 220 });
       });
-      at(P0 + 450, () => {
+      at(T0 + 450, () => {
         ptsV.value = withSpring(1, { damping: 10, stiffness: 200 });
       });
-      for (let k = 1; k <= 12; k++) at(P0 + 500 + k * 30, () => setCount(Math.round((m.shown * k) / 12)));
+      for (let k = 1; k <= 12; k++) at(T0 + 500 + k * 30, () => setCount(Math.round((m.shown * k) / 12)));
       /* then the points themselves fly into the bar, stars trailing them, a tick as each lands, and the bar fills */
-      const flyAt = P0 + 1250;
+      const flyAt = T0 + 1250;
       at(flyAt, () => {
         go.value = withTiming(1, { duration: FLY, easing: Easing.in(Easing.cubic) });
         fly.value = withTiming(1, { duration: FLY + dots * 60, easing: Easing.linear });
@@ -249,7 +256,11 @@ export function LessonFinish({ title, n, gain, again, stats, keep, onDone }: Les
       } else bar.value = withDelay(into, withTiming(m.after.frac, { duration: dots * 60 + 160, easing: Easing.out(Easing.cubic) }));
       next = landed + 350;
     }
-    /* 4. the line to keep, 5. the button */
+    /* 4. the lessons line fills, 5. the line to keep, 6. the button */
+    if (lessons) {
+      setLessonsAt(next);
+      next += meterTime(lessons) - 200;
+    }
     at(next, () => {
       say.value = withTiming(1, { duration: 300 });
     });
@@ -329,7 +340,6 @@ export function LessonFinish({ title, n, gain, again, stats, keep, onDone }: Les
       </View>
 
       <View style={[s.dock, { paddingBottom: inset.bottom + (SHORT ? 12 : 20) }]} pointerEvents="box-none">
-        <Tiles key={beat === 2 && skipped ? 'still' : 'live'} tiles={tiles} at={T0} still={still || skipped} />
         {flying ? (
           <Reanimated.View ref={ptsRef} onLayout={measure} style={[s.pts, ptsGo]} accessible accessibilityLabel={m.shown + ' points'}>
             <Reanimated.View style={starIn}>
@@ -356,6 +366,13 @@ export function LessonFinish({ title, n, gain, again, stats, keep, onDone }: Les
             </Reanimated.View>
           </View>
         ) : null}
+        {lessons && lessonsAt != null ? (
+          <View style={s.levelBox}>
+            <Meter key={lessonsAt < 0 ? 'still' : 'live'} m={lessons} at={Math.max(0, lessonsAt)} still={still || lessonsAt < 0} />
+          </View>
+        ) : (
+          <View style={s.meterSpot} />
+        )}
         <Reanimated.View style={btnIn} pointerEvents={beat === 2 ? 'auto' : 'none'}>
           <Pressable accessibilityRole="button" onPress={onDone}>
             {({ pressed }) => (
@@ -514,6 +531,8 @@ const s = StyleSheet.create({
   ptsNum: { fontFamily: font.display, fontSize: 52, color: GOLD },
   ptsWord: { fontFamily: font.bodyBold, fontSize: 20, color: GOLD },
   levelBox: { alignSelf: 'center', width: '100%', maxWidth: 360, gap: 8 },
+  /* the lessons line's place, held so nothing moves when it comes in */
+  meterSpot: { height: 48 },
   levelHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   levelText: { fontFamily: font.display, fontSize: 17, color: nightInk.ink },
   levelLeft: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted },

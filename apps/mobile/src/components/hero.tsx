@@ -203,6 +203,7 @@ function Sky({
      lower, between the number and the level, so their faces sit low too (the owner, November 1, 2026) */
   const FLAME_TOP = SCENE_H - FLAME - FOOT + 18 + Math.round(FLAME * (SINK[formOfLevel(lvl.n)] ?? 0.03));
   const h = heroNumber(snap.days, snap.settings!, tk, now);
+  const marksOn = !!snap.settings && truthOn(snap.settings, tk);
   const { light, ink, soft, glass } = skyInk(lvl.n, phase ?? undefined);
   /* the sky is alive: three slow twinkles shared by the stars */
   const tw = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
@@ -386,9 +387,13 @@ function Sky({
             accessibilityLabel={h.say + ' Opens your days.'}
             onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'days' } })}
             style={({ pressed }) => [s.num, pressed && { opacity: 0.8 }]}>
-            <Text maxFontSizeMultiplier={ON_ART} style={[s.eb, { color: soft }]}>
-              {h.eb}
-            </Text>
+            {/* with the week's marks shown, the label sits beside them under the number, so the block stays low on the hills and the
+                label is never cut by the hills' edge (the owner, November 13, 2026: "quitting gets cutoff here") */}
+            {marksOn ? null : (
+              <Text maxFontSizeMultiplier={ON_ART} style={[s.eb, { color: soft }]}>
+                {h.eb}
+              </Text>
+            )}
             {/* the words beside the number wrap to a second line on a narrow phone, so they never run under the level */}
             <View style={s.nRow}>
               <Text maxFontSizeMultiplier={ON_ART} numberOfLines={1} style={[s.n, { color: ink }]}>
@@ -401,9 +406,12 @@ function Sky({
               ) : null}
             </View>
             {/* the last seven nights, one mark each (core truth.ts): the count above is made of these */}
-            {snap.settings && truthOn(snap.settings, tk) ? (
+            {marksOn ? (
               <View style={s.marks}>
-                <NightMarks marks={lastNights(snap.days, snap.settings, tk)} size={9} gap={4} ink={soft} dark />
+                <NightMarks marks={lastNights(snap.days, snap.settings!, tk)} size={9} gap={4} ink={soft} dark />
+                <Text maxFontSizeMultiplier={ON_ART} numberOfLines={1} style={[s.eb, s.ebMarks, { color: soft }]}>
+                  {h.eb}
+                </Text>
               </View>
             ) : null}
             {h.chip ? (
@@ -475,7 +483,8 @@ const s = StyleSheet.create({
   unit: { flexShrink: 1, fontFamily: font.display, fontSize: 17, lineHeight: 22, paddingBottom: 6 },
   lv: { position: 'absolute', right: 16, bottom: 18, alignItems: 'flex-end', gap: 1, maxWidth: '40%' },
   chip: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 4 },
-  marks: { alignSelf: 'flex-start', marginTop: 4, marginBottom: 2 },
+  marks: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', marginTop: 4, marginBottom: 2 },
+  ebMarks: { flexShrink: 1 },
   small: { flexShrink: 1, fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },
   lvT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'right' },
   /* under the sky, off the flame */

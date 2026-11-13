@@ -8,7 +8,7 @@
    Burning low (core flame-low.ts, `low`): the face turns sad, the fire, the body and the face sink toward ash together, the glow fades, it sputters and smokes.
    With `douse` it is first seen burning fully and then goes down, as if water were poured on it; when `low` comes back to 0 it is lit again: the
    heart catches, the fire climbs back and leaps, sparks fly and the smoke clears. Under Reduce Motion it is simply drawn as low as it burns. */
-import { emblemLayers, fireOf, formOfLevel, gradOf, lowXml, sadXml, type EmblemLayers, type Fire } from '@daybook/core';
+import { emblemLayers, figAsleep, fireOf, formOfLevel, gradOf, lowXml, sadXml, type EmblemLayers, type Fire } from '@daybook/core';
 import { memo, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import Reanimated, { Easing as REasing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
@@ -105,6 +105,7 @@ export const BigFlame = memo(function BigFlame({
   douse,
   smoke,
   calm,
+  asleep,
   heart,
 }: {
   level: number;
@@ -121,6 +122,8 @@ export const BigFlame = memo(function BigFlame({
   smoke?: string;
   /** low without the sad face: a fire waiting to be lit, not one going out (app/ignite.tsx) */
   calm?: boolean;
+  /** its eyes closed: the unlit flame of app/ignite.tsx, which wakes as it is lit */
+  asleep?: boolean;
   /** something drawn at the figure's heart, centered on it (the ember of app/ignite.tsx) */
   heart?: ReactNode;
 }) {
@@ -130,13 +133,13 @@ export const BigFlame = memo(function BigFlame({
   const full = useMemo(() => bigLayers(level, noLand), [level, noLand]);
   /* while it burns low the face is sad, and it smiles again when it is lit again (core sadXml) */
   const sad = !calm && (low ?? 0) > 0;
-  const b = useMemo(
-    () =>
-      full && sad
-        ? { ...full, layers: { ...full.layers, still: sadXml(full.layers.still), fig: sadXml(full.layers.fig), front: sadXml(full.layers.front) } }
-        : full,
-    [full, sad],
-  );
+  const b = useMemo(() => {
+    if (!full) return full;
+    let L = full.layers;
+    if (sad) L = { ...L, still: sadXml(L.still), fig: sadXml(L.fig), front: sadXml(L.front) };
+    if (asleep) L = { ...L, still: figAsleep(L.still), fig: figAsleep(L.fig) };
+    return L === full.layers ? full : { ...full, layers: L };
+  }, [full, sad, asleep]);
   const breath = useRef(new Animated.Value(0)).current;
   const bloom = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;

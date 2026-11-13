@@ -340,40 +340,28 @@ export default function Setup() {
         <>
           <Head h={tried ? 'SOS is yours now.' : 'This is SOS.'} />
           <Talk text={tried ? 'Next time an urge comes, you already know the way through.' : voice} want={want * 0.8} />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Try SOS now"
-            onPress={() => {
-              if (busy()) return;
-              buzz('tap');
-              router.push({ pathname: '/sos', params: { practice: '1', setup: '1' } });
-            }}
-            style={({ pressed }) => ({ alignItems: 'center', transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-            <SosButton />
-          </Pressable>
         </>
+      );
+      /* no Skip and no second button: the person presses SOS itself, low where it sits on Today, the way they will when an urge
+         comes (the owner, November 13, 2026: "remove the skip button ... have them press the button like they would on the home screen") */
+      const sos = (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="SOS. Try it now."
+          onPress={() => {
+            if (busy()) return;
+            buzz('tap');
+            router.push({ pathname: '/sos', params: { practice: '1', setup: '1' } });
+          }}
+          style={({ pressed }) => ({ alignItems: 'center', transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+          <SosButton />
+        </Pressable>
       );
       foot = tried ? (
         nextBtn('Next')
       ) : (
-        <View key="so" style={[s.footOne, { gap: 2 }]}>
-          <Next
-            label="Try SOS now"
-            noIcon
-            onPress={() => {
-              if (busy()) return;
-              buzz('tap');
-              router.push({ pathname: '/sos', params: { practice: '1', setup: '1' } });
-            }}
-          />
-          <Ghost
-            label="Skip"
-            onPress={() => {
-              if (busy()) return;
-              if (!f.redo) track('setup_skip', { page: pg.id });
-              go(1);
-            }}
-          />
+        <View key="so" style={s.footOne}>
+          {sos}
         </View>
       );
       break;

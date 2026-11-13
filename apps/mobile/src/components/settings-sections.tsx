@@ -140,8 +140,8 @@ import { dropVoice, voiceOk } from '@/lib/voice';
 const COUNT_HOW = {
   strict: (
     <>
-      <B>Strict:</B> a day counts when no slip is logged. The number is your days in a row. A slip puts it to 0, and it climbs again from the next day. Every
-      day you earned stays on your record.
+      <B>Strict:</B> a night counts when you say it was free. The number is your days in a row. A slip puts it to 0, and it climbs again from the next day.
+      Every day you earned stays on your record.
     </>
   ),
   gentle: (
@@ -378,7 +378,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
           </SetGroup>
           <SetGroup
             head="Dates"
-            foot="A day counts when no slip is logged on it. After two days in a row with Daybook not opened, the days after wait until you say how they went. They never take anything away.">
+            foot="A night counts when you tell me it was free: the morning question, a check-in, or a tap on that day in Days. A night not told waits until you do. Nothing is ever taken away.">
             <SetCell>
               <DateStep label="Day 1 of quitting" value={st.day1} from={st.day1 || tk} onPick={(k) => apply(setDate(st, 'day1', k))} />
             </SetCell>

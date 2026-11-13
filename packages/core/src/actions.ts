@@ -186,7 +186,7 @@ export function setDay1(st: Settings, v: 'none' | 'later' | 'today' | 'tomorrow'
     toast: !d1
       ? 'Just tracking. Nothing is counted, and you can start a Day 1 any time.'
       : d1 <= tk
-        ? 'Day 1 is today. Days with no slip logged will count.'
+        ? 'Day 1 is today. Every night you tell me was free will count.'
         : 'Day 1 is ' + fmtDate(d1, { weekday: 'long', month: 'short', day: 'numeric' }) + '.',
   };
 }

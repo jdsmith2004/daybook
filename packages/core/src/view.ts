@@ -140,7 +140,7 @@ export function daysCardText(days: Days, st: Settings, v: CleanView, tk: DayKey)
     eyebrow: step ? 'Step down' : 'No slip',
     big: String(v.cur),
     of: v.cur === 1 ? 'day' : v.cur === 0 ? 'days' : 'days in a row',
-    sub: 'A day counts when no slip is logged. A slip starts the count again the next day, and the days you earned stay on your record.',
+    sub: 'A night counts when you say it was free. A slip starts the count again the next day, and the days you earned stay on your record.',
   };
 }
 

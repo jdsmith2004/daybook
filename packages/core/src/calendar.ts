@@ -95,7 +95,10 @@ export function calMonth(days: Days, st: Settings, tk: DayKey, ym?: string | nul
                 : status === 'untold'
                   ? 'untold'
                   : 'none';
+      /* nights told through an answer while the person was here (truth.ts) are told nights, drawn as what they were, not as away */
+      if (kind === 'away' && awayGapAt(days, st, k, tk)?.away === false) kind = awaySlipDay(days, st, k, tk) ? 'slip' : 'ok';
       if (kind === 'ok') sum.noSlip++;
+      else if (kind === 'slip' && !s.slipped && awaySlipDay(days, st, k, tk)) sum.slips++;
       /* a gap answered: its slips and its no-slip days count with the rest */
       if (kind === 'away' && awaySlipDay(days, st, k, tk)) sum.slips++;
       else if (kind === 'away' && awayGapAt(days, st, k, tk)?.n != null) sum.noSlip++;
@@ -161,7 +164,9 @@ export function daySummary(days: Days, st: Settings, key: DayKey, tk: DayKey): D
         ? 'No slip so far'
         : 'No slip'
       : kind === 'saved' || kind === 'slip'
-        ? plural(s.slipped, 'slip') + ', logged honestly'
+        ? s.slipped
+          ? plural(s.slipped, 'slip') + ', logged honestly'
+          : 'A slip, told honestly'
         : kind === 'logged'
           ? 'Logged'
           : kind === 'ahead'

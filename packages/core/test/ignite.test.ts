@@ -165,3 +165,16 @@ describe('the count the lighting turns over', () => {
     expect(h.from).toBe(h.to);
   });
 });
+
+describe('the count before the night was told', () => {
+  it('turns over from the count the morning page showed, when telling the night moved it', () => {
+    const s3 = core.normSettings({ ...st, start: '2026-10-10', day1: '2026-10-10', truthFrom: '2026-10-10', cleanMode: 'strict' } as never);
+    let days: Days = {};
+    for (let d = 11; d <= 14; d++) days = core.answerNight(days, s3, '2026-10-' + d, 'free', at(d, 7));
+    const after = core.answerNight(days, s3, '2026-10-15', 'free', at(15, 7));
+    const c = core.igniteCount(after, s3, '2026-10-15', at(15, 8), days);
+    const shown = core.heroNumber(days, s3, '2026-10-15', at(15, 8))!.n;
+    expect(+c.from).toBeLessThanOrEqual(+shown);
+    expect(+c.from).toBeLessThan(+c.to);
+  });
+});

@@ -85,15 +85,21 @@ export function igniteWhy(days: Days, st: Settings, tk: DayKey): IgniteWhy | nul
 
 /** the count the lighting turns over: yesterday's, then today's, the same count Today shows (CLAUDE.md: one count, shown the same
     everywhere). Telling the morning does not move the count itself (it moved when the day began), so the turnover shows the day
-    the kept night brought: 11 to 12, or 0 to 1 the morning after a slip. Step down counts hours, and a count that is a word
+    the kept night brought: 11 to 12, or 0 to 1 the morning after a slip. `before`, the log before the night was told, gives the count
+    as it stood on the morning page. Step down counts hours, and a count that is a word
     ("Day 1") has nothing to turn over from, so those light without turning over. */
-export function igniteCount(days: Days, st: Settings, tk: DayKey, nowMs: number): { from: string; to: string; unit: string } {
+export function igniteCount(days: Days, st: Settings, tk: DayKey, nowMs: number, before?: Days): { from: string; to: string; unit: string } {
   const now = heroNumber(days, st, tk, nowMs);
   if (!now) return { from: '', to: '', unit: '' };
-  const was = st.cleanMode === 'step' ? null : heroNumber(days, st, addDays(tk, -1), nowMs - 864e5);
-  const num = (x: string | undefined) => !!x && /^\d+$/.test(x);
-  const from = was && num(was.n) && num(now.n) && +was.n <= +now.n ? was.n : now.n;
-  return { from, to: now.n, unit: now.unit };
+  const num = (x: string | undefined): x is string => !!x && /^\d+$/.test(x);
+  if (st.cleanMode === 'step' || !num(now.n)) return { from: now.n, to: now.n, unit: now.unit };
+  /* the count before the night was told (from truthFrom on, an untold night does not count until it is told, so telling it moves the
+     count); without it, or when telling did not move it (the old rule), yesterday's, when it is lower */
+  const was = [before ? heroNumber(before, st, tk, nowMs)?.n : undefined, heroNumber(days, st, addDays(tk, -1), nowMs - 864e5)?.n]
+    .filter(num)
+    .map(Number)
+    .filter((x) => x < +now.n);
+  return { from: was.length ? String(was[0]) : now.n, to: now.n, unit: now.unit };
 }
 
 /** a slip in the three nights before last night: this one is a comeback */

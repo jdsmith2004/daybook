@@ -128,6 +128,9 @@ export default function Morning() {
     const t = Date.now();
     /* the log as it will be, to know whether this night lights the flame in full (core igniteWhy) */
     const after = answerNight(snap.days, st, tk, v, t);
+    /* the count before and after, read now: the store's snapshot holds the answer once update has run */
+    const c = igniteCount(after, st, tk, now, snap.days);
+    const why = igniteWhy(after, st, tk);
     update(
       (s0) => {
         if (!s0.settings) return s0;
@@ -144,8 +147,7 @@ export default function Morning() {
     }
     /* the full lighting only when the person comes back to it, or keeps a small goal (the owner, November 13, 2026: "it should be
        when they start and come back not every day"); its button comes back here, to tonight */
-    const c = igniteCount(after, st, tk, now);
-    if (igniteWhy(after, st, tk)) {
+    if (why) {
       router.push({ pathname: '/ignite', params: c.from ? { from: c.from } : {} });
       return;
     }

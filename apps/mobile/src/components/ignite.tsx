@@ -13,7 +13,7 @@
    2. The flash: it opens into a gold glow with stars (Medium knock and the chime).
    3. The burst: the screen washes warm, petals of fire fly out across the whole screen, the flame catches and springs up, and the old
       count sits grey under it (Heavy knock).
-   4. The number turns over: the grey one drops away and the new one lands big in the fire's orange (Success).
+   4. The number turns over: the grey count rolls up and away and the new one rolls up into place in the fire's orange (Success).
    5. The flame reacts: it hops and lands, with warm puffs around it (a knock up, a knock down).
    6. Its words type out in the bubble, a soft tick every few letters, and the line under the number comes in.
    7. The row: the days come in one by one (a tick each), then the day just kept pops big and lands with a check and sparks (Medium).
@@ -57,8 +57,11 @@ import { font, nightInk } from '@/lib/theme';
 const ORANGE = '#FF9A2E';
 const GOLD = '#FFD25A';
 const CREAM = '#FFF3D6';
-const GREY = 'rgba(255,255,255,0.24)';
+const PUFF = '#FFF9EE';
+const GREY = 'rgba(255,255,255,0.42)';
 const SLIP = '#9C86F5';
+/** the ember sits this far (a share of the flame's size) under the figure's middle, in its belly */
+const BELLY = 0.07;
 /** how far up a swipe has to go to light it */
 const PULL = 140;
 
@@ -67,17 +70,17 @@ const AT = {
   lit: 480 - RELIGHT_CATCH,
   flash: 260,
   burst: 480,
-  turn: 1050,
-  hop: 1500,
-  words: 1700,
-  unit: 1900,
-  row: 2550,
-  mark: 3150,
-  goal: 3650,
-  button: 3900,
+  turn: 1250,
+  hop: 1700,
+  words: 1900,
+  unit: 2100,
+  row: 2700,
+  mark: 3300,
+  goal: 3800,
+  button: 4050,
 };
 /* with a goal, the button waits for it */
-const GOAL_BUTTON = 4450;
+const GOAL_BUTTON = 4600;
 
 export interface IgniteDay {
   k: string;
@@ -139,8 +142,8 @@ export function Ignition({
   const big = Math.min(win.width - 72, win.height * (SHORT ? 0.3 : 0.34), 300);
   /* where the flame's heart is in its box, for the ember and the burst */
   const heart = useMemo(() => {
-    const b = bigLayers(level);
-    return b ? { x: (b.layers.at.x + b.dx) * big, y: (b.layers.at.y + b.dy) * big } : { x: big / 2, y: big * 0.55 };
+    const b = bigLayers(level, true);
+    return b ? { x: (b.layers.at.x + b.dx) * big, y: (b.layers.at.y + b.dy + BELLY) * big } : { x: big / 2, y: big * 0.62 };
   }, [level, big]);
 
   /* the ember's heat: the finger fans it (0 to 1), and it pulses on its own while it waits */
@@ -207,19 +210,22 @@ export function Ignition({
       knock(Haptics.ImpactFeedbackStyle.Heavy);
       wash.value = withSequence(withTiming(1, { duration: 90 }), withTiming(0, { duration: 750, easing: Easing.out(Easing.quad) }));
       burst.value = withTiming(1, { duration: 1300, easing: Easing.out(Easing.cubic) });
-      popV.value = withSequence(withTiming(0.62, { duration: 0 }), withSpring(1, { damping: 7, stiffness: 190 }));
+      popV.value = withSequence(withTiming(0.7, { duration: 0 }), withSpring(1, { damping: 11, stiffness: 210 }));
       oldV.value = withSpring(1, { damping: 12, stiffness: 200 });
     });
     /* 4. the number turns over */
     at(AT.turn, () => {
       buzz('lit');
-      turn.value = withSpring(1, { damping: 8, stiffness: 150 });
+      turn.value = withSpring(1, { damping: 7, stiffness: 170 });
     });
     /* 5. the flame reacts: it hops, and lands with warm puffs */
     at(AT.hop, () => {
       knock(Haptics.ImpactFeedbackStyle.Light);
       setHopN((x) => x + 1);
-      hop.value = withSequence(withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) }), withTiming(0, { duration: 210, easing: Easing.in(Easing.quad) }));
+      hop.value = withSequence(
+        withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) }),
+        withTiming(0, { duration: 210, easing: Easing.in(Easing.quad) }),
+      );
       squash.value = withDelay(410, withSequence(withTiming(1, { duration: 70 }), withSpring(0, { damping: 6, stiffness: 260 })));
       puffs.value = withDelay(380, withTiming(1, { duration: 750, easing: Easing.out(Easing.cubic) }));
     });
@@ -267,30 +273,42 @@ export function Ignition({
     });
   };
 
-  /* a swipe up anywhere fans it: a tick each quarter of the way, and it lights past the line or on a flick */
+  /* a swipe up anywhere fans it: a tick each quarter of the way, and it lights past the line or on a flick. The gesture is made once:
+     made again on each render, a render in the middle of the first swipe (the morning's answer saving) reset it, and the swipe was lost */
+  const lightRef = useRef(light);
+  lightRef.current = light;
+  const armed = useSharedValue(1);
   const lastQ = useSharedValue(0);
-  const pan = Gesture.Pan()
-    .enabled(beat === 0)
-    .activeOffsetY(-8)
-    .onUpdate((e) => {
-      fan.value = Math.min(1, Math.max(0, -e.translationY / PULL));
-      const q = Math.floor(fan.value * 4);
-      if (q > lastQ.value) {
-        lastQ.value = q;
-        runOnJS(buzz)('tick');
-      }
-    })
-    .onEnd((e) => {
-      if (-e.translationY > PULL || (e.velocityY < -700 && -e.translationY > 30)) runOnJS(light)();
-      else {
-        fan.value = withTiming(0, { duration: 260 });
-        lastQ.value = 0;
-      }
-    });
+  useEffect(() => {
+    armed.value = beat === 0 ? 1 : 0;
+  }, [beat, armed]);
+  const pan = useMemo(() => {
+    const fire = () => lightRef.current();
+    const tick = () => buzz('tick');
+    return Gesture.Pan()
+      .activeOffsetY(-8)
+      .onUpdate((e) => {
+        if (!armed.value) return;
+        fan.value = Math.min(1, Math.max(0, -e.translationY / PULL));
+        const q = Math.floor(fan.value * 4);
+        if (q > lastQ.value) {
+          lastQ.value = q;
+          runOnJS(tick)();
+        }
+      })
+      .onEnd((e) => {
+        if (!armed.value) return;
+        if (-e.translationY > PULL || (e.velocityY < -700 && -e.translationY > 30)) runOnJS(fire)();
+        else {
+          fan.value = withTiming(0, { duration: 260 });
+          lastQ.value = 0;
+        }
+      });
+  }, [armed, fan, lastQ]);
 
   const close = onClose ?? onDone;
 
-  const heat = useAnimatedStyle(() => ({ opacity: interpolate(fan.value, [0, 1], [0.55 + 0.2 * wait.value, 1]) }));
+  const heat = useAnimatedStyle(() => ({ opacity: interpolate(fan.value, [0, 1], [0.8 + 0.1 * wait.value, 1]) }));
   const popIn = useAnimatedStyle(() => ({ transform: [{ scale: popV.value }] }));
   const hopIn = useAnimatedStyle(() => ({
     transformOrigin: ['50%', '100%', 0],
@@ -298,12 +316,12 @@ export function Ignition({
   }));
   const washIn = useAnimatedStyle(() => ({ opacity: 0.5 * wash.value }));
   const oldIn = useAnimatedStyle(() => ({
-    opacity: oldV.value * Math.max(0, 1 - turn.value * 2.2),
-    transform: [{ translateY: 46 * Math.min(1, turn.value) }, { scale: (0.8 + 0.2 * oldV.value) * (1 - 0.35 * Math.min(1, turn.value)) }],
+    opacity: oldV.value * Math.max(0, 1 - turn.value * 1.8),
+    transform: [{ translateY: -50 * Math.min(1, turn.value) }, { scale: (0.8 + 0.2 * oldV.value) * (1 - 0.25 * Math.min(1, turn.value)) }],
   }));
   const neu = useAnimatedStyle(() => ({
     opacity: Math.min(1, turn.value * 2),
-    transform: [{ translateY: -24 * (1 - turn.value) }, { scale: 1.7 - 0.7 * turn.value }],
+    transform: [{ translateY: 56 * (1 - turn.value) }, { scale: 0.7 + 0.3 * turn.value }],
   }));
   const unitIn = useAnimatedStyle(() => ({ opacity: unitV.value, transform: [{ translateY: 10 * (1 - unitV.value) }] }));
   const say = useAnimatedStyle(() => ({
@@ -355,10 +373,12 @@ export function Ignition({
                   size={big}
                   low={lit ? 0 : 1}
                   calm
+                  asleep={!lit}
+                  noLand
                   pulse={hopN}
                   smoke="#191233"
                   label={lit ? 'Your flame, lit' : 'Your flame, waiting to be lit'}
-                  heart={lit ? null : <Ember size={big * 0.3} wait={wait} fan={fan} />}
+                  heart={lit ? null : <Ember size={big * 0.3} wait={wait} fan={fan} drop={big * BELLY} />}
                 />
               </Reanimated.View>
             </Reanimated.View>
@@ -368,7 +388,7 @@ export function Ignition({
             {!still ? <Burst v={burst} x={heart.x} y={heart.y} reach={Math.max(win.width, win.height * 0.7)} /> : null}
           </View>
 
-          <View style={s.count} pointerEvents="none" accessible accessibilityLabel={(beat ? m.to : m.from) + ' ' + m.unit}>
+          <View style={s.count} pointerEvents="box-none" accessible={beat > 0} accessibilityLabel={(beat ? m.to : m.from) + ' ' + m.unit}>
             {beat === 0 ? (
               <Reanimated.View style={[s.hintWrap, hintIn]} pointerEvents="box-none">
                 <Pressable accessibilityRole="button" accessibilityLabel="Light your flame" onPress={light} style={s.hint}>
@@ -382,7 +402,7 @@ export function Ignition({
               <>
                 <View style={s.numBox}>
                   {showOld ? (
-                    <Reanimated.Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4} style={[s.num, { color: GREY }, oldIn]}>
+                    <Reanimated.Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4} style={[s.num, s.over, { color: GREY }, oldIn]}>
                       {m.from}
                     </Reanimated.Text>
                   ) : null}
@@ -465,10 +485,10 @@ function Goal({ goal, v, seg }: { goal: { of: number; kept: boolean; segs: numbe
 }
 
 /** the ember in the heart of the unlit flame: it pulses while it waits, grows hot as the finger fans it */
-function Ember({ size, wait, fan }: { size: number; wait: SharedValue<number>; fan: SharedValue<number> }) {
+function Ember({ size, wait, fan, drop }: { size: number; wait: SharedValue<number>; fan: SharedValue<number>; drop: number }) {
   const st = useAnimatedStyle(() => ({
     opacity: fan.value >= 1 ? 0 : 0.8 + 0.2 * Math.max(wait.value, fan.value),
-    transform: [{ scale: 0.82 + 0.16 * wait.value + 0.55 * fan.value }],
+    transform: [{ translateY: drop }, { scale: 0.82 + 0.16 * wait.value + 0.55 * fan.value }],
   }));
   return (
     <Reanimated.View style={[{ width: size, height: size }, st]}>
@@ -527,7 +547,9 @@ function Mote({
       transform: [{ translateX: x + dx * size * (0.6 + 0.4 * t) - d / 2 }, { translateY: y - up * size * t - d / 2 }],
     };
   });
-  return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: d, height: d, borderRadius: d, backgroundColor: gold ? GOLD : CREAM }, st]} />;
+  return (
+    <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: d, height: d, borderRadius: d, backgroundColor: gold ? GOLD : CREAM }, st]} />
+  );
 }
 
 /** the ember shooting up out of the flame as a streak of light */
@@ -709,16 +731,22 @@ function Puff({ v, size, p }: { v: SharedValue<number>; size: number; p: [number
   const w = size * z;
   const st = useAnimatedStyle(() => {
     const t = v.value;
+    /* a puff swells, holds, and pops away small: it never fades, which on the dark reads as grey smoke */
+    const grow = t < 0.35 ? t / 0.35 : t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
     return {
-      opacity: t <= 0 || t >= 1 ? 0 : 0.95 * (1 - t),
+      opacity: t <= 0 || t >= 1 ? 0 : 1,
       transform: [
-        { translateX: size / 2 + Math.cos(rad) * size * d * (0.55 + 0.45 * t) - w / 2 },
-        { translateY: size * 0.86 + Math.sin(rad) * size * d * 0.5 * (0.55 + 0.45 * t) - w / 2 - size * 0.06 * t },
-        { scale: 0.4 + 0.9 * t },
+        { translateX: size / 2 + Math.cos(rad) * size * d * (0.7 + 0.3 * t) - w / 2 },
+        { translateY: size * 0.8 + Math.sin(rad) * size * d * 0.45 * (0.7 + 0.3 * t) - w / 2 - size * 0.05 * t },
+        { scale: Math.max(0, grow) * (0.9 + 0.2 * t) },
       ],
     };
   });
-  return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: w, height: w, borderRadius: w, backgroundColor: CREAM }, st]} />;
+  return (
+    <Reanimated.View
+      style={[{ position: 'absolute', left: 0, top: 0, width: w, height: w, borderRadius: w, backgroundColor: PUFF, borderWidth: 2, borderColor: GOLD }, st]}
+    />
+  );
 }
 
 const rowSay = (ms: NightMark[]) => {
@@ -792,7 +820,10 @@ export function StepUp({ from, to, unit, color }: { from: string; to: string; un
     return () => clearTimeout(id);
   }, [still, from, to, t]);
   const oldSt = useAnimatedStyle(() => ({ opacity: Math.max(0, 1 - t.value * 2.5), transform: [{ translateY: 22 * Math.min(1, t.value) }] }));
-  const newSt = useAnimatedStyle(() => ({ opacity: Math.min(1, t.value * 2), transform: [{ translateY: -14 * (1 - t.value) }, { scale: 1.5 - 0.5 * t.value }] }));
+  const newSt = useAnimatedStyle(() => ({
+    opacity: Math.min(1, t.value * 2),
+    transform: [{ translateY: -14 * (1 - t.value) }, { scale: 1.5 - 0.5 * t.value }],
+  }));
   return (
     <View style={s.step} accessible accessibilityLabel={to + ' ' + unit}>
       <View style={s.stepNum}>

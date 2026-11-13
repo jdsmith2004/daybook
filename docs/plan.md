@@ -173,13 +173,15 @@ feelings bars count everything the journal shows) and asked for it to be "more o
 
 ### For the owner before it ships
 
-1. **Sign in with Apple for Mithras inside Daybook:** in the Supabase dashboard for Mithras, Authentication, Sign In / Providers,
-   Apple, add `com.jdsmith2004.daybook` to the Client IDs (comma separated, after the IDs already there, which should include Mithras's own `com.jeff.deepwork`), and Save. For
-   the Daybook website, add Daybook's web Services ID there too. Until then Apple answers "Mithras did not take this Apple sign-in"
-   and the email way still works.
-2. The app-only checks (the link cold and warm, Apple's sheet, the keyboard, the moment at real speed) are in the testing chat's
-   hand-over note, `mithras-import-checks.md`. Nothing is lost or doubled: `test/mithras.test.ts` lands 1,236 made-up rows (a very
-   long entry split into parts, one dated ahead, one read twice, two with clashing short ids) and checks every word and time.
+1. **Sign in with Apple for Mithras inside Daybook: done** (November 13, 2026). `com.jdsmith2004.daybook` is in the Mithras
+   Supabase Apple provider's Client IDs, after `host.exp.Exponent,com.jeff.deepwork,com.jeff.deepwork.service`, and Mithras's
+   `delete_my_account()` is live (signed-in callers only). The Daybook website would still need its web Services ID added there.
+2. **Walked on the iPhone simulator** (a local Debug build with the made-up Mithras, November 13): the link before setup and while
+   the page is open, Apple's error line, the email page, setup with Mithras's answers, the Campfire moment, Open the journal, Welcome
+   back, Insights paging and a second import from More. Three fixes came from it (setup keeps Mithras's answers over a setup already
+   begun; the journal lands once; Welcome back waits for Today). Apple's own sheet was not walked (the simulator had no Apple ID);
+   that is for TestFlight. Nothing is lost or doubled: `test/mithras.test.ts` lands 1,236 made-up rows (a very long entry split
+   into parts, one dated ahead, one read twice, two with clashing short ids) and checks every word and time.
 3. Row-level security: the owner decided on November 13 to leave it off ("we're gonna port over users then shut down the app"). The
    import never reads anyone else's rows: every read names the person's own id, and the phone drops any row that is not theirs.
 

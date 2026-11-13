@@ -19,7 +19,8 @@ import {
   nightBeforeDue,
   gameCompute,
   habitOf,
-  heroNumber,
+  igniteCount,
+  igniteWhy,
   lastNightSlip,
   rkOpenFor,
   lastNightStart,
@@ -48,6 +49,7 @@ import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-na
 import { Appear } from '@/components/appear';
 import { Link } from '@/components/choices';
 import { FlameMedallion } from '@/components/flame-medallion';
+import { StepUp } from '@/components/ignite';
 import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Button, Icon, T } from '@/components/ui';
@@ -117,12 +119,15 @@ export default function Morning() {
     if (then) router.replace({ pathname: '/lesson/[id]', params: { id: then, at: 'morning' } });
     else close();
   };
+  /* an ordinary free morning: the flame grows a step in place, and the count turns over under it (components/ignite.tsx StepUp) */
+  const [step, setStep] = useState<{ from: string; to: string; unit: string } | null>(null);
+  const [pulse, setPulse] = useState(0);
   /* a tap is the answer, kept at once. Earned as usual, and nothing is said about points here (noWin) */
   const answer = (v: 'free' | 'slip') => {
     if (!st || leaving.current) return;
-    /* the count as it stood before the night is told, for the lighting (WP8) */
-    const before = v === 'free' && n !== 'free' ? heroNumber(snap.days, st, tk, now)?.n : undefined;
     const t = Date.now();
+    /* the log as it will be, to know whether this night lights the flame in full (core igniteWhy) */
+    const after = answerNight(snap.days, st, tk, v, t);
     update(
       (s0) => {
         if (!s0.settings) return s0;
@@ -133,10 +138,20 @@ export default function Morning() {
       { noWin: true },
     );
     setN(v);
-    buzz(v === 'free' ? 'lit' : 'save');
-    /* a free night: the person lights their own flame over the morning (WP8, app/ignite.tsx), with the count from before the answer
-       so it turns over; its button comes back here, to tonight */
-    if (v === 'free' && n !== 'free') router.push({ pathname: '/ignite', params: before ? { from: before } : {} });
+    if (v !== 'free' || n === 'free') {
+      buzz('save');
+      return;
+    }
+    /* the full lighting only when the person comes back to it, or keeps a small goal (the owner, November 13, 2026: "it should be
+       when they start and come back not every day"); its button comes back here, to tonight */
+    const c = igniteCount(after, st, tk, now);
+    if (igniteWhy(after, st, tk)) {
+      router.push({ pathname: '/ignite', params: c.from ? { from: c.from } : {} });
+      return;
+    }
+    buzz('lit');
+    setStep(c.to ? c : null);
+    setPulse((x) => x + 1);
   };
   /* the night before last, told with a tap and kept at once (WP1, core answerNightBefore); the same answer again changes nothing */
   const answerBefore = (v: 'free' | 'slip') => {
@@ -215,7 +230,10 @@ export default function Morning() {
           {W.night}
         </T>
         <Middle>
-          <FlameMedallion level={level} size={big} />
+          <View style={s.c}>
+            <FlameMedallion level={level} size={big} pulse={pulse} />
+            {told && step && n === 'free' ? <StepUp {...step} color={ON} /> : null}
+          </View>
         </Middle>
         <Dock>
           {told ? (

@@ -10,7 +10,8 @@
    And it keeps the Live Activity (core livePlan, widgets/live.tsx) in step: started when the app opens in the hard hours or before
    screens off (a tapped heads-up opens the app), changed to the flame asleep after Goodnight, ended when its time is up. iPhone only
    lets an app start one while it is open, so that is when this runs. While SOS is open (sosAt), it is the ride instead: the flame burning
-   bright and how long the person has held on, from the moment SOS opens until it passed, a slip, or SOS closes. */
+   bright and how long the person has held on, from the moment SOS opens until it passed, a slip, or SOS closes. Each one carries a
+   second face that iPhone turns to by itself at its stale date (core LivePlan later), so it stays true while the app is shut. */
 import {
   campfireXml,
   emblemLayers,
@@ -18,7 +19,7 @@ import {
   figAsleep,
   gameCompute,
   livePlan,
-  LIVE_WORDS,
+  liveProps,
   lowXml,
   sadXml,
   widgetTimeline,
@@ -142,26 +143,15 @@ function Painter({ xml, px, onDone }: { xml: string; px: number; onDone: (png: s
   );
 }
 
-type LiveWant = {
-  key: string;
-  kind: string;
-  img: string;
-  line: string;
-  sub: string;
-  short: string;
-  a: number;
-  b: number;
-  left: string;
-  right: string;
-  back: string;
-};
-const LIVE_FIELDS = ['kind', 'img', 'line', 'sub', 'short', 'a', 'b', 'left', 'right', 'back'] as const;
+/** what the Live Activity should show: its plan's key, the picture, and core liveProps */
+type LiveWant = { key: string; img: string; props: Record<string, string | number> };
 /** one change at a time, so two quick changes never cross */
 let liveQueue: Promise<unknown> = Promise.resolve();
-/** makes the Live Activity match what should show: updated when it is the same plan, started fresh for a new one, ended when none */
-async function syncLive(want: LiveWant | null, url: string, to: number) {
+/** makes the Live Activity match what should show: updated when it is the same plan, started fresh for a new one, ended when none.
+    stale: when it turns to its second face by itself (Apple's stale date) */
+async function syncLive(want: LiveWant | null, url: string, to: number, stale: number) {
   const note = liveNote();
-  let was: (LiveWant & { id: string }) | null = null;
+  let was: (LiveWant & { id: string; sig?: string }) | null = null;
   try {
     was = note.exists ? JSON.parse(note.textSync()) : null;
   } catch {
@@ -169,23 +159,11 @@ async function syncLive(want: LiveWant | null, url: string, to: number) {
   }
   const all = FlameLive.getInstances();
   const mine = was && all.find((a) => a.getId() === was!.id);
-  const props = want
-    ? {
-        kind: want.kind,
-        back: want.back,
-        img: want.img ? new File(folder(), want.img).uri : '',
-        line: want.line,
-        sub: want.sub,
-        short: want.short,
-        a: want.a,
-        b: want.b,
-        left: want.left,
-        right: want.right,
-      }
-    : null;
+  const props = want ? { ...want.props, img: want.img ? new File(folder(), want.img).uri : '' } : null;
+  const sig = props ? JSON.stringify(props) + '|' + stale : '';
   if (want && props && mine && was!.key === want.key) {
-    if (LIVE_FIELDS.some((f) => was![f] !== want[f])) await mine.update(props, new Date(to));
-    note.write(JSON.stringify({ ...want, id: was!.id }));
+    if (was!.sig !== sig) await mine.update(props as never, new Date(stale));
+    note.write(JSON.stringify({ ...want, id: was!.id, sig }));
     return;
   }
   for (const a of all) await a.end('immediate');
@@ -193,9 +171,9 @@ async function syncLive(want: LiveWant | null, url: string, to: number) {
     if (note.exists) note.delete();
     return;
   }
-  const a = FlameLive.start(props, 'daybook://' + url.replace(/^\//, ''), new Date(to));
+  const a = FlameLive.start(props as never, 'daybook://' + url.replace(/^\//, ''), new Date(stale));
   note.create({ overwrite: true });
-  note.write(JSON.stringify({ ...want, id: a.getId() }));
+  note.write(JSON.stringify({ ...want, id: a.getId(), sig }));
 }
 
 /** keeps the widget showing the flame as it burns, and calls onPlaced once it is first seen on a screen. Gives back the drawing that
@@ -297,28 +275,24 @@ export function useFlameWidget(
   /* the ride is timed from when SOS began, so it is asked for at once, not on the next tick of now */
   const plan = ready ? livePlan(snap.days, snap.settings, tk, sosAt != null ? Math.max(now, Date.now()) : now, sosAt) : null;
   /* before setup there are no pictures yet: the ride shows the plain flame glyph */
-  const want =
+  const want: LiveWant | null =
     plan && (job || plan.kind === 'ride')
       ? {
           key: plan.key,
-          kind: plan.kind,
-          back: plan.kind === 'ride' ? LIVE_WORDS.rideBack : '',
-          /* holding on, the flame burns bright */
-          img: job ? nameOf(job.level, plan.asleep ? ASLEEP : plan.kind === 'ride' ? 0 : job.entries[0].low, true) : '',
-          line: plan.line,
-          sub: plan.sub,
-          short: plan.short,
-          ...plan.bar,
+          /* holding on, the flame burns bright; asleep after Good night; else as it burns now */
+          img: job ? nameOf(job.level, plan.mood === 'asleep' ? ASLEEP : plan.mood === 'bright' ? 0 : job.entries[0].low, true) : '',
+          props: liveProps(plan),
         }
       : null;
-  const wantKey = want ? JSON.stringify(want) : '';
+  const wantKey = want ? JSON.stringify(want) + '|' + plan!.stale : '';
   useEffect(() => {
     /* only once the log is read and the pictures are drawn: before that, nothing is known, and ending it then made it flicker away
        each time the app opened (a tap on it opens the app) */
     if (!ready || !(drawnAll || !snap.settings)) return;
     const url = plan?.url ?? '/';
     const to = plan?.to ?? 0;
-    liveQueue = liveQueue.then(() => syncLive(want, url, to)).catch(() => undefined);
+    const stale = plan?.stale ?? 0;
+    liveQueue = liveQueue.then(() => syncLive(want, url, to, stale)).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, wantKey, drawnAll, !snap.settings]);
   /* on a screen yet? asked each time the app comes back, until it is */

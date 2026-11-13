@@ -38,7 +38,18 @@ function lockWords(): { where: string; text: string }[] {
   for (let n = 0; n < 3; n++) add('trail', core.trailNoteWords(n, 0), core.trailNoteWords(n, 3 * 3600_000));
   add('widget', ...Object.values(core.WIDGET_LINE), ...Object.values(core.WIDGET_NEXT));
   const L = core.LIVE_WORDS;
-  add('live activity', L.hard, L.hardSub(23), L.wind, L.windSub('22:30'), L.asleep);
+  add(
+    'live activity',
+    ...Object.values(L).map((x) =>
+      typeof x === 'string'
+        ? x
+        : x === L.hard
+          ? L.hard(22)
+          : x === L.windNote || x === L.off
+            ? (x as (s: string) => string)('22:30')
+            : (x as (n: number) => string)(Date.now()),
+    ),
+  );
   return out;
 }
 

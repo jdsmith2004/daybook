@@ -1,16 +1,18 @@
-/* The Live Activity on iPhone (core live-activity.ts): the flame on the Lock Screen and in the Dynamic Island, in the hard hours and
-   at night. The look follows the flight, ride and delivery cards the owner held up (November 9, 2026): the start and end times big at
-   the two ends, a thick bar between them that iPhone fills on its own as the time passes, the flame waiting at its end, and a live
-   countdown under it. In the Dynamic Island, the flame and the live time left beside it, read as one thing (Uber's way; a ring drew its own digits).
-   The card is the widget's campfire night, and the picture is the flame standing in its fire, cut in close (core campfire.ts).
-   One small flame picture, the same everywhere (lib/flame-widget), and few layers: a Live Activity has little memory.
-   This function runs on its own inside the widget (expo-widgets): every color and size is written inside it. Nothing in it says
-   what Daybook is for.
+/* The Live Activity on iPhone (core live-activity.ts): the flame on the Lock Screen and in the Dynamic Island, during SOS, in the
+   hard hours and at night. Redesigned on Duolingo's model (the owner, November 13, 2026: "they don't tell us its for sos ... i press
+   them and they open sos for no reason"): every card says what it is in one plain line, shows one live number big with what it
+   means under it, the flame big on the right in the mood of the moment, and a button that says where a tap goes. A tap anywhere on
+   the card goes to that same place.
 
-   It ends itself in all but name: the app starts and updates it with its end as Apple's stale date (core livePlan `to`), and once
-   that has passed (the app closed, so nothing ended it) it draws only the flame, with no words, no time and no bar, until the
-   app ends it on its next open or iPhone takes it away. A frozen "Screens off at 10:30 PM" at 3 AM is never left on the Lock Screen. */
-import { HStack, Image, Link, ProgressView, Spacer, Text, VStack } from '@expo/ui/swift-ui';
+   All the words come from core (liveProps): each card has two faces, and iPhone turns to the second (the props ending in 2) at
+   Apple's stale date, when the moment changes while the app is shut (the hard hours begin, screens off passes, morning comes).
+   The live number is a timer iPhone runs itself, so the card stays true with the app closed.
+
+   The Dynamic Island reads on its own: compact is who and the number (the ride says SOS in its red, since that is what it is),
+   minimal is the flame (SOS for the ride), and the long press is the card, smaller.
+   One small flame picture, the same everywhere (lib/flame-widget), and few layers: a Live Activity has little memory. This
+   function runs on its own inside the widget (expo-widgets): every color and size is written inside it. */
+import { HStack, Image, Link, Spacer, Text, VStack } from '@expo/ui/swift-ui';
 import {
   activityBackgroundTint,
   aspectRatio,
@@ -18,47 +20,63 @@ import {
   font,
   foregroundStyle,
   frame,
-  backgroundOverlay,
-  clipShape,
-  labelsHidden,
   lineLimit,
   minimumScaleFactor,
   monospacedDigit,
-  multilineTextAlignment,
   padding,
-  progressViewStyle,
   resizable,
-  scaleEffect,
   shadow,
   shapes,
-  tint,
 } from '@expo/ui/swift-ui/modifiers';
 import { createLiveActivity, type LiveActivityEnvironment } from 'expo-widgets';
 
+/** core liveProps, and the flame's picture */
 export type FlameLiveProps = {
-  /** 'ride' while SOS is open (the time held on counts up, no bar), else the hard hours or the night; missing on older ones */
+  /** 'ride', 'hard' or 'night' */
   kind?: string;
-  /** the ride's one button back into SOS ("Keep going") */
-  back?: string;
+  /** 1 when the flame is asleep (after Good night) */
+  asleep?: number;
   /** the picture of the flame, a file:// path in the shared folder */
   img: string;
-  /** the one line at the top ("Wind down") */
-  line: string;
-  sub: string;
-  short: string;
-  /** the bar fills from a to b (ms), with left and right said at its ends */
-  a: number;
-  b: number;
-  left: string;
-  right: string;
+  /** the face: its head, the big word when there is no clock, the note, the button and where it goes, SOS beside it, the clock */
+  h?: string;
+  big?: string;
+  n?: string;
+  act?: string;
+  go?: string;
+  sos?: number;
+  ca?: number;
+  cb?: number;
+  cd?: string;
+  /** the same for the face it turns to by itself */
+  h2?: string;
+  big2?: string;
+  n2?: string;
+  act2?: string;
+  go2?: string;
+  sos2?: number;
+  ca2?: number;
+  cb2?: number;
+  cd2?: string;
 };
 
 const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) => {
   'widget';
   const WARM = '#FFB347';
-  const SOFT = '#B9B2E0';
+  const SOFT = '#C9C2EC';
   const NIGHT = '#16123A';
-  const span = { lower: new Date(props.a), upper: new Date(props.b) };
+  const LAV = '#B9ADFF';
+  const later = !!environment.isStale;
+  const f = later
+    ? { h: props.h2, big: props.big2, n: props.n2, act: props.act2, go: props.go2, sos: props.sos2, ca: props.ca2, cb: props.cb2, cd: props.cd2 }
+    : { h: props.h, big: props.big, n: props.n, act: props.act, go: props.go, sos: props.sos, ca: props.ca, cb: props.cb, cd: props.cd };
+  const ride = props.kind === 'ride';
+  const night = props.kind === 'night';
+  /* the number's color: warm for SOS and the hard hours, the night's lavender at night */
+  const ACC = night ? LAV : WARM;
+  const dark = environment.colorScheme === 'dark';
+  /* SOS exactly as the app draws it (components/sos-button.tsx, theme sos, sosLow, sosDeep, sosInk), light or dark as the phone is */
+  const SOS = dark ? { top: '#FF8A7E', low: '#F2674F', deep: '#B8402F', ink: '#3A0D08' } : { top: '#D83A2E', low: '#B92B21', deep: '#8E1F17', ink: '#FFFFFF' };
   /* the card is the widget's night over the campfire (core CAMPFIRE_SKY); plain black while the Lock Screen is dimmed */
   const card = environment.isLuminanceReduced
     ? [activityBackgroundTint('#000000'), padding({ all: 16 })]
@@ -76,222 +94,87 @@ const FlameLive = (props: FlameLiveProps, environment: LiveActivityEnvironment) 
     props.img ? (
       <Image uiImage={props.img} modifiers={[resizable(), aspectRatio({ contentMode: 'fit' }), frame({ width: size, height: size })]} />
     ) : (
-      <Image systemName="flame.fill" size={size * 0.7} color={WARM} />
+      <Image systemName={props.asleep ? 'moon.zzz.fill' : 'flame.fill'} size={size * 0.7} color={WARM} />
     );
-  /* past its end with nothing to end it: only the flame, small, and nothing that reads as a time or a message */
-  if (environment.isStale) {
-    const still = <VStack modifiers={card}>{flame(44)}</VStack>;
-    return { banner: still, compactLeading: flame(22), compactTrailing: flame(18), minimal: flame(22), expandedBottom: still };
-  }
-  /* a clean glyph for the small places, where the mascot would only blur: a flame, or a moon once it is asleep (no short time) */
-  const glyph = (size: number, color = WARM) => <Image systemName={props.short ? 'flame.fill' : 'moon.zzz.fill'} size={size} color={color} />;
-  /* the end of the bar: a warm round badge with the flame in it, like the pin at the end of a ride */
-  const badge = (size: number) => (
-    <VStack modifiers={[frame({ width: size, height: size }), backgroundOverlay({ color: WARM }), clipShape('circle')]}>{glyph(size * 0.55, NIGHT)}</VStack>
+  const text = (s: string, size: number, color: string, weight: 'bold' | 'semibold' | 'heavy' = 'semibold') => (
+    <Text modifiers={[font({ size, weight, design: 'rounded' }), foregroundStyle(color), lineLimit(1), minimumScaleFactor(0.75)]}>{s}</Text>
   );
-  const text = (s: string, size: number, color: string, weight: 'bold' | 'semibold' = 'semibold') => (
-    <Text modifiers={[font({ size, weight, design: 'rounded' }), foregroundStyle(color), lineLimit(1)]}>{s}</Text>
-  );
-  /* the time left, counted down by iPhone */
-  const left = (size: number, color: string) => (
-    <Text
-      timerInterval={span}
-      countsDown
-      modifiers={[font({ size, weight: 'bold', design: 'rounded' }), monospacedDigit(), foregroundStyle(color), lineLimit(1)]}
-    />
-  );
-  /* the thick bar, with the flame waiting at its end */
-  const bar = (
-    <HStack spacing={8}>
-      <ProgressView
-        timerInterval={span}
-        countsDown={false}
-        modifiers={[progressViewStyle('linear'), labelsHidden(), tint(WARM), scaleEffect({ x: 1, y: 2.2 })]}
-      />
-      {/* in a column as wide as the open island's flame above it, so the two stand one over the other */}
-      <VStack modifiers={[frame({ width: 34 })]}>{badge(24)}</VStack>
-    </HStack>
-  );
-  /* under the bar: where it started, the time left, where it ends */
-  const foot = (size: number) => (
-    <HStack>
-      {text(props.left, size, SOFT)}
-      {/* a ticking time takes all the width it is given, so it sits alone in the middle, centered */}
+  /* the one live number, run by iPhone: down to cb, or up from ca */
+  const span = { lower: new Date(f.ca || 0), upper: new Date(f.cb || 0) };
+  const clock = (size: number, color: string) =>
+    f.cd ? (
       <Text
         timerInterval={span}
-        countsDown
+        countsDown={f.cd === 'down'}
+        modifiers={[font({ size, weight: 'bold', design: 'rounded' }), monospacedDigit(), foregroundStyle(color), lineLimit(1)]}
+      />
+    ) : (
+      text(f.big || '', size, color, 'bold')
+    );
+  /* a button that says where it goes, standing on a ledge so it reads as one to press: SOS in its red, the rest warm */
+  const isSos = f.go === 'daybook://sos';
+  const pill = (label: string, dest: string, red: boolean, size: number) => (
+    <Link destination={dest}>
+      <Text
         modifiers={[
-          font({ size, weight: 'bold', design: 'rounded' }),
-          monospacedDigit(),
-          foregroundStyle('#FFFFFF'),
-          multilineTextAlignment('center'),
+          font({ size, weight: 'heavy', design: 'rounded' }),
+          foregroundStyle(red ? SOS.ink : NIGHT),
           lineLimit(1),
-        ]}
-      />
-      {text(props.right, size, WARM)}
-    </HStack>
-  );
-  /* the words: whose it is (the owner: "we don't know which app it is"), what it is, and when */
-  const brand = (
-    <HStack spacing={4}>
-      {glyph(11, SOFT)}
-      {text('Daybook', 13, SOFT)}
-    </HStack>
-  );
-  const words = (big: number, named = true) => (
-    <VStack alignment="leading" spacing={2}>
-      {named ? brand : null}
-      {text(props.line, big, '#FFFFFF', 'bold')}
-      {props.sub ? text(props.sub, 15, WARM) : null}
-    </VStack>
-  );
-  /* asleep after Goodnight (no short time): no bar and no clock, only the flame resting, and SOS one tap away (the owner, November 9,
-     2026: "when I go to sleep I want an SOS button") */
-  const asleep = !props.short;
-  /* SOS exactly as the app draws it (components/sos-button.tsx, theme sos, sosLow, sosDeep, sosInk): just the word, on the SOS color
-     deepening at its foot, standing on a solid ledge, so it reads as a button to press. Light or dark as the phone is, as in the app (the
-     owner, November 9, 2026: "the SOS looks different from the app") */
-  const dark = environment.colorScheme === 'dark';
-  const SOS = dark ? { top: '#FF8A7E', low: '#F2674F', deep: '#B8402F', ink: '#3A0D08' } : { top: '#D83A2E', low: '#B92B21', deep: '#8E1F17', ink: '#FFFFFF' };
-  const sos = (
-    <Link destination="daybook://sos">
-      <Text
-        modifiers={[
-          font({ size: 17, weight: 'heavy', design: 'rounded' }),
-          foregroundStyle(SOS.ink),
-          padding({ horizontal: 18, vertical: 8 }),
+          padding({ horizontal: 16, vertical: 8 }),
           background(
-            { type: 'linearGradient' as const, colors: [SOS.top, SOS.low], startPoint: { x: 0.5, y: 0 }, endPoint: { x: 0.5, y: 1 } },
+            {
+              type: 'linearGradient' as const,
+              colors: red ? [SOS.top, SOS.low] : ['#FFC870', WARM],
+              startPoint: { x: 0.5, y: 0 },
+              endPoint: { x: 0.5, y: 1 },
+            },
             shapes.capsule(),
           ),
-          shadow({ radius: 0, y: 3, color: SOS.deep }),
+          shadow({ radius: 0, y: 3, color: red ? SOS.deep : '#B86A1E' }),
         ]}>
-        SOS
+        {label}
       </Text>
     </Link>
   );
-  const rest = (big: number, img: number) => (
-    <HStack spacing={12}>
-      {words(big)}
+  const buttons = (size: number) => (
+    <HStack spacing={8}>
+      {f.act && f.go ? pill(f.act, f.go, isSos, size) : null}
+      {f.sos ? pill('SOS', 'daybook://sos', true, size) : null}
       <Spacer />
-      <VStack spacing={8}>
-        {flame(img)}
-        {sos}
-      </VStack>
     </HStack>
   );
-  /* the ride, while SOS is open: the flame burning bright, how long the person has held on counting up (no bar, no end to wait for:
-     it is not a countdown), and one tap back into SOS. The whole card opens SOS too */
-  if (props.kind === 'ride') {
-    const up = (size: number, color: string) => (
-      <Text
-        timerInterval={span}
-        countsDown={false}
-        modifiers={[font({ size, weight: 'bold', design: 'rounded' }), monospacedDigit(), foregroundStyle(color), lineLimit(1)]}
-      />
-    );
-    const back = (
-      <Link destination="daybook://sos">
-        <Text
-          modifiers={[
-            font({ size: 16, weight: 'heavy', design: 'rounded' }),
-            foregroundStyle(NIGHT),
-            padding({ horizontal: 16, vertical: 8 }),
-            background(
-              { type: 'linearGradient' as const, colors: ['#FFC870', WARM], startPoint: { x: 0.5, y: 0 }, endPoint: { x: 0.5, y: 1 } },
-              shapes.capsule(),
-            ),
-            shadow({ radius: 0, y: 3, color: '#B86A1E' }),
-          ]}>
-          {props.back || 'Keep going'}
-        </Text>
-      </Link>
-    );
-    return {
-      banner: (
-        <VStack modifiers={card}>
-          <HStack spacing={12}>
-            <VStack alignment="leading" spacing={2}>
-              {brand}
-              {text(props.line, 22, '#FFFFFF', 'bold')}
-              {up(34, WARM)}
-              {text(props.sub, 13, SOFT)}
-            </VStack>
-            <Spacer />
-            <VStack spacing={8}>
-              {flame(72)}
-              {back}
-            </VStack>
-          </HStack>
+  /* the words, the number and what it means, on the left; the flame big on the right, with whose it is under it */
+  const banner = (
+    <VStack spacing={10} modifiers={card}>
+      <HStack spacing={12}>
+        <VStack alignment="leading" spacing={0}>
+          {text(f.h || '', 16, '#FFFFFF', 'bold')}
+          {clock(36, ACC)}
+          {text(f.n || '', 14, SOFT)}
         </VStack>
-      ),
-      compactLeading: <VStack modifiers={[padding({ leading: 2 })]}>{flame(24)}</VStack>,
-      compactTrailing: <VStack modifiers={[frame({ maxWidth: 64 })]}>{up(15, WARM)}</VStack>,
-      minimal: flame(22),
-      expandedLeading: <VStack modifiers={[padding({ leading: 8, top: 4 })]}>{brand}</VStack>,
-      expandedTrailing: <VStack modifiers={[padding({ trailing: 8, top: 4 }), frame({ maxWidth: 80 })]}>{up(15, WARM)}</VStack>,
-      expandedBottom: (
-        <HStack spacing={10} modifiers={[padding({ horizontal: 8, bottom: 4 })]}>
-          {flame(36)}
-          <Text modifiers={[font({ size: 18, weight: 'bold', design: 'rounded' }), foregroundStyle('#FFFFFF'), lineLimit(1), minimumScaleFactor(0.7)]}>
-            {props.line}
-          </Text>
-          <Spacer />
-          {back}
-        </HStack>
-      ),
-    };
-  }
-  if (asleep)
-    return {
-      banner: <VStack modifiers={card}>{rest(24, 64)}</VStack>,
-      compactLeading: <VStack modifiers={[padding({ leading: 2 })]}>{flame(24)}</VStack>,
-      compactTrailing: glyph(15),
-      minimal: flame(22),
-      expandedBottom: (
-        <HStack spacing={10} modifiers={[padding({ horizontal: 8, bottom: 4 })]}>
-          {flame(36)}
-          {/* the open island is narrow: the line shrinks a little to fit whole, never cut */}
-          <Text modifiers={[font({ size: 18, weight: 'bold', design: 'rounded' }), foregroundStyle('#FFFFFF'), lineLimit(1), minimumScaleFactor(0.7)]}>
-            {props.line}
-          </Text>
-          <Spacer />
-          {sos}
-        </HStack>
-      ),
-    };
+        <Spacer />
+        <VStack spacing={2}>
+          {flame(68)}
+          {text('Daybook', 11, SOFT)}
+        </VStack>
+      </HStack>
+      {buttons(15)}
+    </VStack>
+  );
+  /* SOS in its red, small, where the island has no room for words */
+  const sosTag = (size: number) => text('SOS', size, SOS.top, 'heavy');
   return {
-    /* after the ride card: the words on the left, the mascot big on the right as the picture, then the bar and its times */
-    banner: (
-      <VStack spacing={12} modifiers={card}>
-        <HStack spacing={12}>
-          {words(24)}
-          <Spacer />
-          {flame(72)}
-        </HStack>
-        <VStack spacing={6}>
-          {bar}
-          {foot(13)}
-        </VStack>
-      </VStack>
-    ),
-    /* the mascot says whose it is; the time left beside it */
-    compactLeading: <VStack modifiers={[padding({ leading: 2 })]}>{flame(24)}</VStack>,
-    compactTrailing: <VStack modifiers={[frame({ maxWidth: 64 })]}>{left(15, WARM)}</VStack>,
-    minimal: flame(22),
-    /* the sides of the open island are narrow: only the name and the time left there, and the words across the full width below */
-    expandedLeading: <VStack modifiers={[padding({ leading: 8, top: 4 })]}>{brand}</VStack>,
-    expandedTrailing: <VStack modifiers={[padding({ trailing: 8, top: 4 }), frame({ maxWidth: 80 })]}>{left(15, WARM)}</VStack>,
+    banner,
+    compactLeading: <VStack modifiers={[padding({ leading: 2 })]}>{ride ? sosTag(14) : flame(24)}</VStack>,
+    compactTrailing: <VStack modifiers={[frame({ maxWidth: 64 })]}>{f.cd ? clock(15, ACC) : flame(22)}</VStack>,
+    minimal: ride ? sosTag(11) : flame(22),
+    expandedLeading: <VStack modifiers={[padding({ leading: 8, top: 4 })]}>{flame(44)}</VStack>,
+    expandedTrailing: <VStack modifiers={[padding({ trailing: 8, top: 4 }), frame({ maxWidth: 110 })]}>{clock(24, ACC)}</VStack>,
     expandedBottom: (
-      <VStack spacing={6} modifiers={[padding({ horizontal: 8, bottom: 4 })]}>
-        {/* the open island is short: one line and a small mascot, so the bar and its times are never cut off */}
-        <HStack spacing={10}>
-          {text(props.line, 19, '#FFFFFF', 'bold')}
-          <Spacer />
-          <VStack modifiers={[frame({ width: 34 })]}>{flame(34)}</VStack>
-        </HStack>
-        {bar}
-        {foot(13)}
+      <VStack alignment="leading" spacing={6} modifiers={[padding({ horizontal: 8, bottom: 4 })]}>
+        {text(f.h || '', 17, '#FFFFFF', 'bold')}
+        {text(f.n || '', 13, SOFT)}
+        {buttons(14)}
       </VStack>
     ),
   };

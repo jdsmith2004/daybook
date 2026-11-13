@@ -25,6 +25,19 @@ export interface NewItem {
     live before it, so it leads with what 1.3.0 changed (the owner, November 2, 2026). */
 export const WHATS_NEW: { v: string; items: NewItem[] }[] = [
   {
+    /* 1.3.4 (November 13, 2026): the journal's Insights. The Mithras import stays out of it by the owner's choice: it is for people
+       coming from Mithras, who reach it by Mithras's link, not news for everyone. 1.3.3 never went live (Apple turned it down for the
+       listing), so people updating from 1.3.1 see this first and then 1.3.3's news. */
+    v: '1.3.4',
+    items: [
+      {
+        t: 'Insights for your journal',
+        line: 'Tap the chart at the top of your journal: your entries, the days you wrote, and the feelings you name most.',
+        art: 'chart',
+      },
+    ],
+  },
+  {
     /* the quiet notice for people who had Daybook before what it learns (the owner, November 9, 2026: "as unobtrusively as
        possible"); the next build's other news goes above it */
     v: '1.3.3',

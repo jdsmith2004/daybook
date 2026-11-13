@@ -85,4 +85,10 @@ describe('the goal step', () => {
     expect(core.goalStep(9)).toEqual({ of: 14, kept: false, segs: 7, lit: 2 });
     expect(core.goalStep(14)).toEqual({ of: 14, kept: true, segs: 7, lit: 7 });
   });
+  it('starts at 7 for a person who picked a week in setup', () => {
+    expect(core.goalStep(0, 7)).toEqual({ of: 7, kept: false, segs: 7, lit: 0 });
+    expect(core.goalStep(3, 7)).toEqual({ of: 7, kept: false, segs: 7, lit: 3 });
+    expect(core.goalStep(7, 7)).toEqual({ of: 7, kept: true, segs: 7, lit: 7 });
+    expect(core.goalStep(3, 3)).toEqual({ of: 3, kept: true, segs: 3, lit: 3 });
+  });
 });

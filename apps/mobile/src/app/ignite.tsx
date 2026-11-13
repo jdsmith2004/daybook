@@ -23,7 +23,7 @@ export default function Ignite() {
       line: st ? igniteLine(snap.days, st, tk) : '',
       row: st ? igniteRow(snap.days, st, tk) : [],
       /* the small goal: 3 free nights, then 7, then each week (no big goal before a clean week) */
-      goal: st ? goalStep(freeRun(snap.days, st, tk)) : undefined,
+      goal: st ? goalStep(freeRun(snap.days, st, tk), (st as { fwGoal?: number }).fwGoal) : undefined,
     };
   });
   const close = () => {

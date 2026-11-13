@@ -92,7 +92,8 @@ export default function Unlocked() {
     asking.current = false;
     if (r === 'denied') say(PULL_DENIED);
     if (r !== 'on') return;
-    setPullPrefs({ feeds: pause });
+    /* notes only arms nothing: no wait before the apps, and no wait before adult sites at night either */
+    setPullPrefs(pause ? { feeds: true } : { feeds: false, adult: false });
     buzz('lit');
     say('I am watching for it now.');
     close();

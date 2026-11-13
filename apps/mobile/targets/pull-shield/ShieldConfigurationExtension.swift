@@ -8,16 +8,22 @@ import ManagedSettingsUI
 import UIKit
 
 class ShieldConfigurationExtension: ShieldConfigurationDataSource {
-  override func configuration(shielding application: Application) -> ShieldConfiguration { look() }
-  override func configuration(shielding application: Application, in category: ActivityCategory) -> ShieldConfiguration { look() }
-  override func configuration(shielding webDomain: WebDomain) -> ShieldConfiguration { look() }
-  override func configuration(shielding webDomain: WebDomain, in category: ActivityCategory) -> ShieldConfiguration { look() }
+  override func configuration(shielding application: Application) -> ShieldConfiguration { look(web: false) }
+  override func configuration(shielding application: Application, in category: ActivityCategory) -> ShieldConfiguration { look(web: false) }
+  override func configuration(shielding webDomain: WebDomain) -> ShieldConfiguration { look(web: Pull.filtered(webDomain.token)) }
+  override func configuration(shielding webDomain: WebDomain, in category: ActivityCategory) -> ShieldConfiguration {
+    look(web: Pull.filtered(webDomain.token))
+  }
 
-  private func look() -> ShieldConfiguration {
+  /// `web`: over a site the filter holds (not one the person picked as a feed). In the night, with adult sites waiting, its button
+  /// is the long wait (core pullShield's shieldWeb)
+  private func look(web: Bool) -> ShieldConfiguration {
     let b = Pull.bridge()
     let night = b.map { Pull.inNight($0) } ?? false
     let quiet = b.map { Pull.quiet($0) } ?? false
-    let w = (night ? (quiet ? b?["shieldQuiet"] : b?["shieldNight"]) : b?["shield"]) as? [String: Any]
+    let long = web && night && (b.map { Pull.wanted($0).web } ?? false)
+    let w =
+      (long ? (quiet ? b?["shieldWebQuiet"] : b?["shieldWeb"]) : night ? (quiet ? b?["shieldQuiet"] : b?["shieldNight"]) : b?["shield"]) as? [String: Any]
     /* "this morning" only when the app wrote it today; an older bridge says it plainly */
     let fresh = b.map { ($0["day"] as? String) == Pull.logDay($0) } ?? false
     let title = night && !fresh ? "Tonight is set" : ((w?["title"] as? String) ?? "A short wait first")

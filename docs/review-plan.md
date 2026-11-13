@@ -910,6 +910,31 @@ a defence that works with the app closed, a record that is true, a day small eno
 - **Done looks like.** Every step of the script passes on the phone, or the failure is written down with what Apple did. Then, and
   only then, ask the owner for the yes for one `production-pull` store build, naming the profile and that it uses one of the 15.
 - **Checked by:** the core pull, proof and lock-screen tests; the device script, signed off by the owner, in the notes folder.
+- **Built (November 12, 2026), steps 1 to 9; step 10 waits for the owner's iPhone.** None of the ten was on main before this
+  (only "not gone through" in the proof, from `086e0664`). What was built:
+  1. Core `pullParts` decides Apple's schedules (the evening part, after midnight, a heartbeat 5 minutes after the start, a morning
+     check at 6:05) and they ride in the bridge; the night's own callbacks read the clock 2 minutes ahead (`PULL_GRACE`). Every
+     time the morning can pick is covered from its minute (tested); a start after 23:44 can only come from Good night, which arms
+     at once.
+  2. Core `pullTrouble` and the module's `status` and `health`: no yes on this phone (a restore), a schedule Apple would not start,
+     apps that cannot be read back, more than 50 apps. More says "Not working" with the one tap that fixes it, the morning page
+     stops saying adult sites wait and says what is wrong, and Today shows a strip (X hides it until tomorrow). Access taken back
+     in Settings turns it off and More says why. The night filter now runs even when the picked apps cannot be read.
+  3. `armNow` in the module and `pullArmNight` in lib/pull.ts (core `pullArmNow`) for WP5's Good night.
+  4. Over a site the filter holds (not a picked feed), Daybook's shield, if Apple shows it there, offers "Wait 15 minutes" and
+     opens `/pause?w=long` (or the "🔥 Here" note before iOS 26.5). Whether Apple shows Daybook's shield over the adult filter at
+     all is step 5 of the device script; if it shows its own page, the long wait stays in More only.
+  5. "Notes only" arms nothing (adult sites too).
+  6. The nights record has 3 for a night held to the morning (the 6:05 check or the app's first open after 6 AM, access still
+     given); only 3 counts as "Lock held". Opening a feed after the night's short wait is a night gone through, said first on
+     the wait screen. Access taken back at night is a night gone through.
+  7. A later start for a night already handed to the phone waits for the morning (core `pullHoldStart`, which covers the sleep
+     time and "Start tonight at"); the short wait counts from the shield's tap, a wait left over more than two minutes in the
+     background starts again, and a wait opened by day becomes the night's when the night has started.
+  8. A Live Activity past its end (Apple's stale date) draws only the flame: no words, no time, no bar.
+  9. `docs/screen-time/test-on-iphone.md` rewritten from the audit's script, with the browser cases.
+     Compiled for the simulator with `DAYBOOK_PULL=1` (the module and all three extensions). The preview can show each failure with
+     `EXPO_PUBLIC_PULL_TROUBLE=ask|retry|pick` beside `EXPO_PUBLIC_PULL_PREVIEW=1`.
 
 ### WP3. Daybook: Fixes sweep
 

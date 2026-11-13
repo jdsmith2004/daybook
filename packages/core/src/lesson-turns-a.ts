@@ -676,7 +676,7 @@ export const TURNS_A: Record<string, Turn> = {
     np: 'Who I am becoming, in one sentence',
     hook: {
       h: 'Two clean weeks, and a voice still calls you the same old you.',
-      say: 'When do you get to see yourself differently?',
+      say: 'Two weeks is already a new story about you.',
       more: 'Many people carry an old label long after things start to change. This lesson is about when the new one can start.',
     },
     ask1: {
@@ -740,7 +740,7 @@ export const TURNS_A: Record<string, Turn> = {
     np: 'My “I do not” sentence',
     hook: {
       h: 'The urge says, “Just once. No one will know.”',
-      say: 'What do you say back?',
+      say: 'It sounds so reasonable at 11 p.m.',
       more: 'Many people answer with “I cannot,” or “I am not allowed.” This lesson is about two small words that change who is speaking.',
     },
     ask1: {

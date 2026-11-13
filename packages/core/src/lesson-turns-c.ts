@@ -76,7 +76,7 @@ export const TURNS_C: Record<string, Turn> = {
     np: 'What I want to say to God, and to myself, as I turn back',
     hook: {
       h: 'The morning after a slip, it feels wrong to feel okay.',
-      say: 'How long do you think you should carry it?',
+      say: 'It can feel like you owe some misery first.',
       more: 'Many people of faith feel they owe a stretch of misery before they are allowed to start again. This lesson looks at what the old word for repenting asks of you, and what forgiving yourself does.',
     },
     ask1: {
@@ -143,7 +143,7 @@ export const TURNS_C: Record<string, Turn> = {
     np: 'What I will do the day after I miss one',
     hook: {
       h: 'You skipped yesterday’s check-in. Opening the app feels awkward.',
-      say: 'Is the habit broken now?',
+      say: 'One missed day feels bigger than it is.',
       more: 'New habits, like a daily check-in or a screens-off time, take a while to stick. This lesson is about what one missed day does to them, and what the day after is for.',
     },
     ask1: {
@@ -343,7 +343,7 @@ export const TURNS_C: Record<string, Turn> = {
     np: 'The feeling I most often call just “bad”',
     hook: {
       h: 'It is 11 p.m. You feel off, and you cannot say why.',
-      say: 'What is the feeling under it?',
+      say: 'There is a feeling under it, and it has a name.',
       more: 'Urges often ride in on a feeling, and most of the time the feeling has no name. It is just a fog called “bad.” This lesson is about what changes when you name it.',
     },
     ask1: {
@@ -541,7 +541,7 @@ export const TURNS_C: Record<string, Turn> = {
     np: 'The movement I could do in one minute',
     hook: {
       h: 'It is 10 p.m., you are on the couch, and the pull is building.',
-      say: 'Where do you feel it?',
+      say: 'Your body knows before your head does.',
       more: 'Most people treat an urge as a fight in the head: thoughts against thoughts. This lesson is about the part of the urge that lives in the body, and the quick way to change it.',
     },
     ask1: {
@@ -607,7 +607,7 @@ export const TURNS_C: Record<string, Turn> = {
     np: 'The thought that shows up first for me',
     hook: {
       h: 'It is midnight, and a thought says, “Just once will not matter.”',
-      say: 'What does it say about you that you thought it?',
+      say: 'A thought that shows up is not a choice you made.',
       more: 'A thought like that can feel like a confession: proof that part of you does not want to quit. This lesson is about what a thought that shows up says about you, and what it does not.',
     },
     ask1: {

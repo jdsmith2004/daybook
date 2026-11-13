@@ -243,7 +243,7 @@ export const TURNS_D: Record<string, Turn> = {
     np: 'The hour I will fill, and with what',
     hook: {
       h: 'It is Sunday afternoon, and nothing is planned.',
-      say: 'What usually fills an hour like that?',
+      say: 'An empty hour never stays empty for long.',
       more: 'For many people the hardest hours are not the stressful ones. They are the empty ones: after dinner, late at night, Sunday afternoon.',
     },
     ask1: {
@@ -371,7 +371,7 @@ export const TURNS_D: Record<string, Turn> = {
     np: 'One question I would ask a therapist',
     hook: {
       h: 'You have thought about therapy, and pictured being judged.',
-      say: 'What do you picture happening in that room?',
+      say: 'Most people picture a judge with a notepad.',
       more: 'Many people picture a stranger with a notepad deciding what is wrong with them. This lesson is about what it is like, and what makes it work.',
     },
     ask1: {
@@ -437,7 +437,7 @@ export const TURNS_D: Record<string, Turn> = {
     np: 'What I want my partner to be able to count on from me',
     hook: {
       h: 'There is something your partner does not know, and it is heavy.',
-      say: 'Who does the silence protect?',
+      say: 'Telling can feel like it would break something.',
       more: 'Maybe they do not know. Maybe they found out, and nothing feels the same. Either way you want to make it right, and you are afraid of making it worse. This lesson is honest about what helps, and about what nobody can promise.',
     },
     ask1: {

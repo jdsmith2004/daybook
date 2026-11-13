@@ -546,7 +546,7 @@ export const GOD_A: Record<string, Turn> = {
     np: 'The one person I could tell, and my first sentence',
     hook: {
       h: 'You think of telling your bishop, and your stomach drops.',
-      say: 'What do you picture happening in that room?',
+      say: 'Most people expect a verdict. That room is for something else.',
       more: 'Many people carry this alone for years because they picture telling as a trial. This lesson is about what confession is for.',
     },
     ask1: {

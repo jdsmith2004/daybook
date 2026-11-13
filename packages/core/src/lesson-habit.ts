@@ -490,8 +490,8 @@ export const HABIT_TURNS: Record<string, Turn> = {
     key: 'Drinking touched more than you. The repair is showing up sober, again and again, more than one big speech.',
     np: 'One person I want to show up for, and how',
     hook: {
-      h: 'You missed the game, or the dinner, or the call. Again.',
-      say: 'Does it only cost you?',
+      h: 'You missed the game, or the dinner, or the call.',
+      say: 'The people at home feel it too.',
       more: 'Many people tell themselves drinking only hurts the one who drinks. The people at home usually know otherwise. This lesson is about what makes things right with them.',
     },
     ask1: {

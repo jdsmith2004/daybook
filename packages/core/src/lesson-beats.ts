@@ -2024,7 +2024,7 @@ const BOOK: BeatBook = {
   l21: {
     key: 'One missed day barely dents a habit. The day after, come back in the smallest way.',
     cards: [
-      { h: 'You skipped your check-in yesterday.', say: 'Is the habit broken now?' },
+      { h: 'You skipped your check-in yesterday.', say: 'One missed day feels bigger than it is.' },
       {
         h: 'How many days do you think it takes a new habit to feel automatic?',
         rv: { n: '66', h: 'days for the typical person, not 21.', p: 'People ranged from 18 to 254 days. Slow and uneven is no sign you are failing.' },

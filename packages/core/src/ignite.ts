@@ -7,8 +7,8 @@ import { addDays, sumDay } from './legacy/core.js';
 import { morningOf, nightTold } from './morning-set';
 import type { DayKey, Days, Settings } from './types';
 
-/** a night on the row: told free, a slip, not told, or before the log began */
-export type NightMark = 'free' | 'slip' | 'untold' | 'none';
+/** a mark on the row: told free, a slip, not told, before the log began, or still to come (the first lighting's week) */
+export type NightMark = 'free' | 'slip' | 'untold' | 'none' | 'ahead';
 
 const DAY2 = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 /** the two letters of a log day's weekday */
@@ -39,6 +39,11 @@ export function igniteRow(days: Days, st: Settings, tk: DayKey): { k: DayKey; d:
     out.push({ k, d: day2(k), m: nightMark(days, st, k, first) });
   }
   return out;
+}
+
+/** the first lighting (the end of setup): today and the six days to come, today's mark the one that pops (index 0) */
+export function igniteStartRow(tk: DayKey): { k: DayKey; d: string; m: NightMark }[] {
+  return [0, 1, 2, 3, 4, 5, 6].map((i) => ({ k: addDays(tk, i), d: day2(addDays(tk, i)), m: 'ahead' as const }));
 }
 
 /** free nights told in a row, ending last night */

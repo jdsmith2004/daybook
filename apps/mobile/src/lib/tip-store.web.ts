@@ -21,7 +21,7 @@ export const buyAppleMonthly = async (_account: string | null): Promise<StorePat
 export const manageApple = async (): Promise<void> => undefined;
 export const storePrice = (_tier: TipTierId): string | undefined => undefined;
 export const loadPrices = async (): Promise<void> => undefined;
-export const usStorefront = (): boolean => false;
+export const storefront = (): string | null => null;
 export const appleTipError = (): string => '';
 export const appleTipQuiet = (): 'cancelled' | 'waiting' | null => null;
 export const ownedTipsFailed = (): boolean => false;

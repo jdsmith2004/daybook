@@ -2755,8 +2755,10 @@ were corrected and merged. Walked on a release build on two iPhone sizes as a ne
 render); the cap covered the eyes or floated off the head on most forms; a first lesson's glow was cut in a straight line; an off button in a lesson showed its words twice;
 "tap again" on the setup pledge stopped working after four seconds.
 
-**Not merged:** iPhone tips outside the United States (`claude/clever-villani-6a3f09`, commit e5dc2d0). It conflicts with the tip code since Daybook Pattern, and Daybook is
-offered in the United States only, where the web link is already right. Opening other countries is the owner's call, and this commit is the start of that work.
+**Merged November 12, 2026 (the owner: "let's finish it you do it", WP18):** iPhone tips outside the United States, from `claude/clever-villani-6a3f09`, brought onto
+Daybook Pattern. The storefront rule is core `tipWaysFor` and `webTipStorefront`; the tip sheet, the Daybook Pattern sheet and the sync card never mention paying on the
+web off the US storefront. What the owner sets in App Store Connect is launch.md step 10. Follow-up before the UK, Australia and New Zealand: the crisis line for the
+phone's region (988 is US and Canada only).
 
 ## Rekindle: the Next time page and the day and time control (the owner, November 1, 2026; merged with setup once the owner had seen it on the simulator)
 

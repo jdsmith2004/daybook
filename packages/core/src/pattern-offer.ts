@@ -248,15 +248,16 @@ export const PAT_WORDS = {
     /** the three choices, each with what it is and how often it is paid; the last two are the tips of LIFETIME_USD or more */
     monthly: { name: 'Monthly', sub: 'Cancel any time', per: 'a month', go: 'Start monthly' },
     lifetime: { name: 'Lifetime', sub: 'Yours for good', per: 'once', go: 'Get lifetime' },
-    more: { name: 'Give more', sub: 'Lifetime, and $20 more to keep Daybook growing', per: 'once', go: 'Get lifetime' },
+    more: { name: 'Give more', sub: 'Lifetime, with more to keep Daybook growing', per: 'once', go: 'Get lifetime' },
     badge: 'Our pick',
     /** the quiet way in: sync and the safe copy */
-    small: 'Just a $5 tip: sync and a safe copy',
+    small: 'Just a Kind tip: sync and a safe copy',
     web: 'Pay on the web',
     webTitle: 'Pay on the web',
     webLine: 'A secure Stripe page opens. Apple Pay works there too.',
     restore: 'Restore',
-    restoreNone: 'No earlier purchase was found on this Apple Account. If you paid on the web, sign in with that account first.',
+    /** (no word about the web: it is said on every storefront, and only the United States one may point to the web) */
+    restoreNone: 'No earlier purchase was found on this Apple Account. If you paid while signed in to Daybook, sign in with that account first.',
     restoreNoneWeb: 'No earlier purchase was found here. If you paid while signed in, sign in with that account first.',
     manage: 'Manage or cancel',
     /** what Apple asks to be said beside a subscription (Guideline 3.1.2) */

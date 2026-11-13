@@ -1321,6 +1321,11 @@ and after the device script passes, your yes for one `production-pull` store bui
 
 Anything not named here was approved as recommended ("if I didn't mention it, it's just a yes").
 
+- **What "simple" means (the owner, November 12, 2026).** The review read "extremely simple" as "add little and cut a lot". The owner
+  meant something else: "I meant like simple as in anybody could use it, not as in we don't use any actually good features. Those ideas
+  all sound great." So simple means easy for anyone to use, with the next step obvious. It never means holding back good features. The
+  bold ideas in this plan (the phone's bed with the sticker and the alarm, one person, SOS on the Lock Screen, the morning from the Home
+  Screen) are wanted, not "later". A bolder list of new features is being asked for separately.
 - **D1:** (a). From a set date, a night counts as free only when the person says so.
 - **D2: the owner's own rule, not (a).** In the owner's words: "you feed a fire it grows you don't feed it it dims then when it's dimmer
   feeding is more rewarding and you want to do it more". So everything good feeds the fire: a morning told, a free night, the phone put

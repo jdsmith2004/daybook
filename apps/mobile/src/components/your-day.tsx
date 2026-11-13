@@ -3,17 +3,14 @@
    never a question of what to do. The part of the day already done is the squiggle (docs/design-standards.md: squiggle means
    progress), the rest quiet dashes. Every stop opens its moment with one tap, at any time: the lesson, the check-in (app/checkin.tsx)
    and the wind-down (app/wind.tsx). When a bigger moment has the next step (core pickMoment, moment-card.tsx), its card sits above and
-   the stops here are all rows. "Change" turns parts of today on or off, in a sheet. */
+   the stops here are all rows. "Change" opens the list in the same view as its unlock (app/day-list.tsx). */
 import {
   lessonsDone,
   lineOrder,
   openTile,
-  ROUTINE_SHOWN,
   routineChanged,
   logicalKey,
   reachMark,
-  routineDay,
-  routineOn,
   stopTiles,
   type Moment,
   type Snapshot,
@@ -23,14 +20,12 @@ import {
 import { router, useIsFocused } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Animated, Easing, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Text } from '@/components/text';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { OnOff } from '@/components/form';
 import { Shape, SQUIGGLE, squigglePath, SVG_HIDE, useClock, type ShapeKind } from '@/components/shapes';
-import { Button, Icon, T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSpot } from '@/lib/tour';
@@ -96,7 +91,6 @@ export function YourDay({
   /* the stop that is next, as the card at the top opens it (a re-read in place of a lesson that waits behind an account) */
   const open = openTile(snap.days, st, tk, now, !!account);
   const changed = routineChanged(st, snap.days[tk]?.p);
-  const [sheet, setSheet] = useState(false);
   const n = r.tiles.length;
   /* the big card goes on the stop it starts */
   const heroKey = hero ? (hero.go === 'checkin' ? 'evening' : hero.go === 'wind' ? 'night' : hero.go === 'lesson' ? 'lesson' : null) : null;
@@ -130,17 +124,17 @@ export function YourDay({
         </T>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Change today’s routine"
+          accessibilityLabel="Change your list on Today"
           hitSlop={10}
           onPress={() => {
             buzz('tap');
-            setSheet(true);
+            /* the list in the same view as its unlock (app/day-list.tsx) */
+            router.push('/day-list');
           }}
           style={({ pressed }) => [s.change, { opacity: pressed ? 0.6 : 1 }]}>
           <Text style={[s.changeT, { color: c.accentText }]}>Change</Text>
         </Pressable>
       </View>
-      <RoutineSheet open={sheet} onClose={() => setSheet(false)} snap={snap} tk={tk} />
     </View>
   );
 }
@@ -240,6 +234,19 @@ export function DayPicture({ wind }: { wind: string }) {
           hero={{ eb: 'Lesson 1 · 1–5 min', h: 'One short lesson', btn: 'Start', go: 'lesson' }}
           glass={glass}
         />
+      </View>
+    </View>
+  );
+}
+
+/** today's own stops, drawn exactly as Today draws them, as a picture: for the daily list's unlock (app/unlock.tsx), so the person
+    sees the very list they are changing. Nothing in it is a button. */
+export function DayPreview({ tiles, label }: { tiles: StopTile[]; label: string }) {
+  const glass = useTheme().scheme === 'dark';
+  return (
+    <View pointerEvents="none" accessible accessibilityRole="image" accessibilityLabel={label} style={{ alignSelf: 'stretch', width: '100%' }}>
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Stops key={tiles.map((t) => t.k).join(' ')} tiles={tiles} big={null} glass={glass} />
       </View>
     </View>
   );
@@ -413,59 +420,6 @@ function Row({ t, glass }: { t: StopTile; glass?: boolean }) {
   );
 }
 
-/* ---------- today's routine, in a sheet ---------- */
-function RoutineSheet({ open, onClose, snap, tk }: { open: boolean; onClose: () => void; snap: Snapshot; tk: string }) {
-  const c = useTheme();
-  const inset = useSafeAreaInsets();
-  const { update } = useStore();
-  const st = snap.settings!;
-  const p = snap.days[tk]?.p;
-  return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <View style={s.wrap}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(16,10,40,0.42)' }]}
-          onPress={onClose}
-        />
-        <View style={[s.sheet, { backgroundColor: c.surface, paddingBottom: inset.bottom + 16, shadowColor: '#000' }]}>
-          <View style={[s.handle, { backgroundColor: c.line }]} />
-          <T v="h2" accessibilityRole="header">
-            Today’s routine
-          </T>
-          <T v="small" tone="muted">
-            Skip what does not fit today. This is for today only, and anything you already did stays counted.
-          </T>
-          <View style={{ gap: 2 }}>
-            {ROUTINE_SHOWN.map((x) => (
-              <OnOff
-                key={x.k}
-                name={x.name}
-                sub={x.sub}
-                on={routineOn(st, p, x.k)}
-                onPick={(on) => update((s0) => ({ ...s0, days: routineDay(s0.days, s0.settings!, tk, x.k, on) }))}
-              />
-            ))}
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              onClose();
-              router.push({ pathname: '/settings', params: { open: 's-routine' } });
-            }}
-            style={{ minHeight: 40, justifyContent: 'center', alignSelf: 'center' }}>
-            <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>
-              Change my usual routine in Settings
-            </Text>
-          </Pressable>
-          <Button label="Done" onPress={onClose} />
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 const s = StyleSheet.create({
   stop: { paddingLeft: RAIL + 8, paddingVertical: 4 },
   note: { marginTop: 8 },
@@ -493,21 +447,4 @@ const s = StyleSheet.create({
   foot: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: RAIL + 8, paddingRight: 4 },
   change: { minHeight: 44, justifyContent: 'center' },
   changeT: { fontFamily: font.bodySemi, fontSize: 15 },
-  wrap: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
-  sheet: {
-    alignSelf: 'stretch',
-    maxWidth: 560,
-    width: '100%',
-    marginHorizontal: 'auto',
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    paddingHorizontal: 18,
-    paddingTop: 10,
-    gap: 12,
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 12,
-  },
-  handle: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, marginBottom: 2 },
 });

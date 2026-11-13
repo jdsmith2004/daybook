@@ -33,12 +33,14 @@ import { Confetti } from '@/components/celebrate';
 import { FutureInvite, useFutureInvite } from '@/components/future-invite';
 import { MOVE_ICON, MOVE_NAME } from '@/components/ride/moves';
 import { Packed } from '@/components/packed';
+import { Opener } from '@/components/opener';
 import { Finish, SceneFrame } from '@/components/scene';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useFuture } from '@/lib/future';
 import { close, closeAll } from '@/lib/nav';
+import { useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useCareSettings, useStore } from '@/lib/store';
 import { font, useSkyTheme } from '@/lib/theme';
@@ -58,7 +60,23 @@ export interface Rode {
 
 const moveName = (x: string) => MOVE_NAME[x] || urTool(x)?.name || x;
 
-export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rode; night: boolean; level: number; title?: string; onUndo?: () => void }) {
+type RodeProps = { won: Rode; night: boolean; level: number; title?: string; onUndo?: () => void };
+
+/** the ending: first the big opener every win gets (components/opener.tsx: the band, the flame huge, "Rode it out!", confetti),
+    then this page shows under it as it leaves. With celebrations off or Reduce Motion, the page alone, as before. */
+export function RodeOut(props: RodeProps) {
+  const st = useCareSettings();
+  const still = useReducedMotion();
+  const [stage, setStage] = useState<0 | 1 | 2>(() => (st.celebrate === false || still ? 2 : 0));
+  return (
+    <View style={s.full}>
+      {stage > 0 ? <RodeOutPage {...props} after={stage > 0 && !(st.celebrate === false || still)} /> : null}
+      {stage < 2 ? <Opener level={props.level} shout="Rode it out!" onLeave={() => setStage(1)} onEnd={() => setStage(2)} /> : null}
+    </View>
+  );
+}
+
+function RodeOutPage({ won, night, level, title = 'SOS', onUndo, after }: RodeProps & { after: boolean }) {
   const c = useSkyTheme(night ? 'night' : 'mint');
   const { snap, tk, update, apply } = useStore();
   const st = useCareSettings();
@@ -85,6 +103,11 @@ export function RodeOut({ won, night, level, title = 'SOS', onUndo }: { won: Rod
   const [rain, setRain] = useState(false);
   useEffect(() => {
     if (!cel) return void buzz('save');
+    /* after the opener, which had its own burst, only the shower falls */
+    if (after) {
+      const t0 = setTimeout(() => setRain(true), 300);
+      return () => clearTimeout(t0);
+    }
     buzz('lit');
     const t = [
       setTimeout(() => buzz('land'), 170),

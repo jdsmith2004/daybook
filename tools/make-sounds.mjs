@@ -20,6 +20,11 @@ const SOUNDS = {
     [523, 1.4, 0.08, 0],
     [659, 1.6, 0.07, 0.18],
   ],
+  /* a lesson card answered: two quick notes up, bright and short, after Duolingo's answer sound (WP11) */
+  ding: [
+    [784, 0.22, 0.06, 0],
+    [1047, 0.45, 0.06, 0.08],
+  ],
 };
 /* the legacy gain was for a browser at full volume; a file plays at the phone's media volume, so it is raised to a gentle level */
 const LIFT = 4;

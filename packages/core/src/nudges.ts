@@ -47,10 +47,9 @@
    not put on a locked screen), never what the plan is about. */
 import { moodOf } from './day';
 import { fireLow, LOW_BACK_DAYS, LOW_SAVE, LOW_WARN_NOTE, lowBack, type LowStep } from './flame-low';
-import { lessonOpen } from './accounts';
 import { addDays, diffDays, fmtClock, gameCompute, LESSON_WIN_FROM, routineOn, streaks } from './legacy/core.js';
 import { formWord } from './levels';
-import { lessonDoneOn, lessonsDone, lessonWalk } from './lessons';
+import { lessonDoneOn, lessonsDone, lessonStop } from './lessons';
 import { rkActive } from './rekindle';
 import { riskAt, riskWindow } from './risk';
 import { isSunday, sunDue } from './sunday';
@@ -510,9 +509,8 @@ export function lessonAt(days: Days, log: Pick<NudgeLog, 'opens'>, k: DayKey, no
     the lessons after the first LEARN_FREE wait behind one); else null, and no reminder (a re-read is never pushed) */
 export function lessonDue(days: Days, st: Settings, k: DayKey, account = true): string | null {
   if (k < LESSON_WIN_FROM || !routineOn(st, days[k]?.p, 'lesson') || lessonDoneOn(days[k]?.p)) return null;
-  const w = lessonWalk(days, st);
-  const nl = w.next;
-  return nl && lessonOpen(nl, w.done, account) ? nl.id : null;
+  const ls = lessonStop(days, st, k, account);
+  return ls.kind === 'next' && !ls.locked ? ls.L.id : null;
 }
 
 /** how the last three check-ins (in the last week) felt: heavy when mood (motivation, on a day saved before mood was asked)

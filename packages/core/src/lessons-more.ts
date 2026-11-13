@@ -17,6 +17,7 @@
    Talk it through come from talk.ts, so both always point at the same papers. */
 import type { Lesson, Unit } from './lessons';
 import { TALK_SRC } from './talk';
+import { SRC_NIGHT } from './lessons-night';
 
 const bP = (s: string): ['p', string] => ['p', s];
 const bL = (a: string[]): ['l', string[]] => ['l', a];
@@ -183,6 +184,8 @@ export const SRC_MORE: Record<string, [string, string]> = {
     'Mallory, Stanton & Handy (2019): couples’ sexual communication and dimensions of sexual function, a meta-analysis, Journal of Sex Research',
     'https://pubmed.ncbi.nlm.nih.gov/30777780/',
   ],
+  /* lessons 54 to 58, the lessons that meet the night */
+  ...SRC_NIGHT,
 };
 /* two sources the first 32 lessons already use */
 type Src = [string, string];

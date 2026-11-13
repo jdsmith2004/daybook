@@ -3,6 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import { lessonsMore, LUNITS_MORE, SRC_MORE } from '../lessons-more';
+import { NIGHT, NIGHT_AT } from '../lessons-night';
 import { GOD, TURNS, turnLesson } from '../lesson-turns';
 import { HABIT_ONLY, HABIT_TURNS } from '../lesson-habit';
 import { DEED_PTS, deedCount, normDeeds } from '../steps';
@@ -111,7 +112,7 @@ const TOOL_IDS=['pause','breathe','curious','ground','halt','surprise','message'
 /* l1 to l32 are here; l33 on are in lessons-more.ts */
 /* l1 to l49, then the twelve God lessons, g1 to g12 (lesson-turns.ts GOD) */
 /* then l50 to l53, the lessons of one habit only (lesson-habit.ts HABIT_TURNS) */
-const LESSON_IDS=[...Array.from({length:49},(_,i)=>'l'+(i+1)),...Array.from({length:12},(_,i)=>'g'+(i+1)),...Object.keys(HABIT_TURNS)],LNOTE_LEN=400;
+const LESSON_IDS=[...Array.from({length:49},(_,i)=>'l'+(i+1)),...Array.from({length:12},(_,i)=>'g'+(i+1)),...Object.keys(HABIT_TURNS),...Object.keys(NIGHT)],LNOTE_LEN=400;
 /* The last unit is the faith lessons (l29 to l32). They come last in the daily order unless the person picks another order in Learn > Lessons
    (settings.learn.faith, kept once the person has chosen it: faithSet). They speak plainly of God without belonging to any one church or denomination, and each rests on a well-known
    program (the 12 steps, mindfulness-based relapse prevention) or on published research. */
@@ -2753,6 +2754,8 @@ LESSONS.forEach((L,i)=>{if(TURNS[L.id])LESSONS[i]=turnLesson(TURNS[L.id],L).L});
    They sit on the path only for someone who said faith plays a part (lessons.ts godOn, steps.ts god). */
 Object.values(GOD).forEach(T=>LESSONS.push(turnLesson(T,{id:T.id,u:7,f:1,tag:T.ask}).L));
 Object.values(HABIT_TURNS).forEach(T=>LESSONS.push(turnLesson(T,{id:T.id,u:HABIT_ONLY[T.id].u}).L));
+/* lessons 54 to 58, the lessons that meet the night (lessons-night.ts), after them so nothing already in the list moves */
+Object.values(NIGHT).forEach(T=>LESSONS.push(turnLesson(T,{id:T.id,...NIGHT_AT[T.id]}).L));
 
 
 /* ------------------------------------------------------------------------------------------------

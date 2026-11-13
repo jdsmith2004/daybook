@@ -18,7 +18,7 @@ import {
 } from './legacy/core.js';
 import { changeSettings } from './actions';
 import { noSlipDays, todayMeasure } from './graduate';
-import { faithOut, lessonFor, lessonsDone } from './lessons';
+import { lessonsDone, rkFits, RK_LESSONS } from './lessons';
 import { changeDay, withDay } from './mutate';
 import { plural } from './view';
 import type { DayEvent, DayKey, Days, Reviews, Settings } from './types';
@@ -117,21 +117,17 @@ export function rkLitLine(days: Days, st: Settings, reviews: Reviews, tk: DayKey
   return kept.slice(0, 2).join(', ') + '. All still yours.';
 }
 
-/** the lessons Rekindle offers after the fire, in order: what therapy is like first (the owner, November 12, 2026: "i think
-    that's a good lesson and should be a first recommendation"), then kindness after a slip, why one slip snowballs, guilt and
-    shame before God (only on a path with faith), and mindfulness for the next urge. The person's own path decides (habit and
-    faith); one not read yet leads, so the same lesson is not offered every time, and once all are read, the first comes again. */
-export const RK_LESSONS = ['l24', 'l6', 'l3', 'l31', 'l27'];
+/** the lessons Rekindle offers after the fire (lessons.ts RK_LESSONS, which the morning after a slip reads too, lessonToday). The
+    person's own path decides (habit and faith); one not read yet leads, so the same lesson is not offered every time, and once all
+    are read, the first comes again. */
+export { RK_LESSONS };
 export const RK_REPEAT_LESSON = 'l24';
 /** the one quiet "more" after the fire is lit (the owner, November 12, 2026: "maybe just have them refresh and close and if not
     maybe just offer to go into a lesson"): a lesson for after a slip, opened in full (at=care), never behind a gate. After a
     second slip in a week, what therapy is like is offered even when it was read before. null when none is on this person's path. */
 export function rkLesson(days: Days, st: Settings, repeat: boolean): string | null {
   const done = lessonsDone(days);
-  const fits = RK_LESSONS.filter((id) => {
-    const L = lessonFor(id, st);
-    return !!L && !(L.f && faithOut(st));
-  });
+  const fits = rkFits(st);
   if (repeat && fits.includes(RK_REPEAT_LESSON)) return RK_REPEAT_LESSON;
   return fits.find((id) => !done.has(id)) || fits[0] || null;
 }

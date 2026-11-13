@@ -1,5 +1,40 @@
 # What is planned next
 
+## Lessons like Duolingo, and lessons that meet the night (the owner, November 12, 2026: "heavily use this for inspiration everywhere in the app"; WP11 in docs/review-plan.md; built on `claude/lessons-redesign-22657d`, show first)
+
+Why: Fable's review found the lessons do not meet the person where they are (C8), and the owner made Duolingo the model for lessons.
+It helps the person: the first week fits his own nights, and every card asks for a tap. It helps Daybook: lessons that feel alive
+are read more, and the free account ask after seven lessons stays (D8).
+
+- **The player.** There is no Quick or Full door: the short cards are the lesson, with More on each. Every card is answered:
+  - a question;
+  - a guess;
+  - a turn;
+  - two answers on a plain card, never graded ("That rings true" / "Not sure yet", "That sounds like me" / "Not quite me" when the
+    flame asks, "That surprises me" / "I thought so" on a number);
+  - the line the person will try, which lights green.
+
+  A thick bar fills with a shine as cards are answered. After each answer a green bar slides up with praise, the flame's reply and
+  Continue. It brings a knock, and a short sound only when sound is on (the owner: not worried about sound now). Put it to work and
+  the deed are the last cards; then one finish page, WP8's `LessonFinish`, with one Continue back to where the lesson opened.
+  `components/lesson-play.tsx`.
+
+- **The map.** Up next breathes and has a bobbing "Start" bubble, or "Locked" when it waits for a free account.
+- **The path (core).**
+  - A front track of seven from two setup answers: most days and late at night gets l54, l34, l55, l9, l4, l1, l3.
+  - Three hooks:
+    - after a slip told, the after-a-hard-night list;
+    - after the first free night told, l38;
+    - after an urge ridden out, l40.
+  - l22 moves after the first week for most days.
+  - Seven free lessons on every path, counted on the person's own path.
+  - No Next into the sign-up on a slip day.
+  - A locked lesson says so on Today.
+  - The account card shows from day 7 only.
+- **Five new lessons** (`lessons-night.ts`): The morning self and the night self; Where the phone sleeps; A wall with doors; Nobody
+  gets free alone; When the habit is carrying something heavier.
+- Effort: medium (screens, words, rules); the path order is tested in `test/lesson-path.test.ts`.
+
 ## The morning, not the moment: help for the person who does not want to stop (the owner, November 11, 2026; approved November 11, 2026, each question the recommended option)
 
 The owner asked what it would take for Daybook to actually help, because it still does not help them. This plan starts from the owner's

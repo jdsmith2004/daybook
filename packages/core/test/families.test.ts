@@ -20,9 +20,11 @@ const words = (L: Lesson): string[] => {
 
 it('there are 49 lessons, the twelve God lessons and the lessons of one habit, and the ids match the lesson list', () => {
   expect(core.LESSONS.map((L) => L.id)).toEqual(core.LESSON_IDS);
-  expect(core.LESSON_IDS).toHaveLength(65);
+  expect(core.LESSON_IDS).toHaveLength(70);
   expect(core.LESSON_IDS.slice(49, 61)).toEqual(core.PATH_STEPS.map((s) => s.god));
-  expect(core.LESSON_IDS.slice(61)).toEqual(['l50', 'l51', 'l52', 'l53']);
+  expect(core.LESSON_IDS.slice(61, 65)).toEqual(['l50', 'l51', 'l52', 'l53']);
+  /* the lessons that meet the night (lessons-night.ts) come last, so nothing already in the list moves */
+  expect(core.LESSON_IDS.slice(65)).toEqual(['l54', 'l55', 'l56', 'l57', 'l58']);
   expect(NEW.map((L) => L.id)).toEqual(['l33', 'l34', 'l35', 'l36', 'l37', 'l38', 'l39', 'l40', 'l41', 'l42', 'l43', 'l44', 'l45', 'l46', 'l47', 'l48', 'l49']);
 });
 

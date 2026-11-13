@@ -288,8 +288,8 @@ function LessonsPane({
   const pair = due ? lcheckPair(due) : null;
   const account = useAccount();
   const sync = useSync();
-  const open = (L: Lesson) => lessonOpen(L, done, account);
-  const waiting = lessonsLocked(lessonPathFor(st), done, account);
+  const open = (L: Lesson) => lessonOpen(L, done, account, st);
+  const waiting = lessonsLocked(lessonPathFor(st), done, account, st);
   const [more, setMore] = useState(false);
   /* the map's place in the pane and its scale arrive in either order; pass them on once both are known */
   const at = useRef({ y: -1, k: 0 });
@@ -312,7 +312,7 @@ function LessonsPane({
         <Pressable accessibilityRole="button" onPress={() => sync.signInNow()} style={[s.lockLine, { backgroundColor: c.accentSoft }]}>
           <Icon name="shield" size={22} color={c.accentText} />
           <T v="small" style={{ flex: 1, color: c.accentText, fontFamily: font.bodySemi }}>
-            {LEARN_FREE} lessons are free. A free account opens the other {waiting}.
+            The first {LEARN_FREE} lessons are free. A free account opens the other {waiting}.
           </T>
           <Icon name="next" size={16} color={c.accentText} />
         </Pressable>

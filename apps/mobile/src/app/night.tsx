@@ -23,8 +23,9 @@ import {
   PULL_NIGHT_END,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
+import { BedMoment } from '@/components/bed-moment';
 import { NightPage, NightRow, useGoodnight, type Bed } from '@/components/goodnight';
 import * as pull from '@/lib/pull';
 import { textGoodNight, useGoodNightPerson } from '@/lib/person';
@@ -34,14 +35,6 @@ import { useAccount } from '@/lib/sync';
 /* Screen Time's "the night starts now" (WP2, lib/pull.ts pullArmNight): true means adult sites wait now (the filter is on); the feeds'
    short wait already runs all day */
 const armNight = pull.pullArmNight;
-
-/* The moment the flame settles down to sleep belongs to WP8's celebrations (components/bed-moment.tsx, BedMoment, not built yet): the
-   phone goes down, the flame dims into its asleep face, tonight's mark pops. Until it lands, this stand-in with the same props shows
-   the page's own falling asleep (its children); on the rebase onto WP8 it is swapped for the import. */
-type BedMomentProps = { level: number; nights: number; row: ReturnType<typeof bedRow>; line: string; onDone: () => void };
-function BedMoment({ children }: BedMomentProps & { children: ReactNode }) {
-  return <>{children}</>;
-}
 
 export default function Night() {
   /* from SOS "Go to bed" (components/tools/scene.tsx), which has already put the phone to bed: at and gain say what it did */
@@ -97,16 +90,16 @@ export default function Night() {
       }
     />
   );
-  /* just put to bed here: the bed moment (WP8) */
+  /* just put to bed here: WP8's bed moment (the flame falls asleep, tonight's mark pops), then back to Today. Opened again later the
+     same night, the page itself shows the flame asleep. */
   if (!bed) return page;
   return (
     <BedMoment
       level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)}
       nights={bedNights(snap.days)}
       row={bedRow(snap.days, tk)}
-      line={say.doneSub}
-      onDone={() => router.back()}>
-      {page}
-    </BedMoment>
+      line={armed ? say.doneSub + ' ' + nightWaitLine(PULL_NIGHT_END) : say.doneSub}
+      onDone={() => router.back()}
+    />
   );
 }

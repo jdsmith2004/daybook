@@ -89,8 +89,8 @@ export function YourDay({
 }) {
   const c = useTheme();
   const st = snap.settings!;
-  const r = stopTiles(snap.days, st, tk, now, snap.journal);
   const account = useAccount();
+  const r = stopTiles(snap.days, st, tk, now, snap.journal, !!account);
   /* the stop that is next, as the card at the top opens it (a re-read in place of a lesson that waits behind an account) */
   const open = openTile(snap.days, st, tk, now, !!account);
   const changed = routineChanged(st, snap.days[tk]?.p);

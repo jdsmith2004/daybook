@@ -10,9 +10,8 @@
 
    Getting through a hard hour with no slip is recorded on that day (p.hw, the hour it started) as a calm move. It is
    never taken away, so "hard hours held" only ever goes up. */
-import { lessonOpen } from './accounts';
 import { addDays, blankP, diffDays, eventsOf, LESSONS } from './legacy/core.js';
-import { lessonNo, lessonStop, lessonWalk, reviewPick, type Lesson } from './lessons';
+import { lessonNo, lessonReread, lessonStop, lessonWalk, type Lesson } from './lessons';
 import { changeDay, withDay } from './mutate';
 import { talksOf } from './talk';
 import { toldOn, truthOn } from './truth';
@@ -179,12 +178,11 @@ export function riskDay(days: Days, st: Settings, k: DayKey, now: number): RiskD
     or a re-read when every lesson is finished or the next one waits behind an account (the same one Next up opens).
     Null once a lesson was finished or read again today. */
 export function riskLesson(days: Days, st: Settings, tk: DayKey, account = true): { L: Lesson; n: number; again: boolean } | null {
-  if (lessonStop(days, st, tk).kind === 'read') return null;
-  const w = lessonWalk(days, st);
-  const nl = w.next;
-  if (nl && lessonOpen(nl, w.done, account)) return { L: nl, n: lessonNo(nl, st), again: false };
-  const read = (LESSONS as Lesson[]).filter((L) => w.walked.has(L.id));
-  const R = account ? reviewPick(tk, st) : read[Math.abs(diffDays(tk, '2026-01-01')) % read.length];
+  const ls = lessonStop(days, st, tk, account);
+  if (ls.kind === 'read') return null;
+  if (ls.kind === 'next' && !ls.locked) return { L: ls.L, n: lessonNo(ls.L, st), again: false };
+  /* the hard hours are no time for a sign-up: a re-read of a finished lesson instead */
+  const R = ls.kind === 'review' ? ls.L : lessonReread(lessonWalk(days, st), tk, st, account);
   return { L: R, n: lessonNo(R, st), again: true };
 }
 

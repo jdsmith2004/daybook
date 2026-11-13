@@ -126,7 +126,7 @@ describe('the stop that is next, grown in place in Your day', () => {
     expect(t).toMatchObject({ k: 'lesson', cur: true, done: false, btn: 'Start', go: 'lesson', id: LESSONS[0].id });
     expect(calm({})).toMatchObject({ h: t.head, btn: t.btn, go: t.go, v: t.id, eb: t.eyebrow });
   });
-  it('without an account, a lesson that waits behind one becomes a re-read, in both places', () => {
+  it('without an account, a lesson that waits behind one says so, in both places, and is a re-read the day after a slip', () => {
     const free = lessonPath()
       .slice(0, LEARN_FREE)
       .map((L) => L.id);
@@ -136,9 +136,18 @@ describe('the stop that is next, grown in place in Your day', () => {
       changeDay(undefined, '2026-10-17', (x) => void (x.p = { ...blankP(), ls: free }), 1),
     );
     const t = openTile(done, st, tk, at(9), false)!;
-    expect(t).toMatchObject({ btn: 'Read it again', body: 'A quick re-read keeps one fresh.' });
-    expect(free).toContain(t.id);
-    expect(calm(done, false)).toMatchObject({ v: t.id, btn: 'Read it again' });
+    expect(t).toMatchObject({ locked: true, id: lessonPath()[LEARN_FREE].id, btn: 'Create an account or sign in' });
+    expect(t.body).toContain('The first 7 lessons are free');
+    expect(calm(done, false)).toMatchObject({ v: t.id, btn: t.btn });
+    /* the hours after a slip never ask for an account: a re-read of a free one */
+    const hard = withDay(
+      done,
+      tk,
+      changeDay(done[tk], tk, (x) => void (x.events = [{ id: 'e1', outcome: 'slipped', t: '07:00' } as never]), 2),
+    );
+    const r = openTile(hard, st, tk, at(9), false)!;
+    expect(r).toMatchObject({ btn: 'Read it again', body: 'A quick re-read keeps one fresh.' });
+    expect(free).toContain(r.id);
     expect(openTile(done, st, tk, at(9), true)).toMatchObject({ id: lessonPath()[LEARN_FREE].id, btn: 'Start' });
   });
   it('the check-in once the lesson is done, and nothing when no part of the day is on', () => {

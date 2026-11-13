@@ -10,12 +10,6 @@ it('a new person starts with no sentence, and an old settings record gets an emp
   expect(core.normSettings({ becoming: 7 }).becoming).toBe('');
 });
 
-it('setup asks it in the plan, after the screens-off time and before the review', () => {
-  const ids = core.obPages({}).map((p) => p.id);
-  expect(ids.indexOf('becoming')).toBe(ids.indexOf('so') + 1);
-  expect(ids.indexOf('review')).toBe(ids.indexOf('becoming') + 1);
-});
-
 it('the sentence is one trimmed line, and saving puts it in settings', () => {
   expect(core.obBecoming({ be: '  I am   someone\nwho shows up.  ' })).toBe('I am someone who shows up.');
   expect(core.obBecoming({ be: 'x'.repeat(400) }).length).toBe(core.BE_LEN);

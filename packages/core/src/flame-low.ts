@@ -178,6 +178,8 @@ export function lowBack(day: number, f: FireLow, before: LowStep): { t: string; 
 export const LOW_LEAD = 'This lights your fire again';
 /** said when today lit it again */
 export const RELIT = 'You lit your fire again';
+/** said when today fed a low fire part of the way back (under the true record, truth.ts) */
+export const FED = 'Your fire grows';
 
 /* ---------- the colors of a fire burning low ----------
    One map for every part of the drawing, so the fire, the body and the face dim together: each color drains toward a dark ash, the same

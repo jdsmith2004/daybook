@@ -6,6 +6,7 @@
 import {
   calNeighbors,
   daySummary,
+  tellNight,
   fmtClock,
   fmtDate,
   isKey,
@@ -40,6 +41,7 @@ const HEAD: Record<CalKind, { ic: string; tone: (c: Palette) => [string, string]
   logged: { ic: 'pencil', tone: (c) => [c.skySoft, c.skyText] },
   none: { ic: 'calendar', tone: (c) => [c.surface2, c.muted] },
   away: { ic: 'leaf', tone: (c) => [c.surface2, c.muted] },
+  untold: { ic: 'moon', tone: (c) => [c.surface2, c.muted] },
   before: { ic: 'calendar', tone: (c) => [c.surface2, c.muted] },
   ahead: { ic: 'calendar', tone: (c) => [c.surface2, c.muted] },
 };
@@ -56,6 +58,10 @@ export default function DaySheet() {
   const ci = snap.days[date]?.checkin;
   const editing = edit === date || !x.ci;
   const [bg, ink] = HEAD[x.kind].tone(c);
+  const tell = (n: 'free' | 'slip') => {
+    buzz(n === 'free' ? 'lit' : 'save');
+    update((s0) => (s0.settings ? { ...s0, days: tellNight(s0.days, s0.settings, date, n, tk, Date.now()) } : s0), { noWin: n === 'slip' });
+  };
   const go = (k: string | null) => {
     if (!k) return;
     buzz('tap');
@@ -88,6 +94,21 @@ export default function DaySheet() {
           {stat.length ? <Text style={[s.heroS, { color: ink }]}>{stat.join(' · ')}</Text> : null}
         </View>
       </View>
+
+      {/* a night nobody told Daybook about (core truth.ts): one tap tells it, and it counts from then on */}
+      {x.kind === 'untold' ? (
+        <View style={{ gap: 10 }}>
+          <T>How was that night? Tell me, and it counts.</T>
+          <View style={s.tell}>
+            <View style={{ flex: 1 }}>
+              <Button kind="warm" label="Free of it" onPress={() => tell('free')} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button kind="ghost" label="It happened" onPress={() => tell('slip')} />
+            </View>
+          </View>
+        </View>
+      ) : null}
 
       {/* what happened */}
       <SheetH title="What happened" />
@@ -233,6 +254,7 @@ function Bars({ ci }: { ci: Partial<Record<RateKey, number | null>> }) {
 }
 
 const s = StyleSheet.create({
+  tell: { flexDirection: 'row', gap: 10 },
   steps: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: -8 },
   step: { minHeight: 44, minWidth: 44, justifyContent: 'center' },
   stepT: { fontFamily: font.bodySemi, fontSize: 15 },

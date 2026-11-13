@@ -238,3 +238,28 @@ export const awayFromOf = (st: Settings | null): DayKey | null => {
   const v = st && (st as { awayFrom?: unknown }).awayFrom;
   return isKey(v) ? v : null;
 };
+
+/* ---------- the nights, as one mark each (the hero, Days and Sunday draw them the same way: the app's NightMarks) ---------- */
+export type NightMark = NightState | 'none';
+/** where the record starts: Day 1, or the start for someone only tracking */
+const recordFrom = (st: Settings): DayKey => (isKey(st.day1) ? (st.day1 as DayKey) : st.start);
+/** one mark per night from `from` to `to` (both included): free, a slip, not told, or none (before the record starts, or still to
+    come). Today is drawn as none: its night has not happened. */
+export function nightMarks(days: Days, st: Settings, from: DayKey, to: DayKey, tk: DayKey): NightMark[] {
+  const out: NightMark[] = [];
+  for (let k = from, i = 0; k <= to && i < 400; k = addDays(k, 1), i++)
+    out.push(k >= tk || k < recordFrom(st) || !dayKnownOrUntold(days, st, k, tk) ? 'none' : nightState(days, st, k, tk));
+  return out;
+}
+/* a day Daybook counts either way (a night not told is drawn; a day away and not answered is not) */
+const dayKnownOrUntold = (days: Days, st: Settings, k: DayKey, tk: DayKey) => dayKnown(days, st, k, tk) || dayUntold(days, st, k, tk);
+/** the last n nights before today, oldest first (the hero's marks) */
+export const lastNights = (days: Days, st: Settings, tk: DayKey, n = 7): NightMark[] => nightMarks(days, st, addDays(tk, -n), addDays(tk, -1), tk);
+/** the nights from `from` up to last night: how many were free, and how many were told at all ("Free 3 nights of 30. Told the
+    truth on 18.") */
+export function nightsSummary(days: Days, st: Settings, from: DayKey, tk: DayKey): { n: number; free: number; told: number; untold: number } {
+  const m = nightMarks(days, st, from, addDays(tk, -1), tk).filter((x) => x !== 'none');
+  const free = m.filter((x) => x === 'free').length;
+  const untold = m.filter((x) => x === 'untold').length;
+  return { n: m.length, free, told: m.length - untold, untold };
+}

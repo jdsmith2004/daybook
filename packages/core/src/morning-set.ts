@@ -162,6 +162,16 @@ export function answerNightBefore(days: Days, st: Settings, tk: DayKey, n: 'free
   });
 }
 
+/** any night told later, from its day's page on Days (C1: catching up is one tap): last night is this morning's answer, the night
+    before last the catch-up row, and an older night is kept as the catch-up answer on the day two after it (MorningSet.n2), which
+    earns no morning points, since no morning was set. It happened adds a slip with no time to that night, unless one is logged. */
+export function tellNight(days: Days, st: Settings, k: DayKey, n: 'free' | 'slip', tk: DayKey, now = Date.now()): Days {
+  if (k >= tk || k < st.start) return days;
+  if (k === addDays(tk, -1)) return answerNight(days, st, tk, n, now);
+  const on = addDays(k, 2);
+  return answerNightBefore(days, st, on, n, now);
+}
+
 /** "And this morning?" answered: kept on the morning, and also as the day's "How are you feeling today?" when that is not answered
     yet, so the day does not ask twice (Low is Low, Okay is Okay, Good is Good on its five steps). A second tap on the same answer clears it. */
 export function setMorningFeel(days: Days, tk: DayKey, f: 1 | 2 | 3 | null, now = Date.now()): Days {

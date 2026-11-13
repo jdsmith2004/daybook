@@ -9,6 +9,7 @@ import {
   addDays,
   fmtDate,
   freeList,
+  nightsSummary,
   REVIEW_QS,
   setDay1,
   storyDays,
@@ -35,6 +36,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
+import { NightKey, NightMarks } from '@/components/night-marks';
 import { Text } from '@/components/text';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -70,6 +72,10 @@ export function WeeksPane() {
   const last = done[done.length - 1];
   const kept = weeks.reduce((a, w) => a + w.noSlip, 0);
   const up = first && last && first !== last && last.noSlip > first.noSlip;
+  /* nights not told (core truth.ts): the line of days with no slip would read silence as free, so the weeks are drawn as nights,
+     each one a mark, with how many were free and how many were told at all */
+  const untold = weeks.some((w) => (w.untold || 0) > 0);
+  const told = untold ? nightsSummary(snap.days, st, addDays(weeks[0].sun, -6), tk) : null;
   return (
     <View style={{ gap: 24 }}>
       {due ? (
@@ -78,41 +84,53 @@ export function WeeksPane() {
           onPress={() => router.push({ pathname: '/review', params: { s: due.sun } })}
         />
       ) : null}
-      <View style={{ gap: 4 }}>
-        <T v="small" tone="muted">
-          Days with no slip, each week
-        </T>
-        {up ? (
-          <>
-            <Text style={[s.head, { color: c.ink }]} accessibilityLabel={`${first.noSlip} to ${last.noSlip}`}>
-              {first.noSlip} → {last.noSlip}
-            </Text>
-            <T tone="muted">From your first week to last week.</T>
-          </>
-        ) : (
-          <>
-            <Text style={[s.head, { color: c.ink }]}>{kept}</Text>
-            <T tone="muted">
-              {kept === 1 ? 'day' : 'days'} in {weeks.length} {weeks.length === 1 ? 'week' : 'weeks'}. They stay yours.
+      {told ? (
+        <View style={{ gap: 12 }}>
+          <T v="title">Nights, week by week</T>
+          <NightKey />
+          <T>
+            Free {told.free} {told.free === 1 ? 'night' : 'nights'} of {told.n}. Told the truth on {told.told}.
+          </T>
+        </View>
+      ) : (
+        <>
+          <View style={{ gap: 4 }}>
+            <T v="small" tone="muted">
+              Days with no slip, each week
             </T>
-          </>
-        )}
-      </View>
-      {done.length > 1 ? <WeeksLine weeks={done} /> : null}
+            {up ? (
+              <>
+                <Text style={[s.head, { color: c.ink }]} accessibilityLabel={`${first.noSlip} to ${last.noSlip}`}>
+                  {first.noSlip} → {last.noSlip}
+                </Text>
+                <T tone="muted">From your first week to last week.</T>
+              </>
+            ) : (
+              <>
+                <Text style={[s.head, { color: c.ink }]}>{kept}</Text>
+                <T tone="muted">
+                  {kept === 1 ? 'day' : 'days'} in {weeks.length} {weeks.length === 1 ? 'week' : 'weeks'}. They stay yours.
+                </T>
+              </>
+            )}
+          </View>
+          {done.length > 1 ? <WeeksLine weeks={done} /> : null}
+        </>
+      )}
       <FreeLine />
       <View>
         {[...weeks].reverse().map((w, i) => (
           <Pressable
             key={w.sun}
             accessibilityRole="button"
-            accessibilityLabel={`${name(w.sun)}: ${w.noSlip} of ${w.days} days with no slip. Open the week.`}
+            accessibilityLabel={`${name(w.sun)}: ${w.noSlip} of ${w.days} ${told ? 'nights free' : 'days with no slip'}. Open the week.`}
             onPress={() => router.push({ pathname: '/weekly/[sun]', params: { sun: w.sun } })}
             style={({ pressed }) => [s.row, i > 0 && { borderTopWidth: 1, borderTopColor: c.line }, { opacity: pressed ? 0.6 : 1 }]}>
             <View style={{ flex: 1, gap: 8 }}>
               <View style={s.between}>
                 <T v="label">{name(w.sun)}</T>
                 <T v="small" tone="muted">
-                  {w.sun === cur ? `${w.noSlip} of ${w.days} so far` : `${w.noSlip} of ${w.days} days`}
+                  {w.sun === cur ? `${w.noSlip} of ${w.days} so far` : `${w.noSlip} of ${w.days} ${told ? 'free' : 'days'}`}
                 </T>
               </View>
               <Strip ds={storyDays(snap.days, st, w.sun, tk)} />
@@ -306,23 +324,15 @@ function ScaleLine({
   );
 }
 
-/* a week's seven days as a thin strip: warm light no slip, calm violet a slip, an outline for a day still to come */
+/* a week's seven nights, one mark each (components/night-marks.tsx): warm light no slip, calm violet a slip, hollow and dashed a
+   night not told, a faint ring for a day still to come */
 function Strip({ ds }: { ds: StoryDay[] }) {
-  const c = useTheme();
-  const k = kit(c.scheme === 'dark', c.line);
   return (
-    <View style={s.strip}>
-      {ds.map((d) =>
-        d.state === 'clean' ? (
-          <Glow key={d.k} colors={RUN} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.seg} />
-        ) : (
-          <View
-            key={d.k}
-            style={[s.seg, { backgroundColor: d.state === 'slip' ? k.slip : 'transparent' }, d.state !== 'slip' && { borderWidth: 1.5, borderColor: k.faint }]}
-          />
-        ),
-      )}
-    </View>
+    <NightMarks
+      marks={ds.map((d) => (d.state === 'clean' ? 'free' : d.state === 'slip' ? 'slip' : d.state === 'untold' ? 'untold' : 'none'))}
+      size={16}
+      gap={8}
+    />
   );
 }
 

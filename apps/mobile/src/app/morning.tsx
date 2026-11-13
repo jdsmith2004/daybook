@@ -12,6 +12,9 @@
    middle, in its round sky. The answers and the main button sit low, by the thumb. The X skips it for today, which costs nothing. */
 import {
   answerNight,
+  answerNightBefore,
+  nightBeforeAsk,
+  nightBeforeDue,
   gameCompute,
   habitOf,
   futureAsk,
@@ -82,12 +85,16 @@ export default function Morning() {
       f: ms?.f ?? null,
       reasons: st ? morningReasons(snap.days, st, tk) : [],
       nt: st ? nightAtStart(st) : '22:30',
+      /* the night before last, when nobody told Daybook about it (core truth.ts): one quiet row to catch it up */
+      before: st ? nightBeforeDue(snap.days, st, tk) : null,
+      n2: ms?.n2 ?? null,
     };
   });
   const [step, setStep] = useState<Step>('night');
   const [dir, setDir] = useState<-1 | 0 | 1>(0);
   const [n, setN] = useState<'free' | 'slip' | null>(start.n);
   const [f, setF] = useState<1 | 2 | 3 | null>(start.f);
+  const [n2, setN2] = useState<'free' | 'slip' | null>(start.n2);
   const [r, setR] = useState<string>(start.reasons[0] || '');
   const [nt, setNt] = useState<Clock>(start.nt);
   const [said, setSaid] = useState<'free' | 'slip' | null>(null);
@@ -113,6 +120,7 @@ export default function Morning() {
       (s0) => {
         if (!s0.settings) return s0;
         let days = answerNight(s0.days, s0.settings, tk, n, t);
+        if (start.before && n2) days = answerNightBefore(days, s0.settings, tk, n2, t);
         days = setMorningFeel(days, tk, f, t);
         return { ...s0, days };
       },
@@ -242,6 +250,17 @@ export default function Morning() {
             <Choice label={W.free} on={n === 'free'} onPress={() => setN('free')} />
             <Choice label={W.slip} on={n === 'slip'} onPress={() => setN('slip')} />
           </View>
+          {n && start.before ? (
+            <Appear by={8} duration={240}>
+              <View style={s.feel} accessibilityRole="radiogroup" accessibilityLabel={nightBeforeAsk(start.before)}>
+                <Text style={s.feelL} numberOfLines={1} adjustsFontSizeToFit>
+                  {nightBeforeAsk(start.before)}
+                </Text>
+                <Pill label="Free" on={n2 === 'free'} onPress={() => setN2(n2 === 'free' ? null : 'free')} />
+                <Pill label="It happened" on={n2 === 'slip'} onPress={() => setN2(n2 === 'slip' ? null : 'slip')} />
+              </View>
+            </Appear>
+          ) : null}
           {n ? (
             <Appear by={8} duration={240}>
               <View style={s.feel} accessibilityRole="radiogroup" accessibilityLabel={W.feel}>

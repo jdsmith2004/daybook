@@ -29,7 +29,8 @@ export function Rate({ label, lo, hi, value, onChange }: { label: string; lo: st
     const v = Math.max(0, Math.min(10, Math.round((e.nativeEvent.locationX / w) * 10)));
     if (v !== value) {
       onChange(v);
-      buzz('tap');
+      /* like the Slider: a tap on the first value, then the selection click per step */
+      buzz(has ? 'tick' : 'tap');
     }
   };
   const pct = ((has ? value! : 5) / 10) * 100;
@@ -111,7 +112,10 @@ export function Pill({ label, on, onPress }: { label: string; on: boolean; onPre
     <Pressable
       accessibilityRole="radio"
       accessibilityState={{ checked: on }}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.pill, { backgroundColor: on ? c.accent : c.surface, borderColor: on ? c.accent : c.line, opacity: pressed ? 0.85 : 1 }]}>
       <Text style={[s.pillT, { color: on ? c.accentInk : c.ink }]}>{label}</Text>
     </Pressable>
@@ -144,7 +148,10 @@ export function Stepper({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={less}
-          onPress={() => onStep(-1)}
+          onPress={() => {
+            buzz('tick');
+            onStep(-1);
+          }}
           style={[s.sq, { borderColor: c.line, backgroundColor: c.surface }]}>
           <Text style={[s.sqT, { color: c.ink }]}>−</Text>
         </Pressable>
@@ -154,7 +161,10 @@ export function Stepper({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={more}
-          onPress={() => onStep(1)}
+          onPress={() => {
+            buzz('tick');
+            onStep(1);
+          }}
           style={[s.sq, { borderColor: c.line, backgroundColor: c.surface }]}>
           <Text style={[s.sqT, { color: c.ink }]}>+</Text>
         </Pressable>
@@ -170,7 +180,10 @@ export function Check({ label, why, on, onPress }: { label: string; why?: string
     <Pressable
       accessibilityRole="checkbox"
       accessibilityState={{ checked: on }}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.chk, { opacity: pressed ? 0.85 : 1 }]}>
       <View style={[s.box, { backgroundColor: on ? c.mint : 'transparent', borderColor: on ? c.mint : c.line }]}>
         {on ? <Icon name="check" size={16} color="#FFFFFF" /> : null}
@@ -219,7 +232,14 @@ export function Collapse({
   }, [open, reduce, turn]);
   return (
     <View style={[s.det, { backgroundColor: c.surface }, tone === 'now' && { borderWidth: 1.5, borderColor: c.accent }]}>
-      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={onToggle} style={s.sum}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => {
+          buzz('tap');
+          onToggle();
+        }}
+        style={s.sum}>
         {icon ? <Icon name={icon} size={22} color={iconInk || c.accentText} /> : null}
         <View style={{ flex: 1, gap: 1 }}>
           <T v="label">{title}</T>
@@ -314,7 +334,10 @@ export function Segments<K extends string>({ label, list, cur, onPick }: { label
             key={k}
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
-            onPress={() => onPick(k)}
+            onPress={() => {
+              if (!on) buzz('tap');
+              onPick(k);
+            }}
             style={[seg.b, on && { backgroundColor: c.surface }]}>
             {/* a tab name stays whole: it grows less with the phone's text size, and shrinks a little before it would break */}
             <Text

@@ -21,7 +21,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActionSheetIOS, ActivityIndicator, Linking, Pressable, StyleSheet, View } from 'react-native';
 
-import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { HelpLine } from '@/components/help-line';
 import { Dock, Finish } from '@/components/scene';
 import { closeSheet, SheetFrame } from '@/components/sheet';
@@ -150,7 +150,7 @@ export function PatternSheet() {
   if (won)
     return (
       <SheetFrame title={w.haveTitle}>
-        <Finish level={level} title={won === 'all' ? w.doneTitle : w.tipDoneTitle} text={won === 'all' ? w.doneLine : w.tipDoneLine} size={120} alive />
+        <Finish level={level} title={won === 'all' ? w.doneTitle : w.tipDoneTitle} text={won === 'all' ? w.doneLine : w.tipDoneLine} size={160} />
         <PerkLines list={won === 'all' ? PAT_PERKS : supPerks(false).map((p) => p.sub)} open />
         <Dock>
           <Button label={w.done} onPress={closeSheet} />
@@ -165,7 +165,7 @@ export function PatternSheet() {
     return (
       <SheetFrame title={w.haveTitle} sub={w.haveLine}>
         <View style={s.mid}>
-          <Flame level={level} size={160} alive />
+          <FlameMedallion level={level} size={160} />
           <PerkLines list={PAT_PERKS} open />
           <T v="small" tone="muted" style={s.c}>
             {monthlyOn
@@ -200,7 +200,7 @@ export function PatternSheet() {
       title={again ? (lifetime ? w.giveMore : w.goLifetime) : w.title}
       sub={again ? (monthlyOn && !lifetime ? w.goLifetimeLine : undefined) : line || w.line}>
       <View style={s.mid}>
-        <Flame level={level} size={again ? 160 : 96} alive />
+        <FlameMedallion level={level} size={again ? 160 : 120} />
         {again ? null : <PerkLines list={PAT_PERKS} />}
       </View>
       <Dock>

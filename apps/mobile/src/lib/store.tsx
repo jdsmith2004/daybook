@@ -48,6 +48,7 @@ import {
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useNow } from './now';
+import { setHapticsOn } from './feel';
 
 const P = 'daybook:';
 /** said when a change could not be written to the phone's storage */
@@ -355,6 +356,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (st && st.celebrate === false) show({ text: '+' + pts + ' point' + (pts === 1 ? '' : 's') + '. ' + (note || winWhy(by, quiet)) });
     else show({ pts, why: note || winWhy(by, quiet), quiet });
   };
+  /* the haptics switch (Settings, Appearance): every buzz in lib/feel reads it */
+  const hapticsOff = snap.settings?.haptics === false;
+  useEffect(() => setHapticsOn(!hapticsOff), [hapticsOff]);
   /* the first look after the app opens only takes note of what is already saved and seen */
   useEffect(() => {
     if (!ready) return;

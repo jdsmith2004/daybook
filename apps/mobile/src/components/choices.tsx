@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View, type TextInputProps } from 'react-native';
 import { Text, TextInput } from '@/components/text';
 
 import { Button, Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { font, useTheme, type Palette } from '@/lib/theme';
 
 export type OptTone = 'mint' | 'slip' | 'sun' | 'accent';
@@ -40,7 +41,10 @@ export function BigOption({
     <Pressable
       accessibilityRole="button"
       accessibilityState={selected == null ? undefined : { selected }}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [
         s.opt,
         {
@@ -89,7 +93,10 @@ export function Tiles({
             key={id}
             accessibilityRole="button"
             accessibilityState={{ selected: sel }}
-            onPress={() => onPick(id)}
+            onPress={() => {
+              buzz('tap');
+              onPick(id);
+            }}
             style={({ pressed }) => [
               s.tile,
               {
@@ -114,7 +121,10 @@ export function AddTile({ label, icon = 'plus', onPress, block }: { label: strin
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.tile, s.add, block && s.block, { borderColor: c.line, opacity: pressed ? 0.8 : 1 }]}>
       <Icon name={icon} size={18} color={c.accentText} />
       <Text style={[s.tileT, { color: c.accentText }]}>{label}</Text>

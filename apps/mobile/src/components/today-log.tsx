@@ -89,7 +89,10 @@ function CareButton({
       ref={ref}
       accessibilityRole="button"
       accessibilityLabel={label}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.log, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
       <Icon name={icon} size={20} color={c.accentText} />
       <View style={{ flexShrink: 1 }}>
@@ -104,7 +107,8 @@ function CareButton({
   );
 }
 
-/* a plan talked through waits here, quietly, under SOS, until its moment has passed (core talkPlanNow): a changed plan, or
+/* a plan talked through waits here, quietly, at the top of the day just under the sky (one line, not a card: it is part of the
+   day, the owner, November 13, 2026: "i don't like my plan being here maybe move it up"), until its moment has passed (core talkPlanNow): a changed plan, or
    a decide-later until its time (which opens the choice when tapped). Talk it through says "It waits on Today", and this
    is where. A plan for next time made after a slip shows here at its hour: from an hour before its moment until the
    moment ends ("Your plan for tonight"). A plan that names one of Daybook's own tools opens it with a tap. */
@@ -124,7 +128,7 @@ export function WaitingPlan({ snap, tk, now }: { snap: Snapshot; tk: string; now
   );
   if (w.due !== 'waiting' && !w.door)
     return (
-      <View style={[s.plan, { backgroundColor: c.surface }]} accessibilityLabel={w.head + '. ' + w.line}>
+      <View style={s.plan} accessibilityLabel={w.head + '. ' + w.line}>
         {body}
       </View>
     );
@@ -137,7 +141,7 @@ export function WaitingPlan({ snap, tk, now }: { snap: Snapshot; tk: string; now
         if (w.door) openCare(w.door);
         else router.push(('/talk?decide=' + w.id) as '/talk');
       }}
-      style={({ pressed }) => [s.plan, { backgroundColor: c.surface, opacity: pressed ? 0.8 : 1 }]}>
+      style={({ pressed }) => [s.plan, { opacity: pressed ? 0.7 : 1 }]}>
       {body}
     </Pressable>
   );
@@ -155,7 +159,10 @@ export function PauseBanner() {
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={() => router.push({ pathname: '/tool/[id]', params: { id: 'pause' } })}
+      onPress={() => {
+        buzz('tap');
+        router.push({ pathname: '/tool/[id]', params: { id: 'pause' } });
+      }}
       style={[s.banner, { backgroundColor: done ? c.mintSoft : c.violetSoft }]}>
       <T v="label" style={{ flex: 1, color: done ? c.mintText : c.violetText }}>
         {done
@@ -180,7 +187,7 @@ const s = StyleSheet.create({
   log: { flex: 1, flexDirection: 'row', gap: 10, alignItems: 'center', minHeight: 60, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 20 },
   logT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   logS: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
-  plan: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 20 },
+  plan: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingHorizontal: 8, paddingVertical: 2 },
   planH: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   planT: { fontFamily: font.body, fontSize: 15, lineHeight: 20 },
   banner: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 14, paddingRight: 10, borderRadius: 16 },

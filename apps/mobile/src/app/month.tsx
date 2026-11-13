@@ -5,7 +5,7 @@ import { gameCompute, monthNext, monthRead, PAT_WORDS } from '@daybook/core';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { Flame } from '@/components/flame';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { Dock } from '@/components/scene';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { useOpenMonths } from '@/components/support';
@@ -26,7 +26,7 @@ export default function Month() {
   return (
     <SheetFrame title={r ? w.in + r.name : w.title}>
       <View style={s.top}>
-        <Flame level={level} size={110} alive />
+        <FlameMedallion level={level} size={140} />
         <T v="title" style={s.c} accessibilityRole="header">
           {r ? r.head : w.waiting + monthNext(tk) + w.waitingEnd}
         </T>

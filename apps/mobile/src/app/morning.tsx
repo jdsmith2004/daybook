@@ -16,6 +16,7 @@ import {
   answerNight,
   gameCompute,
   habitOf,
+  heroNumber,
   lastNightSlip,
   rkOpenFor,
   lastNightStart,
@@ -112,6 +113,8 @@ export default function Morning() {
   /* a tap is the answer, kept at once. Earned as usual, and nothing is said about points here (noWin) */
   const answer = (v: 'free' | 'slip') => {
     if (!st || leaving.current) return;
+    /* the count as it stood before the night is told, for the lighting (WP8) */
+    const before = v === 'free' && n !== 'free' ? heroNumber(snap.days, st, tk, now)?.n : undefined;
     const t = Date.now();
     update(
       (s0) => {
@@ -124,6 +127,9 @@ export default function Morning() {
     );
     setN(v);
     buzz(v === 'free' ? 'lit' : 'save');
+    /* TODO on the rebase onto WP8 (claude/celebrations-941c95): a free night lights the flame over the morning, with the count from
+       before the answer so it turns over: router.push({ pathname: '/ignite', params: before ? { from: before } : {} }) */
+    void before;
   };
   const set = () => {
     if (!st || leaving.current || !n) return;

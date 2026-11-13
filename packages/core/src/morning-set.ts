@@ -327,5 +327,5 @@ export const morningHello = (now: number): string => MORNING_WORDS.title + ' · 
     from then (the feeds wait all day, so they are not the night's); without it, the time the phone goes down, which is the
     person's own plan. The night wait is only for porn, so any other habit keeps the plan's words. */
 export function tonightLine(o: { waits: boolean; habit: 'porn' | 'alcohol' | 'gambling' | 'other' }): string {
-  return o.waits && o.habit === 'porn' ? 'Adult sites wait from' : 'Phone down tonight at';
+  return o.waits && o.habit === 'porn' ? 'Adult sites wait from' : 'Phone down at';
 }

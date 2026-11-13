@@ -10,7 +10,14 @@ import { chromium, type Page } from 'playwright-core';
 const [dist, out] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
 const version: string = JSON.parse(readFileSync(join(import.meta.dirname, '../apps/mobile/app.json'), 'utf8')).expo.version;
-const TYPES: Record<string, string> = { '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.png': 'image/png', '.ttf': 'font/ttf', '.json': 'application/json' };
+const TYPES: Record<string, string> = {
+  '.js': 'text/javascript',
+  '.html': 'text/html',
+  '.css': 'text/css',
+  '.png': 'image/png',
+  '.ttf': 'font/ttf',
+  '.json': 'application/json',
+};
 const server = createServer((q, r) => {
   let p = join(dist, decodeURIComponent((q.url || '/').split('?')[0]));
   if (!existsSync(p) || statSync(p).isDirectory()) p = existsSync(p + '.html') ? p + '.html' : join(dist, 'index.html');
@@ -19,7 +26,10 @@ const server = createServer((q, r) => {
 }).listen(0);
 const port = (server.address() as { port: number }).port;
 const base = process.env.PLAYWRIGHT_BROWSERS_PATH || join(process.env.HOME!, 'Library/Caches/ms-playwright');
-const dir = readdirSync(base).filter((d) => /^chromium-\d+$/.test(d)).sort().pop()!;
+const dir = readdirSync(base)
+  .filter((d) => /^chromium-\d+$/.test(d))
+  .sort()
+  .pop()!;
 const exe = ['chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing', 'chrome-mac/Chromium.app/Contents/MacOS/Chromium']
   .map((p) => join(base, dir, p))
   .find(existsSync);
@@ -31,6 +41,7 @@ const addDays = (k: string, n: number) => {
   return d.toISOString().slice(0, 10);
 };
 const TODAY = '2026-11-12';
+const at = (k: string, hm: string) => new Date(`${+hm.slice(0, 2) < 4 ? addDays(k, 1) : k}T${hm}:00`);
 type Seed = Record<string, string>;
 function person(o: { slipLastNight?: string; faith?: string; safe?: string } = {}): Seed {
   const s: Seed = {
@@ -54,17 +65,25 @@ function person(o: { slipLastNight?: string; faith?: string; safe?: string } = {
       k === addDays(TODAY, -1) && o.slipLastNight
         ? [{ id: 'q1', time: o.slipLastNight, outcome: 'slipped', trigger: null, paused: null, did: null, recovered: false, note: '' }]
         : [];
-    s['daybook:days/' + k] = JSON.stringify({ d: k, events, checkin: null, p: { w: [], wd: false, r: false, c: 0, m: false, tl: [], po: '22:40', ls: [], lv: [], ov: {}, o: 1 }, u: 1 });
+    /* a check-in on every day, so the app keeps the start date (core startFromLog), as the stories do */
+    const checkin = { m: 6, c: 6, e: 6, s: 4, h: 7, so: 'Y', ro: null, n: '', done: true, at: +at(k, '21:30') };
+    s['daybook:days/' + k] = JSON.stringify({
+      d: k,
+      events,
+      checkin,
+      p: { w: [], wd: false, r: false, c: 0, m: false, tl: [], po: '22:40', ls: [], lv: [], ov: {}, o: 1 },
+      u: 1,
+    });
   }
   return s;
 }
-const at = (k: string, hm: string) => new Date(`${+hm.slice(0, 2) < 4 ? addDays(k, 1) : k}T${hm}:00`);
 async function settle(page: Page, ms = 2500) {
   await page.clock.runFor(ms);
   await page.waitForTimeout(600);
 }
 async function tap(page: Page, words: string) {
-  const b = page.getByRole('button', { name: words }).or(page.getByRole('radio', { name: words })).or(page.getByRole('link', { name: words }));
+  const o = { name: words, exact: true };
+  const b = page.getByRole('button', o).or(page.getByRole('radio', o)).or(page.getByRole('link', o));
   await b.first().evaluate((el) => (el as HTMLElement).click(), null, { timeout: 5000 });
   await settle(page, 1500);
 }
@@ -74,7 +93,13 @@ async function shot(page: Page, name: string) {
 }
 
 async function walk(name: string, seed: Seed, steps: (page: Page) => Promise<void>, w = 390, h = 844) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, timezoneId: 'America/Chicago', locale: 'en-US', reducedMotion: 'reduce' });
+  const ctx = await browser.newContext({
+    viewport: { width: w, height: h },
+    deviceScaleFactor: 2,
+    timezoneId: 'America/Chicago',
+    locale: 'en-US',
+    reducedMotion: 'reduce',
+  });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => console.log(name, 'PAGE ERROR', String(e).split('\n')[0]));
   await page.clock.install({ time: at(TODAY, '07:45') });
@@ -98,34 +123,30 @@ async function openAt(page: Page, hm: string, path = '/') {
 }
 
 /* a good day: the morning, Free of it, Set tonight; Today at noon; Today at 10:45 PM; Good night; Today after */
-await walk(
-  'good',
-  person({ safe: 'Dana' }),
-  async (page) => {
-    await openAt(page, '07:45');
-    await shot(page, 'good-1-morning');
-    await tap(page, 'Free of it');
-    await shot(page, 'good-2-told');
-    await tap(page, 'Set tonight');
-    await shot(page, 'good-3-after-set');
-    await openAt(page, '13:00');
-    await shot(page, 'good-4-today-noon');
-    await page.mouse.wheel(0, 700);
-    await settle(page, 800);
-    await shot(page, 'good-4b-today-noon-scrolled');
-    await openAt(page, '18:30');
-    await shot(page, 'good-5-today-dusk');
-    await openAt(page, '22:45');
-    await shot(page, 'good-6-today-night');
-    await tap(page, 'Start: Phone to bed');
-    await shot(page, 'good-7-goodnight');
-    await tap(page, 'Good night');
-    await settle(page, 4000);
-    await shot(page, 'good-8-asleep');
-    await openAt(page, '23:30');
-    await shot(page, 'good-9-today-after-bed');
-  },
-);
+await walk('good', person({ safe: 'Dana' }), async (page) => {
+  await openAt(page, '07:45');
+  await shot(page, 'good-1-morning');
+  await tap(page, 'Free of it');
+  await shot(page, 'good-2-told');
+  await tap(page, 'Set tonight');
+  await shot(page, 'good-3-after-set');
+  await openAt(page, '13:00');
+  await shot(page, 'good-4-today-noon');
+  await page.mouse.wheel(0, 700);
+  await settle(page, 800);
+  await shot(page, 'good-4b-today-noon-scrolled');
+  await openAt(page, '18:30');
+  await shot(page, 'good-5-today-dusk');
+  await openAt(page, '22:45');
+  await shot(page, 'good-6-today-night');
+  await tap(page, 'Start: Phone to bed');
+  await shot(page, 'good-7-goodnight');
+  await tap(page, 'Good night');
+  await settle(page, 4000);
+  await shot(page, 'good-8-asleep');
+  await openAt(page, '23:30');
+  await shot(page, 'good-9-today-after-bed');
+});
 /* a bad day: It happened, and the quiet way to Rekindle */
 await walk('bad', person(), async (page) => {
   await openAt(page, '08:10');
@@ -138,6 +159,8 @@ await walk('bad', person(), async (page) => {
 await walk('logged', person({ slipLastNight: '23:10', faith: 'some' }), async (page) => {
   await openAt(page, '08:00');
   await shot(page, 'logged-1-morning');
+  await settle(page, 8000);
+  await shot(page, 'logged-1b-morning-later');
   await openAt(page, '22:40', '/night');
   await shot(page, 'logged-2-goodnight-faith');
 });

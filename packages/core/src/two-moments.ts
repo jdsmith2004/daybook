@@ -63,9 +63,9 @@ export const putToBed = (days: Days, tk: DayKey): boolean => !!days[tk]?.p?.po;
 /** "9 nights put to bed": every night the phone went to bed, ever. It only grows. */
 export const bedNights = (days: Days): number => phoneNights(days);
 
-/** the words on Good night (mockup m2). `wait` is the morning time the night's waits hold until, when Screen Time armed them; the
-    line under the title says only what is true. After it: the nights so far, and the person's own words. */
-export function goodNightWords(o: { days: Days; st: Settings; tk: DayKey; wait?: string | null; faith?: string | null }): {
+/** the words on Good night (mockup m2): the title and line before, then the nights so far and the person's own words. What Screen Time
+    armed is said apart, and only once it is true (nightWaitLine). */
+export function goodNightWords(o: { days: Days; st: Settings; tk: DayKey; faith?: string | null }): {
   title: string;
   sub: string;
   doneTitle: string;
@@ -77,7 +77,7 @@ export function goodNightWords(o: { days: Days; st: Settings; tk: DayKey; wait?:
   const own = String(o.st.becoming || '').trim();
   return {
     title: 'Phone to bed.',
-    sub: o.wait ? `Feeds and adult sites wait until ${fmtClock(o.wait)}.` : 'Phone on its charger, away from your bed.',
+    sub: 'Phone on its charger, away from your bed.',
     doneTitle: 'Good night.',
     doneSub: slipped
       ? 'You came back to this tonight. That is the part that lasts.'
@@ -86,6 +86,21 @@ export function goodNightWords(o: { days: Days; st: Settings; tk: DayKey; wait?:
         : `${n} nights put to bed. This is the part that lasts.`,
     own: (o.faith || '').trim() || own,
   };
+}
+
+/** what Good night armed, once Screen Time said it is on: only adult sites wait for the night (the feeds' short wait runs all day
+    already), and only for the porn habit, since the filter runs only then (WP2, lib/pull.ts pullArmNight) */
+export const nightWaitLine = (until: Clock): string => `Adult sites wait until ${fmtClock(until)}.`;
+
+/** the last seven nights for the bed moment (WP8's BedMoment), oldest first and tonight last: 'free' when the phone went to bed, 'none'
+    when it did not, 'ahead' for a night not come yet. d is the day's first letter. */
+export function bedRow(days: Days, tk: DayKey): { k: DayKey; d: string; m: 'free' | 'none' | 'ahead' }[] {
+  const out: { k: DayKey; d: string; m: 'free' | 'none' | 'ahead' }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const k = addDays(tk, -i);
+    out.push({ k, d: new Date(k + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'narrow' }), m: putToBed(days, k) ? 'free' : 'none' });
+  }
+  return out;
 }
 
 /* ---------- one person (WP7's first rung, D6 (a)) ---------- */

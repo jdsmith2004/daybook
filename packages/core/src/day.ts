@@ -414,6 +414,8 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number, j
       ic: 'moon',
       /* the day's second moment (two-moments.ts): the phone goes to bed, and the night's waits start */
       title: 'Good night',
+      /* it opens at tonight's time (two-moments.ts afterNightHour), not the old wind-down hour before screens off */
+      right: s.done ? '' : s.state === 'now' || s.state === 'due' ? status : 'From ' + fmtClock(tonightOf(days, st, tk).at),
       line: s.done ? (p && p.po ? 'Phone to bed at ' + fmtClock(p.po) : 'Phone to bed') : 'Phone to bed at ' + fmtClock(tonightOf(days, st, tk).at),
       head: 'Phone to bed',
       body: 'One tap, and the flame sleeps.',
@@ -441,7 +443,10 @@ export function stopTiles(days: Days, st: Settings, tk: DayKey, nowMs: number, j
 export function lineOrder(tiles: StopTile[], big: string | null): StopTile[] {
   const card = tiles.find((t) => t.k === big);
   if (!card) return tiles;
-  return [...tiles.filter((t) => t.done && t !== card), card, ...tiles.filter((t) => !t.done && t !== card)];
+  /* the morning is the day's first moment, so it stays first, done or not (WP5) */
+  const first = tiles.filter((t) => t.k === 'morning' && t !== card);
+  const rest = tiles.filter((t) => t.k !== 'morning' && t !== card);
+  return [...first, ...rest.filter((t) => t.done), card, ...rest.filter((t) => !t.done)];
 }
 
 /* ---------- the wind-down ---------- */

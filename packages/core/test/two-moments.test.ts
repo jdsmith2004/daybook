@@ -9,6 +9,7 @@ import { addEvent } from '../src/mutate';
 import {
   afterNightHour,
   bedNights,
+  bedRow,
   dayFeelOn,
   faithOn,
   finishLine,
@@ -16,6 +17,7 @@ import {
   goodNightText,
   goodNightWords,
   morningReply,
+  nightWaitLine,
   skyPhase,
 } from '../src/two-moments';
 import type { Days } from '../src/types';
@@ -87,9 +89,16 @@ describe('Good night', () => {
     expect(bedNights(d)).toBe(2);
     expect(goodNightWords({ days: d, st, tk }).doneSub).toBe('2 nights put to bed. This is the part that lasts.');
   });
-  it('says the waits only when they were armed', () => {
-    expect(goodNightWords({ days: {}, st, tk, wait: '06:30' }).sub).toBe('Feeds and adult sites wait until 6:30 AM.');
+  it('says only adult sites wait, and only apart from the words', () => {
+    expect(nightWaitLine('06:00')).toBe('Adult sites wait until 6:00 AM.');
     expect(goodNightWords({ days: {}, st, tk }).sub).toBe('Phone on its charger, away from your bed.');
+  });
+  it('the bed moment’s row: seven nights, tonight last', () => {
+    const d = phoneAway({}, tk, '22:40', 1, st);
+    const row = bedRow(d, tk);
+    expect(row).toHaveLength(7);
+    expect(row[6]).toEqual({ k: tk, d: 'T', m: 'free' });
+    expect(row[5].m).toBe('none');
   });
   it('after a slip, it says they came back', () => {
     const d = addEvent({}, tk, 'slipped', '20:00', {}, 1).days;

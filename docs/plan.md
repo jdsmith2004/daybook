@@ -205,7 +205,7 @@ The morning self's choices become the night's defenses. Built on the Screen Time
 Steps 1 and 2 are built (November 12, 2026, the owner saw it on the simulator): core `morning-set.ts`, app `app/morning.tsx`. The hooks the
 other parts use (tonight's time and reason, mornings set, free nights, last night's slip) are listed at the top of `morning-set.ts`.
 
-Step 3 is built on `claude/night-wait` (November 12, 2026), compiled for the simulator with `DAYBOOK_PULL=1`, not merged: it waits for
+Step 3 is built on `claude/night-wait` (November 12, 2026), compiled for the simulator with `DAYBOOK_PULL=1`, now on main. It waits for
 the owner's iPhone, on a TestFlight build (the long wait's relock, thread 807934). Decided in building it: the night ends at 6 AM; a
 looser choice made from 6 AM to 2 PM works at once (the morning self), any other time it waits for 6 AM; the feeds' all-day wait
 replaces the old pause at 30 minutes in the hard hours; the long wait starts from More, Screen Time, in the night, keeps counting if
@@ -237,7 +237,7 @@ the hooks (`pullNights`, `pullNightHeld` for step 4) are in `night-wait-shape.md
 Each is built on its branch, looked at on the web and the simulator (Screen Time on the owner's iPhone), and shown to the owner before it
 is merged. The owner is the first user: the right test is the owner using it for two weeks and saying whether the nights changed.
 
-## Becoming free: the whole app around one change of identity (the owner, November 11, 2026; approved November 11, 2026, being built)
+## Becoming free: the whole app around one change of identity (the owner, November 11, 2026; approved November 11, 2026, built and on main)
 
 The owner asked for one plan that judges every moment by one question: does this help the person see themselves as someone who is free of
 this, for good? This is the plan. It was made from the real app (`npm run journey`, November 11), the code (every notification, Live
@@ -566,7 +566,7 @@ Branch `claude/frosty-mclean-029784`. Effort: high (sync can lose what a person 
 - **Follow-up:** CloudFront's rule that answers 403 and 404 with the app's page also covers `/sync`; the app now refuses
   such an answer, but the rule itself could be limited to the web app.
 
-### Measuring the change: #19, #20, #22, #24 (built November 12, 2026 on `claude/recursing-mahavira-156b04`, not merged)
+### Measuring the change: #19, #20, #22, #24 (built November 12, 2026 on `claude/recursing-mahavira-156b04`, on main)
 
 Effort: high (analytics and privacy). For the person: nothing on screen changes except Rekindle's first line for half the
 phones in the test. For Daybook: one weekly read of whether people are becoming free, where the way in loses them, and whether
@@ -917,9 +917,9 @@ Core `unlock.ts` decides, `app/unlock.tsx` shows it, and the memory is on this d
 - **The first Sunday review.** The first one due is its own Sunday card marked "Unlocked", opening a page that says what it is
   ("what helped, what got you, and one small goal for the next"), then **Start my review**. Later Sundays are as before.
 - Each has its own sky (the journal night, Planning a slip? violet, the safe person coral, Reached out mint, the review sun).
-  Pictures: `docs/screen-time/unlock-*.png`. Built November 9, 2026, all on `claude/screen-time-f8b40b`, not merged.
+  Pictures: `docs/screen-time/unlock-*.png`. Built November 9, 2026, all on `claude/screen-time-f8b40b`, now on main.
 
-## Screen Time: the app that pulls you in (the owner, November 8, 2026; approved November 9, 2026; being built on `claude/screen-time-f8b40b`)
+## Screen Time: the app that pulls you in (the owner, November 8, 2026; approved November 9, 2026; built and on main from `claude/screen-time-f8b40b`)
 
 **The owner's answers (November 9, 2026).**
 
@@ -1165,7 +1165,7 @@ its questions; after that the workflow can do it. The older steps below are kept
 3. Keep the confirmation. No answer in about two weeks: open a Developer Support case (Entitlements) with the request details.
 4. When approved, tell Claude: it turns on Family Controls (Distribution) for each ID, and EAS rebuilds the profiles.
 
-## It is written: a faith move in SOS, from the owner's bishop (the owner, November 8, 2026: "Let's do the Matthew 4 through 11"; built on `written-sos` with the recommended answers, not merged until the owner has seen it on the simulator)
+## It is written: a faith move in SOS, from the owner's bishop (the owner, November 8, 2026: "Let's do the Matthew 4 through 11"; built on `written-sos` with the recommended answers, on main)
 
 The bishop's note said "Matthew 1-11": Matthew 4:1-11, where Jesus is tempted three times in the wilderness and answers each
 time with "It is written" (Deuteronomy 8:3, 6:16 and 6:13). The owner's sketch: "Are you facing a temptation?", then "No,
@@ -1498,7 +1498,7 @@ Does it help Daybook earn or grow: it gives a reason to come back daily, which i
 
 Merged November 9, 2026, after the owner looked on the simulator. Left for later: the widget. The dimming on the Screen Time wait screen is built on `claude/screen-time-f8b40b`.
 
-## The editor's pass: the whole journey as one app (November 3, 2026; built on `claude/editor-pass-f4b474`, not merged)
+## The editor's pass: the whole journey as one app (November 3, 2026; built on `claude/editor-pass-f4b474`, on main)
 
 Today, Pattern, Days, Weeks and the lessons were each redesigned alone this week. This pass looked at them together. The tool for it stays:
 `npm run journey` takes a picture of every main screen of a seeded three-week person, light and dark, and docs/craft-checklist.md
@@ -1632,7 +1632,7 @@ one quick choice, so the card fills for people with no watch too.
 
 ### The steps, with the effort each needs
 
-**Status (November 9, 2026):** every step is built on `claude/health-sync-710277`, not merged until the owner has seen it.
+**Status (November 9, 2026):** every step is built on `claude/health-sync-710277`, on main.
 Seen on the simulator (a release build with a made-up log): Apple's sheet asks for Sleep only, read only, with Daybook's
 words; Settings shows "Apple Health · On · 61 nights of sleep"; the hard-days card draws two moons (7.4 h before days with no
 slip, 5.7 h before slip days) with the nights counted under them. Not checked against nights a real watch recorded, and the
@@ -1683,7 +1683,7 @@ only with the next App Store build.
 
 Effort: high (data and privacy) for the counts and the send; medium for the report and the words.
 
-## When it keeps coming: a companion for the whole battle, hours or days (the owner, November 3, 2026; approved, being built on `keeps-coming`)
+## When it keeps coming: a companion for the whole battle, hours or days (the owner, November 3, 2026; approved, built and on main from `keeps-coming`)
 
 **The ask, in the owner's words.** After a slip: "My emotions are going crazy, my heart's pumping, I'm charged up, my body's
 like we need dopamine. I lasted about 3 hours and then I broke. That's my main problem with apps: at the end of the day, they
@@ -1905,7 +1905,7 @@ Screens: docs/keeps-review/1-trail.png (the world), 2-screens.png (Where is it n
 walk out, Preview's picture), 3-screens.png (Case's door and key, Steps' side path with the timer, Home, the lock-screen note,
 whose buttons are now Not today, Show me where I am, Not before, and Leave me be today).
 
-### Part 1, built on `keeps-coming` (November 3, 2026; not merged until the owner has seen it on the simulator)
+### Part 1, built on `keeps-coming` (November 3, 2026; on main)
 
 - Core `trail.ts`: the five places, each drill in three lengths, Drift's four lights and how to fill each, the lines the
   permission voice may say next with an answer, the person's own picture (Play it forward), key (note, reason, or who
@@ -1948,7 +1948,7 @@ whose buttons are now Not today, Show me where I am, Not before, and Leave me be
   SOS under it. Tired in the day is not sent to bed, and no cue asks a person to put away the phone the guide is on. What is
   written stays on the screen only; saving it to the log for the pattern pages is a later choice (high effort).
 
-## The trail, fifth design: Walk it through, then Look back (the owner, November 4, 2026; Walk it through built on `keeps-coming`, not merged)
+## The trail, fifth design: Walk it through, then Look back (the owner, November 4, 2026; Walk it through built on `keeps-coming`, on main)
 
 The ask: "I want it to actually teach, walk me through the steps, the science, what's going on … interactive, challenge me to
 write and think and explain"; a blend of a faith-based attack analysis (God, the attack has a pattern and science behind it,
@@ -2004,7 +2004,7 @@ person's answer at every place. Checked on the web end to end, and on a release 
 morning look back (high, done); Look back after a slip, linked from Already happened, writing the chain and the next if-then
 (high, next); the owner's look on the simulator before merging.
 
-## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, not merged)
+## Haptics: the breath by touch, and the moments still missing one (the owner, November 2, 2026; built on `haptics`, on main)
 
 The ask: make the phone guide the breath by touch, so a person could follow it with eyes closed, then find where else a haptic
 would make a moment feel finished. Effort: medium (screens and small rules; nothing touches what a person earned).
@@ -2192,7 +2192,7 @@ The owner: "our goals and plan screen i don't like i think it needs a whole sess
 3. Moves: Learned to Learn and own answers to Settings, with every old link (`pane`, `sub`, `to`, `fresh`, `add`) still landing in the right place (medium).
 4. Check on the web and the iOS simulator in light, dark, by day and night, Reduce Motion and large text; craft checklist on pictures; a release build for the owner (medium).
 
-## Today under Your day (the owner, November 2, 2026; built on `claude/today-below`, not merged)
+## Today under Your day (the owner, November 2, 2026; built on `claude/today-below`, on main)
 
 The owner: the top of Today is fine, and what goes under it must be really useful, not extra space. After rounds of mockups (on
 `claude/gifted-chaum-b1e538`, docs/today-review there), the owner picked all three of these, then the Tonight look "hours inside the
@@ -2330,7 +2330,7 @@ setup now share `lesson-parts`. In order of how much it shows:
 
 **The ask, close to the owner's words:** "I really want these lessons to actually teach people how to quit." The review question comes out: "It's like fishing for an answer." The lessons' own questions "could definitely use some work." The look stays: "I really love it." "Maybe just make sure the flame matches the level they're on, only if that looks good." "Make sure that we have a ton." "I just want to integrate God more. I really like the 12-step program because it just focuses. You genuinely have to do all 12 of these steps." "We cannot make the app more complicated." "I don't want it to just be lessons for the sake of lessons."
 
-**Where it is:** research and this plan are done. The full research, with sources and how strong each one is, is in `docs/lessons-research/`. The review question removal and one flame fix are on branch `lessons-no-review`, not merged. A release build of it is on the iPhone 16 Pro simulator, waiting for the owner to look. Nothing else is built. The owner answered five questions on November 2, 2026: God goes deep for those who choose it, the God lessons follow the owner's own faith as a Latter-day Saint, other Christians get a Bible-only version, the path never locks on a deed but asks once more, and the lessons move to the twelve steps. What the Church teaches, its recovery program, what may be quoted and the research on Latter-day Saints are in `docs/lessons-research/latter-day-saint.md`. Question 5 is below, and step 7 waits on it. The high steps, 3 (the path) and 4 (the deeds), are built on branch `lessons-steps`, which sits on top of `lessons-no-review`, not merged; a release build is on the iPhone 16 Pro simulator for the owner to see. A preview of the question rewrite is below, before the steps.
+**Where it is:** research and this plan are done. The full research, with sources and how strong each one is, is in `docs/lessons-research/`. The review question removal and one flame fix are on branch `lessons-no-review`, on main. A release build of it is on the iPhone 16 Pro simulator, waiting for the owner to look. Nothing else is built. The owner answered five questions on November 2, 2026: God goes deep for those who choose it, the God lessons follow the owner's own faith as a Latter-day Saint, other Christians get a Bible-only version, the path never locks on a deed but asks once more, and the lessons move to the twelve steps. What the Church teaches, its recovery program, what may be quoted and the research on Latter-day Saints are in `docs/lessons-research/latter-day-saint.md`. Question 5 is below, and step 7 waits on it. The high steps, 3 (the path) and 4 (the deeds), are built on branch `lessons-steps`, which sits on top of `lessons-no-review`, on main; a release build is on the iPhone 16 Pro simulator for the owner to see. A preview of the question rewrite is below, before the steps.
 
 ### The honest read of the 49 lessons
 
@@ -2541,11 +2541,11 @@ The Bible-only version names Hebrews 4:15 instead of Alma.
 
 Each merges only after the owner has seen it on the simulator, as `CLAUDE.md` says for a rebuild.
 
-1. **Medium, built, not merged.** The review question comes out of the start of a lesson and the welcome back. The Torch's handle and the Beacon's tower no longer run through the words on the Done card. The recall words stay in the lesson data for now: some are the best scenarios to reuse in step 2, which then removes them. Branch `lessons-no-review`.
-2. **Medium. Built on branch `lessons-steps`, not merged (November 2, 2026).** Rewrite every question to the six rules, keeping the ones listed above. `craft.test.ts` learns what a machine can check: no "Good guess" or "Not quite", and the right answer is the longest no more than about 1 time in 3. Words only, nothing else moves. The faith lessons wait for step 6. As built: 87 questions on the 45 lessons outside the faith lessons (core `lesson-questions.ts`), 56 open and 31 with one best answer; an open pick is outlined, never marked right; a rewritten question waits for an answer. Written by four agents in parallel from one brief, then read and corrected. The old review words (`rc`) are still in the lesson data, unused.
-3. **High. Built on branch `lessons-steps`, not merged (November 2, 2026).** The path (questions 3 and 4 are answered: no lock, and the twelve steps). A written list of lesson ids replaces `UNIT_ORDER`, and the sections become the twelve steps, each with a name and a land (two new pictures in `section-art.ts`). `LESSONS` itself stays in its order, because checkpoints and saved records lean on it. `lessonsEarly` must honor every order the path has ever had, or people mid-path would be sent back. Tests walk a person from each old order: nothing finished drops, no points, level or badge moves, and the first eight stay right for `accounts.ts`. As built: the steps live in core `steps.ts` (their lessons, deed, words and picture); the first eight are l1, l2, l3, l22, l33, l34, l20, l46; change the setting is lesson 9 and the if-then plan lesson 10; the four faith lessons sit inside steps 3, 6, 7 and 8, never last, so a step ends the same for everyone; the path has 47 lessons. Both past orders still count, tested from every point along each. Checkpoints keep their pairs and writing; several pairs now sit in different steps, so one is due once both its lessons are reached. Two new pictures: a door shut for the night (step 3) and one candle lighting another (step 12). The golden fixtures changed by hand in one way: the lesson numbers and 49 to 47.
-4. **High. Built on branch `lessons-steps`, not merged (November 2, 2026).** The deed (question 3 is answered: no lock, it asks once more): a record in `settings.learn`, saved and synced like `prac`, points that only ever add, the land lit on the map, and the one question back at the next step, never after a slip. As built: `settings.learn.did`, `later` and `asked` by step id; a deed is worth 30 points (a lesson is 10), counted in the total like quests, so it never moves; sync keeps the earlier day. The deed shows after the last lesson of a step (after Put it to work, or in its place), on two paper answers; the signpost on the map says "Step 3 · You did it". The ask back opens before the next step's first lesson, never on the day of a slip or the day after. Rereading a step's last lesson offers the deed again, which is how someone who said Not yet twice can still record it.
-5. **Medium. Built on branch `lessons-steps`, not merged (November 2, 2026).** God's plumbing (questions 1, 2 and 6 are answered: deep, by choice, from Latter-day Saint beliefs, with a Bible-only version for other Christians and a plain "God" one for another faith): the setup line and the follow-up, the row in Settings, the closing line shown by the answer, and the note in `srcNote` reworded. The privacy page does not change, since nothing leaves the phone. As built: core `faith.ts` (the voice: lds, christian, plain), the setup page "Which faith is yours?" after a Yes or a Somewhat, a Settings section, Faith in the lessons, and the privacy page. The closing line and the Learn note wait for step 6.
+1. **Medium, built and on main.** The review question comes out of the start of a lesson and the welcome back. The Torch's handle and the Beacon's tower no longer run through the words on the Done card. The recall words stay in the lesson data for now: some are the best scenarios to reuse in step 2, which then removes them. Branch `lessons-no-review`.
+2. **Medium. Built on branch `lessons-steps`, on main (November 2, 2026).** Rewrite every question to the six rules, keeping the ones listed above. `craft.test.ts` learns what a machine can check: no "Good guess" or "Not quite", and the right answer is the longest no more than about 1 time in 3. Words only, nothing else moves. The faith lessons wait for step 6. As built: 87 questions on the 45 lessons outside the faith lessons (core `lesson-questions.ts`), 56 open and 31 with one best answer; an open pick is outlined, never marked right; a rewritten question waits for an answer. Written by four agents in parallel from one brief, then read and corrected. The old review words (`rc`) are still in the lesson data, unused.
+3. **High. Built on branch `lessons-steps`, on main (November 2, 2026).** The path (questions 3 and 4 are answered: no lock, and the twelve steps). A written list of lesson ids replaces `UNIT_ORDER`, and the sections become the twelve steps, each with a name and a land (two new pictures in `section-art.ts`). `LESSONS` itself stays in its order, because checkpoints and saved records lean on it. `lessonsEarly` must honor every order the path has ever had, or people mid-path would be sent back. Tests walk a person from each old order: nothing finished drops, no points, level or badge moves, and the first eight stay right for `accounts.ts`. As built: the steps live in core `steps.ts` (their lessons, deed, words and picture); the first eight are l1, l2, l3, l22, l33, l34, l20, l46; change the setting is lesson 9 and the if-then plan lesson 10; the four faith lessons sit inside steps 3, 6, 7 and 8, never last, so a step ends the same for everyone; the path has 47 lessons. Both past orders still count, tested from every point along each. Checkpoints keep their pairs and writing; several pairs now sit in different steps, so one is due once both its lessons are reached. Two new pictures: a door shut for the night (step 3) and one candle lighting another (step 12). The golden fixtures changed by hand in one way: the lesson numbers and 49 to 47.
+4. **High. Built on branch `lessons-steps`, on main (November 2, 2026).** The deed (question 3 is answered: no lock, it asks once more): a record in `settings.learn`, saved and synced like `prac`, points that only ever add, the land lit on the map, and the one question back at the next step, never after a slip. As built: `settings.learn.did`, `later` and `asked` by step id; a deed is worth 30 points (a lesson is 10), counted in the total like quests, so it never moves; sync keeps the earlier day. The deed shows after the last lesson of a step (after Put it to work, or in its place), on two paper answers; the signpost on the map says "Step 3 · You did it". The ask back opens before the next step's first lesson, never on the day of a slip or the day after. Rereading a step's last lesson offers the deed again, which is how someone who said Not yet twice can still record it.
+5. **Medium. Built on branch `lessons-steps`, on main (November 2, 2026).** God's plumbing (questions 1, 2 and 6 are answered: deep, by choice, from Latter-day Saint beliefs, with a Bible-only version for other Christians and a plain "God" one for another faith): the setup line and the follow-up, the row in Settings, the closing line shown by the answer, and the note in `srcNote` reworded. The privacy page does not change, since nothing leaves the phone. As built: core `faith.ts` (the voice: lds, christian, plain), the setup page "Which faith is yours?" after a Yes or a Somewhat, a Settings section, Faith in the lessons, and the privacy page. The closing line and the Learn note wait for step 6.
 6. **Medium. Written on branch `god-lessons`, not on the path yet (November 2, 2026).** All twelve, g1 to g12, are in core `lesson-turns-god-a.ts` and `-b.ts` (`GOD`), in three voices, each ending in a short prayer, with `lesson-turns-god.test.ts` holding every voice to the limits and to what fits that faith. The four faith lessons were already turned. **On the path (high, same branch):** for Yes or Somewhat, each step ends in its God lesson (steps.ts `god`), so the step's deed comes after its prayer; a skipped answer and No get none. Someone already further on is never sent back: a God lesson behind them opens in full and counts once read (lessons.ts `godPassed`). The God lessons of steps 1 and 2 are free with the first eight. Each reads in the person's voice (lesson-beats.ts `lessonVoiced`), each has its Put it to work step, and an older app never drops a finished one from the record (sync.ts `keepNewer`). Waits for the owner's look on the simulator. Was: two lessons drafted for the owner to read (below). Rewrite the four faith lessons in God's voice and write the twelve God lessons from Latter-day Saint beliefs, with their beats, their prayers and the lines marked for each answer: the Book of Mormon, Doctrine and Covenants, the bishop, the sacrament and the Church's meetings for Latter-day Saints only; Bible verses for other Christians; no Scripture for another faith. Each verse is checked against the text. Before they ship: a lawyer's read on the Book of Mormon and Doctrine and Covenants text, or the Church's permission. These need the owner's eye more than anything else here, and the owner knows this faith better than any source. The voice is the part that most needs the owner, so two are drafted first; the other ten, the four rewrites and the code that shows each voice follow once the owner says the voice is right.
 7. **Medium.** Write the new lessons, a step at a time, each with its beats and its act, and rework the weakest ones (l8, l12, l21, l25, l35, l40, l46). `docs/lessons-research/` has what each can stand on.
 
@@ -3326,7 +3326,7 @@ once the owner decides, then 9 and 10 (one owner of "next", fewer sheets), then 
 **Not checked:** the iPhone build, haptics and notifications; a real sign-in, sync and payment; dark mode and Reduce
 Motion on this pass; the 375x667 size (the October 27 audit covered it).
 
-## The feelings grid, its own look (the owner, October 29, 2026; on branch feelings-own-look, not merged)
+## The feelings grid, its own look (the owner, October 29, 2026; on branch feelings-own-look, on main)
 
 The feeling chart itself (energy one way, pleasantness the other, four corners) is the Mood Meter's, a well-known chart
 anyone can use. The look of today's picker (a pannable field of bubbles that swell under the thumb and morph into
@@ -3677,7 +3677,7 @@ except the Undo right after a mistaken log; the toast carries Undo; the X goes o
 strip with Try again (or Sign in) when sync has not worked for more than a day, and nothing for a short time offline;
 the setup's backup restore uses the shared words, like Settings and the welcome page.
 
-## Logging a slip, second look, and Rekindle rebuilt (the owner, October 27, 2026; on branch slip-again, not merged)
+## Logging a slip, second look, and Rekindle rebuilt (the owner, October 27, 2026; on branch slip-again, on main)
 
 The owner: do not ask how they felt before a slip ("the answer is going to be horny"), the Already happened flow needs
 another look, and the Rekindle celebration is really bad. Two agents researched it.

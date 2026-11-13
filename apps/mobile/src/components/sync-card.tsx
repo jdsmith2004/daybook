@@ -182,8 +182,8 @@ export function SyncBody() {
           <T v="label">Replace this phone’s log with your account’s?</T>
           <T v="small">
             {only
-              ? `This phone has ${days(only)} your account does not. They leave the log here. A copy is kept on this phone for ${PREV_DAYS} days, so you can bring them back in Settings.`
-              : `Every day on this phone is in your account too. A copy of this phone’s log is kept for ${PREV_DAYS} days all the same.`}
+              ? `This phone has ${days(only)} your account does not. They leave the log here. A copy is kept on this phone for ${PREV_DAYS} days, so you can bring them back in Settings. Your badges, level and points stay.`
+              : `Every day on this phone is in your account too. A copy of this phone’s log is kept for ${PREV_DAYS} days all the same. Your badges, level and points stay.`}
           </T>
           <Button kind="danger" label="Yes, use my account’s log" onPress={() => sync.choose('account')} />
           <Button kind="ghost" label="Combine them instead" onPress={() => sync.choose('combine')} />

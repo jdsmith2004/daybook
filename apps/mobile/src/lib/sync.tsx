@@ -23,6 +23,7 @@ import {
   pushAll,
   requestTimeout,
   snapshotOf,
+  accountHere,
   syncFailure,
   CLOCK_OK,
   type SyncRecord,
@@ -557,8 +558,13 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       const { recs, now } = status;
       try {
         setStatus({ k: 'busy', what: 'Joining your account…' });
-        if (how === 'account') await replaceFromAccount(snapshotOf(recs));
-        else await combine(recs);
+        if (how === 'account') {
+          /* the account's log, with what this phone earned kept on its settings and sent back (core accountHere) */
+          const theirs = snapshotOf(recs);
+          const kept = accountHere(theirs.settings, current().snap.settings);
+          await replaceFromAccount(theirs);
+          if (kept) await replace({ ...current().snap, settings: kept }, ['settings']);
+        } else await combine(recs);
         await saveKept({ sub: s.sub, email: s.email, since: now, at: Date.now() });
         setStatus({ k: 'on' });
         await round();
@@ -566,7 +572,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         fail(e);
       }
     },
-    [status, replaceFromAccount, combine, saveKept, round, fail],
+    [status, current, replace, replaceFromAccount, combine, saveKept, round, fail],
   );
 
   const signOutNow = useCallback(

@@ -679,3 +679,26 @@ export function joinRecords(here: Snapshot, recs: SyncRecord[]): { recs: SyncRec
   const won = { ...keepEarned(theirs, own), u };
   return { recs: recs.map((r) => (r.id === 'settings' ? { id: 'settings', u, data: won } : r)), mine: null };
 }
+
+/* "Use my account's log here" (WP4, November 12, 2026): the person chose the account's log over this phone's, and the phone's
+   days are kept aside for a week (the app's store). The settings came whole from the account, so what this phone had earned
+   (graduation, badges, level, points, lessons practiced, the supporter record) went with them, and the kept copy never brings
+   settings back. Now the account's settings stay the plan, and the earned things and the set-once marks this phone holds
+   that the account's copy has not are put on them. */
+
+/** the marks set once and never cleared: the account's copy keeps its own, and takes this phone's where it has none. The
+    one-count rule's day is the earlier of the two, so slips before either keep the rule they were made under. */
+const ONCE = ['widget', 'awayFrom', 'wk1', 'toldStart', 'likeAsk', 'acctNo', 'tipAsk', 'tipMo', 'freeNo', 'nightAt', 'jnTags', 'free'] as const;
+
+/** the account's settings to use on this phone, with what this phone earned kept on them (keepEarned) and the marks it set
+    once that the account's copy lacks; null when there is nothing to keep (no settings here, or nothing changes). The
+    change time is past both, so the joined copy is sent to the account and wins there. */
+export function accountHere(theirs: Settings | null, mine: Settings | null): Settings | null {
+  if (!theirs || !mine) return null;
+  const out = keepEarned(theirs, mine) as Settings & Record<string, unknown>;
+  for (const k of ONCE) if (out[k] == null && mine[k] != null) out[k] = JSON.parse(JSON.stringify(mine[k]));
+  const cf = [theirs.countFrom, mine.countFrom].filter((x): x is string => isKey(x)).sort()[0];
+  if (cf) out.countFrom = cf;
+  if (same({ ...out, u: 0 }, { ...theirs, u: 0 })) return null;
+  return { ...out, u: Math.max(theirs.u || 0, mine.u || 0) + 1 };
+}

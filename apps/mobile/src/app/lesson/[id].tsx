@@ -85,7 +85,7 @@ import { LessonArt, useCount } from '@/components/lesson-art';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
 import { Answer, Question, Quiet, Shell } from '@/components/lesson-parts';
 import { LessonFinish } from '@/components/lesson-finish';
-import { Bar, PickLine, Praise, praiseFor, React2 } from '@/components/lesson-play';
+import { Bar, PickLine, Praise, praiseFor } from '@/components/lesson-play';
 import { FlashCard } from '@/components/lesson-flash';
 import { Next, Rich } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
@@ -600,16 +600,10 @@ export default function LessonScreen() {
         track('lesson_pick', { lesson: L.id, beat: i, ix: j });
       };
       const lines = !num && b.l && b.l.length > 1 ? b.l : null;
-      const hook = !num && !lines && !!b.say && b.say.trim().endsWith('?');
-      const meetList = hook ? MEET_HOOK : MEET_TEXT;
-      const meetSay = num ? MEET_NUMBER_SAY : hook ? MEET_HOOK_SAY : MEET_TEXT_SAY;
       body = num ? (
         <>
           {head}
           <NumberCard n={cardNumber(card, b)} h={b.h || card.h} p={b.p} st={st} fact={card.fact?.s} onSrc={() => setSheet({ t: 'src', i: ci })} />
-          <Dock>
-            <React2 list={MEET_NUMBER} pk={a} onPick={meet} />
-          </Dock>
         </>
       ) : (
         <>
@@ -624,14 +618,24 @@ export default function LessonScreen() {
             pick={lines ? { pk: a, onPick: meet } : undefined}
             onSrc={() => setSheet({ t: 'src', i: ci })}
           />
-          {lines ? null : (
-            <Dock>
-              <React2 list={meetList} pk={a} onPick={meet} />
-            </Dock>
-          )}
         </>
       );
-      if (a != null) ok(lines ? MEET_LINE[(ci + a) % MEET_LINE.length] : meetSay[a][ci % 3]);
+      /* a card that asks nothing is read and passed with Continue: no made-up answers that do not fit its words (the owner,
+         November 13, 2026: "it makes no sense"). Only a card with lines to try asks for a pick. */
+      if (lines) {
+        if (a != null) ok(MEET_LINE[(ci + a) % MEET_LINE.length]);
+      } else
+        foot = (
+          <Next
+            label="Continue"
+            noIcon
+            onPress={() => {
+              buzz('tap');
+              setAns((x) => ({ ...x, [ci]: 0 }));
+              step(1);
+            }}
+          />
+        );
     }
     if (help)
       body = (
@@ -765,24 +769,7 @@ export default function LessonScreen() {
   );
 }
 
-/* how a card with no question is met: two answers, neither the right one, and the flame's reply to each (three, by card, so a
-   lesson does not repeat itself). What only the person can say: whether it lands, never whether they got it. */
-const MEET_TEXT: [string, string] = ['That rings true', 'Not sure yet'];
-const MEET_TEXT_SAY = [
-  ['Then it is yours now.', 'Hold on to that one tonight.', 'Good. Keep it close.'],
-  ['Fair. Try it once and see.', 'Honest. Test it on your own nights.', 'That is fine. See if it holds.'],
-];
-/* a card where the flame asks a question (the opening scene): does the scene fit the person */
-const MEET_HOOK: [string, string] = ['That sounds like me', 'Not quite me'];
-const MEET_HOOK_SAY = [
-  ['Then this one is for you.', 'Then keep going. It gets better.', 'You are in the right place.'],
-  ['Stay a minute. It may still fit.', 'Fair. Something in it may still be yours.', 'Good to know. Read on and see.'],
-];
-const MEET_NUMBER: [string, string] = ['That surprises me', 'I thought so'];
-const MEET_NUMBER_SAY = [
-  ['It surprises most people.', 'Now you know what most people do not.', 'Good. Surprise is how a belief moves.'],
-  ['Then you were ahead of most.', 'You knew more than most do.', 'Good instinct. Keep trusting it.'],
-];
+/* the flame's reply to the line a person picks to try */
 const MEET_LINE = ['Good pick. Try it today.', 'That one is yours to try.', 'Good. Small and real is how it starts.'];
 
 /** where a tool or page from a lesson goes; it comes back to the lesson. Tools are care, so they open from any lesson,

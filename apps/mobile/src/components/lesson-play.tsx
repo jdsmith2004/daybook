@@ -129,28 +129,6 @@ export function Go({ label, onPress, icon }: { label: string; onPress: () => voi
   );
 }
 
-/** two answers side by side, low on the card: how a card lands with the person. Neither is the right one. */
-export function React2({ list, pk, onPick }: { list: [string, string]; pk: number | null; onPick: (j: number) => void }) {
-  return (
-    <View style={s.two}>
-      {list.map((o, j) => {
-        const on = pk === j;
-        const off = pk != null && !on;
-        return (
-          <Pressable
-            key={j}
-            accessibilityRole="button"
-            accessibilityState={{ selected: on }}
-            onPress={() => onPick(j)}
-            style={({ pressed }) => [s.chip, on ? s.chipOn : off ? s.chipOff : s.chipIdle, { transform: [{ translateY: pressed && !on ? 2 : 0 }] }]}>
-            <Text style={[s.chipT, { color: on ? '#FFFFFF' : PAPER_INK, opacity: off ? 0.6 : 1 }]}>{o}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
 /** the lines of what to do, as a pick: the one the person will try lights green, the rest step back */
 export function PickLine({
   list,

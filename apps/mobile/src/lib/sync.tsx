@@ -88,8 +88,9 @@ interface SyncValue {
   /** sign out; with `remove`, the log leaves this device too. What is waiting is sent first; with `remove`, when some of it
       could not be sent, nothing happens unless `anyway`, and the number waiting comes back so the person can decide. */
   signOutNow: (remove: boolean, anyway?: boolean) => Promise<{ waiting: number }>;
-  /** erase the log in the account (every device clears it on its next sync). False when the account could not be reached. */
-  eraseAccount: () => Promise<boolean>;
+  /** erase the log in the account (every device clears it on its next sync): 'ok', 'expired' when the sign-in ran out (or
+      there is none here), or 'away' when the account could not be reached */
+  eraseAccount: () => Promise<'ok' | 'expired' | 'away'>;
   /** delete the account and everything in it, for good. Gives back what to tell the person. An account that signs in with
       Apple asks Apple once more first, so Apple forgets Daybook too (Apple's rule). */
   deleteAccount: () => Promise<{ ok: boolean; msg: string }>;
@@ -634,11 +635,16 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
   checkErasedRef.current = checkErased;
 
   const eraseAccount = useCallback(async () => {
+    if (!sessionRef.current) return 'expired' as const;
     const r = await callApi('DELETE', '');
-    const ok = !!r && r.status === 200;
-    if (ok && keptRef.current) await saveKept({ ...keptRef.current, at: Date.now() });
-    if (ok) await checkErased();
-    return ok;
+    if (r && r.status === 401) {
+      setStatus({ k: 'expired' });
+      return 'expired' as const;
+    }
+    if (!r || r.status !== 200) return 'away' as const;
+    if (keptRef.current) await saveKept({ ...keptRef.current, at: Date.now() });
+    await checkErased();
+    return 'ok' as const;
   }, [callApi, saveKept, checkErased]);
 
   const restoreErased = useCallback(async () => {

@@ -20,12 +20,12 @@ import {
   lowXml,
   sadXml,
   widgetTimeline,
+  widgetSky,
   widgetTold,
   WIDGET_SOS,
   WIDGET_WORDS,
   type Snapshot,
   type WidgetEntry,
-  type WidgetPart,
   type WidgetTold,
 } from '@daybook/core';
 import { Directory, File } from 'expo-file-system';
@@ -34,6 +34,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState, View } from 'react-native';
 import Svg, { parse } from 'react-native-svg';
 
+import { bigLayers } from '@/components/big-flame';
+
 import FlameWidget from '@/widgets/flame';
 import FlameLive from '@/widgets/live';
 import SosWidget from '@/widgets/sos';
@@ -41,13 +43,6 @@ import { WidgetCheck } from '../../modules/widget-check';
 
 /** the size each picture is drawn at, in points (the phone makes it three times as many pixels): crisp in a small widget, and light */
 const PX = 150;
-/** the sky behind the flame through the day, top to bottom: dawn, a rich day blue (Duolingo's), dusk, and the campfire's night */
-const SKY: Record<WidgetPart, string> = {
-  morning: '#2A2470,#5B3C8C,#B85A78,#E89A5C',
-  day: '#16226B,#1F3A9E,#2D55C8',
-  evening: '#1B1650,#3A2368,#7A3354,#B0522E',
-  night: '#120E30,#221A4E,#4A2346,#8A3A2A',
-};
 /** the picture an entry needs: asleep at night, else as low as it burns */
 const lowOf = (e: WidgetEntry) => (e.mood === 'asleep' ? ASLEEP : e.low);
 
@@ -58,13 +53,37 @@ const ASLEEP = -1;
 const xmlOf = (level: number, low: number, small = false) => {
   const fig = emblemLayers(level, false)?.fig;
   if (!fig) return low === ASLEEP ? figAsleep(emblemXml(level)) : low > 0 ? lowXml(sadXml(emblemXml(level)), low) : emblemXml(level);
-  if (low === ASLEEP) return campfireXml(figAsleep(fig), { lit: 0.5, close: small });
-  return lowXml(campfireXml(low > 0 ? sadXml(fig) : fig, { lit: 1 - low, stars: !small, close: small }), low);
+  /* the Live Activity keeps its campfire, cut in close (WP2's) */
+  if (small) {
+    if (low === ASLEEP) return campfireXml(figAsleep(fig), { lit: 0.5, close: true });
+    return lowXml(campfireXml(low > 0 ? sadXml(fig) : fig, { lit: 1 - low, close: true }), low);
+  }
+  /* the widget: the flame big, drawn as on Today (components/big-flame.tsx bigLayers, without its sky and hills), its glow, the small
+     flames, the figure and its logs; sad and drained as it burns low, eyes closed at night (the owner, November 12, 2026: like Duolingo's,
+     the mascot big and full of feeling) */
+  const b = bigLayers(level, true);
+  if (!b) return emblemXml(level);
+  const { layers: l, zoom, dx, dy } = b;
+  const body = low === ASLEEP ? figAsleep(l.fig) : low > 0 ? sadXml(l.fig) : l.fig;
+  const tx = l.at.x * 120 * (1 - zoom) + dx * 120;
+  const ty = l.at.y * 120 * (1 - zoom) + dy * 120;
+  /* no glow: cut in close it would show a square edge, and the widget's own sky carries the light */
+  const parts = [l.back, low === ASLEEP ? '' : l.side, body, l.front].map(inner).join('');
+  const xml = `<svg viewBox="14 22 92 92"><g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${zoom.toFixed(3)})">${parts}</g></svg>`;
+  return low > 0 ? lowXml(xml, low) : xml;
 };
+/** the inside of an SVG: its defs and drawing, without the <svg> tag around them */
+function inner(svg: string): string {
+  if (!svg) return '';
+  const a = svg.indexOf('>', svg.indexOf('<svg'));
+  const b = svg.lastIndexOf('</svg>');
+  return a < 0 || b < 0 ? '' : svg.slice(a + 1, b);
+}
 /** the small size the Live Activity's pictures are drawn at: iPhone shows a gray box in place of a picture too big for one */
 const LIVE_PX = 60;
-/** the picture's name carries the drawing (c3: the campfire, glow and flame centered), the level and how low, so the widget never shows one it kept from before; small ones end in -s */
-const nameOf = (level: number, low: number, small = false) => `flame-c3-${level}-${low === ASLEEP ? 'asleep' : Math.round(low * 100)}${small ? '-s' : ''}.png`;
+/** the picture's name carries the drawing (b1: the big flame, for the widget; c3: the campfire, for the Live Activity), the level and how low, so the widget never shows one it kept from before; small ones end in -s */
+const nameOf = (level: number, low: number, small = false) =>
+  `flame-${small ? 'c3' : 'b3'}-${level}-${low === ASLEEP ? 'asleep' : Math.round(low * 100)}${small ? '-s' : ''}.png`;
 type Pic = { name: string; xml: string; px: number };
 /** the pictures a timeline needs: each way it burns for the widget, and the flame as it burns now and asleep, small, for the Live Activity */
 const picsOf = (level: number, entries: WidgetEntry[]): Pic[] => [
@@ -221,7 +240,7 @@ export function useFlameWidget(snap: Snapshot, tk: string, ready: boolean, now: 
               img: new File(dir, nameOf(job.level, lowOf(e))).uri,
               line: e.line,
               next: e.next,
-              sky: SKY[e.part],
+              sky: widgetSky(e).join(','),
               week: e.week,
               wd: e.wd,
               ask: e.ask ?? '',

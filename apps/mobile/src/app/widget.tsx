@@ -2,7 +2,7 @@
    flame was fed, a few days in, never after a slip. It shows the widget itself, as it would sit on the Home Screen, so the person sees
    what they are getting: the flame big, its line, the week, and SOS. Then how to add it, one step at a time, low by the thumb. The phone
    says when it is on a screen (lib/flame-widget), and that earns the points, so Done only closes the page. */
-import { gameCompute, widgetAsked, widgetAt, WIDGET_ASK } from '@daybook/core';
+import { gameCompute, widgetAsked, widgetAt, widgetSky, WIDGET_ASK } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -37,7 +37,7 @@ export default function AddWidget() {
       <T style={[s.c, { marginTop: 8, color: nightInk.muted }]}>{WIDGET_ASK.say}</T>
       <View style={s.mid}>
         {/* the medium widget, as it sits on the Home Screen now */}
-        <LinearGradient colors={['#16226B', '#1F3A9E', '#2D55C8']} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={s.card}>
+        <LinearGradient colors={widgetSky(w) as [string, string, ...string[]]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={s.card}>
           <View style={s.words}>
             <Text style={s.line} numberOfLines={2}>
               {w.line}
@@ -61,7 +61,7 @@ export default function AddWidget() {
             </View>
           </View>
           <View style={s.flame}>
-            <BigFlame level={level} size={120} noLand low={w.low} />
+            <BigFlame level={level} size={150} noLand low={w.low} />
             <View style={s.sos}>
               <Text style={s.sosT}>SOS</Text>
             </View>
@@ -111,7 +111,7 @@ const s = StyleSheet.create({
   wd: { fontFamily: font.bodyBold, fontSize: 11, color: '#FFFFFFAA' },
   dot: { width: 17, height: 17, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   ring: { borderWidth: 2, borderColor: WARM, borderStyle: 'dashed' },
-  flame: { width: 120, alignItems: 'center', justifyContent: 'flex-end' },
+  flame: { width: 130, alignItems: 'center', justifyContent: 'flex-end', marginVertical: -12 },
   sos: { position: 'absolute', top: -4, right: -4, backgroundColor: '#FF6B4A', borderRadius: 99, paddingHorizontal: 9, paddingVertical: 4 },
   sosT: { fontFamily: font.bodyBold, fontSize: 12, color: '#FFFFFF' },
   steps: { gap: 10, marginBottom: 4 },

@@ -79,6 +79,18 @@ export const WIDGET_NEXT: Record<keyof typeof WIDGET_WORDS, string> = Object.fro
 /** the SOS widget and the SOS button: where it goes, plainly, with nothing about why */
 export const WIDGET_SOS = { label: 'SOS', line: 'A hard moment?', next: 'Tap. I am here.' } as const;
 
+/** the sky behind the flame, top to bottom: dawn, a rich day blue (Duolingo's), dusk, the campfire's night, and a cold charcoal while
+    it burns low, a cold ash light enough that the drained flame still stands out (the owner, November 12, 2026: the flame is never hidden) */
+export const WIDGET_SKY: Record<WidgetPart | 'low', string[]> = {
+  morning: ['#2A2470', '#5B3C8C', '#B85A78', '#E89A5C'],
+  day: ['#16226B', '#1F3A9E', '#2D55C8'],
+  evening: ['#1B1650', '#3A2368', '#7A3354', '#B0522E'],
+  night: ['#120E30', '#221A4E', '#4A2346', '#8A3A2A'],
+  low: ['#3C4256', '#545B6F', '#6E7486'],
+};
+/** the sky for one entry */
+export const widgetSky = (e: Pick<WidgetEntry, 'part' | 'mood'>): string[] => WIDGET_SKY[e.mood === 'low' ? 'low' : e.part];
+
 /** the days ahead the widget is told about: past this it is as low as it goes */
 export const WIDGET_DAYS = 4;
 /** where the day turns, in hours: noon (morning to day) and evening */
@@ -205,7 +217,7 @@ export const widgetAsked = (st: Settings, tk: DayKey, now = Date.now()): Setting
 
 export const WIDGET_ASK = {
   title: 'Your flame, on your Home Screen',
-  say: 'See it every time you pick up your phone. It wakes with you, asks how the night went, and dims when you drift. A tap on SOS opens help.',
+  say: 'It wakes with you, asks about the night, and dims when you drift. SOS is one tap away.',
   line: 'It shows no count and nothing about what Daybook is for.',
   btn: 'Add the widget',
   done: 'Done, I added it',

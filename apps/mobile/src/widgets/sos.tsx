@@ -27,9 +27,14 @@ const SosWidget = (props: SosWidgetProps, environment: WidgetEnvironment) => {
     <VStack spacing={4} modifiers={[containerBackground(sky, 'widget'), widgetURL(url)]}>
       <Image systemName="lifepreserver.fill" size={46} color="#FF6B4A" />
       <Text modifiers={[font({ size: 34, weight: 'heavy', design: 'rounded' }), foregroundStyle('#FFFFFF')]}>SOS</Text>
-      <Text modifiers={[font({ size: 13, weight: 'semibold', design: 'rounded' }), foregroundStyle('#FFB547'), lineLimit(2), minimumScaleFactor(0.8)]}>
-        {props.line + ' ' + props.next}
-      </Text>
+      <VStack spacing={0}>
+        <Text modifiers={[font({ size: 13, weight: 'semibold', design: 'rounded' }), foregroundStyle('#FFB547'), lineLimit(1), minimumScaleFactor(0.8)]}>
+          {props.line}
+        </Text>
+        <Text modifiers={[font({ size: 13, weight: 'semibold', design: 'rounded' }), foregroundStyle('#FFFFFFCC'), lineLimit(1), minimumScaleFactor(0.8)]}>
+          {props.next}
+        </Text>
+      </VStack>
     </VStack>
   );
 };

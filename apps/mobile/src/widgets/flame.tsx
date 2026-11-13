@@ -24,6 +24,7 @@ import {
   offset,
   padding,
   resizable,
+  scaleEffect,
   shapes,
   widgetURL,
 } from '@expo/ui/swift-ui/modifiers';
@@ -180,16 +181,16 @@ const FlameWidget = (props: FlameWidgetProps, environment: WidgetEnvironment) =>
           {ask ? null : sub(13)}
           <Spacer minLength={4} />
           {ask ? (
-            <HStack spacing={6}>
+            <VStack alignment="leading" spacing={6}>
               {free(14, true)}
               {happened(14)}
-            </HStack>
+            </VStack>
           ) : (
             weekRow(17, 5)
           )}
         </VStack>
         <ZStack alignment="topTrailing" modifiers={[frame({ width: 132 })]}>
-          <ZStack modifiers={[offset({ x: 0, y: 8 }), frame({ maxWidth: 1000, maxHeight: 1000 })]}>{picture}</ZStack>
+          <ZStack modifiers={[scaleEffect(1.15), offset({ x: 0, y: 10 }), frame({ maxWidth: 1000, maxHeight: 1000 })]}>{picture}</ZStack>
           {sos(12)}
         </ZStack>
       </HStack>
@@ -218,24 +219,38 @@ const FlameWidget = (props: FlameWidgetProps, environment: WidgetEnvironment) =>
       </VStack>
     );
   }
-  /* small (and StandBy): the line on top, the flame rising big below it, like Duolingo's; in the morning, Free of it answers here */
-  return (
-    <VStack spacing={2} modifiers={base}>
-      <Text
-        modifiers={[
-          font({ size: 15, weight: 'heavy', design: 'rounded' }),
-          foregroundStyle('#FFFFFF'),
-          lineLimit(2),
-          minimumScaleFactor(0.7),
-          multilineTextAlignment('center'),
-        ]}>
-        {line}
-      </Text>
-      <ZStack alignment="bottom" modifiers={[frame({ maxWidth: 1000, maxHeight: 1000 })]}>
-        <ZStack modifiers={[offset({ x: 0, y: ask ? 0 : 10 })]}>{picture}</ZStack>
-        {ask ? free(13, false) : null}
+  /* small (and StandBy): the line on top, the flame rising big below it and filling the rest, like Duolingo's; in the morning, Free of
+     it answers here, under the flame */
+  const top = (
+    <Text
+      modifiers={[
+        font({ size: 15, weight: 'heavy', design: 'rounded' }),
+        foregroundStyle('#FFFFFF'),
+        lineLimit(2),
+        minimumScaleFactor(0.7),
+        multilineTextAlignment('center'),
+      ]}>
+      {line}
+    </Text>
+  );
+  if (ask) {
+    return (
+      <ZStack alignment="top" modifiers={base}>
+        <ZStack alignment="bottom" modifiers={[frame({ maxWidth: 1000, maxHeight: 1000 }), padding({ top: 40 })]}>
+          <ZStack modifiers={[scaleEffect(1.1), offset({ x: 0, y: -12 })]}>{picture}</ZStack>
+          {free(13, false)}
+        </ZStack>
+        {top}
       </ZStack>
-    </VStack>
+    );
+  }
+  return (
+    <ZStack alignment="top" modifiers={base}>
+      <ZStack alignment="bottom" modifiers={[frame({ maxWidth: 1000, maxHeight: 1000 }), padding({ top: 40 })]}>
+        <ZStack modifiers={[scaleEffect(1.25), offset({ x: 0, y: 4 })]}>{picture}</ZStack>
+      </ZStack>
+      {top}
+    </ZStack>
   );
 };
 

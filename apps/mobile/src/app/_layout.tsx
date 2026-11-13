@@ -228,7 +228,11 @@ function WebChrome({ bg }: { bg: string }) {
       meta.setAttribute('name', 'theme-color');
       document.head.appendChild(meta);
     }
-    meta.setAttribute('content', bg);
+    /* +html.tsx draws one per scheme; once the app has chosen, every one takes the app's color */
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+      m.setAttribute('content', bg);
+      m.removeAttribute('media');
+    });
   }, [bg]);
   return null;
 }

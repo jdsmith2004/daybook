@@ -90,7 +90,7 @@ export function SetRow({
           ) : null}
         </View>
         {value ? (
-          <T style={[s.label, { color: c.muted, flexShrink: 1, maxWidth: '50%', textAlign: 'right' }]} numberOfLines={1}>
+          <T style={[s.label, { color: c.muted, flexShrink: 1, maxWidth: '58%', textAlign: 'right' }]} numberOfLines={2}>
             {value}
           </T>
         ) : null}
@@ -118,19 +118,20 @@ export function SetPick<V extends string | number | null>({
   value,
   onPick,
 }: {
-  options: readonly (readonly [V, string])[];
+  options: readonly (readonly [V, string] | readonly [V, string, string])[];
   value: V;
   onPick: (v: V) => void;
 }) {
   const c = useTheme();
   return (
     <>
-      {options.map(([v, l]) => {
+      {options.map(([v, l, sub]) => {
         const on = v === value;
         return (
           <SetRow
             key={String(v)}
             label={l}
+            sub={sub}
             bold={on}
             chevron={false}
             a11y={{ role: 'radio', checked: on }}
@@ -177,7 +178,8 @@ function Toggle({ on, label, onChange }: { on: boolean; label: string; onChange:
         buzz('tap');
         onChange(!on);
       }}>
-      <Animated.View style={[t.track, { backgroundColor: x.interpolate({ inputRange: [0, 1], outputRange: [c.line, c.accent] }) }]}>
+      <Animated.View
+        style={[t.track, { backgroundColor: x.interpolate({ inputRange: [0, 1], outputRange: [c.scheme === 'dark' ? '#7468B8' : '#8A83A5', c.accent] }) }]}>
         <Animated.View style={[t.knob, { transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [2, TW - KNOB - 2] }) }] }]} />
       </Animated.View>
     </Pressable>

@@ -399,10 +399,7 @@ export default function Setup() {
         </>
       ) : (
         <>
-          <Head
-            h={habitSay('Get free of porn, one honest day at a time.', habit)}
-            sub="A plan built from your answers, a short lesson a day, and help when urges hit."
-          />
+          <Head h="Get free, one honest day at a time." sub="A plan built from your answers, a short lesson a day, and help when urges hit." />
           {/* the first thing a new person sees: the flame, big and alive, saying hello. It is the same one they will watch grow. */}
           <Talk text={voice} want={want} />
           {/* someone opening Daybook in the middle of an urge gets help before any question */}
@@ -424,7 +421,7 @@ export default function Setup() {
     case 'how': {
       body = (
         <>
-          <Head h="Three parts, about 8 minutes." sub="Your answers stay private, never tied to who you are. You can skip any question." />
+          <Head h="Three parts, about 8 minutes." sub="Your answers stay on your phone until you make an account. You can skip any question." />
           <Middle>
             <View style={s.acts}>
               {OB_SECS.map((x) => {
@@ -516,7 +513,7 @@ export default function Setup() {
           {/* the statement, big, in the middle; the flame listens beside it, and the three answers sit low, as one row. A pick moves on by
               itself: this is a quick check, and the flame does not comment on it. */}
           <Middle>
-            <Text style={[s.quoteT, { color: c.ink }]}>{OB_BPS[pg.n!]}</Text>
+            <Text style={[s.quoteT, { color: c.ink }]}>{habitSay(OB_BPS[pg.n!], habit)}</Text>
           </Middle>
           <Say text={voice} />
           <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">

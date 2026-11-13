@@ -439,12 +439,12 @@ export default function Log() {
 /* a sentence's last word stays with the one before it, so "SOS." is not left alone on a line, and "I" stays with "will" */
 const keepLast = (line: string) => line.replace(', I will ', ', I\u00A0will ').replace(/ (\S+)$/, '\u00A0$1');
 
-/* "✓ Saved · Slipped at 11:40 PM  Undo": no points beside a slip (Becoming free, step 2; they are still earned) */
+/* "✓ Saved · Slipped at 11:40 PM  Undo": the tick is neutral, since a slip is never green; no points beside a slip (Becoming free, step 2; they are still earned) */
 function SavedPill({ text, onUndo }: { text: string; onUndo?: () => void }) {
   const c = useTheme();
   return (
     <View style={[s.pill, { backgroundColor: c.scBtn }]}>
-      <View style={[s.ck, { backgroundColor: c.mint }]}>
+      <View style={[s.ck, { backgroundColor: 'rgba(255,255,255,0.28)' }]}>
         <Icon name="check" size={14} color="#FFFFFF" />
       </View>
       <T v="label" style={{ flexShrink: 1 }}>

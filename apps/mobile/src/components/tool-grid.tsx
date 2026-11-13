@@ -1,7 +1,7 @@
 /* Every tool, in its four groups (the legacy toolCard and the Tools grid). Used by the Tools tab and by the second SOS screen,
    where each tool can carry a small tag ("Worked 3 of 4", core: urTags). */
 import { TOOL_GROUPS, TOOLS, UR_QUIET, urTried, type Days } from '@daybook/core';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Shape, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 
@@ -76,6 +76,8 @@ export function ToolGrid({
   onLead?: (id: string) => void;
 }) {
   const c = useTheme();
+  /* on a 320-wide phone two columns leave a name three letters of room: one column there */
+  const narrow = useWindowDimensions().width < 360;
   const tried = urTried(days);
   const any = fresh && TOOLS.some((t) => tried[t.id]);
   const [lSoft, lInk] = lead ? toolTone(c, lead.tone) : ['', ''];
@@ -115,7 +117,11 @@ export function ToolGrid({
                   accessibilityRole="button"
                   accessibilityLabel={`${t.name}. ${t.desc}${tag ? '. ' + tag : isNew ? '. New for you' : ''}`}
                   onPress={() => onPick(t.id)}
-                  style={({ pressed }) => [s.tool, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
+                  style={({ pressed }) => [
+                    s.tool,
+                    narrow && { flexBasis: '100%' },
+                    { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] },
+                  ]}>
                   <ToolShape id={t.id} ic={t.ic} size={46} iconSize={22} color={soft} ink={ink} />
                   <View style={{ flex: 1 }}>
                     <View style={s.nameRow}>

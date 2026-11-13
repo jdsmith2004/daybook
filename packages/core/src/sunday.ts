@@ -377,6 +377,7 @@ export function sunGoalLine(g: SunGoal, done: number | null, over: boolean): str
   if (done == null || !g.k || !g.n) return '';
   const unit = SUN_GOALS[g.k].unit;
   const of = done + ' of ' + g.n + ' ' + unit;
+  if (done > g.n) return done + ' ' + unit + ', for a goal of ' + g.n + '. Goal kept.';
   if (done >= g.n) return of + '. Goal kept.';
   if (!over) return done ? of + ' so far.' : (unit === 'nights' ? 'Tonight' : 'Today') + ' can be the first of ' + g.n + '.';
   return done ? of + '. Every one of them counts.' : 'Not this week. A new week, a new try.';

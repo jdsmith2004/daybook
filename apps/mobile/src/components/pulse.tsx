@@ -14,7 +14,7 @@ export function PulseRows() {
     <>
       <SetRow icon="chat" tone="accent" label="Ideas and feedback" onPress={() => router.push('/feedback')} />
       <SetRow icon="chart" tone="accent" label="Anonymous data" value={s?.on === false ? 'Off' : 'On'} onPress={() => router.push('/counts')} />
-      {stats ? <SetRow icon="chart" tone="accent" label="Stats" value="Owner" onPress={() => router.push('/stats')} /> : null}
+      {stats && __DEV__ ? <SetRow icon="chart" tone="accent" label="Stats" value="Owner" onPress={() => router.push('/stats')} /> : null}
     </>
   );
 }

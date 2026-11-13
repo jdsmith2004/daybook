@@ -450,7 +450,7 @@ export function pullPauseWords(o: {
 /** what the flame says on setup's Screen Time page (setup.ts, the night page): what waits, and that it lifts whenever they want */
 export function pullSetupSay(o: { porn: boolean; at: Clock; lift?: number }): string {
   return (
-    'It usually starts with scrolling. Each feed will wait ten seconds before it opens' +
+    (o.porn ? 'It usually starts with scrolling. Each feed will wait ten seconds before it opens' : 'Each app you pick will wait ten seconds before it opens') +
     (o.porn ? ', and from ' + fmtClock(o.at) + ' adult sites wait ' + (o.lift ?? PULL_DEFAULTS.lift) + ' minutes.' : '.') +
     ' You can lift it whenever you want.'
   );

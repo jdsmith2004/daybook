@@ -21,6 +21,8 @@ import {
   TALK_MOVES,
   WALK_BAD,
   WALK_COACH,
+  walkCoach,
+  habitOf,
   WALK_SRC,
   WALK_LINES,
   WALK_NEEDS,
@@ -1068,7 +1070,8 @@ function Coach({
   const [open, setOpen] = useState(false);
   /* the flame takes the room the page leaves it, as in a lesson, and never less than it had */
   const [room, setRoom] = useState(0);
-  const c = beat ? WALK_COACH[beat] : null;
+  const { snap } = useStore();
+  const c = beat ? walkCoach(beat, habitOf(snap.settings)) : null;
   const reason = why || c?.why || '';
   const papers = src || (why ? [] : c?.src || []);
   useEffect(() => setOpen(false), [say]);
@@ -1106,7 +1109,8 @@ function Coach({
 /** a quiet "Why this works" under words that have no coach: opens the beat's reason and its papers in place */
 function WhyLine({ beat }: { beat: WalkBeat }) {
   const [open, setOpen] = useState(false);
-  const c = WALK_COACH[beat];
+  const { snap } = useStore();
+  const c = walkCoach(beat, habitOf(snap.settings));
   return (
     <View style={s.whyLine}>
       <Pressable

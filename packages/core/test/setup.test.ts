@@ -70,7 +70,10 @@ describe.each(flow.map((f, i) => ({ ...f, i })))('setup $i: $name', (f) => {
     const r = core.obSave(a, st, all, tk, 0);
     const got = JSON.parse(JSON.stringify(r.st));
     delete got.u;
-    expect(got).toEqual(f.saved);
+    /* since November 12, 2026 a new person starts on the two-moment day (two-moments.ts freshSettings, WP5): no evening check-in and
+       no "How are you feeling today?". The frozen record is the legacy app's, so a new person's saved settings differ by those two. */
+    const want = st ? f.saved : { ...f.saved, routine: { ...f.saved.routine, checkin: false }, dayFeel: false };
+    expect(got).toEqual(want);
     expect(r.changed).toBe(f.changes.length);
   });
 

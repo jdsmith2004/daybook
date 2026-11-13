@@ -10,6 +10,7 @@
    people who had them keep them. Faith shows in the two moments only when the person said faith plays a part (faithOn, D10 (a)).
    Checked by test/two-moments.test.ts. */
 import { addDays, defaultSettings, fmtClock, isTime, sumDay } from './legacy/core.js';
+import { faithVoice } from './faith';
 import { gradInfo, GRAD_DAYS } from './graduate';
 import { phoneNights } from './day';
 import { morningOf, tonightOf } from './morning-set';
@@ -112,6 +113,13 @@ export function freshSettings(tk: DayKey): Settings {
 export function faithOn(st: Settings | null | undefined): boolean {
   const a = st?.onb?.a as { faith?: string } | undefined;
   return !!a && (a.faith === 'big' || a.faith === 'some');
+}
+/** the faith line under Good night's words, only when faith is on (D10 (a)): the King James words of Matthew 5:14 for the voices that
+    quote Scripture, plain words for the other. Nothing at all when faith is off. */
+export function goodNightFaith(st: Settings | null | undefined): string | null {
+  if (!faithOn(st)) return null;
+  const v = faithVoice(st);
+  return v === 'lds' || v === 'christian' ? 'Ye are the light of the world. Matthew 5:14' : 'God is with you tonight, and in the morning.';
 }
 /** the morning reason that faith adds */
 export const FAITH_REASON = 'My faith';

@@ -46,7 +46,8 @@ export function openStop(go: StopGo, id?: string) {
   /* the any-time stops: the journal opens on its feeling picker, a new entry's first step (reaching out is marked in place, Row) */
   if (go === 'journal') return router.push({ pathname: '/journal', params: { new: '1' } });
   if (go === 'reach') return;
-  router.push(go === 'checkin' ? '/checkin' : '/wind');
+  if (go === 'morning') return router.push('/morning');
+  router.push(go === 'checkin' ? '/checkin' : '/night');
 }
 /** Next up names a stop by its key (evening, night; the lesson opens itself) */
 export function openStopKey(k: string) {
@@ -303,6 +304,8 @@ function DayLine({ tiles, mids, curKey, glass }: { tiles: StopTile[]; mids: (num
 /* ---------- what is next: the one big bright card, the whole card one tap, with its word on a sticker ---------- */
 const PILL: Partial<Record<string, string>> = { review: 'Start', week: 'See it', pattern: 'See it', back: 'Fill in' };
 type BigCard = Pick<Moment, 'eb' | 'h' | 'btn' | 'go'>;
+/** the big bright card on its own: Today after the night hour shows only this one, Phone to bed (app/(tabs)/index.tsx) */
+export const StopCard = ({ m, t }: { m: BigCard; t: StopTile }) => <Hero m={m} t={t} />;
 function Hero({ m, t }: { m: BigCard; t: StopTile }) {
   const c = useTheme();
   const pill = m.btn && m.btn.length <= 14 ? m.btn : PILL[m.go || ''] || 'Start';

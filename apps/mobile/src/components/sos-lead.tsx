@@ -1,6 +1,6 @@
 /* A few words on tinted glass above the SOS circle on Today, so a person knows what it is and is led to it when it counts (core sosLead):
    until SOS has been opened once, and around the hard hours. It moves a little to catch the eye, and a tap opens SOS. */
-import { notifyAsk, sosLead, urLastAt } from '@daybook/core';
+import { diffDays, notifyAsk, sosLead, urLastAt } from '@daybook/core';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
@@ -28,6 +28,8 @@ export function useSosLeadOn() {
   const mem = useNotifyMem();
   const st = snap.settings;
   if (Platform.OS !== 'ios' || !st || !sosLead(snap.days, st, tk, now, urLastAt(sos.mem))) return false;
+  /* only in a person's first week: SOS is always in the tab bar, and after that the words sit on top of the day's rows (WP5) */
+  if (!st.start || diffDays(tk, st.start) > 7) return false;
   return !(env && notifyAsk(env, mem, snap.days, st, tk, { at: urLastAt(sos.mem), now }));
 }
 

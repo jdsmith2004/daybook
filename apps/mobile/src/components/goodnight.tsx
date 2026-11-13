@@ -79,12 +79,12 @@ export function GoodnightButton({ onPress }: { onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Goodnight"
+      accessibilityLabel="Good night"
       accessibilityHint="Saves tonight and puts the phone away"
       onPress={onPress}
       style={({ pressed }) => [s.gn, { transform: [{ translateY: pressed ? 3 : 0 }], shadowOpacity: pressed ? 0 : 1 }]}>
       <Icon name="moon" size={24} color={MOON_INK} />
-      <Text style={s.gnT}>Goodnight</Text>
+      <Text style={s.gnT}>Good night</Text>
     </Pressable>
   );
 }
@@ -328,6 +328,8 @@ export function NightPage({
   plan,
   rowAbove,
   extra,
+  say,
+  after,
 }: {
   bed: Bed | null;
   /** the few words in the top bar while it is awake (core windWhen) */
@@ -341,6 +343,10 @@ export function NightPage({
   rowAbove?: ReactNode;
   /** a row low on the page once it is asleep */
   extra?: ReactNode;
+  /** Good night's own words (core two-moments.ts goodNightWords): the title and line before, and after */
+  say?: { title: string; sub: string; doneTitle: string; doneSub: string; own: string };
+  /** what Good night arms, said once it is asleep, under the words (the night's waits) */
+  after?: string | null;
 }) {
   const { snap, tk } = useStore();
   const st = snap.settings;
@@ -393,7 +399,7 @@ export function NightPage({
   };
   return (
     <View style={s.root} onStartShouldSetResponderCapture={wake}>
-      <SceneFrame title={morning ? 'A new day' : asleep ? 'Good night' : when || 'Wind-down'} sky={morning ? 'violet' : 'night'} onClose={close}>
+      <SceneFrame title={morning ? 'A new day' : asleep || say ? 'Good night' : when || 'Wind-down'} sky={morning ? 'violet' : 'night'} onClose={close}>
         {morning && bed ? (
           <Appear duration={600} by={6} style={[s.words, s.top]}>
             <T v="title" style={s.c} accessibilityRole="header">
@@ -407,11 +413,16 @@ export function NightPage({
         ) : words && bed ? (
           <Appear delay={reduce ? 0 : WORDS} duration={600} by={6} style={[s.words, s.top]}>
             <T v="title" style={s.c} accessibilityRole="header">
-              Phone down. Good night.
+              {say ? say.doneTitle : 'Phone down. Good night.'}
             </T>
-            <T style={s.c}>{words.line}</T>
+            <T style={s.c}>{say ? say.doneSub : words.line}</T>
+            {after ? (
+              <T v="small" tone="muted" style={s.c}>
+                {after}
+              </T>
+            ) : null}
             <T v="label" style={[s.c, { color: '#FFE27A' }]}>
-              {words.own}
+              {say ? say.own || words.own : words.own}
             </T>
             {bed.msg ? (
               <T v="small" tone="muted" style={s.c}>
@@ -434,9 +445,9 @@ export function NightPage({
         ) : (
           <View style={[s.words, s.top]}>
             <T v="title" style={s.c} accessibilityRole="header">
-              Put your flame to bed
+              {say ? say.title : 'Put your flame to bed'}
             </T>
-            <T style={s.c}>Phone on its charger, away from your bed.</T>
+            <T style={s.c}>{say ? say.sub : 'Phone on its charger, away from your bed.'}</T>
           </View>
         )}
         <NightMiddle level={morning ? level : held} asleep={asleep} grew={!!bed?.gain} awakeNow={morning} />

@@ -17,7 +17,6 @@ import {
   tipAsk,
   urLastAt,
   careLastAt,
-  tipButton,
   autoCount,
   bpsDue,
   freeDue,
@@ -42,6 +41,10 @@ import {
   standRow,
   sunriseDue,
   morningDue,
+  afterNightHour,
+  skyPhase,
+  fmtClock,
+  stopTiles,
 } from '@daybook/core';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -51,7 +54,7 @@ import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
 import { FeedbackTop } from '@/components/feedback-top';
-import { TIP_URL, TipCard, TipTop } from '@/components/support';
+import { TIP_URL, TipCard } from '@/components/support';
 import { HomeScreenCard } from '@/components/home-screen';
 import { MomentCard } from '@/components/moment-card';
 import { NightWinCard } from '@/components/night-win';
@@ -63,7 +66,7 @@ import { useSosLeadOn } from '@/components/sos-lead';
 import { TodayBelow } from '@/components/today-below';
 import { LogLink, WaitingPlan } from '@/components/today-log';
 import { Welcome } from '@/components/welcome';
-import { YourDay } from '@/components/your-day';
+import { StopCard, YourDay } from '@/components/your-day';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
 import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
@@ -297,7 +300,42 @@ export default function Today() {
   const done = pick.card.k === 'done';
   const size = sizeFor((slipLine ? NOTE_ROOM : 0) + (lead ? LEAD_ROOM : 0));
   const title = fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' });
-  const ink = skyInk(g.level.n);
+  const ink = skyInk(g.level.n, skyPhase(snap.days, st, tk, now));
+  /* after the night hour (tonight's time, core two-moments.ts), until the new day */
+  const night = afterNightHour(snap.days, st, tk, now);
+  /* the Good night stop, even on a day its row is switched off: Phone to bed is always the night's one card */
+  const nightTile = night ? stopTiles(snap.days, { ...st, routine: { ...st.routine, wind: true } }, tk, now).tiles.find((x) => x.k === 'night') || null : null;
+  const bedAt = snap.days[tk]?.p?.po || null;
+  /* the day: the care row, then the day's line and what waits under it */
+  const dayPage = (
+    <>
+      <LogLink />
+      <NotifyBanner />
+      <WaitingPlan snap={snap} tk={tk} now={now} />
+      {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
+      {calm || done ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}
+      {done ? (
+        <View style={s.done}>
+          <Text style={[s.doneH, { color: c.ink }]}>{pick.card.h}</Text>
+          <Text style={[s.line, { color: c.muted, paddingHorizontal: 0 }]}>{pick.card.p}</Text>
+        </View>
+      ) : null}
+      <YourDay
+        footOff={Platform.OS === 'ios' && atRest}
+        snap={snap}
+        tk={tk}
+        now={now}
+        hero={calm ? pick.card : null}
+        foot={[note ? note + '.' : '', pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
+      />
+      <TodayBelow snap={snap} tk={tk} now={now} />
+      <SyncStrip />
+      <NightWinCard snap={snap} tk={tk} />
+      {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false)} /> : null}
+      {tip ? <TipCard /> : null}
+      <HomeScreenCard />
+    </>
+  );
   return (
     <View style={{ flex: 1 }}>
       {holdsBar ? <StatusBar style={past ? (c.scheme === 'dark' ? 'light' : 'dark') : ink.light ? 'light' : 'dark'} /> : null}
@@ -324,36 +362,27 @@ export default function Today() {
             flame={size.flame}
             title={title}
             lead={<FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />}
-            action={
-              tipButton(snap.days, tk, TIP_URL, st, now, { now, sos: careLastAt(sos.mem) }) ? <TipTop on={{ glass: ink.glass, ink: ink.ink }} /> : undefined
-            }
           />
         }>
-        <LogLink />
-        <NotifyBanner />
-        <WaitingPlan snap={snap} tk={tk} now={now} />
-        {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
-        {calm || done ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}
-        {done ? (
-          <View style={s.done}>
-            <Text style={[s.doneH, { color: c.ink }]}>{pick.card.h}</Text>
-            <Text style={[s.line, { color: c.muted, paddingHorizontal: 0 }]}>{pick.card.p}</Text>
-          </View>
-        ) : null}
-        <YourDay
-          footOff={Platform.OS === 'ios' && atRest}
-          snap={snap}
-          tk={tk}
-          now={now}
-          hero={calm ? pick.card : null}
-          foot={[note ? note + '.' : '', pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
-        />
-        <TodayBelow snap={snap} tk={tk} now={now} />
-        <SyncStrip />
-        <NightWinCard snap={snap} tk={tk} />
-        {ask ? <AccountCard why={ask} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false)} /> : null}
-        {tip ? <TipCard /> : null}
-        <HomeScreenCard />
+        {night ? (
+          /* after the night hour, Today is the night page: one card, Phone to bed, and the care row; nothing else (WP5, mockup m3) */
+          <>
+            {nightTile ? (
+              <StopCard
+                m={
+                  bedAt
+                    ? { eb: 'Good night', h: 'Phone in bed at ' + fmtClock(bedAt), btn: 'Open', go: 'wind' }
+                    : { eb: 'Night · open now', h: 'Phone to bed', btn: 'Start', go: 'wind' }
+                }
+                t={nightTile}
+              />
+            ) : null}
+            <LogLink />
+            <WaitingPlan snap={snap} tk={tk} now={now} />
+          </>
+        ) : (
+          dayPage
+        )}
       </Screen>
       {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
     </View>

@@ -1,6 +1,7 @@
 /* The setup ("How Daybook works"): the answers, the pages, the goal it suggests, and the plan it builds. The questions, scores
    and goals are in the legacy core; the parts of the legacy setup that read the global Store or the clock are ported here as pure
    functions that take the settings and today. Checked against the legacy app by test/setup.test.ts. */
+import { freshSettings } from './two-moments';
 import {
   addDays,
   cleanReason,
@@ -554,7 +555,8 @@ export function obSave(a: SetupAnswers, st: Settings | null, keep: string[] | nu
   const ch = obChanges(a, st, tk);
   const rec = obRecord(a, st, tk, now);
   const use = st ? ch.filter((c) => (keep || []).indexOf(c.k) >= 0) : ch;
-  const base = st || defaultSettings(tk);
+  /* a new person starts on the two-moment day (two-moments.ts): no evening check-in, no "How are you feeling today?" */
+  const base = st || freshSettings(tk);
   const next = changeSettings(
     base,
     (s) => {

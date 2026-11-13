@@ -1,5 +1,154 @@
 # What is planned next
 
+## Mithras people come to Daybook, and a journal Insights page (the owner, November 13, 2026; planned, waiting on the owner's answers)
+
+The owner, November 13, 2026: "push users to come use this app instead and offer to transfer all their logs and journal data over to
+the new app ... it would remember there streak all there journal entries etc... also we'd start them from campfire". The owner also
+wants a minimal journal Insights page like the one in Mithras.
+
+It helps the person: someone who already did real work in Mithras does not start from nothing, and their journal comes with them.
+It helps Daybook: Mithras has real users, and each one who comes over is a person Daybook did not have to find.
+
+### What Mithras is and what it stores
+
+Mithras is the private repository `jdsmith2004/DeepWork` (bundle id `com.jeff.deepwork`, Expo 54, version 1.0.15). The repository has
+one commit, from January 6, 2026. Whether that matches the build in the store is the first question below.
+
+Everything a person keeps is in Supabase rows under their user id. Local copies in AsyncStorage are caches only.
+
+| Mithras table                      | What it holds                                                                                                                                                                                             | In Daybook                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `journals`                         | `created_at`, `title`, `content`, `emotions` (a list of ids from a mood-meter grid of about 190), `word_count`, `reflection_data` (where, doing what, with whom, answers), `response_plans`, `is_deleted` | **Maps cleanly.** One `JEntry` each: `d` is the local day of `created_at`, `at` its time, `t` the title as the first line and then the text, with where, doing what and with whom as plain lines under it. `w` is the first emotion mapped to Daybook's `FEELINGS` (both are four-quadrant mood meters): the same word where it exists, else the nearest word in the same quadrant. The other emotions go in `tags`, plus the tag `mithras`. Deleted rows are skipped. Word counts are counted again from the text. |
+| `streaks`                          | `current_streak`, `longest_streak`, `streak_days` (win days as dates; a setback is the same date with the year minus 100)                                                                                 | **Maps, with care.** Each setback becomes a slip on that day (time unknown, note "From Mithras"), so the log is true. `day1` and `start` become the first Mithras day. `longest_streak` becomes the floor in `seen.longest`, so the longest run carries over even where Daybook would count it differently. The win days must count as known days (so `away.ts` does not mark the gaps "unknown") without earning check-in points: a small marker on the day, decided in the build.                                 |
+| `goals`                            | title, category, progress, target, due date                                                                                                                                                               | **No home.** Daybook's goals are small and set by the app. Listed in the import summary as not brought over.                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `tool_sessions`                    | the deeper reflection (body, descriptors, answers)                                                                                                                                                        | **No home.** Too tool-shaped to be a journal entry. Not brought over.                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `user_profiles` / `profiles`       | onboarding answers: habit, how often, how long, motivations                                                                                                                                               | **Partly.** The habit and how often prefill Daybook's setup; setup still runs (it builds the plan and ends on the account ask).                                                                                                                                                                                                                                                                                                                                                                                     |
+| `ai_interactions`                  | AI coach chats                                                                                                                                                                                            | **Not brought over.** Daybook has no AI coach, and the chats are not the person's own words alone.                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| urges, moods, focus and meditation | not stored at all                                                                                                                                                                                         | Nothing to bring.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+
+What would be lost: goals, deeper reflections, AI chats, the icon and color of each emotion, and Mithras's "net streak" (+1 a win,
+-0.5 a miss). Daybook's count then works its own way from the imported days; the longest run stays as Mithras had it.
+
+### "Start them from Campfire"
+
+Mithras has no Campfire. It has no levels, points or flame stages at all: only a streak, and confetti on day 7, 30, 60, 90 and 100. So
+"Campfire" is Daybook's third flame form (`levels.ts`: Spark 0, Kindling 90, **Campfire 270**, Torch 540, Beacon 900 points).
+
+Recommendation: an import with real history (at least 7 Mithras days or 3 entries) starts at Campfire, step 1: `seen.pts` set to 270,
+the existing floor `gameCompute` already honours. That is about six steady days of Daybook, so it is a welcome for work done elsewhere,
+not inflation. Only the floor is set: everything after it is earned in Daybook, and the floor never drops (earned things stay earned).
+`seen.level` and the badges seen are set in the same step, so the import brings one moment, "Your fire came with you: a Campfire",
+and not a flood of level and badge celebrations. An empty Mithras account starts at Spark like anyone.
+
+Imported slips earn the 5-point honest log like any slip; journal entries earn nothing, as now.
+
+### The way across
+
+**A. An export file.** A new Mithras build writes a file; the person saves it and opens it in Daybook (`readBackup` already takes a
+Daybook-shaped file). Risks: it only works for people who install the new Mithras build first; handling a file on an iPhone (share
+sheet, Files, picker) loses people; the file sits in Files unencrypted.
+
+**B. An import inside Daybook (recommended).** A "Bring my Mithras journal" row (Settings, and once in setup). The person signs in to
+Mithras inside Daybook: Sign in with Apple, or the Mithras email and password, sent only to Mithras's Supabase. Daybook then reads only
+that person's rows, with that person's sign-in, straight from Supabase to the phone, builds the records in core (`mithras.ts`), shows a
+preview ("212 entries, your longest run 41 days, a Campfire"), and on Yes lands them through `restoreBackup`-style merging, which keeps
+what was earned. The Mithras session is then signed out and thrown away.
+
+- It works for every Mithras person, even one who never updates Mithras or has deleted it.
+- No Daybook server ever sees the data: it goes from Supabase to the phone, and syncs only if the person has an account and sync.
+- No account is needed in Daybook, and nothing is locked: care stays free.
+- Plain `fetch` to Supabase's auth and REST endpoints; no new library. The Supabase URL and anon key ship in Daybook (public by design).
+- Risks: it is only as safe as Mithras's row-level security (below). Imports run once, so a second import must not double entries:
+  each `JEntry` id is made from the Mithras row id, so importing again replaces instead of copying.
+
+**C. A server-side move.** A job with Supabase's service key reads every Mithras person's rows and writes them into Daybook accounts.
+It conflicts with "Privacy first" twice over: it is something that reads people's logs on the server, and it needs the move to match a
+Mithras person to a Daybook account, which joins identities Daybook keeps apart. It also moves everyone, not only those who choose it.
+Not recommended.
+
+**Sign-in does not carry over as such.** Daybook accounts are Cognito in the owner's AWS; Mithras is Supabase Auth. Passwords cannot be
+moved (Supabase keeps hashes Cognito cannot take, and Daybook asks for 12 characters). A Cognito "migrate user" trigger could check the
+password against Supabase on first sign-in, but it needs a new Lambda that handles passwords and a role made in `infra/bootstrap`, for
+little gain. Instead:
+
+- Apple: if Mithras and Daybook are under the same Apple developer team, the person's Apple identity is the same in both, so "Continue
+  with Apple" in Daybook just works, and the same Apple sign-in can open their Mithras rows once Daybook's bundle id is added to the
+  Apple provider in Supabase (owner, in the Supabase dashboard).
+- Email: the person types their Mithras email and password once in the import sheet. After the import, the account ask offers a Daybook
+  account with that email filled in.
+
+### Found in Mithras that needs the owner now (before anything ships)
+
+- **Row-level security is not visible.** The repository has no policies for `journals`, `streaks` or any other table, and a script
+  in it (`quick-fix-all.sh`) writes SQL that turns row-level security off on most tables. If it is off in the live project, anyone with
+  the anon key, which ships inside the Mithras app, can read every person's journal today. The owner checks in the Supabase dashboard
+  (Authentication, Policies) that every table has RLS on with "own rows only" policies. Plan B depends on it too.
+- **Secrets are committed** in `.env`: the Stripe secret key and the DeepSeek key (whose `EXPO_PUBLIC_` copy is also inside the shipped
+  app). Rotate both; the repository being private does not cover the copy in the app.
+- **No account delete.** The Settings button does nothing. Apple requires an in-app delete for apps with sign-up, so the new Mithras
+  build may be rejected without one (a Supabase function that deletes the person's rows and auth user).
+
+### The Mithras side: one new build
+
+- A full-screen moment on first open: "Mithras is becoming Daybook", the flame, what comes over (the journal, the streak, a Campfire),
+  one button to Daybook in the App Store (or straight into Daybook's import sheet with `daybook://import/mithras` when it is installed),
+  and a quiet link to keep using Mithras for now. A row in Settings for later. Mithras keeps working; nothing is taken away.
+- The account delete above, and the RLS fix if it is needed.
+- The store text follows Daybook's rule: no explicit words in the listing or What's New.
+- The build: a local one (`eas build --local` or Xcode), which uses none of the 15 monthly EAS builds; an EAS cloud build only with the
+  owner's yes for that build. Mithras has its own Expo project and an `app.json` / `app.config.js` that disagree (versions 1.0.15 and
+  1.0.13, two project ids), so the first step is finding which one the store build came from.
+- Later, a date when the Mithras server stops (the owner picks; six months after the build is a fair default), said in the app first.
+
+### A journal Insights page, minimal
+
+Reached from the journal only: a small chart mark in the journal's header. Not in Settings, which holds no pages of one's own record.
+Free: it is the journal's own count, and a journal that shows its growth gets written in more.
+
+From top to bottom, all from Daybook's own `Journal` (and the feelings the journal timeline already shows):
+
+- **Three numbers in a row**, each a big number with a small word under it: entries this year, days written, words written (counted
+  from the text). No cards around them: space and the numbers, as in Mithras.
+- **The month**, a plain calendar with a warm dot on each day with an entry; swipe for earlier months. One meaning only (a dot is an
+  entry), so it reads in two seconds.
+- **The feelings you felt most often**: the top five as horizontal bars on one baseline, the word at the start, the count on the end of
+  the bar, each bar in its feeling's own quadrant color. No legend.
+- **Empty**, it is the same page drawn in gray: zeros, an empty month, five gray bars with no words. No sentence asking the person to
+  write (show it, do not say it).
+- Spirit: a small flame sits by the words-written number and grows a little with the count, the one living thing on the page. It is not
+  a second chart.
+
+It follows "The look": one type scale (the numbers 34, labels 13), no capitals, no tinted icon circles, no card inside a card. The
+chart reads in two seconds: one shared baseline, the number on the mark, no second meaning.
+
+### Steps, each with its effort
+
+1. The owner checks Mithras's row-level security and rotates the two keys (the owner; no effort level).
+2. Core: `mithras.ts`, Mithras rows to Daybook records (entries, slips, `day1`, `seen.longest`, the Campfire floor), the emotion table,
+   and tests with made-up rows, including a second import that changes nothing. **High** (it lands in what a person has earned).
+3. The import sheet in Daybook: sign in (Apple and email), preview, Yes, the one Campfire moment, the Mithras session thrown away; the
+   `import` event with counts only, and the privacy page saying Mithras data goes only from Mithras to the phone. **High**.
+4. The emotion table itself (about 190 Mithras ids to `FEELINGS`): mechanical, to a Sonnet subagent. **Low**.
+5. The Mithras build: the hand-off moment, the Settings row, the account delete. In the DeepWork repository, its own session. **Medium**
+   (the account delete **high**).
+6. The Insights page: core counts (`jnInsights`), the screen, the empty state, the route in `EV_ROUTES`. **Medium**.
+7. QA on the web and the simulator with a made-up Mithras account of a few hundred entries, then the owner sees it on the simulator
+   before it merges. **Medium**.
+
+### Questions for the owner
+
+1. Is `jdsmith2004/DeepWork` (one commit, January 2026, version 1.0.15) the code of the Mithras in the store? Options: yes; no, the
+   newer code is somewhere else; not sure. Recommendation: confirm before step 5, since the Mithras build is made from it.
+2. The way across. Options: B, the import inside Daybook; A, an export file; both. Recommendation: B alone.
+3. Campfire for whom. Options: every import with real history (7 days or 3 entries) starts at Campfire 1; every import, even empty;
+   scaled by history (Campfire up to Torch). Recommendation: the first.
+4. The Mithras goals and deeper reflections. Options: leave them (listed in the summary as not brought); bring the reflections as journal
+   entries. Recommendation: leave them.
+5. The feelings bars on Insights. Options: everything the journal shows (entries, Name the feeling, the feeling before a slip); journal
+   entries only. Recommendation: everything the journal shows, since that is the journal the person reads.
+6. When the Mithras server stops. Options: six months after the new Mithras build; never (keep it for the import); the owner picks a
+   date. Recommendation: six months, said in the Mithras app.
+
 ## Lessons like Duolingo, and lessons that meet the night (the owner, November 12, 2026: "heavily use this for inspiration everywhere in the app"; WP11 in docs/review-plan.md; built on `claude/lessons-redesign-22657d`, show first)
 
 Why: Fable's review found the lessons do not meet the person where they are (C8), and the owner made Duolingo the model for lessons.

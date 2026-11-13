@@ -17,6 +17,7 @@ import { Answer, AnswerText } from '@/components/lesson-parts';
 import { Bubble } from '@/components/lesson-flame';
 import { Dock, Finish, SceneFrame } from '@/components/scene';
 import { Button, Icon, T } from '@/components/ui';
+import { UnlockSheet } from '@/components/unlocked';
 import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
@@ -56,6 +57,8 @@ export default function Unlocked() {
   const soft = night ? nightInk.muted : undefined;
   const [pause, setPause] = useState(true);
   const asking = useRef(false);
+  /* the part opens with its Unlocked moment, then the page under it is the one thing to do (the first Sunday has its own card) */
+  const [intro, setIntro] = useState(id !== 'sunday');
 
   useEffect(() => {
     buzz('lit');
@@ -113,64 +116,67 @@ export default function Unlocked() {
   };
 
   return (
-    <SceneFrame title="" sky={sky} onClose={() => close()}>
-      <View style={s.eb}>
-        <Icon name="sparkle" size={16} color={night ? '#FFE27A' : c.accent} />
-        <Text style={[s.ebT, { color: night ? '#FFE27A' : c.accent }]}>{w.eb}</Text>
-      </View>
-      <T v="title" style={[s.mid0, ink ? { color: ink } : null]} accessibilityRole="header">
-        {id === 'plan' && line ? 'When ' + line.ask + ', what will you do?' : w.title}
-      </T>
-      {w.line ? (
-        <T tone={night ? undefined : 'muted'} style={[s.mid0, { marginTop: 8 }, soft ? { color: soft } : null]}>
-          {w.line}
-        </T>
-      ) : null}
-      {id === 'person' ? (
-        <View style={s.name}>
-          <Field
-            label="Their name"
-            maxLength={80}
-            placeholder="A first name"
-            value={name}
-            onChangeText={setName}
-            returnKeyType="done"
-            onSubmitEditing={saveName}
-          />
-          <Button label={w.btn} onPress={saveName} disabled={!name.trim()} />
+    <View style={{ flex: 1 }}>
+      <SceneFrame title="" sky={sky} onClose={() => close()}>
+        <View style={s.eb}>
+          <Icon name="sparkle" size={16} color={night ? '#FFE27A' : c.accent} />
+          <Text style={[s.ebT, { color: night ? '#FFE27A' : c.accent }]}>{w.eb}</Text>
         </View>
-      ) : null}
-      <View style={s.mid}>
-        <Bubble text={w.say} style={{ alignSelf: 'center', maxWidth: 320 }} />
-        <Finish level={level} alive always least={0.6} size={190} zoom={1.25} />
-      </View>
-      {id === 'person' ? null : (
-        <Dock>
-          {id === 'plan' && line ? (
-            <View style={{ gap: 8 }}>
-              {line.opts.map((t) => (
-                <Answer key={t} sel={then === t} right={then === t} onPress={() => setThen(t)} style={s.opt}>
-                  <AnswerText right={then === t}>{t}</AnswerText>
-                </Answer>
-              ))}
-            </View>
-          ) : null}
-          {id === 'doors' ? (
-            <View style={{ gap: 8 }}>
-              {WAYS.map(([v, t, sub]) => (
-                <Answer key={t} sel={pause === v} right={pause === v} onPress={() => setPause(v)} style={s.opt}>
-                  <View style={{ gap: 2 }}>
-                    <AnswerText right={pause === v}>{t}</AnswerText>
-                    <Text style={[s.sub, { color: pause === v ? '#FFFFFF' : PAPER_INK }]}>{sub}</Text>
-                  </View>
-                </Answer>
-              ))}
-            </View>
-          ) : null}
-          <Button label={w.btn} onPress={main[id]} kind={night ? 'warm' : 'primary'} disabled={id === 'plan' && !then} />
-        </Dock>
-      )}
-    </SceneFrame>
+        <T v="title" style={[s.mid0, ink ? { color: ink } : null]} accessibilityRole="header">
+          {id === 'plan' && line ? 'When ' + line.ask + ', what will you do?' : w.title}
+        </T>
+        {w.line ? (
+          <T tone={night ? undefined : 'muted'} style={[s.mid0, { marginTop: 8 }, soft ? { color: soft } : null]}>
+            {w.line}
+          </T>
+        ) : null}
+        {id === 'person' ? (
+          <View style={s.name}>
+            <Field
+              label="Their name"
+              maxLength={80}
+              placeholder="A first name"
+              value={name}
+              onChangeText={setName}
+              returnKeyType="done"
+              onSubmitEditing={saveName}
+            />
+            <Button label={w.btn} onPress={saveName} disabled={!name.trim()} />
+          </View>
+        ) : null}
+        <View style={s.mid}>
+          <Bubble text={w.say} style={{ alignSelf: 'center', maxWidth: 320 }} />
+          <Finish level={level} alive always least={0.6} size={190} zoom={1.25} />
+        </View>
+        {id === 'person' ? null : (
+          <Dock>
+            {id === 'plan' && line ? (
+              <View style={{ gap: 8 }}>
+                {line.opts.map((t) => (
+                  <Answer key={t} sel={then === t} right={then === t} onPress={() => setThen(t)} style={s.opt}>
+                    <AnswerText right={then === t}>{t}</AnswerText>
+                  </Answer>
+                ))}
+              </View>
+            ) : null}
+            {id === 'doors' ? (
+              <View style={{ gap: 8 }}>
+                {WAYS.map(([v, t, sub]) => (
+                  <Answer key={t} sel={pause === v} right={pause === v} onPress={() => setPause(v)} style={s.opt}>
+                    <View style={{ gap: 2 }}>
+                      <AnswerText right={pause === v}>{t}</AnswerText>
+                      <Text style={[s.sub, { color: pause === v ? '#FFFFFF' : PAPER_INK }]}>{sub}</Text>
+                    </View>
+                  </Answer>
+                ))}
+              </View>
+            ) : null}
+            <Button label={w.btn} onPress={main[id]} kind={night ? 'warm' : 'primary'} disabled={id === 'plan' && !then} />
+          </Dock>
+        )}
+      </SceneFrame>
+      {intro ? <UnlockSheet name={w.h} line={w.line || w.say} go={{ label: 'Set it up', onPress: () => setIntro(false) }} /> : null}
+    </View>
   );
 }
 

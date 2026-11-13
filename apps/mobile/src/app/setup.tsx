@@ -1,7 +1,7 @@
 /* Setup in two minutes (WP10; the owner's decisions D4 and D14, November 12, 2026), with Duolingo as the model (the owner,
    November 12, 2026: "heavily use this for inspiration everywhere in the app for celebrations streaks onboarding lessons").
 
-   A new person: hello (the flame says how many quick questions), what they are quitting, how often, when it pulls hardest,
+   A new person: what they are quitting (the flame says hello on it), how often, when it pulls hardest,
    thirty seconds of breathing (the first win, the way SOS starts), the promise ("You are here. This time is different."),
    who it is for, faith, tonight (the phone-down time, and on a phone the note an hour before), then they light their flame
    for the first time, with a swipe up, and pick a small first goal. Then the free account ask, with "Keep it on this phone".
@@ -22,9 +22,8 @@ import {
   keyOfDate,
   LEARN_FREE,
   NUDGE_WORDS,
-  OB_FIRST,
+  obFirstGoals,
   OB_PAGES,
-  obAskCount,
   obBegin,
   obChanges,
   obGoal,
@@ -47,14 +46,13 @@ import {
   lessonStop,
   type DayKey,
 } from '@daybook/core';
-import { router } from 'expo-router';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, PanResponder, Pressable, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { Appear } from '@/components/appear';
-import { Confetti } from '@/components/celebrate';
 import { SHORT, useFitRoom } from '@/components/fit';
 import { Ignition } from '@/components/ignite';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
@@ -63,6 +61,7 @@ import { Ghost, Next } from '@/components/lx';
 import { Middle } from '@/components/scene';
 import { useClock } from '@/components/shapes';
 import { TIP_ON } from '@/components/support';
+import { UnlockSheet } from '@/components/unlocked';
 import { BEAT_BREATH, ToolTimer, type BeatOf } from '@/components/tools/timer';
 import { Icon, T } from '@/components/ui';
 import { ClockWheels } from '@/components/when';
@@ -83,7 +82,6 @@ import { font, MAX_WIDTH, nightInk, skies, useTheme } from '@/lib/theme';
 import { restoredWords, WORDS } from '@/lib/words';
 
 type Flow = SetupFlow;
-const NUM = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'];
 
 export default function Setup() {
   const base = useTheme();
@@ -180,9 +178,18 @@ export default function Setup() {
   const [cheer, setCheer] = useState(false);
   const done = () => {
     if (busy()) return;
-    buzz('lit');
     setCheer(true);
   };
+  /* SOS, unlocked: the person came back from the practice ride with Next (app/sos.tsx sets setupKeep.sos) */
+  const [sosOpen, setSosOpen] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!setupKeep.sos) return;
+      setupKeep.sos = false;
+      setF((x) => ({ ...x, a: { ...x.a, sosTried: true } }));
+      setSosOpen(true);
+    }, []),
+  );
   const finish = () => {
     setupKeep.flow = null;
     storeSetup(null);
@@ -242,8 +249,9 @@ export default function Setup() {
   const ans = (v: unknown) => (Array.isArray(v) ? v.length > 0 : v != null && v !== '');
   const nextBtn = (label: string, skip?: boolean) =>
     skip ? (
+      /* the same big button on every page: Skip until there is an answer, then Next, in the same place (nothing jumps) */
       <View key="s" style={s.footOne}>
-        <Ghost
+        <Next
           label={label}
           onPress={() => {
             if (busy()) return;
@@ -284,23 +292,72 @@ export default function Setup() {
           </>
         );
         foot = nextBtn('Start');
-        break;
       }
-      const n = obAskCount(a, env);
+      break;
+    }
+    case 'how': {
+      /* the first thing a new person sees: the flame, big and alive, saying hello, and the three ways Daybook helps */
       body = (
         <>
-          <Head h="Get free of it, one honest night at a time." />
-          {/* the first thing a new person sees: the flame, big and alive, saying hello. It is the same one they will light. */}
-          <Talk text={`Hi. I am your flame. ${NUM[n] || n} quick questions, and tonight is set.`} want={want} />
+          <Head h="Here is how I help you." />
+          <Talk text={voice} want={want * 0.75} />
+          <View style={s.rows}>
+            {HOW.map(([ic, t, sub], j) => (
+              <Appear key={ic} delay={400 + j * 500} by={12}>
+                <View style={s.row}>
+                  <View style={[s.rowIc, { backgroundColor: c.surface }]}>
+                    <Icon name={ic} size={22} color={ic === 'life' ? c.sos : c.accentText} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.howT, { color: c.ink }]}>{t}</Text>
+                    <T tone="muted">{sub}</T>
+                  </View>
+                </View>
+              </Appear>
+            ))}
+          </View>
         </>
       );
       foot = (
         <View key="h" style={[s.footOne, { gap: 2 }]}>
-          <Next label="Start" onPress={() => !busy() && go(1)} off={false} />
+          <Next label="Let us start" onPress={() => !busy() && go(1)} off={false} />
           {sync.status.k !== 'off' && sync.status.k !== 'on' ? (
             <TextLink label={sync.status.k === 'busy' ? sync.status.what : 'I already have an account'} onPress={() => sync.signInNow({ why: 'in' })} />
           ) : null}
           {BACKUP_FILES ? <TextLink label="I have a backup file" onPress={restore} /> : null}
+        </View>
+      );
+      break;
+    }
+    case 'sos': {
+      /* the real SOS, a short practice ride: its swipes and moves, then Next brings the person back here, and SOS is unlocked */
+      const tried = !!a.sosTried;
+      body = (
+        <>
+          <Head h={tried ? 'SOS is yours now.' : 'This is SOS.'} />
+          <Talk text={tried ? 'Next time an urge comes, you already know the way through.' : voice} want={want * 0.8} />
+        </>
+      );
+      /* no Skip and no second button: the person presses SOS itself, low where it sits on Today, the way they will when an urge
+         comes (the owner, November 13, 2026: "remove the skip button ... have them press the button like they would on the home screen") */
+      const sos = (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="SOS. Try it now."
+          onPress={() => {
+            if (busy()) return;
+            buzz('tap');
+            router.push({ pathname: '/sos', params: { practice: '1', setup: '1' } });
+          }}
+          style={({ pressed }) => ({ alignItems: 'center', transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+          <SosButton />
+        </Pressable>
+      );
+      foot = tried ? (
+        nextBtn('Next')
+      ) : (
+        <View key="so" style={s.footOne}>
+          {sos}
         </View>
       );
       break;
@@ -351,12 +408,6 @@ export default function Setup() {
         </>
       );
       foot = nextBtn(arr.length ? 'Next' : 'Skip', !arr.length);
-      break;
-    }
-    case 'breathe': {
-      const done = !!a.breathed;
-      body = <Breathe done={done} onDone={() => setA({ breathed: true })} />;
-      foot = done ? nextBtn('Next') : nextBtn('Skip', true);
       break;
     }
     case 'promise': {
@@ -456,6 +507,7 @@ export default function Setup() {
       body = (
         <FirstGoal
           tk={tk}
+          opts={obFirstGoals(a)}
           goal={st?.fwGoal ?? null}
           onGoal={(n) => {
             if (st) apply({ st: setFirstGoal(st, n) });
@@ -614,115 +666,96 @@ export default function Setup() {
         }>
         {body}
       </Shell>
-      {cheer ? (
-        <Cheer
-          onLesson={() => {
-            const id = snap.settings ? lessonStop(snap.days, snap.settings, tk).L?.id : null;
-            finish();
-            if (id) setTimeout(() => router.push({ pathname: '/lesson/[id]', params: { id } }), 50);
+      {sosOpen ? (
+        <UnlockSheet
+          name="SOS"
+          art={<SosButton small />}
+          line="Always one tap away, at the bottom of Today. It works day or night, with no account."
+          go={{
+            label: 'Next',
+            onPress: () => {
+              setSosOpen(false);
+              go(1);
+            },
           }}
-          onHome={finish}
+        />
+      ) : null}
+      {cheer ? (
+        <UnlockSheet
+          eb="Great job! You unlocked"
+          name="Lessons"
+          line="One a day, about two minutes. Each one changes how you see the urge, so the next one is easier. Your first is ready."
+          go={{
+            label: 'Keep going',
+            onPress: () => {
+              const id = snap.settings ? lessonStop(snap.days, snap.settings, tk).L?.id : null;
+              finish();
+              if (id) setTimeout(() => router.push({ pathname: '/lesson/[id]', params: { id } }), 50);
+            },
+          }}
+          other={{ label: 'Go home', onPress: finish }}
         />
       ) : null}
     </View>
   );
 }
 
-/* ---------- the end: a small celebration from the bottom, as Duolingo's "Awesome!" banner, with both ways on ---------- */
-function Cheer({ onLesson, onHome }: { onLesson: () => void; onHome: () => void }) {
+/* ---------- the SOS button as it sits on Today, for the SOS page and its unlock ---------- */
+function SosButton({ small }: { small?: boolean }) {
   const c = useTheme();
-  const inset = useSafeAreaInsets();
-  const still = useReducedMotion();
-  const up = useRef(new Animated.Value(still ? 1 : 0)).current;
-  useEffect(() => {
-    if (!still) Animated.spring(up, { toValue: 1, friction: 7, tension: 70, useNativeDriver: NATIVE }).start();
-  }, [still, up]);
+  const d = small ? 64 : 112;
   return (
-    <View style={StyleSheet.absoluteFill} accessibilityViewIsModal>
-      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(8,6,24,0.45)', opacity: up }]} />
-      {still ? null : <Confetti big={false} />}
-      <Animated.View
-        style={[
-          s.cheer,
-          { backgroundColor: c.mintSoft, paddingBottom: Math.max(16, inset.bottom + 8) },
-          { transform: [{ translateY: up.interpolate({ inputRange: [0, 1], outputRange: [320, 0] }) }] },
-        ]}>
-        <View style={s.cheerTop} accessible accessibilityRole="header" accessibilityLabel="Great job! Tonight is set.">
-          <Icon name="check" size={28} color={c.mint} />
-          <Text style={[s.cheerH, { color: c.mintText }]}>Great job!</Text>
-        </View>
-        <T style={{ color: c.mintText }}>Tonight is set. Your first lesson takes two minutes.</T>
-        <View style={{ gap: 2, marginTop: 6 }}>
-          <Next label="Keep going" noIcon onPress={onLesson} />
-          <Ghost label="Go home" onPress={onHome} />
-        </View>
-      </Animated.View>
+    <View
+      accessible
+      accessibilityLabel="The SOS button"
+      style={[s.sosBtn, { width: d, height: d, borderRadius: d / 2, backgroundColor: '#FFFFFF', shadowColor: c.sos }]}>
+      <Text style={[s.sosBtnT, { color: c.sos, fontSize: small ? 22 : 38, lineHeight: small ? 28 : 46 }]}>SOS</Text>
     </View>
   );
 }
 
-/* ---------- the first small goal, after the flame is lit (core ignite.ts igniteGoal: three nights, then seven) ----------
+/* the three ways Daybook helps, on the first page */
+const HOW: [string, string, string][] = [
+  ['life', 'SOS, when an urge hits', 'Breathing starts on the first tap, then a move at a time until it passes.'],
+  ['book', 'A lesson a day', 'Two minutes that change how you see the urge.'],
+  ['flame', 'Tell me each morning', 'Every honest night feeds me, and you watch me grow.'],
+];
+
+/* ---------- the first small goal, after the flame is lit (core setup.ts obFirstGoals: a close goal and a stretch, from how often it happens) ----------
    The lighting itself is WP8's Ignition (components/ignite.tsx), shown as the whole screen before this. Then the flame, big, asks
-   for a first goal, and the person picks it: three nights or seven, nothing bigger before a clean week (CLAUDE.md). Picking is the
+   for a first goal, and the person picks it: a close one or a stretch, never past a week before a clean week (CLAUDE.md). Picking is the
    commitment (Duolingo found an active choice, with nothing picked for you, holds better), so the button waits for it. */
-function FirstGoal({ goal, onGoal, tk }: { goal: number | null; onGoal: (n: number) => void; tk: DayKey }) {
+const NIGHTS = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
+const goalName = (n: number) => (n >= 7 ? 'A free week' : NIGHTS[n] + ' free nights');
+function FirstGoal({ goal, opts, onGoal, tk }: { goal: number | null; opts: [number, number]; onGoal: (n: number) => void; tk: DayKey }) {
   /* the morning the goal is kept: the person tells the last night of it that morning */
   const by = (n: number) => new Date(addDays(tk, n) + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }) + ' morning';
+  const [near, far] = opts;
   return (
     <>
       <Bubble
         text={
           goal
-            ? goal === 3
-              ? 'Three nights. Then we go for seven.'
-              : 'A whole week. I will light up every morning you tell me.'
+            ? goal >= 7
+              ? 'A whole week. I will light up every morning you tell me.'
+              : goal === near
+                ? `${NIGHTS[goal]} nights. Then we go for a week.`
+                : `${NIGHTS[goal]} nights is a stretch. I will light up every morning you tell me.`
             : 'Let us set your first goal. Small is how it starts.'
         }
       />
       <FlameSlot size={SHORT ? 240 : 330} min={SHORT ? 160 : 220} />
       <View style={{ gap: 10, alignSelf: 'stretch' }} accessibilityRole="radiogroup">
-        {OB_FIRST.map((n) => (
+        {opts.map((n) => (
           <Answer key={n} sel={goal === n} right={goal === n} onPress={() => onGoal(n)} style={s.goalRow} label={n + ' free nights, kept by ' + by(n)}>
             <Text style={[s.goalN, { color: goal === n ? '#FFFFFF' : PAPER_INK }]}>{n}</Text>
             <View style={{ flex: 1 }}>
-              <AnswerText right={goal === n}>{n === 3 ? 'Three free nights' : 'A free week'}</AnswerText>
+              <AnswerText right={goal === n}>{goalName(n)}</AnswerText>
               <Text style={[s.optSub, { color: goal === n ? '#FFFFFF' : PAPER_INK }]}>Kept by {by(n)}</Text>
             </View>
           </Answer>
         ))}
       </View>
-    </>
-  );
-}
-
-/* ---------- the first win: thirty seconds of the breathing SOS starts with ---------- */
-const BREATHE_SECS = 30;
-const BREATHE_BEAT: BeatOf = { ...BEAT_BREATH, words: ['Breathe in', 'Breathe out'] };
-function Breathe({ done, onDone }: { done: boolean; onDone: () => void }) {
-  const c = useTheme();
-  const sec = useClock(true);
-  const gone = done ? BREATHE_SECS : Math.min(sec, BREATHE_SECS);
-  useEffect(() => {
-    if (done || sec < BREATHE_SECS) return;
-    buzz('lit');
-    onDone();
-  }, [done, sec, onDone]);
-  return (
-    <>
-      <Head h={done ? 'You just did the whole skill.' : 'Try it once. Thirty seconds.'} />
-      <Middle>
-        <ToolTimer
-          p={gone / BREATHE_SECS}
-          left={(BREATHE_SECS - gone) * 1000}
-          sec={sec}
-          beat={done ? BEAT_BREATH : BREATHE_BEAT}
-          touch={done ? undefined : BREATHE_SECS}
-          label={done ? 'Well done' : 'Breathing'}
-          color={c.scheme === 'dark' ? c.sun : c.accent}
-          ink={c.accentText}
-        />
-      </Middle>
-      <Say text={done ? 'When an urge comes, SOS starts right here, with you.' : obSay('breathe')} />
     </>
   );
 }
@@ -827,18 +860,8 @@ const s = StyleSheet.create({
   week: { flexDirection: 'row', justifyContent: 'space-between', alignSelf: 'stretch', paddingHorizontal: 8 },
   dot: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 12 },
-  cheer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    gap: 8,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-  },
-  cheerTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  cheerH: { fontFamily: font.displayBold, fontSize: 28, lineHeight: 34 },
+  howT: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 22 },
+  sosBtn: { alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 4 } },
+  sosBtnT: { fontFamily: font.displayBold },
   goalN: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 40 },
 });

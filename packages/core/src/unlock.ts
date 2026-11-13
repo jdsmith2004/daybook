@@ -119,7 +119,7 @@ export interface UnlockWords {
 
 export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
   bed: {
-    eb: 'New tonight',
+    eb: 'Unlocked tonight',
     h: 'Where your phone sleeps',
     title: 'Where does your phone sleep?',
     line: 'Most hard nights start with a phone in bed.',
@@ -127,7 +127,7 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
     btn: 'Set it for tonight',
   },
   person: {
-    eb: 'New today',
+    eb: 'Unlocked',
     h: 'One person',
     title: 'Who is one person on your side?',
     line: 'Only you see the name. Daybook never contacts anyone.',
@@ -135,21 +135,21 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
     btn: 'Keep their name',
   },
   plan: {
-    eb: 'New today',
+    eb: 'Unlocked',
     h: 'The first line of your plan',
     title: 'When it comes, what will you do?',
     say: 'Decide it now, on a calm day. Then the hard moment only has to remember.',
     btn: 'Make it my plan',
   },
   doors: {
-    eb: 'New today',
+    eb: 'Unlocked',
     h: 'The other doors',
     title: 'Which app pulls you in?',
     say: 'A few seconds before it opens, every time. That moment is where you choose.',
     btn: 'Choose the apps',
   },
   voice: {
-    eb: 'New today',
+    eb: 'Unlocked',
     h: 'A note from you',
     title: 'Leave a note for your next hard night',
     line: 'In your own voice. It stays on this phone.',

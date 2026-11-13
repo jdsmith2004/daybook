@@ -229,7 +229,7 @@ export interface Settings {
       finished the long one never see the first-week parts (unlock.ts). Set once. Optional, so older records need no change. */
   fw?: DayKey;
   /** the first small goal picked when the flame was first lit: 3 or 7 free nights */
-  fwGoal?: 3 | 7;
+  fwGoal?: number;
   /** the day the widget was offered (flame-widget.ts widgetAskDue): offered once. Optional, so older records need no change. */
   widgetAsk?: DayKey;
   /** the day graduation was earned (see graduate.ts). Set once and never cleared. Optional, so older records need no change. */

@@ -910,6 +910,35 @@ a defence that works with the app closed, a record that is true, a day small eno
 - **Done looks like.** Every step of the script passes on the phone, or the failure is written down with what Apple did. Then, and
   only then, ask the owner for the yes for one `production-pull` store build, naming the profile and that it uses one of the 15.
 - **Checked by:** the core pull, proof and lock-screen tests; the device script, signed off by the owner, in the notes folder.
+- **Merged November 13, 2026, without step 10, by the owner's choice** ("after you qa just merge i'm not gonna run the sim on my
+  phone"). Nothing of it has run on an iPhone: what only Apple can show (callbacks early or late, the 6:05 check, the adult filter's
+  page, the browsers, the stale Live Activity) is still unproven, and `docs/screen-time/test-on-iphone.md` is the test for when a
+  phone is at hand. A `production-pull` TestFlight build still needs the owner's own yes (one of the 15).
+- **Built (November 12, 2026), steps 1 to 9.** None of the ten was on main before this
+  (only "not gone through" in the proof, from `086e0664`). What was built:
+  1. Core `pullParts` decides Apple's schedules (the evening part, after midnight, a heartbeat 5 minutes after the start, a morning
+     check at 6:05) and they ride in the bridge; the night's own callbacks read the clock 2 minutes ahead (`PULL_GRACE`). Every
+     time the morning can pick is covered from its minute (tested); a start after 23:44 can only come from Good night, which arms
+     at once.
+  2. Core `pullTrouble` and the module's `status` and `health`: no yes on this phone (a restore), a schedule Apple would not start,
+     apps that cannot be read back, more than 50 apps. More says "Not working" with the one tap that fixes it, the morning page
+     stops saying adult sites wait and says what is wrong, and Today shows a strip (X hides it until tomorrow). Access taken back
+     in Settings turns it off and More says why. The night filter now runs even when the picked apps cannot be read.
+  3. `armNow` in the module and `pullArmNight` in lib/pull.ts (core `pullArmNow`) for WP5's Good night.
+  4. Over a site the filter holds (not a picked feed), Daybook's shield, if Apple shows it there, offers "Wait 15 minutes" and
+     opens `/pause?w=long` (or the "🔥 Here" note before iOS 26.5). Whether Apple shows Daybook's shield over the adult filter at
+     all is step 5 of the device script; if it shows its own page, the long wait stays in More only.
+  5. "Notes only" arms nothing (adult sites too).
+  6. The nights record has 3 for a night held to the morning (the 6:05 check or the app's first open after 6 AM, access still
+     given); only 3 counts as "Lock held". Opening a feed after the night's short wait is a night gone through, said first on
+     the wait screen. Access taken back at night is a night gone through.
+  7. A later start for a night already handed to the phone waits for the morning (core `pullHoldStart`, which covers the sleep
+     time and "Start tonight at"); the short wait counts from the shield's tap, a wait left over more than two minutes in the
+     background starts again, and a wait opened by day becomes the night's when the night has started.
+  8. A Live Activity past its end (Apple's stale date) draws only the flame: no words, no time, no bar.
+  9. `docs/screen-time/test-on-iphone.md` rewritten from the audit's script, with the browser cases.
+     Compiled for the simulator with `DAYBOOK_PULL=1` (the module and all three extensions). The preview can show each failure with
+     `EXPO_PUBLIC_PULL_TROUBLE=ask|retry|pick` beside `EXPO_PUBLIC_PULL_PREVIEW=1`.
 
 ### WP3. Daybook: Fixes sweep
 
@@ -1044,21 +1073,19 @@ a defence that works with the app closed, a record that is true, a day small eno
   Daybook's server.
 - **Checked by:** core tests for the note's words (a word test: no slip, urge, count of nights or habit name can appear in it), pictures.
 
-### WP8. Daybook: Quiet the game
+### WP8. Daybook: Celebrations like Duolingo (replaces "Quiet the game", which the owner turned down: D7)
 
-- **Model and effort:** Opus, medium (earned things must not move).
-- **Waits on:** D7. **Depends on:** WP5.
-- **Goal (C10).** Points and level numbers show on one page; the flame's forms carry the progress; sheets open for true firsts only.
-- **Read first:** `review-nov-12/seams.md` (the twelve places points show; Milestones, Points and Growth), `critic-more.md`, and
-  `dan.md` (a month of doing everything: every number and celebration he was shown, day by day).
-- **What to build.** Remove every "+N points" and level number outside Milestones (lesson end, check-in end, Goodnight, Today's row
-  chips, the widget toast, the rode-out chip, the Sunday review); the hero and More say the form by name; Milestones leads with "Who you
-  are becoming" and holds the level, points and badges under it, with Points and Growth folded in; a celebration sheet only for a new
-  form, a true first and graduation, never over the morning or after an SOS or a slip, never with a tip ask in it; the Support pill
-  leaves Today's sky (the tip ask stays in More and at its earned moments).
-- **Done looks like:** points still add up exactly as before (a test compares totals before and after over the fuzz histories); a month
-  of Dan's days shows no number chasing on any screen but Milestones.
-- **Checked by:** `npm test`, the upgrade test, pictures.
+- **Model and effort:** Opus, medium for screens, high for anything that changes points or earned things. Show first.
+- **Branch:** `claude/celebrations-941c95`. Shared pieces for WP10 (setup) and WP11 (lessons): `components/ignite.tsx` (`Ignition`),
+  `components/lesson-finish.tsx` (`LessonFinish`), core `ignite.ts`.
+- **Built so far.** Lighting the night: a free night told in the morning opens a dark screen where the flame waits with an ember in it;
+  the person swipes it alight, it bursts, the count turns over, the flame says who they are becoming, the row of nights ticks in, the
+  button comes last (`docs/review/wp8-ignite-before.png`, `wp8-ignite-after.png`). The lesson finish: tiles land one by one, the
+  points fly into the flame and fill the level bar, the flame says the line to keep, the button last.
+- **Still to build.** The moments for an urge ridden out, a told morning and the phone put to bed; small goals (3, then 7 nights,
+  core `igniteGoal`); the tip ask at most once, on a new flame form.
+- **Bounds.** No big goals before a clean week; after a slip only the honesty and the comeback are celebrated (core `ptsQuiet`);
+  earned things stay earned; no random-reward chests (the owner to confirm).
 
 ### WP9. Daybook: Sunday in three pages (show first)
 

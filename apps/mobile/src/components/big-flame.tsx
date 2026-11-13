@@ -9,7 +9,7 @@
    With `douse` it is first seen burning fully and then goes down, as if water were poured on it; when `low` comes back to 0 it is lit again: the
    heart catches, the fire climbs back and leaps, sparks fly and the smoke clears. Under Reduce Motion it is simply drawn as low as it burns. */
 import { emblemLayers, fireOf, formOfLevel, gradOf, lowXml, sadXml, type EmblemLayers, type Fire } from '@daybook/core';
-import { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import Reanimated, { Easing as REasing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
@@ -104,6 +104,8 @@ export const BigFlame = memo(function BigFlame({
   low,
   douse,
   smoke,
+  calm,
+  heart,
 }: {
   level: number;
   size: number;
@@ -117,13 +119,17 @@ export const BigFlame = memo(function BigFlame({
   douse?: boolean;
   /** the smoke's color, for the sky behind it */
   smoke?: string;
+  /** low without the sad face: a fire waiting to be lit, not one going out (app/ignite.tsx) */
+  calm?: boolean;
+  /** something drawn at the figure's heart, centered on it (the ember of app/ignite.tsx) */
+  heart?: ReactNode;
 }) {
   const still = useReducedMotion();
   const { snap } = useStore();
   const grad = !!gradOf(snap.settings);
   const full = useMemo(() => bigLayers(level, noLand), [level, noLand]);
   /* while it burns low the face is sad, and it smiles again when it is lit again (core sadXml) */
-  const sad = (low ?? 0) > 0;
+  const sad = !calm && (low ?? 0) > 0;
   const b = useMemo(
     () =>
       full && sad
@@ -272,6 +278,12 @@ export const BigFlame = memo(function BigFlame({
           </Animated.View>
         )}
         {layers.front ? <SvgXml xml={layers.front} width={S} height={S} style={StyleSheet.absoluteFill} /> : null}
+        {heart ? (
+          <View
+            style={{ position: 'absolute', left: layers.at.x * S, top: layers.at.y * S, width: 0, height: 0, alignItems: 'center', justifyContent: 'center' }}>
+            {heart}
+          </View>
+        ) : null}
       </View>
       {grad ? (
         /* on the head, whichever form */

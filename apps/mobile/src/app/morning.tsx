@@ -17,6 +17,7 @@ import {
   nightBeforeDue,
   gameCompute,
   habitOf,
+  heroNumber,
   futureAsk,
   lastNightSlip,
   rkOpenFor,
@@ -48,7 +49,7 @@ import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { nightWaitsOn } from '@/lib/morning';
+import { nightWaitsOn, pullTroubleLine } from '@/lib/morning';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { askedFuture, useFuture } from '@/lib/future';
@@ -96,6 +97,8 @@ export default function Morning() {
   const [f, setF] = useState<1 | 2 | 3 | null>(start.f);
   const [n2, setN2] = useState<'free' | 'slip' | null>(start.n2);
   const [r, setR] = useState<string>(start.reasons[0] || '');
+  /* Screen Time not working: said here, under tonight's time, with a tap to More's Screen Time page (core pullTrouble) */
+  const trouble = pullTroubleLine();
   const [nt, setNt] = useState<Clock>(start.nt);
   const [said, setSaid] = useState<'free' | 'slip' | null>(null);
   const leaving = useRef(false);
@@ -114,6 +117,8 @@ export default function Morning() {
   };
   const next = () => {
     if (!n || !st) return;
+    /* the count as it stood before the night is told, so the lighting can turn it over */
+    const before = heroNumber(snap.days, st, tk, now)?.n;
     /* earned as usual, but nothing is said about points here: no ceremony after It happened (noWin) */
     const t = Date.now();
     update(
@@ -129,6 +134,8 @@ export default function Morning() {
     setSaid(n);
     buzz('save');
     go('why', 1);
+    /* a free night: the person lights their own flame over the morning (app/ignite.tsx), and its button comes back here */
+    if (n === 'free' && said !== 'free') router.push({ pathname: '/ignite', params: before ? { from: before } : {} });
   };
   const set = () => {
     if (!st || leaving.current) return;
@@ -220,6 +227,11 @@ export default function Morning() {
               <Text style={[s.timeR, { color: c.sun }]}>{fmtClock(nt)}</Text>
               <Icon name="next" size={14} color={c.sun} />
             </Pressable>
+            {trouble ? (
+              <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/settings/[part]', params: { part: 'pull' } })} hitSlop={6}>
+                <Text style={[s.trouble, { color: c.sun }]}>{trouble}</Text>
+              </Pressable>
+            ) : null}
             <Button label={W.set} kind="warm" onPress={set} disabled={!r} />
             {rk ? (
               <View style={s.c}>
@@ -335,4 +347,5 @@ const s = StyleSheet.create({
   time: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48, borderRadius: 16, paddingHorizontal: 18, backgroundColor: 'rgba(43,31,87,0.62)' },
   timeL: { flex: 1, fontFamily: font.bodySemi, fontSize: 15, color: nightInk.ink },
   timeR: { fontFamily: font.bodyBold, fontSize: 15 },
+  trouble: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'center', paddingHorizontal: 8 },
 });

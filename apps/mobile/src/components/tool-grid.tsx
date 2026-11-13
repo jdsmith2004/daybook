@@ -65,6 +65,7 @@ export function ToolGrid({
   night,
   lead,
   onLead,
+  omit,
 }: {
   days: Days;
   onPick: (id: string) => void;
@@ -74,6 +75,8 @@ export function ToolGrid({
   /** one ride move shown first, in a group of its own (SOS: It is written, for people who said faith plays a part) */
   lead?: { id: string; name: string; desc: string; ic: string; tone: string; group: string };
   onLead?: (id: string) => void;
+  /** tools already offered above it, so no door is listed twice (SOS, More) */
+  omit?: string[];
 }) {
   const c = useTheme();
   const tried = urTried(days);
@@ -99,42 +102,46 @@ export function ToolGrid({
           </Pressable>
         </View>
       ) : null}
-      {TOOL_GROUPS.map(([g, name]) => (
-        <View key={g} style={{ gap: 8 }}>
-          <T v="eyebrow" tone="muted" accessibilityRole="header">
-            {name}
-          </T>
-          <View style={s.grid}>
-            {TOOLS.filter((t) => t.g === g && UR_QUIET.indexOf(t.id) < 0 && !(t.id === 'bed' && night === false)).map((t) => {
-              const [soft, ink] = toolTone(c, t.tone);
-              const isNew = any && !tried[t.id];
-              const tag = tags?.[t.id];
-              return (
-                <Pressable
-                  key={t.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${t.name}. ${t.desc}${tag ? '. ' + tag : isNew ? '. New for you' : ''}`}
-                  onPress={() => onPick(t.id)}
-                  style={({ pressed }) => [s.tool, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
-                  <ToolShape id={t.id} ic={t.ic} size={46} iconSize={22} color={soft} ink={ink} />
-                  <View style={{ flex: 1 }}>
-                    <View style={s.nameRow}>
-                      <Text style={[s.name, { color: c.ink, flexShrink: 1 }]}>{t.name}</Text>
-                      {isNew ? (
-                        <View style={[s.new, { backgroundColor: c.sun }]}>
-                          <Text style={[s.newT, { color: c.onSun }]}>New</Text>
-                        </View>
-                      ) : null}
+      {TOOL_GROUPS.map(([g, name]) => {
+        const list = TOOLS.filter((t) => t.g === g && UR_QUIET.indexOf(t.id) < 0 && !(t.id === 'bed' && night === false) && !omit?.includes(t.id));
+        if (!list.length) return null;
+        return (
+          <View key={g} style={{ gap: 8 }}>
+            <T v="eyebrow" tone="muted" accessibilityRole="header">
+              {name}
+            </T>
+            <View style={s.grid}>
+              {list.map((t) => {
+                const [soft, ink] = toolTone(c, t.tone);
+                const isNew = any && !tried[t.id];
+                const tag = tags?.[t.id];
+                return (
+                  <Pressable
+                    key={t.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t.name}. ${t.desc}${tag ? '. ' + tag : isNew ? '. New for you' : ''}`}
+                    onPress={() => onPick(t.id)}
+                    style={({ pressed }) => [s.tool, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
+                    <ToolShape id={t.id} ic={t.ic} size={46} iconSize={22} color={soft} ink={ink} />
+                    <View style={{ flex: 1 }}>
+                      <View style={s.nameRow}>
+                        <Text style={[s.name, { color: c.ink, flexShrink: 1 }]}>{t.name}</Text>
+                        {isNew ? (
+                          <View style={[s.new, { backgroundColor: c.sun }]}>
+                            <Text style={[s.newT, { color: c.onSun }]}>New</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text style={[s.desc, { color: c.muted }]}>{t.desc}</Text>
+                      {tag ? <Text style={[s.tag, { color: c.mintText }]}>{tag}</Text> : null}
                     </View>
-                    <Text style={[s.desc, { color: c.muted }]}>{t.desc}</Text>
-                    {tag ? <Text style={[s.tag, { color: c.mintText }]}>{tag}</Text> : null}
-                  </View>
-                </Pressable>
-              );
-            })}
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }

@@ -56,6 +56,7 @@ import { HomeScreenCard } from '@/components/home-screen';
 import { MomentCard } from '@/components/moment-card';
 import { NightWinCard } from '@/components/night-win';
 import { NotifyBanner } from '@/components/notify-banner';
+import { PullTroubleStrip } from '@/components/pull-trouble';
 import { Hero, skyInk } from '@/components/hero';
 import { openJournalFrom } from '@/components/journal';
 import { Screen } from '@/components/screen';
@@ -331,6 +332,7 @@ export default function Today() {
         }>
         <LogLink />
         <NotifyBanner />
+        <PullTroubleStrip />
         <WaitingPlan snap={snap} tk={tk} now={now} />
         {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
         {calm || done ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}

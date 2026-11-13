@@ -23,6 +23,7 @@ const WORD: Record<CalKind, string> = {
   logged: 'logged',
   none: 'nothing logged',
   away: 'you were away',
+  untold: 'not told',
   before: 'before the log started',
   ahead: 'still to come',
 };
@@ -89,6 +90,7 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
       ['saved', 'You came back'],
       ['logged', 'Logged'],
       ['away', 'Away'],
+      ['untold', 'Not told'],
       ['ahead', 'To come'],
     ] as [CalKind, string][]
   ).filter(([k]) => kinds.has(k) || (k === 'slip' && kinds.has('saved')));
@@ -204,6 +206,10 @@ function Day({ d, end }: { d: CalDay; end?: boolean }) {
   else if (isSlip(d.kind)) inner = num(ON_SLIP);
   else if (d.kind === 'logged') inner = <View style={[s.round, { backgroundColor: COOL }]}>{num(NIGHT.ink)}</View>;
   else if (d.kind === 'away') inner = <View style={[s.round, s.open, { borderColor: NIGHT.muted }]}>{num(NIGHT.muted)}</View>;
+  /* a night nobody told Daybook about (core truth.ts): hollow and dashed, plainer than a day still to come, and nothing counted */ else if (
+    d.kind === 'untold'
+  )
+    inner = <View style={[s.round, s.open, s.dash, { borderColor: NIGHT.muted }]}>{num(NIGHT.muted)}</View>;
   else if (d.kind === 'ahead') inner = <View style={[s.round, s.open, s.dash]}>{num('rgba(207,200,242,0.5)')}</View>;
   else inner = num(d.kind === 'before' ? 'rgba(207,200,242,0.35)' : NIGHT.muted);
   if (!open)
@@ -232,6 +238,7 @@ function Swatch({ k }: { k: CalKind }) {
   if (k === 'saved') return <View style={[s.back, s.swBack]} />;
   if (k === 'logged') return <View style={[s.swDot, { width: 12, height: 12, backgroundColor: COOL }]} />;
   if (k === 'away') return <View style={[s.swDot, s.open, { width: 12, height: 12, borderColor: NIGHT.muted }]} />;
+  if (k === 'untold') return <View style={[s.swDot, s.open, s.dash, { width: 14, height: 14, borderRadius: 7, borderColor: NIGHT.muted }]} />;
   return <View style={[s.swDot, s.open, s.dash, { width: 14, height: 14, borderRadius: 7 }]} />;
 }
 

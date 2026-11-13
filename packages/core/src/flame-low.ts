@@ -11,7 +11,9 @@
    Only the fire's glow changes: level, form, points and badges never move. And never in the hours after a slip (SLIP_HOURS, the same 72 hours
    the hero shows the time since one), when the job is to bring the person back. Today itself does not count against them until it is over.
    Checked by test/flame-low.test.ts. */
-import { SLIP_HOURS } from './hero';
+import { awayAnsweredOn, dayUntold } from './away';
+import { latestSlip, SLIP_HOURS } from './hero';
+import { truthOn } from './truth';
 import { addDays, dayPoints, diffDays, evMs, sumDay } from './legacy/core.js';
 import type { DayKey, Days, Settings } from './types';
 
@@ -35,6 +37,10 @@ export interface FireLow {
   warn: boolean;
   /** it burns lower because the hard hours' notes were ignored (Screen Time, pull.ts pullDrift), not for days with nothing done */
   pull?: boolean;
+  /** under the true record (truth.ts): nights in a row not told, back from last night */
+  untold?: number;
+  /** last night is not told yet: telling it lights the fire fully */
+  tell?: boolean;
 }
 
 /** whether the person did their part on a day: anything that earns points, a tool, a talk-through or a feeling named */
@@ -48,18 +54,65 @@ export function partDone(days: Days, st: Settings, k: DayKey): boolean {
 
 const stepOf = (idle: number): LowStep => (idle >= LOW_AT[2] ? 3 : idle >= LOW_AT[1] ? 2 : idle >= LOW_AT[0] ? 1 : 0);
 
-/** the latest slip logged, in ms, looking back far enough for SLIP_HOURS */
+/** the latest slip logged, in ms (for a slip told with no time, when it was told: hero.ts slipAt), looking back far enough for SLIP_HOURS */
 export function lastSlipMs(days: Days, st: Settings, tk: DayKey): number | null {
-  for (let i = 0; i <= 4; i++) {
-    const k = addDays(tk, -i);
-    if (!sumDay(days[k]).slipped) continue;
-    return Math.max(...days[k].events.filter((e) => e.outcome === 'slipped').map((e) => evMs(k, e.time, st.rollover)));
+  return latestSlip(days, st, tk)?.at ?? null;
+}
+
+/* ---------- the owner's rule, under the true record (D2, November 12, 2026) ----------
+   "You feed a fire it grows, you don't feed it it dims, then when it's dimmer feeding is more rewarding and you want to do it more."
+   From truthFrom on (truth.ts) the fire is a heat that each finished day moves, oldest first:
+   - Telling the truth about a night (the morning's answer, the catch-up row, an evening check-in, a slip logged, Welcome back's
+     number) lights it fully: honesty is never followed by embers.
+   - Anything else good (a lesson, an urge ridden out, the phone put to bed, a tool, a talk-through) feeds it: the dimness halves,
+     so a low fire grows visibly more from one feed than a full one does.
+   - A day with nothing fed dims it one step. A night nobody told about dims it one step even on a day that was fed, so not
+     telling never pays better than telling a slip (which lights it fully).
+   - It never dims in the hours after a slip (SLIP_HOURS), and today counts for the person at once but against them only once it
+     is over. Before truthFrom the rule of November 8 holds: days in a row with nothing done. */
+/** the most dimness kept: one feed from the lowest is always visible */
+const HEAT_CAP = 4;
+const heatStep = (v: number): LowStep => stepOf(v);
+/** whether something on log day k told a night: the morning's answer or catch-up row, a slip logged, an evening check-in, or
+    Welcome back's number answered that day */
+function toldThatDay(days: Days, st: Settings, k: DayKey): boolean {
+  const d = days[k];
+  const ms = d?.p?.ms;
+  return !!(ms?.n || ms?.n2 || sumDay(d).slipped || d?.checkin?.done || awayAnsweredOn(st, k));
+}
+/** the heat after day k, from the heat before it. past: k is over, so a night not told before it counts against it. */
+function heatAfter(days: Days, st: Settings, tk: DayKey, k: DayKey, v: number, past: boolean): number {
+  if (toldThatDay(days, st, k)) return 0;
+  if (partDone(days, st, k)) {
+    const y = addDays(k, -1);
+    const untold = past && y >= st.start && dayUntold(days, st, y, tk);
+    return Math.min(HEAT_CAP, Math.round(v / 2) + (untold ? 1 : 0));
   }
-  return null;
+  return past ? Math.min(HEAT_CAP, v + 1) : v;
+}
+function fireTruth(days: Days, st: Settings, tk: DayKey, nowMs: number): FireLow {
+  const back = Math.min(LOOK_BACK, diffDays(tk, st.start));
+  let v = 0;
+  for (let i = back; i >= 1; i--) v = heatAfter(days, st, tk, addDays(tk, -i), v, true);
+  let idle = 0;
+  while (idle < back && !partDone(days, st, addDays(tk, -1 - idle)) && !toldThatDay(days, st, addDays(tk, -1 - idle))) idle++;
+  let untold = 0;
+  while (untold < back && dayUntold(days, st, addDays(tk, -1 - untold), tk)) untold++;
+  const tell = dayUntold(days, st, addDays(tk, -1), tk);
+  const at = lastSlipMs(days, st, tk);
+  const fresh = at != null && nowMs - Math.min(at, nowMs) < SLIP_HOURS * 36e5;
+  const before = fresh ? 0 : heatStep(v);
+  const now = heatAfter(days, st, tk, tk, v, false);
+  const step = fresh ? 0 : heatStep(now);
+  /* the warning: tomorrow it burns lower if nothing more is done today */
+  const tomorrow = heatStep(heatAfter(days, st, addDays(tk, 1), tk, v, true));
+  const out: FireLow = { step, low: LOW_OF[step], idle, was: before, warn: !fresh && step === 0 && tomorrow > 0, untold, tell };
+  return out;
 }
 
 /** how low the fire burns today */
 export function fireLow(days: Days, st: Settings | null, tk: DayKey, nowMs: number): FireLow {
+  if (st && st.start && tk > st.start && truthOn(st, tk)) return fireTruth(days, st, tk, nowMs);
   const none: FireLow = { step: 0, low: 0, idle: 0, was: 0, warn: false };
   if (!st || !st.start || tk <= st.start) return none;
   /* the days before today with nothing done, back to the start */
@@ -77,14 +130,21 @@ export function fireLow(days: Days, st: Settings | null, tk: DayKey, nowMs: numb
     and plain, about the next choice. Big and few, after Duolingo's lapsed screens: the flame carries the feeling, the words say why. */
 export function lowWords(f: FireLow): { h: string; p: string; fix: string } | null {
   if (!f.step) return null;
-  const p = f.pull ? 'You stayed on it through your hard hours.' : f.idle + ' days with nothing done.';
-  const fix = 'One lesson today lights it again.';
+  const nights = (n: number) => (n === 1 ? 'Last night is not told.' : (NUM[n] || String(n)) + ' nights not told.');
+  /* under the true record (truth.ts) the fire is fed by the truth first: say what was not told, and that telling lights it */
+  const p = f.pull ? 'You stayed on it through your hard hours.' : f.untold && f.untold >= f.idle ? nights(f.untold) : f.idle + ' days with nothing done.';
+  const fix = f.tell ? 'Tell me how last night went, and it burns again.' : 'One lesson today lights it again.';
   if (f.step === 1) return { h: 'You are dimming your fire', p, fix };
   if (f.step === 2) return { h: 'Your fire is smouldering', p, fix };
   return { h: 'Your fire is down to embers', p, fix };
 }
+const NUM: Record<number, string> = { 2: 'Two', 3: 'Three', 4: 'Four', 5: 'Five', 6: 'Six', 7: 'Seven' };
 /** the words on Today the day before it burns lower, while the flame still burns fully */
 export const LOW_WARN = { h: 'Your fire burns lower tomorrow', p: 'Nothing done yesterday.', fix: 'One lesson today keeps it burning.' };
+/** the same under the true record, when it is a night not told that would dim it (truth.ts) */
+export const LOW_WARN_TOLD = { h: 'Your fire burns lower tomorrow', p: 'Last night is not told yet.', fix: 'Tell me how it went, and it keeps burning.' };
+/** the warning to show: about the night when one is not told, otherwise about the day */
+export const lowWarn = (f: FireLow) => (f.tell ? LOW_WARN_TOLD : LOW_WARN);
 /** the day's reminder, the day before it burns lower */
 export const LOW_WARN_NOTE = { t: 'Your fire burns lower tomorrow 🔥', b: 'Do one thing today to keep it burning. Today’s lesson takes a few minutes.' };
 /** the evening note, a last call, on a day the fire is about to burn lower and nothing is done yet (Duolingo's streak saver) */
@@ -118,6 +178,8 @@ export function lowBack(day: number, f: FireLow, before: LowStep): { t: string; 
 export const LOW_LEAD = 'This lights your fire again';
 /** said when today lit it again */
 export const RELIT = 'You lit your fire again';
+/** said when today fed a low fire part of the way back (under the true record, truth.ts) */
+export const FED = 'Your fire grows';
 
 /* ---------- the colors of a fire burning low ----------
    One map for every part of the drawing, so the fire, the body and the face dim together: each color drains toward a dark ash, the same

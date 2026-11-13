@@ -32,7 +32,12 @@ export default function Back() {
       saved == null || !gap
         ? { h: 'Welcome back.', p: 'Everything you built is still here.' }
         : saved === 0
-          ? { h: 'Then those days count.', p: `${gap.n} more ${gap.n === 1 ? 'day' : 'days'} with no slip. That is real, and it is yours.` }
+          ? gap.away === false
+            ? {
+                h: 'Then those nights count.',
+                p: `${gap.n} more ${gap.n === 1 ? 'night' : 'nights'} free of it, on your record. That is real, and it is yours.`,
+              }
+            : { h: 'Then those days count.', p: `${gap.n} more ${gap.n === 1 ? 'day' : 'days'} with no slip. That is real, and it is yours.` }
           : {
               h: 'Thank you for being honest.',
               p:
@@ -41,7 +46,7 @@ export default function Back() {
                   : 'A slip is data. Every day you earned stays on your record, and your longest run stays yours.',
             };
     return (
-      <SceneFrame title="Welcome back" sky="mint" onClose={close}>
+      <SceneFrame title={gap?.away === false ? 'Your nights' : 'Welcome back'} sky="mint" onClose={close}>
         <View style={s.mid}>
           <FlameMedallion level={level} size={Math.min(win.width - 96, win.height * 0.36, 280)} />
         </View>
@@ -64,16 +69,29 @@ export default function Back() {
     setSaved(n);
   };
   return (
-    <SceneFrame title="Welcome back" sky="sun" onClose={close}>
+    <SceneFrame title={gap.away === false ? 'Your nights' : 'Welcome back'} sky="sun" onClose={close}>
+      {/* nights not told while the person was here (core truth.ts) are asked about as nights, not as time away */}
       <T v="title" style={s.c} accessibilityRole="header">
-        Welcome back. Everything you built is still here.
+        {gap.away === false ? `${gap.n} nights not told.` : 'Welcome back. Everything you built is still here.'}
       </T>
-      <T style={s.c}>While you were away ({span}), how many slips did you have?</T>
+      <T style={s.c}>
+        {gap.away === false
+          ? `Over those nights (${span}), how many slips did you have? Then they count.`
+          : `While you were away (${span}), how many slips did you have?`}
+      </T>
       <View style={s.mid}>
         <SliderValue big value={n} caption={n === 1 ? 'slip' : 'slips'} hint="Slide below to answer" />
       </View>
       <Dock>
-        <Slider label="Slips while you were away" value={n} min={0} max={gap.max} unit="slips" readout={false} onChange={setN} />
+        <Slider
+          label={gap.away === false ? 'Slips over those nights' : 'Slips while you were away'}
+          value={n}
+          min={0}
+          max={gap.max}
+          unit="slips"
+          readout={false}
+          onChange={setN}
+        />
         {n != null ? (
           <Appear by={10} duration={240}>
             <Button label="Save" onPress={save} />

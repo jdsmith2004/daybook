@@ -1,5 +1,6 @@
 /* Reviews, backups, and the records that sync moves. */
-import { isKey, mergeOpts, normDay, normSettings } from './legacy/core.js';
+import { isKey, mergeOpts, normDay } from './legacy/core.js';
+import { normSettingsLoaded as normSettings } from './settings-norm';
 import { isJnId, normJEntry, type JEntry, type Journal } from './journal-entries';
 import { keepPat, keepSup } from './supporter';
 import { normSun } from './sunday';
@@ -78,6 +79,9 @@ export function keepEarned(win: Settings, lose: Settings): Settings {
   const out = JSON.parse(JSON.stringify(win)) as Settings;
   const g = [win.gradAt, lose.gradAt].filter((x): x is string => isKey(x)).sort()[0];
   if (g) out.gradAt = g;
+  /* the true record's first day (truth.ts) is set once: the earlier of the two copies, so it is never moved later */
+  const tf = [win.truthFrom, lose.truthFrom].filter((x): x is string => isKey(x)).sort()[0];
+  if (tf) out.truthFrom = tf;
   if (lose.seen) {
     const s = out.seen || { badges: [], quests: [], level: 1, full: null, lad: lose.seen.lad };
     s.badges = [...new Set([...s.badges, ...lose.seen.badges])];

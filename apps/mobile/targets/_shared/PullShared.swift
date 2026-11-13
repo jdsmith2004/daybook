@@ -35,8 +35,17 @@ enum Pull {
   static let liftKey = "pull.liftUntil"
   static let openKey = "pull.openUntil"
   static let webKey = "pull.webUntil"
-  /// the nights, on this phone only (core pullNightHeld): night to 1 (the waits were on) or 2 (went through)
+  /// the nights, on this phone only (core pullNightHeld): night to 1 (the waits were on at its start), 2 (went through) or 3
+  /// (held to the morning)
   static let nightsKey = "pull.nights"
+  /// a shield's button over a site in the night (the long wait, not the short one)
+  static let wantLongKey = "pull.wantLong"
+  /// the picked apps were there but could not be read back (an iOS update): ms when that was seen, 0 when they read fine
+  static let decodeFailKey = "pull.decodeFail"
+  /// schedules Apple would not start, by name (More and Today say so: core pullTrouble)
+  static let failedKey = "pull.failed"
+  /// minutes the night's own callbacks read ahead by (core PULL_GRACE): one a few seconds early still finds its night
+  static let grace: Double = 2
   /// pull.open lasts this long (the app's openSchedule)
   static let openSpan: Double = 20 * 60_000
   /// the times the person put it down (the shield's Close, the wait screen's Put it down), and ms of the last one counted
@@ -63,11 +72,24 @@ enum Pull {
     return (try? JSONSerialization.jsonObject(with: d)) as? [String: Any]
   }
 
-  static func selection() -> FamilyActivitySelection? { decode(selectionKey) }
+  static func selection() -> FamilyActivitySelection? {
+    let s: FamilyActivitySelection? = decode(selectionKey)
+    /* there, but unreadable: said in More and on Today, never "On" over nothing */
+    let there = defaults?.data(forKey: selectionKey) != nil
+    let failed = there && s == nil
+    if failed != ((defaults?.double(forKey: decodeFailKey) ?? 0) > 0) { defaults?.set(failed ? nowMs : 0.0, forKey: decodeFailKey) }
+    return s
+  }
 
   static func decode(_ key: String) -> FamilyActivitySelection? {
     guard let d = defaults?.data(forKey: key) else { return nil }
     return try? JSONDecoder().decode(FamilyActivitySelection.self, from: d)
+  }
+
+  /// a site held by the adult filter, not one the person picked as a feed (a picked one gets the short wait like any app)
+  static func filtered(_ t: WebDomainToken?) -> Bool {
+    guard let t = t else { return true }
+    return !(selection()?.webDomainTokens.contains(t) ?? false)
   }
 
   static func count(_ s: FamilyActivitySelection) -> Int {
@@ -148,8 +170,10 @@ enum Pull {
     return f > nightEnd ? (m >= f || m < nightEnd) : (m >= f && m < nightEnd)
   }
 
-  /// core pullGuard, the same rule: the picked apps behind the short wait, adult sites behind Apple's filter in the night
-  static func wanted(_ b: [String: Any]) -> (apps: Bool, web: Bool) {
+  /// core pullGuard, the same rule: the picked apps behind the short wait, adult sites behind Apple's filter in the night.
+  /// `boundary`: one of the night's own callbacks (a start, an end, the heartbeat, the morning check), read `grace` minutes ahead,
+  /// so a callback that comes a few seconds early still sets (or lifts) the filter it was set for.
+  static func wanted(_ b: [String: Any], boundary: Bool = false) -> (apps: Bool, web: Bool) {
     let p = prefs(b)
     guard (p["on"] as? Bool) == true else { return (false, false) }
     let now = nowMs
@@ -157,30 +181,57 @@ enum Pull {
     /* Lift every wait ends at a night's start or end, where Apple's callback can come a few seconds early: a minute's grace */
     let free = now >= (d?.double(forKey: liftKey) ?? 0) - 60_000
     let apps = (p["feeds"] as? Bool) == true && free && now >= (d?.double(forKey: openKey) ?? 0)
-    let web = (p["adult"] as? Bool) == true && (b["adult"] as? Bool) == true && free && now >= (d?.double(forKey: webKey) ?? 0) && inNight(b)
+    let clock = boundary ? Date().addingTimeInterval(grace * 60) : Date()
+    let web =
+      (p["adult"] as? Bool) == true && (b["adult"] as? Bool) == true && free && now >= (d?.double(forKey: webKey) ?? 0) && inNight(b, at: clock)
     return (apps, web)
   }
 
   /// sets Apple's shield and adult filter to what is wanted now, and marks the night as one the waits were on. Every monitor
   /// callback and every write from the app runs this, so a missed callback is caught up by the next one, or by the next open.
-  static func guardNow(_ b: [String: Any]? = Pull.bridge()) {
+  static func guardNow(_ b: [String: Any]? = Pull.bridge(), boundary: Bool = false) {
     guard let b = b else { return }
-    let w = wanted(b)
+    let w = wanted(b, boundary: boundary)
     if w.apps, let s = selection() { shield(s) } else { clearShield() }
     store.webContent.blockedByFilter = w.web ? .auto([], except: []) : nil
     let p = prefs(b)
     let on = (p["on"] as? Bool) == true && ((p["feeds"] as? Bool) == true || ((p["adult"] as? Bool) == true && (b["adult"] as? Bool) == true))
-    if on && inNight(b) { markNight(1) }
+    let clock = boundary ? Date().addingTimeInterval(grace * 60) : Date()
+    if on && inNight(b, at: clock) { markNight(1, night: nightOf(clock)) }
   }
 
-  /// the night's mark: 1 when the waits were on, 2 when the person went through; it only goes up. Every night is kept (a few bytes
-  /// each), since "Lock held N nights" must only ever go up.
-  static func markNight(_ v: Int) {
-    let k = nightOf()
+  /// the night's mark (core pullMark, the same rule): 1 when the waits were on at its start, 2 when the person went through (it
+  /// wins over everything), 3 when the morning came with them still on (only after a 1). Every night is kept (a few bytes each),
+  /// since "Lock held N nights" must only ever go up.
+  static func markNight(_ v: Int, night: String? = nil) {
+    let k = night ?? nightOf()
     var n = (defaults?.dictionary(forKey: nightsKey) as? [String: Int]) ?? [:]
-    if (n[k] ?? 0) >= v { return }
-    n[k] = v
+    let old = n[k]
+    var next = old
+    if v == 2 {
+      next = 2
+    } else if v == 3 {
+      if old == 1 { next = 3 }
+    } else if old == nil {
+      next = 1
+    }
+    if next == old { return }
+    n[k] = next
     defaults?.set(n, forKey: nightsKey)
+  }
+
+  /// the morning's check: the night just gone held, when its waits were on at its start, nothing was gone through, Screen Time is
+  /// still on and access was not taken back. Only once the night is over (from 6 AM); a night switched off in Settings never gets
+  /// here, since Apple stops the schedules with it.
+  static func confirmNight(allowed: Bool) {
+    let k = nightOf(Date().addingTimeInterval(-60 * 60))
+    guard allowed, k != nightOf(), let b = bridge(), (prefs(b)["on"] as? Bool) == true else { return }
+    markNight(3, night: k)
+  }
+
+  /// schedules Apple would not start (core pullTrouble), kept so More and Today can say so
+  static func setFailed(_ names: [String]) {
+    if names.isEmpty { defaults?.removeObject(forKey: failedKey) } else { defaults?.set(names.sorted(), forKey: failedKey) }
   }
 
   /// core pullNoteFor, the same rule: which note goes for a threshold ("long", or the night's 1 and 2), or nil
@@ -281,6 +332,10 @@ enum Pull {
   /// the night's two schedules: pull.night.a from its start to 23:59, pull.night.b from midnight (or its start, when that is
   /// after midnight) to 6 AM, so nothing rests on an interval that crosses midnight
   static func isNight(_ name: String) -> Bool { name == "pull.night.a" || name == "pull.night.b" }
+
+  /// the night's own callbacks (core pullParts): its two parts, the heartbeat a few minutes after its start, the morning check.
+  /// They read the clock a little ahead (`grace`).
+  static func isBoundary(_ name: String) -> Bool { isNight(name) || name == "pull.night.h" || name == "pull.morning" }
 
   /// when this part of the night started, for the thresholds (today at its start minute)
   static func partStart(_ name: String, _ b: [String: Any], at now: Date = Date()) -> Date? {

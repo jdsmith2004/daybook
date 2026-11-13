@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SosButton } from '@/components/sos-button';
 import { Icon } from '@/components/ui';
 import { keepTab } from '@/lib/nav';
+import { useSpot, type SpotKey } from '@/lib/tour';
 import { font, MAX_WIDTH, useTheme } from '@/lib/theme';
 
 export default function AppTabs() {
@@ -32,7 +33,9 @@ export default function AppTabs() {
           </TabTrigger>
           <SosTab />
           <TabTrigger name="learn" href="/learn" asChild>
-            <TabButton icon="book">Learn</TabButton>
+            <TabButton icon="book" spot="learn">
+              Learn
+            </TabButton>
           </TabTrigger>
           <TabTrigger name="more" href="/more" asChild>
             <TabButton icon="more">More</TabButton>
@@ -54,26 +57,31 @@ function Bar({ children, ...rest }: { children?: React.ReactNode }) {
   );
 }
 
-function TabButton({ children, isFocused, icon, ...props }: TabTriggerSlotProps & { icon: string }) {
+function TabButton({ children, isFocused, icon, spot, ...props }: TabTriggerSlotProps & { icon: string; spot?: SpotKey }) {
   const c = useTheme();
+  /* the first tour points at Learn (lib/tour.ts) */
+  const ref = useSpot(spot ?? 'learn', !!spot);
   return (
     <Pressable
       {...(props as PressableProps)}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
       style={({ pressed }) => [s.tab, pressed && { opacity: 0.7 }]}>
-      <Icon name={icon} size={24} color={isFocused ? c.accentText : c.muted} />
-      <Text maxFontSizeMultiplier={TAB_MAX} style={[s.label, { color: isFocused ? c.accentText : c.muted }]}>
-        {children}
-      </Text>
+      <View ref={spot ? ref : undefined} collapsable={false} style={s.tabIn}>
+        <Icon name={icon} size={24} color={isFocused ? c.accentText : c.muted} />
+        <Text maxFontSizeMultiplier={TAB_MAX} style={[s.label, { color: isFocused ? c.accentText : c.muted }]}>
+          {children}
+        </Text>
+      </View>
     </Pressable>
   );
 }
 
 function SosTab() {
+  const ref = useSpot('sos');
   return (
     <View style={s.tab}>
-      <View style={s.sos}>
+      <View style={s.sos} ref={ref} collapsable={false}>
         <SosButton />
       </View>
     </View>
@@ -88,6 +96,7 @@ const s = StyleSheet.create({
   },
   inner: { flexDirection: 'row', gap: 4, alignSelf: 'center', width: '100%', maxWidth: MAX_WIDTH },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, minHeight: 52, paddingVertical: 4 },
+  tabIn: { alignItems: 'center', gap: 3 },
   label: { fontFamily: font.bodySemi, fontSize: 12 },
   /* raised, half out of the bar, so its lip stays inside the bar on a phone with a Home button too */
   sos: { position: 'absolute', top: -30 },

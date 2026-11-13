@@ -62,6 +62,8 @@ import { Middle } from '@/components/scene';
 import { useClock } from '@/components/shapes';
 import { TIP_ON } from '@/components/support';
 import { UnlockSheet } from '@/components/unlocked';
+import { useSos } from '@/lib/sos';
+import { markTourDue } from '@/lib/tour';
 import { BEAT_BREATH, ToolTimer, type BeatOf } from '@/components/tools/timer';
 import { Icon, T } from '@/components/ui';
 import { ClockWheels } from '@/components/when';
@@ -176,6 +178,8 @@ export default function Setup() {
   /* the end of a new person's setup: a small "Great job" with two ways on, the first lesson or Today (the owner, November 13, 2026:
      "a minor celebration like the popup good job in duolingo ... keep going and go to the lesson or say go home give them both options") */
   const [cheer, setCheer] = useState(false);
+  /* either way on, Today gives its first tour once the person lands there (lib/tour.ts) */
+  const { setMem } = useSos();
   const done = () => {
     if (busy()) return;
     setCheer(true);
@@ -701,11 +705,18 @@ export default function Setup() {
             label: 'Keep going',
             onPress: () => {
               const id = snap.settings ? lessonStop(snap.days, snap.settings, tk).L?.id : null;
+              setMem(markTourDue);
               finish();
               if (id) setTimeout(() => router.push({ pathname: '/lesson/[id]', params: { id } }), 50);
             },
           }}
-          other={{ label: 'Go home', onPress: finish }}
+          other={{
+            label: 'Go home',
+            onPress: () => {
+              setMem(markTourDue);
+              finish();
+            },
+          }}
         />
       ) : null}
     </View>

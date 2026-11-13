@@ -14,6 +14,7 @@ import { count } from '@/lib/pulse';
 import { track } from '@/lib/events';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
+import { useSpot } from '@/lib/tour';
 
 /* the one small thing after a slip (the slip-day card on Today): it marks the day's slips as recovered */
 export function useLogActions() {
@@ -38,9 +39,13 @@ export function LogLink() {
   const c = useTheme();
   /* on a 320-wide phone the two share too little room and "Already happened" is cut: they stack there */
   const narrow = useWindowDimensions().width < 360;
+  /* the first tour points at these two (lib/tour.ts) */
+  const logSpot = useSpot('log');
+  const trailSpot = useSpot('trail');
   return (
     <View style={[s.pair, narrow && { flexDirection: 'column' }]}>
       <Pressable
+        ref={logSpot}
         accessibilityRole="button"
         accessibilityLabel="Already happened? Log what happened."
         onPress={() => router.push('/log')}
@@ -51,6 +56,7 @@ export function LogLink() {
         </Text>
       </Pressable>
       <Pressable
+        ref={trailSpot}
         accessibilityRole="button"
         accessibilityLabel="Walk it through: when it keeps coming back, or you are planning it."
         onPress={() => router.push('/trail')}

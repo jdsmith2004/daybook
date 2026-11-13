@@ -5,6 +5,7 @@
    and the wind-down (app/wind.tsx). When a bigger moment has the next step (core pickMoment, moment-card.tsx), its card sits above and
    the stops here are all rows. "Change" turns parts of today on or off, in a sheet. */
 import {
+  lessonsDone,
   lineOrder,
   openTile,
   ROUTINE_SHOWN,
@@ -20,9 +21,9 @@ import {
   type StopTile,
 } from '@daybook/core';
 import { router, useIsFocused } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Modal, Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,7 +32,8 @@ import { OnOff } from '@/components/form';
 import { Shape, SQUIGGLE, squigglePath, SVG_HIDE, useClock, type ShapeKind } from '@/components/shapes';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { useReducedMotion } from '@/lib/motion';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { useSpot } from '@/lib/tour';
 import { useStore } from '@/lib/store';
 import { useAccount } from '@/lib/sync';
 import { font, nightInk, useTheme, type Palette } from '@/lib/theme';
@@ -114,6 +116,8 @@ export function YourDay({
           hero={hero}
           note={note}
           tileOf={(t) => (open && open.k === t.k && !t.done ? open : t)}
+          first={!lessonsDone(snap.days).size}
+          spots
         />
       ) : (
         <T tone="muted" style={{ paddingHorizontal: 4 }}>
@@ -149,6 +153,8 @@ function Stops({
   note,
   tileOf = (t) => t,
   glass,
+  first,
+  spots,
 }: {
   tiles: StopTile[];
   big: string | null;
@@ -157,8 +163,13 @@ function Stops({
   tileOf?: (t: StopTile) => StopTile;
   /** on a colored sky: the line and the rows are the sky's own white, as a sky's top bar is, not the page's surface */
   glass?: boolean;
+  /** no lesson done yet: the lesson card is the first thing to do, and looks it (Start here, a pop and a glow) */
+  first?: boolean;
+  /** on Today: the lesson card is one of the parts the first tour points at (lib/tour.ts) */
+  spots?: boolean;
 }) {
   const n = tiles.length;
+  const lessonSpot = useSpot('lesson', !!spots && big === 'lesson');
   /* where each stop's card sits, so its mark sits at the card's middle and the line runs from mark to mark */
   const [rowY, setRowY] = useState<Record<string, number>>({});
   const [cardMid, setCardMid] = useState<Record<string, number>>({});
@@ -178,8 +189,11 @@ function Stops({
             key={t.k}
             onLayout={(e) => put(setRowY, t.k, e.nativeEvent.layout.y)}
             style={[s.stop, !i && { paddingTop: 0 }, i === n - 1 && { paddingBottom: 0 }]}>
-            <View onLayout={(e) => put(setCardMid, t.k, e.nativeEvent.layout.y + e.nativeEvent.layout.height / 2)}>
-              {isBig ? <Hero m={hero!} t={tile} /> : <Row t={tile} glass={glass} />}
+            <View
+              ref={isBig && t.k === 'lesson' ? lessonSpot : undefined}
+              collapsable={false}
+              onLayout={(e) => put(setCardMid, t.k, e.nativeEvent.layout.y + e.nativeEvent.layout.height / 2)}>
+              {isBig ? <Hero m={hero!} t={tile} first={!!first && t.k === 'lesson'} /> : <Row t={tile} glass={glass} />}
             </View>
             {isBig && note ? <View style={s.note}>{note}</View> : null}
           </View>
@@ -306,19 +320,20 @@ const PILL: Partial<Record<string, string>> = { review: 'Start', week: 'See it',
 type BigCard = Pick<Moment, 'eb' | 'h' | 'btn' | 'go'>;
 /** the big bright card on its own: Today after the night hour shows only this one, Phone to bed (app/(tabs)/index.tsx) */
 export const StopCard = ({ m, t }: { m: BigCard; t: StopTile }) => <Hero m={m} t={t} />;
-function Hero({ m, t }: { m: BigCard; t: StopTile }) {
+function Hero({ m, t, first }: { m: BigCard; t: StopTile; first?: boolean }) {
   const c = useTheme();
   const pill = m.btn && m.btn.length <= 14 ? m.btn : PILL[m.go || ''] || 'Start';
-  return (
+  const eb = first ? 'Start here · ' + m.eb : m.eb;
+  const card = (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={(m.btn || pill) + ': ' + m.h}
+      accessibilityLabel={(first ? 'Start here. ' : '') + (m.btn || pill) + ': ' + m.h}
       onPress={() => openStop(t.go, t.id)}
       style={({ pressed }) => [s.hero, { transform: [{ scale: pressed ? 0.985 : 1 }] }]}>
       <LinearGradient colors={[c.sun, c.sun2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={[s.heroEb, { color: c.onSun }]} numberOfLines={1}>
-          {m.eb}
+          {eb}
         </Text>
         <Text style={[s.heroT, { color: c.onSun }]} numberOfLines={3}>
           {m.h}
@@ -328,6 +343,41 @@ function Hero({ m, t }: { m: BigCard; t: StopTile }) {
         <Text style={[s.heroGoT, { color: c.sun }]}>{pill}</Text>
       </Shape>
     </Pressable>
+  );
+  return first ? <FirstGlow>{card}</FirstGlow> : card;
+}
+
+/* the first lesson's card, the first time it is on Today: it pops in once and keeps a warm glow around it, so the first lesson is
+   plainly the thing to do. With Reduce Motion on, the glow is simply there. */
+function FirstGlow({ children }: { children: React.ReactNode }) {
+  const c = useTheme();
+  const still = useReducedMotion();
+  const focused = useIsFocused();
+  const pop = useRef(new Animated.Value(still ? 1 : 0.9)).current;
+  const glow = useRef(new Animated.Value(still ? 0.6 : 0)).current;
+  useEffect(() => {
+    if (still) return;
+    Animated.spring(pop, { toValue: 1, friction: 4, tension: 110, useNativeDriver: NATIVE }).start();
+  }, [still, pop]);
+  useEffect(() => {
+    if (still || !focused) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glow, { toValue: 1, duration: 1100, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+        Animated.timing(glow, { toValue: 0.25, duration: 1100, easing: Easing.inOut(Easing.sin), useNativeDriver: NATIVE }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [still, focused, glow]);
+  return (
+    <Animated.View style={{ transform: [{ scale: pop }] }}>
+      <Animated.View
+        pointerEvents="none"
+        style={[s.glow, { backgroundColor: c.sun, opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.18, 0.5] }) }]}
+      />
+      {children}
+    </Animated.View>
   );
 }
 
@@ -432,6 +482,7 @@ const s = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
   },
+  glow: { position: 'absolute', left: -6, right: -6, top: -6, bottom: -6, borderRadius: 26 },
   heroEb: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   heroT: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },
   heroGoT: { fontFamily: font.display, fontSize: 17, lineHeight: 22 },

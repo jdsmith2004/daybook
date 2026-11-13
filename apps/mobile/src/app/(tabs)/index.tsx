@@ -45,6 +45,7 @@ import {
   skyPhase,
   fmtClock,
   stopTiles,
+  lessonStop,
 } from '@daybook/core';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -68,6 +69,8 @@ import { TodayBelow } from '@/components/today-below';
 import { LogLink, WaitingPlan } from '@/components/today-log';
 import { Welcome } from '@/components/welcome';
 import { StopCard, YourDay } from '@/components/your-day';
+import { FirstTour, tourSteps } from '@/components/tour';
+import { markTourDone, tourDue, useSpot } from '@/lib/tour';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
 import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
@@ -160,6 +163,8 @@ export default function Today() {
   const [askFeel, setAskFeel] = useState(false);
   /* a celebration sheet ends it: there is never both on one open (the owner, October 30, 2026) */
   const celebrating = useCelebrating();
+  /* the first look at Today (components/tour.tsx), once, after setup: it waits for a calm, settled Today */
+  const tourWaits = tourDue(sos.mem);
   useEffect(() => {
     if (celebrating && askFeel) setAskFeel(false);
   }, [celebrating, askFeel]);
@@ -184,7 +189,7 @@ export default function Today() {
   }, [ready, morningNow, focused, backNow, gradNow, celebrating, tk]);
   useEffect(() => {
     if (!firstOpen || !ready) return;
-    if (firstOpen.k < tk || sosUsed || feelQuiet || cameBack || celebrating || celebrationSheetAt() >= firstOpen.at) {
+    if (firstOpen.k < tk || sosUsed || feelQuiet || cameBack || celebrating || tourWaits || celebrationSheetAt() >= firstOpen.at) {
       spendFirstOpen();
       return;
     }
@@ -201,7 +206,7 @@ export default function Today() {
       setAskFeel(true);
     }, 700);
     return () => clearTimeout(t);
-  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack, celebrating, morningNow]);
+  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack, celebrating, morningNow, tourWaits]);
 
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
   useEffect(() => {
@@ -266,6 +271,21 @@ export default function Today() {
   const nlog = useNudgeLog();
   const nudge = remindersOffered && st && nlog.ready ? nudgeCard(snap.days, st, prefs, nlog, tk) : null;
   const quiet = useQuietAsks();
+  /* the tour: on Today in front, with nothing else opening, never in the hours after an SOS or a slip (it waits for them to pass),
+     and never during an SOS or a pause. A short wait first, so a lesson opened by setup's Keep going is in front by then. */
+  const [touring, setTouring] = useState(false);
+  const tourNow = ready && !!st && tourWaits && !syncing && focused && !quiet && !backNow && !gradNow && !morningNow && !celebrating && !sos.ur && !sos.timer;
+  useEffect(() => {
+    if (!tourNow || touring) return;
+    const t = setTimeout(() => {
+      if (!focusRef.current || sheetOnTop()) return;
+      scroll.current?.scrollTo({ y: 0, animated: false });
+      scrolled.current = 0;
+      setTouring(true);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [tourNow, touring]);
+  const skySpot = useSpot('sky');
   /* the sky runs under the clock: the clock takes the sky's ink until the page has scrolled past it */
   const [past, setPast] = useState(false);
   /* the line under Your day sits behind the iPhone's glass tab bar until the page moves, so it waits until then */
@@ -355,16 +375,18 @@ export default function Today() {
           router.push('/journal');
         }}
         top={
-          <Hero
-            g={g}
-            snap={snap}
-            tk={tk}
-            now={now}
-            sky={size.sky}
-            flame={size.flame}
-            title={title}
-            lead={<FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />}
-          />
+          <View ref={skySpot} collapsable={false}>
+            <Hero
+              g={g}
+              snap={snap}
+              tk={tk}
+              now={now}
+              sky={size.sky}
+              flame={size.flame}
+              title={title}
+              lead={<FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />}
+            />
+          </View>
         }>
         {night ? (
           /* after the night hour, Today is the night page: one card, Phone to bed, and the care row; nothing else (WP5, mockup m3). On the
@@ -392,6 +414,22 @@ export default function Today() {
         )}
       </Screen>
       {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
+      {touring && g ? (
+        <FirstTour
+          steps={tourSteps({ lessonDone: lessonsDone(snap.days).size > 0, lessonId: lessonsDone(snap.days).size ? null : (lessonStop(snap.days, st, tk).L?.id ?? null) })}
+          level={Math.max(1, g.level.n)}
+          onEnd={() => {
+            sos.setMem(markTourDone);
+            setTouring(false);
+          }}
+          scrollBy={(dy) => {
+            const y = Math.max(0, scrolled.current + dy);
+            if (Math.abs(y - scrolled.current) < 2) return false;
+            scroll.current?.scrollTo({ y, animated: true });
+            return true;
+          }}
+        />
+      ) : null}
     </View>
   );
 }

@@ -58,7 +58,7 @@ export function LogLink({ walk = true }: { walk?: boolean }) {
           ref={trailSpot}
           icon="compass"
           title="Walk it through"
-          sub="When it keeps coming back"
+          sub="When it comes back"
           label="Walk it through: when an urge keeps coming back, or you are planning a slip."
           onPress={() => router.push('/trail')}
         />

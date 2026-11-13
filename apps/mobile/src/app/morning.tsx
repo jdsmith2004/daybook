@@ -49,7 +49,7 @@ import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { nightWaitsOn } from '@/lib/morning';
+import { nightWaitsOn, pullTroubleLine } from '@/lib/morning';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { useAccount } from '@/lib/sync';
@@ -127,9 +127,9 @@ export default function Morning() {
     );
     setN(v);
     buzz(v === 'free' ? 'lit' : 'save');
-    /* TODO on the rebase onto WP8 (claude/celebrations-941c95): a free night lights the flame over the morning, with the count from
-       before the answer so it turns over: router.push({ pathname: '/ignite', params: before ? { from: before } : {} }) */
-    void before;
+    /* a free night: the person lights their own flame over the morning (WP8, app/ignite.tsx), with the count from before the answer
+       so it turns over; its button comes back here, to tonight */
+    if (v === 'free' && n !== 'free') router.push({ pathname: '/ignite', params: before ? { from: before } : {} });
   };
   const set = () => {
     if (!st || leaving.current || !n) return;
@@ -162,6 +162,8 @@ export default function Morning() {
   const big = Math.min(win.width - 120, win.height * (told ? 0.2 : 0.32), told ? 200 : 280);
   const dawn = <LinearGradient colors={c.scheme === 'dark' ? DAWN.dark : DAWN.light} locations={AT} style={StyleSheet.absoluteFill} pointerEvents="none" />;
   const waits = nightWaitsOn();
+  /* Screen Time not working: said under tonight, with a tap to More's Screen Time page (WP2, core pullTrouble) */
+  const trouble = pullTroubleLine();
 
   if (when) {
     const i = Math.max(0, NIGHT_TIMES.indexOf(nt));
@@ -278,6 +280,11 @@ export default function Morning() {
               </View>
             </>
           )}
+          {told && trouble ? (
+            <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/settings/[part]', params: { part: 'pull' } })} hitSlop={6}>
+              <Text style={s.trouble}>{trouble}</Text>
+            </Pressable>
+          ) : null}
           {told ? <Button label={W.set} kind="warm" onPress={set} disabled={!r} /> : null}
           {rk ? (
             <View style={s.c}>
@@ -354,4 +361,5 @@ const s = StyleSheet.create({
   picks: { gap: 4, paddingBottom: 10 },
   pick: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.12)' },
   pressed: { opacity: 0.8 },
+  trouble: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'center', paddingHorizontal: 8, color: INK },
 });

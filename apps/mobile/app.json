@@ -37,6 +37,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/night-pack",
       "expo-apple-authentication",
       [
         "expo-audio",

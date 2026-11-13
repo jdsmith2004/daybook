@@ -31,11 +31,9 @@ import { textGoodNight, useGoodNightPerson } from '@/lib/person';
 import { useStore } from '@/lib/store';
 import { useAccount } from '@/lib/sync';
 
-/* Screen Time's "the night starts now" (WP2, claude/night-wait-iphone-3d3d23, lib/pull.ts pullArmNight). Read off the module by name, so
-   this builds on main before WP2 lands and calls it once it is there; whoever merges second may swap this for a plain import.
-   true means adult sites wait now (the filter is on); the feeds' short wait already runs all day. */
-type ArmNight = (days: unknown, st: unknown, account?: boolean) => Promise<boolean>;
-const armNight = (pull as unknown as { pullArmNight?: ArmNight }).pullArmNight;
+/* Screen Time's "the night starts now" (WP2, lib/pull.ts pullArmNight): true means adult sites wait now (the filter is on); the feeds'
+   short wait already runs all day */
+const armNight = pull.pullArmNight;
 
 /* The moment the flame settles down to sleep belongs to WP8's celebrations (components/bed-moment.tsx, BedMoment, not built yet): the
    phone goes down, the flame dims into its asleep face, tonight's mark pops. Until it lands, this stand-in with the same props shows
@@ -57,7 +55,7 @@ export default function Night() {
   const [armed, setArmed] = useState(false);
   const st = snap.settings;
   const arm = () => {
-    if (st && pull.pullOffered && armNight)
+    if (st && pull.pullOffered)
       armNight(snap.days, st, !!account)
         .then((on) => setArmed(on))
         .catch(() => undefined);

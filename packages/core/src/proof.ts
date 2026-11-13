@@ -34,7 +34,7 @@ export interface EffortCounts {
 /** the effort record from the morning set (core morning-set.ts): mornings set ever and in the last 7, and the last 7 nights the
     morning tap called free (night k is told on k + 1, so the last night is tk - 1). Nights the lock held come from the night wait
     (Screen Time, core pull.ts pullNightHeld): `nights` is the phone's own record (lib/pull.ts pullNights), a night counting once
-    it is before today and its waits were on and not gone through. It stays on the phone, like everything from Screen Time.
+    it is before today and it held to the morning: the waits on at its start, still on and allowed at 6 AM, and nothing gone through. It stays on the phone, like everything from Screen Time.
     Null while there is nothing in it. */
 export function effortCounts(days: Days, tk: DayKey, nights?: PullNights | null): EffortCounts | null {
   const first = firstMorning(days, tk);

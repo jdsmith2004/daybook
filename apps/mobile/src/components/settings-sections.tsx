@@ -48,6 +48,8 @@ import {
   pullEarly,
   pullEarlier,
   pullInNight,
+  pullLater,
+  pullMorningNow,
   pullNightStart,
   pullQuietUntil,
   pullSettle,
@@ -65,6 +67,7 @@ import {
   habitMedical,
   OB_HABIT,
   PULL_NAME,
+  packLitCount,
 } from '@daybook/core';
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
@@ -107,7 +110,22 @@ import {
 } from '@/lib/prefs';
 import { useNotifyEnv } from '@/lib/notify-env';
 import { allowReminders, exactAlarmsAsk, exactAlarmsOk, remindersOffered } from '@/lib/reminders';
-import { Pull, PULL_DENIED, pullLiftAll, pullOffered, pullPick, pullSet, pullStart, pullStop, setPullPrefs, usePullPrefs } from '@/lib/pull';
+import { NightPackBody } from '@/components/night-pack';
+import { packOffered, usePack } from '@/lib/night-pack';
+import {
+  getPullTrouble,
+  PULL_DENIED,
+  pullFix,
+  pullLiftAll,
+  pullOffered,
+  pullPick,
+  pullSet,
+  pullStart,
+  pullStop,
+  setPullPrefs,
+  usePullPrefs,
+  usePullTrouble,
+} from '@/lib/pull';
 import { connectHealth, forgetHealth, healthOffered, useNights } from '@/lib/health';
 import { play } from '@/lib/sound';
 import { useSos } from '@/lib/sos';
@@ -151,6 +169,7 @@ export type PartId =
   | 'answers'
   | 'sos'
   | 'pull'
+  | 'nightpack'
   | 'look'
   | 'lock'
   | 'health'
@@ -163,7 +182,7 @@ export type PartId =
 const GROUPS: [string, Tone, PartId[]][] = [
   ['Your quit', 'coral', ['habit', 'count', 'faith']],
   ['Your days', 'sky', ['routine', 'bed', 'remind']],
-  ['When it hits', 'violet', ['sos', 'pull', 'answers']],
+  ['When it hits', 'violet', ['sos', 'pull', 'nightpack', 'answers']],
   ['This phone', 'mint', ['look', 'lock', 'health', 'notes']],
   ['Your log', 'accent', ['sync', 'copy']],
 ];
@@ -218,6 +237,8 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
   }, []);
   const lock = useLockPref();
   const pull = usePullPrefs();
+  const pack = usePack();
+  const pullBad = usePullTrouble();
   const health = useNights();
   const nightsN = Object.keys(health.nights).length;
   const [busy, setBusy] = useState(false);
@@ -576,8 +597,16 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
     },
 
     pull: pullOffered
-      ? { icon: 'phone', title: PULL_NAME, value: pull.on ? 'On' : 'Off', body: <PullBody pull={pull} days={snap.days} st={st} now={now} say={say} /> }
+      ? {
+          icon: 'phone',
+          title: PULL_NAME,
+          value: pullBad ? 'Not working' : pull.on ? 'On' : 'Off',
+          body: <PullBody pull={pull} days={snap.days} st={st} now={now} say={say} />,
+        }
       : null,
+
+    /* the night pack (WP21, core night-pack.ts): its own part, since Screen Time is not in every build and the pack is */
+    nightpack: packOffered ? { icon: 'moon', title: 'The night pack', value: packLitCount(pack) + ' of 4', body: <NightPackBody /> } : null,
 
     answers: {
       icon: 'pencil',
@@ -814,12 +843,23 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
     if (r === 'denied') say(PULL_DENIED);
     else if (r === 'closed') say('Nothing was picked, so nothing changed.');
   };
+  const trouble = usePullTrouble();
   if (!pull.on)
     return (
-      <SetGroup foot="Pick the apps that pull you in. Each one waits a few seconds before it opens, and at night adult sites wait longer. Apple keeps the list, and nothing about your apps leaves this phone.">
-        <SetRow label="Choose the apps" act="accent" onPress={start} />
+      <SetGroup
+        foot={
+          (pull.lost ? 'Screen Time access was turned off in the phone’s Settings, so nothing waits now. ' : '') +
+          'Pick the apps that pull you in. Each one waits a few seconds before it opens, and at night adult sites wait longer. Apple keeps the list, and nothing about your apps leaves this phone.'
+        }>
+        <SetRow label={pull.lost ? 'Turn it back on' : 'Choose the apps'} act="accent" onPress={start} />
       </SetGroup>
     );
+  const fix = async () => {
+    if (!trouble) return;
+    const r = await pullFix(trouble.fix).catch(() => 'closed' as const);
+    if (r === 'denied') say(PULL_DENIED);
+    else if (r === 'ok') say(getPullTrouble() ? 'It is still not working. Restart the phone, then try again.' : 'It is working again.');
+  };
   const t = Date.now();
   const p = pullSettle(pull, t);
   const shown = pullShown(p);
@@ -843,6 +883,15 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
   const foot = (k: keyof PullPrefs, base?: string) => (held(k) ? (base ? base + ' ' : '') + 'Your change starts at ' + waits + '.' : base);
   return (
     <>
+      {trouble ? (
+        <SetGroup head="Not working" foot={trouble.line.replace(/^Screen Time is not working: (.)/, (_m, c: string) => c.toUpperCase())}>
+          <SetRow
+            label={trouble.fix === 'ask' ? 'Give Screen Time your yes' : trouble.fix === 'pick' ? 'Pick the apps again' : 'Try again'}
+            act="accent"
+            onPress={fix}
+          />
+        </SetGroup>
+      ) : null}
       <SetGroup foot="Apple keeps the list, and nothing about your apps leaves this phone.">
         <SetRow
           label="Change the apps"
@@ -874,7 +923,13 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
           <SetPick
             options={[...earlier, morning].map((x) => [x, fmtClock(x)] as const)}
             value={from}
-            onPick={(x) => setPullPrefs({ early: pullEarly(p, days, st, x, Date.now()).early })}
+            onPick={(x) => {
+              const e = pullEarly(p, days, st, x, Date.now()).early;
+              setPullPrefs({ early: e });
+              /* a later start than the one already set for tonight waits for the morning (core pullHoldStart) */
+              if (p.armed && pullLater(p.armed.at, e?.at ?? morning) && !pullMorningNow(Date.now()))
+                say('Looser settings start in the morning. Tonight still starts at ' + fmtClock(p.armed.at) + '.');
+            }}
           />
         </SetGroup>
       ) : null}
@@ -899,6 +954,7 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
           (night && !quiet ? 'Tonight, lifting every wait or turning this off counts as a night you went through. ' : '') +
           'You can also turn this off in the phone’s Settings, under Screen Time.'
         }>
+        {packOffered ? <SetRow label="The night pack, for the whole phone" onPress={() => router.push('/settings/nightpack')} /> : null}
         <SetRow
           label="Lift every wait now"
           act="accent"

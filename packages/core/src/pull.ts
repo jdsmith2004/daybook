@@ -52,6 +52,11 @@ export interface PullPrefs {
   early?: { k: DayKey; at: Clock };
   /** looser choices waiting for the morning (loosen slowly, tighten at once): they apply at `at` ms */
   later?: { p: PullLoose; at: number };
+  /** the start last handed to the phone for night k (pullHoldStart): a later start for that same night, outside the morning,
+      waits for the morning like any loosening */
+  armed?: { k: DayKey; at: Clock };
+  /** Screen Time access was taken back in the phone's Settings, so it was turned off here (More says so until it is on again) */
+  lost?: boolean;
 }
 /** the choices that can loosen the night, and so wait for the morning */
 export type PullLooseKey = 'feeds' | 'wait' | 'open' | 'adult' | 'lift';
@@ -114,6 +119,8 @@ export function normPull(x: unknown): PullPrefs {
   };
   if (o.asked === 'picked' || o.asked === 'skipped') out.asked = o.asked;
   if (o.early && isKey(o.early.k) && isTime(o.early.at)) out.early = { k: o.early.k, at: o.early.at as Clock };
+  if (o.armed && isKey(o.armed.k) && isTime(o.armed.at)) out.armed = { k: o.armed.k, at: o.armed.at as Clock };
+  if (o.lost === true) out.lost = true;
   const l = o.later;
   if (l && typeof l === 'object' && typeof l.at === 'number' && l.p && typeof l.p === 'object') {
     const p: PullLoose = {};
@@ -241,6 +248,31 @@ export function pullEarly(prefs: PullPrefs, days: Days, st: Settings, at: Clock,
   return pullLater(at, tonightOf(days, st, k).at) ? { ...out, early: { k, at } } : out;
 }
 
+/** Good night (WP5): the night starts now, for tonight only. Stricter, so it works at once; a time already earlier keeps. After
+    midnight it is the night still running (pullNightOf), so Good night at 12:30 AM with a 1 AM start starts it at 12:30. */
+export function pullArmNow(prefs: PullPrefs, days: Days, st: Settings, now: number): PullPrefs {
+  const k = pullNightOf(now);
+  const at = clockOf(now) as Clock;
+  const from = startOf(days, st, prefs, k);
+  return pullLater(at, from) ? { ...prefs, early: { k, at } } : prefs;
+}
+
+/** loosen slowly, for the start time itself: once a night's start has been handed to the phone, a later start for that same
+    night (the sleep time moved, an early start taken back) waits for the morning, unless it is the morning now. The start that
+    holds is kept as that night's early start. Returns the choices with `armed` set to the start the phone gets. */
+export function pullHoldStart(prefs: PullPrefs, days: Days, st: Settings, now: number): PullPrefs {
+  const k = pullNightOf(now);
+  let p = prefs;
+  let from = startOf(days, st, p, k);
+  const a = p.armed;
+  if (a && a.k === k && pullLater(a.at, from) && !pullMorningNow(now)) {
+    p = { ...p, early: { k, at: a.at } };
+    from = a.at;
+  }
+  if (a && a.k === k && a.at === from && p === prefs) return prefs;
+  return { ...p, armed: { k, at: from } };
+}
+
 /** the night waits are on: the morning page then says what waits ("Adult sites wait from 10:30 PM", core tonightLine). The feeds
     wait all day, so the night's own wait is the adult sites'. */
 export const nightWaitOn = (prefs: PullPrefs): boolean => prefs.on && prefs.adult;
@@ -253,24 +285,100 @@ export interface PullHolds {
   open: number;
   web: number;
 }
-export function pullGuard(p: PullPrefs, o: { adult: boolean; from: Clock; holds: PullHolds; now: number }): { apps: boolean; web: boolean } {
+/** minutes Apple's callbacks at the night's start and end are read ahead by: one that comes a few seconds early still finds the
+    night it was set for (the start sets the filter, the end lifts it), so no night is left open by a second */
+export const PULL_GRACE = 2;
+/** `boundary`: this is one of the night's own callbacks (a start, an end, the heartbeat), read PULL_GRACE minutes ahead */
+export function pullGuard(
+  p: PullPrefs,
+  o: { adult: boolean; from: Clock; holds: PullHolds; now: number; boundary?: boolean },
+): { apps: boolean; web: boolean } {
   const { holds: h, now } = o;
   /* Lift every wait ends at a night's start or end, where Apple's callback can come a few seconds early: a minute's grace */
   const free = now >= h.lift - 60_000;
+  const clock = o.boundary ? now + PULL_GRACE * 60_000 : now;
   return {
     apps: p.on && p.feeds && free && now >= h.open,
-    web: p.on && p.adult && o.adult && free && now >= h.web && pullInNight(now, o.from),
+    web: p.on && p.adult && o.adult && free && now >= h.web && pullInNight(clock, o.from),
   };
 }
 
+/* ---------- Apple's schedules for the night (core decides them; the module sets exactly these) ----------
+   Arm by the clock, not by which callback fired: every callback asks "what should be held right now?" (pullGuard), so these are
+   only the moments Apple wakes the monitor to ask. No interval crosses midnight; each is at least PULL_MIN_SCHEDULE long. */
+export interface PullPart {
+  /** the schedule's name: the night's evening part, its after-midnight part, the heartbeat after the start, the morning check */
+  n: 'pull.night.a' | 'pull.night.b' | 'pull.night.h' | 'pull.morning';
+  /** start and end, minutes into the day */
+  a: number;
+  b: number;
+  /** whether it watches the minutes of use (the night's two notes and the ignored mark) */
+  ev: boolean;
+}
+/** minutes after the night's start that the heartbeat asks again, in case the start's own callback did not come */
+export const PULL_HEARTBEAT = 5;
+export function pullParts(next: Clock): PullPart[] {
+  const f = clockMin(next);
+  const e = clockMin(PULL_NIGHT_END);
+  const last = 23 * 60 + 59;
+  const min = PULL_MIN_SCHEDULE;
+  const out: PullPart[] = [];
+  if (f > e) {
+    if (last - f >= min) out.push({ n: 'pull.night.a', a: f, b: last, ev: true });
+    out.push({ n: 'pull.night.b', a: 0, b: e, ev: true });
+  } else if (e - f >= min) out.push({ n: 'pull.night.b', a: f, b: e, ev: true });
+  const h = f + PULL_HEARTBEAT;
+  if (h + min <= (f > e ? last : e)) out.push({ n: 'pull.night.h', a: h, b: h + min, ev: false });
+  /* after 6 AM: the filter is lifted even if the end's callback did not come, and the night just gone is confirmed as held */
+  out.push({ n: 'pull.morning', a: e + PULL_HEARTBEAT, b: e + PULL_HEARTBEAT + min, ev: false });
+  return out;
+}
+
+/* ---------- when it is not working: said in plain words, never "On" over nothing ---------- */
+
+/** what the phone says about Screen Time (the module's health and status) */
+export interface PullHealth {
+  /** Apple's answer: approved, denied (taken back in Settings), or not determined (after a restore to a new phone) */
+  status: 'approved' | 'denied' | 'notDetermined';
+  /** schedules Apple would not start */
+  failed: string[];
+  /** the picked apps could not be read back (after an iOS update) */
+  decodeFail: boolean;
+  /** how many single apps are picked (Apple holds at most PULL_MAX_APPS) */
+  apps: number;
+}
+/** Apple's shield holds at most this many single apps; more and none of them waits */
+export const PULL_MAX_APPS = 50;
+export type PullFix = 'ask' | 'retry' | 'pick';
+/** what is wrong, in one line, and the one tap that fixes it; null when it works (or is off) */
+export function pullTrouble(prefs: PullPrefs, h: PullHealth | null): { line: string; fix: PullFix; btn: string } | null {
+  if (!prefs.on || !h) return null;
+  if (h.status !== 'approved') return { line: 'Screen Time is not working: it needs your yes again on this phone.', fix: 'ask', btn: 'Give it' };
+  if (h.apps > PULL_MAX_APPS)
+    return { line: 'Screen Time is not working: Apple holds at most ' + PULL_MAX_APPS + ' apps. Pick fewer.', fix: 'pick', btn: 'Pick' };
+  if (h.decodeFail) return { line: 'Screen Time is not working: the apps need picking again.', fix: 'pick', btn: 'Pick' };
+  if (h.failed.length) return { line: 'Screen Time is not working: Apple did not start tonight’s wait.', fix: 'retry', btn: 'Try again' };
+  return null;
+}
+
 /* ---------- nights the lock held (for the effort record) ----------
-   The App Group keeps, on this phone only, { [night]: 1 | 2 } by pullNightOf: 1 when the night's waits were on, 2 when the
-   person went through (opened adult sites after the long wait, lifted every wait, or turned Screen Time off, in that night). It
-   comes from Screen Time, so it is never synced, backed up or sent. */
+   The App Group keeps, on this phone only, { [night]: 1 | 2 | 3 } by pullNightOf: 1 when the night's waits were on at its
+   start, 2 when the person went through (opened adult sites after the long wait, opened a feed after the short wait, lifted every
+   wait, or turned Screen Time off, in that night, or access was taken back in Settings), 3 when the morning came with the waits
+   still on and access still given (the morning's check, or the app's first open after 6 AM) and nothing gone through. Only 3
+   is a night the lock held: a night switched off in Settings never reaches the morning's check. It comes from Screen Time, so it
+   is never synced, backed up or sent. */
 export type PullNights = Record<DayKey, number>;
-export function pullNightHeld(rec: PullNights | null | undefined, k: DayKey): 'held' | 'through' | null {
+export function pullNightHeld(rec: PullNights | null | undefined, k: DayKey): 'held' | 'through' | 'started' | null {
   const v = rec?.[k];
-  return v === 2 ? 'through' : v === 1 ? 'held' : null;
+  return v === 3 ? 'held' : v === 2 ? 'through' : v === 1 ? 'started' : null;
+}
+/** the night's mark after `v` (the same rule as the extensions' Pull.markNight): went through wins over everything, held only
+    follows a night that started, and started only marks a night with nothing yet */
+export function pullMark(old: number | undefined, v: 1 | 2 | 3): number | undefined {
+  if (v === 2) return 2;
+  if (v === 3) return old === 1 ? 3 : old;
+  return old ?? 1;
 }
 
 /** when the quiet after a slip ends (ms), or null when there is none: from a slip on today's or yesterday's log, until the first
@@ -304,7 +412,7 @@ export function pullPlanLine(st: Settings): string | null {
 
 /* ---------- the words, in the flame's voice ---------- */
 
-export type PullNoteKind = 'long' | 'longDone' | 'hard1' | 'hard2' | 'quiet' | 'open';
+export type PullNoteKind = 'long' | 'longDone' | 'hard1' | 'hard2' | 'quiet' | 'open' | 'openLong';
 export interface PullNote {
   t: string;
   b: string;
@@ -340,6 +448,8 @@ export function pullNudges(o: { lessonUrl: string; long: number }): Record<PullN
     quiet: { t: '🔥 Tonight', b: 'You do not have to fight it alone tonight. SOS is one tap away.', url: '/sos' },
     /* posted when the shield's button is pressed before iOS 26.5, since a shield cannot open Daybook itself */
     open: { t: '🔥 Here', b: 'Tap, and I will be right there.', url: '/pause' },
+    /* the same, from Apple's page over a site in the night: the long wait */
+    openLong: { t: '🔥 Here', b: 'Tap, and the wait starts.', url: '/pause?w=long' },
   };
 }
 
@@ -365,8 +475,16 @@ export interface PullShield {
 }
 /** by day, the short wait in plain words; at night, what the person set up that morning, in their own words (show it, do not say
     it). In the quiet after a slip, no stakes: only the reason and that the flame is there. */
-export function pullShield(o: { night: boolean; wait: number; plan: string | null; tonight: PullTonight | null; quiet: boolean }): PullShield {
-  const primary = 'Wait ' + pullWaitLabel(o.wait);
+export function pullShield(o: {
+  night: boolean;
+  wait: number;
+  plan: string | null;
+  tonight: PullTonight | null;
+  quiet: boolean;
+  /** over a site in the night: the long wait's minutes */
+  long?: number;
+}): PullShield {
+  const primary = o.long ? 'Wait ' + o.long + ' minutes' : 'Wait ' + pullWaitLabel(o.wait);
   const downs = 'You have put it down {n}. Close it, and that makes {next}.';
   /* by day, never the plan: it is the night's ("back to bed without my phone" at noon reads wrong) */
   if (!o.night)
@@ -400,11 +518,16 @@ export interface PullPauseWords {
   down: string;
   /** the quiet link once the wait is over */
   open: string;
-  /** the stake, said before the choice (never after, never in the quiet after a slip): only on the long wait */
+  /** the stake, said before the choice (never after, never in the quiet after a slip): only in the night, where Open counts as a
+      night gone through */
   stake: string | null;
   /** after "Put it down" */
   thanks: string;
+  /** under the ring once the wait is over, in the night only: sleep care for the person lying awake (C3) */
+  awake: string | null;
 }
+/** sleep care's one line for the person lying awake (the plan, C3: the wait page at night gains it) */
+export const PULL_AWAKE = 'Awake after 20 minutes? Get up, leave the phone, come back sleepy.';
 /** "7:40 AM" */
 const timeOf = (ms: number) => fmtClock(clockOf(ms));
 /** `mode`: 'day' the short wait by day, 'night' the short wait in the night hours, 'long' the long wait before adult sites */
@@ -427,6 +550,7 @@ export function pullPauseWords(o: {
       open: 'Open it for ' + o.open + ' minutes',
       stake: null,
       thanks: n >= 2 ? 'You put it down. That makes ' + n + '.' : 'You put it down. That is what someone free does.',
+      awake: null,
     };
   const t = o.tonight;
   const said = t?.r ? (t.rAt ? 'You, at ' + timeOf(t.rAt) + ': ' : 'You: ') + quote(t.r) : null;
@@ -438,12 +562,13 @@ export function pullPauseWords(o: {
     hold: long ? 'It keeps counting if you leave.' : 'Breathe while it runs.',
     down: 'Put it down and go to bed',
     open: long ? 'Open them for ' + PULL_WEB_OPEN + ' minutes' : 'Open it for ' + o.open + ' minutes',
-    stake: long && !o.quiet ? 'Open them, and tonight goes in the week as a night you went through.' : null,
+    stake: o.quiet ? null : (long ? 'Open them' : 'Open it') + ', and tonight goes in the week as a night you went through.',
     thanks: o.quiet
       ? 'That was the strong choice. It is in your log as a win.'
       : n >= 2
         ? 'That makes ' + n + '. One more win in your log.'
         : 'One more win in your log. That is what someone free does.',
+    awake: PULL_AWAKE,
   };
 }
 
@@ -517,6 +642,11 @@ export interface PullBridge {
   shieldNight: PullShield;
   /** the shield in the night, in the quiet after a slip */
   shieldQuiet: PullShield;
+  /** over a site in the night, if Apple shows Daybook's shield there: the long wait (quiet after a slip in shieldWebQuiet) */
+  shieldWeb: PullShield;
+  shieldWebQuiet: PullShield;
+  /** Apple's schedules for the night, exactly as the module sets them (pullParts of night.next) */
+  parts: PullPart[];
 }
 export function pullBridge(days: Days, st: Settings, prefs: PullPrefs, now: number, account = true): PullBridge {
   const day = logicalKey(now, st.rollover);
@@ -538,6 +668,9 @@ export function pullBridge(days: Days, st: Settings, prefs: PullPrefs, now: numb
     shield: pullShield({ night: false, wait: p.wait, plan, tonight: null, quiet: false }),
     shieldNight: pullShield({ night: true, wait: p.wait, plan, tonight, quiet: false }),
     shieldQuiet: pullShield({ night: true, wait: p.wait, plan: null, tonight, quiet: true }),
+    shieldWeb: pullShield({ night: true, wait: p.wait, plan, tonight, quiet: false, long: p.lift }),
+    shieldWebQuiet: pullShield({ night: true, wait: p.wait, plan: null, tonight, quiet: true, long: p.lift }),
+    parts: pullParts(pullNextStart(days, st, p, now)),
   };
 }
 

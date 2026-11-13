@@ -1,7 +1,7 @@
 /* The Today cards as data. The legacy app builds these inside its HTML templates, reading the global Store and the clock.
    Here they are pure: the screen passes in the log, the settings, today's key and the time, and gets back what to show.
    Each one is checked against the legacy app by the golden tests, so the words and numbers match it exactly. */
-import { hoursSinceSlip } from './hero';
+import { hoursSinceSlip, slipWhenChip } from './hero';
 import { noSlipDays, todayMeasure } from './graduate';
 import {
   addDays,
@@ -48,6 +48,8 @@ export interface CleanView {
   /* counting only */
   /** the hours since the last slip, for 72 hours after one (the same chip as Today's) */
   hours?: number | null;
+  /** for a slip with no time, when it was instead of made-up hours: "last night" (hero.ts slipWhenChip) */
+  slipWhen?: string | null;
   next?: number | null;
 }
 
@@ -69,6 +71,11 @@ export function cleanView(days: Days, st: Settings, tk: DayKey, nowMs: number): 
   v.counted = sk.counted;
   v.noSlip = noSlipDays(days, st, tk);
   v.hours = hoursSinceSlip(days, { ...st, cleanMode: mode }, tk, nowMs);
+  const when = slipWhenChip(days, { ...st, cleanMode: mode }, tk, nowMs);
+  if (when) {
+    v.hours = null;
+    v.slipWhen = when.replace(/^Your last slip: /, '');
+  }
   v.next = v.longest > v.cur ? (RUN_GOALS.find((n) => n > v.cur) ?? null) : null;
   return v;
 }
@@ -91,7 +98,7 @@ export function trackFacts(days: Days, tk: DayKey) {
 /** the chips under the Days card, as data: the same hours as Today's chip, then what stays on the record */
 export function runChips(v: CleanView) {
   return {
-    hours: v.hours != null ? fmtStretch(v.hours) : null,
+    hours: v.hours != null ? fmtStretch(v.hours) : v.slipWhen || null,
     longest: v.longest > 0 ? plural(v.longest, 'day') : null,
     noSlip: v.noSlip > 0 ? plural(v.noSlip, 'day') : null,
     next: v.next ? plural(v.next, 'day') : null,
@@ -133,7 +140,7 @@ export function daysCardText(days: Days, st: Settings, v: CleanView, tk: DayKey)
     eyebrow: step ? 'Step down' : 'No slip',
     big: String(v.cur),
     of: v.cur === 1 ? 'day' : v.cur === 0 ? 'days' : 'days in a row',
-    sub: 'A day counts when no slip is logged. A slip starts the count again the next day, and the days you earned stay on your record.',
+    sub: 'A night counts when you say it was free. A slip starts the count again the next day, and the days you earned stay on your record.',
   };
 }
 

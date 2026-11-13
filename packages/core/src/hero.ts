@@ -11,7 +11,20 @@
    by test/hero.test.ts. */
 import { awayGaps, QUIET_GRACE } from './away';
 import { GRAD_DAYS, GRAD_WINDOW, gradInfo, gradOnToday, todayMeasure, WEEK, type TodayMeasure } from './graduate';
-import { addDays, computeMetrics, diffDays, evMs, fmtDate, fmtStretch, fmtStretchShort, phaseOf, runLedger, stepView, sumDay } from './legacy/core.js';
+import {
+  addDays,
+  recordFrom,
+  computeMetrics,
+  diffDays,
+  evMs,
+  fmtDate,
+  fmtStretch,
+  fmtStretchShort,
+  phaseOf,
+  runLedger,
+  stepView,
+  sumDay,
+} from './legacy/core.js';
 import type { DayKey, Days, Settings } from './types';
 
 export interface HeroNumber {
@@ -28,15 +41,35 @@ export interface HeroNumber {
 }
 /** how long the hours since a slip are the chip: 72 hours */
 export const SLIP_HOURS = 72;
+/** when a slip happened, as far as Daybook knows, in ms: its time, or for a slip with no time (the morning's "It happened",
+    or one logged without a time), the moment it was told, never a made-up noon the day before (C1). The id of an entry
+    starts with the moment it was made (mutate.ts makeId); an id that does not, or reads as far off, falls back to the day's last
+    change, then to noon of its day. */
+export function slipAt(days: Days, st: Settings, k: DayKey, e: { time: string | null; id?: string }): number {
+  if (e.time) return evMs(k, e.time, st.rollover);
+  const noon = evMs(k, null, st.rollover);
+  const made = e.id && /^[0-9a-z]{8,9}[0-9a-z]{4}$/.test(e.id) ? parseInt(e.id.slice(0, -4), 36) : NaN;
+  if (isFinite(made) && made >= noon - 864e5 && made <= noon + 4 * 864e5) return Math.max(noon, made);
+  return Math.max(noon, days[k]?.u || 0);
+}
+/** the latest slip in the last four log days (72 hours reach back at most that far): its day, when it happened (slipAt), and
+    whether it had a time */
+export function latestSlip(days: Days, st: Settings, tk: DayKey): { k: DayKey; at: number; timed: boolean } | null {
+  for (let i = 0; i <= 4; i++) {
+    const k = addDays(tk, -i);
+    if (!sumDay(days[k]).slipped) continue;
+    const sl = days[k].events.filter((e) => e.outcome === 'slipped');
+    const at = Math.max(...sl.map((e) => slipAt(days, st, k, e)));
+    return { k, at, timed: sl.every((e) => !!e.time) };
+  }
+  return null;
+}
 /** the hours since the latest slip, while counting days (strict or gentle), for SLIP_HOURS after it. null otherwise. */
 export function hoursSinceSlip(days: Days, st: Settings, tk: DayKey, nowMs: number): number | null {
   if (!st.day1 || tk < st.day1 || (st.cleanMode !== 'strict' && st.cleanMode !== 'gentle')) return null;
-  /* the latest slip day: 72 hours reach back at most four days */
-  let k: DayKey | null = null;
-  for (let i = 0; i <= 4 && !k; i++) if (sumDay(days[addDays(tk, -i)]).slipped) k = addDays(tk, -i);
-  if (!k || k < st.day1) return null;
-  const at = Math.max(...days[k].events.filter((e) => e.outcome === 'slipped').map((e) => evMs(k, e.time, st.rollover)));
-  const h = Math.max(0, (nowMs - Math.min(at, nowMs)) / 36e5);
+  const l = latestSlip(days, st, tk);
+  if (!l || l.k < st.day1) return null;
+  const h = Math.max(0, (nowMs - Math.min(l.at, nowMs)) / 36e5);
   return h < SLIP_HOURS ? h : null;
 }
 /** the chip for those hours: "13 hours since your last slip" */
@@ -44,11 +77,26 @@ export function slipHoursChip(h: number): string {
   const w = fmtStretch(h);
   return w.charAt(0).toUpperCase() + w.slice(1) + ' since your last slip';
 }
+/** the chip for a slip with no time, which has no true number of hours: "Your last slip: last night" (C1). Null when the latest
+    slip had a time, or is past SLIP_HOURS. */
+export function slipWhenChip(days: Days, st: Settings, tk: DayKey, nowMs: number): string | null {
+  if (hoursSinceSlip(days, st, tk, nowMs) == null) return null;
+  const l = latestSlip(days, st, tk);
+  if (!l || l.timed) return null;
+  const w = l.k === tk ? 'today' : l.k === addDays(tk, -1) ? 'last night' : fmtDate(l.k, { weekday: 'long' }) + ' night';
+  return 'Your last slip: ' + w;
+}
+/** the chip under the number for the hours after a slip: the hours, or for a slip with no time, when */
+function slipChip(days: Days, st: Settings, tk: DayKey, nowMs: number): string | null {
+  const h = hoursSinceSlip(days, st, tk, nowMs);
+  if (h == null) return null;
+  return slipWhenChip(days, st, tk, nowMs) || slipHoursChip(h);
+}
 /** while the latest gap away is not answered and its not-known days reach into the last week: the week's measure as it
     stood on the first day that is not known (the last one Daybook could count), or null */
 export function awayHeldMeasure(days: Days, st: Settings, tk: DayKey): TodayMeasure | null {
   const g = awayGaps(days, st, tk)
-    .filter((x) => x.n == null && x.len > QUIET_GRACE)
+    .filter((x) => x.n == null && x.len > QUIET_GRACE && x.away !== false)
     .pop();
   if (!g) return null;
   const edge = addDays(g.from, QUIET_GRACE);
@@ -74,8 +122,7 @@ export function heroNumber(days: Days, st: Settings, tk: DayKey, nowMs: number):
   }
   const t = todayMeasure(days, st, tk);
   if (t) {
-    const h = hoursSinceSlip(days, st, tk, nowMs);
-    const hours = h != null ? slipHoursChip(h) : null;
+    const hours = slipChip(days, st, tk, nowMs);
     /* on the day of a slip, "No slip" over the count would not be true */
     const label = (days[tk]?.events || []).some((e) => e.outcome === 'slipped') ? 'Still going' : 'No slip';
     if (st.cleanMode !== 'gentle') {
@@ -112,7 +159,7 @@ export function heroSlipLine(days: Days, st: Settings, tk: DayKey, nowMs: number
   const slips = (days[tk]?.events || []).filter((e) => e.outcome === 'slipped');
   if (!slips.length) return null;
   const strict = st.cleanMode !== 'gentle';
-  const n = strict ? (tk > st.day1 ? runLedger(days, st, addDays(tk, -1)).cur : 0) : Number(heroNumber(days, st, tk, nowMs)?.n);
+  const n = strict ? (tk > (recordFrom(st) || st.day1) ? runLedger(days, st, addDays(tk, -1)).cur : 0) : Number(heroNumber(days, st, tk, nowMs)?.n);
   if (!(n > 0)) return null;
   /* the latest slip's hour, in the log day's order (an hour after midnight comes after the evening) */
   const hours = slips

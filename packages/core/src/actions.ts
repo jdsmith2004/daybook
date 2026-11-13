@@ -186,7 +186,7 @@ export function setDay1(st: Settings, v: 'none' | 'later' | 'today' | 'tomorrow'
     toast: !d1
       ? 'Just tracking. Nothing is counted, and you can start a Day 1 any time.'
       : d1 <= tk
-        ? 'Day 1 is today. Days with no slip logged will count.'
+        ? 'Day 1 is today. Every night you tell me was free will count.'
         : 'Day 1 is ' + fmtDate(d1, { weekday: 'long', month: 'short', day: 'numeric' }) + '.',
   };
 }
@@ -241,12 +241,12 @@ export const MODE_LEGEND = (st: Settings): [ModeInfo['k'], string, string][] => 
   [
     'week',
     st.day1 && diffDays(st.day1, st.start) !== 7 ? 'Tracking' : 'Tracking week',
-    'You only log and look. Nothing is counted, so there is nothing to fail. The first week always works this way.',
+    'You only log and look, so there is nothing to fail. Every free day in it still counts once Day 1 comes.',
   ],
   [
     'quit',
     'Quitting',
-    'Starts on Day 1. A day with no slip logged counts, and your count grows. Away more than two days, and the days after wait until you say how they went; your count waits with them. Your points, badges and longest run always stay.',
+    'Starts on Day 1. A night counts as free when you say so, and your count grows. A night you have not told me about waits until you do; your count waits with it. Your points, badges and longest run always stay.',
   ],
   [
     'step',

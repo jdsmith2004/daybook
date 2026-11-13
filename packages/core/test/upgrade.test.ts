@@ -21,6 +21,8 @@ const fx = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)),
   expect: any;
 };
 const E = fx.expect;
+/** the free days of the save's tracking week, which count in the record since D14 (November 12, 2026) */
+const D14_WEEK = 7;
 const J = <T>(x: T): T => JSON.parse(JSON.stringify(x));
 
 const P = 'daybook:';
@@ -43,7 +45,7 @@ function load(storage: Record<string, string>): { snap: core.Snapshot; dirty: Re
     else if (k === TOMB) {
       const t = core.cleanTombs(v);
       if (t) snap.tomb = t;
-    } else if (id === 'settings') snap.settings = core.normSettings(v);
+    } else if (id === 'settings') snap.settings = core.normSettingsLoaded(v);
     else if (id.startsWith('days/') && core.isKey(id.slice(5))) snap.days[id.slice(5)] = core.normDay(v, id.slice(5));
     else if (id.startsWith('reviews/') && core.isReviewKey(id.slice(8))) snap.reviews[id.slice(8)] = core.normReview(v, id.slice(8));
     else if (id.startsWith('journal/') && core.isJnId(id.slice(8))) {
@@ -208,10 +210,12 @@ describe(`a ${fx.version} save (commit ${fx.commit}) opens in today's app`, () =
       expect(r.items).toEqual([]);
     });
 
-    it('keeps the longest run: the same, and above the current run', () => {
-      expect(L.longest).toBe(E.longest);
+    /* D14 (the owner, November 12, 2026): the free days of the tracking week now count in the record, so the run that began
+       with it is 7 days longer than 1.2.1 showed. It only ever grows: nothing a 1.2.1 save held is lower. */
+    it('keeps the longest run: never lower, and longer by the tracking week it began with (D14)', () => {
+      expect(L.longest).toBe(E.longest + D14_WEEK);
       expect(mt.longest).toBeGreaterThanOrEqual(E.longest);
-      expect(mt.longest).toBe(E.longest);
+      expect(mt.longest).toBe(E.longest + D14_WEEK);
       expect(L.cur).toBe(E.current);
       expect(L.cur).toBeLessThan(E.longest);
       expect(L.saves).toBe(E.saves);
@@ -220,8 +224,8 @@ describe(`a ${fx.version} save (commit ${fx.commit}) opens in today's app`, () =
           .filter((k) => L.kind[k] === 'saved')
           .sort(),
       ).toEqual(E.savedRuns);
-      expect(L.clean).toBe(E.cleanDays);
-      expect(L.counted).toBe(E.countedDays);
+      expect(L.clean).toBe(E.cleanDays + D14_WEEK);
+      expect(L.counted).toBe(E.countedDays + D14_WEEK);
     });
 
     it('keeps the comebacks', () => {
@@ -278,7 +282,7 @@ describe(`a ${fx.version} save (commit ${fx.commit}) opens in today's app`, () =
       const g = core.gameCompute(back.days, back.settings!, back.reviews, fx.today);
       expect(g.pts).toBe(E.points);
       expect(g.level.n).toBe(E.level.n);
-      expect(core.computeMetrics(back.days, back.settings!, fx.today).longest).toBe(E.longest);
+      expect(core.computeMetrics(back.days, back.settings!, fx.today).longest).toBe(E.longest + D14_WEEK);
       expect(core.rkComebackCount(back.days, back.settings!, fx.today)).toBe(E.comebacks);
       expect([...core.lessonsDone(back.days)].sort()).toEqual(E.lessons);
     });

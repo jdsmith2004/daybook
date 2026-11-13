@@ -101,15 +101,32 @@ function DayDot({ d, i }: { d: StoryDay; i: number }) {
       ? { bg: c.mint, bd: c.mint, ic: 'check', col: '#FFFFFF' }
       : d.state === 'slip'
         ? { bg: c.coralSoft, bd: c.coral, ic: 'leaf', col: c.coralText }
-        : { bg: 'transparent', bd: c.line, ic: '', col: c.muted };
+        : d.state === 'untold'
+          ? { bg: 'transparent', bd: c.muted, ic: '', col: c.muted }
+          : { bg: 'transparent', bd: c.line, ic: '', col: c.muted };
   return (
     <View
       style={s.day}
       accessible
       accessibilityLabel={
-        d.name + ': ' + (d.state === 'clean' ? 'no slip' : d.state === 'slip' ? 'a slip' : d.state === 'ahead' ? 'still to come' : 'before you started')
+        d.name +
+        ': ' +
+        (d.state === 'clean'
+          ? 'no slip'
+          : d.state === 'slip'
+            ? 'a slip'
+            : d.state === 'untold'
+              ? 'not told'
+              : d.state === 'ahead'
+                ? 'still to come'
+                : 'before you started')
       }>
-      <Animated.View style={[s.dayDot, { backgroundColor: look.bg, borderColor: look.bd, borderStyle: d.state === 'ahead' ? 'dashed' : 'solid' }, pop(v)]}>
+      <Animated.View
+        style={[
+          s.dayDot,
+          { backgroundColor: look.bg, borderColor: look.bd, borderStyle: d.state === 'ahead' || d.state === 'untold' ? 'dashed' : 'solid' },
+          pop(v),
+        ]}>
         {look.ic ? <Icon name={look.ic} size={20} color={look.col} /> : null}
       </Animated.View>
       <Text style={[s.dayL, { color: c.muted }]}>{d.l}</Text>

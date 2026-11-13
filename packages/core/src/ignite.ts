@@ -4,7 +4,9 @@
    apps/mobile/src/app/ignite.tsx. Modeled on Duolingo's streak ignition, translated: the flame is both the streak and the mascot,
    and the words are about who the person is becoming, never only the number. */
 import { addDays, sumDay } from './legacy/core.js';
+import { nightState } from './away';
 import { morningOf, nightTold } from './morning-set';
+import { truthOn } from './truth';
 import type { DayKey, Days, Settings } from './types';
 
 /** a mark on the row: told free, a slip, not told, before the log began, or still to come (the first lighting's week) */
@@ -24,6 +26,8 @@ export function firstTold(days: Days, tk: DayKey): DayKey | null {
 /** what one night was: a slip logged on it, told free the next morning, or not told */
 export function nightMark(days: Days, st: Settings, k: DayKey, first: DayKey | null = firstTold(days, addDays(k, 1))): NightMark {
   if (k < st.start) return 'none';
+  /* the true record (truth.ts, WP1): from truthFrom on a night is what was told about it, the same as Today and Days draw it */
+  if (truthOn(st, k)) return nightState(days, st, k, addDays(k, 1));
   if (sumDay(days[k]).slipped > 0) return 'slip';
   if (nightTold(days, k) === 'free') return 'free';
   /* before the person ever told a morning, a night with no slip counted as free, as it always had (WP1 moves this to truthFrom) */

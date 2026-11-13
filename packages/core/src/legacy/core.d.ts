@@ -12,6 +12,8 @@ export function keyOfDate(d: Date): DayKey;
 export function addDays(key: DayKey, n: number): DayKey;
 export function diffDays(a: DayKey, b: DayKey): number;
 export function logicalKey(ms: number, roll: number): DayKey;
+/** where the record counts from: Day 1, or the start once this version has opened the log (D14, truthFrom) */
+export function recordFrom(st: Settings): DayKey | null;
 export function clockOf(ms: number): string;
 export function fmtClock(t: string | null): string;
 export function fmtHour(h: number): string;

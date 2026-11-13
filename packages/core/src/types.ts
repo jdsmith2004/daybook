@@ -61,6 +61,11 @@ export interface MorningSet {
   n?: 'free' | 'slip';
   /** the id of the slip the morning added, so changing the answer back takes it away again */
   ev?: string;
+  /** "And the night before?": the catch-up row for the night before last, when it was not told (truth.ts). 'slip' adds a slip to
+      that day, like n does for last night. */
+  n2?: 'free' | 'slip';
+  /** the id of the slip the catch-up row added */
+  ev2?: string;
   /** "And this morning?": 1 Low, 2 Okay, 3 Good */
   f?: 1 | 2 | 3;
   /** "Who are you doing tonight for?": the reason picked, in the person's own words, as it was shown */
@@ -220,14 +225,19 @@ export interface Settings {
   /** the day the flame was first seen on the Home Screen or the Lock Screen (flame-widget.ts): WIDGET_PTS, once, kept for good.
       Set once and never cleared. Optional, so older records need no change. */
   widget?: DayKey;
+  /** the day the widget was offered (flame-widget.ts widgetAskDue): offered once. Optional, so older records need no change. */
+  widgetAsk?: DayKey;
   /** the day graduation was earned (see graduate.ts). Set once and never cleared. Optional, so older records need no change. */
   gradAt?: DayKey | null;
   /** the last "Not now" on the account card (see accounts.ts) */
   acctNo?: DayKey | null;
   /** the first day the app marked the days it was opened (away.ts); the quiet-day rule counts from here. Set once. */
   awayFrom?: DayKey | null;
+  /** the first day of the true record (truth.ts): from here a night counts as free only when the person said so. Set once on the
+      first open after the update (miles.ts keepCounts), synced, never moved. Optional: with none, the old rule everywhere. */
+  truthFrom?: DayKey;
   /** the answers about gaps away (away.ts): n, the slips while away. Optional. (The first version kept `a` instead.) */
-  away?: { from: DayKey; to: DayKey; n?: number; a?: 'clean' | 'some' | 'skip' }[];
+  away?: { from: DayKey; to: DayKey; n?: number; a?: 'clean' | 'some' | 'skip'; on?: DayKey }[];
   /** the day the first week's look back was opened (week.ts). Optional. */
   wk1?: DayKey | null;
   /** the day the "tell your safe person you started" card on Day 1 was answered (rekindle.ts). Optional. */

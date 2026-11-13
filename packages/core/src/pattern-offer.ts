@@ -7,7 +7,8 @@
    What changed this month: on the 1st, a short read of the month before against the one before that, made on the device from
    the log. It looks for what got better, and says a harder month plainly and without shame. Nothing is stored: a month's read
    is worked out when it is opened, so it stays whatever happens to the plan (patMonthOpen says who can open it). */
-import { addDays, eventsOf, optText } from './legacy/core.js';
+import { addDays, eventsOf, logicalKey, optText } from './legacy/core.js';
+import { dayUntold } from './away';
 import { urWorks } from './journal';
 import { logStart } from './log-start';
 import { inTen, patKeys, patSlipTrig, patTriggerLines, patTriggers, patWhen, SLIP_TRIG_WORDS } from './pattern';
@@ -84,8 +85,10 @@ function tally(days: Days, st: Settings, ym: string): Tally {
     }
   }
   let run = 0;
+  const tk = logicalKey(Date.now(), st.rollover);
   for (let k = first < start ? start : first; ymOf(k) === ym; k = addDays(k, 1)) {
-    run = slipDays.has(k) ? 0 : run + 1;
+    /* a night nobody told Daybook about (truth.ts) neither adds to a stretch nor ends it */
+    run = slipDays.has(k) ? 0 : dayUntold(days, st, k, tk) ? run : run + 1;
     if (run > t.longest) t.longest = run;
   }
   return t;

@@ -249,8 +249,11 @@ export function LessonFinish({ title, n, gain, again, stats, keep, onDone }: Les
 
   const flameIn = useAnimatedStyle(() => ({
     opacity: rest ? 1 : 0,
-    transform: [{ translateY: dy * open.value }, { scale: (1 + (K - 1) * open.value) * interpolate(grow.value, [0, 1], [0.3, 1]) }],
+    /* the flame is drawn at its opener size and scaled down to rest, never up past 1: iOS scales the drawn picture, so scaling
+       up made it soft (the owner, November 13, 2026: "super low resolution") */
+    transform: [{ translateY: dy * open.value }, { scale: ((1 + (K - 1) * open.value) / K) * interpolate(grow.value, [0, 1], [0.3, 1]) }],
   }));
+  const B = Math.round(big * K);
   const bandIn = useAnimatedStyle(() => ({
     transform: [{ translateX: interpolate(band.value, [0, 1, 2], [-win.width * 1.8, 0, win.width * 1.8]) }, { rotate: '-10deg' }],
   }));
@@ -299,8 +302,8 @@ export function LessonFinish({ title, n, gain, again, stats, keep, onDone }: Les
         </Reanimated.View>
         <View ref={flameRef} onLayout={measure} style={{ width: big, height: big, marginVertical: 14 }} pointerEvents="none">
           <Sparkles v={twinkle} size={big} />
-          <Reanimated.View style={[StyleSheet.absoluteFill, flameIn]}>
-            <BigFlame level={lvl} size={big} pulse={pulse} noLand />
+          <Reanimated.View style={[{ position: 'absolute', width: B, height: B, left: (big - B) / 2, top: (big - B) / 2 }, flameIn]}>
+            <BigFlame level={lvl} size={B} pulse={pulse} noLand />
           </Reanimated.View>
         </View>
         <Reanimated.View style={headIn}>

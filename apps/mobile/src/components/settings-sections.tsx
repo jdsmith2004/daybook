@@ -718,6 +718,8 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
               <SetRow label={busy ? 'Restoring…' : 'Restore from a backup'} act="accent" onPress={busy ? undefined : restore} />
             </>
           ) : null}
+          {/* the Mithras import, for someone who looks for it (lib/mithras.ts): it opens up front only from Mithras's own link */}
+          <SetRow label="Bring a Mithras journal" onPress={() => router.push({ pathname: '/import/mithras', params: { from: 'settings' } })} />
         </SetGroup>
       ),
     },

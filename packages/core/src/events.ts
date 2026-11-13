@@ -24,7 +24,7 @@ import type { DayKey } from './types';
 /** every event, and what it means (for the privacy page and "See exactly what is sent") */
 export const EV_NAMES = {
   /* the app */
-  open: 'Opened Daybook (cold: started fresh)',
+  open: 'Opened Daybook (cold: started fresh; from: mithras when it was opened by the link from Mithras)',
   leave: 'Left Daybook (secs: how long it was open, route: the screen it was left from)',
   screen: 'Opened a screen (route)',
   screen_left: 'Left a screen for another (route, secs: how long it was on)',
@@ -80,6 +80,8 @@ export const EV_NAMES = {
   account: 'Made an account (how)',
   sync_on: 'Turned sync on',
   feedback: 'Sent feedback (never the words here)',
+  /* Mithras people coming over (mithras.ts) */
+  import: 'Bringing a Mithras journal over (stage: how far it got; how: apple or email; ents and days: how many entries and Mithras days, in bands)',
   /* word tests (ab.ts) */
   ab: 'Was shown one wording of a line being tested (test, arm)',
 } as const;
@@ -141,6 +143,8 @@ export const EV_ROUTES = [
   'trail',
   'unlock',
   'stats',
+  'import',
+  'insights',
   'other',
 ] as const;
 
@@ -173,7 +177,7 @@ export const EV_PROPS: Record<string, Prop> = {
   ix: int(0, 200),
   lesson: one(() => (LESSONS as { id: string }[]).map((l) => l.id)),
   beat: int(0, 60),
-  from: one(() => ['today', 'door', 'nudge', 'widget', 'other']),
+  from: one(() => ['today', 'door', 'nudge', 'widget', 'mithras', 'settings', 'other']),
   outcome: one(() => ['rode', 'slipped', 'closed', 'resisted', 'strong', 'other']),
   str: int(0, 10),
   tool: one(() => [...(TOOLS as { id: string }[]).map((t) => t.id), 'other']),
@@ -221,6 +225,10 @@ export const EV_PROPS: Record<string, Prop> = {
   locked: bool,
   tier: one(() => [...TIP_TIER_IDS, 'pattern_month', 'pattern_life', 'pattern_life_more', 'web', 'other']),
   how: one(() => ['apple', 'email', 'other']),
+  /* the Mithras import: how far it got, and its size in bands only (evBand), never a count of one person's records */
+  stage: one(() => ['link', 'open', 'signed_in', 'read', 'landed', 'closed', 'failed']),
+  ents: one(() => EV_BANDS),
+  days: one(() => EV_BANDS),
   /* the day's snapshot */
   mode: one(() => ['strict', 'gentle', 'step']),
   count: int(0, 100000),
@@ -238,6 +246,9 @@ export const EV_PROPS: Record<string, Prop> = {
   lang: one(() => LANGS),
   os: int(0, 100),
 };
+/** a size as a band: 0, 1 to 9, 10 to 49, 50 to 199, 200 or more */
+export const EV_BANDS = ['b0', 'b1', 'b10', 'b50', 'b200'] as const;
+export const evBand = (n: number): (typeof EV_BANDS)[number] => (!(n > 0) ? 'b0' : n < 10 ? 'b1' : n < 50 ? 'b10' : n < 200 ? 'b50' : 'b200');
 /** languages by their two letters: a short fixed list, anything else is "other" */
 const LANGS = ['en', 'es', 'pt', 'fr', 'de', 'it', 'nl', 'ru', 'uk', 'pl', 'tr', 'ar', 'hi', 'id', 'ja', 'ko', 'zh', 'vi', 'th', 'tl', 'other'] as const;
 /** the two letters of a locale, or "other" */

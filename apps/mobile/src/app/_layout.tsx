@@ -220,7 +220,22 @@ function NavKeeper() {
    ((tabs)/_layout.tsx), and any other page, reached by a link, a notification or a typed address, goes back to it. SOS stays open, with
    what it opens (its tools, Talk it through, I slipped into Rekindle, the bedtime tool's good night), because care is never locked
    (CLAUDE.md); so do the setup itself, signing in, saying what would help, and the privacy page. When SOS closes, the setup comes back. */
-const OPEN_BEFORE_SETUP = new Set(['(tabs)', 'setup', 'sos', 'tool', 'talk', 'trail', 'log', 'night', 'account', 'feedback', 'privacy', 'shots', '+not-found']);
+const OPEN_BEFORE_SETUP = new Set([
+  '(tabs)',
+  'setup',
+  'sos',
+  'tool',
+  'talk',
+  'trail',
+  'log',
+  'night',
+  'account',
+  'feedback',
+  'privacy',
+  'shots',
+  'import',
+  '+not-found',
+]);
 function SetupGate() {
   const { ready, snap } = useStore();
   const top = useSegments()[0] as string | undefined;
@@ -355,6 +370,7 @@ function Shell() {
             'day-list',
             'ignite',
             'becoming',
+            'import/mithras',
           ].map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
           ))}

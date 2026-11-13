@@ -84,7 +84,7 @@ describe('signing in and reading', () => {
     const rows = await m.client.read(s);
     await m.client.signOut(s);
     expect(rows.journals).toHaveLength(1234);
-    expect(rows.journals.every((r) => (r as { user_id: string }).user_id === ME)).toBe(true);
+    expect(rows.journals.every((r) => (r as unknown as { user_id: string }).user_id === ME)).toBe(true);
     expect(rows.streak && (rows.streak as { user_id: string }).user_id).toBe(ME);
     const rest = m.calls.filter((c) => c.url.includes('/rest/v1/'));
     /* three pages of entries, the streak, the profile: every read names the person and carries their own sign-in */
@@ -243,9 +243,10 @@ describe('landing it', () => {
     expect(core.gameCompute(r.snap.days, r.snap.settings!, {}, tk).pts).toBeGreaterThanOrEqual(before);
 
     const logged = fresh();
-    logged.days = core.addEvent(logged.days, '2026-03-10', 'slipped', {}).days ?? logged.days;
+    logged.days = core.addEvent(logged.days, '2026-03-10', 'slipped', '22:00').days;
     const r2 = core.mithrasApply(logged, core.mithrasPlan(rowsOf(0), 4, tk, now), tk, now);
-    expect(r2.snap.days['2026-03-10'].events.filter((e) => e.outcome === 'slipped').length).toBeLessThanOrEqual(1);
+    expect(r2.snap.days['2026-03-10'].events.map((e) => e.time)).toEqual(['22:00']);
+    expect(r2.slips).toBe(1);
   });
 
   it('no real history: no welcome, and no form promised', () => {

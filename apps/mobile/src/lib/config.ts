@@ -13,3 +13,8 @@ export const EVENTS_URL = (process.env.EXPO_PUBLIC_EVENTS_URL || '').replace(/\/
    Services ID. Empty: no Apple button. */
 export const APPLE_ON = process.env.EXPO_PUBLIC_APPLE === 'on';
 export const APPLE_SERVICES_ID = process.env.EXPO_PUBLIC_APPLE_SERVICES_ID || '';
+/* Mithras, the owner's earlier app (core mithras.ts): its Supabase address and its public anon key, which ships inside Mithras too and is
+   public by design. The import signs in with the person's own Mithras sign-in and reads only their rows; nothing here is secret. */
+export const MITHRAS_URL = 'https://myouylbpeuqnmectdwyt.supabase.co';
+export const MITHRAS_ANON =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15b3V5bGJwZXVxbm1lY3Rkd3l0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE5ODI0MTUsImV4cCI6MjA1NzU1ODQxNX0.EieCouVFd9MPKJ2Q8V-skh0q-9z6H_1c4LjT9tfKFtc';

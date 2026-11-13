@@ -464,6 +464,10 @@ function ListPage({
                 ) : null}
               </View>
             </View>
+            {/* the journal's own Insights (app/insights.tsx): a small mark, the only way there */}
+            <Pressable accessibilityRole="button" accessibilityLabel="Insights" onPress={() => router.push('/insights')} style={s.round} hitSlop={6}>
+              <Icon name="chart" color={JN.ink} />
+            </Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={s.round} hitSlop={6}>
               <Icon name="x" color={JN.ink} />
             </Pressable>

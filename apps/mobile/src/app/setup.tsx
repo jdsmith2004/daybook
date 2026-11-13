@@ -30,6 +30,7 @@ import {
   obHabit,
   obPages,
   obPrefill,
+  mithrasProfile,
   obPromise,
   obReply,
   obSave,
@@ -63,6 +64,7 @@ import { TIP_ON } from '@/components/support';
 import { UnlockSheet } from '@/components/unlocked';
 import { useSos } from '@/lib/sos';
 import { markTourDue } from '@/lib/tour';
+import { mithrasHeld } from '@/lib/mithras';
 import { BEAT_BREATH, ToolTimer, type BeatOf } from '@/components/tools/timer';
 import { Icon, T } from '@/components/ui';
 import { ClockWheels } from '@/components/when';
@@ -99,7 +101,9 @@ export default function Setup() {
     const k = setupKeep.flow;
     setupKeep.shut = false;
     if (k && k.redo === redo && !k.saved) return { ...k };
-    return { redo, i: 0, a: obPrefill(st), hg: null, keep: null, saved: false, changed: 0 };
+    /* a yes to the Mithras import before setup (app/import/mithras.tsx): the habit and how often come from Mithras, to change or keep */
+    const mi = !redo && mithrasHeld.rows ? mithrasProfile(mithrasHeld.rows.profile) : {};
+    return { redo, i: 0, a: { ...mi, ...obPrefill(st) }, hg: null, keep: null, saved: false, changed: 0 };
   });
   /* opened straight onto this page (a Home Screen icon on the web): someone whose setup is done goes to Today instead */
   const [cold] = useState(() => !router.canGoBack());

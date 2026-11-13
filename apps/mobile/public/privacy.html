@@ -143,6 +143,20 @@
           You can also stop it in the Health app, under Sharing.
         </p>
 
+        <h2 id="mithras">Bringing a Mithras journal</h2>
+        <p>
+          If you used Mithras, the app Daybook grew out of, you can bring your Mithras journal and streak into Daybook (More, Save a copy, or the link in
+          Mithras). You sign in to Mithras inside Daybook, with Apple or your Mithras email and password. That sign-in goes only to Mithras's own service
+          (Supabase), never to Daybook. Daybook then reads only your own Mithras records, straight from Mithras to your phone: your journal entries (what you
+          wrote, the feelings you picked, and when), the days you marked as wins and setbacks, your longest streak, and the habit and how often you said it
+          happens. It then signs out of Mithras and forgets that sign-in. Your goals, deeper reflections and coach chats stay in Mithras.
+        </p>
+        <p>
+          What comes over becomes part of your log on this phone, like anything you write in Daybook: it reaches your account only if you have one with sync on.
+          No Daybook server ever sees your Mithras records, and no Daybook account is needed. Bringing it again replaces what came the first time, and never
+          makes a second copy.
+        </p>
+
         <h2 id="learns">What Daybook learns</h2>
         <p>
           Daybook is built by one person, who needs to know which parts help people quit and which do not, so they can make it better. So Daybook learns how the
@@ -164,8 +178,8 @@
         <ul>
           <li>
             <code>open</code>, <code>leave</code>, <code>screen</code>, <code>screen_left</code>, <code>error</code>: Daybook was opened (and whether it started
-            fresh), left (how long it was open, and from which screen), a screen was opened or left (and how long it was on), or something went wrong (which
-            part).
+            fresh, and whether it was opened by the link from Mithras), left (how long it was open, and from which screen), a screen was opened or left (and how
+            long it was on), or something went wrong (which part).
           </li>
           <li>
             <code>day</code>: once a day, where things stand: the counting mode, the count, no-slip days in the last 28, how many urges were ridden out and how
@@ -220,6 +234,11 @@
             a card or a receipt), an account was made (with Apple or email, never the account), sync was turned on, feedback was sent (never its words here).
           </li>
           <li>
+            <code>import</code>: bringing a Mithras journal over, and how far it got (the link opened, signed in, read, landed, closed or failed), whether the
+            sign-in was Apple or email, and how many entries and Mithras days came, only in bands (none, under 10, under 50, under 200, 200 or more). Never your
+            Mithras account, email or anything you wrote.
+          </li>
+          <li>
             <code>ab</code>: Daybook tries two wordings of a line to learn which helps more, and this says which one was shown: the line's name (rk_first,
             Rekindle's first line) and a or b. Which one a phone sees is picked from its random number above, never from anything about you, and is the same
             every time. With this turned off, you always see the wording Daybook had before.
@@ -233,7 +252,8 @@
           <code>kind</code>, <code>nh</code>, <code>after</code>, <code>test</code>, <code>arm</code>, <code>what</code>, <code>note</code>, <code>tier</code>,
           <code>how</code>, <code>mode</code>, <code>count</code>, <code>ns28</code>, <code>pts</code>, <code>badges</code>, <code>low</code>, <code>rem</code>,
           <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>, <code>faith</code>, <code>habit</code>, <code>lang</code>,
-          <code>os</code>. Anything that is not on those lists is dropped on your phone, and refused by the server.
+          <code>os</code>, <code>stage</code>, <code>ents</code>, <code>days</code>. Anything that is not on those lists is dropped on your phone, and refused
+          by the server.
         </p>
         <p>
           Never sent: your journal, notes, voice notes, Obsidian folder, plan, reasons, Talk it through, or anything else you write; your name, email, account
@@ -356,7 +376,8 @@
         <h2>Other companies</h2>
         <p>
           Amazon Web Services hosts the website and the account service. Apple and Google distribute the app. Apple and Stripe handle tip payments, and Apple
-          handles Sign in with Apple if you use it. If you have chosen in your phone's settings to share crash reports with app developers, Apple or Google may
+          handles Sign in with Apple if you use it. If you bring a Mithras journal, your phone signs in to Mithras's service (Supabase) and reads your own
+          records from it, as Mithras itself does. If you have chosen in your phone's settings to share crash reports with app developers, Apple or Google may
           send Daybook anonymous crash reports. No one else receives anything.
         </p>
 

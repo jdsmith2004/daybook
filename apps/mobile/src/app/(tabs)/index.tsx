@@ -81,6 +81,7 @@ import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
 import { useCameBack, useQuietAsks } from '@/lib/quiet-asks';
 import { useStore } from '@/lib/store';
+import { useMithrasPending } from '@/lib/mithras';
 import { useUnlock } from '@/lib/unlock';
 import { useNights } from '@/lib/health';
 import { LEAD_ROOM, NOTE_ROOM, useTodaySize } from '@/lib/today-size';
@@ -160,6 +161,18 @@ export default function Today() {
   const holdsBar = useHoldsBar();
   const focusRef = useRef(focused);
   focusRef.current = focused;
+  /* the link from Mithras came (lib/mithras.ts), and the import is not done or closed: it opens over Today once setup is done, first of all,
+     since the person came here for it. Nothing else opens until it is answered. */
+  const miPending = useMithrasPending();
+  const miNow = ready && !!st && miPending && !syncing && !sos.ur && !sos.timer;
+  useEffect(() => {
+    if (!miNow || !focused) return;
+    const t = setTimeout(() => {
+      if (!focusRef.current || sheetOnTop()) return;
+      router.push('/import/mithras');
+    }, 450);
+    return () => clearTimeout(t);
+  }, [miNow, focused]);
   /* "How are you feeling today?": a small card at the bottom of Today on the day's first open (day-feel-pop.tsx) */
   const [askFeel, setAskFeel] = useState(false);
   /* a celebration sheet ends it: there is never both on one open (the owner, October 30, 2026) */
@@ -179,7 +192,7 @@ export default function Today() {
      opened already, and not while SOS is open. It comes before "How are you feeling today?", which it answers. */
   const morningNow = !!st && !syncing && !cameBack && !sos.ur && !sos.timer && morningDue(snap.days, st, tk, now);
   useEffect(() => {
-    if (!ready || !morningNow || !focused || backNow || gradNow || celebrating) return;
+    if (!ready || !morningNow || !focused || backNow || gradNow || celebrating || miNow) return;
     const t = setTimeout(() => {
       if (!focusRef.current || sheetOnTop() || morningOpened === tk) return;
       /* once per day in this run of the app: a page left by a back press does not come straight back (the X skips it for good) */
@@ -187,7 +200,7 @@ export default function Today() {
       router.push('/morning');
     }, 400);
     return () => clearTimeout(t);
-  }, [ready, morningNow, focused, backNow, gradNow, celebrating, tk]);
+  }, [ready, morningNow, focused, backNow, gradNow, celebrating, miNow, tk]);
   useEffect(() => {
     if (!firstOpen || !ready) return;
     if (firstOpen.k < tk || sosUsed || feelQuiet || cameBack || celebrating || tourWaits || celebrationSheetAt() >= firstOpen.at) {
@@ -275,7 +288,8 @@ export default function Today() {
   /* the tour: on Today in front, with nothing else opening, never in the hours after an SOS or a slip (it waits for them to pass),
      and never during an SOS or a pause. A short wait first, so a page still closing (setup's end) is gone by then. */
   const [touring, setTouring] = useState(false);
-  const tourNow = ready && !!st && tourWaits && !syncing && focused && !quiet && !backNow && !gradNow && !morningNow && !celebrating && !sos.ur && !sos.timer;
+  const tourNow =
+    ready && !!st && tourWaits && !syncing && focused && !quiet && !backNow && !gradNow && !morningNow && !celebrating && !miNow && !sos.ur && !sos.timer;
   useEffect(() => {
     if (!tourNow || touring) return;
     const t = setTimeout(() => {

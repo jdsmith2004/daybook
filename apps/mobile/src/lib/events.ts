@@ -24,7 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
 import { useEffect } from 'react';
-import { AppState, Platform } from 'react-native';
+import { AppState, Linking, Platform } from 'react-native';
 
 import { EVENTS_URL, PULSE_URL } from '@/lib/config';
 
@@ -158,7 +158,10 @@ export function useKeepEvents(ready: boolean) {
   useEffect(() => {
     if (!eventsOffered || !ready) return;
     let since = Date.now();
-    track('open', { cold: true });
+    /* opened by the link from Mithras (lib/mithras.ts): said as where it came from, never the link itself */
+    Linking.getInitialURL()
+      .then((u) => track('open', { cold: true, ...(/import\/mithras/.test(u || '') ? { from: 'mithras' } : {}) }))
+      .catch(() => track('open', { cold: true }));
     if (Date.now() - lastSend > EVERY) sendEvents();
     const sub = AppState.addEventListener('change', (a) => {
       if (a === 'active') {

@@ -27,6 +27,7 @@ import {
   obAskCount,
   obBegin,
   obChanges,
+  obGoal,
   obHabit,
   obPages,
   obPrefill,
@@ -516,7 +517,7 @@ export default function Setup() {
                   <View style={{ gap: 2 }}>
                     <AnswerText right={on}>{x.l}</AnswerText>
                     <Text style={[s.optSub, { color: on ? '#FFFFFF' : PAPER_INK }]}>
-                      {x.from} → {x.to}
+                      {x.from} → {x.k === 'goal' ? obGoal(a, st, tk).goal : x.to}
                     </Text>
                   </View>
                 </Answer>
@@ -555,8 +556,8 @@ export default function Setup() {
       <Ignition
         level={1}
         from="0"
-        to="Day 1"
-        unit="is today"
+        to="1"
+        unit="Tonight is night one"
         line="You lit me. Tonight is the first night, and I am with you for it."
         row={igniteStartRow(tk)}
         pop={0}

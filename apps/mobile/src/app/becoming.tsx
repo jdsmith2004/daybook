@@ -37,7 +37,6 @@ export default function Becoming() {
   /* what is picked: a starter, or the person's own words (a starter typed out by hand counts as the starter) */
   const [pick, setPick] = useState<string>(OB_BE.indexOf(had) >= 0 ? had : '');
   const [own, setOwn] = useState<string>(OB_BE.indexOf(had) >= 0 ? '' : had);
-  const [typing, setTyping] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
   const [pulse, setPulse] = useState(0);
   const level = useMemo(() => (st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1), [st, snap.days, snap.reviews, tk]);
@@ -50,7 +49,6 @@ export default function Becoming() {
     apply((x) => ({ st: setField(x, 'becoming', cur) }));
     buzz('lit');
     setPulse((n) => n + 1);
-    setTyping(false);
     setSaid(cur);
   };
 
@@ -73,10 +71,14 @@ export default function Becoming() {
             That is who you are becoming.
           </T>
         </View>
-        <Appear by={10} delay={260} duration={320}>
-          <Bubble text={said} />
-        </Appear>
-        <FlameSlot size={SHORT ? 220 : 280} min={SHORT ? 140 : 180} />
+        <Middle>
+          <View style={s.said}>
+            <Appear by={10} delay={260} duration={320}>
+              <Bubble text={said} />
+            </Appear>
+            <FlameSlot size={SHORT ? 380 : 500} min={SHORT ? 190 : 260} style={s.saidFlame} />
+          </View>
+        </Middle>
         <T style={[s.c, { color: look.low }]}>Every day you live it, it gets truer. I will show it to you on hard days.</T>
       </Shell>
     );
@@ -93,13 +95,14 @@ export default function Becoming() {
       fit={fit}
       bodyKey="ask"
       onClose={close}
-      foot={<Next label={had ? 'Save it' : 'Save my sentence'} off={!cur || cur === had} onPress={save} />}>
+      /* with words in the box, its Save beside it is the one Save; the low button is for a starter */
+      foot={tidy(own) ? null : <Next label={had ? 'Save it' : 'Save my sentence'} off={!cur || cur === had} onPress={save} />}>
       <View style={s.head}>
         <T v="title" style={SHORT ? s.titleShort : s.title} accessibilityRole="header">
           Who are you becoming?
         </T>
       </View>
-      {/* the box and its Save stay together near the top, since the keyboard covers the bottom while typing */}
+      {/* the box and its Save stay together near the top, since the keyboard covers the bottom while typing; it is the only Save while there are words in it */}
       <View style={{ gap: 6 }}>
         <T v="label">Write my own</T>
         <View style={s.ownRow}>
@@ -112,15 +115,13 @@ export default function Becoming() {
             returnKeyType="done"
             placeholder="I am someone who…"
             placeholderTextColor="rgba(27,31,75,0.5)"
-            onFocus={() => setTyping(true)}
-            onBlur={() => setTyping(false)}
             onChangeText={(v) => {
               setOwn(v.replace(/\n/g, ' '));
               if (v.trim()) setPick('');
             }}
             style={[s.input, { backgroundColor: PAPER, color: PAPER_INK }]}
           />
-          {typing && tidy(own) ? (
+          {tidy(own) && tidy(own) !== had ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Save my sentence"
@@ -170,7 +171,9 @@ function Say({ text }: { text: string }) {
 }
 
 const s = StyleSheet.create({
-  head: { gap: 8 },
+  head: { gap: 8, marginBottom: 8 },
+  said: { alignSelf: 'stretch', gap: 4 },
+  saidFlame: { flexGrow: 0 },
   title: { fontSize: 28, lineHeight: 34 },
   titleShort: { fontSize: 22, lineHeight: 28 },
   c: { textAlign: 'center', fontSize: 17, lineHeight: 24 },

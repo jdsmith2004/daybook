@@ -37,7 +37,7 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
       {be ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={'Who you are becoming: ' + be + '. Change it.'}
+          accessibilityLabel={'Who you are becoming: ' + be.replace(/[.!]+$/, '') + '. Change it.'}
           onPress={openBe}
           style={({ pressed }) => [s.be, { opacity: pressed ? 0.85 : 1 }]}>
           <View style={s.beTop}>
@@ -59,7 +59,7 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
       ) : (
         <View style={s.be}>
           <T v="h2">Who are you becoming?</T>
-          <T tone="muted">One sentence about the person you are growing into. The flame holds on to it for the hard days.</T>
+          <T tone="muted">One sentence about who you are growing into. The flame holds on to it for the hard days.</T>
           <View style={s.beBtn}>
             <Button label="Write my sentence" icon="pencil" onPress={openBe} />
           </View>

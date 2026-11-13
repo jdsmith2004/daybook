@@ -11,6 +11,9 @@
      leaves, and the stake is said before the choice, never after: "Open it, and tonight goes in the week as a night you went
      through." Once over, Open them for 10 minutes; then Apple's filter is back.
 
+   At night, once the wait is over, sleep care's one line for the person lying awake takes the place of "Breathe while it runs."
+   (the plan, C3), so it costs the screen no room.
+
    Loosen slowly here too: the short wait counts from the shield's tap (not from whenever this screen is looked at), a wait left
    over for more than two minutes in the background starts again, and a screen opened by day that is still open when the night
    starts becomes the night's wait before anything opens. In the night, Open counts as a night gone through, and says so first.
@@ -223,8 +226,8 @@ export default function PullPause() {
             <BigFlame level={level} size={ring * 0.86} pulse={pulse} noLand low={low} douse={dims} smoke="#6B6577" label={w.title} />
           </WavyRing>
           <Text style={[s.left, { color: over ? soft : dark ? c.sun : c.ink }]}>{over ? ' ' : leftLabel(left, long)}</Text>
-          <T v="small" style={{ color: soft }}>
-            {over ? ' ' : w.hold}
+          <T v="small" style={{ color: soft, textAlign: 'center' }}>
+            {over ? (w.awake ?? ' ') : w.hold}
           </T>
         </View>
         {dark && note ? (

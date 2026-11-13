@@ -523,7 +523,11 @@ export interface PullPauseWords {
   stake: string | null;
   /** after "Put it down" */
   thanks: string;
+  /** under the ring once the wait is over, in the night only: sleep care for the person lying awake (C3) */
+  awake: string | null;
 }
+/** sleep care's one line for the person lying awake (the plan, C3: the wait page at night gains it) */
+export const PULL_AWAKE = 'Awake after 20 minutes? Get up, leave the phone, come back sleepy.';
 /** "7:40 AM" */
 const timeOf = (ms: number) => fmtClock(clockOf(ms));
 /** `mode`: 'day' the short wait by day, 'night' the short wait in the night hours, 'long' the long wait before adult sites */
@@ -546,6 +550,7 @@ export function pullPauseWords(o: {
       open: 'Open it for ' + o.open + ' minutes',
       stake: null,
       thanks: n >= 2 ? 'You put it down. That makes ' + n + '.' : 'You put it down. That is what someone free does.',
+      awake: null,
     };
   const t = o.tonight;
   const said = t?.r ? (t.rAt ? 'You, at ' + timeOf(t.rAt) + ': ' : 'You: ') + quote(t.r) : null;
@@ -563,6 +568,7 @@ export function pullPauseWords(o: {
       : n >= 2
         ? 'That makes ' + n + '. One more win in your log.'
         : 'One more win in your log. That is what someone free does.',
+    awake: PULL_AWAKE,
   };
 }
 

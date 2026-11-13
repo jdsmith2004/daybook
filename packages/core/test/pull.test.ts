@@ -398,6 +398,11 @@ describe('the words', () => {
       'Open it, and tonight goes in the week as a night you went through.',
     );
     expect(pullPauseWords({ mode: 'night', quiet: true, open: 3, plan: null, tonight: t }).stake).toBeNull();
+    /* sleep care's line for the person lying awake: at night only */
+    expect(pullPauseWords({ mode: 'night', quiet: true, open: 3, plan: null, tonight: t }).awake).toBe(
+      'Awake after 20 minutes? Get up, leave the phone, come back sleepy.',
+    );
+    expect(pullPauseWords({ mode: 'day', quiet: false, open: 3, plan: null }).awake).toBeNull();
     expect(pullPauseWords({ mode: 'long', quiet: false, open: 3, plan: null, tonight: t }).open).toBe('Open them for ' + PULL_WEB_OPEN + ' minutes');
   });
   it('shows the morning at night: the reason, quoted with when it was chosen', () => {

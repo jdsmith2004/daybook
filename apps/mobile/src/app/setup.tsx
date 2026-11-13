@@ -249,10 +249,9 @@ export default function Setup() {
   const ans = (v: unknown) => (Array.isArray(v) ? v.length > 0 : v != null && v !== '');
   const nextBtn = (label: string, skip?: boolean) =>
     skip ? (
-      /* the same big button on every page, waiting for an answer, with Skip under it */
-      <View key="s" style={[s.footOne, { gap: 2 }]}>
-        <Next label="Next" onPress={() => undefined} off />
-        <Ghost
+      /* the same big button on every page: Skip until there is an answer, then Next, in the same place (nothing jumps) */
+      <View key="s" style={s.footOne}>
+        <Next
           label={label}
           onPress={() => {
             if (busy()) return;
@@ -337,9 +336,17 @@ export default function Setup() {
         <>
           <Head h={tried ? 'SOS is yours now.' : 'This is SOS.'} />
           <Talk text={tried ? 'Next time an urge comes, you already know the way through.' : voice} want={want * 0.8} />
-          <View style={{ alignItems: 'center' }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Try SOS now"
+            onPress={() => {
+              if (busy()) return;
+              buzz('tap');
+              router.push({ pathname: '/sos', params: { practice: '1', setup: '1' } });
+            }}
+            style={({ pressed }) => ({ alignItems: 'center', transform: [{ scale: pressed ? 0.95 : 1 }] })}>
             <SosButton />
-          </View>
+          </Pressable>
         </>
       );
       foot = tried ? (
@@ -744,7 +751,7 @@ function FirstGoal({ goal, opts, onGoal, tk }: { goal: number | null; opts: [num
             ? goal >= 7
               ? 'A whole week. I will light up every morning you tell me.'
               : goal === near
-                ? `${NIGHTS[goal]} nights. Then we go for ${far >= 7 ? 'a week' : NIGHTS[far].toLowerCase()}.`
+                ? `${NIGHTS[goal]} nights. Then we go for a week.`
                 : `${NIGHTS[goal]} nights is a stretch. I will light up every morning you tell me.`
             : 'Let us set your first goal. Small is how it starts.'
         }

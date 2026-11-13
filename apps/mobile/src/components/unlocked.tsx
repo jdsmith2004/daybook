@@ -54,8 +54,10 @@ export function UnlockSheet({ eb = 'Unlocked', name, line, art, go, other }: Unl
           <Icon name="sparkle" size={18} color={c.mintText} />
           <Text style={[s.ebT, { color: c.mintText }]}>{eb}</Text>
         </View>
-        <Animated.Text style={[s.name, { color: c.mintText, transform: [{ scale: pop }] }]}>{name}</Animated.Text>
-        {art ? <View style={s.art}>{art}</View> : null}
+        <View style={s.top}>
+          {art ? <View style={s.art}>{art}</View> : null}
+          <Animated.Text style={[s.name, { color: c.mintText, transform: [{ scale: pop }] }]}>{name}</Animated.Text>
+        </View>
         <T style={{ color: c.mintText }}>{line}</T>
         <View style={{ gap: 2, marginTop: 8 }}>
           <Next label={go.label} noIcon onPress={go.onPress} />
@@ -80,6 +82,7 @@ const s = StyleSheet.create({
   },
   eb: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   ebT: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 22 },
-  name: { fontFamily: font.displayBold, fontSize: 40, lineHeight: 46, transformOrigin: 'left' },
-  art: { alignItems: 'flex-start', paddingVertical: 6 },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 4 },
+  name: { flex: 1, fontFamily: font.displayBold, fontSize: 40, lineHeight: 46, transformOrigin: 'left' },
+  art: { alignItems: 'center', justifyContent: 'center' },
 });

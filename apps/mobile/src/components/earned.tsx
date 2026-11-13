@@ -143,7 +143,9 @@ function Moment({
       title = L.name;
       sub = was + L.meaning + ' You built it, one day at a time.';
       picture = (z: number) => <Grow from={from} to={L.n} size={z} still={still} quiet={quiet} />;
-      lines = levelLines(L, turn.from);
+      /* the flame growing is the highlight, so it keeps the room (the owner, November 13, 2026: "the highlight was the flame growing and
+         it's the smallest part of the screen"): one line, the level turning over, and no number or form step under the name to repeat it */
+      lines = levelLines(L, turn.from).slice(0, 1);
     } else {
       shout = 'Level up!';
       title = '';
@@ -251,7 +253,7 @@ function Moment({
             setBox((b) => (b.words === h ? b : { ...b, words: h }));
           }}>
           {title ? <Title text={title} at={B.title} still={still} big={kind === 'form'} /> : null}
-          {turn ? <Turn from={turn.from} to={turn.to} at={kind === 'form' ? B.title + 150 : B.title} still={still} quiet={quiet} /> : null}
+          {turn && kind !== 'form' ? <Turn from={turn.from} to={turn.to} at={B.title} still={still} quiet={quiet} /> : null}
           {sub ? (
             <Reanimated.View style={subIn}>
               <Text style={s.sub}>{sub}</Text>

@@ -97,6 +97,7 @@ import { lessonLook, PAPER, PAPER_INK, SUN_CARD, SUN_INK, type Look, type LookKi
 import { count } from '@/lib/pulse';
 import { track } from '@/lib/events';
 import { close, closeAll } from '@/lib/nav';
+import { phoneCrisisLine } from '@/lib/crisis';
 import { useStore } from '@/lib/store';
 import { useSos } from '@/lib/sos';
 import { copyText } from '@/lib/words';
@@ -472,6 +473,7 @@ export default function LessonScreen() {
       const pr = lessonPractice(L, st);
       const note = (st.learn.notes && st.learn.notes[L.id]) || '';
       const key = beats?.key || L.key;
+      const crisis = phoneCrisisLine();
       body = (
         <>
           <View style={s.doneHead}>
@@ -493,8 +495,9 @@ export default function LessonScreen() {
           </Pressable>
           {L.u === 1 || L.id === 'l22' || L.care ? (
             <T v="small" tone="muted">
-              If this stirs up something heavy, you can call or text <Text style={{ fontFamily: font.bodyBold }}>988</Text>, the Suicide &amp; Crisis Lifeline,
-              any time, day or night (US). It is open to anyone who is struggling.
+              {/* the free line for where the phone is (core crisis.ts) */}
+              If this stirs up something heavy, you can {crisis.text ? 'call or text' : 'call'} <Text style={{ fontFamily: font.bodyBold }}>{crisis.num}</Text>,{' '}
+              {crisis.called}, any time, day or night ({crisis.where}). It is open to anyone who is struggling.
             </T>
           ) : null}
         </>

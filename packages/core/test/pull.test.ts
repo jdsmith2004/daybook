@@ -34,10 +34,18 @@ import {
   PULL_NIGHT_END,
   PULL_WEB_OPEN,
   pullSetupSay,
+  pullMark,
+  pullParts,
+  pullTrouble,
+  pullArmNow,
+  pullHoldStart,
+  PULL_MAX_APPS,
+  PULL_MIN_SCHEDULE,
+  PULL_HEARTBEAT,
 } from '../src/pull';
 import { lowWords, partDone } from '../src/flame-low';
-import { nightAtStart } from '../src/morning-set';
-import type { Days, Settings } from '../src/types';
+import { nightAtStart, NIGHT_TIMES } from '../src/morning-set';
+import type { Clock, Days, Settings } from '../src/types';
 
 const st = { ...defaultSettings('2026-10-01'), rollover: 4 } as Settings;
 const at = (s: string) => new Date(s).getTime();
@@ -202,10 +210,135 @@ describe('what is held right now', () => {
     expect(g(t, {}, { ...on, feeds: false, adult: false })).toEqual({ apps: false, web: false });
     expect(g(t, {}, PULL_DEFAULTS)).toEqual({ apps: false, web: false });
   });
-  it('reads a night as held or gone through', () => {
-    expect(pullNightHeld({ '2026-10-12': 1, '2026-10-13': 2 }, '2026-10-12')).toBe('held');
-    expect(pullNightHeld({ '2026-10-12': 1, '2026-10-13': 2 }, '2026-10-13')).toBe('through');
+  it('reads a night as held only once the morning came with the waits still on', () => {
+    const rec = { '2026-10-11': 1, '2026-10-12': 3, '2026-10-13': 2 };
+    expect(pullNightHeld(rec, '2026-10-11')).toBe('started');
+    expect(pullNightHeld(rec, '2026-10-12')).toBe('held');
+    expect(pullNightHeld(rec, '2026-10-13')).toBe('through');
     expect(pullNightHeld(null, '2026-10-12')).toBeNull();
+  });
+  it('a night gone through stays gone through; held only follows a night that started', () => {
+    expect(pullMark(undefined, 1)).toBe(1);
+    expect(pullMark(1, 3)).toBe(3);
+    expect(pullMark(undefined, 3)).toBeUndefined();
+    expect(pullMark(2, 3)).toBe(2);
+    expect(pullMark(2, 1)).toBe(2);
+    expect(pullMark(3, 2)).toBe(2);
+    expect(pullMark(3, 1)).toBe(3);
+  });
+  it('a callback at the night’s start or end a few seconds early still finds the night it was set for', () => {
+    const b = (now: number, boundary: boolean) => pullGuard(on, { adult: true, from: '22:30', holds: none, now, boundary }).web;
+    const start = at('2026-10-12T22:29:58');
+    expect(b(start, false)).toBe(false);
+    expect(b(start, true)).toBe(true);
+    const end = at('2026-10-13T05:59:58');
+    expect(b(end, false)).toBe(true);
+    expect(b(end, true)).toBe(false);
+    /* the evening part's end at 23:59 and the after-midnight part's start stay in the night */
+    expect(b(at('2026-10-12T23:58:59'), true)).toBe(true);
+    expect(b(at('2026-10-12T23:59:59'), true)).toBe(true);
+  });
+});
+
+describe('Apple’s schedules for the night', () => {
+  const m = (t: string) => +t.slice(0, 2) * 60 + +t.slice(3, 5);
+  it('a night before midnight: its evening part, after midnight, a heartbeat after the start, and the morning check', () => {
+    expect(pullParts('22:30')).toEqual([
+      { n: 'pull.night.a', a: m('22:30'), b: m('23:59'), ev: true },
+      { n: 'pull.night.b', a: 0, b: m('06:00'), ev: true },
+      { n: 'pull.night.h', a: m('22:35'), b: m('22:50'), ev: false },
+      { n: 'pull.morning', a: m('06:05'), b: m('06:20'), ev: false },
+    ]);
+  });
+  it('a night that starts after midnight is one part', () => {
+    expect(pullParts('01:00').map((x) => [x.n, x.a, x.b])).toEqual([
+      ['pull.night.b', 60, 360],
+      ['pull.night.h', 65, 80],
+      ['pull.morning', 365, 380],
+    ]);
+  });
+  it('every time the morning can choose is covered from its start minute, inside one day, at least 15 minutes each', () => {
+    for (const t of NIGHT_TIMES) {
+      const parts = pullParts(t);
+      for (const x of parts) {
+        expect(x.b - x.a).toBeGreaterThanOrEqual(PULL_MIN_SCHEDULE);
+        expect(x.b).toBeLessThanOrEqual(23 * 60 + 59);
+      }
+      /* something starts at the night's own start minute, with a heartbeat a few minutes later */
+      expect(parts.some((x) => x.a === m(t) && x.n !== 'pull.night.h')).toBe(true);
+      expect(parts.some((x) => x.n === 'pull.night.h' && x.a === m(t) + PULL_HEARTBEAT)).toBe(true);
+    }
+  });
+  it('a start too late for an evening part leaves the night to midnight and to the app (Good night arms it at once)', () => {
+    expect(pullParts('23:50').map((x) => x.n)).toEqual(['pull.night.b', 'pull.morning']);
+  });
+  it('rides in the bridge', () => {
+    expect(pullBridge({}, st, normPull({ on: true }), at('2026-10-12T21:00')).parts).toEqual(pullParts(st.screensOff as Clock));
+  });
+});
+
+describe('when it is not working', () => {
+  const on = normPull({ on: true });
+  const ok = { status: 'approved' as const, failed: [], decodeFail: false, apps: 3 };
+  it('says nothing when it works or is off', () => {
+    expect(pullTrouble(on, ok)).toBeNull();
+    expect(pullTrouble(normPull(null), { ...ok, status: 'notDetermined' })).toBeNull();
+    expect(pullTrouble(on, null)).toBeNull();
+  });
+  it('names each failure and the one tap that fixes it, in plain words', () => {
+    expect(pullTrouble(on, { ...ok, status: 'notDetermined' })?.fix).toBe('ask');
+    expect(pullTrouble(on, { ...ok, apps: PULL_MAX_APPS + 1 })?.fix).toBe('pick');
+    expect(pullTrouble(on, { ...ok, decodeFail: true })?.fix).toBe('pick');
+    expect(pullTrouble(on, { ...ok, failed: ['pull.night.a'] })?.fix).toBe('retry');
+    for (const h of [{ status: 'denied' as const }, { apps: 60 }, { decodeFail: true }, { failed: ['x'] }]) {
+      const t = pullTrouble(on, { ...ok, ...h });
+      expect(t?.line).toMatch(/^Screen Time is not working: /);
+      expect(t?.line).not.toMatch(/n't|'s /);
+    }
+    expect(pullTrouble(on, { ...ok, apps: PULL_MAX_APPS })).toBeNull();
+  });
+});
+
+describe('Good night, and loosen slowly for the start itself', () => {
+  const on = normPull({ on: true });
+  const s2 = { ...st, screensOff: '22:30' } as Settings;
+  it('Good night starts the night now, for tonight only', () => {
+    const p = pullArmNow(on, {}, s2, at('2026-10-12T21:40'));
+    expect(p.early).toEqual({ k: '2026-10-12', at: '21:40' });
+    expect(pullNightStart({}, s2, p, at('2026-10-12T21:41'))).toBe('21:40');
+    expect(pullNightStart({}, s2, p, at('2026-10-13T21:41'))).toBe('22:30');
+  });
+  it('after midnight, before a late start, it is the night still running', () => {
+    const late = { ...s2, screensOff: '01:00' } as Settings;
+    const p = pullArmNow(on, {}, late, at('2026-10-13T00:30'));
+    expect(p.early).toEqual({ k: '2026-10-12', at: '00:30' });
+    expect(pullInNight(at('2026-10-13T00:31'), pullNightStart({}, late, p, at('2026-10-13T00:31')))).toBe(true);
+  });
+  it('a start already earlier is kept', () => {
+    expect(pullArmNow(on, {}, s2, at('2026-10-12T23:00'))).toBe(on);
+  });
+  it('a later sleep time in the evening waits for the morning; in the morning it works at once', () => {
+    const t = at('2026-10-12T21:00');
+    const p1 = pullHoldStart(on, {}, s2, t);
+    expect(p1.armed).toEqual({ k: '2026-10-12', at: '22:30' });
+    expect(pullHoldStart(p1, {}, s2, t + 60_000)).toBe(p1);
+    const later = { ...s2, screensOff: '23:30' } as Settings;
+    const p2 = pullHoldStart(p1, {}, later, t + 60_000);
+    expect(pullNightStart({}, later, p2, t + 60_000)).toBe('22:30');
+    expect(pullNightStart({}, later, p2, at('2026-10-13T01:00'))).toBe('22:30');
+    /* the next night is the new time; changed in the morning, it works for tonight */
+    expect(pullNightStart({}, later, pullHoldStart(p2, {}, later, at('2026-10-13T08:00')), at('2026-10-13T08:00'))).toBe('23:30');
+  });
+  it('an earlier start works at once, and is then the one held', () => {
+    const p1 = pullHoldStart(on, {}, s2, at('2026-10-12T21:00'));
+    const early = { ...s2, screensOff: '22:00' } as Settings;
+    const p2 = pullHoldStart(p1, {}, early, at('2026-10-12T21:01'));
+    expect(p2.armed?.at).toBe('22:00');
+    expect(pullNightStart({}, early, p2, at('2026-10-12T21:01'))).toBe('22:00');
+  });
+  it('is kept through a save', () => {
+    const p = pullHoldStart(on, {}, s2, at('2026-10-12T21:00'));
+    expect(normPull(JSON.parse(JSON.stringify({ ...p, lost: true })))).toMatchObject({ armed: p.armed, lost: true });
   });
 });
 
@@ -260,7 +393,16 @@ describe('the words', () => {
       'Open them, and tonight goes in the week as a night you went through.',
     );
     expect(pullPauseWords({ mode: 'long', quiet: true, open: 3, plan: null, tonight: t }).stake).toBeNull();
-    expect(pullPauseWords({ mode: 'night', quiet: false, open: 3, plan: null, tonight: t }).stake).toBeNull();
+    /* Open on the night's short wait counts as gone through too (WP2), so it says so before the choice; never by day */
+    expect(pullPauseWords({ mode: 'night', quiet: false, open: 3, plan: null, tonight: t }).stake).toBe(
+      'Open it, and tonight goes in the week as a night you went through.',
+    );
+    expect(pullPauseWords({ mode: 'night', quiet: true, open: 3, plan: null, tonight: t }).stake).toBeNull();
+    /* sleep care's line for the person lying awake: at night only */
+    expect(pullPauseWords({ mode: 'night', quiet: true, open: 3, plan: null, tonight: t }).awake).toBe(
+      'Awake after 20 minutes? Get up, leave the phone, come back sleepy.',
+    );
+    expect(pullPauseWords({ mode: 'day', quiet: false, open: 3, plan: null }).awake).toBeNull();
     expect(pullPauseWords({ mode: 'long', quiet: false, open: 3, plan: null, tonight: t }).open).toBe('Open them for ' + PULL_WEB_OPEN + ' minutes');
   });
   it('shows the morning at night: the reason, quoted with when it was chosen', () => {

@@ -162,9 +162,9 @@ export function finishLine(days: Days, st: Settings, tk: DayKey): string | null 
 export const morningTold = (days: Days, tk: DayKey): boolean => !!morningOf(days[tk])?.n;
 
 /** the reply line under the answer (mockup m1). Plain and sure; It happened gets no ceremony, only that telling is done. */
-export function morningReply(n: 'free' | 'slip', alreadyLogged: boolean): string {
+export function morningReply(n: 'free' | 'slip', alreadyLogged: boolean, planHeld = false): string {
   if (n === 'slip') return alreadyLogged ? 'Last night is logged. Today is open.' : 'Logged. Telling it is your part, and it is done.';
-  return 'A free night. That one is yours for good.';
+  return planHeld ? 'A free night, and your plan held. That one is yours for good.' : 'A free night. That one is yours for good.';
 }
 
 /** the log day before tk, for callers that only have tk */

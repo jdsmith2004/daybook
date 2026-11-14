@@ -23,6 +23,7 @@ import { truthOn } from './truth';
 import { changeSettings } from './actions';
 import { addEvent, changeDay, removeEvent, withDay } from './mutate';
 import { normMorning } from './morning-norm';
+import { settleByMorning, unsettleByMorning } from './talk-log';
 import type { Clock, Day, DayEvent, DayKey, Days, MorningSet, Play, Settings } from './types';
 
 export { MORNING_REASON_MAX } from './morning-norm';
@@ -103,7 +104,8 @@ function withMorning(days: Days, tk: DayKey, now: number, fn: (ms: MorningSet, p
 }
 
 /** "How was last night?" answered (or changed). It happened adds a slip to the night before, with no time, unless one that night is
-    already logged; changing back to Free of it takes away only the slip this morning added. Answering marks the day's morning. */
+    already logged; changing back to Free of it takes away only the slip this morning added. Answering marks the day's morning, and
+    answers last night's talk-throughs (settleByMorning). */
 export function answerNight(days: Days, st: Settings, tk: DayKey, n: 'free' | 'slip', now = Date.now()): Days {
   const y = addDays(tk, -1);
   const prev = morningOf(days[tk]);
@@ -119,6 +121,9 @@ export function answerNight(days: Days, st: Settings, tk: DayKey, n: 'free' | 's
     next = r.days;
     ev = r.id;
   }
+  /* the answer is also the answer to last night's plans (talk-log.ts): Free of it settles them as held, so Today never asks
+     "Did your plan hold?" about a night already told; It happened opens them again, and its slip settles them */
+  next = n === 'free' ? settleByMorning(next, tk, now) : unsettleByMorning(next, tk, now);
   return withMorning(next, tk, now, (ms, p) => {
     ms.n = n;
     if (ev) ms.ev = ev;

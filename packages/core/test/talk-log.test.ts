@@ -3,12 +3,15 @@
 import { describe, expect, it } from 'vitest';
 import { normSettings } from '../src/legacy/core.js';
 import { addEvent } from '../src/mutate';
+import { skipMorning } from '../src/morning-set';
 import { newTalk, type Talk, type TalkMove } from '../src/talk';
 import { saveTalk, talkDueNow, talkForNext, talkMomentAt, talkNextMoment, talkPlanAhead, talkPlanNow } from '../src/talk-log';
 import type { Days } from '../src/types';
 
 const at = (s: string) => new Date(s).getTime();
 const st = normSettings({ start: '2026-10-01', day1: '2026-10-08' });
+/* the morning closed without an answer: otherwise the morning's "How was last night?" asks first (talk-morning.test.ts) */
+const skipped = (days: Days, tk: string) => skipMorning(days, tk, at(tk + 'T05:00:00'));
 
 describe('a plan for next time, made after a slip late at night', () => {
   /* the slip at 11:10 PM on October 27, the plan a few minutes later (Rekindle, log.tsx) */
@@ -29,7 +32,7 @@ describe('a plan for next time, made after a slip late at night', () => {
     expect(talkDueNow(days, st, '2026-10-28', at('2026-10-28T22:00:00'))!.due).toBe('plan');
   });
   it('is asked about the morning after the next night, with the plan as it was saved', () => {
-    const d = talkDueNow(days, st, '2026-10-29', at('2026-10-29T08:00:00'))!;
+    const d = talkDueNow(skipped(days, '2026-10-29'), st, '2026-10-29', at('2026-10-29T08:00:00'))!;
     expect(d.due).toBe('look');
     expect(d.talk.at).toBeNull();
     expect(d.talk.fw).toBe('Ashamed');
@@ -83,7 +86,7 @@ describe('a plan for next time from what was going on (since October 27, 2026)',
     expect(talkPlanNow(days, st, '2026-10-28', at('2026-10-28T16:00:00'))!.head).toBe('Your plan for this evening');
     expect(talkPlanNow(days, st, '2026-10-28', at('2026-10-28T21:00:00'))).toBeNull();
     /* then "Did your plan hold?" the next morning */
-    expect(talkDueNow(days, st, '2026-10-29', at('2026-10-29T07:00:00'))!.due).toBe('look');
+    expect(talkDueNow(skipped(days, '2026-10-29'), st, '2026-10-29', at('2026-10-29T07:00:00'))!.due).toBe('look');
   });
   it('a slip in the daytime: the same hour the next day, for two hours', () => {
     const T = at('2026-10-27T14:10:00');
@@ -120,7 +123,7 @@ describe('a changed plan, from Planning a slip', () => {
     expect(talkPlanNow(days, st, K, at('2026-10-28T01:00:00'))).toBeNull();
   });
   it('then the look back opens the next morning, as before', () => {
-    expect(talkDueNow(days, st, '2026-10-28', at('2026-10-28T06:00:00'))!.due).toBe('look');
+    expect(talkDueNow(skipped(days, '2026-10-28'), st, '2026-10-28', at('2026-10-28T06:00:00'))!.due).toBe('look');
   });
   it('a decide-later waits on Today too, with its time', () => {
     const wait: Talk = { ...newTalk(T), id: 'wt', s: ['plan'], n: 'relief', w: 6, p: 'wait', m: ['treat'] as TalkMove[], mo: '60', at: T + 3600000 };

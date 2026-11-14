@@ -18,6 +18,7 @@ import type { Art, Block, Card, Lesson } from './lessons';
 import type { Beat, LessonBeats } from './lesson-beats';
 import type { MineKind } from './lesson-turns';
 import { STORIES_A } from './lesson-stories-a';
+import { STORIES_B } from './lesson-stories-b';
 
 /** a source: [name: topic, url] */
 type Src = [string, string, string?, string?];
@@ -116,4 +117,4 @@ export function storyLesson(S: Story, was: Lesson): { L: Lesson; beats: LessonBe
 }
 
 /** every lesson told as a story, by id */
-export const STORIES: Record<string, Story> = { ...STORIES_A };
+export const STORIES: Record<string, Story> = { ...STORIES_A, ...STORIES_B };

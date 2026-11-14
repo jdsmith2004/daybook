@@ -72,7 +72,9 @@ The kinds rotate along the path, so no two days in a row feel the same.
 
 A lesson told as a story is written in `packages/core/src/lesson-stories*.ts` (the shape is at the top of `lesson-stories.ts`)
 and replaces the older turn with the same id, so its place on the path and everything earned stay. `test/lesson-stories.test.ts`
-holds each one to the rules below. Batch A (November 14, 2026): l1, l2, l3, l10, l11, l41.
+holds each one to the rules below. Batch A (November 14, 2026): l1, l2, l3, l10, l11, l41. Batch B (the same day, after the owner saw the pictures: "Yes, roll it
+out"): l4 to l9. Each story card carries a picture (`apps/mobile/src/components/story-art.tsx` and `story-scenes-*.tsx`), and no
+card asks a person to guess a fact they cannot know.
 
 ## Every lesson
 

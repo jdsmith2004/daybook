@@ -103,6 +103,7 @@ export const STORIES_A: Record<string, Story> = {
         long: 1,
         h: 'Mixed feelings are not a sign you are not serious.',
         p: 'A guide written for addiction counselors calls them a normal part of any change. You do not have to finish being unsure. You need one small yes.',
+        art: ['scene', { k: 'mixed-feelings' }],
         fact: { s: 'Treatment guide · US SAMHSA, TIP 35', i: [2] },
       },
     ],
@@ -255,6 +256,7 @@ export const STORIES_A: Record<string, Story> = {
         long: 1,
         h: 'He also found who gets back up fastest.',
         p: 'People who saw a slip as one mistake, in one moment, with a cause they could change, got back on track sooner. People who blamed something fixed in themselves kept going.',
+        art: ['scene', { k: 'get-up' }],
       },
       {
         h: 'So score it as one.',
@@ -294,24 +296,31 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'In 1971, the United States got news it did not expect from Vietnam.',
         p: 'About one in five American soldiers there said they were addicted to heroin. The fear was that a wave of addicts was about to come home.',
+        art: ['scene', { k: 'far-away' }],
       },
       {
         h: 'A researcher named Lee Robins was asked to follow them home.',
         p: 'She did something unusual. She followed every man in her sample, not only the ones who turned up at clinics for help.',
+        art: ['scene', { k: 'files' }],
       },
       {
-        k: 'guess',
-        h: 'Back home, most people treated for heroin went back to it. Of these soldiers, how many went back in their first year?',
+        k: 'ask',
+        h: 'Say you came home after a year like that. What would you expect to happen?',
         o: [
-          ['About nine in ten', 'That is what everyone feared. It is not what she found.'],
-          ['About half', 'Far fewer than that.'],
-          ['About one in twenty', 'That is it. Most of them stopped, and stayed stopped.'],
+          ['I would keep using', 'That is what the doctors expected too. Look at what happened.'],
+          ['It would depend on the person', 'That is what most people would say. Look at what mattered more.'],
+          ['I would stop once I was home', 'Then you saw what almost nobody did. Look at the number.'],
         ],
-        a: 2,
+      },
+      {
+        h: 'Of the men who had been addicted in Vietnam, about 5 in 100 went back to it in their first year home.',
+        p: 'Back home, most people treated for heroin went back to it. These men mostly stopped, and stayed stopped.',
+        art: ['people', { n: 5, s: 'went back to it' }],
       },
       {
         h: 'They were the same men, with the same bodies and the same memories.',
         p: 'What had changed was everything around them: the place, the people, the boredom, the fear, the drug in reach on every corner.',
+        art: ['scene', { k: 'same-man' }],
         fact: { s: 'Study · Robins, Vietnam veterans, reviewed by Hall & Weier, 2017', i: [0] },
       },
       {
@@ -322,16 +331,19 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'A habit is not only inside you.',
         p: 'Much of it lives in the setting: the room, the hour, the device, the chair. The setting does part of the deciding before you do.',
+        art: ['rooms', {}],
       },
       {
         long: 1,
         h: 'Students who moved to a new university showed the same thing.',
         p: 'Their old habits, like exercise or watching TV, held when the new place looked like the old one. When the setting changed, the habit often broke.',
+        art: ['scene', { k: 'campus' }],
         fact: { s: 'Study · Wood, Tam & Guerrero Witt, 2005', i: [1] },
       },
       {
         h: 'So you do not have to rebuild yourself first.',
         p: 'Change the room, the device or the route, and much of the pull stays behind, the way the soldiers left theirs behind.',
+        art: ['scene', { k: 'move-phone' }],
       },
       {
         long: 1,
@@ -369,10 +381,12 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'The word addict comes from Roman law.',
         p: 'An addictus was a person a judge handed over to the one he owed money to. He worked for that person until the debt was paid.',
+        art: ['scene', { k: 'court' }],
       },
       {
         h: 'It was never a name for what someone was.',
         p: 'It was a state someone was in, for a time. And it had an end. When the debt was paid, the person walked out free.',
+        art: ['scene', { k: 'debt-paid' }],
       },
       {
         long: 1,
@@ -382,19 +396,23 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'Now a second word. Decide comes from the Latin for “to cut off.”',
         p: 'The same root is in scissors and incision. A decision is not a feeling. It is a cut.',
+        art: ['scene', { k: 'scissors' }],
       },
       {
         h: 'The habit is a rope that binds you for a time.',
         p: 'A decision is a cut in that rope. One cut does not free you. But every cut is real, and the rope does not grow back by itself.',
+        art: ['scene', { k: 'rope-cuts' }],
       },
       {
         long: 1,
         h: 'And a third word. Habit first meant something you wear.',
         p: 'It came from the Latin for condition, and it also meant dress, like a monk’s habit. Something put on, again and again, until it feels like skin. Something worn can be taken off.',
+        art: ['scene', { k: 'robe' }],
       },
       {
         h: 'So the name matters less than the debt.',
         p: 'You do not have to decide what to call this before you get help. Ask what it has been collecting from you, and whether you want to keep paying.',
+        art: ['scene', { k: 'ledger' }],
       },
       {
         long: 1,
@@ -433,10 +451,12 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'In Pinocchio, a coachman offers boys a free ride to a place with no school and no rules.',
         p: 'In the old book it is called the Land of Toys. Every week there has six Thursdays and one Sunday. Thursday was the day children had off.',
+        art: ['scene', { k: 'toy-land' }],
       },
       {
         h: 'Nobody is dragged there.',
         p: 'The coachman has a sweet voice and asks nothing. Every boy climbs into the coach because he wants to.',
+        art: ['scene', { k: 'coach-ride' }],
       },
       {
         long: 1,
@@ -446,19 +466,23 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'Then one morning, Pinocchio wakes up with long ears.',
         p: 'Look at what he does first. He does not run for help. He pulls a cap down over his ears and goes to find his friend.',
+        art: ['scene', { k: 'cap-ears' }],
       },
       {
         h: 'His friend is wearing a cap too.',
         p: 'Each pretends nothing is wrong, until they take the caps off together. They laugh at each other’s ears, and the laughing turns to braying.',
+        art: ['scene', { k: 'two-caps' }],
       },
       {
         long: 1,
         h: 'The change did not happen in one night.',
         p: 'It was five months of days that each cost nothing. And the first thing both boys did when they noticed was to hide it.',
+        art: ['scene', { k: 'free-days' }],
       },
       {
         h: 'The trip was free. The cost was the boys themselves.',
         p: 'A pleasure that asks nothing of you slowly makes you less of a person, and more of something that carries other people’s loads.',
+        art: ['scene', { k: 'donkey-load' }],
         fact: { s: 'Story · Collodi, The Adventures of Pinocchio, 1883', i: [0] },
       },
       {
@@ -470,14 +494,17 @@ export const STORIES_A: Record<string, Story> = {
         long: 1,
         h: 'In the sea, he becomes a puppet again, and a giant fish swallows him.',
         p: 'Inside it, he finds his father, who has been searching for him for two years. Pinocchio swims out with his father on his back.',
+        art: ['scene', { k: 'big-fish' }],
       },
       {
         h: 'Even then, he does not become real that night.',
         p: 'He becomes real months later, after working every day to care for his sick father, turning a heavy wheel for a glass of milk.',
+        art: ['scene', { k: 'wheel' }],
       },
       {
         h: 'Becoming real is not one brave night.',
         p: 'It is a run of ordinary days spent carrying something that matters. The ears grow slowly, and so does a real person.',
+        art: ['scene', { k: 'real-boy' }],
       },
     ],
     today: {

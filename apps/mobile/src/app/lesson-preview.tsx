@@ -25,25 +25,27 @@ export default function LessonPreview() {
         The new lessons
       </Text>
       <Text style={[s.p, { color: c.muted }]}>Short is the everyday lesson. Long goes deeper. Come back here with your browser’s back button.</Text>
-      {Object.values(STORIES).map((S) => {
-        const L = lessonById(S.id);
-        return (
-          <View key={S.id} style={[s.row, { backgroundColor: c.surface }]}>
-            <Text style={[s.name, { color: c.ink }]}>{L ? L.title : S.title}</Text>
-            <View style={s.btns}>
-              {(['q', 'f'] as const).map((len) => (
-                <Pressable
-                  key={len}
-                  onPress={() => open(S.id, len)}
-                  accessibilityRole="button"
-                  style={({ pressed }) => [s.btn, { backgroundColor: len === 'f' ? c.sun : c.bg, opacity: pressed ? 0.7 : 1 }]}>
-                  <Text style={[s.btnT, { color: len === 'f' ? '#2A1A0A' : c.ink }]}>{len === 'q' ? 'Short' : 'Long'}</Text>
-                </Pressable>
-              ))}
+      {Object.values(STORIES)
+        .sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)))
+        .map((S) => {
+          const L = lessonById(S.id);
+          return (
+            <View key={S.id} style={[s.row, { backgroundColor: c.surface }]}>
+              <Text style={[s.name, { color: c.ink }]}>{L ? L.title : S.title}</Text>
+              <View style={s.btns}>
+                {(['q', 'f'] as const).map((len) => (
+                  <Pressable
+                    key={len}
+                    onPress={() => open(S.id, len)}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [s.btn, { backgroundColor: len === 'f' ? c.sun : c.bg, opacity: pressed ? 0.7 : 1 }]}>
+                    <Text style={[s.btnT, { color: len === 'f' ? '#2A1A0A' : c.ink }]}>{len === 'q' ? 'Short' : 'Long'}</Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
-          </View>
-        );
-      })}
+          );
+        })}
     </ScrollView>
   );
 }

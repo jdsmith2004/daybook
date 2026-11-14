@@ -73,8 +73,8 @@ export default function Celebrations() {
 
 const s = StyleSheet.create({
   page: { padding: 20, gap: 12 },
-  h: { fontFamily: font.display, fontSize: 30 },
-  p: { fontFamily: font.body, fontSize: 16, marginBottom: 8 },
+  h: { fontFamily: font.display, fontSize: 28 },
+  p: { fontFamily: font.body, fontSize: 15, marginBottom: 8 },
   row: { borderRadius: 16, padding: 18, gap: 4 },
   name: { fontFamily: font.display, fontSize: 20 },
   what: { fontFamily: font.body, fontSize: 15 },

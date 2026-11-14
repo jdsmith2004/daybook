@@ -440,7 +440,7 @@ function Slip() {
           onSave={(v) => apply((cur) => ({ st: setMyLine(cur, v) }))}
         />
         <T v="small" tone="muted">
-          Already happened shows it, so you never have to wonder if a hard moment counts.
+          Logging a slip shows it, so you never have to wonder if a hard moment counts.
         </T>
       </Card>
       <Card>

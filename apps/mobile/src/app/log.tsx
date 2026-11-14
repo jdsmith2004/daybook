@@ -295,7 +295,7 @@ export default function Log() {
   let body: React.ReactNode;
   let footer: React.ReactNode = null;
   let sky: Sky = 'sky';
-  let title = from === 'urge' ? 'SOS' : from === 'pause' ? 'Pause' : 'Already happened';
+  let title = from === 'urge' ? 'SOS' : from === 'pause' ? 'Pause' : 'Log a slip';
   let dots: { n: number; i: number; label: string } | null = null;
 
   /* an urge ridden out: the one celebration, with what helped and what set it off inside it */

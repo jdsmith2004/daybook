@@ -333,7 +333,7 @@ export function Finish({
               <View pointerEvents="none" style={{ position: 'absolute', left: (room - size) / 2, top: (room - size) / 2, width: size, height: size }}>
                 <Sparkles size={size} at={420} still={false} />
               </View>
-              <Burst fire={pulse} x={room / 2} y={room * 0.42} w={size} n={30} />
+              <Burst fire={pulse} x={room / 2} y={room * 0.42} w={win.width * 1.3} n={30} />
             </>
           ) : null}
         </View>

@@ -120,9 +120,9 @@ describe('the goal it suggests', () => {
 
 describe('setup in two minutes (WP10)', () => {
   it('asks a new person a few things, sets tonight, lights the flame, then asks for the account', () => {
-    expect(core.obPages({}).map((p) => p.id)).toEqual(['how', 'habit', 'freq', 'when', 'sos', 'promise', 'for', 'faith', 'tonight', 'light']);
-    expect(core.obPages({ faith: 'big' }, { account: true }).map((p) => p.id)).toEqual(
-      'how habit freq when sos promise for faith creed tonight light account'.split(' '),
+    expect(core.obPages({}).map((p) => p.id)).toEqual(['how', 'habit', 'freq', 'when', 'sos', 'promise', 'for', 'grow', 'faith', 'tonight', 'light', 'why']);
+    expect(core.obPages({ faith: 'big', freq: 'f2' }, { account: true }).map((p) => p.id)).toEqual(
+      'how habit freq when need sos promise for grow faith creed tonight light why account'.split(' '),
     );
     expect(core.obPages({}, { redo: true })[0].id).toBe('hello');
   });
@@ -144,6 +144,28 @@ describe('setup in two minutes (WP10)', () => {
     expect(core.lessonLen(long)).toBe('f');
     expect(core.lessonLen(core.normSettings(JSON.parse(JSON.stringify(long))))).toBe('f');
     expect(core.setLessonLen(long, 'f', 0)).toBe(long);
+  });
+  it('shows what Daybook gives: a year at their pace, the flame growing, and why it works (the owner, November 14, 2026)', () => {
+    /* the year: only with an answer, rounded the way it was said, and its marks add up */
+    expect(core.obYear({})).toBe(null);
+    expect(core.obYear({ freq: 'f3' })!.n).toBe(300);
+    expect(core.obYear({ freq: 'f0' })!.h).toMatch(/Fewer than 50/);
+    for (const f of ['f0', 'f1', 'f2', 'f3']) {
+      const y = core.obYear({ freq: f })!;
+      expect(core.obYearMarks(y.n).filter(Boolean).length).toBe(y.n);
+    }
+    /* the flame grows at every stop, and the last one says it in their own reason */
+    const g = core.obGrow({ for: ['health', 'love'] });
+    expect(g.map((x) => x.at)).toEqual(['Tonight', 'Week 1', 'Month 1', 'Day 90']);
+    for (let i = 1; i < g.length; i++) expect(core.formOfLevel(g[i].level)).toBeGreaterThan(core.formOfLevel(g[i - 1].level));
+    expect(g[3].line).toMatch(/clear mornings/);
+    expect(core.obGrow({})[3].line).toMatch(/free of it/);
+    /* the record never drops at a slip; the streak does */
+    const w = core.obWhyLines();
+    for (let d = 1; d < w.record.length; d++) expect(w.record[d]).toBeGreaterThanOrEqual(w.record[d - 1]);
+    expect(w.streak.filter((v, d) => d > 0 && v === 0).length).toBe(2);
+    /* none of it on a walk-through */
+    expect(core.obPages({ freq: 'f3' }, { redo: true }).some((p) => ['need', 'grow', 'why'].includes(p.id))).toBe(false);
   });
   it('asks the same questions on a walk-through, then the changes to keep', () => {
     expect(core.obPages({}, { redo: true, account: true }).map((p) => p.id)).toEqual(['hello', 'habit', 'freq', 'when', 'for', 'faith', 'review', 'done']);

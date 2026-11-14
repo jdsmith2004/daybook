@@ -36,6 +36,8 @@ import {
   obSave,
   obSay,
   obTonightAt,
+  obGrow,
+  obYear,
   readBackup,
   restoreBackup,
   setFirstGoal,
@@ -61,6 +63,7 @@ import { Ghost, Next } from '@/components/lx';
 import { Packed } from '@/components/packed';
 import { Middle } from '@/components/scene';
 import { useClock } from '@/components/shapes';
+import { GrowStops, useGrowWalk, WhyChart, YearMarks } from '@/components/setup-value';
 import { TIP_ON } from '@/components/support';
 import { UnlockSheet } from '@/components/unlocked';
 import { useSos } from '@/lib/sos';
@@ -287,6 +290,18 @@ export default function Setup() {
     buzz('tap');
   };
 
+  /* each page starts at its top: a long page before it (the goal) can leave the card scrolled, and the next page's heading under the bar */
+  useEffect(() => {
+    scroll.current?.scrollTo({ y: 0, animated: false });
+  }, [pg.id]);
+  /* the grow page walks the flame through its stops, and the page's own flame takes each form */
+  const grow = obGrow(a);
+  const walk = useGrowWalk(grow.length, pg.k === 'grow');
+  const growAt = pg.k === 'grow' ? walk.at : -1;
+  useEffect(() => {
+    if (growAt > 0) setPulse((x) => x + 1);
+  }, [growAt]);
+
   let body: ReactNode = null;
   let foot: ReactNode = null;
   switch (pg.k) {
@@ -421,6 +436,63 @@ export default function Setup() {
         </>
       );
       foot = nextBtn(arr.length ? 'Next' : 'Skip', !arr.length);
+      break;
+    }
+    case 'need': {
+      /* what it takes now: a year of marks at the person's own pace, then each one turning to flame, as the ones to take back */
+      const yr = obYear(a)!;
+      body = (
+        <>
+          <Head h={yr.h} />
+          <Middle>
+            <YearMarks n={yr.n} onBack={() => setPulse((x) => x + 1)} />
+          </Middle>
+          <Say text={voice} />
+        </>
+      );
+      foot = nextBtn('Next');
+      break;
+    }
+    case 'grow': {
+      /* what grows: the flame itself takes the form a steady pace reaches at each stop, and says what that stop looks like */
+      const g = grow[Math.max(0, growAt)];
+      body = (
+        <>
+          <Head h="This is how I grow with you." />
+          <Talk text={g.line} want={want} />
+          <GrowStops
+            a={a}
+            at={Math.max(0, growAt)}
+            onAt={(j) => {
+              walk.pick(j);
+              buzz('tap');
+            }}
+          />
+        </>
+      );
+      foot = nextBtn('Next');
+      break;
+    }
+    case 'why': {
+      /* why it works: a slip takes nothing away here, and keeping track works (Harkin et al., 2016: 138 studies) */
+      body = (
+        <>
+          <Head h="Why this works." />
+          <Middle>
+            <WhyChart />
+          </Middle>
+          <T tone="muted" style={s.p}>
+            In 138 studies, people who kept track of their progress reached their goals more often.
+          </T>
+          <Say text={voice} />
+        </>
+      );
+      /* the last page when there is no account to ask for (signed in already, or a build without accounts): Next goes home */
+      foot = (
+        <View key="w" style={s.footOne}>
+          <Next label="Next" onPress={() => (i < P.length - 1 ? !busy() && go(1) : done())} off={false} />
+        </View>
+      );
       break;
     }
     case 'promise': {
@@ -654,7 +726,7 @@ export default function Setup() {
     <View style={{ flex: 1 }}>
       <Shell
         look={look}
-        level={flameLevel}
+        level={pg.k === 'grow' ? grow[Math.max(0, growAt)].level : flameLevel}
         /* before it is lit, the flame is the ember on the lighting page, not the gliding flame */
         flameOn
         pulse={pulse}

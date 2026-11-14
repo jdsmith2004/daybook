@@ -38,6 +38,7 @@ import {
   type ObOpt,
 } from './legacy/core.js';
 import { changeSettings } from './actions';
+import { levelOf } from './levels';
 import { OB_CREED } from './faith';
 import { FREE_WAIT } from './north';
 import { habitIn, habitMedical, habitOf, habitSay, normHabit, OB_HABIT, type Habit } from './habit';
@@ -189,7 +190,7 @@ export function obThenPick(a: SetupAnswers, st: Settings | null, redo: boolean, 
    week, one part a day, each set up by using it (unlock.ts). Duolingo is the model (the owner, November 12, 2026): the flame
    talks in its bubble and answers each pick, one question a page with big answers low, a bar across the top, the first win
    inside setup, and the flame lit by the person at the end. Every question can be skipped; setup itself cannot. */
-export type PageKind = 'hello' | 'how' | 'sos' | 'account' | 'tiles' | 'multi' | 'promise' | 'tonight' | 'light' | 'review' | 'done';
+export type PageKind = 'hello' | 'how' | 'sos' | 'account' | 'tiles' | 'multi' | 'promise' | 'tonight' | 'light' | 'review' | 'done' | 'need' | 'grow' | 'why';
 export interface ObPage {
   id: string;
   k: PageKind;
@@ -254,6 +255,9 @@ export const OB_PAGES: ObPage[] = [
   { id: 'habit', k: 'tiles', key: 'habit', list: OB_HABIT, h: 'What are you quitting?', keep: 1 },
   { id: 'freq', k: 'tiles', key: 'freq', list: OB_FREQ4, h: 'How often does it happen?', keep: 1 },
   { id: 'when', k: 'multi', key: 'when', list: OB_WHEN, h: 'When does it pull hardest?', sub: 'Pick any.', cols: 2, keep: 1 },
+  /* what it takes now, as a year of marks from the person's own "how often" (the owner, November 14, 2026: setup "needs a couple
+     screens just demonstrating the extreme beneifi and need of daybook it is all business (setup) and no pleasure"). Only with an answer. */
+  { id: 'need', k: 'need', need: (a, env) => !env.redo && !!obYear(a) },
   /* the first win, inside setup: the real SOS, a short practice ride with its swipes, then SOS is unlocked (the owner, November 13,
      2026: "the sos preview should literally be sos with the swipe gestures and stuff and when theyre done press next") */
   { id: 'sos', k: 'sos', need: isNew },
@@ -271,6 +275,8 @@ export const OB_PAGES: ObPage[] = [
     max: FOR_MAX,
     keep: 1,
   },
+  /* what grows: the flame tonight, at a week, a month and day 90, at a steady pace, ending on who they said it is for */
+  { id: 'grow', k: 'grow', need: isNew },
   { id: 'faith', k: 'tiles', key: 'faith', list: OB_FAITH, h: 'Does faith play a part in this for you?', keep: 1 },
   /* after a Yes or a Somewhat: which faith the God lessons speak from (faith.ts) */
   { id: 'creed', k: 'tiles', key: 'creed', list: OB_CREED, h: 'Which faith is yours?', keep: 1, need: (a) => a.faith === 'big' || a.faith === 'some' },
@@ -280,6 +286,8 @@ export const OB_PAGES: ObPage[] = [
   { id: 'tonight', k: 'tonight', need: (a, env) => !env.redo && habitIn(a) === 'porn' },
   /* the person lights their flame: the plan is saved, counting starts tonight (D14), and the first small goal is picked */
   { id: 'light', k: 'light', need: isNew },
+  /* why it works, once the flame is lit: a slip takes nothing away here, and keeping track works. It also shows what the account keeps. */
+  { id: 'why', k: 'why', need: isNew },
   /* a free account, asked for last (CLAUDE.md): the flame was just lit. Never required: "Keep it on this phone" goes on. */
   { id: 'account', k: 'account', need: (_a, env) => !env.redo && !!env.account },
   /* a walk-through ends on the changes to keep, then a short done */
@@ -559,6 +567,74 @@ export function obPromise(a: SetupAnswers): { h: string; rows: [string, string][
   };
 }
 
+/* ---------- the pages that show what Daybook gives (the owner, November 14, 2026) ---------- */
+/** the times a year it happens now, from "how often" (OB_FREQ4), rounded, as the person said it roughly. Null without an answer.
+    Most days is about 6 a week, a few times a week about 3, once a week 1; less than that is "fewer than 50", drawn as about 25. */
+export function obYear(a: SetupAnswers): { n: number; h: string } | null {
+  const per: Record<string, [number, string]> = {
+    f3: [300, 'About 300 times a year.'],
+    f4: [300, 'About 300 times a year.'],
+    f2: [150, 'About 150 times a year.'],
+    f1: [50, 'About 50 times a year.'],
+    f0: [25, 'Fewer than 50 times a year.'],
+  };
+  const x = a.freq ? per[a.freq] : null;
+  return x ? { n: x[0], h: x[1] } : null;
+}
+/** the 365 days of a year, true where it happens at n a year: scattered the way real life is (a fixed shuffle, the same each time) */
+export function obYearMarks(n: number): boolean[] {
+  const mix = (d: number) => {
+    let h = Math.imul((d + 1) ^ ((d + 1) >>> 16), 0x45d9f3b);
+    h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+    return (h ^ (h >>> 16)) >>> 0;
+  };
+  const order = Array.from({ length: 365 }, (_, d) => d).sort((x, y) => mix(x) - mix(y));
+  const out = new Array<boolean>(365).fill(false);
+  for (const d of order.slice(0, Math.max(0, Math.min(365, n)))) out[d] = true;
+  return out;
+}
+/** what Day 90 looks like, said back from "who are you doing this for" (the first pick) */
+const OB_FOR_GAIN: Record<string, string> = {
+  love: 'Day 90: more present with the people you love.',
+  partner: 'Day 90: ready for a real, honest relationship.',
+  faith: 'Day 90: living by your faith, day after day.',
+  focus: 'Day 90: your time and focus, yours again.',
+  health: 'Day 90: clear mornings and steady energy.',
+  me: 'Day 90: someone you are proud to be.',
+};
+/** the flame as it grows at a steady pace (about 45 points a day, levels.ts): tonight, a week, a month, day 90. The level each
+    stop shows is the one that pace reaches, so the picture is the ladder itself, not a promise. The early stops say what the
+    person will have; the last one says it in their own reason, quietly (no big goals pushed early, CLAUDE.md). */
+export function obGrow(a: SetupAnswers): { at: string; level: number; line: string }[] {
+  const pick = (Array.isArray(a.for) ? (a.for as string[]) : []).find((id) => OB_FOR_GAIN[id]);
+  const lv = (d: number) => levelOf(d * 45).n;
+  return [
+    { at: 'Tonight', level: 1, line: 'Tonight: your plan is ready before the hard hour.' },
+    { at: 'Week 1', level: lv(7), line: 'Week 1: you see your pattern, when it pulls and what gets you through.' },
+    { at: 'Month 1', level: lv(30), line: 'Month 1: urges still come, and you know the way through them.' },
+    { at: 'Day 90', level: lv(90), line: pick ? OB_FOR_GAIN[pick] : 'Day 90: free of it, and it feels like you.' },
+  ];
+}
+/** the two lines of the "why it works" picture over eight weeks with two slips: a streak that drops to zero at each, and the free
+    days on the record here, which only ever go up (strict mode's count does drop, but the record, points and level never do) */
+export function obWhyLines(): { streak: number[]; record: number[] } {
+  const slip = new Set([17, 44]);
+  const streak: number[] = [];
+  const record: number[] = [];
+  let s = 0;
+  let r = 0;
+  for (let d = 0; d < 56; d++) {
+    if (slip.has(d)) s = 0;
+    else {
+      s++;
+      r++;
+    }
+    streak.push(s);
+    record.push(r);
+  }
+  return { streak, record };
+}
+
 /* ---------- the words on the pages that answer what was said ---------- */
 export interface ObShow {
   h: string;
@@ -760,6 +836,9 @@ const OB_SAY: Record<string, string> = {
   tonight: 'Set it now, while it is easy.',
   light: 'Swipe up. Light me.',
   account: 'Look at me now. You did that.',
+  need: 'That is the pull now. Each one you ride out, you take back.',
+  grow: 'Every honest day feeds me. This is what that looks like.',
+  why: 'Here a slip is something to learn from. What you earn stays yours.',
   review: 'Tick what to keep. The rest stays as it is.',
 };
 /** a walk-through: the flame has grown, and says so */

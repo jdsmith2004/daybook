@@ -679,7 +679,14 @@ export default function LessonScreen() {
       body = num ? (
         <>
           {head}
-          <NumberCard n={cardNumber(card, b)} h={b.h || card.h} p={b.p} st={st} fact={card.fact?.s} onSrc={() => setSheet({ t: 'src', i: ci })} />
+          <NumberCard
+            n={cardNumber(card, b)}
+            h={b.h || card.h}
+            p={len === 'd' && b.dx ? b.dx : b.p}
+            st={st}
+            fact={card.fact?.s}
+            onSrc={() => setSheet({ t: 'src', i: ci })}
+          />
         </>
       ) : (
         <>
@@ -1173,7 +1180,8 @@ function TextCard({
   if (L.form && art && card.e !== 'move' && !own.length)
     return (
       <>
-        <FitArt style={s.storyArt} drop={0.4} stretch={art[0] === 'research' || art[0] === 'wave'}>
+        {/* in Deep the reading is long, so the card scrolls and the picture keeps its full size */}
+        <FitArt style={s.storyArt} min={deep ? 1 : undefined} drop={deep ? undefined : 0.4} stretch={art[0] === 'research' || art[0] === 'wave'}>
           <LessonArt key={L.id + card.h} art={art} ic={L.ic} t={tone} st={st} />
         </FitArt>
         {B ? (

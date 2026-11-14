@@ -17,6 +17,7 @@
 import type { Art, Block, Card, Lesson } from './lessons';
 import type { Beat, LessonBeats } from './lesson-beats';
 import type { MineKind } from './lesson-turns';
+import type { OtherHabit } from './lesson-habit';
 import { STORIES_A } from './lesson-stories-a';
 import { STORIES_B } from './lesson-stories-b';
 import { STORIES_C } from './lesson-stories-c';
@@ -74,6 +75,10 @@ export interface Story {
   you: { h: string; o: Opt[] };
   scope: string;
   src: Src[];
+  /** for a lesson written for porn that another habit reads too (lesson-habit.ts PORN_ONLY and HABIT_OPEN, which stays the gate): that
+      habit's own parts, put over the story before its words are said in the habit's terms (lesson-beats.ts lessonAs). 'say' means the
+      words alone change. */
+  hab?: Partial<Record<OtherHabit, 'say' | Partial<Pick<Story, 'tell' | 'today' | 'you' | 'key' | 'ask' | 'np' | 'mine' | 'scope' | 'src' | 'title' | 'tag'>>>>;
 }
 
 const ICON = (ic: string): Art => ['icon', { ic }];

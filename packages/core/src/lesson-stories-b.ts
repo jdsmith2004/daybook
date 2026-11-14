@@ -88,7 +88,6 @@ export const STORIES_B: Record<string, Story> = {
         long: 1,
         h: 'Earlier work from the same lab found the brake gets weaker too.',
         p: 'After lost sleep, the front of the brain, the part that says wait, had less hold over the alarm and the pull. So the push gets louder at the same moment the brake gets softer.',
-        art: ['scene', { k: 'speaker' }],
         fact: { s: 'Study · Yoo and colleagues, 2007', i: [1] },
       },
       {
@@ -106,6 +105,7 @@ export const STORIES_B: Record<string, Story> = {
         long: 1,
         h: 'So the urge on a drained day is not news about you.',
         p: 'It feels like the truth finally coming out. It is the same pull, played through louder speakers. Rested, the same picture would have said far less.',
+        art: ['scene', { k: 'speaker' }],
       },
       {
         h: 'Worn down is a time to plan for, not to fight through.',
@@ -310,7 +310,7 @@ export const STORIES_B: Record<string, Story> = {
       },
       {
         h: 'Almost everyone had one.',
-        p: 'About 97 in every 100 people were keeping a secret right then. On average they kept thirteen, and five of those they had never told anyone at all.',
+        p: 'About 97 in every 100 were keeping one right then. Most kept several they had never told anyone.',
         art: ['people', { n: 97, s: 'keeping a secret' }],
         fact: { s: 'Study · Slepian, Chun & Mason, 2017', i: [0] },
       },

@@ -313,8 +313,8 @@ export const STORIES_A: Record<string, Story> = {
         ],
       },
       {
-        h: 'Of the men who had been addicted in Vietnam, about 5 in 100 went back to it in their first year home.',
-        p: 'Back home, most people treated for heroin went back to it. These men mostly stopped, and stayed stopped.',
+        h: 'Only about 5 in 100 went back to it.',
+        p: 'That was in their first year home. Most people treated for heroin at home went back to it. These men mostly stopped.',
         art: ['people', { n: 5, s: 'went back to it' }],
       },
       {

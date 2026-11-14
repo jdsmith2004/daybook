@@ -84,7 +84,8 @@ export function lessonAs(L: Lesson, voice: FaithVoice | null, h: Habit): Lesson 
   if (!out && S0) {
     const part = S0.hab && S0.hab[h as Exclude<Habit, 'porn'>];
     const { hab: _hab, ...S } = part && part !== 'say' ? { ...S0, ...part } : S0;
-    const v = storyLesson(sayAll(S, h), L);
+    /* a card that rests on a porn study (porn: 1) is left out, then the rest is said in the habit's words */
+    const v = storyLesson(sayAll({ ...S, tell: S.tell.filter((t) => !t.porn) }, h), L);
     VOICE_BEATS.set(v.L, v.beats);
     SAID.set(k, (out = v.L));
   }

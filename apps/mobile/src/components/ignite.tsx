@@ -170,6 +170,8 @@ export function Ignition({
   const grow = useSharedValue(1);
   const squish = useSharedValue(0);
   const comet = useSharedValue(0);
+  const flare = useSharedValue(0);
+  const glowV = useSharedValue(0);
   const flash = useSharedValue(0);
   const slash = useSharedValue(0);
   const wash = useSharedValue(0);
@@ -198,8 +200,8 @@ export function Ignition({
     setAwake(true);
     setBeat(2);
     setTyped(m.line.length);
-    for (const v of [turn, words, unitV, rowV, coin, goalV, segV, btn, oldV, shown, grow]) v.value = withTiming(1, { duration: still ? 0 : 200 });
-    for (const v of [comet, flash, slash, wash, burst, puffs, squish]) v.value = 0;
+    for (const v of [turn, words, unitV, rowV, coin, goalV, segV, btn, oldV, shown, grow, glowV]) v.value = withTiming(1, { duration: still ? 0 : 200 });
+    for (const v of [comet, flare, flash, slash, wash, burst, puffs, squish]) v.value = 0;
   };
 
   const light = () => {
@@ -241,6 +243,9 @@ export function Ignition({
     at(AT.flame, () => {
       setLit(true);
       burst.value = withTiming(1, { duration: 900, easing: Easing.out(Easing.quad) });
+      /* a flare at the heart as it catches, and the flame swirls up out of it; the pool of light under it and its embers come with it */
+      flare.value = withTiming(1, { duration: AT.squash - AT.flame, easing: Easing.out(Easing.quad) });
+      glowV.value = withDelay(200, withTiming(1, { duration: 700, easing: Easing.out(Easing.quad) }));
       shown.value = 1;
       grow.value = 0;
       grow.value = withTiming(1, { duration: AT.stretch - AT.flame, easing: Easing.out(Easing.cubic) });
@@ -350,7 +355,12 @@ export function Ignition({
     return {
       opacity: shown.value * (lit ? 1 : interpolate(fan.value, [0, 1], [0.8 + 0.1 * wait.value, 1])),
       transformOrigin: ['50%', '86%', 0],
-      transform: [{ scale: 0.3 + 0.7 * grow.value }, { scaleY: q >= 0 ? 1 + 0.28 * q : 1 + 0.36 * q }, { scaleX: q >= 0 ? 1 - 0.2 * q : 1 - 0.36 * q }],
+      transform: [
+        { scale: 0.12 + 0.88 * grow.value },
+        { rotate: -38 * (1 - grow.value) + 'deg' },
+        { scaleY: q >= 0 ? 1 + 0.28 * q : 1 + 0.36 * q },
+        { scaleX: q >= 0 ? 1 - 0.2 * q : 1 - 0.36 * q },
+      ],
     };
   });
   const washIn = useAnimatedStyle(() => ({ opacity: 0.88 * wash.value }));
@@ -389,6 +399,7 @@ export function Ignition({
             <Ellipse cx="50%" cy="42%" rx="100%" ry="100%" fill="url(#igWash)" />
           </Svg>
         </Reanimated.View>
+        {!still ? <WashStars v={wash} w={win.width} h={win.height} /> : null}
         {/* a tap anywhere once it is lit brings the rest in at once */}
         <Pressable
           style={StyleSheet.absoluteFill}
@@ -414,6 +425,8 @@ export function Ignition({
             {!still ? <Comet v={comet} x={heart.x} y={heart.y} size={big} /> : null}
             {!still ? <Flash v={flash} x={heart.x} y={heart.y} size={big} reach={Math.max(win.width, win.height)} /> : null}
             {!still ? <Slashes v={slash} x={heart.x} y={heart.y} reach={Math.max(win.width, win.height * 0.7)} /> : null}
+            {!still ? <Pool v={glowV} x={heart.x} size={big} /> : null}
+            {!still ? <Flare v={flare} x={heart.x} y={heart.y} size={big} /> : null}
             <Reanimated.View style={[StyleSheet.absoluteFill, body]}>
               <BigFlame
                 level={level}
@@ -429,7 +442,7 @@ export function Ignition({
                 heart={lit ? null : <Ember size={big * 0.3} wait={wait} fan={fan} drop={big * BELLY} />}
               />
             </Reanimated.View>
-            {!still && beat === 0 ? <Motes v={drift} x={heart.x} y={heart.y} size={big} fade={fan} /> : null}
+            {!still && (beat === 0 || lit) ? <Motes v={drift} x={heart.x} y={heart.y} size={big} fade={fan} lit={glowV} /> : null}
             {!still ? <Burst v={burst} x={heart.x} y={heart.y} reach={Math.max(win.width, win.height * 0.7)} /> : null}
             {!still ? <Puffs v={puffs} size={big} x={heart.x} y={heart.y} /> : null}
           </View>
@@ -449,7 +462,7 @@ export function Ignition({
                       {m.from}
                     </Reanimated.Text>
                   ) : null}
-                  <Reanimated.Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4} style={[s.num, s.over, { color: ORANGE }, neu]}>
+                  <Reanimated.Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4} style={[s.num, s.over, s.numLit, neu]}>
                     {m.to}
                   </Reanimated.Text>
                 </View>
@@ -493,33 +506,140 @@ function Day({ r, on, v, coin }: { r: IgniteDay; on: boolean; v: SharedValue<num
   );
 }
 
-/** the ember, after the swipe: it dips, then stretches up into a tall streak of light that shrinks a little before it opens */
+/* the sparks that leave the streak as it holds: [x offset as a share of the streak's width, how far up as a share of its height, when (0 to 1), size] */
+const COMET_SPARKS: [number, number, number, number][] = [
+  [-1.4, 0.7, 0.35, 4],
+  [1.3, 0.55, 0.45, 3],
+  [-0.9, 1.0, 0.55, 3],
+  [1.6, 0.85, 0.6, 4],
+];
+/** the ember, after the swipe: it dips, then stretches up into a tall streak of light, a white core in a soft gold halo, that shrinks a
+    little before it opens; a few sparks leave it as it holds */
 function Comet({ v, x, y, size }: { v: SharedValue<number>; x: number; y: number; size: number }) {
   const w = size * 0.2;
-  const h = size * 0.6;
+  const h = size * 0.7;
+  const rise = (t: number) => {
+    'worklet';
+    return size * interpolate(t, [0, 0.3, 1], [0, 0.08, 0.12], 'clamp');
+  };
   const st = useAnimatedStyle(() => {
     const t = v.value;
     return {
       opacity: t <= 0 || t >= 1 ? 0 : 1,
       transform: [
         { translateX: x - w / 2 },
-        { translateY: y - h / 2 - size * interpolate(t, [0, 0.3, 1], [0, 0.07, 0.1], 'clamp') },
-        { scaleY: interpolate(t, [0, 0.15, 0.3, 0.45, 1], [0.34, 0.24, 1, 1, 0.75], 'clamp') },
-        { scaleX: interpolate(t, [0, 0.15, 0.3, 1], [1, 0.75, 0.7, 0.55], 'clamp') },
+        { translateY: y - h / 2 - rise(t) },
+        { scaleY: interpolate(t, [0, 0.15, 0.3, 0.45, 1], [0.3, 0.2, 1, 1, 0.72], 'clamp') },
+        { scaleX: interpolate(t, [0, 0.15, 0.3, 1], [1, 0.7, 0.75, 0.5], 'clamp') },
+      ],
+    };
+  });
+  /* the halo spreads a little wider than the core and lags it, so the streak reads as light, not a drawn line */
+  const halo = useAnimatedStyle(() => {
+    const t = v.value;
+    return {
+      opacity: t <= 0 || t >= 1 ? 0 : interpolate(t, [0, 0.2, 0.35, 1], [0.15, 0.25, 0.7, 0.5], 'clamp'),
+      transform: [
+        { translateX: x - w * 0.75 },
+        { translateY: y - h / 2 - rise(t) },
+        { scaleY: interpolate(t, [0, 0.15, 0.3, 0.5, 1], [0.35, 0.28, 0.95, 1.1, 0.9], 'clamp') },
+        { scaleX: interpolate(t, [0, 0.3, 1], [0.7, 0.9, 0.8], 'clamp') },
       ],
     };
   });
   return (
-    <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: w, height: h }, st]}>
-      <Svg width={w} height={h} viewBox="0 0 20 80">
+    <>
+      <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: w * 1.5, height: h }, halo]}>
+        <Svg width={w * 1.5} height={h} viewBox="0 0 30 80">
+          <Defs>
+            <RadialGradient id="igCometHalo" cx="15" cy="40" rx="15" ry="40" gradientUnits="userSpaceOnUse">
+              <Stop offset="0" stopColor={GOLD} stopOpacity="0.7" />
+              <Stop offset="0.3" stopColor={GOLD} stopOpacity="0.3" />
+              <Stop offset="0.65" stopColor={ORANGE} stopOpacity="0.08" />
+              <Stop offset="1" stopColor={ORANGE} stopOpacity="0" />
+            </RadialGradient>
+          </Defs>
+          <Ellipse cx="15" cy="40" rx="15" ry="40" fill="url(#igCometHalo)" />
+        </Svg>
+      </Reanimated.View>
+      <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: w, height: h }, st]}>
+        <Svg width={w} height={h} viewBox="0 0 20 80">
+          <Defs>
+            <RadialGradient id="igComet" cx="10" cy="42" rx="10" ry="40" gradientUnits="userSpaceOnUse">
+              <Stop offset="0" stopColor="#FFFFFF" stopOpacity="1" />
+              <Stop offset="0.3" stopColor="#FFF6D6" stopOpacity="1" />
+              <Stop offset="0.6" stopColor={GOLD} stopOpacity="0.9" />
+              <Stop offset="1" stopColor={ORANGE} stopOpacity="0" />
+            </RadialGradient>
+          </Defs>
+          <Ellipse cx="10" cy="40" rx="9" ry="39" fill="url(#igComet)" />
+        </Svg>
+      </Reanimated.View>
+      {COMET_SPARKS.map((c, i) => (
+        <CometSpark key={i} v={v} x={x} y={y} w={w} h={h} c={c} />
+      ))}
+    </>
+  );
+}
+function CometSpark({ v, x, y, w, h, c }: { v: SharedValue<number>; x: number; y: number; w: number; h: number; c: (typeof COMET_SPARKS)[number] }) {
+  const [dx, up, at, z] = c;
+  const st = useAnimatedStyle(() => {
+    const t = interpolate(v.value, [at, 1], [0, 1], 'clamp');
+    const e = 1 - (1 - t) * (1 - t);
+    return {
+      opacity: t <= 0 || v.value >= 1 ? 0 : 1 - t * t,
+      transform: [{ translateX: x + dx * w * 0.5 * e - z / 2 }, { translateY: y - h * 0.5 * up * e - z / 2 }],
+    };
+  });
+  return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: z, height: z, borderRadius: z, backgroundColor: CREAM }, st]} />;
+}
+
+/** the flare at the heart as the flame catches: a bright core that blooms out and fades as the flame grows out of it */
+function Flare({ v, x, y, size }: { v: SharedValue<number>; x: number; y: number; size: number }) {
+  const g = size * 1.1;
+  const st = useAnimatedStyle(() => {
+    const t = v.value;
+    return {
+      opacity: t <= 0 || t >= 1 ? 0 : interpolate(t, [0, 0.12, 0.5, 1], [0, 1, 0.7, 0], 'clamp'),
+      transform: [{ translateX: x - g / 2 }, { translateY: y - g / 2 }, { scale: interpolate(t, [0, 0.3, 1], [0.15, 0.7, 1], 'clamp') }],
+    };
+  });
+  return (
+    <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: g, height: g }, st]}>
+      <Svg width={g} height={g} viewBox="0 0 100 100">
         <Defs>
-          <RadialGradient id="igComet" cx="10" cy="44" rx="10" ry="40" gradientUnits="userSpaceOnUse">
+          <RadialGradient id="igFlare" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
             <Stop offset="0" stopColor="#FFFFFF" stopOpacity="1" />
-            <Stop offset="0.45" stopColor={GOLD} stopOpacity="1" />
+            <Stop offset="0.18" stopColor="#FFF3C4" stopOpacity="0.95" />
+            <Stop offset="0.45" stopColor={GOLD} stopOpacity="0.45" />
             <Stop offset="1" stopColor={ORANGE} stopOpacity="0" />
           </RadialGradient>
         </Defs>
-        <Ellipse cx="10" cy="40" rx="9" ry="39" fill="url(#igComet)" />
+        <Circle cx="50" cy="50" r="50" fill="url(#igFlare)" />
+      </Svg>
+    </Reanimated.View>
+  );
+}
+
+/** the pool of warm light under the lit flame, where its light falls: it comes as the flame catches and stays, breathing with the drift */
+function Pool({ v, x, size }: { v: SharedValue<number>; x: number; size: number }) {
+  const w = size * 0.8;
+  const h = size * 0.2;
+  const st = useAnimatedStyle(() => ({
+    opacity: 0.5 * v.value,
+    transform: [{ translateX: x - w / 2 }, { translateY: size * 0.84 - h / 2 }, { scaleX: 0.6 + 0.4 * v.value }],
+  }));
+  return (
+    <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: w, height: h }, st]}>
+      <Svg width={w} height={h} viewBox="0 0 100 25">
+        <Defs>
+          <RadialGradient id="igPool" cx="50" cy="12.5" rx="50" ry="12.5" gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={ORANGE} stopOpacity="0.9" />
+            <Stop offset="0.5" stopColor={ORANGE} stopOpacity="0.35" />
+            <Stop offset="1" stopColor={ORANGE} stopOpacity="0" />
+          </RadialGradient>
+        </Defs>
+        <Ellipse cx="50" cy="12.5" rx="50" ry="12.5" fill="url(#igPool)" />
       </Svg>
     </Reanimated.View>
   );
@@ -553,8 +673,9 @@ function Flash({ v, x, y, size, reach }: { v: SharedValue<number>; x: number; y:
         <Svg width={g} height={g} viewBox="0 0 100 100">
           <Defs>
             <RadialGradient id="igGlow" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
-              <Stop offset="0" stopColor="#FFF6D0" stopOpacity="1" />
-              <Stop offset="0.25" stopColor={GOLD} stopOpacity="0.85" />
+              <Stop offset="0" stopColor="#FFFFFF" stopOpacity="1" />
+              <Stop offset="0.12" stopColor="#FFF6D0" stopOpacity="1" />
+              <Stop offset="0.3" stopColor={GOLD} stopOpacity="0.85" />
               <Stop offset="0.6" stopColor={ORANGE} stopOpacity="0.3" />
               <Stop offset="1" stopColor={ORANGE} stopOpacity="0" />
             </RadialGradient>
@@ -565,7 +686,84 @@ function Flash({ v, x, y, size, reach }: { v: SharedValue<number>; x: number; y:
       {STARS.map(([a, d, z, ph], i) => (
         <FlashStar key={i} v={v} x={x} y={y} a={a} d={d * size} z={z} ph={ph} />
       ))}
+      {BITS.map(([a, d, z, spin], i) => (
+        <FlashBit key={i} v={v} x={x} y={y} a={a} d={d * size} z={z} spin={spin} />
+      ))}
     </>
+  );
+}
+/* the orange bits that drift out through the glow with the stars: [angle, distance as a share of the size, size, spin] */
+const BITS: [number, number, number, number][] = [
+  [-130, 0.14, 6, 200],
+  [-20, 0.2, 5, -160],
+  [60, 0.12, 6, 240],
+  [150, 0.22, 5, -200],
+  [-75, 0.28, 4, 180],
+  [110, 0.3, 4, -220],
+  [-170, 0.3, 5, 160],
+  [25, 0.34, 4, -180],
+];
+function FlashBit({ v, x, y, a, d, z, spin }: { v: SharedValue<number>; x: number; y: number; a: number; d: number; z: number; spin: number }) {
+  const rad = (a * Math.PI) / 180;
+  const st = useAnimatedStyle(() => {
+    const t = v.value;
+    const r = d * (0.3 + 1.4 * Math.min(1, t));
+    return {
+      opacity: t <= 0 ? 0 : t <= 1 ? Math.min(1, t * 3) : 2 - t,
+      transform: [{ translateX: x + Math.cos(rad) * r - z / 2 }, { translateY: y + Math.sin(rad) * r - z / 2 }, { rotate: spin * t + 'deg' }],
+    };
+  });
+  return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: z, height: z, borderRadius: 1.5, backgroundColor: ORANGE }, st]} />;
+}
+
+/* the stars and bits over the whole screen at the height of the wash: [x, y as shares of the screen, size, star or bit, phase] */
+const WASH_STARS: [number, number, number, boolean, number][] = [
+  [0.12, 0.14, 16, true, 0],
+  [0.86, 0.1, 12, true, 0.3],
+  [0.08, 0.5, 10, true, 0.6],
+  [0.92, 0.42, 14, true, 0.15],
+  [0.2, 0.78, 12, true, 0.45],
+  [0.8, 0.72, 16, true, 0.75],
+  [0.5, 0.06, 10, true, 0.9],
+  [0.3, 0.3, 6, false, 0.2],
+  [0.72, 0.24, 5, false, 0.5],
+  [0.16, 0.64, 6, false, 0.8],
+  [0.88, 0.6, 5, false, 0.35],
+  [0.6, 0.86, 6, false, 0.65],
+];
+function WashStars({ v, w, h }: { v: SharedValue<number>; w: number; h: number }) {
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {WASH_STARS.map((o, i) => (
+        <WashStar key={i} v={v} x={o[0] * w} y={o[1] * h} z={o[2]} star={o[3]} ph={o[4]} />
+      ))}
+    </View>
+  );
+}
+function WashStar({ v, x, y, z, star, ph }: { v: SharedValue<number>; x: number; y: number; z: number; star: boolean; ph: number }) {
+  const st = useAnimatedStyle(() => {
+    const t = v.value;
+    const tw = 0.7 + 0.3 * Math.abs(Math.sin((t * 2 + ph) * Math.PI));
+    return {
+      opacity: t <= 0 ? 0 : Math.min(1, t * 1.6),
+      transform: [
+        { translateX: x - z / 2 },
+        { translateY: y - z / 2 - 14 * (1 - t) },
+        { scale: tw * Math.min(1, t * 2) },
+        { rotate: (star ? 30 : 120) * t + 'deg' },
+      ],
+    };
+  });
+  return (
+    <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: z, height: z }, st]}>
+      {star ? (
+        <Svg width={z} height={z} viewBox="0 0 24 24">
+          <Path d={STAR} fill="#FFFFFF" />
+        </Svg>
+      ) : (
+        <View style={{ width: z, height: z, borderRadius: 1.5, backgroundColor: ORANGE }} />
+      )}
+    </Reanimated.View>
   );
 }
 function FlashStar({ v, x, y, a, d, z, ph }: { v: SharedValue<number>; x: number; y: number; a: number; d: number; z: number; ph: number }) {
@@ -897,11 +1095,26 @@ const MOTES: [number, number, number, number, boolean][] = [
   [0.24, 0.5, 0.63, 4, true],
   [-0.26, 0.45, 0.8, 3, false],
 ];
-function Motes({ v, x, y, size, fade }: { v: SharedValue<number>; x: number; y: number; size: number; fade: SharedValue<number> }) {
+/** sparks drifting up from the ember while it waits, gone with the swipe, and back, softer, once the flame is lit: an ember off it now and then */
+function Motes({
+  v,
+  x,
+  y,
+  size,
+  fade,
+  lit,
+}: {
+  v: SharedValue<number>;
+  x: number;
+  y: number;
+  size: number;
+  fade: SharedValue<number>;
+  lit: SharedValue<number>;
+}) {
   return (
     <>
       {MOTES.map((mo, i) => (
-        <Mote key={i} v={v} x={x} y={y} size={size} fade={fade} mo={mo} />
+        <Mote key={i} v={v} x={x} y={y} size={size} fade={fade} lit={lit} mo={mo} />
       ))}
     </>
   );
@@ -912,6 +1125,7 @@ function Mote({
   y,
   size,
   fade,
+  lit,
   mo,
 }: {
   v: SharedValue<number>;
@@ -919,14 +1133,17 @@ function Mote({
   y: number;
   size: number;
   fade: SharedValue<number>;
+  lit: SharedValue<number>;
   mo: [number, number, number, number, boolean];
 }) {
   const [dx, up, ph, d, gold] = mo;
   const st = useAnimatedStyle(() => {
     const t = (v.value + ph) % 1;
+    /* lit, they start higher (off the fire, not the belly) and are fewer: the white ones stay out */
+    const on = Math.max(1 - fade.value, lit.value * (gold ? 0.75 : 0));
     return {
-      opacity: Math.sin(t * Math.PI) * (1 - fade.value),
-      transform: [{ translateX: x + dx * size * (0.6 + 0.4 * t) - d / 2 }, { translateY: y - up * size * t - d / 2 }],
+      opacity: Math.sin(t * Math.PI) * on,
+      transform: [{ translateX: x + dx * size * (0.6 + 0.4 * t) - d / 2 }, { translateY: y - size * 0.2 * lit.value - up * size * t - d / 2 }],
     };
   });
   return (
@@ -994,6 +1211,7 @@ const s = StyleSheet.create({
   numBox: { justifyContent: 'center', alignItems: 'center', minWidth: 120, alignSelf: 'stretch', overflow: 'hidden' },
   num: { fontFamily: font.display, fontSize: SHORT ? 80 : 100, lineHeight: SHORT ? 88 : 108, textAlign: 'center' },
   over: { position: 'absolute', left: 0, right: 0 },
+  numLit: { color: ORANGE, textShadowColor: 'rgba(255,154,46,0.55)', textShadowRadius: 22, textShadowOffset: { width: 0, height: 0 } },
   unit: { fontFamily: font.bodyBold, fontSize: 20, color: ORANGE, marginTop: -2 },
   dock: { paddingHorizontal: 16, gap: 20 },
   rowIn: { marginTop: SHORT ? 14 : 22 },

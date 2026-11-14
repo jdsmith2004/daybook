@@ -27,7 +27,7 @@ import { Text } from '@/components/text';
 import { Shape, SQUIGGLE, squigglePath, SVG_HIDE, useClock, type ShapeKind } from '@/components/shapes';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { NATIVE, SETTLE, useReducedMotion } from '@/lib/motion';
 import { useSpot } from '@/lib/tour';
 import { useStore } from '@/lib/store';
 import { useAccount } from '@/lib/sync';
@@ -37,7 +37,7 @@ import { font, nightInk, useTheme, type Palette } from '@/lib/theme';
 export function openStop(go: StopGo, id?: string) {
   buzz('tap');
   if (go === 'lesson') {
-    if (id) router.push({ pathname: '/lesson/[id]', params: { id } });
+    if (id) router.push({ pathname: '/lesson/[id]', params: { id, pick: '1' } });
     return;
   }
   /* the any-time stops: the journal opens on its feeling picker, a new entry's first step (reaching out is marked in place, Row) */
@@ -365,7 +365,7 @@ function FirstGlow({ children }: { children: React.ReactNode }) {
   const glow = useRef(new Animated.Value(still ? 0.6 : 0)).current;
   useEffect(() => {
     if (still) return;
-    Animated.spring(pop, { toValue: 1, friction: 4, tension: 110, useNativeDriver: NATIVE }).start();
+    Animated.spring(pop, { toValue: 1, ...SETTLE, useNativeDriver: NATIVE }).start();
   }, [still, pop]);
   useEffect(() => {
     if (still || !focused) return;

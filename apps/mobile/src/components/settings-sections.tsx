@@ -39,6 +39,8 @@ import {
   lessonLast,
   OB_CREED,
   setFaith,
+  lessonLen,
+  setLessonLen,
   NIGHT_TIMES,
   PULL_LIFT,
   PULL_LONG,
@@ -168,6 +170,7 @@ export type PartId =
   | 'habit'
   | 'count'
   | 'faith'
+  | 'lessons'
   | 'answers'
   | 'sos'
   | 'pull'
@@ -182,7 +185,7 @@ export type PartId =
 
 /** the list, grouped by what the person came to do; each group's icons take one tone. Delete everything stands alone at the end. */
 const GROUPS: [string, Tone, PartId[]][] = [
-  ['Your quit', 'coral', ['habit', 'count', 'faith']],
+  ['Your quit', 'coral', ['habit', 'count', 'faith', 'lessons']],
   ['Your days', 'sky', ['routine', 'bed', 'remind']],
   ['When it hits', 'violet', ['sos', 'pull', 'nightpack', 'answers']],
   ['This phone', 'mint', ['look', 'lock', 'health', 'notes']],
@@ -193,6 +196,9 @@ const toneOf = (id: PartId): Tone => GROUPS.find(([, , ids]) => ids.includes(id)
 
 /** the ids links used before the redesign (November 9, 2026), so an old link still opens the right page */
 const OLD: Record<string, PartId> = { sched: 'bed', data: 'copy' };
+/** which moment the next Preview a celebration plays */
+let previewN = 0;
+
 export function partOf(asked?: string): PartId | null {
   const k = (asked || '').replace(/^s-/, '');
   const id = (OLD[k] || k) as PartId;
@@ -391,6 +397,24 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
             <SetRow label="Tracking week, quitting and just tracking" onPress={() => router.push('/mode')} />
           </SetGroup>
         </>
+      ),
+    },
+
+    lessons: {
+      icon: 'book',
+      title: 'Lesson length',
+      value: lessonLen(st) === 'f' ? 'Long' : 'Short',
+      body: (
+        <SetGroup head="How long should a lesson be?" foot="Short plays the main idea and one check. Long adds the science and the questions behind it.">
+          <SetPick
+            options={[
+              ['q', 'Short, about 2 minutes'],
+              ['f', 'Long, about 5 minutes'],
+            ]}
+            value={lessonLen(st)}
+            onPick={(v) => v && apply({ st: setLessonLen(st, v) })}
+          />
+        </SetGroup>
       ),
     },
 
@@ -636,14 +660,25 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
               onPick={(v) => setThemePref(v)}
             />
           </SetGroup>
-          <SetGroup foot="Confetti and pop-ups for level-ups and badges. Off gives a quiet message instead. If your phone is set to reduce motion, the movement is already off.">
+          <SetGroup foot="A moment on screen for a new level, a new form of the flame and badges. Each preview plays the next one. Off gives a quiet message instead. If your phone is set to reduce motion, the movement is already off.">
             <SetSwitch label="Celebrations" on={st.celebrate} onChange={(on) => apply({ st: setCelebrate(st, on) })} />
             <SetRow
               label="Preview a celebration"
               act="accent"
-              onPress={() =>
-                hooks.current.onCelebrate?.([{ type: 'level', level: gameCompute(snap.days, st, snap.reviews, tk).level, from: 0, evolve: false }])
-              }
+              onPress={() => {
+                /* each tap plays the next kind of moment: a level, a new form of the flame, a badge */
+                const g = gameCompute(snap.days, st, snap.reviews, tk);
+                const L = g.level;
+                const badge = g.badges.find((x) => x.done) ?? g.badges[0];
+                const kind = previewN++ % 3;
+                hooks.current.onCelebrate?.([
+                  kind === 1
+                    ? { type: 'level', level: L, from: Math.max(1, L.n - 1), evolve: true }
+                    : kind === 2 && badge
+                      ? { type: 'badge', b: badge }
+                      : { type: 'level', level: L, from: 0, evolve: false },
+                ]);
+              }}
             />
           </SetGroup>
           <SetGroup foot="A small buzz under your finger for taps, choices and wins. Your phone's own haptics setting still comes first.">

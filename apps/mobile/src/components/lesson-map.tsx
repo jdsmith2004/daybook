@@ -34,6 +34,7 @@ import { Text } from '@/components/text';
 import { SvgXml } from 'react-native-svg';
 
 import { Icon } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme, type Tone } from '@/lib/theme';
@@ -218,7 +219,10 @@ export const Stone = memo(function Stone({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ expanded: open }}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       hitSlop={6}
       style={{ position: 'absolute', left: x - w / 2, top: y - h / 2, width: w, height: h, transform: [{ rotate: rot + 'deg' }], zIndex: 3 }}>
       {({ pressed }) => (
@@ -545,7 +549,10 @@ export function StoneCard({
       ) : null}
       <Pressable
         accessibilityRole="button"
-        onPress={ahead ? onNext : locked ? onSignIn : onStart}
+        onPress={() => {
+          buzz('tap');
+          (ahead ? onNext : locked ? onSignIn : onStart)();
+        }}
         style={({ pressed }) => [s_.go, { backgroundColor: c.surface, shadowColor: deep, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
         <Icon name={ahead ? 'next' : locked ? 'shield' : when ? 'book' : 'play'} size={18} color={btn} />
         <Text style={[s_.goT, { color: btn }]}>
@@ -590,7 +597,10 @@ export function MapChip({ l, of, here, onPress }: { l: MapLand; of: number; here
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${here ? 'You are on step' : 'Step'} ${l.u + 1}: ${u.name}, ${l.done} of ${n} done. Go to the next lesson.`}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s_.chip, { backgroundColor: c.surface, opacity: pressed ? 0.92 : 1 }]}>
       <View style={[s_.chipArt, { backgroundColor: t.soft }]}>
         <SvgXml xml={art} width={46} height={46} />
@@ -929,7 +939,10 @@ function NextLabel({ s, land, x, y, k, w, onPress }: { s: MapStone; land: MapLan
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Up next: lesson ${s.n}, ${s.L.title}, ${lmin(s.L)}. Open its card.`}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={{ position: 'absolute', left, width, top: y - 30 * k, zIndex: 4, alignItems: right ? 'flex-start' : 'flex-end' }}>
       <Text style={[s_.nextEye, { color: t.text, textAlign: right ? 'left' : 'right' }]}>Up next · {lmin(s.L)}</Text>
       <Text style={[s_.nextT, { color: c.ink, textAlign: right ? 'left' : 'right' }]}>

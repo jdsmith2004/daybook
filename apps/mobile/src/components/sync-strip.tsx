@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { here } from '@/lib/here';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
@@ -29,7 +30,11 @@ export function SyncStrip() {
       <Text style={[s.text, { color: c.ink }]}>{text}</Text>
       <Pressable
         accessibilityRole="button"
-        onPress={() => (k === 'expired' ? sync.signInNow({ why: 'in', email: sync.email }) : sync.syncNow())}
+        onPress={() => {
+          buzz('tap');
+          if (k === 'expired') sync.signInNow({ why: 'in', email: sync.email });
+          else sync.syncNow();
+        }}
         hitSlop={6}
         style={({ pressed }) => [s.btn, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}>
         <Text style={[s.btnT, { color: c.accentInk }]}>{k === 'expired' ? 'Sign in' : 'Try again'}</Text>

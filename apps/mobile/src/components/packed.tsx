@@ -4,7 +4,10 @@
    group still holds them; only where each one is drawn changes.
    First draw: the pills are laid out by plain wrapping, unseen, to measure them; then they are placed and shown. After that
    a change of width (rotation), of a pill's size (text size, a check mark) or of the list repacks in place.
-   A pill is never wider than the row: a long one wraps onto a second line inside itself instead of running off. */
+   A pill is never wider than the row: a long one wraps onto a second line inside itself instead of running off.
+   With fill, each row is stretched edge to edge: the room left in a row is shared by its pills, so long answers that cannot
+   share a row still read as one even block instead of a ragged edge (Walk it through's plan, the owner, November 14, 2026:
+   "the text groupings messed up"). */
 import { packRows, wrapRows } from '@daybook/core';
 import { Children, isValidElement, useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
@@ -19,6 +22,7 @@ export function Packed({
   center,
   last = 0,
   ordered,
+  fill,
   style,
   ...rest
 }: ViewProps & {
@@ -32,6 +36,8 @@ export function Packed({
   last?: number;
   /** the order carries meaning (a scale, steps, times of day): wrap in order, never move a pill up */
   ordered?: boolean;
+  /** stretch each row to the full width, sharing the room left among its pills */
+  fill?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const items = Children.toArray(children).filter(isValidElement);
@@ -39,6 +45,8 @@ export function Packed({
   const [width, setWidth] = useState(0);
   const [sizes, setSizes] = useState<Record<string, Size>>({});
   const pending = useRef<Record<string, Size>>({});
+  /* the stretch each pill was drawn with (fill): taken off what it measures, so the packing always works from its own size */
+  const stretch = useRef<Record<string, number>>({});
   const frame = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
   const down = rowGap ?? gap;
 
@@ -55,7 +63,7 @@ export function Packed({
   }, []);
   const measure = (k: string) => (e: LayoutChangeEvent) => {
     const { width: w, height: h } = e.nativeEvent.layout;
-    pending.current[k] = { w, h };
+    pending.current[k] = { w: w - (stretch.current[k] || 0), h };
     if (frame.current == null) frame.current = requestAnimationFrame(flush);
   };
   const onBox = (e: LayoutChangeEvent) => {
@@ -82,15 +90,16 @@ export function Packed({
     const tail = keys.slice(keys.length - last).filter((k) => sizes[k]).length;
     const ws = idx.map((i) => sizes[keys[i]].w);
     const rows = (ordered ? wrapRows(ws, width, gap) : packRows(ws, width, gap, tail)).map((r) => r.map((j) => idx[j]));
-    const at: ({ x: number; y: number } | undefined)[] = [];
+    const at: ({ x: number; y: number; ex: number } | undefined)[] = [];
     let y = 0;
     rows.forEach((r) => {
       const used = r.reduce((n, i) => n + sizes[keys[i]].w, 0) + gap * (r.length - 1);
-      let x = center ? Math.max(0, (width - used) / 2) : 0;
+      const ex = fill ? Math.max(0, (width - used) / r.length) : 0;
+      let x = center && !fill ? Math.max(0, (width - used) / 2) : 0;
       let h = 0;
       r.forEach((i) => {
-        at[i] = { x, y };
-        x += sizes[keys[i]].w + gap;
+        at[i] = { x, y, ex };
+        x += sizes[keys[i]].w + ex + gap;
         h = Math.max(h, sizes[keys[i]].h);
       });
       y += h + down;
@@ -98,7 +107,7 @@ export function Packed({
     return { at, height: Math.max(0, y - down) };
     // sig holds everything the packing reads
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sig, gap, down, center, last, ordered]);
+  }, [sig, gap, down, center, last, ordered, fill]);
 
   if (place) shown.current = true;
   if (!place) {
@@ -120,11 +129,17 @@ export function Packed({
     <View {...rest} onLayout={onBox} style={[s.box, style, { height: place.height }]}>
       {items.map((el, i) => {
         const p = place.at[i];
+        stretch.current[keys[i]] = p && p.ex ? p.ex : 0;
         return (
           <View
             key={keys[i]}
             onLayout={measure(keys[i])}
-            style={[s.item, { maxWidth: width }, p ? { transform: [{ translateX: p.x }, { translateY: p.y }] } : s.unseen]}
+            style={[
+              s.item,
+              { maxWidth: width },
+              p && p.ex ? { width: sizes[keys[i]].w + p.ex } : null,
+              p ? { transform: [{ translateX: p.x }, { translateY: p.y }] } : s.unseen,
+            ]}
             pointerEvents={p ? 'auto' : 'none'}>
             {el}
           </View>

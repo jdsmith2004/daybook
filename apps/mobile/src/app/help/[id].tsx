@@ -32,6 +32,7 @@ import { LinkCard, Rows } from '@/components/link-card';
 import { Screen } from '@/components/screen';
 import { Card, T } from '@/components/ui';
 import { useCrisis } from '@/lib/crisis';
+import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -326,7 +327,10 @@ function FitCheck() {
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: on }}
                     accessibilityLabel={name(k) + ': ' + t}
-                    onPress={() => apply({ st: toggleTherapist(snap.settings!, r, k) })}
+                    onPress={() => {
+                      buzz('tap');
+                      apply({ st: toggleTherapist(snap.settings!, r, k) });
+                    }}
                     style={[s.sq, { backgroundColor: on ? c.mintSoft : c.surface, borderColor: on ? c.mintText : c.line }]}>
                     <Text style={{ fontFamily: font.bodyBold, fontSize: 15, color: on ? c.mintText : c.ink }}>{on ? '✓' : k + 1}</Text>
                   </Pressable>

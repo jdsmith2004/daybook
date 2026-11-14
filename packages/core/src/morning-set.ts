@@ -23,6 +23,7 @@ import { truthOn } from './truth';
 import { changeSettings } from './actions';
 import { addEvent, changeDay, removeEvent, withDay } from './mutate';
 import { normMorning } from './morning-norm';
+import { settleByMorning, unsettleByMorning } from './talk-log';
 import type { Clock, Day, DayEvent, DayKey, Days, MorningSet, Play, Settings } from './types';
 
 export { MORNING_REASON_MAX } from './morning-norm';
@@ -103,7 +104,8 @@ function withMorning(days: Days, tk: DayKey, now: number, fn: (ms: MorningSet, p
 }
 
 /** "How was last night?" answered (or changed). It happened adds a slip to the night before, with no time, unless one that night is
-    already logged; changing back to Free of it takes away only the slip this morning added. Answering marks the day's morning. */
+    already logged; changing back to Free of it takes away only the slip this morning added. Answering marks the day's morning, and
+    answers last night's talk-throughs (settleByMorning). */
 export function answerNight(days: Days, st: Settings, tk: DayKey, n: 'free' | 'slip', now = Date.now()): Days {
   const y = addDays(tk, -1);
   const prev = morningOf(days[tk]);
@@ -119,6 +121,9 @@ export function answerNight(days: Days, st: Settings, tk: DayKey, n: 'free' | 's
     next = r.days;
     ev = r.id;
   }
+  /* the answer is also the answer to last night's plans (talk-log.ts): Free of it settles them as held, so Today never asks
+     "Did your plan hold?" about a night already told; It happened opens them again, and its slip settles them */
+  next = n === 'free' ? settleByMorning(next, tk, now) : unsettleByMorning(next, tk, now);
   return withMorning(next, tk, now, (ms, p) => {
     ms.n = n;
     if (ev) ms.ev = ev;
@@ -190,7 +195,7 @@ export function morningReasons(days: Days, st: Settings, tk: DayKey): string[] {
     const s = (t || '').trim();
     if (s && out.length < 3 && !out.some((x) => x.toLowerCase() === s.toLowerCase())) out.push(s);
   };
-  const last = lastSet(days, tk, CARRY_DAYS)?.ms.r;
+  const last = morningOf(days[tk])?.r || lastSet(days, tk, CARRY_DAYS)?.ms.r;
   /* faith on (D10 (a)): "My faith" is one of the person's own reasons; with it off, nothing about faith */
   const a = st.onb?.a as { faith?: string } | undefined;
   const faith = a && (a.faith === 'big' || a.faith === 'some') ? ['My faith'] : [];
@@ -264,8 +269,20 @@ export interface Tonight {
     CARRY_DAYS, or the starting time with no reason. tk is the log day, so at 1 AM it is still the same night. */
 export function tonightOf(days: Days, st: Settings, tk: DayKey): Tonight {
   const s = lastSet(days, tk, CARRY_DAYS);
-  if (!s) return { at: nightAtStart(st), r: null, rAt: null, from: null, today: false };
-  return { at: s.ms.nt || nightAtStart(st), r: s.ms.r || null, rAt: s.ms.set || null, from: s.k, today: s.k === tk };
+  const t: Tonight = s
+    ? { at: s.ms.nt || nightAtStart(st), r: s.ms.r || null, rAt: s.ms.set || null, from: s.k, today: s.k === tk }
+    : { at: nightAtStart(st), r: null, rAt: null, from: null, today: false };
+  /* a reason chosen on Today before the morning was set (pickTonightReason) is tonight's */
+  const own = morningOf(days[tk]);
+  return own?.r && !own.set ? { ...t, r: own.r, rAt: own.at, from: tk } : t;
+}
+
+/** tonight's reason, chosen on Today ("Tonight, for", components/today-below.tsx): kept on today without setting the morning, so the
+    morning page still opens as it would, already on this reason */
+export function pickTonightReason(days: Days, tk: DayKey, r: string, now = Date.now()): Days {
+  const t = r.trim();
+  if (!t) return days;
+  return withMorning(days, tk, now, (ms) => void (ms.r = t));
 }
 
 /** how a night went, as the morning after said: the night of log day k is answered on day k + 1 (or by the catch-up row on day

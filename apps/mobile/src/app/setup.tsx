@@ -36,6 +36,8 @@ import {
   obSave,
   obSay,
   obTonightAt,
+  obGrow,
+  obYear,
   readBackup,
   restoreBackup,
   setFirstGoal,
@@ -58,8 +60,10 @@ import { Ignition } from '@/components/ignite';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
 import { Answer, AnswerText, BESIDE, Prog, Question, Shell } from '@/components/lesson-parts';
 import { Ghost, Next } from '@/components/lx';
+import { Packed } from '@/components/packed';
 import { Middle } from '@/components/scene';
 import { useClock } from '@/components/shapes';
+import { GrowStops, useGrowWalk, WhyChart, YearMarks } from '@/components/setup-value';
 import { TIP_ON } from '@/components/support';
 import { UnlockSheet } from '@/components/unlocked';
 import { useSos } from '@/lib/sos';
@@ -115,6 +119,8 @@ export default function Setup() {
   const rem = useReminderPrefs();
   const env = { notify: remindersOffered, account: !f.redo && sync.status.k === 'out', redo: f.redo };
   const until = useRef(0);
+  /** which way the last move went, so the next page comes in from that side */
+  const dir = useRef<1 | -1 | 0>(0);
   const asking = useRef(false);
   const P = obPages(f.a, env);
   const i = Math.max(0, Math.min(P.length - 1, f.i));
@@ -176,6 +182,7 @@ export default function Setup() {
       const to = Math.max(0, Math.min(PP.length - 1, x.i + d));
       if (to === x.i) return x;
       until.current = Date.now() + 260;
+      dir.current = d > 0 ? 1 : -1;
       return { ...x, i: to };
     });
   };
@@ -282,6 +289,18 @@ export default function Setup() {
     if (!f.redo) track('setup_pick', { page: pg.id, ix });
     buzz('tap');
   };
+
+  /* each page starts at its top: a long page before it (the goal) can leave the card scrolled, and the next page's heading under the bar */
+  useEffect(() => {
+    scroll.current?.scrollTo({ y: 0, animated: false });
+  }, [pg.id]);
+  /* the grow page walks the flame through its stops, and the page's own flame takes each form */
+  const grow = obGrow(a);
+  const walk = useGrowWalk(grow.length, pg.k === 'grow');
+  const growAt = pg.k === 'grow' ? walk.at : -1;
+  useEffect(() => {
+    if (growAt > 0) setPulse((x) => x + 1);
+  }, [growAt]);
 
   let body: ReactNode = null;
   let foot: ReactNode = null;
@@ -417,6 +436,63 @@ export default function Setup() {
         </>
       );
       foot = nextBtn(arr.length ? 'Next' : 'Skip', !arr.length);
+      break;
+    }
+    case 'need': {
+      /* what it takes now: a year of marks at the person's own pace, then each one turning to flame, as the ones to take back */
+      const yr = obYear(a)!;
+      body = (
+        <>
+          <Head h={yr.h} />
+          <Middle>
+            <YearMarks n={yr.n} onBack={() => setPulse((x) => x + 1)} />
+          </Middle>
+          <Say text={voice} />
+        </>
+      );
+      foot = nextBtn('Next');
+      break;
+    }
+    case 'grow': {
+      /* what grows: the flame itself takes the form a steady pace reaches at each stop, and says what that stop looks like */
+      const g = grow[Math.max(0, growAt)];
+      body = (
+        <>
+          <Head h="This is how I grow with you." />
+          <Talk text={g.line} want={want} />
+          <GrowStops
+            a={a}
+            at={Math.max(0, growAt)}
+            onAt={(j) => {
+              walk.pick(j);
+              buzz('tap');
+            }}
+          />
+        </>
+      );
+      foot = nextBtn('Next');
+      break;
+    }
+    case 'why': {
+      /* why it works: a slip takes nothing away here, and keeping track works (Harkin et al., 2016: 138 studies) */
+      body = (
+        <>
+          <Head h="Why this works." />
+          <Middle>
+            <WhyChart />
+          </Middle>
+          <T tone="muted" style={s.p}>
+            In 138 studies, people who kept track of their progress reached their goals more often.
+          </T>
+          <Say text={voice} />
+        </>
+      );
+      /* the last page when there is no account to ask for (signed in already, or a build without accounts): Next goes home */
+      foot = (
+        <View key="w" style={s.footOne}>
+          <Next label="Next" onPress={() => (i < P.length - 1 ? !busy() && go(1) : done())} off={false} />
+        </View>
+      );
       break;
     }
     case 'promise': {
@@ -650,7 +726,7 @@ export default function Setup() {
     <View style={{ flex: 1 }}>
       <Shell
         look={look}
-        level={flameLevel}
+        level={pg.k === 'grow' ? grow[Math.max(0, growAt)].level : flameLevel}
         /* before it is lit, the flame is the ember on the lighting page, not the gliding flame */
         flameOn
         pulse={pulse}
@@ -658,6 +734,7 @@ export default function Setup() {
         scroll={scroll}
         fit={fit}
         bodyKey={pg.id}
+        dir={dir.current}
         prog={<Prog total={P.length} i={i} all={fin} look={look} label={barLabel} />}
         onBack={noBack ? undefined : () => go(-1)}
         onClose={fin ? finish : exit}
@@ -790,24 +867,23 @@ function Say({ text }: { text: string | null }) {
     </View>
   );
 }
-/** the answers of a question with more than one: paper, the icon beside the words (one across) or over them (two across) */
+/** the answers of a question with more than one: paper. Two across (cols 2), the icon over the words, as an even grid; one across,
+    pills the size of their words, packed into the fewest rows (Packed, as every chip list in the app), never one to a row
+    (the owner, November 14, 2026: "the options should be grouped") */
 function Tiles({ list, cols, cur, onPick }: { list: ObOpt[]; cols: number; cur: string[]; onPick: (v: string) => void }) {
   const two = cols === 2;
-  return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-      {list.map((it) => {
-        const sel = cur.indexOf(it[0]) >= 0;
-        return (
-          <Answer key={it[0]} sel={sel} right={sel} onPress={() => onPick(it[0])} style={two ? s.tall : s.wide} label={String(it[1])}>
-            {typeof it[2] === 'string' ? <Icon name={it[2]} size={24} color={sel ? '#FFFFFF' : PAPER_INK} /> : null}
-            <AnswerText right={sel} center={two}>
-              {it[1]}
-            </AnswerText>
-          </Answer>
-        );
-      })}
-    </View>
-  );
+  const items = list.map((it) => {
+    const sel = cur.indexOf(it[0]) >= 0;
+    return (
+      <Answer key={it[0]} sel={sel} right={sel} onPress={() => onPick(it[0])} style={two ? s.tall : s.pill} corner={two} label={String(it[1])}>
+        {typeof it[2] === 'string' ? <Icon name={it[2]} size={two ? 24 : 20} color={sel ? '#FFFFFF' : PAPER_INK} /> : null}
+        <AnswerText right={sel} center={two}>
+          {it[1]}
+        </AnswerText>
+      </Answer>
+    );
+  });
+  return two ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{items}</View> : <Packed gap={8}>{items}</Packed>;
 }
 function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useTheme();
@@ -832,7 +908,7 @@ const s = StyleSheet.create({
   titleShort: { fontSize: 22, lineHeight: 28 },
   p: { fontSize: SHORT ? 15 : 17, lineHeight: SHORT ? 21 : 24 },
   optSub: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
-  wide: { flexBasis: '100%', flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 14 },
   tall: { flexBasis: '46%', flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: SHORT ? 72 : 84, paddingLeft: 8, paddingRight: 8 },
   rows: { alignSelf: 'stretch', gap: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },

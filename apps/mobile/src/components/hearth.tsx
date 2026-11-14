@@ -32,7 +32,7 @@ import Svg, { Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Rect, Stop
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
-import { useReducedMotion } from '@/lib/motion';
+import { SETTLE, SETTLE_SLOW, useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
 export const HOLD_MS = 1400;
@@ -80,8 +80,8 @@ export function useHearthHold(lit: boolean, onLit: () => void): HearthHold {
     if (reduce) k.value = withTiming(1, { duration: 400 });
     else {
       flash.value = withSequence(withTiming(1, { duration: 70 }), withTiming(0, { duration: 480, easing: Easing.out(Easing.quad) }));
-      pop.value = withSequence(withTiming(1, { duration: 70 }), withSpring(0, { damping: 7, stiffness: 260 }));
-      k.value = withSpring(1, { damping: 7, stiffness: 110, mass: 0.9 });
+      pop.value = withSequence(withTiming(1, { duration: 70 }), withSpring(0, SETTLE));
+      k.value = withSpring(1, SETTLE_SLOW);
     }
     /* a heartbeat: heavy, then soft */
     knock(Haptics.ImpactFeedbackStyle.Heavy);

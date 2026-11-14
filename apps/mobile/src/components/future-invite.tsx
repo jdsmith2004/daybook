@@ -9,6 +9,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
 import { track } from '@/lib/events';
+import { buzz } from '@/lib/feel';
 import { askedFuture, futureLoaded, useFuture } from '@/lib/future';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -38,6 +39,7 @@ export function FutureInvite({ first, onGo }: { first: boolean; onGo?: () => voi
     <Pressable
       accessibilityRole="button"
       onPress={() => {
+        buzz('tap');
         track('ask_tap', { what: 'future' });
         onGo?.();
         router.push('/future');

@@ -40,6 +40,7 @@ it('the "Thirty-two lessons" badge still asks for 32, so nobody loses it when le
 
 describe.each(NEW.map((L) => [L.id, L] as const))('%s', (_id, L) => {
   it('follows the lesson standard: hook, guess, answer, the science, a move, and a check', () => {
+    if (L.form) return; /* told as a story: its own shape (lesson-stories.ts, test/lesson-stories.test.ts) */
     expect(core.LUNITS[L.u]).toBeTruthy();
     expect(L.cards.map((c) => c.e)).toEqual(expect.arrayContaining(['hook', 'predict', 'answer', 'proof', 'move', 'check']));
     expect(L.cards[0].e).toBe('hook');

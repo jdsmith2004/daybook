@@ -11,6 +11,7 @@ import { SvgXml } from 'react-native-svg';
 
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { useNotifyEnv } from '@/lib/notify-env';
 import { useSos } from '@/lib/sos';
 import { setNotifyMem, setNudgeLog, setReminderPrefs, useNotifyMem, useReminderPrefs } from '@/lib/prefs';
@@ -65,7 +66,10 @@ export function NotifyBanner() {
       </View>
       <Pressable
         accessibilityRole="button"
-        onPress={yes}
+        onPress={() => {
+          buzz('tap');
+          yes();
+        }}
         hitSlop={6}
         style={({ pressed }) => [s.btn, { backgroundColor: c.onSun, opacity: pressed ? 0.85 : 1 }]}>
         <Text style={[s.btnT, { color: c.sun }]}>{ask.yes}</Text>

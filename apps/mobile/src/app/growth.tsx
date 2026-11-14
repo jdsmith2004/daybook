@@ -9,6 +9,7 @@ import { Flame } from '@/components/flame';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Bar, Button, Card, Icon, T } from '@/components/ui';
 import { Dock } from '@/components/scene';
+import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -31,7 +32,10 @@ export default function Growth() {
       accessibilityLabel={label}
       accessibilityState={{ disabled: off }}
       disabled={off}
-      onPress={() => setSi(Math.max(0, Math.min(last, si + d)))}
+      onPress={() => {
+        buzz('tap');
+        setSi(Math.max(0, Math.min(last, si + d)));
+      }}
       style={({ pressed }) => [s.nav, { opacity: off ? 0.4 : pressed ? 0.7 : 1 }]}>
       {d < 0 ? <Icon name="back" size={16} color={c.accentText} /> : null}
       <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText }}>{text}</Text>

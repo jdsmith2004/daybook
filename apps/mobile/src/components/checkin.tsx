@@ -81,6 +81,7 @@ export function CheckinBlock({
             accessibilityRole="button"
             hitSlop={8}
             onPress={() => {
+              buzz('tap');
               if (scene) return router.push({ pathname: '/checkin', params: { k: dkey } });
               setForm(checkinFormOf(snap.days, dkey));
               setEditing(true);

@@ -4,7 +4,8 @@
    - Good night is one page (app/night.tsx): the phone goes to bed, the night's waits are armed (Screen Time, lib/pull.ts), the time is
      kept (p.po, day.ts phoneAway) and the flame sleeps. "N nights put to bed" only grows.
    - Today follows the clock: its sky is dawn, day, dusk or night (skyPhase), and after the night hour (tonight's time, morning-set.ts
-     tonightOf) Today is the night page: one card, Phone to bed, and the care row (afterNightHour).
+     tonightOf) Today is the night page: Phone to bed leads, with the care row and the person's own part of Today under it, and the day's
+     line of stops waits for the morning (afterNightHour; the owner, November 13, 2026, found the one-card night page empty).
 
    New people start without the evening check-in and without "How are you feeling today?" (freshSettings); both stay as switches, and
    people who had them keep them. Faith shows in the two moments only when the person said faith plays a part (faithOn, D10 (a)).
@@ -12,7 +13,7 @@
 import { addDays, defaultSettings, fmtClock, isTime, sumDay } from './legacy/core.js';
 import { faithVoice } from './faith';
 import { gradInfo, GRAD_DAYS } from './graduate';
-import { phoneNights, windCounts } from './day';
+import { phoneNights, setupNight, windCounts } from './day';
 import { morningOf, tonightOf } from './morning-set';
 import type { Clock, DayKey, Days, Settings } from './types';
 
@@ -37,6 +38,9 @@ export function afterNightHour(days: Days, st: Settings, tk: DayKey, now: number
   const n = nowMin(now);
   return !isTime(st.screensOff) || windCounts(st, `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`);
 }
+
+/** whether Today is the night page now: after the night hour, except on the night setup is finished, before any lesson */
+export const nightPage = (days: Days, st: Settings, tk: DayKey, now: number): boolean => afterNightHour(days, st, tk, now) && !setupNight(days, st, tk);
 
 export type SkyPhase = 'dawn' | 'day' | 'dusk' | 'night';
 /** Today's sky, by the clock (D3): dawn from the new day until 9 AM, day until 5 PM, dusk until the night hour, then night. So the sky
@@ -158,9 +162,9 @@ export function finishLine(days: Days, st: Settings, tk: DayKey): string | null 
 export const morningTold = (days: Days, tk: DayKey): boolean => !!morningOf(days[tk])?.n;
 
 /** the reply line under the answer (mockup m1). Plain and sure; It happened gets no ceremony, only that telling is done. */
-export function morningReply(n: 'free' | 'slip', alreadyLogged: boolean): string {
+export function morningReply(n: 'free' | 'slip', alreadyLogged: boolean, planHeld = false): string {
   if (n === 'slip') return alreadyLogged ? 'Last night is logged. Today is open.' : 'Logged. Telling it is your part, and it is done.';
-  return 'A free night. That one is yours for good.';
+  return planHeld ? 'A free night, and your plan held. That one is yours for good.' : 'A free night. That one is yours for good.';
 }
 
 /** the log day before tk, for callers that only have tk */

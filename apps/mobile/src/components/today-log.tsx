@@ -45,20 +45,12 @@ export function LogLink({ walk = true }: { walk?: boolean }) {
   const trailSpot = useSpot('trail', walk);
   return (
     <View style={[s.pair, narrow && { flexDirection: 'column' }]}>
-      <CareButton
-        ref={logSpot}
-        icon="check"
-        title="Already happened?"
-        sub="Log a slip, no shame"
-        label="Already happened? Log a slip here, with no shame."
-        onPress={() => router.push('/log')}
-      />
+      <CareButton ref={logSpot} icon="check" title="Log a slip" label="Log a slip, with no shame." onPress={() => router.push('/log')} />
       {walk ? (
         <CareButton
           ref={trailSpot}
           icon="compass"
           title="Walk it through"
-          sub="When it comes back"
           label="Walk it through: when an urge keeps coming back, or you are planning a slip."
           onPress={() => router.push('/trail')}
         />
@@ -67,22 +59,9 @@ export function LogLink({ walk = true }: { walk?: boolean }) {
   );
 }
 
-/** one of the care buttons: what it is, and under it what it is for */
-function CareButton({
-  ref,
-  icon,
-  title,
-  sub,
-  label,
-  onPress,
-}: {
-  ref?: React.Ref<ViewInstance>;
-  icon: string;
-  title: string;
-  sub: string;
-  label: string;
-  onPress: () => void;
-}) {
+/** one of the care buttons: its name and nothing else (the owner, November 14, 2026: "Already happened should be log a slip. And walk
+    it through should just be walk it through. It doesn't need anything extra.") */
+function CareButton({ ref, icon, title, label, onPress }: { ref?: React.Ref<ViewInstance>; icon: string; title: string; label: string; onPress: () => void }) {
   const c = useTheme();
   return (
     <Pressable
@@ -98,9 +77,6 @@ function CareButton({
       <View style={{ flexShrink: 1 }}>
         <Text style={[s.logT, { color: c.accentText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
           {title}
-        </Text>
-        <Text style={[s.logS, { color: c.muted }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
-          {sub}
         </Text>
       </View>
     </Pressable>
@@ -186,7 +162,6 @@ const s = StyleSheet.create({
   pair: { flexDirection: 'row', gap: 8 },
   log: { flex: 1, flexDirection: 'row', gap: 10, alignItems: 'center', minHeight: 60, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 20 },
   logT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
-  logS: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
   plan: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingHorizontal: 8, paddingVertical: 2 },
   planH: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   planT: { fontFamily: font.body, fontSize: 15, lineHeight: 20 },

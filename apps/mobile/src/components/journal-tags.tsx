@@ -43,7 +43,14 @@ export function JournalTags({ id, onNew }: { id: string; onNew: () => void }) {
           </Pressable>
         );
       })}
-      <Pressable accessibilityRole="button" accessibilityLabel="New tag" onPress={onNew} style={({ pressed }) => [s.tag, { opacity: pressed ? 0.7 : 1 }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="New tag"
+        onPress={() => {
+          buzz('tap');
+          onNew();
+        }}
+        style={({ pressed }) => [s.tag, { opacity: pressed ? 0.7 : 1 }]}>
         <Icon name="plus" size={15} color={JN.quiet} />
         <Text style={s.tagT}>Tag</Text>
       </Pressable>

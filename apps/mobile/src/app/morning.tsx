@@ -30,6 +30,7 @@ import {
   morningOf,
   morningReasons,
   morningReply,
+  heldByMorning,
   NIGHT_TIMES,
   nightAtStart,
   nightSlips,
@@ -49,8 +50,6 @@ import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-na
 import { Appear } from '@/components/appear';
 import { Link } from '@/components/choices';
 import { FlameMedallion } from '@/components/flame-medallion';
-import { Burst } from '@/components/reward-kit';
-import { useReducedMotion } from '@/lib/motion';
 import { StepUp } from '@/components/ignite';
 import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
@@ -85,7 +84,6 @@ export default function Morning() {
   const account = useAccount();
   const c = useTheme();
   const win = useWindowDimensions();
-  const reduce = useReducedMotion();
   const st = snap.settings;
   const level = useMemo(() => (st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1), [snap, st, tk]);
   /* what the page starts on is fixed when it opens */
@@ -237,12 +235,7 @@ export default function Morning() {
         <Middle>
           <View style={s.c}>
             <FlameMedallion level={level} size={big} pulse={pulse} />
-            {/* a free night: confetti thrown up from the flame as it leaps (none under Reduce Motion) */}
-            {pulse && !reduce ? (
-              <View pointerEvents="none" style={{ position: 'absolute', top: 0, width: big, height: big }}>
-                <Burst fire={pulse} x={big / 2} y={big * 0.4} w={win.width * 1.3} n={26} />
-              </View>
-            ) : null}
+            {/* a free night: the flame's own bloom carries it; no confetti on an everyday moment (docs/design-standards.md) */}
             {told && step && n === 'free' ? <StepUp {...step} color={ON} /> : null}
           </View>
         </Middle>
@@ -252,7 +245,7 @@ export default function Morning() {
               <View style={s.told}>
                 {start.logged ? null : <Choice label={n === 'free' ? W.free : W.slip} on onPress={() => setN(null)} />}
                 <Text style={s.reply} accessibilityLiveRegion="polite">
-                  {morningReply(n!, start.logged)}
+                  {morningReply(n!, start.logged, n === 'free' && heldByMorning(snap.days, tk, Date.now()) > 0)}
                 </Text>
                 <View style={s.card}>
                   <Pressable

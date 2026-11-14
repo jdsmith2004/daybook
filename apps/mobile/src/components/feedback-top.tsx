@@ -6,6 +6,7 @@ import { Pressable, StyleSheet } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { pulseOffered } from '@/lib/pulse';
 import { font, useTheme } from '@/lib/theme';
 
@@ -18,7 +19,10 @@ export function FeedbackTop({ on }: { on?: { glass: string; ink: string } }) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Ideas. Send an idea or a change to the person who builds Daybook."
-      onPress={() => router.push('/feedback')}
+      onPress={() => {
+        buzz('tap');
+        router.push('/feedback');
+      }}
       hitSlop={6}
       style={({ pressed }) => [s.top, { backgroundColor: bg, opacity: pressed ? 0.85 : 1 }]}>
       <Icon name="chat" size={15} color={ink} />

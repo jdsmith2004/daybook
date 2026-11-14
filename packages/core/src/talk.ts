@@ -480,6 +480,9 @@ export interface TalkAfter {
   /** feelings and costs in the person's own words (only when there are some) */
   fx?: string[];
   cx?: string[];
+  /** 1 when the morning's Free of it answered it (talk-log.ts settleByMorning), not a look back: no question was asked.
+      Only when it is one. */
+  mn?: 1;
 }
 export interface Talk {
   id: string;
@@ -616,6 +619,7 @@ export function normTalk(x: unknown): Talk | null {
           )
         : null,
   };
+  if (out.a && a && a.mn === 1) out.a.mn = 1;
   withOwn(out, 'nx', out.n ? '' : talkOwn([v.nx], 1)[0] || '');
   withOwn(out, 'mx', talkOwn(v.mx));
   if (v.pr === 1) out.pr = 1;

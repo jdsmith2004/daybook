@@ -8,6 +8,7 @@ import { Animated, Pressable, StyleSheet, View, type ViewInstance, type ViewStyl
 import { BigFlame } from '@/components/big-flame';
 import { SHORT } from '@/components/fit';
 import { Text } from '@/components/text';
+import { buzz } from '@/lib/feel';
 import { BUBBLE, PAPER_INK } from '@/lib/lesson-look';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { font } from '@/lib/theme';
@@ -138,7 +139,10 @@ export function Bubble({
     <Pressable
       accessibilityRole="button"
       accessibilityHint="Reads the longer words"
-      onPress={onMore}
+      onPress={() => {
+        buzz('tap');
+        onMore();
+      }}
       style={({ pressed }) => [style, pressed && { opacity: 0.85 }]}>
       {body}
     </Pressable>

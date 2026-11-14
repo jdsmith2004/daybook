@@ -29,6 +29,7 @@ import {
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { buzz } from '@/lib/feel';
 import { countOnce } from '@/lib/pulse';
 import { track } from '@/lib/events';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -128,7 +129,10 @@ export function TipTop({ on }: { on?: { glass: string; ink: string } }) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Support Daybook. Opens the tips, and what a tip unlocks."
-      onPress={openTip}
+      onPress={() => {
+        buzz('tap');
+        openTip();
+      }}
       hitSlop={6}
       style={({ pressed }) => [s.top, { backgroundColor: bg, opacity: pressed ? 0.85 : 1 }]}>
       <Icon name="heart" size={15} color={ink} />

@@ -378,6 +378,7 @@ function Shell() {
             'ignite',
             'becoming',
             'import/mithras',
+            'love-play',
           ].map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
           ))}

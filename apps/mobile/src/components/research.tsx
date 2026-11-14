@@ -6,6 +6,7 @@ import { Text } from '@/components/text';
 
 import { Reveal } from '@/components/form';
 import { Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
 /** the short name of a source, for its chip: "Sayette, Loewenstein, Griffin & Black (2008)" */
@@ -22,7 +23,10 @@ export function Sources({ keys, map }: { keys: string[]; map: Record<string, [st
             key={k}
             accessibilityRole="link"
             accessibilityLabel={'Source: ' + map[k][0]}
-            onPress={() => Linking.openURL(map[k][1]).catch(() => undefined)}
+            onPress={() => {
+              buzz('tap');
+              Linking.openURL(map[k][1]).catch(() => undefined);
+            }}
             style={({ pressed }) => [s.src, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
             <Icon name="book" size={13} color={c.accentText} />
             <Text style={[s.srcT, { color: c.accentText }]} numberOfLines={1}>
@@ -48,7 +52,10 @@ export function SourceLine({ keys, map }: { keys: string[]; map: Record<string, 
           accessibilityRole="link"
           accessibilityLabel={'Source: ' + map[k][0]}
           hitSlop={6}
-          onPress={() => Linking.openURL(map[k][1]).catch(() => undefined)}
+          onPress={() => {
+            buzz('tap');
+            Linking.openURL(map[k][1]).catch(() => undefined);
+          }}
           style={({ pressed }) => [s.lineI, pressed && { opacity: 0.6 }]}>
           <Text style={[s.lineT, { color: c.muted }]} numberOfLines={1}>
             {srcName(map, k) + (i < ks.length - 1 ? ' ·' : '')}
@@ -79,7 +86,14 @@ export function KnownLine({
   const [open, setOpen] = useState(false);
   return (
     <View style={[s.known, { backgroundColor: c.surface }]}>
-      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={s.knownHead}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => {
+          buzz('tap');
+          setOpen(!open);
+        }}
+        style={s.knownHead}>
         <Icon name={icon} size={18} color={c.mintText} />
         <T style={{ flex: 1 }}>{short}</T>
         <Icon name={open ? 'up' : 'down'} size={18} color={c.muted} />

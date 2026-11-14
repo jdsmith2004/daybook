@@ -5,6 +5,7 @@
    until it has passed. */
 import { addDays, blankP, clockOf } from './legacy/core.js';
 import { addEvent, changeDay, withDay } from './mutate';
+import { normMorning } from './morning-norm';
 import { riskAt, riskWindow } from './risk';
 import {
   normTalk,
@@ -177,6 +178,10 @@ export function talkDueNow(days: Days, st: Settings | null, tk: DayKey, now: num
     moved[k] = { ...moved[k]!, p: { ...p, tt: normTalks(p.tt).map((x) => (x.id === talk.id ? { ...x, at: talkMomentAt(x) } : x)) } };
   }
   const d = talkDue(moved || days, now, hard);
+  /* a talk-through from last night while this morning's "How was last night?" is still to answer: the morning asks, and its
+     answer settles it (settleByMorning), so Today does not ask the same thing twice */
+  if (d && d.due !== 'plan' && d.due !== 'waiting' && morningPending(days, st, tk) && lastNight(days, tk, now).some((x) => x.talk.id === d.talk.id))
+    return null;
   if (!d || !moved) return d;
   const real = talkById(days, d.talk.id);
   return real ? { ...d, talk: real.talk } : d;
@@ -227,3 +232,57 @@ export function talkPlanAhead(days: Days, now: number): { talk: Talk; start: num
   const m = talkNextMoment(last.talk);
   return m.start > now ? { talk: last.talk, start: m.start, mo: m.mo } : null;
 }
+
+/* ---------- the morning answers last night's plans (the owner, November 14, 2026) ----------
+   "If when they open the app, we ask them if they slipped the day before ... then did your plan hold is worthless, because if we
+   say no, then they're going to say, I already told you that." So the morning's "How was last night?" is the answer for every
+   talk-through whose moment was last night: Free of it settles it as held (a decide-later as passed, an eyes-open go-ahead as
+   something else chosen), with mn 1, and Today never asks; It happened is already settled by the slip it logs (slipSince). A
+   plan for the daytime is not covered by "last night", so its look back still opens as before. */
+
+/** from this hour on the log day before, a moment is part of "last night" for the morning's answer (After work, 5:30 PM, is) */
+export const TALK_NIGHT_FROM = 17;
+
+/** when a talk-through's moment is: a changed plan's (talkMomentAt), a decide-later's time to decide, or a go-ahead's own time */
+const momentOf = (t: Talk): number => (t.p === 'change' ? talkMomentAt(t) : t.p === 'wait' ? (t.at ?? t.t) : t.t);
+
+/** the talk-throughs whose moment was last night as the morning on tk reads it: from 5 PM on the log day before until 4 AM on
+    tk's date (the usual rollover), and before now. A talk-through in the early morning is this morning's, not last night's. */
+function lastNight(days: Days, tk: DayKey, now: number): { k: DayKey; talk: Talk }[] {
+  const [y, m, d] = addDays(tk, -1).split('-').map(Number);
+  const from = new Date(y, m - 1, d, TALK_NIGHT_FROM).getTime();
+  const to = Math.min(now, new Date(y, m - 1, d + 1, NIGHT_TO).getTime());
+  return talksOf(days).filter(({ talk }) => {
+    if (!talk.p || talk.t >= to) return false;
+    const mo = momentOf(talk);
+    return mo >= from && mo < to;
+  });
+}
+const NIGHT_TO = 4;
+
+/** the morning on tk said Free of it: each talk-through whose moment was last night, not looked back on and with no slip since,
+    is settled as held. No calm move is added (the morning earns its own), so changing the answer takes nothing away. */
+export function settleByMorning(days: Days, tk: DayKey, now = Date.now()): Days {
+  let out = days;
+  for (const { k, talk } of lastNight(days, tk, now)) {
+    if (talk.a || slipSince(days, k, talk.t)) continue;
+    out = saveTalk(out, k, { ...talk, a: { went: false, t: now, f: [], g: null, c: [], mn: 1 } }, now);
+  }
+  return out;
+}
+/** the morning's answer changed to It happened: what Free of it settled is open again, and the slip it logs settles it */
+export function unsettleByMorning(days: Days, tk: DayKey, now = Date.now()): Days {
+  let out = days;
+  for (const { k, talk } of lastNight(days, tk, now)) if (talk.a?.mn === 1) out = saveTalk(out, k, { ...talk, a: null }, now);
+  return out;
+}
+/** whether this morning's "How was last night?" is still to answer: the morning comes (setup done, not the first day), and it
+    was neither told nor closed */
+function morningPending(days: Days, st: Settings | null, tk: DayKey): boolean {
+  if (!st || !st.start || tk <= st.start) return false;
+  const ms = normMorning(days[tk]?.p?.ms);
+  return !ms?.n && !ms?.x;
+}
+/** the changed plans the morning on tk settled as held, for the morning's quiet line ("and your plan held") */
+export const heldByMorning = (days: Days, tk: DayKey, now: number): number =>
+  lastNight(days, tk, now).filter(({ talk }) => talk.p === 'change' && talk.a?.mn === 1).length;

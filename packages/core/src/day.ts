@@ -219,6 +219,13 @@ export function stepSleep(days: Days, tk: DayKey, dd: number, now = Date.now()):
   );
   return withDay(days, tk, day);
 }
+/** the night setup is finished, before any lesson: Today stays the day page then, so lesson 1 (and the first tour's last step, "Start
+    lesson 1") is there and is the open stop; the night page is for the nights after, and for that night once a lesson is done (the owner, November 13, 2026:
+    "at nightime when i onboard it doesn't show a lesson or anything") */
+export function setupNight(days: Days, st: Settings, tk: DayKey): boolean {
+  return st.start === tk && !Object.values(days).some((d) => !!(d?.p?.ls?.length || d?.p?.lv?.length));
+}
+
 /* ---------- lessons first ---------- */
 /** the day's stops (legacy rhythm), with today's lesson the open one until it is done (docs/plan.md, "Lessons first", C1), or
     until the night opens: from then the wind-down is the open one, and an unread lesson steps aside and says "Still open" (the
@@ -236,7 +243,7 @@ export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): 
   const nowRel = (((nowLocal.getHours() * 60 + nowLocal.getMinutes() - rollMin) % 1440) + 1440) % 1440;
   if (night && night.started && nowRel - night.startRel < NIGHT_LONGEST_MIN) {
     if (sumDay(days[tk]).slipped) return { ...r, stops: r.stops.filter((x) => x.done || x.k === 'night'), cur: night.done ? null : 'night' };
-    if (!night.done) return r;
+    if (!night.done && !setupNight(days, st, tk)) return r;
   }
   const ls = r.stops.find((x) => x.k === 'lesson');
   if (!ls || ls.done || r.cur === 'lesson') return r;

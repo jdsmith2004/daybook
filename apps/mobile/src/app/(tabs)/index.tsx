@@ -42,7 +42,7 @@ import {
   standRow,
   sunriseDue,
   morningDue,
-  afterNightHour,
+  nightPage,
   skyPhase,
   fmtClock,
   stopTiles,
@@ -255,22 +255,20 @@ export default function Today() {
     );
   }, [ready, st, snap.days, tk, now, update, say, syncing]);
 
-  /* Today always opens on the flame and the next step: once it is out of sight (another tab, a lesson, a page, or the app
-     put away), it goes back to the top, so coming back never shows it jump. A sheet only covers part of it, so a sheet
-     keeps the place. */
+  /* coming back to Today keeps the place: a page opened from Today (If it gets hard tonight, Who you are becoming, a lesson)
+     returns to where it was opened (the owner, November 14, 2026: "when I go back, it starts me at the top of today instead of
+     where I opened the page"). Today goes back to the flame only after the app was put away, or after a long time away. */
   const scroll = useRef<ScrollViewInstance>(null);
   const top = useCallback(() => scroll.current?.scrollTo({ y: 0, animated: false }), []);
   const away = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const left = useRef(false);
+  const leftAt = useRef(0);
   useFocusEffect(
     useCallback(() => {
       clearTimeout(away.current);
-      /* a hidden tab cannot scroll on the web, so it also goes up as it comes back, before it is drawn */
-      if (left.current) top();
-      left.current = false;
+      if (leftAt.current && Date.now() - leftAt.current > AWAY_LONG) top();
+      leftAt.current = 0;
       return () => {
-        left.current = !sheetOnTop();
-        if (left.current) away.current = setTimeout(top, 450);
+        leftAt.current = Date.now();
       };
     }, [top]),
   );
@@ -379,7 +377,8 @@ export default function Today() {
   const title = fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' });
   const ink = skyInk(g.level.n, skyPhase(snap.days, st, tk, now));
   /* after the night hour (tonight's time, core two-moments.ts), until the new day */
-  const night = afterNightHour(snap.days, st, tk, now);
+  /* the night page; not on the night setup is finished before any lesson, so lesson 1 is there (core two-moments.ts setupNight) */
+  const night = nightPage(snap.days, st, tk, now);
   /* a long day's list takes a little of the empty sky over the flame (lib/today-size.ts skyTrim; the hero keeps the flame whole) */
   const trim = night ? 0 : skyTrim(stopTiles(snap.days, st, tk, now, snap.journal, !!account).tiles.length);
   /* the Good night stop, even on a day its row is switched off: Phone to bed is always the night's one card */
@@ -446,9 +445,15 @@ export default function Today() {
           </View>
         }>
         {night ? (
-          /* after the night hour, Today is the night page: one card, Phone to bed, and the care row; nothing else (WP5, mockup m3). On the
-             night of a slip, its own card is the one card instead (its Go to bed is the same act): bringing the person back is the job then. */
+          /* after the night hour, under the care row, Phone to bed leads (WP5, mockup m3), and the rest of Today stays under it: the person's own words, tonight's
+             reason, the hard hours and the plan (the owner, November 13, 2026: "I don't like the main screen just being empty like that").
+             What waits for the day (the line of stops, its lesson, the asks) is left for the morning. On the night of a slip, its own card
+             leads instead (its Go to bed is the same act): bringing the person back is the job then. */
           <>
+            {/* the care row always sits at the top, right under the flame, as on the day page (the owner, November 13, 2026: "already
+                hapened and walk it through are always on the top") */}
+            <WaitingPlan snap={snap} tk={tk} now={now} />
+            <LogLink walk={!walkWaits} />
             {pick.card.k === 'slip-day' ? (
               <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />
             ) : nightTile ? (
@@ -461,14 +466,19 @@ export default function Today() {
                 t={nightTile}
               />
             ) : null}
-            <WaitingPlan snap={snap} tk={tk} now={now} />
-            <LogLink walk={!walkWaits} />
+            <NotifyBanner />
             {/* Screen Time not working: said here too, since the night is when it matters (WP2) */}
             <PullTroubleStrip />
+            <TodayBelow snap={snap} tk={tk} now={now} />
+            <SyncStrip />
+            <NightWinCard snap={snap} tk={tk} />
           </>
         ) : (
           dayPage
         )}
+        {/* while a tour is open, room under the page so it can scroll a lit part up clear of the flame's words (the owner, November 13,
+            2026: "i can't see the thing ... bc it's blocked": on a short Today the page could not move, and the bubble sat on it) */}
+        {touring || walkOpen ? <View style={{ height: TOUR_ROOM }} /> : null}
       </Screen>
       {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
       {walkOpen && g && !touring ? (
@@ -507,6 +517,12 @@ export default function Today() {
     </View>
   );
 }
+
+/** how long away from Today before it goes back to the flame */
+const AWAY_LONG = 30 * 60 * 1000;
+
+/** the room under Today while a tour is open: about the flame's panel and the tab bar */
+const TOUR_ROOM = 380;
 
 const s = StyleSheet.create({
   line: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, paddingHorizontal: 16 },

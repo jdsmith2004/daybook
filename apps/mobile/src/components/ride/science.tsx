@@ -81,7 +81,7 @@ export function ScienceSheet({ id, name, open, night, onClose }: { id: string; n
                     icon="book"
                     onPress={() => {
                       onClose();
-                      router.push({ pathname: '/lesson/[id]', params: { id: sci.lesson!.id } });
+                      router.push({ pathname: '/lesson/[id]', params: { id: sci.lesson!.id, pick: '1' } });
                     }}
                   />
                 ) : null}

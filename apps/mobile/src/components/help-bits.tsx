@@ -49,7 +49,10 @@ export function Ext({ url, label }: { url: string; label: string }) {
     <Pressable
       accessibilityRole="link"
       accessibilityHint="Opens outside the app"
-      onPress={() => Linking.openURL(url).catch(() => undefined)}
+      onPress={() => {
+        buzz('tap');
+        Linking.openURL(url).catch(() => undefined);
+      }}
       hitSlop={6}
       style={s.ext}>
       <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText }}>{label}</Text>
@@ -154,7 +157,7 @@ export function RelLesson({ id }: { id: string }) {
       icon="book"
       title={(lessonNo(L, snap.settings) ? `Lesson ${lessonNo(L, snap.settings)}: ` : '') + L.title}
       sub={g === 'key' ? 'The key idea' : w.walked.has(id) ? 'Done · read it again' : lmin(L) + ' · up next'}
-      onPress={() => router.push({ pathname: '/lesson/[id]', params: { id } })}
+      onPress={() => router.push({ pathname: '/lesson/[id]', params: { id, pick: '1' } })}
     />
   );
 }

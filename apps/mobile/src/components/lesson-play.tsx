@@ -7,6 +7,7 @@ import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { RIGHT, RIGHT_LIP } from '@/lib/lesson-look';
 import { font } from '@/lib/theme';
@@ -64,6 +65,10 @@ function Run({ n, color }: { n: number; color: string }) {
 /** the words of praise on the bar, picked by the card so the same card always says the same thing */
 const PRAISE = ['Nice.', 'Good.', 'Well said.', 'Yes.', 'Nicely done.', 'Good one.'];
 export const praiseFor = (k: number, run: number) => (run === 5 ? 'Five in a row.' : run === 10 ? 'Ten in a row.' : PRAISE[k % PRAISE.length]);
+/** the word on the bar after a question with no right answer, about the person's own life: it thanks them, and never sounds like a
+    verdict on what they picked (the owner, November 14, 2026, docs/lessons.md) */
+const THANKS = ['Thank you.', 'Good to know.', 'Honest answer.'];
+export const thanksFor = (k: number) => THANKS[k % THANKS.length];
 
 /** the bar that slides up from the bottom once a card is answered: a word of praise with a tick, the flame's reply, and the button.
     It covers the low part of the screen, as Duolingo's does, so the next step is the only thing to do. */
@@ -103,7 +108,14 @@ export function Praise({
           {word}
         </Text>
         {onMore ? (
-          <Pressable accessibilityRole="button" onPress={onMore} hitSlop={10} style={s.more}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              buzz('tap');
+              onMore();
+            }}
+            hitSlop={10}
+            style={s.more}>
             <Text style={s.moreT}>More</Text>
           </Pressable>
         ) : null}
@@ -119,7 +131,10 @@ export function Go({ label, onPress, icon }: { label: string; onPress: () => voi
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.go, { shadowOffset: { width: 0, height: pressed ? 1 : 4 }, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
       <Text style={s.goT} numberOfLines={2}>
         {label}

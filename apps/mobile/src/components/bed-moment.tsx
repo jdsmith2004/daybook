@@ -16,7 +16,7 @@ import { NightMiddle } from '@/components/night-flame';
 import { Text } from '@/components/text';
 import { Button, Icon } from '@/components/ui';
 import { knock } from '@/lib/feel';
-import { useReducedMotion } from '@/lib/motion';
+import { SETTLE, useReducedMotion } from '@/lib/motion';
 import { font, nightInk } from '@/lib/theme';
 
 const SKY = '#120E38';
@@ -73,7 +73,7 @@ export function BedMoment({
     });
     at(AT.mark, () => {
       knock(Haptics.ImpactFeedbackStyle.Soft);
-      mark.value = withSpring(1, { damping: 9, stiffness: 160 });
+      mark.value = withSpring(1, SETTLE);
     });
     at(AT.line, () => {
       say.value = withTiming(1, { duration: 500 });

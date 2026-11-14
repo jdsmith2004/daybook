@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isVideoId, LOVE_VIDEOS, loveEmbed } from '../src/resources';
+import { isVideoId, LOVE_KINDS, LOVE_VIDEOS, loveEmbed, loveGroups } from '../src/resources';
 
 describe('love videos', () => {
   it('every entry has a real video id, a short title and at most one short line', () => {
@@ -23,5 +23,12 @@ describe('love videos', () => {
   it('turns away an address or a typo in place of an id', () => {
     expect(isVideoId('https://youtu.be/iqGAW57EudQ')).toBe(false);
     expect(isVideoId('iqGAW57Eud')).toBe(false);
+  });
+  it('every video is in exactly one group, and an empty group is left out', () => {
+    const groups = loveGroups();
+    expect(groups.flatMap((g) => g.videos).length).toBe(LOVE_VIDEOS.length);
+    for (const g of groups) expect(g.videos.length).toBeGreaterThan(0);
+    for (const v of LOVE_VIDEOS) if (v.kind) expect(LOVE_KINDS.map((k) => k.kind)).toContain(v.kind);
+    expect(loveGroups([{ id: 'iqGAW57EudQ', title: 'A', kind: 'lift' }]).map((g) => g.kind)).toEqual(['lift']);
   });
 });

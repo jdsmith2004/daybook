@@ -11,11 +11,14 @@
    3. the points rise in low and count up, then glide into the level line and are gone into it as it fills; a new level turns
       the label over and the flame blooms once;
    4. the lessons line fills by this one;
+   Each line runs to its next milestone, a round mark at its end (the next level; the end of this step of the path), and never
+   says what it is out of (the owner, November 14, 2026: "show it in perspective to the next milestone ... don't say what it's
+   out of");
    5. the flame says the one line to keep, and the one button, Continue, back to wherever the lesson was opened.
    About four seconds; a tap anywhere brings it all in at once. Reduce Motion: no opener, everything in and settled, one buzz.
    In the hours after a slip (core ptsQuiet) the points and the level line are not shown, as everywhere else: the lesson itself
    is the win. A lesson read again earns no points, so nothing glides. */
-import { gameCompute, lessonCount, lessonWalk, levelOf, ptsQuiet } from '@daybook/core';
+import { gameCompute, lessonCount, lessonWalk, levelOf, LOOKS, ptsQuiet, stepProgress } from '@daybook/core';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View, type ViewInstance } from 'react-native';
@@ -44,10 +47,14 @@ import { useStore } from '@/lib/store';
 import { font, nightInk } from '@/lib/theme';
 
 const GOLD = '#FFD25A';
+/** each face's place in core LOOKS */
+const LOOK = Object.fromEntries(LOOKS.map((k, i) => [k, i])) as Record<(typeof LOOKS)[number], number>;
 const NIGHT = '#16113A';
 const BAND = '#2E2477';
 const LIP = '#D99A12';
 const ORANGE = '#FF9A2E';
+/** the lessons line, apart from the gold of the points and the level */
+const MINT = '#5EE0B5';
 /** a four-point star, in a 24 box */
 const STAR = 'M12 0C13 8 16 11 24 12C16 13 13 16 12 24C11 16 8 13 0 12C8 11 11 8 12 0Z';
 /* the curves: things arrive decelerating, travel easing both ways, and nothing passes its mark */
@@ -76,25 +83,29 @@ export interface LessonFinishProps {
 /* when each beat starts, in ms */
 const T = {
   /** the band and the flame glide in */
-  inMs: 380,
+  inMs: 420,
+  /** the band opens from a line across the middle, and the flame slides in once it is open */
+  slitMs: 260,
+  slideAt: 160,
   /** the opener holds, then the flame travels to its place */
-  settle: 1150,
+  settle: 1350,
   settleMs: 560,
   /** the title, the halo and the two lines come in as the flame arrives */
-  rest: 1450,
+  rest: 1650,
   /** the points rise in and count up */
-  pts: 1800,
+  pts: 2000,
   /** the points glide into the level line */
-  glide: 2500,
+  glide: 2700,
   glideMs: 600,
   /** the level line fills */
   fillMs: 700,
 };
 
 type Line = { x0: number; y0: number; x1: number; y1: number };
-type Lessons = { done: number; of: number; from: number; to: number };
+/* name: the step the lesson is in, the milestone the line runs to; null when the line is the whole path */
+type Lessons = { name: string | null; from: number; to: number };
 
-export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFinishProps) {
+export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: LessonFinishProps) {
   const { snap, tk, now } = useStore();
   const st = snap.settings;
   const win = useWindowDimensions();
@@ -111,13 +122,17 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
   const up = m.after.n > m.before.n;
   /* with the level line hidden (the hours after a slip) nothing is shown; with it, the points end up inside it */
   const flying = m.shown > 0 && !m.quiet;
-  /* the lessons line: done of the path, this one included (it is recorded before this page); a read again adds nothing */
+  /* the lessons line runs to the next milestone, the end of this step (the owner, November 14, 2026: "show it in perspective to
+     the next milestone ... don't say what it's out of"), this one included (it is recorded before this page); a read again adds
+     nothing. A lesson off the path runs along the whole path. */
   const [lessons] = useState<Lessons | null>(() => {
     if (!st) return null;
-    const c = lessonCount(lessonWalk(snap.days, st));
+    const w = lessonWalk(snap.days, st);
+    const p = stepProgress(w, lessonId);
+    const c = p ?? lessonCount(w);
     if (!c.of) return null;
     const before = again ? c.done : Math.max(0, c.done - 1);
-    return { done: c.done, of: c.of, from: before / c.of, to: c.done / c.of };
+    return { name: p ? p.name : null, from: before / c.of, to: c.done / c.of };
   });
 
   const [beat, setBeat] = useState(still ? 2 : 0);
@@ -134,6 +149,8 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
   const enter = useSharedValue(still ? 1 : 0);
   const open = useSharedValue(still ? 0 : 1);
   const drift = useSharedValue(0);
+  /* the band opening, from a line to its full height */
+  const slit = useSharedValue(still ? 1 : 0);
   const shout = useSharedValue(0);
   const glint = useSharedValue(0);
   /* the page at rest */
@@ -147,6 +164,13 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
   const lessonsFill = useSharedValue(still || !lessons ? (lessons?.to ?? 0) : lessons.from);
   const say = useSharedValue(still ? 1 : 0);
   const btn = useSharedValue(still ? 1 : 0);
+  /* the flame acting, as Duolingo's owl does on its finish (the owner, November 14, 2026: "the owl has like clever movements"):
+     its eyes (0 open, 1 shut), a slow sway on its feet once it is home, and a nod toward the level line as the points land */
+  const look = useSharedValue(0);
+  const sway = useSharedValue(0);
+  const nod = useSharedValue(0);
+  /* the line to keep writes itself out, letter by letter, once the flame says it */
+  const [typed, setTyped] = useState(still ? keep.length : 0);
 
   /* the flame, the points and the level line, measured in the window: the flame starts in the middle of the screen, and the
      points glide from where they rose into the line (to where it will end, or to its end when it fills to a new level) */
@@ -192,6 +216,10 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
     if (lessons) lessonsFill.value = withTiming(lessons.to, q);
     setLvl(m.after.n);
     setCount(m.shown);
+    setTyped(keep.length);
+    slit.value = 1;
+    look.value = 0;
+    nod.value = withTiming(0, q);
     setLanded(true);
     setBeat(2);
   };
@@ -206,10 +234,36 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
     /* 1. the band and the flame glide in, the words rise under them, a few glints drift off */
     play('chime');
     buzz('lit');
-    enter.value = withTiming(1, { duration: T.inMs, easing: OUT });
+    slit.value = withTiming(1, { duration: T.slitMs, easing: OUT });
+    enter.value = withDelay(T.slideAt, withTiming(1, { duration: T.inMs, easing: OUT }));
     drift.value = withTiming(1, { duration: T.settle + T.settleMs, easing: Easing.linear });
-    shout.value = withDelay(140, withTiming(1, { duration: 420, easing: OUT }));
-    glint.value = withDelay(180, withTiming(1, { duration: 1700, easing: Easing.linear }));
+    shout.value = withDelay(T.slideAt + 260, withTiming(1, { duration: 420, easing: OUT }));
+    glint.value = withDelay(T.slideAt + 300, withTiming(1, { duration: 1700, easing: Easing.linear }));
+    /* the flame comes home pleased with itself: a happy squint, then it sways a little on its feet and acts, at no exact beat, for
+       as long as the page is open: a glance one way and the other, a sly look, a quick squint (the faces are core LOOKS) */
+    const home = T.settle + T.settleMs;
+    const face = (k: number, ms: number) => {
+      look.value = k;
+      at(ms, () => (look.value = 0));
+    };
+    at(home - 80, () => face(LOOK.happy, 720));
+    sway.value = withDelay(home + 300, withRepeat(withTiming(1, { duration: 1700, easing: Easing.inOut(Easing.sin) }), -1, true));
+    const acts: [number, number, number][] = [
+      [LOOK.left, 620, 2200],
+      [LOOK.right, 620, 260],
+      [LOOK.slyRight, 1300, 2000],
+      [LOOK.happy, 150, 2300],
+      [LOOK.slyLeft, 1100, 2100],
+      [LOOK.happy, 150, 2600],
+    ];
+    let t = home + 1400;
+    for (let round = 0; round < 4; round++)
+      for (const [k, ms, gap] of acts) {
+        t += gap;
+        const at0 = t;
+        at(at0, () => face(k, ms));
+        t += ms;
+      }
     /* 2. one continuous move: the band fades as the flame travels to its place */
     open.value = withDelay(T.settle, withTiming(0, { duration: T.settleMs, easing: BOTH }));
     rest.value = withDelay(T.rest, withTiming(1, { duration: 480, easing: OUT }));
@@ -225,6 +279,12 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
       }
       go.value = withDelay(T.glide, withTiming(1, { duration: T.glideMs, easing: BOTH }));
       const into = T.glide + T.glideMs - 120;
+      /* the flame looks down at the line as the points go in, and back up */
+      at(T.glide, () => face(LOOK.down, T.glideMs + 300));
+      nod.value = withDelay(
+        T.glide,
+        withSequence(withTiming(1, { duration: T.glideMs, easing: BOTH }), withDelay(260, withTiming(0, { duration: 520, easing: BOTH }))),
+      );
       at(into, () => {
         buzz('tick');
         if (!up) setLanded(true);
@@ -239,6 +299,7 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
           setLanded(true);
           buzz('lit');
           setPulse((p) => p + 1);
+          face(LOOK.happy, 640);
           bar.value = 0;
           bar.value = withTiming(m.after.frac, { duration: 520, easing: OUT });
         });
@@ -253,7 +314,8 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
       lessonsFill.value = withDelay(next, withTiming(lessons.to, { duration: 600, easing: OUT }));
       next += 200;
     }
-    say.value = withDelay(next, withTiming(1, { duration: 420, easing: OUT }));
+    say.value = withDelay(next, withTiming(1, { duration: 300, easing: OUT }));
+    for (let k = 1; k <= keep.length; k++) at(next + 160 + k * 26, () => setTyped(k));
     btn.value = withDelay(next + 200, withTiming(1, { duration: 420, easing: OUT }));
     at(next + 200, () => setBeat(2));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -263,22 +325,30 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
   const flameIn = useAnimatedStyle(() => ({
     opacity: still || spot ? Math.min(1, enter.value * 1.4) : 0,
     transform: [
+      { translateX: -win.width * 0.75 * (1 - enter.value) },
       { translateY: dy * open.value },
-      { scale: ((1 + (K - 1) * open.value) / K) * (0.92 + 0.08 * enter.value) * (1 + 0.025 * drift.value * open.value) },
+      /* the camera pushes in slowly while the opener holds, as Duolingo's does */
+      { scale: ((1 + (K - 1) * open.value) / K) * (0.92 + 0.08 * enter.value) * (1 + 0.1 * drift.value * open.value) },
     ],
   }));
-  /* the band glides in from the left, drifts a little while it holds, and fades as the flame leaves it */
+  /* the band opens from a line across the middle (the owner, November 14, 2026: "the lightning starts in the middle and opens
+     vertically"), drifts a little while it holds, and as the flame leaves it, it rises away and fades */
   const bandIn = useAnimatedStyle(() => ({
-    opacity: enter.value * interpolate(open.value, [0.35, 1], [0, 1], 'clamp'),
+    opacity: Math.min(1, slit.value * 3) * interpolate(open.value, [0.2, 0.9], [0, 1], 'clamp'),
     transform: [
-      { translateX: -win.width * 0.6 * (1 - enter.value) + 16 * drift.value },
+      { translateY: -win.height * 0.22 * (1 - open.value) },
+      { translateX: 16 * drift.value },
       { rotate: '-8deg' },
-      { scaleY: interpolate(open.value, [0, 1], [0.7, 1]) },
+      { scaleY: Math.max(0.02, slit.value) },
+      { scale: 1 + 0.08 * drift.value },
     ],
   }));
   const shoutIn = useAnimatedStyle(() => ({
     opacity: shout.value * interpolate(open.value, [0.55, 1], [0, 1], 'clamp'),
     transform: [{ translateY: 10 * (1 - shout.value) }],
+  }));
+  const actIn = useAnimatedStyle(() => ({
+    transform: [{ translateY: 4 * nod.value }, { rotate: `${(sway.value * 2 - 1) * 2.2 * rest.value + 4 * nod.value}deg` }],
   }));
   const restIn = useAnimatedStyle(() => ({ opacity: rest.value, transform: [{ translateY: 8 * (1 - rest.value) }] }));
   const ptsIn = useAnimatedStyle(() => {
@@ -297,6 +367,7 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
   const btnIn = useAnimatedStyle(() => ({ opacity: btn.value, transform: [{ translateY: 12 * (1 - btn.value) }] }));
   const lv = landed ? m.after : m.before;
   const ptsLeft = lv.next == null ? null : lv.toNext;
+  const stepDone = !!lessons && lessons.to >= 1;
 
   return (
     <View ref={root} style={s.page} onLayout={measure}>
@@ -307,13 +378,15 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
       <Pressable style={StyleSheet.absoluteFill} accessible={false} onPress={() => beat === 1 && all()} />
       <View style={[s.col, { paddingTop: inset.top + (SHORT ? 12 : 28) }]} pointerEvents="box-none">
         <Reanimated.View style={[s.bubble, sayIn]} pointerEvents="none">
-          <Bubble text={keep} />
+          <Bubble text={keep} shown={typed} />
         </Reanimated.View>
         <View ref={flameRef} onLayout={measure} style={{ width: big, height: big, marginVertical: 14 }} pointerEvents="none">
           <Halo v={rest} size={big} still={still} />
           <Sparkles v={rest} size={big} still={still} />
           <Reanimated.View style={[{ position: 'absolute', width: B, height: B, left: (big - B) / 2, top: (big - B) / 2 }, flameIn]}>
-            <BigFlame level={lvl} size={B} pulse={pulse} noLand />
+            <Reanimated.View style={[{ transformOrigin: '50% 88%' }, actIn]}>
+              <BigFlame level={lvl} size={B} pulse={pulse} noLand look={still ? undefined : look} />
+            </Reanimated.View>
           </Reanimated.View>
         </View>
         <Reanimated.View style={restIn}>
@@ -341,29 +414,47 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
             style={[s.lineBox, restIn]}
             accessible
             accessibilityLabel={`Level ${lvl}${ptsLeft != null ? ', ' + ptsLeft + ' points to the next' : ''}`}>
-            <View style={s.lineHead}>
-              <Reanimated.Text style={[s.lineLabel, lvIn]}>Level {lvl}</Reanimated.Text>
-              {ptsLeft != null ? <Text style={s.lineRight}>{ptsLeft} to the next</Text> : null}
-            </View>
-            <View>
+            <Reanimated.Text style={[s.lineLabel, lvIn]}>Level {lvl}</Reanimated.Text>
+            <View style={s.lineRow}>
               <View ref={trackRef} onLayout={measure} style={s.track}>
                 <Reanimated.View style={[s.fill, barIn]}>
                   <View style={s.shine} />
                 </Reanimated.View>
               </View>
+              {/* the milestone at the end of the line: the next level, lit when the line reaches it */}
+              {ptsLeft != null ? (
+                <Reanimated.View style={[s.goal, lvIn]}>
+                  <Text style={s.goalNum}>{lvl + 1}</Text>
+                </Reanimated.View>
+              ) : null}
             </View>
           </Reanimated.View>
         ) : null}
         {lessons ? (
-          <Reanimated.View style={[s.lineBox, lessonsIn]} accessible accessibilityLabel={lessons.done + ' of ' + lessons.of + ' lessons done'}>
+          <Reanimated.View
+            style={[s.lineBox, lessonsIn]}
+            accessible
+            accessibilityLabel={`Lesson ${n}${lessons.name ? ', on the way to the end of ' + lessons.name : ''}`}>
             <View style={s.lineHead}>
-              <Text style={s.lineLabel}>Lessons</Text>
-              <Text style={s.lineRight}>{lessons.done + ' of ' + lessons.of}</Text>
+              <Text style={s.lineLabel}>Lesson {n}</Text>
+              {lessons.name ? (
+                <Text style={s.lineRight} numberOfLines={1}>
+                  {lessons.name}
+                </Text>
+              ) : null}
             </View>
-            <View style={s.track}>
-              <Reanimated.View style={[s.fill, lessonsBar]}>
-                <View style={s.shine} />
-              </Reanimated.View>
+            <View style={s.lineRow}>
+              <View style={s.track}>
+                <Reanimated.View style={[s.fill, s.fillLessons, lessonsBar]}>
+                  <View style={s.shine} />
+                </Reanimated.View>
+              </View>
+              {/* the milestone: the end of the step, a star that is full once the step is done */}
+              <View style={[s.goal, s.goalLessons, stepDone && s.goalLessonsOn]}>
+                <Svg width={14} height={14} viewBox="0 0 24 24">
+                  <Path d={STAR} fill={stepDone ? NIGHT : MINT} />
+                </Svg>
+              </View>
             </View>
           </Reanimated.View>
         ) : null}
@@ -490,11 +581,18 @@ const s = StyleSheet.create({
   ptsNum: { fontFamily: font.display, fontSize: 40, color: GOLD },
   ptsWord: { fontFamily: font.bodyBold, fontSize: 20, color: GOLD },
   lineBox: { alignSelf: 'center', width: '100%', maxWidth: 360, gap: 8 },
-  lineHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  lineHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 },
+  lineRow: { flexDirection: 'row', alignItems: 'center' },
   lineLabel: { fontFamily: font.display, fontSize: 17, color: nightInk.ink },
-  lineRight: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted },
-  track: { height: 20, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
-  fill: { height: 20, borderRadius: 10, backgroundColor: GOLD, paddingTop: 4, paddingHorizontal: 8 },
+  lineRight: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted, flexShrink: 1 },
+  track: { flex: 1, height: 18, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden', marginRight: -14 },
+  fill: { height: 18, borderRadius: 9, backgroundColor: GOLD, paddingTop: 4, paddingHorizontal: 8 },
+  fillLessons: { backgroundColor: MINT },
+  /* the round milestone the line runs into, sitting over its end */
+  goal: { width: 34, height: 34, borderRadius: 17, borderWidth: 3, borderColor: GOLD, backgroundColor: NIGHT, alignItems: 'center', justifyContent: 'center' },
+  goalNum: { fontFamily: font.display, fontSize: 13, color: GOLD },
+  goalLessons: { borderColor: MINT },
+  goalLessonsOn: { backgroundColor: MINT },
   shine: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.45)' },
   btn: {
     minHeight: 56,

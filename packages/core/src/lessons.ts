@@ -528,6 +528,16 @@ export function lessonCount(w: LessonWalk): { done: number; of: number } {
   const off = [...w.done].filter((id) => !w.path.some((L) => L.id === id)).length;
   return { done: w.walked.size + off, of: w.path.length + off };
 }
+/** the step a lesson belongs to and how far through it this person is, on their own path (the end of a lesson shows it as the
+    next milestone, with no total: the owner, November 14, 2026) */
+export function stepProgress(w: LessonWalk, id: string): { name: string; done: number; of: number } | null {
+  const k = stepAt(id);
+  if (k < 0) return null;
+  const mine = w.path.filter((L) => stepAt(L.id) === k);
+  if (!mine.length) return null;
+  const done = mine.filter((L) => w.walked.has(L.id) || w.done.has(L.id) || w.passed.has(L.id)).length;
+  return { name: PATH_STEPS[k].name, done, of: mine.length };
+}
 /** how a lesson opens: in full when it is Up next or behind it ('open'); as a welcome back when Up next was read early
     ('back'); else as its key idea, until the path reaches it ('key'). The account rule (accounts.ts lessonOpen) sits on
     top of 'open'. */

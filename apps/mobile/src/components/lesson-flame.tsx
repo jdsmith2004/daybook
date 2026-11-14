@@ -118,8 +118,11 @@ export function Bubble({
   more,
   onMore,
   style,
+  shown,
 }: {
   text: string;
+  /** how many letters are written so far, for words that write themselves out; the bubble is its full size from the start */
+  shown?: number;
   tail?: 'mid' | 'right';
   more?: boolean;
   onMore?: () => void;
@@ -128,7 +131,8 @@ export function Bubble({
   const body = (
     <View style={[s.bubble, { backgroundColor: BUBBLE }]}>
       <Text style={s.say} accessibilityLiveRegion="polite">
-        {text}
+        {shown == null ? text : text.slice(0, shown)}
+        {shown != null && shown < text.length ? <Text style={{ color: 'transparent' }}>{text.slice(shown)}</Text> : null}
         {more ? <Text style={s.more}>{'  More'}</Text> : null}
       </Text>
       <View style={[s.tail, { backgroundColor: BUBBLE }, tail === 'right' ? s.tailRight : s.tailMid]} />

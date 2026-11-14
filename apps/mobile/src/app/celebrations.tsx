@@ -46,7 +46,7 @@ export default function Celebrations() {
     { name: 'Streak lighting', what: 'Swipe up on the ember to light it. A tap during it skips to the end.', go: () => open('/ignite') },
     { name: 'Morning done', what: 'Tap Free of it.', go: () => open('/morning') },
     { name: 'Urge ridden out', what: 'SOS, It passed.', go: () => open('/sos?won=1') },
-    { name: 'Check-in finished', what: 'Answer or skip each question, then Save this day.', go: () => open('/checkin') },
+    { name: 'Check-in finished', what: 'Day logged, with the points.', go: () => open('/checkin?end=1') },
     { name: 'Graduation', what: 'One soft fall of confetti and three small fireworks.', go: () => fresh('/graduated?demo=grad') },
   ];
   return (

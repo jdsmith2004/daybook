@@ -81,7 +81,7 @@ export default function Checkin() {
   const prefs = useReminderPrefs();
   const goodnight = useGoodnight();
   const st = snap.settings;
-  const { k: kp } = useLocalSearchParams<{ k?: string }>();
+  const { k: kp, end: endQ } = useLocalSearchParams<{ k?: string; end?: string }>();
   const k = (kp && kp <= tk ? kp : tk) as DayKey;
   const tonight = k === tk;
   const [form, setForm] = useState<CheckinForm>(() => checkinFormOf(snap.days, k));
@@ -168,6 +168,21 @@ export default function Checkin() {
     setDir(1);
     setStep('end');
   };
+  /* the demo build (EXPO_PUBLIC_SHOTS=1) can open straight on the finish (?end=1), for the celebrations page */
+  useEffect(() => {
+    if (process.env.EXPO_PUBLIC_SHOTS !== '1' || endQ !== '1') return;
+    const f = { ...form, md: 7, u: 3, s: 4 };
+    let text = '';
+    update((s0) => {
+      const days = saveCheckin(s0.days, k, f);
+      text = checkinSaveText(days, s0.settings!, k, tk);
+      return { ...s0, days };
+    });
+    setForm(f);
+    setMsg(text);
+    setStep('end');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   /* Goodnight: the check-in (when anything is answered) and the phone away, in one tap */
   const sayGoodnight = () => {
     const b = goodnight(any ? form : null);

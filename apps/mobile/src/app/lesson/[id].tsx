@@ -45,6 +45,7 @@ import {
   lessonPractice,
   lessonPracticed,
   lessonReach,
+  lessonLen,
   lessonSeq,
   lessonStats,
   lessonWalk,
@@ -162,8 +163,9 @@ export default function LessonScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [L?.id],
   );
-  /* one way in (C8): the short cards are the lesson, with More on each; a lesson with no short cut runs in full */
-  const [len] = useState<'q' | 'f'>(() => (found && lessonHasQuick(found) ? 'q' : 'f'));
+  /* one way in (C8): the length the person picked in setup or Settings (core lessonLen; short until they pick long). Short plays the
+     short cards, with More on each; long, or a lesson with no short cut, runs in full. Held for the whole lesson. */
+  const [len] = useState<'q' | 'f'>(() => (found && lessonHasQuick(found) ? lessonLen(st) : 'f'));
   /* how a card without a question landed with the person (two answers, or the line they will try), by card */
   const [ans, setAns] = useState<Record<number, number>>({});
   /* a turn card's reply has landed */

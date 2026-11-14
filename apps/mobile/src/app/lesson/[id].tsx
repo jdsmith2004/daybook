@@ -46,7 +46,9 @@ import {
   lessonPracticed,
   lessonReach,
   lessonLen,
-  setLessonLen,
+  type LessonLen,
+  pickLessonLen,
+  deepOn,
   lessonSeq,
   lessonStats,
   lessonWalk,
@@ -170,14 +172,15 @@ export default function LessonScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [L?.id],
   );
-  /* one way in (C8): the length last picked on a lesson's first page or in Settings (core lessonLen; short until long). Short plays the
-     short cards, with More on each; long, or a lesson with no short cut, runs in full. Held for the whole lesson. */
-  const [len, setLen] = useState<'q' | 'f'>(() => (preview ? (lenQ === 'q' ? 'q' : 'f') : found && lessonHasQuick(found) ? lessonLen(st) : 'f'));
-  /* a lesson the person starts (pick=1: Today, Learn, a link) asks Short or Long first, as it did before the rework; a lesson the app
-     opens by itself (the first tour, the morning, after signing up, a care door) goes straight in at the saved length (the owner,
-     November 14, 2026: "if a lesson automatically pops up, we don't ask them which version, we just go into it. But if they choose a
-     lesson from the homepage, ask them if they want to go like longer or shorter like we did before") */
-  const [chose, setChose] = useState(() => preview || !(picked === '1' && found && lessonHasQuick(found)));
+  /* the length, marked first on the lesson's first page: the one the person picks most (core lessonLen; Short until they have picked).
+     Short plays the short cards, Long every card but the deep ones, Deep every card with each one's fuller telling. Held for the whole
+     lesson. */
+  const [len, setLen] = useState<LessonLen>(() =>
+    preview ? (lenQ === 'q' ? 'q' : lenQ === 'd' ? 'd' : 'f') : found && lessonHasQuick(found) ? lessonLen(st) : 'f',
+  );
+  /* every lesson asks its length first, wherever it starts (the owner, November 14, 2026: "It should also ask them 2 or 5 minutes when
+     they do the lesson anywhere. Always."); only a lesson with no short cut, which has one length, goes straight in */
+  const [chose, setChose] = useState(() => preview || !(found && lessonHasQuick(found)));
   /* how a card without a question landed with the person (two answers, or the line they will try), by card */
   const [ans, setAns] = useState<Record<number, number>>({});
   /* a turn card's reply has landed */
@@ -450,10 +453,10 @@ export default function LessonScreen() {
   /* the flame grows a little as the lesson goes on */
   const want = (SHORT ? 210 : 260) + (SHORT ? 40 : 70) * p;
   if (stg === 'len') {
-    /* Short or Long, the saved one marked; the pick is kept for next time (Settings, Lesson length) */
-    const choose = (ln: 'q' | 'f') => {
+    /* Short or Long (and Deep, for a person who turned it on), the one picked most marked first; each pick is counted */
+    const choose = (ln: LessonLen) => {
       setLen(ln);
-      if (st && st.learn.len !== ln) apply((cur) => ({ st: setLessonLen(cur, ln) }));
+      if (st) apply((cur) => ({ st: pickLessonLen(cur, ln) }));
       dir.current = 1;
       setChose(true);
     };
@@ -474,7 +477,15 @@ export default function LessonScreen() {
               on={cur === 'q'}
               title="Short"
               mins="about 2 min"
-              sub={L.v === 3 ? 'The turn, what to do, one check' : L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'}
+              sub={
+                L.form
+                  ? 'The story, the line that sticks, what to do'
+                  : L.v === 3
+                    ? 'The turn, what to do, one check'
+                    : L.v === 2
+                      ? 'The answer, what to do, one check'
+                      : 'The main idea, then one question'
+              }
               onPress={() => choose('q')}
             />
             <LenBtn
@@ -482,14 +493,20 @@ export default function LessonScreen() {
               title="Long"
               mins="about 5 min"
               sub={
-                L.v === 3
-                  ? 'Adds a question and what is behind the turn'
-                  : L.v === 2
-                    ? 'Adds a guess and the science behind it'
-                    : 'Adds the evidence and why it works'
+                L.form
+                  ? 'More of the story, and why it works'
+                  : L.v === 3
+                    ? 'Adds a question and what is behind the turn'
+                    : L.v === 2
+                      ? 'Adds a guess and the science behind it'
+                      : 'Adds the evidence and why it works'
               }
               onPress={() => choose('f')}
             />
+            {/* Deep, the 10-minute lesson, shows here only for a person who turned it on in Settings */}
+            {deepOn(st) ? (
+              <LenBtn on={cur === 'd'} title="Deep" mins="about 10 min" sub="Adds the rest of the story and a second look" onPress={() => choose('d')} />
+            ) : null}
           </View>
         </Dock>
       </>
@@ -667,7 +684,7 @@ export default function LessonScreen() {
       ) : (
         <>
           {head}
-          <TextCard L={L} card={card} beat={b} look={look} st={st} want={want} onSrc={() => setSheet({ t: 'src', i: ci })} />
+          <TextCard L={L} card={card} beat={b} look={look} st={st} want={want} deep={len === 'd'} onSrc={() => setSheet({ t: 'src', i: ci })} />
         </>
       );
       /* a card that asks nothing is read and passed with Continue: no made-up answers and no pick over lines that are steps
@@ -1111,7 +1128,25 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
 }
 
 /** the words of a card: one thought, with a real picture when it has one, and room left for the flame */
-function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: Card; beat: Beat; look: Look; st: Settings; want: number; onSrc: () => void }) {
+function TextCard({
+  L,
+  card,
+  beat,
+  look,
+  st,
+  want,
+  deep,
+  onSrc,
+}: {
+  L: Lesson;
+  card: Card;
+  beat: Beat;
+  look: Look;
+  st: Settings;
+  want: number;
+  deep?: boolean;
+  onSrc: () => void;
+}) {
   const art = cardArt(card);
   const h = beat.h || card.h;
   /* what is the person's own stays on the card; the rest of the original words are in More */
@@ -1149,7 +1184,7 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
         <T style={[s.h, h.length > 64 && s.hsm]} accessibilityRole="header">
           {h}
         </T>
-        {beat.p ? <Rich text={beat.p} st={st} style={s.storyP} /> : null}
+        {deep && beat.dx ? <Rich text={beat.dx} st={st} style={s.storyP} /> : beat.p ? <Rich text={beat.p} st={st} style={s.storyP} /> : null}
         {card.fact ? <Fact text={card.fact.s} onPress={onSrc} /> : null}
         <View style={s.storyFoot}>
           <FlameSlot size={92} min={84} side style={s.storyFlame} />
@@ -1174,7 +1209,7 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
       <T style={[s.h, SHORT && h.length > 40 && s.hsm]} accessibilityRole="header">
         {h}
       </T>
-      {beat.p ? <Rich text={beat.p} st={st} style={s.p} /> : null}
+      {deep && beat.dx ? <Rich text={beat.dx} st={st} style={s.p} /> : beat.p ? <Rich text={beat.p} st={st} style={s.p} /> : null}
       {beat.l ? (
         /* steps, not buttons: a number and the words, nothing that looks tappable */
         <View style={{ gap: 14, marginTop: 10 }} accessibilityRole="list">

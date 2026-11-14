@@ -17,8 +17,14 @@
 import type { Art, Block, Card, Lesson } from './lessons';
 import type { Beat, LessonBeats } from './lesson-beats';
 import type { MineKind } from './lesson-turns';
+import type { OtherHabit } from './lesson-habit';
 import { STORIES_A } from './lesson-stories-a';
 import { STORIES_B } from './lesson-stories-b';
+import { STORIES_C } from './lesson-stories-c';
+import { STORIES_D } from './lesson-stories-d';
+import { STORIES_E } from './lesson-stories-e';
+import { STORIES_F } from './lesson-stories-f';
+import { STORIES_G } from './lesson-stories-g';
 
 /** a source: [name: topic, url] */
 type Src = [string, string, string?, string?];
@@ -41,11 +47,16 @@ export type StoryPart =
       fact?: { s: string; i?: number[] };
       back?: string;
       long?: 1;
+      /** in Deep only, the 10-minute lesson: the rest of the study, the story around it, a second study or tale */
+      deep?: 1;
+      /** in Deep, this card told in full in place of p: the study or the talk as if read through, with nothing condensed out (the
+          owner, November 14, 2026: "it should be more like going through the talk and reading it, just in a improved form") */
+      dx?: string;
     }
-  | { k: 'guess'; h: string; o: Opt[]; a: number; long?: 1 }
+  | { k: 'guess'; h: string; o: Opt[]; a: number; long?: 1; deep?: 1 }
   /** a question inside the story with no right answer: what the person would do, or what they have lived */
-  | { k: 'ask'; h: string; o: Opt[]; long?: 1 }
-  | { k: 'flip'; think: string; see: string; long?: 1 };
+  | { k: 'ask'; h: string; o: Opt[]; long?: 1; deep?: 1 }
+  | { k: 'flip'; think: string; see: string; long?: 1; deep?: 1 };
 
 export interface Story {
   id: string;
@@ -64,6 +75,10 @@ export interface Story {
   you: { h: string; o: Opt[] };
   scope: string;
   src: Src[];
+  /** for a lesson written for porn that another habit reads too (lesson-habit.ts PORN_ONLY and HABIT_OPEN, which stays the gate): that
+      habit's own parts, put over the story before its words are said in the habit's terms (lesson-beats.ts lessonAs). 'say' means the
+      words alone change. */
+  hab?: Partial<Record<OtherHabit, 'say' | Partial<Pick<Story, 'tell' | 'today' | 'you' | 'key' | 'ask' | 'np' | 'mine' | 'scope' | 'src' | 'title' | 'tag'>>>>;
 }
 
 const ICON = (ic: string): Art => ['icon', { ic }];
@@ -74,14 +89,16 @@ export function storyLesson(S: Story, was: Lesson): { L: Lesson; beats: LessonBe
   const beats: Beat[] = [];
   const add = (c: Card, b: Beat) => (cards.push(c), beats.push(b));
   S.tell.forEach((t, i) => {
-    const q = t.long ? undefined : (1 as const);
-    if (t.k === 'guess') return add({ k: 'choose', q, e: 'predict', el: 'Guess', h: t.h, a: t.a, c: t.o }, { h: t.h, c: t.o.map((x) => x[1]) });
-    if (t.k === 'ask') return add({ k: 'choose', q, e: 'predict', el: 'You', h: t.h, c: t.o }, { h: t.h, c: t.o.map((x) => x[1]) });
-    if (t.k === 'flip') return add({ k: 'flip', q, e: 'answer', el: 'Look again', h: t.think, see: t.see }, { h: t.think, p: t.see });
+    const q = t.long || t.deep ? undefined : (1 as const);
+    const dp = t.deep ? (1 as const) : undefined;
+    if (t.k === 'guess') return add({ k: 'choose', q, e: 'predict', el: 'Guess', h: t.h, a: t.a, c: t.o, dp }, { h: t.h, c: t.o.map((x) => x[1]) });
+    if (t.k === 'ask') return add({ k: 'choose', q, e: 'predict', el: 'You', h: t.h, c: t.o, dp }, { h: t.h, c: t.o.map((x) => x[1]) });
+    if (t.k === 'flip') return add({ k: 'flip', q, e: 'answer', el: 'Look again', h: t.think, see: t.see, dp }, { h: t.think, p: t.see });
     add(
       {
         k: 'text',
         q,
+        dp,
         e: i === 0 ? 'hook' : 'proof',
         el: 'The story',
         art: t.n ? ['big', { n: t.n }] : t.art || (i === 0 ? ICON(S.ic) : undefined),
@@ -89,7 +106,7 @@ export function storyLesson(S: Story, was: Lesson): { L: Lesson; beats: LessonBe
         fact: t.fact,
         back: t.back,
       },
-      { h: t.h, p: t.p, say: t.say, n: t.n },
+      { h: t.h, p: t.p, say: t.say, n: t.n, dx: t.dx },
     );
   });
   add({ k: 'text', q: 1, e: 'answer', el: 'The line', h: S.key }, { h: S.key });
@@ -117,4 +134,4 @@ export function storyLesson(S: Story, was: Lesson): { L: Lesson; beats: LessonBe
 }
 
 /** every lesson told as a story, by id */
-export const STORIES: Record<string, Story> = { ...STORIES_A, ...STORIES_B };
+export const STORIES: Record<string, Story> = { ...STORIES_A, ...STORIES_B, ...STORIES_C, ...STORIES_D, ...STORIES_E, ...STORIES_F, ...STORIES_G };

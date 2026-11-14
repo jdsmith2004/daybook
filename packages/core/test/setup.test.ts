@@ -135,15 +135,21 @@ describe('setup in two minutes (WP10)', () => {
     }
     expect(core.obPages({ habit: 'porn' }).map((p) => p.id)).toContain('tonight');
   });
-  it('keeps the lesson length, short until long is picked (the owner, November 14, 2026)', () => {
+  it('marks the length picked most, Short until one is picked, and offers Deep only when turned on (the owner, November 14, 2026)', () => {
     const tk = '2026-11-12' as core.DayKey;
     const st = core.obBegin({}, tk, 0);
     expect(core.obPages({}).map((p) => p.id)).not.toContain('len');
     expect(core.lessonLen(st)).toBe('q');
-    const long = core.setLessonLen(st, 'f', 0);
-    expect(core.lessonLen(long)).toBe('f');
-    expect(core.lessonLen(core.normSettings(JSON.parse(JSON.stringify(long))))).toBe('f');
-    expect(core.setLessonLen(long, 'f', 0)).toBe(long);
+    let x = core.pickLessonLen(st, 'f', 0);
+    expect(core.lessonLen(x)).toBe('f');
+    x = core.pickLessonLen(core.pickLessonLen(x, 'f', 0), 'q', 0);
+    expect(core.lessonLen(x), 'two Longs and one Short: Long is picked most').toBe('f');
+    expect(core.lessonLen(core.normSettings(JSON.parse(JSON.stringify(x)))), 'the count survives a save').toBe('f');
+    x = core.pickLessonLen(core.pickLessonLen(x, 'q', 0), 'q', 0);
+    expect(core.lessonLen(x)).toBe('q');
+    /* Deep is a choice only once every lesson has it, and only for a person who turned it on */
+    expect(core.deepOn(core.setDeep(x, true, 0))).toBe(core.DEEP_READY);
+    expect(core.deepOn(x)).toBe(false);
   });
   it('shows what Daybook gives: a year at their pace, the flame growing, and why it works (the owner, November 14, 2026)', () => {
     /* the year: only with an answer, rounded the way it was said, and its marks add up */

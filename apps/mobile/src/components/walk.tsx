@@ -216,10 +216,13 @@ export function Walk({
       return { id, label: w, tag: t ? talkClock(t) : undefined };
     }),
   );
-  const onlyWhen = when.length === 1 ? when[0].id : null;
+  /* When starts on "In an hour" (or the first moment left), said plainly; a tap opens the others (the owner, November 14,
+     2026: "just have it default to in an hour and they can press it to adjust") */
+  const firstWhen = (when.find((o) => o.id === 'soon') || when[0])?.id || null;
+  const [pickWhen, setPickWhen] = useState(false);
   useEffect(() => {
-    if (part === 'plan' && onlyWhen && !mo) setMo(onlyWhen);
-  }, [part, onlyWhen, mo]);
+    if (part === 'plan' && firstWhen && (!mo || !when.some((o) => o.id === mo))) setMo(firstWhen);
+  }, [part, firstWhen, mo, when]);
   const moAt = mo === TALK_HARD_MOMENT ? hard : mo ? talkMomentTime(mo, now) : null;
   const moNight = mo === TALK_HARD_MOMENT && hard ? new Date(hard).getHours() >= 21 || new Date(hard).getHours() < 5 : night;
 
@@ -827,27 +830,48 @@ export function Walk({
       dock = (
         <>
           <Text style={s.ask}>When</Text>
-          {when.length === 1 ? (
-            /* one moment left today is not a choice: it is picked, and said plainly (the owner, November 14, 2026: "if it's one
-               option then why not just pick yourself") */
-            <Text style={s.whenOne}>
-              {when[0].label}
-              {when[0].tag ? <Text style={s.whenTag}>{'  ' + when[0].tag}</Text> : null}
-            </Text>
-          ) : (
+          {pickWhen && when.length > 1 ? (
             <Chips
               label="When it may come back"
               ordered
               opts={when}
               on={mo ? [mo] : []}
               onPick={(x) => {
-                const nx = x === mo ? null : x;
-                setMo(nx);
-                const nn = nx === TALK_HARD_MOMENT && hard ? new Date(hard).getHours() >= 21 || new Date(hard).getHours() < 5 : night;
-                const ok = walkPlanMoves(N, nx === TALK_HARD_MOMENT ? null : nx, nn, held);
+                setMo(x);
+                setPickWhen(false);
+                const nn = x === TALK_HARD_MOMENT && hard ? new Date(hard).getHours() >= 21 || new Date(hard).getHours() < 5 : night;
+                const ok = walkPlanMoves(N, x === TALK_HARD_MOMENT ? null : x, nn, held);
                 setMoves((l) => l.filter((m) => ok.indexOf(m) >= 0));
               }}
             />
+          ) : (
+            (() => {
+              const W = when.find((o) => o.id === mo) || when[0];
+              if (!W) return null;
+              const words = (
+                <Text style={s.whenOne}>
+                  {W.label}
+                  {W.tag ? <Text style={s.whenTag}>{'  ' + W.tag}</Text> : null}
+                </Text>
+              );
+              /* one moment left is not a choice: it is just said */
+              return when.length > 1 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={'When: ' + W.label + (W.tag ? ', ' + W.tag : '') + '. Change'}
+                  hitSlop={8}
+                  onPress={() => {
+                    buzz('tap');
+                    setPickWhen(true);
+                  }}
+                  style={({ pressed }) => [s.whenRow, { opacity: pressed ? 0.7 : 1 }]}>
+                  {words}
+                  <Text style={s.whenChange}>Change</Text>
+                </Pressable>
+              ) : (
+                words
+              );
+            })()
           )}
           <Text style={s.ask}>Then I will</Text>
           <Chips
@@ -1447,6 +1471,8 @@ const s = StyleSheet.create({
   use: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingVertical: 2 },
   useT: { fontFamily: font.bodySemi, fontSize: 15, color: TW.mint },
   whenOne: { fontFamily: font.display, fontSize: 20, lineHeight: 26, color: TW.ink },
+  whenRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
+  whenChange: { fontFamily: font.bodySemi, fontSize: 15, color: TW.mint },
   whenTag: { fontFamily: font.bodySemi, fontSize: 15, color: TW.mint },
   boxTight: { marginTop: 0 },
   art: { alignSelf: 'stretch', alignItems: 'center' },

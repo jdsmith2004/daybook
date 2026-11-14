@@ -1,4 +1,4 @@
-/* The setup ("How Daybook works"): the answers, the pages, the goal it suggests, and the plan it builds. The questions, scores
+/* The setup (again from More: "Redo setup"): the answers, the pages, the goal it suggests, and the plan it builds. The questions, scores
    and goals are in the legacy core; the parts of the legacy setup that read the global Store or the clock are ported here as pure
    functions that take the settings and today. Checked against the legacy app by test/setup.test.ts. */
 import { freshSettings } from './two-moments';
@@ -209,7 +209,7 @@ export interface ObEnv {
   notify?: boolean;
   /** true when this build has accounts and the person is not signed in: the account page shows once the flame is lit */
   account?: boolean;
-  /** a walk-through ("How Daybook works" in More): the same questions, then the changes to keep */
+  /** a walk-through ("Redo setup" in More): the same questions, then the changes to keep */
   redo?: boolean;
 }
 /** said most days (or more): step-down counting */
@@ -843,7 +843,7 @@ const OB_SAY: Record<string, string> = {
 };
 /** a walk-through: the flame has grown, and says so */
 const OB_SAY_REDO: Record<string, string> = {
-  hello: 'Look how far I have come with you. Nothing changes until the last page.',
+  hello: 'Your log, points, level and badges stay just as they are.',
 };
 /** what the flame says first on a page, or null */
 export const obSay = (id: string, redo = false, h: Habit = 'porn'): string | null =>

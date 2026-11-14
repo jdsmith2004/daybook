@@ -58,7 +58,19 @@ const OPEN: Partial<Record<SpotKey, { label: string; go: () => void }>> = {
 };
 
 /** the steps, from the top of the page down, then the tab bar, and last the lesson (only while lesson 1 waits on the page) */
-export function tourSteps({ lessonDone, lessonId, walk = true }: { lessonDone: boolean; lessonId: string | null; walk?: boolean }): Step[] {
+export function tourSteps({
+  lessonDone: done,
+  lessonId,
+  walk = true,
+  again = false,
+}: {
+  lessonDone: boolean;
+  lessonId: string | null;
+  walk?: boolean;
+  /** played again from More: the plain words, not the first lesson's */
+  again?: boolean;
+}): Step[] {
+  const lessonDone = done && !again;
   const steps: Step[] = [
     {
       at: ['sky'],
@@ -80,7 +92,7 @@ export function tourSteps({ lessonDone, lessonId, walk = true }: { lessonDone: b
       steps.findIndex((x) => x.at[0] === 'trail'),
       1,
     );
-  if (!lessonDone && lessonId)
+  if (!done && lessonId)
     steps.push({
       at: ['lesson'],
       say: 'And this is your lesson for today. It takes about two minutes. Start here.',

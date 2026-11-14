@@ -3,7 +3,7 @@
    desert after Egypt, the partner and the truth, the watcher in the room, the cigarette on the desk), then l54 to l58, then the
    lessons of one habit, l50 to l53. No lesson here asks a person to guess a fact they cannot know, and none puts a clock time on
    everyone. l47 and l48 are frank and kind, and never explicit. */
-import type { Story } from './lesson-stories';
+import type { Story, StoryPart } from './lesson-stories';
 
 type Src = [string, string];
 const S = {
@@ -26,6 +26,11 @@ const S = {
     'Fernandez and colleagues (2023): a week without pornography, a randomized trial with students, Archives of Sexual Behavior',
     'https://link.springer.com/article/10.1007/s10508-022-02519-w',
   ],
+  brown: [
+    'Brown & Schuckit (1988): changes in depression among abstinent alcoholics, Journal of Studies on Alcohol',
+    'https://doi.org/10.15288/jsa.1988.49.412',
+  ],
+  dsm: ['American Psychiatric Association: DSM-5, gambling disorder', 'https://www.psychiatry.org/psychiatrists/practice/dsm'],
   lally: ['Lally, van Jaarsveld, Potts & Wardle (2010): how are habits formed, European Journal of Social Psychology', 'https://doi.org/10.1002/ejsp.674'],
   resch14: [
     'Resch & Alderson (2014): female partners of men who use pornography, are honesty and mutual use associated with relationship satisfaction? Journal of Sex & Marital Therapy',
@@ -54,12 +59,84 @@ const S = {
   ],
 } satisfies Record<string, Src>;
 
+/* l46 is read by people quitting drinking or gambling too (lesson-habit.ts HABIT_OPEN): the week off porn is swapped for what fits
+   their habit. For drinking, the swapped card says first that a doctor should help with the first days, since stopping heavy drinking
+   all at once can be dangerous. */
+const L46_TELL: StoryPart[] = [
+  {
+    h: 'An old story tells of a people who walked out of slavery in a single night.',
+    p: 'In the book of Exodus, they had made bricks in Egypt for generations. They left in such a hurry that **their bread had no time to rise**.',
+    art: ['scene', { k: 'l46-leaving' }],
+  },
+  {
+    h: 'A month later, in the desert, they began to miss Egypt.',
+    p: 'There was little to eat and nothing to do but walk. They said: in Egypt we sat by pots of meat and **ate bread until we were full**.',
+    art: ['scene', { k: 'l46-missing' }],
+  },
+  {
+    h: 'Later, they listed what they missed.',
+    p: '**We remember the fish we ate in Egypt for free**, they said, and the cucumbers, the melons, the leeks, the onions and the garlic. Now we have nothing but this.',
+    art: ['scene', { k: 'l46-fish' }],
+    fact: { s: 'Story · Exodus 16 and Numbers 11', i: [0] },
+  },
+  {
+    h: 'For free. They had been slaves.',
+    p: 'Memory kept the fish and dropped the bricks, the whips and the long days. That is what missing a habit does. It remembers the relief, and **leaves out what it cost**.',
+    art: ['scene', { k: 'l46-bricks' }],
+  },
+  {
+    k: 'ask',
+    h: 'When you miss the habit, what does your memory show you?',
+    o: [
+      ['The relief, and not much else', 'That is the fish. The bricks are still there, just out of the picture.'],
+      ['How easy it was', 'It was easy, the way Egypt was easy. Look at what came with it.'],
+      ['All of it, the cost too', 'Then your memory is more honest than most. Keep it that way.'],
+      ['I do not miss it much', 'Then the desert may be gentler for you. Keep this for a harder week.'],
+    ],
+  },
+  {
+    h: 'The desert was not a wrong turn. It was the land in between.',
+    p: 'Egypt was behind them and the new land was not yet in sight. Nothing felt like freedom yet. **A flat stretch feels like the wrong way, and it is the way through.**',
+    art: ['scene', { k: 'l46-between' }],
+  },
+  {
+    h: 'In the desert, food came every morning, enough for one day.',
+    p: 'The story calls it manna. Anyone who tried to keep extra for tomorrow found it spoiled by morning. They could not store up strength for later. They got **enough for today**.',
+    art: ['scene', { k: 'l46-manna' }],
+  },
+  {
+    n: '26',
+    h: 'studies followed people who quit smoking, and people who kept on.',
+    p: 'Weeks and months later, the ones who quit had less worry, less low mood and less stress than the ones who kept on. It held even for people who had smoked to cope. **The habit had not been holding the mood up.**',
+    fact: { s: 'Review · 26 studies · Taylor and colleagues, 2014', i: [1] },
+  },
+  {
+    long: 1,
+    h: 'A week off porn showed no harm done by stopping.',
+    p: 'In a trial, 176 students were asked to stop for seven days, or to carry on. Their mood and cravings came out about the same. **A low day is a low day, not damage.**',
+    fact: { s: 'Randomized trial · 176 students · Fernandez and colleagues, 2023', i: [2] },
+  },
+  {
+    long: 1,
+    h: 'An old saying puts it this way: one night got the people out of Egypt. It took years to get Egypt out of the people.',
+    p: 'Your stretch is weeks, not years, and nobody can give you a date. But the shape is the same. **Leaving is one night. Becoming free is the walk after.**',
+    art: ['scene', { k: 'l46-road' }],
+    fact: { s: 'Study · 96 volunteers · Lally and colleagues, 2010', i: [3] },
+  },
+  {
+    h: 'Getting free often feels like the desert before it feels like home.',
+    p: 'Gray days in the first weeks are common, and they ease: fewer pulls, weaker pulls, more good days between them. **Every urge you ride out is one more day of the walk.** If the low lasts for weeks or turns dark, tell a doctor.',
+    art: ['scene', { k: 'l46-home' }],
+  },
+];
+const L46_AT = 8;
+const L46_AS = (c: StoryPart): StoryPart[] => [...L46_TELL.slice(0, L46_AT), c, ...L46_TELL.slice(L46_AT + 1)];
+
 export const STORIES_F: Record<string, Story> = {
   l45: {
     id: 'l45',
     form: 'tale',
     title: 'Words from a calm day',
-    tag: 'Odysseus at the mast, and the orders he left for the hour he would beg.',
     ic: 'pencil',
     ask: 'Why read my own reasons in the middle of an urge?',
     key: 'Write your orders on a calm day, for the hour you will beg to be untied.',
@@ -105,7 +182,7 @@ export const STORIES_F: Record<string, Story> = {
         k: 'guess',
         h: 'Who guessed their own craving better: the calm smokers, or the ones already craving?',
         o: [
-          ['The calm ones, with clear heads', 'That is what most people expect. The calm ones guessed low.'],
+          ['The calm ones, with clear heads', 'That is what most people expect, and it is not what happened.'],
           ['The ones already craving', 'They were inside the feeling, so they knew what it would want.'],
         ],
         a: 1,
@@ -159,78 +236,11 @@ export const STORIES_F: Record<string, Story> = {
     id: 'l46',
     form: 'tale',
     title: 'What getting free feels like',
-    tag: 'The people who missed Egypt, and why the desert is the way through.',
     ic: 'sunrise',
     ask: 'Why do I feel so flat since I stopped, and when does it get easier?',
     key: 'Memory keeps the fish and drops the bricks. The desert is the way through, not a wrong turn.',
     np: 'What memory leaves out when I miss the habit',
-    tell: [
-      {
-        h: 'An old story tells of a people who walked out of slavery in a single night.',
-        p: 'In the book of Exodus, they had made bricks in Egypt for generations. They left in such a hurry that **their bread had no time to rise**.',
-        art: ['scene', { k: 'l46-leaving' }],
-      },
-      {
-        h: 'A month later, in the desert, they began to miss Egypt.',
-        p: 'There was little to eat and nothing to do but walk. They said: in Egypt we sat by pots of meat and **ate bread until we were full**.',
-        art: ['scene', { k: 'l46-missing' }],
-      },
-      {
-        h: 'Later, they listed what they missed.',
-        p: '**We remember the fish we ate in Egypt for free**, they said, and the cucumbers, the melons, the leeks, the onions and the garlic. Now we have nothing but this.',
-        art: ['scene', { k: 'l46-fish' }],
-        fact: { s: 'Story · Exodus 16 and Numbers 11', i: [0] },
-      },
-      {
-        h: 'For free. They had been slaves.',
-        p: 'Memory kept the fish and dropped the bricks, the whips and the long days. That is what missing a habit does. It remembers the relief, and **leaves out what it cost**.',
-        art: ['scene', { k: 'l46-bricks' }],
-      },
-      {
-        k: 'ask',
-        h: 'When you miss the habit, what does your memory show you?',
-        o: [
-          ['The relief, and not much else', 'That is the fish. The bricks are still there, just out of the picture.'],
-          ['How easy it was', 'It was easy, the way Egypt was easy. Look at what came with it.'],
-          ['All of it, the cost too', 'Then your memory is more honest than most. Keep it that way.'],
-          ['I do not miss it much', 'Then the desert may be gentler for you. Keep this for a harder week.'],
-        ],
-      },
-      {
-        h: 'The desert was not a wrong turn. It was the land in between.',
-        p: 'Egypt was behind them and the new land was not yet in sight. Nothing felt like freedom yet. **A flat stretch feels like the wrong way, and it is the way through.**',
-        art: ['scene', { k: 'l46-between' }],
-      },
-      {
-        h: 'In the desert, food came every morning, enough for one day.',
-        p: 'The story calls it manna. Anyone who tried to keep extra for tomorrow found it spoiled by morning. They could not store up strength for later. They got **enough for today**.',
-        art: ['scene', { k: 'l46-manna' }],
-      },
-      {
-        n: '26',
-        h: 'studies followed people who quit smoking, and people who kept on.',
-        p: 'Weeks and months later, the ones who quit had less worry, less low mood and less stress than the ones who kept on. It held even for people who had smoked to cope. **The habit had not been holding the mood up.**',
-        fact: { s: 'Review · 26 studies · Taylor and colleagues, 2014', i: [1] },
-      },
-      {
-        long: 1,
-        h: 'A week off porn showed no harm done by stopping.',
-        p: 'In a trial, 176 students were asked to stop for seven days, or to carry on. Their mood and cravings came out about the same. **A low day is a low day, not damage.**',
-        fact: { s: 'Randomized trial · 176 students · Fernandez and colleagues, 2023', i: [2] },
-      },
-      {
-        long: 1,
-        h: 'An old saying puts it this way: one night got the people out of Egypt. It took years to get Egypt out of the people.',
-        p: 'Your stretch is weeks, not years. But the shape is the same. **Leaving is one night. Becoming free is the walk after.**',
-        art: ['scene', { k: 'l46-road' }],
-        fact: { s: 'Study · 96 volunteers · Lally and colleagues, 2010', i: [3] },
-      },
-      {
-        h: 'Getting free often feels like the desert before it feels like home.',
-        p: 'Gray days in the first weeks are common, and they ease: fewer pulls, weaker pulls, more good days between them. **Every urge you ride out is one more day of the walk.** If the low lasts for weeks or turns dark, tell a doctor.',
-        art: ['scene', { k: 'l46-home' }],
-      },
-    ],
+    tell: L46_TELL,
     mine: { h: 'Every urge you ride out is one more day of the walk.', k: 'rode' },
     today: {
       h: 'On a flat day, gather only today’s strength.',
@@ -246,15 +256,37 @@ export const STORIES_F: Record<string, Story> = {
       ],
     },
     scope:
-      'The Exodus is an old story, told here for what it shows about missing a habit, not as a lesson about faith. The mood review was about people who quit smoking, and those studies followed people rather than assigning them. The week off porn was one short trial with students. Together they point one hopeful way: a flat stretch is common, it is not damage, and people tend to feel better on the far side of it.',
+      'The Exodus is an old story, told here for what it shows about missing a habit, not as a lesson about faith. The mood review was about people who quit smoking, and those studies followed people rather than assigning them. The week off porn was one short trial with students. Nobody can give you a date for the flat stretch to lift. Together they point one hopeful way: it is common, it is not damage, and people tend to feel better on the far side of it.',
     src: [S.exodus, S.taylor, S.fernandez, S.lally],
+    hab: {
+      alcohol: {
+        tell: L46_AS({
+          h: 'If you drank every day, or a lot at a time, a doctor should help with the first days.',
+          p: 'Stopping heavy drinking all at once can be dangerous. After that, the low often lifts within weeks: in men treated for drinking, high depression scores fell from about 4 in 10 to under 1 in 10 in a month. **Much of the low was the drink wearing off.**',
+          fact: { s: 'Study · 191 men · Brown & Schuckit, 1988', i: [2] },
+        }),
+        scope:
+          'The Exodus is an old story, told here for what it shows about missing a habit, not as a lesson about faith. The mood review was about people who quit smoking, and the depression study followed men in treatment for drinking. Together they point one hopeful way: a flat stretch is common, much of it is the drink wearing off, and people tend to feel better on the far side of it.',
+        src: [S.exodus, S.taylor, S.brown, S.lally],
+      },
+      gambling: {
+        tell: L46_AS({
+          long: 1,
+          h: 'Restless when you stop is so common it is in the definition.',
+          p: 'Doctors list feeling restless or short-tempered when cutting down as a sign of the habit itself, not of harm done by stopping. **It eases as the habit loosens.**',
+          fact: { s: 'Manual · DSM-5, gambling disorder', i: [2] },
+        }),
+        scope:
+          'The Exodus is an old story, told here for what it shows about missing a habit, not as a lesson about faith. The mood review was about people who quit smoking, and the manual describes what doctors look for in gambling disorder. Together they point one hopeful way: a restless, flat stretch is common, it is not damage, and people tend to feel better on the far side of it.',
+        src: [S.exodus, S.taylor, S.dsm, S.lally],
+      },
+    },
   },
 
   l47: {
     id: 'l47',
     form: 'breakdown',
     title: 'Your partner and the truth',
-    tag: 'Would telling them only hurt them? An honest answer.',
     ic: 'heart',
     ask: 'Should I tell my partner? And if they found out, can trust come back?',
     key: 'Hiding does not shield your partner. Honesty lets them meet the truth with you, whatever they decide.',
@@ -335,7 +367,7 @@ export const STORIES_F: Record<string, Story> = {
       ],
     },
     scope:
-      'These studies asked partners, mostly women with male partners, and people in recovery who chose to answer, so they show what goes together and how people felt looking back. Telling did not keep anyone from slipping. It ended the hiding, and most on both sides said it was right.',
+      'These studies asked partners, mostly women with male partners, and people in recovery who chose to answer, so they show what goes together and how people felt looking back. Telling did not keep anyone from slipping, and nobody can promise how a partner will take it. It ended the hiding, and most on both sides said it was right.',
     src: [S.zitzman09, S.resch14, S.schneider98],
   },
 
@@ -343,7 +375,6 @@ export const STORIES_F: Record<string, Story> = {
     id: 'l48',
     form: 'works',
     title: 'Sex after porn',
-    tag: 'Why checking yourself is what spooks desire, and what helps instead.',
     ic: 'leaf',
     ask: 'What do I do when desire goes quiet after quitting?',
     key: 'Desire is shy of being watched. Skip the test, and put your attention on the person.',
@@ -426,7 +457,6 @@ export const STORIES_F: Record<string, Story> = {
     id: 'l49',
     form: 'study',
     title: 'Day 30, 60, 90, and after',
-    tag: 'Why feeling strong makes temptation look small.',
     ic: 'flag',
     ask: 'It is going well. What do I watch for now, and what does keeping it look like?',
     key: 'Feeling strong makes the danger look small. People who keep it stay clear on purpose.',

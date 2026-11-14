@@ -2,13 +2,15 @@
    on a dusk that warms to an ember at the bottom. The hours sit inside a small arc of the evening, 6 PM to 2 AM, gold where they are
    and a dot for now, the way Apple's sleep schedule draws a stretch of time as a shape. The plan comes back in the person's own words,
    in the cream bubbles the lessons speak in. A night card stays a night card in both themes, the way Weather keeps its sky.
-   Before the hard hours are known: the same dusk, with a moon. With no plan: one bubble to make one while it is calm. */
+   Before the hard hours are known: the same arc drawn empty, titled, so it is plain what will fill it (docs/design-standards.md, "Show
+   it, do not say it"). With no plan: one bubble with blanks where the person's when and then go, which opens Walk it through. */
 import { riskDay, riskPlanLabel, riskWhen, talkPlanNow, type DayKey, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
+import { Blank } from '@/components/blank';
 import { SVG_HIDE } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
@@ -37,7 +39,7 @@ const whenOf = (w: string) => 'When ' + w.replace(/^when\s+/i, '');
 /* the evening as an arc from 6 PM to 2 AM: the hard hours in gold with a glow, and a dot for now while it is on the arc */
 const FROM = 18;
 const SPAN = 8;
-function Arc({ start, now, w }: { start: number; now: number; w: number }) {
+function Arc({ start, now, w }: { start: number | null; now: number; w: number }) {
   /* room above the arc, so its glow fades out before the edge of the drawing */
   const PAD = 28;
   const k = w / 300;
@@ -58,7 +60,7 @@ function Arc({ start, now, w }: { start: number; now: number; w: number }) {
   const d = new Date(now);
   let h = d.getHours() + d.getMinutes() / 60;
   if (h < 6) h += 24;
-  const s0 = Math.min(FROM + SPAN - 2, Math.max(FROM, start < 6 ? start + 24 : start));
+  const s0 = start == null ? FROM + 3 : Math.min(FROM + SPAN - 2, Math.max(FROM, start < 6 ? start + 24 : start));
   const [nx, ny] = pt(h);
   const [gx, gy] = pt(s0 + 1);
   return (
@@ -69,23 +71,10 @@ function Arc({ start, now, w }: { start: number; now: number; w: number }) {
           <Stop offset="1" stopColor={N.gold} stopOpacity={0} />
         </RadialGradient>
       </Defs>
-      <Rect width={w} height={H} fill="url(#tnGlow)" />
+      {start == null ? null : <Rect width={w} height={H} fill="url(#tnGlow)" />}
       <Path d={arc(FROM, FROM + SPAN)} stroke={N.track} strokeWidth={sw} strokeLinecap="round" fill="none" />
-      <Path d={arc(s0, s0 + 2)} stroke={N.gold} strokeWidth={sw} strokeLinecap="round" fill="none" />
+      {start == null ? null : <Path d={arc(s0, s0 + 2)} stroke={N.gold} strokeWidth={sw} strokeLinecap="round" fill="none" />}
       {h >= FROM && h <= FROM + SPAN ? <Circle cx={nx} cy={ny} r={7} fill={N.ink} stroke={N.creamInk} strokeWidth={3} /> : null}
-    </Svg>
-  );
-}
-
-/* the moon, for the card before the hard hours are known */
-function Moon({ size }: { size: number }) {
-  const r = size / 2;
-  return (
-    <Svg width={size} height={size} {...SVG_HIDE}>
-      <Path
-        d={`M ${r * 1.15} ${r * 0.08} A ${r * 0.92} ${r * 0.92} 0 1 0 ${r * 1.92} ${r * 1.25} A ${r * 0.74} ${r * 0.74} 0 0 1 ${r * 1.15} ${r * 0.08} Z`}
-        fill={N.gold}
-      />
     </Svg>
   );
 }
@@ -141,9 +130,14 @@ export function TonightCard({
           </View>
         </View>
       ) : (
-        <View style={s.head}>
-          <Moon size={28} />
-          <Text style={[s.title, { color: N.ink }]}>If it gets hard tonight</Text>
+        <View style={s.arcBox} accessible accessibilityLabel="Hard hours, not known yet. They show here once the log has a few urges.">
+          <Arc start={null} now={now} w={244} />
+          <View style={s.arcIn}>
+            <Text style={[s.small, { color: N.lav }]}>Hard hours</Text>
+            <View style={s.arcBlank}>
+              <Blank color={N.lav} h={34} />
+            </View>
+          </View>
         </View>
       )}
       <View style={s.bubbles}>
@@ -163,15 +157,31 @@ export function TonightCard({
             />
           ))
         ) : (
-          <Bubble i={0} then="Make a plan, while it is calm" label="Make a plan for your hard moments" onPress={() => go('/trail')} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Your plan, not made yet. Make a plan for your hard moments."
+            onPress={() => go('/trail')}
+            style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+            <View style={s.bubble}>
+              <View style={s.blankRow}>
+                <Text style={[s.when, { color: N.creamMuted }]}>When</Text>
+                <Blank color={N.creamMuted} h={18} />
+              </View>
+              <View style={s.blankRow}>
+                <Text style={[s.then, { color: N.creamInk }]}>I will</Text>
+                <Blank color={N.creamMuted} h={22} />
+              </View>
+            </View>
+            <View style={[s.tail, { left: 28 }]} />
+          </Pressable>
         )}
       </View>
-      {prep || (more && lines.length) ? (
+      {prep || (more && lines.length) || !lines.length ? (
         <Pressable
           accessibilityRole="button"
-          onPress={() => (prep ? go('/talk', { prep: '1' }) : go('/plan'))}
+          onPress={() => (prep ? go('/talk', { prep: '1' }) : lines.length ? go('/plan') : go('/trail'))}
           style={({ pressed }) => [s.foot, { opacity: pressed ? 0.75 : 1 }]}>
-          <Text style={[s.footT, { color: N.ink }]}>{prep ? riskPlanLabel(r!.win.start) : 'Your whole plan'}</Text>
+          <Text style={[s.footT, { color: N.ink }]}>{prep ? riskPlanLabel(r!.win.start) : lines.length ? 'Your whole plan' : 'Make my plan'}</Text>
           <Icon name="next" size={16} color={N.ink} />
         </Pressable>
       ) : (
@@ -185,12 +195,12 @@ const s = StyleSheet.create({
   wrap: { borderRadius: 24, overflow: 'hidden' },
   arcBox: { alignItems: 'center', height: 160 },
   arcIn: { position: 'absolute', top: 88, alignItems: 'center' },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
-  title: { fontFamily: font.display, fontSize: 22, lineHeight: 28 },
   small: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   big: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
   bigLong: { fontSize: 22, lineHeight: 28, marginTop: 3, marginBottom: 3 },
   bubbles: { gap: 12, paddingHorizontal: 16 },
+  blankRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  arcBlank: { width: 96, marginTop: 2 },
   bubble: { backgroundColor: N.cream, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12, gap: 2 },
   tail: { position: 'absolute', bottom: -6, width: 14, height: 14, backgroundColor: N.cream, transform: [{ rotate: '45deg' }], borderRadius: 2 },
   when: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18 },

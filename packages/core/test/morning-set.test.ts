@@ -205,3 +205,19 @@ describe('the words', () => {
     expect(core.morningHello(at(21, 7))).toBe('Good morning · Wednesday');
   });
 });
+
+describe("tonight's reason, chosen on Today", () => {
+  it('is tonight’s reason without setting the morning, and the morning page starts on it', () => {
+    const r: Days = core.pickTonightReason({}, tk, 'Doing my best work', at(21, 8));
+    expect(core.morningDue(r, st, tk, at(21, 9))).toBe(true);
+    expect(core.tonightOf(r, st, tk)).toMatchObject({ r: 'Doing my best work', from: tk, today: false });
+    expect(core.morningReasons(r, st, tk)[0]).toBe('Doing my best work');
+    /* set later in the morning, the morning's own choice is the one kept */
+    const set = core.setTonight(r, st, tk, { r: 'Being ready for a real, honest relationship', nt: '23:00' }, at(21, 10));
+    expect(core.tonightOf(set.days, set.st, tk)).toMatchObject({ r: 'Being ready for a real, honest relationship', today: true, at: '23:00' });
+    /* chosen again on Today after the morning was set: the new one holds, and the morning stays set */
+    const again = core.pickTonightReason(set.days, tk, 'Doing my best work', at(21, 20));
+    expect(core.tonightOf(again, set.st, tk)).toMatchObject({ r: 'Doing my best work', today: true, at: '23:00' });
+    expect(core.pickTonightReason({}, tk, '  ')).toEqual({});
+  });
+});

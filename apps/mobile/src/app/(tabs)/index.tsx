@@ -447,8 +447,10 @@ export default function Today() {
           </View>
         }>
         {night ? (
-          /* after the night hour, Today is the night page: one card, Phone to bed, and the care row; nothing else (WP5, mockup m3). On the
-             night of a slip, its own card is the one card instead (its Go to bed is the same act): bringing the person back is the job then. */
+          /* after the night hour, Phone to bed leads (WP5, mockup m3), and the rest of Today stays under it: the person's own words, tonight's
+             reason, the hard hours and the plan (the owner, November 13, 2026: "I don't like the main screen just being empty like that").
+             What waits for the day (the line of stops, its lesson, the asks) is left for the morning. On the night of a slip, its own card
+             leads instead (its Go to bed is the same act): bringing the person back is the job then. */
           <>
             {pick.card.k === 'slip-day' ? (
               <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />
@@ -464,8 +466,12 @@ export default function Today() {
             ) : null}
             <WaitingPlan snap={snap} tk={tk} now={now} />
             <LogLink walk={!walkWaits} />
+            <NotifyBanner />
             {/* Screen Time not working: said here too, since the night is when it matters (WP2) */}
             <PullTroubleStrip />
+            <TodayBelow snap={snap} tk={tk} now={now} />
+            <SyncStrip />
+            <NightWinCard snap={snap} tk={tk} />
           </>
         ) : (
           dayPage

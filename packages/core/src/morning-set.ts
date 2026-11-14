@@ -190,7 +190,7 @@ export function morningReasons(days: Days, st: Settings, tk: DayKey): string[] {
     const s = (t || '').trim();
     if (s && out.length < 3 && !out.some((x) => x.toLowerCase() === s.toLowerCase())) out.push(s);
   };
-  const last = lastSet(days, tk, CARRY_DAYS)?.ms.r;
+  const last = morningOf(days[tk])?.r || lastSet(days, tk, CARRY_DAYS)?.ms.r;
   /* faith on (D10 (a)): "My faith" is one of the person's own reasons; with it off, nothing about faith */
   const a = st.onb?.a as { faith?: string } | undefined;
   const faith = a && (a.faith === 'big' || a.faith === 'some') ? ['My faith'] : [];
@@ -264,8 +264,20 @@ export interface Tonight {
     CARRY_DAYS, or the starting time with no reason. tk is the log day, so at 1 AM it is still the same night. */
 export function tonightOf(days: Days, st: Settings, tk: DayKey): Tonight {
   const s = lastSet(days, tk, CARRY_DAYS);
-  if (!s) return { at: nightAtStart(st), r: null, rAt: null, from: null, today: false };
-  return { at: s.ms.nt || nightAtStart(st), r: s.ms.r || null, rAt: s.ms.set || null, from: s.k, today: s.k === tk };
+  const t: Tonight = s
+    ? { at: s.ms.nt || nightAtStart(st), r: s.ms.r || null, rAt: s.ms.set || null, from: s.k, today: s.k === tk }
+    : { at: nightAtStart(st), r: null, rAt: null, from: null, today: false };
+  /* a reason chosen on Today before the morning was set (pickTonightReason) is tonight's */
+  const own = morningOf(days[tk]);
+  return own?.r && !own.set ? { ...t, r: own.r, rAt: own.at, from: tk } : t;
+}
+
+/** tonight's reason, chosen on Today ("Tonight, for", components/today-below.tsx): kept on today without setting the morning, so the
+    morning page still opens as it would, already on this reason */
+export function pickTonightReason(days: Days, tk: DayKey, r: string, now = Date.now()): Days {
+  const t = r.trim();
+  if (!t) return days;
+  return withMorning(days, tk, now, (ms) => void (ms.r = t));
 }
 
 /** how a night went, as the morning after said: the night of log day k is answered on day k + 1 (or by the catch-up row on day

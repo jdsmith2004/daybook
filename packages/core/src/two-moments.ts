@@ -4,7 +4,8 @@
    - Good night is one page (app/night.tsx): the phone goes to bed, the night's waits are armed (Screen Time, lib/pull.ts), the time is
      kept (p.po, day.ts phoneAway) and the flame sleeps. "N nights put to bed" only grows.
    - Today follows the clock: its sky is dawn, day, dusk or night (skyPhase), and after the night hour (tonight's time, morning-set.ts
-     tonightOf) Today is the night page: one card, Phone to bed, and the care row (afterNightHour).
+     tonightOf) Today is the night page: Phone to bed leads, with the care row and the person's own part of Today under it, and the day's
+     line of stops waits for the morning (afterNightHour; the owner, November 13, 2026, found the one-card night page empty).
 
    New people start without the evening check-in and without "How are you feeling today?" (freshSettings); both stay as switches, and
    people who had them keep them. Faith shows in the two moments only when the person said faith plays a part (faithOn, D10 (a)).

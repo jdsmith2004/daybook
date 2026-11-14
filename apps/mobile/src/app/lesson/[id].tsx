@@ -149,6 +149,8 @@ export default function LessonScreen() {
   const took = useRef(0);
   const finished = useRef(false);
   const beatAt = useRef(0);
+  /** which way the last move went, so the next card comes in from that side */
+  const dir = useRef<1 | -1 | 0>(0);
   useEffect(() => {
     beatAt.current = i;
     if (L && i > 0) track('lesson_beat', { lesson: L.id, beat: i });
@@ -328,6 +330,7 @@ export default function LessonScreen() {
     const to = i + d;
     if (to < 0) return;
     if (d > 0 && !read && !answered(seq[i])) return;
+    dir.current = d > 0 ? 1 : -1;
     /* past the last card the lesson is read: it is recorded, then Put it to work, the deed, and the finish */
     if (to >= seq.length) {
       record();
@@ -341,6 +344,7 @@ export default function LessonScreen() {
     apply((cur) => ({ st: lessonPracticed(cur, L.id) }));
   };
   const toStage = (s: Stage) => {
+    dir.current = 1;
     setStage(s);
   };
   /* a deed's answer, at the end of the step or asked once more: "I did it" gives its points on today, kept for good */
@@ -744,6 +748,7 @@ export default function LessonScreen() {
       scroll={scroll}
       fit={fit}
       bodyKey={stg + ':' + i + (lockKey ? ':lock' : '')}
+      dir={lockKey ? 0 : dir.current}
       praise={praise}
       floatFoot
       foot={foot}

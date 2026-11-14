@@ -429,11 +429,7 @@ export function NightPage({
                 {bed.msg}
               </T>
             ) : null}
-            {bed.gain && !bed.hush ? (
-              <T v="label" style={[s.c, { color: '#8CF0CE' }]}>
-                {'+' + bed.gain + ' points'}
-              </T>
-            ) : null}
+            {bed.gain && !bed.hush ? <PointsPop gain={bed.gain} delay={reduce ? 0 : WORDS + 700} reduce={reduce} /> : null}
           </Appear>
         ) : opens ? (
           <View style={[s.words, s.top]}>
@@ -490,12 +486,34 @@ export function NightPage({
   );
 }
 
+/** what Goodnight earned, landing a beat after the words: it springs up from small, overshoots and settles, like a reward dropped on the
+    nightstand, then stays */
+function PointsPop({ gain, delay, reduce }: { gain: number; delay: number; reduce: boolean }) {
+  const v = useRef(new Animated.Value(reduce ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduce) return;
+    const a = Animated.sequence([Animated.delay(delay), Animated.spring(v, { toValue: 1, friction: 4, tension: 140, useNativeDriver: NATIVE })]);
+    a.start();
+    return () => a.stop();
+  }, [reduce, delay, v]);
+  const scale = v.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
+  const lift = v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] });
+  const opacity = v.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1], extrapolate: 'clamp' });
+  return (
+    <Animated.View style={[s.pts, { opacity, transform: [{ translateY: lift }, { scale }] }]}>
+      <Icon name="star" size={18} color={MINT} />
+      <Text style={s.ptsT}>{'+' + gain + ' points'}</Text>
+    </Animated.View>
+  );
+}
+
 /** after Goodnight in the check-in and after SOS "Go to bed": the same page, asleep */
 export function GoingToBed({ bed, plan, extra }: { bed: Bed; plan?: string; extra?: ReactNode }) {
   return <NightPage bed={bed} plan={plan} extra={extra} />;
 }
 
 const MOON_INK = '#1A1250';
+const MINT = '#8CF0CE';
 const s = StyleSheet.create({
   root: { flex: 1 },
   c: { textAlign: 'center' },
@@ -545,6 +563,8 @@ const s = StyleSheet.create({
     shadowRadius: 0,
     elevation: 3,
   },
+  pts: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  ptsT: { fontFamily: font.display, fontSize: 22, color: MINT },
   gnT: { fontFamily: font.display, fontSize: 22, color: MOON_INK },
   fold: { alignSelf: 'stretch', borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.10)', overflow: 'hidden' },
   foldHead: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56, paddingHorizontal: 16, paddingVertical: 8 },

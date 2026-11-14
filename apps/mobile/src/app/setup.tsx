@@ -115,6 +115,8 @@ export default function Setup() {
   const rem = useReminderPrefs();
   const env = { notify: remindersOffered, account: !f.redo && sync.status.k === 'out', redo: f.redo };
   const until = useRef(0);
+  /** which way the last move went, so the next page comes in from that side */
+  const dir = useRef<1 | -1 | 0>(0);
   const asking = useRef(false);
   const P = obPages(f.a, env);
   const i = Math.max(0, Math.min(P.length - 1, f.i));
@@ -176,6 +178,7 @@ export default function Setup() {
       const to = Math.max(0, Math.min(PP.length - 1, x.i + d));
       if (to === x.i) return x;
       until.current = Date.now() + 260;
+      dir.current = d > 0 ? 1 : -1;
       return { ...x, i: to };
     });
   };
@@ -658,6 +661,7 @@ export default function Setup() {
         scroll={scroll}
         fit={fit}
         bodyKey={pg.id}
+        dir={dir.current}
         prog={<Prog total={P.length} i={i} all={fin} look={look} label={barLabel} />}
         onBack={noBack ? undefined : () => go(-1)}
         onClose={fin ? finish : exit}

@@ -319,7 +319,7 @@ export default function Checkin() {
     body = (
       <>
         {/* the day is logged, and the flame takes it in */}
-        <Finish level={Math.max(1, g.level.n)} title="Day logged." text={msg} always least={0.6} />
+        <Finish level={Math.max(1, g.level.n)} title="Day logged." text={msg} always least={0.6} cheer />
         {gain ? <CountUp to={gain} prefix="+" suffix=" points" delay={700} style={[s.pts, { color: c.mintText }]} /> : null}
         <View style={s.tiles}>
           {rateKeys(form).map((f, j) => (

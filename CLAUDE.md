@@ -96,6 +96,10 @@ need, without letting the screen turn into a list of features.
   in the chat, every time: say which profile and that it uses one of the 15, then wait. A task that says "make a TestFlight
   build" is not that yes, and one yes covers one build. Builds that use none of the 15 need no permission: local builds
   (`expo run:ios`, Xcode, the simulator, `eas build --local`) and setting up credentials when no build can be queued.
+  **Store builds run through the GitHub workflow, not the Mac (the owner, November 13, 2026: "that action was built so we
+  would use it").** Once the owner says yes, start it with `gh workflow run store.yml --ref main` (Actions, App Store): it runs
+  the checks, builds on Expo and sends it to TestFlight with no one at the keyboard. Never hand the owner a local `eas build`
+  command or run one on the Mac, except as the one-time fix when the workflow fails on something only an Apple sign-in can do.
 - **Working style.** Work on your own and ask only about design changes or real uncertainty. When `npm run typecheck` and
   `npm test` pass, merge to `main` (deploying as below); GitHub keeps everything, so a change can always be rolled back.
   Effort levels save usage: every plan marks each step with the Opus effort level it needs (high for sync, accounts,

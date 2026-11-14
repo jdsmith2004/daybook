@@ -169,6 +169,8 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
   const look = useSharedValue(0);
   const sway = useSharedValue(0);
   const nod = useSharedValue(0);
+  /* the flame settling its weight as it lands home: a soft squash that eases out, never past its shape */
+  const land = useSharedValue(0);
   /* the line to keep writes itself out, letter by letter, once the flame says it */
   const [typed, setTyped] = useState(still ? keep.length : 0);
 
@@ -246,7 +248,11 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
       look.value = k;
       at(ms, () => (look.value = 0));
     };
-    at(home - 80, () => face(LOOK.happy, 720));
+    at(home - 80, () => {
+      face(LOOK.happy, 720);
+      buzz('land');
+      land.value = withSequence(withTiming(1, { duration: 110, easing: OUT }), withTiming(0, { duration: 420, easing: OUT }));
+    });
     sway.value = withDelay(home + 300, withRepeat(withTiming(1, { duration: 1700, easing: Easing.inOut(Easing.sin) }), -1, true));
     const acts: [number, number, number][] = [
       [LOOK.left, 620, 2200],
@@ -275,7 +281,11 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
       const steps = 16;
       for (let k = 1; k <= steps; k++) {
         const e = 1 - Math.pow(1 - k / steps, 2);
-        at(T.pts + e * 520, () => setCount(Math.round((m.shown * k) / steps)));
+        at(T.pts + e * 520, () => {
+          setCount(Math.round((m.shown * k) / steps));
+          /* a faint click as the number climbs, as Duolingo's does, every few steps so it never buzzes */
+          if (k % 4 === 0) buzz('tick');
+        });
       }
       go.value = withDelay(T.glide, withTiming(1, { duration: T.glideMs, easing: BOTH }));
       const into = T.glide + T.glideMs - 120;
@@ -286,7 +296,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
         withSequence(withTiming(1, { duration: T.glideMs, easing: BOTH }), withDelay(260, withTiming(0, { duration: 520, easing: BOTH }))),
       );
       at(into, () => {
-        buzz('tick');
+        buzz('land');
         if (!up) setLanded(true);
       });
       if (up) {
@@ -312,6 +322,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
     /* 4. the lessons line fills by this one, 5. as it does, the line to keep and the button come in */
     if (lessons) {
       lessonsFill.value = withDelay(next, withTiming(lessons.to, { duration: 600, easing: OUT }));
+      at(next + 560, () => buzz(lessons.to >= 1 ? 'land' : 'tick'));
       next += 200;
     }
     say.value = withDelay(next, withTiming(1, { duration: 300, easing: OUT }));
@@ -345,10 +356,15 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
   }));
   const shoutIn = useAnimatedStyle(() => ({
     opacity: shout.value * interpolate(open.value, [0.55, 1], [0, 1], 'clamp'),
-    transform: [{ translateY: 10 * (1 - shout.value) }],
+    transform: [{ translateY: 10 * (1 - shout.value) }, { scale: 0.9 + 0.1 * shout.value }],
   }));
   const actIn = useAnimatedStyle(() => ({
-    transform: [{ translateY: 4 * nod.value }, { rotate: `${(sway.value * 2 - 1) * 2.2 * rest.value + 4 * nod.value}deg` }],
+    transform: [
+      { translateY: 4 * nod.value },
+      { rotate: `${(sway.value * 2 - 1) * 2.2 * rest.value + 4 * nod.value}deg` },
+      { scaleX: 1 + 0.05 * land.value },
+      { scaleY: 1 - 0.07 * land.value },
+    ],
   }));
   const restIn = useAnimatedStyle(() => ({ opacity: rest.value, transform: [{ translateY: 8 * (1 - rest.value) }] }));
   const ptsIn = useAnimatedStyle(() => {
@@ -481,14 +497,17 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
   );
 }
 
-/** a few gold glints that drift away from the words in the opener and fade, the only confetti the moment has */
+/** a few gold bits round the words in the opener, the only confetti the moment has: like the gold squares on Duolingo's banner, each
+    drifts slowly down, turning over as it goes, and fades before the opener ends */
 const GLINTS = [
-  { x: -150, y: -14, dx: -18, dy: -10, s: 7 },
-  { x: -128, y: 26, dx: -14, dy: 12, s: 5 },
-  { x: -96, y: -40, dx: -8, dy: -16, s: 5 },
-  { x: 100, y: -36, dx: 10, dy: -16, s: 6 },
-  { x: 138, y: -6, dx: 18, dy: -6, s: 7 },
-  { x: 124, y: 30, dx: 14, dy: 14, s: 5 },
+  { x: -150, y: -30, dx: -10, dy: 34, s: 8, r: 160 },
+  { x: -128, y: 22, dx: -6, dy: 40, s: 6, r: -120 },
+  { x: -92, y: -62, dx: -4, dy: 30, s: 6, r: 200 },
+  { x: -40, y: 54, dx: 2, dy: 36, s: 5, r: -90 },
+  { x: 52, y: -70, dx: 4, dy: 32, s: 6, r: 140 },
+  { x: 100, y: -36, dx: 8, dy: 38, s: 7, r: -180 },
+  { x: 138, y: -4, dx: 10, dy: 30, s: 8, r: 120 },
+  { x: 120, y: 44, dx: 6, dy: 40, s: 5, r: -150 },
 ];
 function Glints({ v, open, x, y }: { v: SharedValue<number>; open: SharedValue<number>; x: number; y: number }) {
   return (
@@ -505,7 +524,16 @@ function Glint({ v, open, x, y, g, i }: { v: SharedValue<number>; open: SharedVa
     const t = Math.max(0, Math.min(1, (v.value - i * 0.04) / 0.8));
     const a = interpolate(t, [0, 0.15, 0.7, 1], [0, 1, 1, 0], 'clamp') * interpolate(open.value, [0.5, 1], [0, 1], 'clamp');
     const e = 1 - (1 - t) * (1 - t);
-    return { opacity: a, transform: [{ translateX: x - g.s / 2 + g.dx * e }, { translateY: y - g.s / 2 + g.dy * e }, { rotate: '45deg' }] };
+    return {
+      opacity: a,
+      transform: [
+        { translateX: x - g.s / 2 + g.dx * e },
+        { translateY: y - g.s / 2 + g.dy * t },
+        { rotate: `${45 + g.r * t}deg` },
+        /* turning over: it narrows and widens as it falls, like a flat square catching the light */
+        { scaleX: 0.35 + 0.65 * Math.abs(Math.cos(t * Math.PI * 1.5 + i)) },
+      ],
+    };
   });
   return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: g.s, height: g.s, borderRadius: 1, backgroundColor: GOLD }, st]} />;
 }

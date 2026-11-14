@@ -181,13 +181,14 @@ export function figAsleep(fig: string): string {
 export const LOOKS = ['ahead', 'left', 'right', 'slyLeft', 'slyRight', 'happy', 'down'] as const;
 export type Look = (typeof LOOKS)[number];
 /** where the dark of each eye sits in the white, and how far the lid is down (0 open, about 0.45 half shut), for each look */
-const LOOK_AT: Record<Exclude<Look, 'happy'>, { x: number; y: number; lid: number }> = {
-  ahead: { x: 0.6, y: 0.4, lid: 0 },
-  left: { x: -3.6, y: 0.4, lid: 0 },
-  right: { x: 3.6, y: 0.4, lid: 0 },
-  slyLeft: { x: -3.4, y: 1.4, lid: 0.48 },
-  slyRight: { x: 3.4, y: 1.4, lid: 0.48 },
-  down: { x: 0.4, y: 3.4, lid: 0.18 },
+/* the dark keeps its size and the face's own highlights, so every look is the flame's usual face, only turned (a smaller dark,
+   with more white round it, looked like a stare: the owner, November 14, 2026, "the eyes look freaking creepy") */
+const LOOK_AT: Record<Exclude<Look, 'happy' | 'ahead'>, { x: number; y: number; lid: number }> = {
+  left: { x: -2.4, y: 0.7, lid: 0 },
+  right: { x: 3.2, y: 0.4, lid: 0 },
+  slyLeft: { x: -2.2, y: 1.2, lid: 0.46 },
+  slyRight: { x: 3, y: 1.2, lid: 0.46 },
+  down: { x: 1.2, y: 2.4, lid: 0.2 },
 };
 /** the still layer (emblemLayers) once for each of LOOKS: the eyes drawn again with a smaller dark that can move inside the white, a lid
     that comes half down for a sly look, and a happy squint. Every form has the one face, so this works for all of them. Each copy gets
@@ -201,6 +202,7 @@ export function faceLooks(still: string): string[] {
   const iris = /url\(#(em\d+f\w*)\)/.exec(still.slice(at, end))?.[1] ?? 'em1fir';
   const pre = /^em\d+f/.exec(iris)?.[0] ?? 'em1f';
   const eye = (cx: number, look: Look, k: number) => {
+    if (look === 'ahead') return '';
     if (look === 'happy') return `<path d="M${cx - 11} 88Q${cx} 74 ${cx + 11} 88" fill="none" stroke="#8A2E0C" stroke-width="4.6" stroke-linecap="round"/>`;
     const p = LOOK_AT[look];
     const ix = cx + p.x;
@@ -215,12 +217,16 @@ export function faceLooks(still: string): string[] {
     return (
       `<defs><clipPath id="${clip}"><circle cx="${cx}" cy="84" r="13"/></clipPath></defs>` +
       `<circle cx="${cx}" cy="84" r="13" fill="${ink}"/><circle cx="${cx}" cy="84" r="11.7" fill="#FFF6E8"/>` +
-      `<g clip-path="url(#${clip})"><circle cx="${ix}" cy="${iy}" r="7.6" fill="url(#${iris})"/>` +
-      `<circle cx="${ix - 1.8}" cy="${iy - 3.2}" r="2.9" fill="#fff"/><circle cx="${ix + 3}" cy="${iy + 1.6}" r="1.3" fill="#fff"/></g>` +
+      `<g clip-path="url(#${clip})"><circle cx="${ix}" cy="${iy}" r="9.1" fill="url(#${iris})"/>` +
+      `<circle cx="${ix - 2.1}" cy="${iy - 4.3}" r="3.5" fill="#fff"/><circle cx="${ix + 3.4}" cy="${iy + 1.1}" r="1.6" fill="#fff"/></g>` +
       lid
     );
   };
   return LOOKS.map((look, k) =>
-    (still.slice(0, at) + '<g>' + eye(-17, look, k) + eye(17, look, k) + '</g>' + still.slice(end)).replace(/\bem(\d+)f(?!\d+q)/g, `em$1f${k}q`),
+    /* ahead is the face exactly as it is drawn everywhere else */
+    (look === 'ahead' ? still : still.slice(0, at) + '<g>' + eye(-17, look, k) + eye(17, look, k) + '</g>' + still.slice(end)).replace(
+      /\bem(\d+)f(?!\d+q)/g,
+      `em$1f${k}q`,
+    ),
   );
 }

@@ -42,7 +42,7 @@ import {
   standRow,
   sunriseDue,
   morningDue,
-  afterNightHour,
+  nightPage,
   skyPhase,
   fmtClock,
   stopTiles,
@@ -379,7 +379,8 @@ export default function Today() {
   const title = fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' });
   const ink = skyInk(g.level.n, skyPhase(snap.days, st, tk, now));
   /* after the night hour (tonight's time, core two-moments.ts), until the new day */
-  const night = afterNightHour(snap.days, st, tk, now);
+  /* the night page; not on the night setup is finished before any lesson, so lesson 1 is there (core two-moments.ts setupNight) */
+  const night = nightPage(snap.days, st, tk, now);
   /* a long day's list takes a little of the empty sky over the flame (lib/today-size.ts skyTrim; the hero keeps the flame whole) */
   const trim = night ? 0 : skyTrim(stopTiles(snap.days, st, tk, now, snap.journal, !!account).tiles.length);
   /* the Good night stop, even on a day its row is switched off: Phone to bed is always the night's one card */

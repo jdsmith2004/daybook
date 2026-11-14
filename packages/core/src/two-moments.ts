@@ -12,7 +12,7 @@
 import { addDays, defaultSettings, fmtClock, isTime, sumDay } from './legacy/core.js';
 import { faithVoice } from './faith';
 import { gradInfo, GRAD_DAYS } from './graduate';
-import { phoneNights, windCounts } from './day';
+import { phoneNights, setupNight, windCounts } from './day';
 import { morningOf, tonightOf } from './morning-set';
 import type { Clock, DayKey, Days, Settings } from './types';
 
@@ -37,6 +37,9 @@ export function afterNightHour(days: Days, st: Settings, tk: DayKey, now: number
   const n = nowMin(now);
   return !isTime(st.screensOff) || windCounts(st, `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`);
 }
+
+/** whether Today is the night page now: after the night hour, except on the night setup is finished, before any lesson */
+export const nightPage = (days: Days, st: Settings, tk: DayKey, now: number): boolean => afterNightHour(days, st, tk, now) && !setupNight(days, st, tk);
 
 export type SkyPhase = 'dawn' | 'day' | 'dusk' | 'night';
 /** Today's sky, by the clock (D3): dawn from the new day until 9 AM, day until 5 PM, dusk until the night hour, then night. So the sky

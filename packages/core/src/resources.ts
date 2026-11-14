@@ -14,7 +14,10 @@ export type LoveVideo = {
   note?: string;
 };
 
-export const LOVE_VIDEOS: LoveVideo[] = [{ id: 'iqGAW57EudQ', title: 'About You', note: 'The 1975' }];
+export const LOVE_VIDEOS: LoveVideo[] = [
+  { id: 'iqGAW57EudQ', title: 'About You', note: 'The 1975' },
+  { id: 'kFp-2UxBiYE', title: 'Cry', note: 'Sally Kim' },
+];
 
 /** a YouTube video id, as it appears in the address */
 export const isVideoId = (id: string) => /^[A-Za-z0-9_-]{11}$/.test(id);

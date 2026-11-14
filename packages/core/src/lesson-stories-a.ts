@@ -138,11 +138,13 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'In 1863, the writer Dostoevsky made a small challenge.',
         p: 'Try not to think of a polar bear, he wrote, and you will see that the cursed thing comes to mind every minute.',
+        dx: 'He was writing about a trip to Europe, not about the mind, and it was a passing line. Try to set yourself this task, he wrote: not to think of a polar bear, and you will see that the cursed thing will come to mind every minute. For more than a hundred years people quoted it as a curiosity. **Nobody tested it**, because it sounded too obvious to test, and too strange to explain.',
         art: ['scene', { k: 'bear-book' }],
       },
       {
         h: 'More than a hundred years later, a psychologist named Daniel Wegner tested it.',
         p: 'He sat people alone in a room for five minutes, saying aloud whatever came to mind. One rule: do not think of a white bear. If one comes, ring the bell.',
+        dx: 'Wegner was a psychologist in Texas who could not let the line go. He brought students into a small room, one at a time, with a microphone and a bell on the table. For five minutes they were to say out loud everything that went through their mind, the way you would narrate a daydream. Then came one rule: do not think of a white bear. **If one shows up, ring the bell.** Nobody had told them anything about bears before. Nothing in the room was white or furry. The only bear in that room was the one the rule put there.',
         art: ['scene', { k: 'bell-room' }],
       },
       {
@@ -152,6 +154,7 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'The people in the room rang the bell about once a minute.',
         p: 'Then came the part nobody expected. Told afterward that they could think of the bear, the ones who had pushed it away thought of it more than people who had been free to all along.',
+        dx: 'Trying their hardest, they still could not keep it out, and they said the bear out loud even more often than they rang. That part Dostoevsky could have guessed. The surprise came in the second five minutes. Now the students were told the opposite: go ahead, think of a white bear. A second group had been free to think of it from the start. **The ones who had pushed it away thought of it more.** Wegner called it a rebound. Pushing a thought down did not empty it. It wound it up like a spring.',
         art: ['scene', { k: 'rebound' }],
         fact: { s: 'Study · Wegner and colleagues, 1987', i: [0] },
       },
@@ -159,17 +162,20 @@ export const STORIES_A: Record<string, Story> = {
         long: 1,
         h: 'Wegner spent years working out why.',
         p: 'To keep a thought out, part of your mind has to keep checking whether it is gone. Every check carries the thought back in. The harder you push, the harder that part works.',
+        dx: 'He came to think the mind runs two jobs at once when you try not to think of something. One job looks for anything else to think about: a song, the wall, your plans. The other job quietly checks whether the bear is gone, and to check, it has to hold the bear in mind. Most of the time the first job wins and you forget for a while. But Wegner found that **when people were tired, stressed or busy**, the searching job slowed down and the checking job kept going. Under strain, trying not to think of something made people think of it more than if they had never tried. That is why an urge pushed away on a worn-out day can feel louder than ever.',
         art: ['scene', { k: 'checker' }],
         fact: { s: 'Theory · Wegner, ironic processes, 1994', i: [1] },
       },
       {
         h: 'An urge works the same way.',
         p: 'When you fight hard to keep a picture out, the fight keeps it close. The urge is not winning because you are weak. It is winning because you are pushing.',
+        dx: 'Think of how this goes with a picture or an urge. The thought arrives. You tell yourself no, do not think about it, stop. Every no is a check, and every check brings the picture back for one more look. Minutes later you are worn out from a fight you did not seem to be winning, and the fight itself feels like proof that the urge is strong. It is not proof of that. **The urge is not winning because you are weak.** It is winning because the push keeps carrying it back in, the same way it carried the bear back to the students in that room.',
         art: ['scene', { k: 'push-door' }],
       },
       {
         h: 'There is a third way, between pushing it out and giving in.',
         p: 'Let it be there. Name it. Watch it rise, peak and fall like a wave. An urge left alone does not climb forever.',
+        dx: 'Between fighting the thought and obeying it there is a third way, and it is learnable. Let the urge be there without arguing with it. Name it plainly: this is an urge. Then watch it the way you would watch a wave come in from the shore. It rises, it peaks, and it falls, usually in minutes, because the body cannot hold a craving at full strength for long. **An urge left alone does not climb forever.** You are not trying to make it go away. You are letting it finish, while you stay where you are.',
         art: ['wave', {}],
       },
       {
@@ -177,12 +183,14 @@ export const STORIES_A: Record<string, Story> = {
         n: '123',
         h: 'college smokers were taught to watch their urges this way.',
         p: 'Their urges were as strong as everyone else’s. Over the next week, they smoked fewer cigarettes. The urge did not change. What they did with it did.',
+        dx: 'Researchers in Seattle asked the smokers to bring their cigarettes, and had them hold a pack, open it, smell the tobacco and handle a lighter, without lighting up. Some were first taught to surf the urge: to notice it in the body, breathe, and watch it rise and fall. The others got no instruction. In the room, both groups felt the same strong urge. The difference came after. Over the next seven days, **the ones who had learned to watch smoked fewer cigarettes.** Watching did not make the urge weaker. It changed what the urge could make them do.',
         fact: { s: 'Study · 123 college smokers · Bowen & Marlatt, 2009', i: [2] },
       },
       {
         long: 1,
         h: 'Each urge you watch to the end teaches you something.',
         p: 'Not that the urge is weak, but that it ends. The next one has less to promise you, because you have seen how this goes.',
+        dx: 'The first time you watch an urge all the way to its end, it is hard, because some part of you does not believe it will end. The second time, you have one memory of it ending. The tenth time, you know. That knowledge changes the next urge before it even starts: **it has less to promise you**, because you have watched how the story goes. This is how a brain that learned one habit by repetition learns another the same way, one watched wave at a time.',
         art: ['scene', { k: 'waves' }],
       },
     ],

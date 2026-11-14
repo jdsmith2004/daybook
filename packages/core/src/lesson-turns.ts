@@ -23,6 +23,7 @@ import { TURNS_D } from './lesson-turns-d';
 import { GOD_A } from './lesson-turns-god-a';
 import { GOD_B } from './lesson-turns-god-b';
 import { NIGHT } from './lessons-night';
+import { STORIES, storyLesson } from './lesson-stories';
 
 /** a source: [name: topic, url] */
 type Src = [string, string, string?, string?];
@@ -87,6 +88,8 @@ const more = (s?: string): Block[] | undefined => (s ? [['p', s]] : undefined);
 
 /** a turn as a lesson's cards, and the short words each card shows */
 export function turnLesson(T: Turn, was: Lesson): { L: Lesson; beats: LessonBeats } {
+  /* a lesson told as a story replaces its turn (lesson-stories.ts) */
+  if (STORIES[T.id]) return storyLesson(STORIES[T.id], was);
   const cards: Card[] = [];
   const beats: Beat[] = [];
   const add = (c: Card, b: Beat) => (cards.push(c), beats.push(b));

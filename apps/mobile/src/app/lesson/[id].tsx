@@ -87,7 +87,7 @@ import { LessonArt, useCount } from '@/components/lesson-art';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
 import { Answer, Question, Quiet, Shell } from '@/components/lesson-parts';
 import { LessonFinish } from '@/components/lesson-finish';
-import { Bar, Praise, praiseFor } from '@/components/lesson-play';
+import { Bar, Praise, praiseFor, thanksFor } from '@/components/lesson-play';
 import { FlashCard } from '@/components/lesson-flash';
 import { Next, Rich } from '@/components/lx';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
@@ -531,7 +531,7 @@ export default function LessonScreen() {
         <Praise
           key={'p' + ci}
           show
-          word={praiseFor(ci + L.id.length, run)}
+          word={card.k === 'choose' && card.a == null ? thanksFor(ci + L.id.length) : praiseFor(ci + L.id.length, run)}
           say={say}
           label="Continue"
           onMore={moreOn ? more : undefined}

@@ -83,6 +83,8 @@ export interface Lesson {
   id: string;
   u: number;
   v?: number;
+  /** a lesson told as a story: its kind (lesson-stories.ts, docs/lessons.md) */
+  form?: string;
   title: string;
   tag: string;
   ic: string;

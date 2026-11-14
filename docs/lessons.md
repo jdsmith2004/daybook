@@ -68,6 +68,12 @@ The kinds rotate along the path, so no two days in a row feel the same.
 | Why this works               | Why a tool Daybook asks you to try works, so trying it makes sense.                                                                                                                         | not yet seen       |
 | An old tale taken apart      | A story everyone knows, read for what it says about a habit (Pleasure Island, the dragon's gold).                                                                                           | "excellent"        |
 
+## Where they live
+
+A lesson told as a story is written in `packages/core/src/lesson-stories*.ts` (the shape is at the top of `lesson-stories.ts`)
+and replaces the older turn with the same id, so its place on the path and everything earned stay. `test/lesson-stories.test.ts`
+holds each one to the rules below. Batch A (November 14, 2026): l1, l2, l3, l10, l11, l41.
+
 ## Every lesson
 
 - **It turns something over.** By the end, the person sees something differently. A card that says what they already believed is cut.

@@ -65,6 +65,10 @@ function Run({ n, color }: { n: number; color: string }) {
 /** the words of praise on the bar, picked by the card so the same card always says the same thing */
 const PRAISE = ['Nice.', 'Good.', 'Well said.', 'Yes.', 'Nicely done.', 'Good one.'];
 export const praiseFor = (k: number, run: number) => (run === 5 ? 'Five in a row.' : run === 10 ? 'Ten in a row.' : PRAISE[k % PRAISE.length]);
+/** the word on the bar after a question with no right answer, about the person's own life: it thanks them, and never sounds like a
+    verdict on what they picked (the owner, November 14, 2026, docs/lessons.md) */
+const THANKS = ['Thank you.', 'Good to know.', 'Honest answer.'];
+export const thanksFor = (k: number) => THANKS[k % THANKS.length];
 
 /** the bar that slides up from the bottom once a card is answered: a word of praise with a tick, the flame's reply, and the button.
     It covers the low part of the screen, as Duolingo's does, so the next step is the only thing to do. */

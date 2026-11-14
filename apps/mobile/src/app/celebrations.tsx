@@ -8,6 +8,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Earned } from '@/components/earned';
+import { LessonFinish } from '@/components/lesson-finish';
 import { Text } from '@/components/text';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -20,6 +21,7 @@ export default function Celebrations() {
   const inset = useSafeAreaInsets();
   const [cur, setCur] = useState<CelItem[] | null>(null);
   const [n, setN] = useState(0);
+  const [lesson, setLesson] = useState(0);
   const st = snap.settings;
   if (!ON || !st) return <Redirect href="/" />;
   const g = gameCompute(snap.days, st, snap.reviews, tk);
@@ -36,6 +38,7 @@ export default function Celebrations() {
     if (typeof window !== 'undefined') window.location.href = path + '&motion=1';
   };
   const rows: { name: string; what: string; go: () => void }[] = [
+    { name: 'Lesson finished', what: 'The band, the flame gliding home, the points into the level line.', go: () => setLesson((x) => x + 1) },
     { name: 'Level up', what: 'Rays and a few stars. No confetti.', go: () => play([{ type: 'level', level: L, from: 0, evolve: false }]) },
     {
       name: 'New flame form',
@@ -67,6 +70,23 @@ export default function Celebrations() {
           </Pressable>
         ))}
       </ScrollView>
+      {lesson ? (
+        <View style={StyleSheet.absoluteFill}>
+          <LessonFinish
+            key={lesson}
+            lessonId="l4"
+            title="When values and habits clash"
+            n={4}
+            gain={10}
+            again={false}
+            stats={{ cards: 6, combo: 6, secs: 120 }}
+            keep="You are not your urges. You are the one who decides."
+            next={null}
+            onNext={() => setLesson(0)}
+            onDone={() => setLesson(0)}
+          />
+        </View>
+      ) : null}
       {cur ? <Earned key={n} group={cur} more={false} onClose={() => setCur(null)} /> : null}
     </View>
   );

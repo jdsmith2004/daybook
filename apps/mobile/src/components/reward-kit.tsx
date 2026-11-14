@@ -288,6 +288,113 @@ function Bit({ v, x, y, b }: { v: SharedValue<number>; x: number; y: number; b: 
   return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: b.s, height: b.s, borderRadius: 2, backgroundColor: b.c }, st]} />;
 }
 
+const rect = (l: { x: number; y: number; width: number; height: number }) => ({ x: l.x, y: l.y, w: l.width, h: l.height });
+
+/** The points, then where they go (the check-in's finish): "+25" rises and counts up, then glides down into the level line
+    and is gone into it as the line fills; on a new level the line fills to its end, the label turns over (a soft dip, never a
+    pop) and it fills again from nothing. One continuous path, no springs (docs/design-standards.md, Celebrations). */
+export function PointsInto({
+  gain,
+  was,
+  now,
+  at,
+  still,
+  ink,
+  muted,
+  track,
+  color,
+}: {
+  gain: number;
+  was: { n: number; frac: number };
+  now: { n: number; frac: number };
+  at: number;
+  still: boolean;
+  ink: string;
+  muted: string;
+  track: string;
+  /** the colour of the rising number */
+  color: string;
+}) {
+  const up = now.n > was.n;
+  const rise = useSharedValue(still ? 1 : 0);
+  const go = useSharedValue(still ? 1 : 0);
+  const show = useSharedValue(still ? 1 : 0);
+  const fill = useSharedValue(still ? now.frac : was.frac);
+  const lvFade = useSharedValue(1);
+  const [count, setCount] = useState(still ? gain : 0);
+  const [lvl, setLvl] = useState(still ? now.n : was.n);
+  /* where the number stands and where the fill will end, inside this box */
+  const [box, setBox] = useState<{ nx: number; ny: number; tx: number; ty: number; tw: number } | null>(null);
+  const [num, setNum] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [trk, setTrk] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [line, setLine] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  useEffect(() => {
+    if (num && trk && line) setBox({ nx: num.x + num.w / 2, ny: num.y + num.h / 2, tx: line.x + trk.x, ty: line.y + trk.y + trk.h / 2, tw: trk.w });
+  }, [num, trk, line]);
+  useEffect(() => {
+    if (still) return;
+    const tm: ReturnType<typeof setTimeout>[] = [];
+    const OUT = Easing.out(Easing.cubic);
+    show.value = withDelay(at, withTiming(1, { duration: 360, easing: OUT }));
+    rise.value = withDelay(at, withTiming(1, { duration: 380, easing: OUT }));
+    const steps = 16;
+    for (let k = 1; k <= steps; k++) {
+      const e = 1 - Math.pow(1 - k / steps, 2);
+      tm.push(setTimeout(() => setCount(Math.round((gain * k) / steps)), at + 120 + e * 560));
+    }
+    const glide = at + 1000;
+    go.value = withDelay(glide, withTiming(1, { duration: 600, easing: Easing.inOut(Easing.cubic) }));
+    const into = glide + 480;
+    tm.push(setTimeout(() => buzz('tick'), into));
+    if (up) {
+      fill.value = withDelay(into, withTiming(1, { duration: 480, easing: Easing.in(Easing.quad) }));
+      const turn = into + 480;
+      lvFade.value = withDelay(turn - 160, withSequence(withTiming(0, { duration: 160 }), withTiming(1, { duration: 300, easing: OUT })));
+      tm.push(
+        setTimeout(() => {
+          setLvl(now.n);
+          buzz('lit');
+          fill.value = 0;
+          fill.value = withTiming(now.frac, { duration: 520, easing: OUT });
+        }, turn),
+      );
+    } else fill.value = withDelay(into, withTiming(now.frac, { duration: 700, easing: OUT }));
+    return () => tm.forEach(clearTimeout);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const target = up ? 1 : Math.max(0.04, now.frac);
+  const numIn = useAnimatedStyle(() => {
+    const e = go.value;
+    const dx = box ? box.tx + box.tw * target - box.nx : 0;
+    const dy = box ? box.ty - box.ny : 0;
+    return {
+      opacity: rise.value * (1 - interpolate(e, [0.55, 0.95], [0, 1], 'clamp')),
+      transform: [{ translateX: dx * e }, { translateY: dy * e + 10 * (1 - rise.value) }, { scale: 1 - 0.6 * e }],
+    };
+  });
+  const lineIn = useAnimatedStyle(() => ({ opacity: show.value, transform: [{ translateY: 8 * (1 - show.value) }] }));
+  const fillIn = useAnimatedStyle(() => ({ width: `${Math.max(0.04, Math.min(1, fill.value)) * 100}%` }));
+  const lvIn = useAnimatedStyle(() => ({ opacity: lvFade.value }));
+  return (
+    <View style={s.into} accessible accessibilityLabel={'Plus ' + gain + ' points. Level ' + now.n}>
+      <Reanimated.View onLayout={(e) => setNum(rect(e.nativeEvent.layout))} style={[s.intoNum, numIn]}>
+        <Text style={[s.intoNumT, { color }]}>+{count}</Text>
+        <Text style={[s.intoUnit, { color }]}>points</Text>
+      </Reanimated.View>
+      <Reanimated.View onLayout={(e) => setLine(rect(e.nativeEvent.layout))} style={[s.meter, lineIn]}>
+        <View style={s.meterHead}>
+          <Reanimated.Text style={[s.meterLabel, { color: ink }, lvIn]}>Level {lvl}</Reanimated.Text>
+          <Text style={[s.meterRight, { color: muted }]}>+{gain} points</Text>
+        </View>
+        <View onLayout={(e) => setTrk(rect(e.nativeEvent.layout))} style={[s.track, { backgroundColor: track }]}>
+          <Reanimated.View style={[s.fill, fillIn]}>
+            <View style={s.shine} />
+          </Reanimated.View>
+        </View>
+      </Reanimated.View>
+    </View>
+  );
+}
+
 /** the gold button with its lip, the one way on from an earned moment */
 export const btnStyle = StyleSheet.create({
   btn: { minHeight: 56, borderRadius: 16, backgroundColor: GOLD, borderBottomWidth: 5, borderBottomColor: LIP, alignItems: 'center', justifyContent: 'center' },
@@ -306,4 +413,8 @@ const s = StyleSheet.create({
   star: { position: 'absolute', left: 0, top: 0, width: 18, height: 18 },
   shout: { fontFamily: font.display, color: GOLD, textAlign: 'center' },
   ink: { color: nightInk.ink },
+  into: { alignSelf: 'stretch', gap: 18 },
+  intoNum: { alignSelf: 'center', flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  intoNumT: { fontFamily: font.display, fontSize: 34 },
+  intoUnit: { fontFamily: font.display, fontSize: 20 },
 });

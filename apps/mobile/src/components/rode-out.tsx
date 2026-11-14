@@ -31,9 +31,8 @@ import {
   levelOf,
 } from '@daybook/core';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, useWindowDimensions, View, type ViewInstance } from 'react-native';
-import { Easing, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { AddOwn, Link } from '@/components/choices';
 import { OwnChip } from '@/components/own';
@@ -42,8 +41,8 @@ import { BigFlame } from '@/components/big-flame';
 import { FutureInvite, useFutureInvite } from '@/components/future-invite';
 import { MOVE_ICON, MOVE_NAME } from '@/components/ride/moves';
 import { Packed } from '@/components/packed';
-import { btnStyle, CalmStars, Halo, Meter, meterTime, type MeterSpec } from '@/components/reward-kit';
-import { Opener, type FlameSpot } from '@/components/opener';
+import { btnStyle, Meter, meterTime, Sparkles, type MeterSpec } from '@/components/reward-kit';
+import { Opener } from '@/components/opener';
 import { SceneFrame } from '@/components/scene';
 import { Text } from '@/components/text';
 import { Icon, T } from '@/components/ui';
@@ -68,41 +67,26 @@ export interface Rode {
   sos?: boolean;
 }
 
-/** how long the opener's flame takes to land here (components/opener.tsx TRAVEL) */
-const TRAVEL_MS = 560;
-
 const moveName = (x: string) => MOVE_NAME[x] || urTool(x)?.name || x;
 
 /* `night` is kept for the callers: the page is always on the night now */
 type RodeProps = { won: Rode; night?: boolean; level: number; title?: string; onUndo?: () => void };
 
-/** the ending: first the opener (components/opener.tsx: the band, the flame huge, "Rode it out!", a few glints), then this page
-    mounts under it and says where its flame stands, and the opener's flame travels down into that place: one flame, one move.
-    With celebrations off or Reduce Motion, the page alone, as before. */
+/** the ending: first the big opener every win gets (components/opener.tsx: the band, the flame huge, "Rode it out!", confetti),
+    then this page shows under it as it leaves. With celebrations off or Reduce Motion, the page alone, as before. */
 export function RodeOut(props: RodeProps) {
   const st = useCareSettings();
   const still = useReducedMotion();
   const [stage, setStage] = useState<0 | 1 | 2>(() => (st.celebrate === false || still ? 2 : 0));
-  const [spot, setSpot] = useState<FlameSpot | null>(null);
   return (
     <View style={s.full}>
-      {stage > 0 ? (
-        <RodeOutPage {...props} after={stage > 0 && !(st.celebrate === false || still)} landed={stage === 2} onSpot={(p) => setSpot((o) => o ?? p)} />
-      ) : null}
-      {stage < 2 ? <Opener level={props.level} shout="Rode it out!" to={spot} onLeave={() => setStage(1)} onEnd={() => setStage(2)} /> : null}
+      {stage > 0 ? <RodeOutPage {...props} after={stage > 0 && !(st.celebrate === false || still)} /> : null}
+      {stage < 2 ? <Opener level={props.level} shout="Rode it out!" onLeave={() => setStage(1)} onEnd={() => setStage(2)} /> : null}
     </View>
   );
 }
 
-function RodeOutPage({
-  won,
-  level,
-  title = 'SOS',
-  onUndo,
-  after,
-  landed = true,
-  onSpot,
-}: RodeProps & { after: boolean; landed?: boolean; onSpot?: (p: FlameSpot) => void }) {
+function RodeOutPage({ won, level, title = 'SOS', onUndo, after }: RodeProps & { after: boolean }) {
   const c = useSkyTheme('night');
   const win = useWindowDimensions();
   const { snap, tk, update, apply } = useStore();
@@ -128,14 +112,13 @@ function RodeOutPage({
   const cel = st.celebrate !== false;
   /* the beats play only after the opener; with celebrations off or Reduce Motion everything is in place at once */
   const still = !after;
-  const rest = useSharedValue(still ? 1 : 0);
-  const flameRef = useRef<ViewInstance>(null);
+  const [pulse, setPulse] = useState(0);
   useEffect(() => {
     if (!cel) return void buzz('save');
     if (still) return void buzz('lit');
-    /* the halo and the stars come up as the opener's flame lands here */
-    rest.value = withDelay(TRAVEL_MS, withTiming(1, { duration: 480, easing: Easing.out(Easing.cubic) }));
-    return undefined;
+    /* the opener had its burst; as it leaves, the flame it handed over leaps once */
+    const t0 = setTimeout(() => setPulse(1), 250);
+    return () => clearTimeout(t0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -225,9 +208,8 @@ function RodeOutPage({
   });
   /* the beats: the flame is already there (the opener handed it over), the headline rises, the lines fill one after another,
      then the questions come up low, and Done comes in last */
-  /* the page mounts as the opener's flame sets off toward it; the words wait for it to land */
-  const T_HEAD = still ? 0 : 520;
-  const T_LINES = still ? 0 : 1000;
+  const T_HEAD = 150;
+  const T_LINES = 650;
   const lineAt = lines.map((_, i) => T_LINES + lines.slice(0, i).reduce((s0, l) => s0 + meterTime(l) - 250, 0));
   const linesEnd = lines.length ? T_LINES + lines.reduce((s0, l) => s0 + meterTime(l) - 250, 0) : T_LINES;
   const T_ASK = still ? 0 : linesEnd;
@@ -259,19 +241,9 @@ function RodeOutPage({
         </Appear>
       }>
       {/* the flame, standing big on the night with gold stars twinkling around it, as at the end of a lesson */}
-      <View
-        ref={flameRef}
-        onLayout={() => flameRef.current?.measureInWindow((x, y, w, h) => onSpot?.({ x: x + w / 2, y: y + h / 2, size: w }))}
-        style={[s.flame, { width: F, height: F }]}
-        accessible
-        accessibilityRole="image"
-        accessibilityLabel={'Your flame, level ' + level}>
-        {cel ? <Halo v={rest} size={F} still={still} /> : null}
-        {cel ? <CalmStars v={rest} size={F} still={still} /> : null}
-        {/* while the opener's flame is on its way here, this one waits unseen: the two are one flame */}
-        <View style={{ opacity: landed ? 1 : 0 }}>
-          <BigFlame level={level} size={F} noLand label="" />
-        </View>
+      <View style={[s.flame, { width: F, height: F }]} accessible accessibilityRole="image" accessibilityLabel={'Your flame, level ' + level}>
+        <Sparkles size={F} at={still ? 0 : 200} still={still || !cel} />
+        <BigFlame level={level} size={F} pulse={pulse} noLand label="" />
       </View>
       <Appear delay={still ? 0 : T_HEAD} by={12} duration={still ? 0 : 380} style={s.words}>
         <T v="title" style={s.center} accessibilityRole="header">

@@ -19,7 +19,7 @@ import Reanimated, {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
-import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import { Text } from '@/components/text';
 import { buzz, knock } from '@/lib/feel';
@@ -27,7 +27,6 @@ import { SETTLE } from '@/lib/motion';
 import { font, nightInk } from '@/lib/theme';
 
 export const GOLD = '#FFD25A';
-const ORANGE = '#FF9A2E';
 export const NIGHT = '#16113A';
 export const LIP = '#D99A12';
 /** a four-point star, in a 24 box */
@@ -287,92 +286,6 @@ function Bit({ v, x, y, b }: { v: SharedValue<number>; x: number; y: number; b: 
       </Reanimated.View>
     );
   return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: b.s, height: b.s, borderRadius: 2, backgroundColor: b.c }, st]} />;
-}
-
-/** a few gold glints that drift away from the words in the opener and fade, the only confetti the moment has */
-const GLINTS = [
-  { x: -150, y: -14, dx: -18, dy: -10, s: 7 },
-  { x: -128, y: 26, dx: -14, dy: 12, s: 5 },
-  { x: -96, y: -40, dx: -8, dy: -16, s: 5 },
-  { x: 100, y: -36, dx: 10, dy: -16, s: 6 },
-  { x: 138, y: -6, dx: 18, dy: -6, s: 7 },
-  { x: 124, y: 30, dx: 14, dy: 14, s: 5 },
-];
-export function Glints({ v, open, x, y }: { v: SharedValue<number>; open: SharedValue<number>; x: number; y: number }) {
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {GLINTS.map((g, i) => (
-        <Glint key={i} v={v} open={open} x={x + g.x} y={y + g.y} g={g} i={i} />
-      ))}
-    </View>
-  );
-}
-function Glint({ v, open, x, y, g, i }: { v: SharedValue<number>; open: SharedValue<number>; x: number; y: number; g: (typeof GLINTS)[number]; i: number }) {
-  const st = useAnimatedStyle(() => {
-    /* each comes in a little after the one before, drifts outward and fades before the opener ends */
-    const t = Math.max(0, Math.min(1, (v.value - i * 0.04) / 0.8));
-    const a = interpolate(t, [0, 0.15, 0.7, 1], [0, 1, 1, 0], 'clamp') * interpolate(open.value, [0.5, 1], [0, 1], 'clamp');
-    const e = 1 - (1 - t) * (1 - t);
-    return { opacity: a, transform: [{ translateX: x - g.s / 2 + g.dx * e }, { translateY: y - g.s / 2 + g.dy * e }, { rotate: '45deg' }] };
-  });
-  return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: g.s, height: g.s, borderRadius: 1, backgroundColor: GOLD }, st]} />;
-}
-
-/** the warm halo the resting flame stands in (the lesson finish, an urge ridden out): a soft light that breathes slowly */
-export function Halo({ v, size, still }: { v: SharedValue<number>; size: number; still: boolean }) {
-  const breath = useSharedValue(0);
-  useEffect(() => {
-    if (still) return;
-    breath.value = withRepeat(withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.sin) }), -1, true);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const st = useAnimatedStyle(() => ({ opacity: v.value * (0.75 + 0.25 * breath.value) }));
-  const R = Math.round(size * 1.5);
-  return (
-    <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', width: R, height: R, left: (size - R) / 2, top: (size - R) / 2 + size * 0.06 }, st]}>
-      <Svg width={R} height={R} viewBox="0 0 100 100">
-        <Defs>
-          <RadialGradient id="kitHalo" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
-            <Stop offset="0" stopColor={ORANGE} stopOpacity={0.42} />
-            <Stop offset="0.4" stopColor={ORANGE} stopOpacity={0.13} />
-            <Stop offset="1" stopColor={ORANGE} stopOpacity={0} />
-          </RadialGradient>
-        </Defs>
-        <Circle cx={50} cy={50} r={50} fill="url(#kitHalo)" />
-      </Svg>
-    </Reanimated.View>
-  );
-}
-
-/** four faint gold stars around the resting flame, each glowing slowly brighter and dimmer on its own beat; they never pop */
-const CALM_SPOTS = [
-  { x: -0.06, y: 0.2, r: 16, d: 0 },
-  { x: 1.02, y: 0.12, r: 12, d: 900 },
-  { x: 0.96, y: 0.66, r: 18, d: 1700 },
-  { x: 0.0, y: 0.72, r: 11, d: 500 },
-];
-export function CalmStars({ v, size, still }: { v: SharedValue<number>; size: number; still: boolean }) {
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {CALM_SPOTS.map((p, i) => (
-        <CalmTwinkle key={i} v={v} left={p.x * size - p.r / 2} top={p.y * size - p.r / 2} r={p.r} delay={p.d} still={still} />
-      ))}
-    </View>
-  );
-}
-function CalmTwinkle({ v, left, top, r, delay, still }: { v: SharedValue<number>; left: number; top: number; r: number; delay: number; still: boolean }) {
-  const t = useSharedValue(still ? 1 : 0);
-  useEffect(() => {
-    if (still) return;
-    t.value = withDelay(delay, withRepeat(withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.sin) }), -1, true));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const st = useAnimatedStyle(() => ({ opacity: v.value * (0.3 + 0.6 * t.value), transform: [{ scale: 0.8 + 0.2 * t.value }] }));
-  return (
-    <Reanimated.View style={[{ position: 'absolute', left, top, width: r, height: r }, st]}>
-      <Svg width={r} height={r} viewBox="0 0 24 24">
-        <Path d={STAR} fill={GOLD} />
-      </Svg>
-    </Reanimated.View>
-  );
 }
 
 /** the gold button with its lip, the one way on from an earned moment */

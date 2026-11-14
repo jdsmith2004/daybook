@@ -58,6 +58,7 @@ export * from './sync';
 export * from './graduate';
 export * from './levels';
 export * from './accounts';
+export * from './resources';
 export * from './support';
 export * from './supporter';
 export * from './like';

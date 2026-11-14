@@ -86,7 +86,15 @@ export default function Settings() {
             </SetGroup>
           </>
         }
-        foot={<HelpFoot />}
+        foot={
+          <>
+            {/* a test feature, kept quiet and low on purpose (the owner, November 14, 2026; app/love.tsx) */}
+            <SetGroup>
+              <SetRow icon="heart" tone="coral" label="Real love" onPress={() => router.push('/love')} />
+            </SetGroup>
+            <HelpFoot />
+          </>
+        }
       />
     </Screen>
   );

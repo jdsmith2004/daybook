@@ -126,13 +126,14 @@ export function WhyChart() {
             ))}
             <Circle cx={end[0] - 2} cy={end[1]} r={7} fill={c.accent} />
           </Svg>
-          {/* the labels sit where the lines leave room: the record's over the empty top left, the streak's low on the right */}
+          {/* the record's label over the empty top left; the streak is named in the key under the chart, where no line runs through it */}
           <Text style={[s.lab, { color: c.accentText, top: 0, left: 0 }]}>Your free days here</Text>
-          <Text style={[s.lab, { color: c.muted, top: h - 34, right: 0 }]}>A streak</Text>
         </View>
       ) : null}
       <View style={s.slipKey}>
-        <View style={[s.slipDot, { backgroundColor: c.slip }]} />
+        <View style={[s.streakKey, { backgroundColor: c.muted }]} />
+        <Text style={[s.month, { color: c.muted }]}>A streak</Text>
+        <View style={[s.slipDot, { backgroundColor: c.slip, marginLeft: 12 }]} />
         <Text style={[s.month, { color: c.muted }]}>A slip</Text>
       </View>
     </View>
@@ -144,4 +145,5 @@ const s = StyleSheet.create({
   lab: { position: 'absolute', fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   slipKey: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   slipDot: { width: 10, height: 10, borderRadius: 5 },
+  streakKey: { width: 16, height: 3, borderRadius: 2, opacity: 0.7 },
 });

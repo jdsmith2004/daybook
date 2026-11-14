@@ -7,6 +7,7 @@ import { faithVoice, type FaithVoice } from './faith';
 import { GOD, TURNS, turnIn, turnLesson, type Turn } from './lesson-turns';
 import { habitOf, habitSay, type Habit } from './habit';
 import { HABIT_TURNS, habitOpen, habitPart, PORN_ONLY } from './lesson-habit';
+import { STORIES, storyLesson } from './lesson-stories';
 
 export interface Beat {
   /** the big line. On a number card it finishes the sentence the number starts ("7" + "days off porn, and ...") */
@@ -78,6 +79,15 @@ export function lessonAs(L: Lesson, voice: FaithVoice | null, h: Habit): Lesson 
   if (h === 'porn' || !T0 || !PORN_ONLY.has(L.id) || !habitOpen(L.id, h)) return lessonVoiced(L, voice);
   const k = L.id + ':' + (voice || '') + ':' + h;
   let out = SAID.get(k);
+  /* a lesson told as a story (lesson-stories.ts): the habit's own parts over the story, then the story in the habit's words */
+  const S0 = STORIES[L.id];
+  if (!out && S0) {
+    const part = S0.hab && S0.hab[h as Exclude<Habit, 'porn'>];
+    const { hab: _hab, ...S } = part && part !== 'say' ? { ...S0, ...part } : S0;
+    const v = storyLesson(sayAll(S, h), L);
+    VOICE_BEATS.set(v.L, v.beats);
+    SAID.set(k, (out = v.L));
+  }
   if (!out) {
     let T: Turn = turnIn(T0, GOD[L.id] ? voice : null);
     const part = habitPart(L.id, h);

@@ -30,6 +30,7 @@ import {
   morningOf,
   morningReasons,
   morningReply,
+  heldByMorning,
   NIGHT_TIMES,
   nightAtStart,
   nightSlips,
@@ -252,7 +253,7 @@ export default function Morning() {
               <View style={s.told}>
                 {start.logged ? null : <Choice label={n === 'free' ? W.free : W.slip} on onPress={() => setN(null)} />}
                 <Text style={s.reply} accessibilityLiveRegion="polite">
-                  {morningReply(n!, start.logged)}
+                  {morningReply(n!, start.logged, n === 'free' && heldByMorning(snap.days, tk, Date.now()) > 0)}
                 </Text>
                 <View style={s.card}>
                   <Pressable

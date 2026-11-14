@@ -240,7 +240,7 @@ export default function Morning() {
             {/* a free night: confetti thrown up from the flame as it leaps (none under Reduce Motion) */}
             {pulse && !reduce ? (
               <View pointerEvents="none" style={{ position: 'absolute', top: 0, width: big, height: big }}>
-                <Burst fire={pulse} x={big / 2} y={big * 0.4} w={big} n={26} />
+                <Burst fire={pulse} x={big / 2} y={big * 0.4} w={win.width * 1.3} n={26} />
               </View>
             ) : null}
             {told && step && n === 'free' ? <StepUp {...step} color={ON} /> : null}

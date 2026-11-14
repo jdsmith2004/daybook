@@ -204,8 +204,11 @@ export function Ignition({
     for (const v of [comet, flare, flash, slash, wash, burst, puffs, squish]) v.value = 0;
   };
 
+  /* when it lit: the end of the swipe that lit it also lands as a tap on the web (a mouse up is a click), and must not skip the moment */
+  const litAt = useRef(0);
   const light = () => {
     if (beat !== 0) return;
+    litAt.current = Date.now();
     setBeat(1);
     AccessibilityInfo.announceForAccessibility(m.to ? m.to + ' ' + m.unit + '. ' + m.line : m.line);
     if (still) {
@@ -405,7 +408,7 @@ export function Ignition({
           style={StyleSheet.absoluteFill}
           accessible={false}
           onPress={() => {
-            if (beat === 1) all();
+            if (beat === 1 && Date.now() - litAt.current > 700) all();
           }}
         />
         <View style={[s.top, { paddingTop: inset.top + 8 }]} pointerEvents="box-none">

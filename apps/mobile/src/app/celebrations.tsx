@@ -29,10 +29,11 @@ export default function Celebrations() {
     setN((x) => x + 1);
     setCur(it);
   };
-  /* a page opened with a fresh load, so its own moment plays with full motion */
-  const open = (path: string) => {
-    if (typeof window !== 'undefined') window.location.href = path + (path.includes('?') ? '&' : '?') + 'motion=1';
-    else router.push(path as never);
+  /* the other moments open their own page in place, keeping this page's full motion (a fresh load would start the demo over,
+     and its What is new page would come first); graduation needs the graduated demo person, so it loads fresh */
+  const open = (path: string) => router.push(path as never);
+  const fresh = (path: string) => {
+    if (typeof window !== 'undefined') window.location.href = path + '&motion=1';
   };
   const rows: { name: string; what: string; go: () => void }[] = [
     { name: 'Level up', what: 'Rays and a few stars. No confetti.', go: () => play([{ type: 'level', level: L, from: 0, evolve: false }]) },
@@ -42,11 +43,11 @@ export default function Celebrations() {
       go: () => play([{ type: 'level', level: L, from: Math.max(1, L.n - 1), evolve: true }]),
     },
     { name: 'New badge', what: 'Rays, the medal lands and settles. No confetti.', go: () => badge && play([{ type: 'badge', b: badge }]) },
-    { name: 'Streak lighting', what: 'Swipe up on the ember to light it.', go: () => open('/ignite') },
+    { name: 'Streak lighting', what: 'Swipe up on the ember to light it. A tap during it skips to the end.', go: () => open('/ignite') },
     { name: 'Morning done', what: 'Tap Free of it.', go: () => open('/morning') },
     { name: 'Urge ridden out', what: 'SOS, It passed.', go: () => open('/sos?won=1') },
     { name: 'Check-in finished', what: 'Answer or skip each question, then Save this day.', go: () => open('/checkin') },
-    { name: 'Graduation', what: 'One soft fall of confetti and three small fireworks.', go: () => open('/graduated?demo=grad') },
+    { name: 'Graduation', what: 'One soft fall of confetti and three small fireworks.', go: () => fresh('/graduated?demo=grad') },
   ];
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>

@@ -161,7 +161,15 @@ need, without letting the screen turn into a list of features.
   web that I made. Take a look. And would you like to archive the chat?").** Every chat, redesigns included: a thorough QA
   on the web (no simulator), merge to `main` without waiting for a yes, then leave the web preview open on the change in the
   browser pane with pictures in the report ("here are the changes I made on the web, take a look"), and ask "Archive this
-  chat?" with Yes and No. The owner asks for changes after. A question the owner was asked to decide (a choice of direction,
+  chat?" with Yes and No. The owner asks for changes after.
+  **Showing it means the owner can see and play it (the owner, November 14, 2026: "i said i want to see it and I haven't seen it
+  or had options to see it", and "our other sessions also keep not showing me previews on the web").** Pictures in the chat are
+  not enough, and a pane left on an old or blank tab is not showing it. Before the report: the browser pane is open and displayed
+  (`tabs_context` says so), its active tab is on the change, at phone size (`resize_window` mobile), with full motion (in the demo
+  build, `EXPO_PUBLIC_SHOTS=1`, load the page with `?motion=1`), and a screenshot taken just then proves it. Give the owner a way to
+  play each change themself: a button or link per moment (for celebrations, `/celebrations` in the demo build), not only a list of
+  steps. Anything that moves is checked moving on the web; a web-only bug (like a mouse release counting as a tap) is fixed, not
+  blamed on the web. If the pane is closed later, open it again on the same page. A question the owner was asked to decide (a choice of direction,
   sample lessons to judge) still waits for the answer before the work it decides. The iPhone QA happens before publishing.
 - **Merge to main, then archive; the iPhone check is TestFlight from main (the owner, November 13, 2026: "i want the chats
   to merge to main then archive alot of these chats keep not merging to main bc it's not tested on iphone, we will test it on

@@ -55,6 +55,7 @@ import { AppState, Platform, StyleSheet, View, type ScrollViewInstance } from 'r
 import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
+import { SettingsButton } from '@/components/settings-button';
 import { FeedbackTop } from '@/components/feedback-top';
 import { TIP_URL, TipCard } from '@/components/support';
 import { HomeScreenCard } from '@/components/home-screen';
@@ -63,7 +64,6 @@ import { NightWinCard } from '@/components/night-win';
 import { NotifyBanner } from '@/components/notify-banner';
 import { PullTroubleStrip } from '@/components/pull-trouble';
 import { Hero, skyInk } from '@/components/hero';
-import { openJournalFrom } from '@/components/journal';
 import { Screen } from '@/components/screen';
 import { useSosLeadOn } from '@/components/sos-lead';
 import { TodayBelow } from '@/components/today-below';
@@ -429,10 +429,6 @@ export default function Today() {
           if (y > 12 === atRest) setAtRest(y <= 12);
           scrolled.current = y;
         }}
-        pullDown={(px) => {
-          openJournalFrom(px);
-          router.push('/journal');
-        }}
         top={
           <View ref={skySpot} collapsable={false}>
             <Hero
@@ -445,6 +441,7 @@ export default function Today() {
               trim={trim}
               title={title}
               lead={<FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />}
+              action={<SettingsButton on={{ glass: ink.glass, ink: ink.ink }} />}
             />
           </View>
         }>

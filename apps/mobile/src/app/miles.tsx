@@ -57,7 +57,7 @@ export default function Miles() {
   const { width, height } = useWindowDimensions();
   const over = useOverModal();
   const holdsBar = useHoldsBar();
-  const backLabel = useBackLabel('More');
+  const backLabel = useBackLabel('Settings');
   const forms = useRef<ScrollViewInstance>(null);
   const [how, setHow] = useState(false);
   const [all, setAll] = useState(false);

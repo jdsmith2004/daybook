@@ -21,16 +21,15 @@ import { buzz } from '@/lib/feel';
 import { useNotes } from '@/lib/notes';
 import { font, nightInk } from '@/lib/theme';
 
-/* ---------- opening it ---------- */
-/** how far down the journal already is when it opens (the pull on Today let go past the line), in points from the top of
-    the screen: the journal starts there and carries on down, so it feels like the same motion. Read once, then cleared. */
-let startAt = 0;
-export function openJournalFrom(px: number) {
-  startAt = px;
+/* ---------- coming back to it ---------- */
+/** the entry just written (app/write.tsx), for the tab's list to raise into place at the top when it shows again. Read once. */
+let freshId: string | null = null;
+export function keepFresh(id: string) {
+  freshId = id;
 }
-export function takeJournalStart() {
-  const v = startAt;
-  startAt = 0;
+export function takeFresh() {
+  const v = freshId;
+  freshId = null;
   return v;
 }
 

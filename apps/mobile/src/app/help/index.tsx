@@ -20,7 +20,7 @@ export default function HelpHome() {
   const { line, text } = useCrisis();
   const pages = (Object.keys(HELP_PAGES) as HelpPage[]).filter((k) => k !== 'plan' && k !== 'playbook' && !(k === 'faith' && faithOut(snap.settings)));
   return (
-    <Screen title="Get help" back="More">
+    <Screen title="Get help" back>
       <Card>
         <T v="h2">If it is hard right now</T>
         <T>Tap SOS to breathe, then pick one thing to try. Or reach a person{nm ? ', starting with ' + nm : ''}.</T>

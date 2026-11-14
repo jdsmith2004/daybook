@@ -421,9 +421,52 @@ function Rise({ level, size, still, quiet }: { level: number; size: number; stil
     transform: [{ scale: Math.min(1, interpolate(v.value, [0, 1], [0.3, 1]) / OVER) }],
   }));
   return (
-    <Reanimated.View style={[{ position: 'absolute', width: D, height: D, left: (size - D) / 2, top: (size - D) / 2 }, st]}>
-      <BigFlame level={level} size={D} pulse={pulse} noLand />
-    </Reanimated.View>
+    <>
+      {quiet ? null : <Halo size={size} at={BEATS.level.shout} still={still} quiet={quiet} />}
+      <Reanimated.View style={[{ position: 'absolute', width: D, height: D, left: (size - D) / 2, top: (size - D) / 2 }, st]}>
+        <BigFlame level={level} size={D} pulse={pulse} noLand />
+      </Reanimated.View>
+    </>
+  );
+}
+
+/** the level's reward beat, Duolingo's sunburst: when the flame blooms (at), two layers of soft rays open and keep turning behind
+   it, a gold ring rolls out and sparks fly up. Reduce Motion: the rays are simply there, still. */
+function Halo({ size, at, still, quiet }: { size: number; at: number; still: boolean; quiet: boolean }) {
+  const rays = useSharedValue(still ? 1 : 0);
+  const spin = useSharedValue(0);
+  const ring = useSharedValue(0);
+  useEffect(() => {
+    if (still) return;
+    rays.value = withDelay(at - 120, withTiming(1, { duration: 650, easing: Easing.out(Easing.back(1.6)) }));
+    spin.value = withRepeat(withTiming(1, { duration: 18000, easing: Easing.linear }), -1);
+    ring.value = withDelay(at, withTiming(1, { duration: 850, easing: Easing.out(Easing.cubic) }));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const R = size * 1.7;
+  const M = size * 0.6;
+  const front = useAnimatedStyle(() => ({
+    opacity: rays.value * 0.7,
+    transform: [{ rotate: `${spin.value * 360}deg` }, { scale: interpolate(rays.value, [0, 1], [0.3, 1]) }],
+  }));
+  const back = useAnimatedStyle(() => ({
+    opacity: rays.value * 0.45,
+    transform: [{ rotate: `${-spin.value * 216 + 15}deg` }, { scale: interpolate(rays.value, [0, 1], [0.2, 1.15]) }],
+  }));
+  const ringSt = useAnimatedStyle(() => ({
+    opacity: ring.value === 0 ? 0 : interpolate(ring.value, [0, 0.15, 1], [0, 0.9, 0]),
+    transform: [{ scale: interpolate(ring.value, [0, 1], [0.5, 2.6]) }],
+  }));
+  return (
+    <View style={[StyleSheet.absoluteFill, s.center]} pointerEvents="none">
+      <Reanimated.View style={[{ position: 'absolute', width: R, height: R }, back]}>
+        <Rays size={R} n={8} soft />
+      </Reanimated.View>
+      <Reanimated.View style={[{ position: 'absolute', width: R, height: R }, front]}>
+        <Rays size={R} n={12} />
+      </Reanimated.View>
+      <Reanimated.View style={[{ position: 'absolute', width: M, height: M, borderRadius: M / 2, borderWidth: 3, borderColor: GOLD }, ringSt]} />
+      {!still && !quiet ? <Sparks size={M} at={at} /> : null}
+    </View>
   );
 }
 
@@ -637,6 +680,7 @@ function Grow({ from, to, size, still, quiet }: { from: number; to: number; size
           <Glow size={G} warm />
         </Reanimated.View>
       )}
+      {quiet ? null : <Halo size={size} at={SEE + GATHER + FLASH / 2} still={still} quiet={quiet} />}
       {turned ? (
         <Reanimated.View style={[{ position: 'absolute', width: D, height: D, left: (size - D) / 2, top: (size - D) / 2 }, newIn]}>
           <BigFlame level={to} size={D} pulse={pulse} noLand />

@@ -4,8 +4,8 @@
    the gap unanswered, Today asks once more the next day, then keeps a quiet row. After the answer, the person's own flame,
    drawn big (flame-medallion.tsx). */
 import { answerAwaySlips, awayDue, awaySpan, gameCompute } from '@daybook/core';
-import { useMemo, useState } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Appear } from '@/components/appear';
 import { FlameMedallion } from '@/components/flame-medallion';
@@ -13,6 +13,7 @@ import { Dock, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 
@@ -48,14 +49,22 @@ export default function Back() {
     return (
       <SceneFrame title={gap?.away === false ? 'Your nights' : 'Welcome back'} sky="mint" onClose={close}>
         <View style={s.mid}>
-          <FlameMedallion level={level} size={Math.min(win.width - 96, win.height * 0.36, 280)} />
+          <Rekindle size={Math.min(win.width - 96, win.height * 0.36, 280)}>
+            <FlameMedallion level={level} size={Math.min(win.width - 96, win.height * 0.36, 280)} />
+          </Rekindle>
         </View>
-        <T v="title" style={s.c} accessibilityRole="header">
-          {words.h}
-        </T>
-        <T style={s.c}>{words.p}</T>
+        <Appear delay={420} by={12}>
+          <T v="title" style={s.c} accessibilityRole="header">
+            {words.h}
+          </T>
+        </Appear>
+        <Appear delay={560} by={10}>
+          <T style={s.c}>{words.p}</T>
+        </Appear>
         <Dock>
-          <Button label="Go to Today" onPress={close} />
+          <Appear delay={720} by={10}>
+            <Button label="Go to Today" onPress={close} />
+          </Appear>
         </Dock>
       </SceneFrame>
     );
@@ -104,7 +113,56 @@ export default function Back() {
   );
 }
 
+/* The comeback, once: the flame rises from low and small, springs past its size and settles, and two warm rings of light
+   roll out from behind it, like a fire catching again. It never loops, never throws confetti (this is a return, not a party
+   about the slip), and with Reduce Motion on the flame is simply there. */
+function Rekindle({ size, children }: { size: number; children: React.ReactNode }) {
+  const reduce = useReducedMotion();
+  const up = useRef(new Animated.Value(0)).current;
+  const ring = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduce) {
+      up.setValue(1);
+      return;
+    }
+    Animated.parallel([
+      Animated.spring(up, { toValue: 1, friction: 5, tension: 70, useNativeDriver: NATIVE }),
+      Animated.timing(ring, { toValue: 1, duration: 1100, delay: 160, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }),
+    ]).start();
+  }, [reduce, up, ring]);
+  const rings = [0, 0.28].map((lag) => {
+    const t = ring.interpolate({ inputRange: [lag, 1], outputRange: [0, 1], extrapolate: 'clamp' });
+    return {
+      key: lag,
+      style: {
+        opacity: t.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.55, 0] }),
+        transform: [{ scale: t.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.55] }) }],
+      },
+    };
+  });
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      {reduce
+        ? null
+        : rings.map((r) => (
+            <Animated.View key={r.key} pointerEvents="none" style={[s.ring, { width: size * 0.82, height: size * 0.82, borderRadius: size }, r.style]} />
+          ))}
+      <Animated.View
+        style={{
+          opacity: up.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 1, 1] }),
+          transform: [
+            { translateY: up.interpolate({ inputRange: [0, 1], outputRange: [size * 0.18, 0] }) },
+            { scale: up.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }) },
+          ],
+        }}>
+        {children}
+      </Animated.View>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
+  ring: { position: 'absolute', borderWidth: 3, borderColor: '#FFB547' },
   c: { textAlign: 'center' },
   mid: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
   btnSpace: { height: 52 },

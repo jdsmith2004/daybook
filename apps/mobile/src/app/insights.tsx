@@ -6,10 +6,11 @@
 import { gameCompute, jnInsights, jnMonth, jnMonths, JN_TOP, type DayKey } from '@daybook/core';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BigFlame } from '@/components/big-flame';
+import { useCountUp, useGrow } from '@/components/charts';
 import { feelColor, JN } from '@/components/journal';
 import { closeSheet } from '@/components/sheet';
 import { Text } from '@/components/text';
@@ -50,11 +51,12 @@ export default function Insights() {
           </View>
 
           <View style={s.nums}>
-            <Num n={ins.year} word="entries this year" />
-            <Num n={ins.days} word="days written" />
+            <Num n={ins.year} word="entries this year" delay={0} />
+            <Num n={ins.days} word="days written" delay={120} />
             <Num
               n={ins.words}
               word="words written"
+              delay={240}
               flame={
                 <View style={[s.flame, { width: flameSize, height: flameSize, marginTop: 40 - flameSize }, !ins.words && { opacity: 0.35 }]}>
                   <BigFlame level={level} size={flameSize} noLand calm={!ins.words} label="Your flame" />
@@ -75,12 +77,14 @@ export default function Insights() {
   );
 }
 
-function Num({ n, word, flame }: { n: number; word: string; flame?: React.ReactNode }) {
+/** the number counts up as the page opens, left to right across the three; the flame comes in with its words */
+function Num({ n, word, flame, delay }: { n: number; word: string; flame?: React.ReactNode; delay: number }) {
+  const shown = Math.round(useCountUp(n, delay, 1000));
   return (
     <View style={s.num} accessible accessibilityLabel={n.toLocaleString('en-US') + ' ' + word}>
       <View style={s.numRow}>
         <Text style={[s.big, !n && { color: GRAY }]} maxFontSizeMultiplier={1.2}>
-          {n.toLocaleString('en-US')}
+          {shown.toLocaleString('en-US')}
         </Text>
         {flame}
       </View>
@@ -171,7 +175,7 @@ function Month({ ym, tk, width, jn }: { ym: string; tk: DayKey; width: number; j
               {k ? (
                 <>
                   <Text style={[s.dayN, k === tk && s.today, k > tk && { color: GRAY }]}>{Number(k.slice(8))}</Text>
-                  <View style={[s.dot, { backgroundColor: written.has(k) ? DOT : 'transparent' }]} />
+                  {written.has(k) ? <Dot delay={300 + (i * 7 + j) * 22} /> : <View style={s.dot} />}
                 </>
               ) : null}
             </View>
@@ -182,6 +186,16 @@ function Month({ ym, tk, width, jn }: { ym: string; tk: DayKey; width: number; j
   );
 }
 
+/** a day's warm dot, popping in a beat after the day before it */
+function Dot({ delay }: { delay: number }) {
+  const v = useGrow(delay, 380);
+  return (
+    <Animated.View
+      style={[s.dot, { backgroundColor: DOT, opacity: v, transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] }]}
+    />
+  );
+}
+
 /** the five feelings, one baseline, the word at the start and the count at the end of each bar */
 function Bars({ top, empty }: { top: { w: string; n: number }[]; empty: boolean }) {
   const max = Math.max(1, ...top.map((x) => x.n));
@@ -189,16 +203,39 @@ function Bars({ top, empty }: { top: { w: string; n: number }[]; empty: boolean 
   return (
     <View style={s.bars}>
       {rows.map((r, i) => (
-        <View key={i} style={s.barRow} accessible={!!r.w} accessibilityLabel={r.w ? `${r.w}, ${r.n} ${r.n === 1 ? 'time' : 'times'}` : undefined}>
-          <Text style={s.barW} numberOfLines={1}>
-            {r.w}
-          </Text>
-          <View style={s.track}>
-            <View style={[s.bar, { width: `${Math.max(4, r.frac * 82)}%` as `${number}%`, backgroundColor: r.w ? feelColor(r.w) : GRAY }]} />
-            {r.w ? <Text style={s.barN}>{r.n}</Text> : null}
-          </View>
-        </View>
+        <Bar key={i} r={r} delay={200 + i * 90} />
       ))}
+    </View>
+  );
+}
+
+/** one bar grows out from its word, the top one first, and its count lands as it finishes */
+function Bar({ r, delay }: { r: { w: string; n: number; frac: number }; delay: number }) {
+  const v = useGrow(delay, 700);
+  const n = useGrow(delay + 450, 350);
+  return (
+    <View style={s.barRow} accessible={!!r.w} accessibilityLabel={r.w ? `${r.w}, ${r.n} ${r.n === 1 ? 'time' : 'times'}` : undefined}>
+      <Text style={s.barW} numberOfLines={1}>
+        {r.w}
+      </Text>
+      <View style={s.track}>
+        <Animated.View
+          style={[
+            s.bar,
+            {
+              width: `${Math.max(4, r.frac * 82)}%` as `${number}%`,
+              backgroundColor: r.w ? feelColor(r.w) : GRAY,
+              transformOrigin: 'left',
+              transform: [{ scaleX: v }],
+            },
+          ]}
+        />
+        {r.w ? (
+          <Animated.Text style={[s.barN, { opacity: n, transform: [{ translateX: n.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) }] }]}>
+            {r.n}
+          </Animated.Text>
+        ) : null}
+      </View>
     </View>
   );
 }

@@ -14,6 +14,7 @@ import { feelColor, JN } from '@/components/journal';
 import { closeSheet } from '@/components/sheet';
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, MAX_WIDTH } from '@/lib/theme';
 
@@ -109,7 +110,10 @@ function Months({ months, tk, width, snap }: { months: string[]; tk: DayKey; wid
             accessibilityRole="button"
             accessibilityLabel="The month before"
             disabled={at <= 0}
-            onPress={() => go(at - 1)}
+            onPress={() => {
+              buzz('tick');
+              go(at - 1);
+            }}
             hitSlop={10}
             style={s.arrow}>
             <Icon name="back" size={18} color={at <= 0 ? GRAY : JN.quiet} />
@@ -118,7 +122,10 @@ function Months({ months, tk, width, snap }: { months: string[]; tk: DayKey; wid
             accessibilityRole="button"
             accessibilityLabel="The month after"
             disabled={at >= months.length - 1}
-            onPress={() => go(at + 1)}
+            onPress={() => {
+              buzz('tick');
+              go(at + 1);
+            }}
             hitSlop={10}
             style={s.arrow}>
             <Icon name="next" size={18} color={at >= months.length - 1 ? GRAY : JN.quiet} />

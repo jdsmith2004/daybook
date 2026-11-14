@@ -13,6 +13,7 @@ import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -66,6 +67,7 @@ export function Toast() {
             accessibilityLabel={'Undo. ' + toast.text}
             hitSlop={12}
             onPress={() => {
+              buzz('tap');
               hush();
               undo();
             }}

@@ -56,7 +56,13 @@ export function Back({ onPress }: { onPress: () => void }) {
 export function Ghost({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s.ghost, { opacity: pressed ? 0.6 : 1 }]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      style={({ pressed }) => [s.ghost, { opacity: pressed ? 0.6 : 1 }]}>
       <Text style={[s.ghostT, { color: c.accentText }]}>{label}</Text>
     </Pressable>
   );
@@ -65,7 +71,13 @@ export function Ghost({ label, onPress }: { label: string; onPress: () => void }
 export function Route({ label, small, onPress }: { label: string; small?: string; onPress: () => void }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s.soft, { backgroundColor: c.accentSoft, opacity: pressed ? 0.75 : 1 }]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      style={({ pressed }) => [s.soft, { backgroundColor: c.accentSoft, opacity: pressed ? 0.75 : 1 }]}>
       <View style={{ flex: 1 }}>
         <Text style={[s.softT, { color: c.accentText }]}>{label}</Text>
         {small ? (

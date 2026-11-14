@@ -437,7 +437,10 @@ export function WeekDetail({ sun }: { sun: string }) {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={'Change the review for ' + sunRange(sun)}
-              onPress={() => open(sun)}
+              onPress={() => {
+                buzz('tap');
+                open(sun);
+              }}
               style={({ pressed }) => [s.change, { opacity: pressed ? 0.6 : 1 }]}>
               <Text style={[s.link, { color: c.accentText }]}>Change</Text>
             </Pressable>
@@ -538,7 +541,10 @@ function WeekDays({ ds }: { ds: StoryDay[] }) {
               key={d.k}
               accessibilityRole="button"
               accessibilityLabel={`${d.name} ${fmtDate(d.k, { month: 'long', day: 'numeric' })}: ${d.state === 'slip' ? 'a slip' : 'no slip'}`}
-              onPress={() => router.push({ pathname: '/day/[date]', params: { date: d.k } })}
+              onPress={() => {
+                buzz('tap');
+                router.push({ pathname: '/day/[date]', params: { date: d.k } });
+              }}
               style={({ pressed }) => [s.dayBox, s.dayCell, { opacity: pressed ? 0.7 : 1 }]}>
               {n}
             </Pressable>

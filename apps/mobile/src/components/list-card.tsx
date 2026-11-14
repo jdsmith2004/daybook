@@ -220,7 +220,10 @@ function Row({
         accessibilityLabel={text}
         accessibilityHint="Opens it to reword, move or remove"
         accessibilityState={{ expanded: open }}
-        onPress={onToggle}
+        onPress={() => {
+          buzz('tap');
+          onToggle();
+        }}
         style={({ pressed }) => [s.rowTop, { opacity: pressed ? 0.6 : 1 }]}>
         {n != null ? <T style={{ fontFamily: font.bodyBold, color: ink, minWidth: 16 }}>{n}</T> : null}
         <T style={{ flex: 1 }}>{text}</T>
@@ -267,7 +270,10 @@ function Tool({ icon, label, on, onPress, danger }: { icon?: string; label: stri
       accessibilityRole="button"
       accessibilityState={{ disabled: !on }}
       disabled={!on}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.tool, { opacity: !on ? 0.35 : pressed ? 0.6 : 1 }]}>
       {icon ? <Icon name={icon} size={16} color={col} /> : null}
       <T v="small" style={{ fontFamily: font.bodySemi, color: col }}>

@@ -13,6 +13,7 @@ import { Collapse } from '@/components/form';
 import { Screen } from '@/components/screen';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { Packed } from '@/components/packed';
+import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
@@ -30,7 +31,10 @@ function CatChips({ cur, onPick, label }: { cur: string | null; onPick: (id: Cat
             key={k.id}
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
-            onPress={() => onPick(k.id)}
+            onPress={() => {
+              if (!on) buzz('tap');
+              onPick(k.id);
+            }}
             style={[s.cat, { backgroundColor: on ? t.soft : c.surface, borderColor: on ? t.ic : c.line }]}>
             <Icon name={k.ic} size={16} color={on ? t.text : c.muted} />
             <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: on ? t.text : c.ink }}>{k.name}</Text>
@@ -191,7 +195,10 @@ export default function Reasons() {
                     accessibilityRole="button"
                     accessibilityLabel={text}
                     accessibilityHint="Opens it to reword, move or remove"
-                    onPress={() => startEdit(i)}
+                    onPress={() => {
+                      buzz('tap');
+                      startEdit(i);
+                    }}
                     style={({ pressed }) => [s.main, { opacity: pressed ? 0.6 : 1 }]}>
                     <View style={{ flex: 1, gap: 2 }}>{line}</View>
                     <Icon name="pencil" size={16} color={c.muted} />
@@ -238,6 +245,7 @@ export default function Reasons() {
                     key={k}
                     accessibilityRole="button"
                     onPress={() => {
+                      buzz('tap');
                       setAdd(x[0]);
                       setAddCat(x[1]);
                     }}
@@ -292,7 +300,10 @@ function Tool({
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.tool, { opacity: disabled ? 0.35 : pressed ? 0.6 : 1 }]}>
       <Icon name={icon} size={16} color={col} />
       <T v="small" style={{ fontFamily: font.bodySemi, color: col }}>

@@ -11,6 +11,7 @@ import { Text } from '@/components/text';
 
 import { useOnce } from '@/components/talk-art';
 import { Icon } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
 const LW = 84;
@@ -122,7 +123,10 @@ export function WeekDots({ week }: { week: ReturnType<typeof stepWeek> }) {
             accessibilityLabel={
               d.k + ': ' + (d.ahead ? 'still to come' : d.slips ? d.slips + (d.slips === 1 ? ' slip' : ' slips') : 'no slip') + '. Open the day.'
             }
-            onPress={() => router.push({ pathname: '/day/[date]', params: { date: d.k } })}
+            onPress={() => {
+              buzz('tap');
+              router.push({ pathname: '/day/[date]', params: { date: d.k } });
+            }}
             style={({ pressed }) => [s.day, pressed && { opacity: 0.7 }]}>
             <Text style={[s.dayL, { color: d.today ? c.accentText : c.muted, fontFamily: d.today ? font.bodyBold : font.bodySemi }]}>{d.l}</Text>
             <View

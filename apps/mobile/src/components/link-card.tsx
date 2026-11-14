@@ -5,6 +5,7 @@ import { createContext, useContext, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { useTheme } from '@/lib/theme';
 
 const InRows = createContext(false);
@@ -44,7 +45,10 @@ export function LinkCard({
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={onPress}
+      onPress={() => {
+        if (!inRows) buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [inRows ? s.row : [s.card, { backgroundColor: c.surface }], { opacity: pressed ? 0.7 : 1 }]}>
       <Icon name={icon} size={22} color={ink} />
       <View style={[s.words, inRows && { borderBottomColor: c.line, borderBottomWidth: 1 }]}>

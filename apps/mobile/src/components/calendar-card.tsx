@@ -179,7 +179,13 @@ export function CalendarCard({ snap, tk }: { snap: Snapshot; tk: string }) {
               {g.line}
             </T>
             {g.n == null ? (
-              <Pressable accessibilityRole="button" onPress={() => router.push('/back')} style={s.fill}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  buzz('tap');
+                  router.push('/back');
+                }}
+                style={s.fill}>
                 <T v="small" style={{ color: NIGHT.ink, textDecorationLine: 'underline' }}>
                   Fill in
                 </T>
@@ -222,7 +228,10 @@ function Day({ d, end }: { d: CalDay; end?: boolean }) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label + '. Open the day.'}
-      onPress={() => router.push({ pathname: '/day/[date]', params: { date: d.k } })}
+      onPress={() => {
+        buzz('tap');
+        router.push({ pathname: '/day/[date]', params: { date: d.k } });
+      }}
       style={({ pressed }) => [s.box, pressed && { opacity: 0.7, transform: [{ scale: 0.94 }] }]}>
       {inner}
       {many}

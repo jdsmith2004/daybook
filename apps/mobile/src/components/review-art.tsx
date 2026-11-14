@@ -12,6 +12,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { SourceLine } from '@/components/research';
 import { pop, useOnce } from '@/components/talk-art';
 import { Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { font, toneOf, useTheme } from '@/lib/theme';
@@ -57,7 +58,10 @@ export function Teach({ teach, folded }: { teach: StoryTeach; folded?: boolean }
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: false }}
-        onPress={() => setOpen(true)}
+        onPress={() => {
+          buzz('tap');
+          setOpen(true);
+        }}
         style={({ pressed }) => [s.fold, { backgroundColor: c.surface, opacity: pressed ? 0.7 : 1 }]}>
         <T v="eyebrow" style={{ flex: 1, color: c.violetText }}>
           Why it matters
@@ -78,7 +82,10 @@ export function Teach({ teach, folded }: { teach: StoryTeach; folded?: boolean }
             accessibilityRole="link"
             accessibilityLabel={'Read the lesson: ' + l.title}
             hitSlop={6}
-            onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: l.id } })}
+            onPress={() => {
+              buzz('tap');
+              router.push({ pathname: '/lesson/[id]', params: { id: l.id } });
+            }}
             style={s.lesson}>
             <Icon name="book" size={14} color={c.accentText} />
             <Text style={[s.lessonT, { color: c.accentText }]} numberOfLines={1}>

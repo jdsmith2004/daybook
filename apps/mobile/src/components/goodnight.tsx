@@ -69,7 +69,8 @@ export function useGoodnight() {
       count('goodnight');
       track('wind');
     }
-    buzz('save');
+    /* the night's first Good night that counts is a win, felt as one (not in the hours after a slip); saying it again later is a plain save */
+    buzz(first && !hush ? 'lit' : 'save');
     return { at, gain, hush, msg };
   };
 }

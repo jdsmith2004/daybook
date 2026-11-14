@@ -83,14 +83,30 @@ export function PLine({
           </T>
         ) : null}
         {state === 'added' && !copy ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Undo. Take it back off." onPress={onUndo} hitSlop={8} style={s.undo}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Undo. Take it back off."
+            onPress={() => {
+              buzz('tap');
+              onUndo();
+            }}
+            hitSlop={8}
+            style={s.undo}>
             <Text style={[s.linkT, { color: c.accentText }]}>Undo</Text>
           </Pressable>
         ) : null}
       </View>
       <View style={s.side}>
         {!on && !copy ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Change the words first" onPress={onEdit} hitSlop={6} style={s.pen}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Change the words first"
+            onPress={() => {
+              buzz('tap');
+              onEdit();
+            }}
+            hitSlop={6}
+            style={s.pen}>
             <Icon name="pencil" size={18} color={c.accentText} />
           </Pressable>
         ) : null}
@@ -102,7 +118,10 @@ export function PLine({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={copy ? (on ? 'Copied. Copy again' : 'Copy') : itemButton(it)}
-            onPress={copy ? onCopy : onAdd}
+            onPress={() => {
+              buzz('tap');
+              (copy ? onCopy : onAdd)();
+            }}
             hitSlop={4}
             style={({ pressed }) => [s.round, { backgroundColor: on ? c.mintSoft : c.accent, transform: [{ scale: pressed ? 0.92 : 1 }] }]}>
             <Icon name={on ? 'check' : copy ? 'copy' : 'plus'} size={22} color={on ? c.mintText : c.accentInk} />
@@ -148,7 +167,10 @@ export function LineEditor({ it, t, onAdd, onCancel }: { it: PItem; t: Tone; onA
           accessibilityRole="button"
           accessibilityState={{ disabled: !ok }}
           disabled={!ok}
-          onPress={() => onAdd({ ...it, when: it.k === 'plan' ? when.trim() : it.when, text: text.trim() })}
+          onPress={() => {
+            buzz('save');
+            onAdd({ ...it, when: it.k === 'plan' ? when.trim() : it.when, text: text.trim() });
+          }}
           style={({ pressed }) => [
             s.btn,
             s.btnMain,
@@ -202,7 +224,10 @@ export function WriteBox({
               accessibilityRole="button"
               accessibilityLabel={'Use this: ' + x}
               accessibilityState={{ selected: on }}
-              onPress={() => onChange(x)}
+              onPress={() => {
+                if (!on) buzz('tap');
+                onChange(x);
+              }}
               style={({ pressed }) => [s.ex, { backgroundColor: on ? t.soft : c.surface, opacity: pressed ? 0.8 : 1 }]}>
               <Icon name={on ? 'check' : 'plus'} size={15} color={t.text} />
               <Text style={[s.exT, { color: c.ink }]}>{x}</Text>

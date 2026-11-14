@@ -47,7 +47,7 @@ interface Step {
 
 /** what tapping a lit part does: it opens, as it would on Today */
 const OPEN: Partial<Record<SpotKey, { label: string; go: () => void }>> = {
-  log: { label: 'Already happened. Log what happened.', go: () => router.push('/log') },
+  log: { label: 'Log a slip.', go: () => router.push('/log') },
   trail: { label: 'Walk it through.', go: () => router.push('/trail') },
   sos: { label: 'SOS. Help with an urge.', go: () => router.push('/sos') },
   learn: { label: 'Learn. Your lessons.', go: () => router.navigate('/learn') },
@@ -62,7 +62,7 @@ export function tourSteps({ lessonDone, lessonId, walk = true }: { lessonDone: b
         ? 'Lesson one, done, and your flame felt it. Each morning, tell me how the night went, and I keep growing.'
         : 'This is your flame. Each morning, tell me how the night went. Every honest answer and every lesson makes me grow.',
     },
-    { at: ['log'], say: 'Slipped? Tap Already happened and tell it straight. No shame here: a slip is something we learn from.' },
+    { at: ['log'], say: 'Slipped? Tap Log a slip and tell it straight. No shame here: a slip is something we learn from.' },
     { at: ['trail'], say: 'Planning a slip, or the urge keeps coming back? Walk it through, and we talk it down together.' },
     { at: ['sos'], say: 'When an urge hits, tap SOS. I will help you ride it out, day or night.' },
     {

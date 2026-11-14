@@ -470,6 +470,9 @@ export default function Today() {
         ) : (
           dayPage
         )}
+        {/* while a tour is open, room under the page so it can scroll a lit part up clear of the flame's words (the owner, November 13,
+            2026: "i can't see the thing ... bc it's blocked": on a short Today the page could not move, and the bubble sat on it) */}
+        {touring || walkOpen ? <View style={{ height: TOUR_ROOM }} /> : null}
       </Screen>
       {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
       {walkOpen && g && !touring ? (
@@ -508,6 +511,9 @@ export default function Today() {
     </View>
   );
 }
+
+/** the room under Today while a tour is open: about the flame's panel and the tab bar */
+const TOUR_ROOM = 380;
 
 const s = StyleSheet.create({
   line: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, paddingHorizontal: 16 },

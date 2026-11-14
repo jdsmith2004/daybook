@@ -174,3 +174,53 @@ export function figAsleep(fig: string): string {
   const arc = (x: number) => `<path d="M${x - 12} 83Q${x} 94 ${x + 12} 83" fill="none" stroke="#8A2E0C" stroke-width="4.4" stroke-linecap="round"/>`;
   return (fig.slice(0, at) + arc(-17) + arc(17) + fig.slice(end)).replace(/\b(em\d+c)/g, '$1z');
 }
+
+/* ---------- the flame's face, acting ---------- */
+/** the faces the flame can make while it acts (the end of a lesson: the owner, November 14, 2026, "the owl has like clever movements"),
+    in the order faceLooks returns them */
+export const LOOKS = ['ahead', 'left', 'right', 'slyLeft', 'slyRight', 'happy', 'down'] as const;
+export type Look = (typeof LOOKS)[number];
+/** where the dark of each eye sits in the white, and how far the lid is down (0 open, about 0.45 half shut), for each look */
+const LOOK_AT: Record<Exclude<Look, 'happy'>, { x: number; y: number; lid: number }> = {
+  ahead: { x: 0.6, y: 0.4, lid: 0 },
+  left: { x: -3.6, y: 0.4, lid: 0 },
+  right: { x: 3.6, y: 0.4, lid: 0 },
+  slyLeft: { x: -3.4, y: 1.4, lid: 0.48 },
+  slyRight: { x: 3.4, y: 1.4, lid: 0.48 },
+  down: { x: 0.4, y: 3.4, lid: 0.18 },
+};
+/** the still layer (emblemLayers) once for each of LOOKS: the eyes drawn again with a smaller dark that can move inside the white, a lid
+    that comes half down for a sly look, and a happy squint. Every form has the one face, so this works for all of them. Each copy gets
+    its own ids, so they can lie over each other and the one showing can change in a frame. */
+export function faceLooks(still: string): string[] {
+  const at = still.indexOf('<g><circle cx="-17" cy="84"');
+  if (at < 0) return LOOKS.map(() => still);
+  const [, end] = elementAt(still, at);
+  const ink = '#4A1A0A';
+  /* the gradient the dark of the eye is painted with, and the start every id of this drawing shares */
+  const iris = /url\(#(em\d+f\w*)\)/.exec(still.slice(at, end))?.[1] ?? 'em1fir';
+  const pre = /^em\d+f/.exec(iris)?.[0] ?? 'em1f';
+  const eye = (cx: number, look: Look, k: number) => {
+    if (look === 'happy') return `<path d="M${cx - 11} 88Q${cx} 74 ${cx + 11} 88" fill="none" stroke="#8A2E0C" stroke-width="4.6" stroke-linecap="round"/>`;
+    const p = LOOK_AT[look];
+    const ix = cx + p.x;
+    const iy = 84 + p.y;
+    const clip = `${pre}${k}q${cx < 0 ? 'l' : 'r'}`;
+    /* the lid: the top of the eye, cut off by a straight edge, in the face's own warm color, with a dark line along its edge */
+    const h = 84 - 13 + 26 * p.lid;
+    const lid = p.lid
+      ? `<g clip-path="url(#${clip})"><rect x="${cx - 14}" y="${84 - 14}" width="28" height="${h - 70}" fill="#FFC447"/>` +
+        `<path d="M${cx - 13} ${h}H${cx + 13}" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/></g>`
+      : '';
+    return (
+      `<defs><clipPath id="${clip}"><circle cx="${cx}" cy="84" r="13"/></clipPath></defs>` +
+      `<circle cx="${cx}" cy="84" r="13" fill="${ink}"/><circle cx="${cx}" cy="84" r="11.7" fill="#FFF6E8"/>` +
+      `<g clip-path="url(#${clip})"><circle cx="${ix}" cy="${iy}" r="7.6" fill="url(#${iris})"/>` +
+      `<circle cx="${ix - 1.8}" cy="${iy - 3.2}" r="2.9" fill="#fff"/><circle cx="${ix + 3}" cy="${iy + 1.6}" r="1.3" fill="#fff"/></g>` +
+      lid
+    );
+  };
+  return LOOKS.map((look, k) =>
+    (still.slice(0, at) + '<g>' + eye(-17, look, k) + eye(17, look, k) + '</g>' + still.slice(end)).replace(/\bem(\d+)f(?!\d+q)/g, `em$1f${k}q`),
+  );
+}

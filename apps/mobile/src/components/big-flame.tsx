@@ -8,7 +8,7 @@
    Burning low (core flame-low.ts, `low`): the face turns sad, the fire, the body and the face sink toward ash together, the glow fades, it sputters and smokes.
    With `douse` it is first seen burning fully and then goes down, as if water were poured on it; when `low` comes back to 0 it is lit again: the
    heart catches, the fire climbs back and leaps, sparks fly and the smoke clears. Under Reduce Motion it is simply drawn as low as it burns. */
-import { emblemLayers, figAsleep, fireOf, formOfLevel, gradOf, lowXml, sadXml, type EmblemLayers, type Fire } from '@daybook/core';
+import { emblemLayers, faceLooks, figAsleep, fireOf, formOfLevel, gradOf, lowXml, sadXml, type EmblemLayers, type Fire } from '@daybook/core';
 import { memo, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import Reanimated, { Easing as REasing, useAnimatedStyle, useSharedValue, withDelay, withTiming, type SharedValue } from 'react-native-reanimated';
@@ -108,7 +108,7 @@ export const BigFlame = memo(function BigFlame({
   asleep,
   heart,
   relight,
-  lid,
+  look,
 }: {
   level: number;
   size: number;
@@ -130,8 +130,9 @@ export const BigFlame = memo(function BigFlame({
   heart?: ReactNode;
   /** lit again faster than the usual catch and climb: [when it catches, how long it climbs] in ms (the lighting, components/ignite.tsx) */
   relight?: [number, number];
-  /** its eyes, driven from outside: 0 open, 1 closed (a blink, or the happy squint at the end of a lesson, components/lesson-finish.tsx) */
-  lid?: SharedValue<number>;
+  /** its face, acting, driven from outside: an index into core LOOKS (ahead, a glance left or right, a sly look, a happy squint,
+      looking down), for the end of a lesson (components/lesson-finish.tsx) */
+  look?: SharedValue<number>;
 }) {
   const still = useReducedMotion();
   const { snap } = useStore();
@@ -170,12 +171,8 @@ export const BigFlame = memo(function BigFlame({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the relight timing is read when it is lit, never a reason to light again
   }, [low, still, lv, burst]);
   const dimmed = useAnimatedStyle(() => ({ opacity: lv.value }));
-  /* the eyes: the face with its eyes closed lies over the open one and takes its place while the lid is down */
-  const lid0 = useSharedValue(0);
-  const lidV = lid ?? lid0;
-  const eyesOpen = useAnimatedStyle(() => ({ opacity: lidV.value > 0.5 ? 0 : 1 }));
-  const eyesShut = useAnimatedStyle(() => ({ opacity: lidV.value > 0.5 ? 1 : 0 }));
-  const shutStill = useMemo(() => (lid && b && !asleep ? figAsleep(b.layers.still) : null), [lid, b, asleep]);
+  /* acting: every face is drawn, one over another, and only the one it is making shows */
+  const faces = useMemo(() => (look && b && !asleep && !sad ? faceLooks(b.layers.still) : null), [look, b, asleep, sad]);
   const glowLow = useAnimatedStyle(() => ({ opacity: 1 - 0.8 * lv.value }));
   const lowOn = low != null;
   const lowFig = useMemo(() => (lowOn && b ? { still: ember(b.layers.still), side: ember(b.layers.side), fig: ember(b.layers.fig) } : null), [lowOn, b]);
@@ -286,15 +283,8 @@ export const BigFlame = memo(function BigFlame({
               fine={zoom > 1 ? 1.5 / zoom : 1}
               smoke={smoke}
             />
-            {shutStill ? (
-              <>
-                <Reanimated.View style={[StyleSheet.absoluteFill, eyesOpen]} pointerEvents="none">
-                  <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, S / 120)} />
-                </Reanimated.View>
-                <Reanimated.View style={[StyleSheet.absoluteFill, eyesShut]} pointerEvents="none">
-                  <SvgXml xml={stillIn(shutStill, fire)} {...stillBox(fire, S / 120)} />
-                </Reanimated.View>
-              </>
+            {faces && look ? (
+              faces.map((x, k) => <Face key={k} k={k} look={look} xml={stillIn(x, fire)} box={stillBox(fire, S / 120)} />)
             ) : (
               <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, S / 120)} />
             )}
@@ -324,3 +314,13 @@ export const BigFlame = memo(function BigFlame({
     </View>
   );
 });
+
+/** one of the faces the flame can make, showing only while it is the one it makes */
+function Face({ k, look, xml, box }: { k: number; look: SharedValue<number>; xml: string; box: ReturnType<typeof stillBox> }) {
+  const st = useAnimatedStyle(() => ({ opacity: Math.round(look.value) === k ? 1 : 0 }));
+  return (
+    <Reanimated.View style={[StyleSheet.absoluteFill, st]} pointerEvents="none">
+      <SvgXml xml={xml} {...box} />
+    </Reanimated.View>
+  );
+}

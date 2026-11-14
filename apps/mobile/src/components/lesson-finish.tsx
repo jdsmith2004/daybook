@@ -18,7 +18,7 @@
    About four seconds; a tap anywhere brings it all in at once. Reduce Motion: no opener, everything in and settled, one buzz.
    In the hours after a slip (core ptsQuiet) the points and the level line are not shown, as everywhere else: the lesson itself
    is the win. A lesson read again earns no points, so nothing glides. */
-import { gameCompute, lessonCount, lessonWalk, levelOf, ptsQuiet, stepProgress } from '@daybook/core';
+import { gameCompute, lessonCount, lessonWalk, levelOf, LOOKS, ptsQuiet, stepProgress } from '@daybook/core';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View, type ViewInstance } from 'react-native';
@@ -47,6 +47,8 @@ import { useStore } from '@/lib/store';
 import { font, nightInk } from '@/lib/theme';
 
 const GOLD = '#FFD25A';
+/** each face's place in core LOOKS */
+const LOOK = Object.fromEntries(LOOKS.map((k, i) => [k, i])) as Record<(typeof LOOKS)[number], number>;
 const NIGHT = '#16113A';
 const BAND = '#2E2477';
 const LIP = '#D99A12';
@@ -81,16 +83,19 @@ export interface LessonFinishProps {
 /* when each beat starts, in ms */
 const T = {
   /** the band and the flame glide in */
-  inMs: 380,
+  inMs: 420,
+  /** the band opens from a line across the middle, and the flame slides in once it is open */
+  slitMs: 260,
+  slideAt: 160,
   /** the opener holds, then the flame travels to its place */
-  settle: 1150,
+  settle: 1350,
   settleMs: 560,
   /** the title, the halo and the two lines come in as the flame arrives */
-  rest: 1450,
+  rest: 1650,
   /** the points rise in and count up */
-  pts: 1800,
+  pts: 2000,
   /** the points glide into the level line */
-  glide: 2500,
+  glide: 2700,
   glideMs: 600,
   /** the level line fills */
   fillMs: 700,
@@ -144,6 +149,8 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
   const enter = useSharedValue(still ? 1 : 0);
   const open = useSharedValue(still ? 0 : 1);
   const drift = useSharedValue(0);
+  /* the band opening, from a line to its full height */
+  const slit = useSharedValue(still ? 1 : 0);
   const shout = useSharedValue(0);
   const glint = useSharedValue(0);
   /* the page at rest */
@@ -159,7 +166,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
   const btn = useSharedValue(still ? 1 : 0);
   /* the flame acting, as Duolingo's owl does on its finish (the owner, November 14, 2026: "the owl has like clever movements"):
      its eyes (0 open, 1 shut), a slow sway on its feet once it is home, and a nod toward the level line as the points land */
-  const lid = useSharedValue(0);
+  const look = useSharedValue(0);
   const sway = useSharedValue(0);
   const nod = useSharedValue(0);
   /* the line to keep writes itself out, letter by letter, once the flame says it */
@@ -210,7 +217,8 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
     setLvl(m.after.n);
     setCount(m.shown);
     setTyped(keep.length);
-    lid.value = 0;
+    slit.value = 1;
+    look.value = 0;
     nod.value = withTiming(0, q);
     setLanded(true);
     setBeat(2);
@@ -226,21 +234,36 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
     /* 1. the band and the flame glide in, the words rise under them, a few glints drift off */
     play('chime');
     buzz('lit');
-    enter.value = withTiming(1, { duration: T.inMs, easing: OUT });
+    slit.value = withTiming(1, { duration: T.slitMs, easing: OUT });
+    enter.value = withDelay(T.slideAt, withTiming(1, { duration: T.inMs, easing: OUT }));
     drift.value = withTiming(1, { duration: T.settle + T.settleMs, easing: Easing.linear });
-    shout.value = withDelay(140, withTiming(1, { duration: 420, easing: OUT }));
-    glint.value = withDelay(180, withTiming(1, { duration: 1700, easing: Easing.linear }));
-    /* the flame comes home pleased with itself: a happy squint, eyes open, then it sways a little on its feet and blinks now
-       and then, at no exact beat, for as long as the page is open */
+    shout.value = withDelay(T.slideAt + 260, withTiming(1, { duration: 420, easing: OUT }));
+    glint.value = withDelay(T.slideAt + 300, withTiming(1, { duration: 1700, easing: Easing.linear }));
+    /* the flame comes home pleased with itself: a happy squint, then it sways a little on its feet and acts, at no exact beat, for
+       as long as the page is open: a glance one way and the other, a sly look, a quick squint (the faces are core LOOKS) */
     const home = T.settle + T.settleMs;
-    lid.value = withDelay(home - 80, withSequence(withTiming(1, { duration: 90 }), withDelay(620, withTiming(0, { duration: 140 }))));
+    const face = (k: number, ms: number) => {
+      look.value = k;
+      at(ms, () => (look.value = 0));
+    };
+    at(home - 80, () => face(LOOK.happy, 720));
     sway.value = withDelay(home + 300, withRepeat(withTiming(1, { duration: 1700, easing: Easing.inOut(Easing.sin) }), -1, true));
-    let wink = home + 2600;
-    for (let k = 0; k < 12; k++) {
-      const t = wink;
-      at(t, () => (lid.value = withSequence(withTiming(1, { duration: 80 }), withDelay(60, withTiming(0, { duration: 120 })))));
-      wink += 2600 + ((k * 7919) % 5) * 450;
-    }
+    const acts: [number, number, number][] = [
+      [LOOK.left, 620, 2200],
+      [LOOK.right, 620, 260],
+      [LOOK.slyRight, 1300, 2000],
+      [LOOK.happy, 150, 2300],
+      [LOOK.slyLeft, 1100, 2100],
+      [LOOK.happy, 150, 2600],
+    ];
+    let t = home + 1400;
+    for (let round = 0; round < 4; round++)
+      for (const [k, ms, gap] of acts) {
+        t += gap;
+        const at0 = t;
+        at(at0, () => face(k, ms));
+        t += ms;
+      }
     /* 2. one continuous move: the band fades as the flame travels to its place */
     open.value = withDelay(T.settle, withTiming(0, { duration: T.settleMs, easing: BOTH }));
     rest.value = withDelay(T.rest, withTiming(1, { duration: 480, easing: OUT }));
@@ -257,6 +280,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
       go.value = withDelay(T.glide, withTiming(1, { duration: T.glideMs, easing: BOTH }));
       const into = T.glide + T.glideMs - 120;
       /* the flame looks down at the line as the points go in, and back up */
+      at(T.glide, () => face(LOOK.down, T.glideMs + 300));
       nod.value = withDelay(
         T.glide,
         withSequence(withTiming(1, { duration: T.glideMs, easing: BOTH }), withDelay(260, withTiming(0, { duration: 520, easing: BOTH }))),
@@ -275,7 +299,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
           setLanded(true);
           buzz('lit');
           setPulse((p) => p + 1);
-          lid.value = withSequence(withTiming(1, { duration: 90 }), withDelay(520, withTiming(0, { duration: 140 })));
+          face(LOOK.happy, 640);
           bar.value = 0;
           bar.value = withTiming(m.after.frac, { duration: 520, easing: OUT });
         });
@@ -301,18 +325,21 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
   const flameIn = useAnimatedStyle(() => ({
     opacity: still || spot ? Math.min(1, enter.value * 1.4) : 0,
     transform: [
+      { translateX: -win.width * 0.75 * (1 - enter.value) },
       { translateY: dy * open.value },
       /* the camera pushes in slowly while the opener holds, as Duolingo's does */
       { scale: ((1 + (K - 1) * open.value) / K) * (0.92 + 0.08 * enter.value) * (1 + 0.1 * drift.value * open.value) },
     ],
   }));
-  /* the band glides in from the left, drifts a little while it holds, and fades as the flame leaves it */
+  /* the band opens from a line across the middle (the owner, November 14, 2026: "the lightning starts in the middle and opens
+     vertically"), drifts a little while it holds, and as the flame leaves it, it rises away and fades */
   const bandIn = useAnimatedStyle(() => ({
-    opacity: enter.value * interpolate(open.value, [0.35, 1], [0, 1], 'clamp'),
+    opacity: Math.min(1, slit.value * 3) * interpolate(open.value, [0.2, 0.9], [0, 1], 'clamp'),
     transform: [
-      { translateX: -win.width * 0.6 * (1 - enter.value) + 16 * drift.value },
+      { translateY: -win.height * 0.22 * (1 - open.value) },
+      { translateX: 16 * drift.value },
       { rotate: '-8deg' },
-      { scaleY: interpolate(open.value, [0, 1], [0.7, 1]) },
+      { scaleY: Math.max(0.02, slit.value) },
       { scale: 1 + 0.08 * drift.value },
     ],
   }));
@@ -358,7 +385,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
           <Sparkles v={rest} size={big} still={still} />
           <Reanimated.View style={[{ position: 'absolute', width: B, height: B, left: (big - B) / 2, top: (big - B) / 2 }, flameIn]}>
             <Reanimated.View style={[{ transformOrigin: '50% 88%' }, actIn]}>
-              <BigFlame level={lvl} size={B} pulse={pulse} noLand lid={still ? undefined : lid} />
+              <BigFlame level={lvl} size={B} pulse={pulse} noLand look={still ? undefined : look} />
             </Reanimated.View>
           </Reanimated.View>
         </View>

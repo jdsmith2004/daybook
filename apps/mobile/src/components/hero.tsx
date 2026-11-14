@@ -17,7 +17,6 @@ import {
   CHEERS,
   emblemScene,
   fireLow,
-  formOfLevel,
   heroNumber,
   effortCounts,
   heroProof,
@@ -34,6 +33,10 @@ import {
   finishLine,
   PHASE_SKY,
   skyPhase,
+  figHead,
+  heroFit,
+  HERO_WORDS_MAX,
+  wordsInk,
   type SkyPhase,
 } from '@daybook/core';
 import * as Haptics from 'expo-haptics';
@@ -57,12 +60,8 @@ import { pullIgnoredAt, pullNights } from '@/lib/pull';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
-import { FOOT, SKY_TRIM_MAX } from '@/lib/today-size';
+import { SKY_TRIM_MAX } from '@/lib/today-size';
 
-/** how far a form stands below the hills' line, as a share of its drawing: the torch and the beacon are tall and narrow enough to pass between the words; the kindling's and the campfire's logs are wide, so they stay clear above them */
-const SINK: Record<number, number> = { 1: -0.02, 2: 0, 3: 0.11, 4: 0.08 };
-/** the empty room at the top of the flame's drawing, over the tip of the fire, as a share of the drawing (big-flame.tsx) */
-const FIG_HEAD = 0.2;
 /** the star field was drawn for a sky this tall, and spreads with the real one */
 const STAR_SKY = 262;
 /** the day the fire was last seen going down, and lit again, in this run of the app: each is seen once a day */
@@ -207,15 +206,25 @@ function Sky({
   /* the finish line, once a clean week is behind the person (WP5, from docs/big-ideas.md idea 11) */
   const finish = snap.settings ? finishLine(snap.days, snap.settings, tk) : null;
   const inset = useSafeAreaInsets();
-  const SCENE_H = height;
   const FLAME = flame;
   /* the drawing stands on the hills along the bottom, and the sky above it carries on up to the clock. The tall, narrow forms stand
-     lower, between the number and the level, so their faces sit low too (the owner, November 1, 2026) */
-  const FLAME_TOP = SCENE_H - FLAME - FOOT + 18 + Math.round(FLAME * (SINK[formOfLevel(lvl.n)] ?? 0.03));
+     lower, between the number and the level, so their faces sit low too (the owner, November 1, 2026). The words along the bottom
+     decide how low: the flame and its hills rise until the hills are clear above the taller block of words, so the words are never
+     half on the sky (core hero-room.ts, where a test holds it for every form and phone; the owner, November 14, 2026) */
+  const h = heroNumber(snap.days, snap.settings!, tk, now);
+  const marksOn = !!snap.settings && truthOn(snap.settings, tk);
+  /* the words' height before they are measured: the label or the marks, the number, and the line under it */
+  const [numH, setNumH] = useState(0);
+  const [lvH, setLvH] = useState(50);
+  const wordsH = Math.min(HERO_WORDS_MAX * 1.5, Math.max(numH || (h ? (marksOn ? 24 : 18) + 48 + (h.chip ? 18 : 0) : 0), lvH));
+  const fit = heroFit({ sky: height, flame: FLAME, level: lvl.n, words: wordsH, top: inset.top });
+  /* the sky grows a little only where a tall form on a short sky needs it (core heroFit) */
+  const SCENE_H = fit.sky;
+  const FLAME_TOP = fit.top;
   /* a long list takes a little of the sky, from the top only: the whole scene is drawn at its full height and slides up under the
      clock, so the flame keeps its size and its place on the hills. Never more than SKY_TRIM_MAX of the sky, and never so much that
-     the tip of the fire goes under the clock (FIG_HEAD: the empty room at the top of the flame's drawing) */
-  const cut = Math.round(Math.max(0, Math.min(trim, SCENE_H * SKY_TRIM_MAX, FLAME_TOP + FLAME * FIG_HEAD - inset.top - 6)));
+     the tip of the fire goes under the clock (core figHead: the empty room over this form's fire) */
+  const cut = Math.round(Math.max(0, Math.min(trim, SCENE_H * SKY_TRIM_MAX, FLAME_TOP + FLAME * figHead(lvl.n) - inset.top - 6)));
   const cutA = useRef(new Animated.Value(cut)).current;
   useEffect(() => {
     if (reduce) return cutA.setValue(cut);
@@ -223,9 +232,10 @@ function Sky({
     a.start();
     return () => a.stop();
   }, [cut, cutA, reduce]);
-  const h = heroNumber(snap.days, snap.settings!, tk, now);
-  const marksOn = !!snap.settings && truthOn(snap.settings, tk);
-  const { light, ink, soft, glass } = skyInk(lvl.n, phase ?? undefined);
+  const { light, glass } = skyInk(lvl.n, phase ?? undefined);
+  /* the words along the bottom take the ink that reads on what is behind them, hills or the bottom of the hour's sky (core wordsInk,
+     where a test holds the contrast for every form and hour) */
+  const { ink, soft, light: wordsLight } = wordsInk(lvl.n, phase);
   /* the sky is alive: three slow twinkles shared by the stars */
   const tw = useRef([new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)]).current;
   const [pulse, setPulse] = useState(0);
@@ -256,8 +266,6 @@ function Sky({
   const [due, setDue] = useState(false);
   const dueRef = useRef(false);
   const [grew, setGrew] = useState(false);
-  /* the level block's height, so the pill sits just over it */
-  const [lvH, setLvH] = useState(50);
   useFocusEffect(
     useCallback(() => {
       const was = seen.current;
@@ -412,6 +420,7 @@ function Sky({
               buzz('tap');
               router.navigate({ pathname: '/pattern', params: { pane: 'days' } });
             }}
+            onLayout={(e) => setNumH(Math.ceil(e.nativeEvent.layout.height))}
             style={({ pressed }) => [s.num, pressed && { opacity: 0.8 }]}>
             {/* with the week's marks shown, the label sits beside them under the number, so the block stays low on the hills and the
                 label is never cut by the hills' edge (the owner, November 13, 2026: "quitting gets cutoff here") */}
@@ -434,7 +443,7 @@ function Sky({
             {/* the last seven nights, one mark each (core truth.ts): the count above is made of these */}
             {marksOn ? (
               <View style={s.marks}>
-                <NightMarks marks={lastNights(snap.days, snap.settings!, tk)} size={9} gap={4} ink={soft} dark />
+                <NightMarks marks={lastNights(snap.days, snap.settings!, tk)} size={9} gap={4} ink={soft} dark edge={wordsLight ? undefined : ink} />
                 <Text maxFontSizeMultiplier={ON_ART} numberOfLines={1} style={[s.eb, s.ebMarks, { color: soft }]}>
                   {h.eb}
                 </Text>
@@ -457,7 +466,7 @@ function Sky({
             buzz('tap');
             router.push('/points');
           }}
-          onLayout={(e) => setLvH(e.nativeEvent.layout.height)}
+          onLayout={(e) => setLvH(Math.ceil(e.nativeEvent.layout.height))}
           style={({ pressed }) => [s.lv, pressed && { opacity: 0.8 }]}>
           <Text maxFontSizeMultiplier={ON_ART} style={[s.lvT, { color: ink }]}>
             Level {lvl.n} · {lvl.name} ›
@@ -468,7 +477,8 @@ function Sky({
               {proof}
             </Text>
           ) : null}
-          {finish ? (
+          {/* the way to graduation is said once: under the number when it is the number's own line (core heroNumber's chip) */}
+          {finish && finish !== h?.chip ? (
             <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft, textAlign: 'right' }]}>
               {finish}
             </Text>

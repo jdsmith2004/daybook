@@ -38,6 +38,7 @@ import {
   type ObOpt,
 } from './legacy/core.js';
 import { changeSettings } from './actions';
+import { DEEP_READY, type LessonLen } from './lessons';
 import { levelOf } from './levels';
 import { OB_CREED } from './faith';
 import { FREE_WAIT } from './north';
@@ -234,10 +235,43 @@ export const OB_FOR: [string, string, string, string][] = [
 export const FOR_MAX = 3;
 /** how long a lesson runs (Settings learn.len): short plays a lesson's quick cards, long plays every card. A lesson the person starts
     asks it on its first page; one the app opens goes straight in at this (the owner, November 14, 2026). Short until long is picked. */
-export const lessonLen = (st: Settings | null | undefined): 'q' | 'f' => (st && st.learn && st.learn.len === 'f' ? 'f' : 'q');
-/** a lesson's first page, or Settings: keep the lesson length */
-export const setLessonLen = (st: Settings, len: 'q' | 'f', now = Date.now()): Settings =>
-  st.learn.len === len ? st : changeSettings(st, (s) => void (s.learn.len = len), now);
+/* Every lesson asks its length, wherever it starts (the owner, November 14, 2026: "It should also ask them 2 or 5 minutes when they do
+   the lesson anywhere. Always."). The one marked is the length the person picks most, Short until they have picked; a tie goes to
+   the last pick. Deep is a choice only for a person who turned it on in Settings ("if they have 10 minutes checked, it should have
+   them choose 2, 5, or 10 minutes every time"). */
+export const deepOn = (st: Settings | null | undefined): boolean => DEEP_READY && !!(st && st.learn && st.learn.deep);
+export const lessonLen = (st: Settings | null | undefined): LessonLen => {
+  if (!st || !st.learn) return 'q';
+  const n = st.learn.lens || {};
+  const last = st.learn.len === 'd' && !deepOn(st) ? 'f' : st.learn.len || 'q';
+  const can: LessonLen[] = deepOn(st) ? ['q', 'f', 'd'] : ['q', 'f'];
+  const top = Math.max(...can.map((k) => n[k] || 0));
+  if (!top) return can.indexOf(last as LessonLen) >= 0 ? (last as LessonLen) : 'q';
+  const best = can.filter((k) => (n[k] || 0) === top);
+  return best.indexOf(last as LessonLen) >= 0 ? (last as LessonLen) : best[0];
+};
+/** a lesson's first page: the length picked, counted */
+export const pickLessonLen = (st: Settings, len: LessonLen, now = Date.now()): Settings =>
+  changeSettings(
+    st,
+    (s) => {
+      s.learn.len = len;
+      s.learn.lens = { ...(s.learn.lens || {}), [len]: ((s.learn.lens || {})[len] || 0) + 1 };
+    },
+    now,
+  );
+/** Settings: Deep lessons on or off */
+export const setDeep = (st: Settings, on: boolean, now = Date.now()): Settings =>
+  !!st.learn.deep === on
+    ? st
+    : changeSettings(
+        st,
+        (s) => {
+          if (on) s.learn.deep = true;
+          else delete s.learn.deep;
+        },
+        now,
+      );
 /** the reasons the "who for" picks keep */
 export const obForReasons = (a: SetupAnswers): string[] =>
   (Array.isArray(a.for) ? (a.for as string[]) : []).map((id) => (OB_FOR.find((x) => x[0] === id) || [])[3]).filter((x): x is string => !!x);

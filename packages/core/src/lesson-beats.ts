@@ -15,6 +15,8 @@ export interface Beat {
   say?: string;
   /** one short sentence under the big line */
   p?: string;
+  /** in Deep, the 10-minute lesson: this card told in full, in place of p (lesson-stories.ts) */
+  dx?: string;
   /** what to do: up to three short lines */
   l?: string[];
   /** the giant number, when a card without a number picture should be a number card. It comes from the card's own words. */

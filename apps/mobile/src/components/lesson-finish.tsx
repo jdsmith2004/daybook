@@ -18,7 +18,7 @@
    About four seconds; a tap anywhere brings it all in at once. Reduce Motion: no opener, everything in and settled, one buzz.
    In the hours after a slip (core ptsQuiet) the points and the level line are not shown, as everywhere else: the lesson itself
    is the win. A lesson read again earns no points, so nothing glides. */
-import { gameCompute, lessonCount, lessonWalk, levelOf, LOOKS, ptsQuiet, stepProgress } from '@daybook/core';
+import { gameCompute, lessonCount, lessonWalk, levelOf, LOOKS, ptsQuiet, stepProgress, type Look } from '@daybook/core';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View, type ViewInstance } from 'react-native';
@@ -171,6 +171,8 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
   const nod = useSharedValue(0);
   /* the flame settling its weight as it lands home: a soft squash that eases out, never past its shape */
   const land = useSharedValue(0);
+  /* the head going a little way with a glance, in degrees */
+  const lean = useSharedValue(0);
   /* the line to keep writes itself out, letter by letter, once the flame says it */
   const [typed, setTyped] = useState(still ? keep.length : 0);
 
@@ -221,6 +223,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
     setTyped(keep.length);
     slit.value = 1;
     look.value = 0;
+    lean.value = 0;
     nod.value = withTiming(0, q);
     setLanded(true);
     setBeat(2);
@@ -244,31 +247,52 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
     /* the flame comes home pleased with itself: a happy squint, then it sways a little on its feet and acts, at no exact beat, for
        as long as the page is open: a glance one way and the other, a sly look, a quick squint (the faces are core LOOKS) */
     const home = T.settle + T.settleMs;
-    const face = (k: number, ms: number) => {
-      look.value = k;
-      at(ms, () => (look.value = 0));
+    /* a move plays a few poses in a row, holds, and plays them back, so the eyes turn and the lids slide (core LOOKS); a glance takes the
+       head a little way with it */
+    const MOVES: Record<string, { go: Look[]; back: Look[]; ms: number; lean?: number }> = {
+      blink: { go: ['b1', 'b2'], back: ['b1', 'ahead'], ms: 34 },
+      glance: { go: ['l1', 'l2', 'l3'], back: ['l2', 'l1', 'ahead'], ms: 32, lean: -2.6 },
+      sly: { go: ['s1', 's2', 's3'], back: ['s2', 's1', 'ahead'], ms: 46 },
+      slyLeft: { go: ['l1', 'l2', 'l3', 'sl1', 'sl2', 'sl3'], back: ['sl2', 'sl1', 'l2', 'l1', 'ahead'], ms: 38, lean: -2 },
+      down: { go: ['d1', 'd2'], back: ['d1', 'ahead'], ms: 40 },
+      happy: { go: ['b1', 'happy'], back: ['b1', 'ahead'], ms: 40 },
     };
+    const move = (name: keyof typeof MOVES, hold: number) => {
+      const m = MOVES[name];
+      m.go.forEach((k, i) => at(i * m.ms, () => (look.value = LOOK[k])));
+      const back = m.go.length * m.ms + hold;
+      m.back.forEach((k, i) => at(back + i * m.ms, () => (look.value = LOOK[k])));
+      if (m.lean) {
+        lean.value = withTiming(m.lean, { duration: 280, easing: BOTH });
+        at(back, () => (lean.value = withTiming(0, { duration: 340, easing: BOTH })));
+      }
+    };
+    const face = move;
     at(home - 80, () => {
-      face(LOOK.happy, 720);
+      face('happy', 680);
       buzz('land');
       land.value = withSequence(withTiming(1, { duration: 110, easing: OUT }), withTiming(0, { duration: 420, easing: OUT }));
     });
     sway.value = withDelay(home + 300, withRepeat(withTiming(1, { duration: 1700, easing: Easing.inOut(Easing.sin) }), -1, true));
-    const acts: [number, number, number][] = [
-      [LOOK.left, 620, 2200],
-      [LOOK.right, 620, 260],
-      [LOOK.slyRight, 1300, 2000],
-      [LOOK.happy, 150, 2300],
-      [LOOK.slyLeft, 1100, 2100],
-      [LOOK.happy, 150, 2600],
+    /* [the move, how long it holds, the pause before it]: blinks between the looks, at no exact beat, the way a face rests */
+    const acts: [keyof typeof MOVES, number, number][] = [
+      ['blink', 60, 1300],
+      ['glance', 760, 1500],
+      ['blink', 60, 500],
+      ['sly', 1200, 2100],
+      ['blink', 60, 2400],
+      ['slyLeft', 1000, 1700],
+      ['blink', 60, 2900],
+      ['happy', 520, 1900],
     ];
-    let t = home + 1400;
+    /* after the points have gone in and any new level has turned over */
+    let t = home + 2000;
     for (let round = 0; round < 4; round++)
-      for (const [k, ms, gap] of acts) {
+      for (const [k, hold, gap] of acts) {
         t += gap;
         const at0 = t;
-        at(at0, () => face(k, ms));
-        t += ms;
+        at(at0, () => face(k, hold));
+        t += hold + 400;
       }
     /* 2. one continuous move: the band fades as the flame travels to its place */
     open.value = withDelay(T.settle, withTiming(0, { duration: T.settleMs, easing: BOTH }));
@@ -290,7 +314,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
       go.value = withDelay(T.glide, withTiming(1, { duration: T.glideMs, easing: BOTH }));
       const into = T.glide + T.glideMs - 120;
       /* the flame looks down at the line as the points go in, and back up */
-      at(T.glide, () => face(LOOK.down, T.glideMs + 300));
+      at(T.glide, () => face('down', T.glideMs + 260));
       nod.value = withDelay(
         T.glide,
         withSequence(withTiming(1, { duration: T.glideMs, easing: BOTH }), withDelay(260, withTiming(0, { duration: 520, easing: BOTH }))),
@@ -309,7 +333,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
           setLanded(true);
           buzz('lit');
           setPulse((p) => p + 1);
-          face(LOOK.happy, 640);
+          face('happy', 600);
           bar.value = 0;
           bar.value = withTiming(m.after.frac, { duration: 520, easing: OUT });
         });
@@ -361,7 +385,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
   const actIn = useAnimatedStyle(() => ({
     transform: [
       { translateY: 4 * nod.value },
-      { rotate: `${(sway.value * 2 - 1) * 2.2 * rest.value + 4 * nod.value}deg` },
+      { rotate: `${(sway.value * 2 - 1) * 2.2 * rest.value + 4 * nod.value + lean.value}deg` },
       { scaleX: 1 + 0.05 * land.value },
       { scaleY: 1 - 0.07 * land.value },
     ],

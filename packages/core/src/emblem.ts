@@ -176,22 +176,33 @@ export function figAsleep(fig: string): string {
 }
 
 /* ---------- the flame's face, acting ---------- */
-/** the faces the flame can make while it acts (the end of a lesson: the owner, November 14, 2026, "the owl has like clever movements"),
-    in the order faceLooks returns them */
-export const LOOKS = ['ahead', 'left', 'right', 'slyLeft', 'slyRight', 'happy', 'down'] as const;
+/** the poses the flame's eyes can take while it acts (the end of a lesson: the owner, November 14, 2026, "the owl has like clever
+    movements"), in the order faceLooks returns them. A move is played as a few of these in a row, about 30 ms apart, so the eyes turn
+    and the lids slide instead of jumping (the owner, November 14, 2026: "the movement doesn't seem natural"):
+    - ahead: the face as it is drawn everywhere else; l1, l2, l3: on the way to a glance left; d1, d2: looking down;
+    - s1, s2, s3: the lids sliding half down, a sly look; sl1, sl2, sl3: the same, looking left;
+    - b1, b2: a blink, half and shut; happy: the happy squint. */
+export const LOOKS = ['ahead', 'l1', 'l2', 'l3', 'd1', 'd2', 's1', 's2', 's3', 'sl1', 'sl2', 'sl3', 'b1', 'b2', 'happy'] as const;
 export type Look = (typeof LOOKS)[number];
-/** where the dark of each eye sits in the white, and how far the lid is down (0 open, about 0.45 half shut), for each look */
-/* the dark keeps its size and the face's own highlights, so every look is the flame's usual face, only turned (a smaller dark,
-   with more white round it, looked like a stare: the owner, November 14, 2026, "the eyes look freaking creepy") */
-const LOOK_AT: Record<Exclude<Look, 'happy' | 'ahead'>, { x: number; y: number; lid: number }> = {
-  left: { x: -2.4, y: 0.7, lid: 0 },
-  right: { x: 3.2, y: 0.4, lid: 0 },
-  slyLeft: { x: -2.2, y: 1.2, lid: 0.46 },
-  slyRight: { x: 3, y: 1.2, lid: 0.46 },
-  down: { x: 1.2, y: 2.4, lid: 0.2 },
+/* where both eyes look ([x, y] of the dark from the middle of the white), how far along the way there from where they rest (as drawn,
+   each eye looks a little in toward the other: 2.6 in and 0.7 down), and how far the lid is down (0 open, 1 shut). The dark keeps its size and the shine stays where the light is, so it reads as the eye turning (a smaller
+   dark, with more white round it, looked like a stare: the owner, November 14, 2026, "the eyes look freaking creepy"). */
+const LOOK_AT: Record<Exclude<Look, 'happy' | 'ahead'>, [number, number, number, number]> = {
+  l1: [-3.6, 0.9, 0.3, 0],
+  l2: [-3.6, 0.9, 0.7, 0],
+  l3: [-3.6, 0.9, 1, 0],
+  d1: [0, 3.2, 0.5, 0.1],
+  d2: [0, 3.2, 1, 0.22],
+  s1: [0, 1.2, 0, 0.16],
+  s2: [0, 1.2, 0, 0.32],
+  s3: [0, 1.2, 0, 0.46],
+  sl1: [-3.6, 1.2, 1, 0.16],
+  sl2: [-3.6, 1.2, 1, 0.32],
+  sl3: [-3.6, 1.2, 1, 0.46],
+  b1: [0, 0.7, 0, 0.55],
+  b2: [0, 0.7, 0, 1],
 };
-/** the still layer (emblemLayers) once for each of LOOKS: the eyes drawn again with a smaller dark that can move inside the white, a lid
-    that comes half down for a sly look, and a happy squint. Every form has the one face, so this works for all of them. Each copy gets
+/** the still layer (emblemLayers) once for each of LOOKS. Every form has the one face, so this works for all of them. Each copy gets
     its own ids, so they can lie over each other and the one showing can change in a frame. */
 export function faceLooks(still: string): string[] {
   const at = still.indexOf('<g><circle cx="-17" cy="84"');
@@ -203,27 +214,31 @@ export function faceLooks(still: string): string[] {
   const pre = /^em\d+f/.exec(iris)?.[0] ?? 'em1f';
   const eye = (cx: number, look: Look, k: number) => {
     if (look === 'ahead') return '';
+    /* shut in a blink: the eye is a soft closed curve, like the flame asleep, not a lid over an empty ring */
+    if (look === 'b2') return `<path d="M${cx - 12} 84Q${cx} 93 ${cx + 12} 84" fill="none" stroke="#8A2E0C" stroke-width="4.4" stroke-linecap="round"/>`;
     if (look === 'happy') return `<path d="M${cx - 11} 88Q${cx} 74 ${cx + 11} 88" fill="none" stroke="#8A2E0C" stroke-width="4.6" stroke-linecap="round"/>`;
-    const p = LOOK_AT[look];
-    const ix = cx + p.x;
-    const iy = 84 + p.y;
+    const [tx, ty, f, down] = LOOK_AT[look];
+    /* where this eye rests, as drawn, and where it is on its way to the look */
+    const bx = cx < 0 ? 2.6 : -2.6;
+    const x = bx + (tx - bx) * f;
+    const y = 0.7 + (ty - 0.7) * f;
     const clip = `${pre}${k}q${cx < 0 ? 'l' : 'r'}`;
     /* the lid: the top of the eye, cut off by a straight edge, in the face's own warm color, with a dark line along its edge */
-    const h = 84 - 13 + 26 * p.lid;
-    const lid = p.lid
-      ? `<g clip-path="url(#${clip})"><rect x="${cx - 14}" y="${84 - 14}" width="28" height="${h - 70}" fill="#FFC447"/>` +
+    const h = 71 + 26 * down;
+    const lid = down
+      ? `<g clip-path="url(#${clip})"><rect x="${cx - 14}" y="70" width="28" height="${h - 70}" fill="#FFC447"/>` +
         `<path d="M${cx - 13} ${h}H${cx + 13}" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/></g>`
       : '';
     return (
       `<defs><clipPath id="${clip}"><circle cx="${cx}" cy="84" r="13"/></clipPath></defs>` +
       `<circle cx="${cx}" cy="84" r="13" fill="${ink}"/><circle cx="${cx}" cy="84" r="11.7" fill="#FFF6E8"/>` +
-      `<g clip-path="url(#${clip})"><circle cx="${ix}" cy="${iy}" r="9.1" fill="url(#${iris})"/>` +
-      `<circle cx="${ix - 2.1}" cy="${iy - 4.3}" r="3.5" fill="#fff"/><circle cx="${ix + 3.4}" cy="${iy + 1.1}" r="1.6" fill="#fff"/></g>` +
+      `<g clip-path="url(#${clip})"><circle cx="${cx + x}" cy="${84 + y}" r="9.1" fill="url(#${iris})"/>` +
+      /* the shine, where the drawing has it: the light does not move when the eye does */
+      `<circle cx="${cx + bx - 2.1}" cy="80.4" r="3.5" fill="#fff"/><circle cx="${cx + bx + 3.4}" cy="85.8" r="1.6" fill="#fff"/></g>` +
       lid
     );
   };
   return LOOKS.map((look, k) =>
-    /* ahead is the face exactly as it is drawn everywhere else */
     (look === 'ahead' ? still : still.slice(0, at) + '<g>' + eye(-17, look, k) + eye(17, look, k) + '</g>' + still.slice(end)).replace(
       /\bem(\d+)f(?!\d+q)/g,
       `em$1f${k}q`,

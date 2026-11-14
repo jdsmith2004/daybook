@@ -263,7 +263,7 @@ function Floating({ show, due, children }: { show: boolean; due: number; childre
   );
 }
 
-const openLesson = (id: string) => router.push({ pathname: '/lesson/[id]', params: { id } });
+const openLesson = (id: string) => router.push({ pathname: '/lesson/[id]', params: { id, pick: '1' } });
 
 /* ---------- lessons ---------- */
 function LessonsPane({

@@ -37,7 +37,7 @@ import { font, nightInk, useTheme, type Palette } from '@/lib/theme';
 export function openStop(go: StopGo, id?: string) {
   buzz('tap');
   if (go === 'lesson') {
-    if (id) router.push({ pathname: '/lesson/[id]', params: { id } });
+    if (id) router.push({ pathname: '/lesson/[id]', params: { id, pick: '1' } });
     return;
   }
   /* the any-time stops: the journal opens on its feeling picker, a new entry's first step (reaching out is marked in place, Row) */

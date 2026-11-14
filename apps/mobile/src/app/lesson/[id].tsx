@@ -46,6 +46,7 @@ import {
   lessonPracticed,
   lessonReach,
   lessonLen,
+  setLessonLen,
   lessonSeq,
   lessonStats,
   lessonWalk,
@@ -107,7 +108,7 @@ import { useAccount } from '@/lib/sync';
 import { font, MAX_WIDTH, PaletteOverride, toneOf, useTheme, type Tone } from '@/lib/theme';
 
 /** deed: a step's deed, after its last lesson (core steps.ts) */
-type Stage = 'cover' | 'run' | 'practice' | 'deed' | 'practiced';
+type Stage = 'len' | 'cover' | 'run' | 'practice' | 'deed' | 'practiced';
 /** recall questions answered on a welcome back while the app is open, by lesson id, with the day: the lesson after it does
     not ask the same question again that day */
 const ASKED: Record<string, string> = {};
@@ -125,7 +126,7 @@ interface Got {
 }
 
 export default function LessonScreen() {
-  const { id, at } = useLocalSearchParams<{ id: string; at?: string }>();
+  const { id, at, pick: picked } = useLocalSearchParams<{ id: string; at?: string; pick?: string }>();
   const { snap, tk, update, apply, say } = useStore();
   /* the first week's part for today (WP10, unlock.ts): it opens after the lesson, never on a care lesson */
   const part = useUnlock();
@@ -163,9 +164,14 @@ export default function LessonScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [L?.id],
   );
-  /* one way in (C8): the length the person picked in setup or Settings (core lessonLen; short until they pick long). Short plays the
+  /* one way in (C8): the length last picked on a lesson's first page or in Settings (core lessonLen; short until long). Short plays the
      short cards, with More on each; long, or a lesson with no short cut, runs in full. Held for the whole lesson. */
-  const [len] = useState<'q' | 'f'>(() => (found && lessonHasQuick(found) ? lessonLen(st) : 'f'));
+  const [len, setLen] = useState<'q' | 'f'>(() => (found && lessonHasQuick(found) ? lessonLen(st) : 'f'));
+  /* a lesson the person starts (pick=1: Today, Learn, a link) asks Short or Long first, as it did before the rework; a lesson the app
+     opens by itself (the first tour, the morning, after signing up, a care door) goes straight in at the saved length (the owner,
+     November 14, 2026: "if a lesson automatically pops up, we don't ask them which version, we just go into it. But if they choose a
+     lesson from the homepage, ask them if they want to go like longer or shorter like we did before") */
+  const [chose, setChose] = useState(() => !(picked === '1' && found && lessonHasQuick(found)));
   /* how a card without a question landed with the person (two answers, or the line they will try), by card */
   const [ans, setAns] = useState<Record<number, number>>({});
   /* a turn card's reply has landed */
@@ -253,7 +259,7 @@ export default function LessonScreen() {
   /* the step before this one, asked about once more as its first lesson opens (never after a slip) */
   const askK = care || askedBack ? -1 : deedAskBack(L, snap.days, st, tk);
   /* one way in: with nothing to ask before the step, the lesson opens on its first card */
-  const stg: Stage = stage === 'cover' && askK < 0 ? 'run' : stage;
+  const stg: Stage = !chose && !care ? 'len' : stage === 'cover' && askK < 0 ? 'run' : stage;
   /* the cards; the old Done card is gone: after the last card comes Put it to work, the step's deed, then one finish page */
   const seq = lessonSeq(L, len).filter((x): x is Extract<SeqItem, { t: 'card' }> => x.t === 'card');
   const pr0 = lessonPractice(L, st);
@@ -298,7 +304,7 @@ export default function LessonScreen() {
       /* a turn keeps the sky it has: the card itself turns over (a change of sky read as a flash, the owner, November 2, 2026) */
       kind = cl === 'sun' ? 'sun' : cl === 'number' || (cl === 'guess' && lockKey) ? 'violet' : 'sky';
     }
-  } else if (stg !== 'cover') p = 1;
+  } else if (stg !== 'cover' && stg !== 'len') p = 1;
   const look = lessonLook(kind, p, base.scheme);
   const c = look.c;
   const t = toneOf(c, lessonUnit(L).tone);
@@ -437,7 +443,52 @@ export default function LessonScreen() {
   let praise: ReactNode = null;
   /* the flame grows a little as the lesson goes on */
   const want = (SHORT ? 210 : 260) + (SHORT ? 40 : 70) * p;
-  if (stg === 'cover') {
+  if (stg === 'len') {
+    /* Short or Long, the saved one marked; the pick is kept for next time (Settings, Lesson length) */
+    const choose = (ln: 'q' | 'f') => {
+      setLen(ln);
+      if (st && st.learn.len !== ln) apply((cur) => ({ st: setLessonLen(cur, ln) }));
+      dir.current = 1;
+      setChose(true);
+    };
+    const cur = lessonLen(st);
+    body = (
+      <>
+        <T v="small" tone="muted">
+          {lessonUnit(L).name}
+        </T>
+        <T style={[s.h, L.title.length > 30 && s.hsm]} accessibilityRole="header">
+          {L.title}
+        </T>
+        <T style={s.p}>{L.ask || L.tag}</T>
+        <FlameSlot size={SHORT ? 240 : 310} min={120} />
+        <Dock>
+          <View style={{ gap: 12 }} accessibilityLabel="Pick a length">
+            <LenBtn
+              on={cur === 'q'}
+              title="Short"
+              mins="about 2 min"
+              sub={L.v === 3 ? 'The turn, what to do, one check' : L.v === 2 ? 'The answer, what to do, one check' : 'The main idea, then one question'}
+              onPress={() => choose('q')}
+            />
+            <LenBtn
+              on={cur === 'f'}
+              title="Long"
+              mins="about 5 min"
+              sub={
+                L.v === 3
+                  ? 'Adds a question and what is behind the turn'
+                  : L.v === 2
+                    ? 'Adds a guess and the science behind it'
+                    : 'Adds the evidence and why it works'
+              }
+              onPress={() => choose('f')}
+            />
+          </View>
+        </Dock>
+      </>
+    );
+  } else if (stg === 'cover') {
     /* the one ask back, before the next step starts: two answers, and either way it is never asked again */
     body = (
       <>
@@ -898,6 +949,18 @@ function Help988() {
   );
 }
 /** one answer to a step's deed: a plain choice on paper, like a question's answers, neither one marked as the right one */
+/** a length to pick, on paper like every answer in a lesson; the saved one shows picked */
+function LenBtn({ on, title, sub, mins, onPress }: { on: boolean; title: string; sub: string; mins: string; onPress: () => void }) {
+  return (
+    <Answer sel={on} right={false} onPress={onPress} label={title + ', ' + mins + '. ' + sub} style={{ gap: 2 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+        <Text style={{ fontFamily: font.display, fontSize: 17, lineHeight: 22, color: PAPER_INK }}>{title}</Text>
+        <Text style={{ fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: PAPER_INK }}>{mins}</Text>
+      </View>
+      <Text style={{ fontFamily: font.body, fontSize: 13, lineHeight: 18, color: PAPER_INK }}>{sub}</Text>
+    </Answer>
+  );
+}
 function DeedBtn({ title, sub, onPress }: { title: string; sub: string; onPress: () => void }) {
   return (
     <Answer sel={false} right={false} onPress={onPress} style={{ gap: 2 }}>

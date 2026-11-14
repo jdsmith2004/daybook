@@ -420,7 +420,7 @@ export default function Review() {
               {l ? (
                 <Pressable
                   accessibilityRole="link"
-                  onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: l.id } })}
+                  onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: l.id, pick: '1' } })}
                   style={s.lesson}
                   hitSlop={6}>
                   <Icon name="book" size={14} color={c.accentText} />

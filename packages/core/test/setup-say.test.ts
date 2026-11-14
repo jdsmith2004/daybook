@@ -13,7 +13,7 @@ const lines = [...OB_PAGES.map((p) => obSay(p.id)), obSay('hello', true), ...Obj
 
 describe('the flame in the setup', () => {
   it('says hello, and something on every question that asks for a guess or a count', () => {
-    for (const id of ['hello', 'habit', 'freq', 'when', 'for', 'len', 'faith', 'tonight', 'light', 'review']) expect(obSay(id), id).toBeTruthy();
+    for (const id of ['hello', 'habit', 'freq', 'when', 'for', 'faith', 'tonight', 'light', 'review']) expect(obSay(id), id).toBeTruthy();
     expect(obSay('hello', true)).not.toBe(obSay('hello'));
   });
   it('answers every one-tap pick', () => {

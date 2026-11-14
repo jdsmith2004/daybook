@@ -120,9 +120,9 @@ describe('the goal it suggests', () => {
 
 describe('setup in two minutes (WP10)', () => {
   it('asks a new person a few things, sets tonight, lights the flame, then asks for the account', () => {
-    expect(core.obPages({}).map((p) => p.id)).toEqual(['how', 'habit', 'freq', 'when', 'sos', 'promise', 'for', 'len', 'faith', 'tonight', 'light']);
+    expect(core.obPages({}).map((p) => p.id)).toEqual(['how', 'habit', 'freq', 'when', 'sos', 'promise', 'for', 'faith', 'tonight', 'light']);
     expect(core.obPages({ faith: 'big' }, { account: true }).map((p) => p.id)).toEqual(
-      'how habit freq when sos promise for len faith creed tonight light account'.split(' '),
+      'how habit freq when sos promise for faith creed tonight light account'.split(' '),
     );
     expect(core.obPages({}, { redo: true })[0].id).toBe('hello');
   });
@@ -135,38 +135,18 @@ describe('setup in two minutes (WP10)', () => {
     }
     expect(core.obPages({ habit: 'porn' }).map((p) => p.id)).toContain('tonight');
   });
-  it('asks how long a lesson should be, keeps it, and the lessons play it (the owner, November 14, 2026)', () => {
+  it('keeps the lesson length, short until long is picked (the owner, November 14, 2026)', () => {
     const tk = '2026-11-12' as core.DayKey;
-    /* short until the person picks long */
-    const none = core.obBegin({}, tk, 0);
-    expect(core.lessonLen(none)).toBe('q');
-    const long = core.obBegin({ len: 'f' }, tk, 0);
-    expect(long.learn.len).toBe('f');
+    const st = core.obBegin({}, tk, 0);
+    expect(core.obPages({}).map((p) => p.id)).not.toContain('len');
+    expect(core.lessonLen(st)).toBe('q');
+    const long = core.setLessonLen(st, 'f', 0);
     expect(core.lessonLen(long)).toBe('f');
     expect(core.lessonLen(core.normSettings(JSON.parse(JSON.stringify(long))))).toBe('f');
-    /* a walk-through starts from it, and offers the change when it moves */
-    expect(core.obPrefill(long).len).toBe('f');
-    const ch = core.obChanges({ ...core.obPrefill(long), len: 'q' }, long, tk).find((c) => c.k === 'len');
-    expect(ch && [ch.from, ch.to]).toEqual(['Long', 'Short']);
-    expect(core.obChanges(core.obPrefill(long), long, tk).some((c) => c.k === 'len')).toBe(false);
-    expect(core.obSave({ ...core.obPrefill(long), len: 'q' }, long, ['len'], tk, 0).st.learn.len).toBe('q');
-    /* Settings */
-    expect(core.setLessonLen(none, 'f', 0).learn.len).toBe('f');
-    /* the flame answers both picks */
-    for (const v of ['q', 'f']) expect(core.obReply('len', v)).toBeTruthy();
+    expect(core.setLessonLen(long, 'f', 0)).toBe(long);
   });
   it('asks the same questions on a walk-through, then the changes to keep', () => {
-    expect(core.obPages({}, { redo: true, account: true }).map((p) => p.id)).toEqual([
-      'hello',
-      'habit',
-      'freq',
-      'when',
-      'for',
-      'len',
-      'faith',
-      'review',
-      'done',
-    ]);
+    expect(core.obPages({}, { redo: true, account: true }).map((p) => p.id)).toEqual(['hello', 'habit', 'freq', 'when', 'for', 'faith', 'review', 'done']);
   });
   it('starts counting tonight, counts how often says, and keeps who it is for as reasons', () => {
     const tk = '2026-11-12' as core.DayKey;

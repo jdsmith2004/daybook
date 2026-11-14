@@ -157,7 +157,7 @@ export function RelLesson({ id }: { id: string }) {
       icon="book"
       title={(lessonNo(L, snap.settings) ? `Lesson ${lessonNo(L, snap.settings)}: ` : '') + L.title}
       sub={g === 'key' ? 'The key idea' : w.walked.has(id) ? 'Done · read it again' : lmin(L) + ' · up next'}
-      onPress={() => router.push({ pathname: '/lesson/[id]', params: { id } })}
+      onPress={() => router.push({ pathname: '/lesson/[id]', params: { id, pick: '1' } })}
     />
   );
 }

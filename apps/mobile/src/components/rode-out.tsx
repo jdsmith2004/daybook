@@ -279,7 +279,10 @@ function RodeOutPage({ won, level, title = 'SOS', onUndo, after }: RodeProps & {
                   {why.t}
                 </T>
                 {lesson ? (
-                  <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: lesson.id } })} hitSlop={8}>
+                  <Pressable
+                    accessibilityRole="link"
+                    onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: lesson.id, pick: '1' } })}
+                    hitSlop={8}>
                     <Text style={[s.lesson, { color: c.accentText }]}>Later, when it is calm: {lesson.title} ›</Text>
                   </Pressable>
                 ) : null}

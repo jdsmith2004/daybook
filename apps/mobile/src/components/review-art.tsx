@@ -84,7 +84,7 @@ export function Teach({ teach, folded }: { teach: StoryTeach; folded?: boolean }
             hitSlop={6}
             onPress={() => {
               buzz('tap');
-              router.push({ pathname: '/lesson/[id]', params: { id: l.id } });
+              router.push({ pathname: '/lesson/[id]', params: { id: l.id, pick: '1' } });
             }}
             style={s.lesson}>
             <Icon name="book" size={14} color={c.accentText} />

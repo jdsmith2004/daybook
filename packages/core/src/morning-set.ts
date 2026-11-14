@@ -277,7 +277,7 @@ export function tonightOf(days: Days, st: Settings, tk: DayKey): Tonight {
   return own?.r && !own.set ? { ...t, r: own.r, rAt: own.at, from: tk } : t;
 }
 
-/** tonight's reason, chosen on Today ("Tonight, for", components/today-below.tsx): kept on today without setting the morning, so the
+/** tonight's reason, chosen on Today ("Tonight I stay free for", components/today-below.tsx): kept on today without setting the morning, so the
     morning page still opens as it would, already on this reason */
 export function pickTonightReason(days: Days, tk: DayKey, r: string, now = Date.now()): Days {
   const t = r.trim();

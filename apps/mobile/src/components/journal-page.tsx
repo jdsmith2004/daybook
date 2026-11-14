@@ -1,7 +1,7 @@
-/* The journal (core journal-entries.ts; its pieces are components/journal.tsx). It comes down over Today like a shade when
-   the page is pulled down past the line (components/pull-door.tsx), carrying on from where the thumb let go, and goes back
-   up the same way: the X, a push up from its bottom edge, or Back. It is always the night sky, in either theme, like the
-   field of feelings it opens into, so a private page feels like a quiet room.
+/* The journal (core journal-entries.ts; its pieces are components/journal.tsx). It is a tab (app/(tabs)/journal.tsx; the owner,
+   November 13, 2026: "should we just put it as a tab bar"), always the night sky, in either theme, like the field of feelings it
+   opens into, so a private page feels like a quiet room. Writing is a full-screen moment over it (app/write.tsx), which fades in
+   and goes back to the list when it is done.
 
    The list is every entry, newest first, by day: a constellation of the feelings' shapes on one dotted line
    (components/journal.tsx). Low at the bottom, where the thumb is, New entry opens the same four colors as everywhere
@@ -9,7 +9,11 @@
    named, the page to write on is kept bare: the feeling's shape and word in its color, one tiny line to start from
    ("Explore why you might be feeling hopeful"), and the page, in a book face. It saves quietly as it is written; Done
    goes back to the list, where the new entry lands at the top. The feeling alone is an entry too: naming it is the part
-   that helps most. */
+   that helps most.
+
+   The first entry with words in it, on a phone with the lock off, is followed once by the lock's page (app/unlock.tsx, id lock):
+   what is written there is worth keeping for the person's eyes only. Never after an SOS or a slip (lib/quiet-asks.ts), never
+   from a door after a slip, and never again once that page has been shown, from here or from the first-week series. */
 import {
   addDays,
   feelAt,
@@ -30,7 +34,7 @@ import {
   type JLog,
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -51,6 +55,7 @@ import Reanimated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withSpri
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
+import { SettingsButton } from '@/components/settings-button';
 import {
   dayColors,
   DayLogs,
@@ -61,7 +66,8 @@ import {
   LightField,
   logColors,
   NewEntry,
-  takeJournalStart,
+  keepFresh,
+  takeFresh,
   WeekLights,
   type LogColor,
 } from '@/components/journal';
@@ -75,11 +81,12 @@ import { Icon, InkContext, T } from '@/components/ui';
 import { WhenSheet } from '@/components/when';
 import { webDeps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
-import { useReducedMotion } from '@/lib/motion';
 import { useNotes } from '@/lib/notes';
 import { useSos } from '@/lib/sos';
 import { useAccount } from '@/lib/sync';
 import { useStore } from '@/lib/store';
+import { tabRoom } from '@/lib/tab-room';
+import { useLockOffer } from '@/lib/unlock';
 import { font, MAX_WIDTH, NightContext, nightInk } from '@/lib/theme';
 import { useWebGrow, useWebKeyboard } from '@/lib/web-keyboard';
 
@@ -99,29 +106,31 @@ type Step =
   | { k: 'grid'; start: { r: number; c: number }; from?: FeelFrom; id: string | null; fresh?: boolean }
   | { k: 'write'; id: string; fresh: boolean };
 
-export default function JournalScreen() {
-  const params = useLocalSearchParams<{ pane?: string; feel?: string; new?: string }>();
-  /* the Pattern tab was called Journal until October 2026: an old link to one of its sections goes there */
-  useEffect(() => {
-    if (params.pane) router.replace({ pathname: '/pattern', params: { pane: params.pane } });
-  }, [params.pane]);
-  if (params.pane) return null;
+/** the journal as a tab (the list), or as the moment of writing over it (entry): a new one, one read back (open), or one started
+    from a door after a slip (feel) */
+export function JournalPage(p: { mode: 'tab' | 'entry'; feel?: string; fresh?: boolean; open?: string }) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <Journal feel={params.feel} fresh={params.new === '1'} />
+      <Journal {...p} />
     </GestureHandlerRootView>
   );
 }
 
 /* feel: opened from a door after a slip, where the feeling was just named, so it opens on the page, ready to write, and Done goes
    back to where it was opened. fresh: it opens on the four colors, for a new entry. */
-function Journal({ feel, fresh }: { feel?: string; fresh?: boolean }) {
+function Journal({ mode, feel, fresh, open }: { mode: 'tab' | 'entry'; feel?: string; fresh?: boolean; open?: string }) {
   const { height: H, width: W } = useWindowDimensions();
-  const reduce = useReducedMotion();
+  const tab = mode === 'tab';
+  /* the moment of writing fades in over the tab, as a page turning in place rather than a shade coming down */
+  const reduce = true;
   const sos = useSos();
   const { snap, tk, update } = useStore();
-  const [start] = useState(takeJournalStart);
-  const [step, setStep] = useState<Step>({ k: fresh ? 'quad' : 'list' });
+  const offer = useLockOffer();
+  const focused = useIsFocused();
+  const start = 0;
+  const [step, setStep] = useState<Step>(() =>
+    tab ? { k: 'list' } : open && snap.journal?.[open] ? { k: 'write', id: open, fresh: false } : fresh ? { k: 'quad' } : { k: 'list' },
+  );
   /* where the list was (the day picked, the filter, how far down), so coming back from an entry lands in the same place */
   const place = useRef<Place>({ on: tk, filter: 'all', y: 0 });
 
@@ -130,16 +139,27 @@ function Journal({ feel, fresh }: { feel?: string; fresh?: boolean }) {
      the bottom of the screen instead of being sized from the window; this is how far it goes back up */
   const [full, setFull] = useState(H);
   const y = useSharedValue(reduce ? 0 : Math.min(0, start - H));
-  const shown = useSharedValue(reduce ? 0 : 1);
+  const shown = useSharedValue(tab ? 1 : reduce ? 0 : 1);
   useEffect(() => {
+    if (tab) return;
     if (reduce) shown.value = withTiming(1, { duration: 220 });
     else y.value = withSpring(0, OPEN);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const closing = useRef(false);
-  const leave = useCallback(() => (router.canGoBack() ? router.back() : router.replace('/')), []);
+  /* after the first entry with words, the lock's page takes this one's place, once (see the top of this file) */
+  const then = useRef<string | null>(null);
+  /* read after the page has faded, so the words saved as Done was pressed are there */
+  const journal = useRef(snap.journal);
+  journal.current = snap.journal;
+  const leave = useCallback(() => {
+    const id = then.current;
+    if (id && journal.current?.[id]?.t.trim()) return router.replace({ pathname: '/unlock', params: { id: 'lock' } });
+    if (router.canGoBack()) router.back();
+    else router.replace('/journal');
+  }, []);
   const close = useCallback(() => {
-    if (closing.current) return;
+    if (tab || closing.current) return;
     closing.current = true;
     Keyboard.dismiss();
     if (reduce) shown.value = withTiming(0, { duration: 180 }, (f) => f && runOnJS(leave)());
@@ -210,6 +230,23 @@ function Journal({ feel, fresh }: { feel?: string; fresh?: boolean }) {
     });
     setStep({ k: 'write', id, fresh: true });
   };
+  /* back on the tab after writing: the new entry rises into place at the top of the list */
+  useFocusEffect(
+    useCallback(() => {
+      if (!tab) return;
+      const id = takeFresh();
+      if (id) setStep({ k: 'list', fresh: id });
+    }, [tab]),
+  );
+  /* the list is the tab: from the moment of writing, going back to it closes this page; a new entry lands at the top there */
+  const toList = (id?: string) => {
+    if (tab) return setStep({ k: 'list', fresh: id });
+    if (id) {
+      keepFresh(id);
+      if (offer && !feel) then.current = id;
+    }
+    close();
+  };
   const back = useRef<() => void>(close);
   /* the page being written on sets this, so Android's Back does what its own back arrow does */
   const writeBack = useRef<(() => void) | null>(null);
@@ -217,37 +254,38 @@ function Journal({ feel, fresh }: { feel?: string; fresh?: boolean }) {
     step.k === 'list'
       ? close
       : step.k === 'quad'
-        ? () => setStep({ k: 'list' })
+        ? () => toList()
         : step.k === 'grid'
           ? () => setStep(step.id ? { k: 'write', id: step.id, fresh: !!step.fresh } : { k: 'quad' })
-          : () => (writeBack.current ? writeBack.current() : setStep({ k: 'list' }));
+          : () => (writeBack.current ? writeBack.current() : toList());
   useEffect(() => {
-    if (Platform.OS !== 'android') return;
+    if (Platform.OS !== 'android' || tab) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       back.current();
       return true;
     });
     return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <NightContext.Provider value={true}>
       <InkContext.Provider value={NIGHT_INK}>
         <View style={StyleSheet.absoluteFill} onLayout={(e) => setFull(e.nativeEvent.layout.height)}>
-          <StatusBar style="light" />
+          {/* the tabs stay mounted: the night's light clock only while the journal is in front */}
+          {focused ? <StatusBar style="light" /> : null}
           <Reanimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.dim, dim]} />
           <Reanimated.View style={[s.shade, { top: -EXTRA, bottom: 0 }, shade]}>
             <View style={[StyleSheet.absoluteFill, { backgroundColor: JN.paper }]} />
             <View style={[StyleSheet.absoluteFill, { top: EXTRA }]}>
               {step.k === 'list' ? (
                 <ListPage
-                  key="list"
+                  key={'list' + (step.fresh || '')}
                   place={place}
                   fresh={step.fresh}
-                  push={push}
-                  onClose={close}
-                  onNew={() => setStep({ k: 'quad' })}
-                  onOpen={(id) => setStep({ k: 'write', id, fresh: false })}
+                  push={tab ? undefined : push}
+                  onNew={() => (tab ? router.push({ pathname: '/write', params: { new: '1' } }) : setStep({ k: 'quad' }))}
+                  onOpen={(id) => (tab ? router.push({ pathname: '/write', params: { open: id } }) : setStep({ k: 'write', id, fresh: false }))}
                 />
               ) : step.k === 'quad' ? (
                 <SceneFrame key="quad" title="Journal" sky="paper" onClose={back.current}>
@@ -268,13 +306,13 @@ function Journal({ feel, fresh }: { feel?: string; fresh?: boolean }) {
                   key={'write' + step.id}
                   id={step.id}
                   fresh={step.fresh}
-                  onDone={(fresh) => (feel ? close() : setStep({ k: 'list', fresh: fresh || undefined }))}
+                  onDone={(fresh) => (feel ? close() : toList(fresh || undefined))}
                   onFeel={(r, c) => setStep({ k: 'grid', start: { r, c }, id: step.id, fresh: step.fresh })}
                   onBack={(r, c, blank) => {
                     /* an entry read back goes back to the list; a new one goes back to the feelings, on its word. One
                        with nothing written yet is taken back too, so naming another feeling starts afresh */
                     const id = step.id;
-                    if (!step.fresh) return setStep({ k: 'list' });
+                    if (!step.fresh) return toList();
                     if (blank) {
                       update((s0) => ({ ...s0, journal: jnRemove(s0.journal || {}, id) }));
                       return setStep({ k: 'grid', start: { r, c }, id: null });
@@ -314,14 +352,13 @@ function ListPage({
   place,
   fresh,
   push,
-  onClose,
   onNew,
   onOpen,
 }: {
   place: { current: Place };
   fresh?: string;
-  push: ReturnType<typeof Gesture.Pan>;
-  onClose: () => void;
+  /** the moment of writing, opened on its list, goes back up with a push from its bottom edge; the tab has none */
+  push?: ReturnType<typeof Gesture.Pan>;
   onNew: () => void;
   onOpen: (id: string) => void;
 }) {
@@ -468,9 +505,7 @@ function ListPage({
             <Pressable accessibilityRole="button" accessibilityLabel="Insights" onPress={() => router.push('/insights')} style={s.round} hitSlop={6}>
               <Icon name="chart" color={JN.ink} />
             </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={s.round} hitSlop={6}>
-              <Icon name="x" color={JN.ink} />
-            </Pressable>
+            <SettingsButton on={{ glass: 'rgba(255, 255, 255, 0.1)', ink: JN.ink }} style={s.round} />
           </View>
         </View>
       </View>
@@ -499,15 +534,22 @@ function ListPage({
       {/* the bottom fades into the page just above the bar, so the days slide under it softly and none peeks out beside it */}
       <LinearGradient pointerEvents="none" colors={[JN.paper + '00', JN.paper]} style={[s.fade, { bottom: dockH, height: FOOT_FADE }]} />
       <View pointerEvents="none" style={[s.fade, { height: dockH, backgroundColor: JN.paper }]} />
-      <GestureDetector gesture={push}>
-        <View style={[s.dock, { paddingBottom: Math.max(inset.bottom, 12) }]} onLayout={(e) => setDockH(e.nativeEvent.layout.height)}>
+      {push ? (
+        <GestureDetector gesture={push}>
+          <View style={[s.dock, { paddingBottom: Math.max(inset.bottom, 12) }]} onLayout={(e) => setDockH(e.nativeEvent.layout.height)}>
+            <View style={s.col}>
+              <NewEntry onPress={onNew} />
+            </View>
+          </View>
+        </GestureDetector>
+      ) : (
+        /* above the tab bar, which keeps its own room (lib/tab-room.ts) */
+        <View style={[s.dock, { paddingBottom: tabRoom(inset.bottom) + 12 }]} onLayout={(e) => setDockH(e.nativeEvent.layout.height)}>
           <View style={s.col}>
             <NewEntry onPress={onNew} />
           </View>
-          {/* the edge of the shade: a push up here takes the journal back up */}
-          <View style={s.grab} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
         </View>
-      </GestureDetector>
+      )}
     </View>
   );
 }
@@ -942,7 +984,6 @@ const s = StyleSheet.create({
   list: { paddingHorizontal: 20 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   dock: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 10, alignItems: 'center' },
-  grab: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(255, 255, 255, 0.26)', marginTop: 12 },
   empty: { alignItems: 'center', paddingTop: 34, paddingHorizontal: 12, gap: 10 },
   art: { width: 160, height: 130, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   artBit: { position: 'absolute' },

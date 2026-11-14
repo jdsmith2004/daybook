@@ -1,5 +1,5 @@
 /* The tab bar on Android and the web (the iPhone uses Apple's own, app-tabs.ios.tsx): Today, Pattern, a raised SOS button in the middle (it opens SOS, it is not a
-   page), Learn, and More. Like the legacy tab bar. It also notes which tab is showing, so a page's Back can name it. */
+   page), Learn, and Journal (where More was until November 13, 2026; Settings is the gear at the top right of each tab). Like the legacy tab bar. It also notes which tab is showing, so a page's Back can name it. */
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname } from 'expo-router';
 import { Tabs, TabList, TabSlot, TabTrigger, type TabTriggerSlotProps } from 'expo-router/ui';
@@ -11,6 +11,7 @@ import { Text } from '@/components/text';
 const TAB_MAX = 1.15;
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { JN } from '@/components/journal';
 import { SosButton } from '@/components/sos-button';
 import { Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -38,8 +39,8 @@ export default function AppTabs() {
               Learn
             </TabButton>
           </TabTrigger>
-          <TabTrigger name="more" href="/more" asChild>
-            <TabButton icon="more">More</TabButton>
+          <TabTrigger name="journal" href="/journal" asChild>
+            <TabButton icon="pencil">Journal</TabButton>
           </TabTrigger>
         </Bar>
       </TabList>
@@ -47,19 +48,28 @@ export default function AppTabs() {
   );
 }
 
-function Bar({ children, ...rest }: { children?: React.ReactNode }) {
+/** the bar's colors: the theme's, or on the Journal tab the journal's own night in either theme, so its page runs on into the bar */
+function useBarLook() {
   const c = useTheme();
+  const night = usePathname() === '/journal';
+  return night
+    ? { bar: JN.paper, line: 'rgba(255, 255, 255, 0.08)', fade: JN.paper, on: JN.accent, off: JN.quiet }
+    : { bar: c.surface, line: c.line, fade: c.bg, on: c.accentText, off: c.muted };
+}
+
+function Bar({ children, ...rest }: { children?: React.ReactNode }) {
+  const look = useBarLook();
   const inset = useSafeAreaInsets();
   return (
-    <View {...rest} style={[s.bar, { backgroundColor: c.surface, borderTopColor: c.line, paddingBottom: 4 + inset.bottom }]}>
-      <LinearGradient colors={[c.bg + '00', c.bg]} style={s.fade} pointerEvents="none" />
+    <View {...rest} style={[s.bar, { backgroundColor: look.bar, borderTopColor: look.line, paddingBottom: 4 + inset.bottom }]}>
+      <LinearGradient colors={[look.fade + '00', look.fade]} style={s.fade} pointerEvents="none" />
       <View style={s.inner}>{children}</View>
     </View>
   );
 }
 
 function TabButton({ children, isFocused, icon, spot, ...props }: TabTriggerSlotProps & { icon: string; spot?: SpotKey }) {
-  const c = useTheme();
+  const look = useBarLook();
   /* the first tour points at Learn (lib/tour.ts) */
   const ref = useSpot(spot ?? 'learn', !!spot);
   return (
@@ -73,8 +83,8 @@ function TabButton({ children, isFocused, icon, spot, ...props }: TabTriggerSlot
       accessibilityState={{ selected: isFocused }}
       style={({ pressed }) => [s.tab, pressed && { opacity: 0.7 }]}>
       <View ref={spot ? ref : undefined} collapsable={false} style={s.tabIn}>
-        <Icon name={icon} size={24} color={isFocused ? c.accentText : c.muted} />
-        <Text maxFontSizeMultiplier={TAB_MAX} style={[s.label, { color: isFocused ? c.accentText : c.muted }]}>
+        <Icon name={icon} size={24} color={isFocused ? look.on : look.off} />
+        <Text maxFontSizeMultiplier={TAB_MAX} style={[s.label, { color: isFocused ? look.on : look.off }]}>
           {children}
         </Text>
       </View>

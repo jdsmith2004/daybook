@@ -17,7 +17,7 @@ function wordsOf(L: Lesson): string[] {
   if (!b) return [];
   const out: string[] = [b.key];
   b.cards.forEach((x) => {
-    [x.h, x.say, x.p, x.rv?.h, x.rv?.p].forEach((w) => w && out.push(w));
+    [x.h, x.say, x.p, x.dx, x.rv?.h, x.rv?.p].forEach((w) => w && out.push(w));
     (x.l || []).concat(x.c || [], x.o || []).forEach((w) => out.push(w));
   });
   if (b.rc) out.push(...(b.rc.q ? [b.rc.q] : []), ...(b.rc.o || []), ...b.rc.c);

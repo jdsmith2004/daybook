@@ -92,6 +92,7 @@ import { LessonFinish } from '@/components/lesson-finish';
 import { Bar, Praise, praiseFor, thanksFor } from '@/components/lesson-play';
 import { FlashCard } from '@/components/lesson-flash';
 import { Next, Rich } from '@/components/lx';
+import { LISTEN_OK, ListenButton, SpokenCard } from '@/components/listen';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -206,6 +207,8 @@ export default function LessonScreen() {
   const [wrote, setWrote] = useState<string | null>(null);
   /* the flame blooms when the right answer is found */
   const [pulse, setPulse] = useState(0);
+  /* Listen (components/listen.tsx): once on, each story card is read aloud as it comes in, until it is turned off */
+  const [listen, setListen] = useState(false);
   const scroll = useRef<ScrollViewInstance>(null);
   /* the picture on a card gives up height so the card fits a short phone (components/fit) */
   const fit = useFitRoom();
@@ -679,12 +682,30 @@ export default function LessonScreen() {
       body = num ? (
         <>
           {head}
-          <NumberCard n={cardNumber(card, b)} h={b.h || card.h} p={b.p} st={st} fact={card.fact?.s} onSrc={() => setSheet({ t: 'src', i: ci })} />
+          <NumberCard
+            n={cardNumber(card, b)}
+            h={b.h || card.h}
+            p={len === 'd' && b.dx ? b.dx : b.p}
+            st={st}
+            fact={card.fact?.s}
+            onSrc={() => setSheet({ t: 'src', i: ci })}
+          />
         </>
       ) : (
         <>
           {head}
-          <TextCard L={L} card={card} beat={b} look={look} st={st} want={want} deep={len === 'd'} onSrc={() => setSheet({ t: 'src', i: ci })} />
+          <TextCard
+            L={L}
+            card={card}
+            beat={b}
+            look={look}
+            st={st}
+            want={want}
+            deep={len === 'd'}
+            listen={listen}
+            onListen={() => setListen((x) => !x)}
+            onSrc={() => setSheet({ t: 'src', i: ci })}
+          />
         </>
       );
       /* a card that asks nothing is read and passed with Continue: no made-up answers and no pick over lines that are steps
@@ -1136,6 +1157,8 @@ function TextCard({
   st,
   want,
   deep,
+  listen,
+  onListen,
   onSrc,
 }: {
   L: Lesson;
@@ -1145,6 +1168,8 @@ function TextCard({
   st: Settings;
   want: number;
   deep?: boolean;
+  listen?: boolean;
+  onListen?: () => void;
   onSrc: () => void;
 }) {
   const art = cardArt(card);
@@ -1173,7 +1198,8 @@ function TextCard({
   if (L.form && art && card.e !== 'move' && !own.length)
     return (
       <>
-        <FitArt style={s.storyArt} drop={0.4} stretch={art[0] === 'research' || art[0] === 'wave'}>
+        {/* in Deep the reading is long, so the card scrolls and the picture keeps its full size */}
+        <FitArt style={s.storyArt} min={deep ? 1 : undefined} drop={deep ? undefined : 0.4} stretch={art[0] === 'research' || art[0] === 'wave'}>
           <LessonArt key={L.id + card.h} art={art} ic={L.ic} t={tone} st={st} />
         </FitArt>
         {B ? (
@@ -1181,13 +1207,21 @@ function TextCard({
             {(bn ? 'From lesson ' + bn : 'From') + ', ' + B.title}
           </T>
         ) : null}
-        <T style={[s.h, h.length > 64 && s.hsm]} accessibilityRole="header">
-          {h}
-        </T>
-        {deep && beat.dx ? <Rich text={beat.dx} st={st} style={s.storyP} /> : beat.p ? <Rich text={beat.p} st={st} style={s.storyP} /> : null}
+        <SpokenCard
+          key={L.id + card.h}
+          h={h}
+          body={deep && beat.dx ? beat.dx : beat.p}
+          st={st}
+          on={!!listen}
+          hStyle={[s.h, h.length > 64 && s.hsm]}
+          pStyle={s.storyP}
+        />
         {card.fact ? <Fact text={card.fact.s} onPress={onSrc} /> : null}
         <View style={s.storyFoot}>
-          <FlameSlot size={92} min={84} side style={s.storyFlame} />
+          <View style={s.storyRow}>
+            {LISTEN_OK && onListen ? <ListenButton on={!!listen} onPress={onListen} ink={look.dashOn} /> : null}
+            <FlameSlot size={92} min={84} side style={s.storyFlame} />
+          </View>
         </View>
       </>
     );
@@ -1409,7 +1443,8 @@ const s = StyleSheet.create({
   art: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   storyP: { fontSize: 20, lineHeight: 28, opacity: 0.92 },
   storyFoot: { flexGrow: 1, justifyContent: 'flex-end' },
-  storyFlame: { flexGrow: 0, height: 84 },
+  storyFlame: { flexGrow: 1, height: 84 },
+  storyRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
   storyArt: { alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   eye2: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   h: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },

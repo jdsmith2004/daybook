@@ -2,7 +2,7 @@
    becoming (the sentence from the end of setup, big in the flame's gold, with the newest proof from the log under it: core rodeProof,
    or the first line of who you are in numbers; moved up to sit right under the flame and the next step, "Becoming free", the owner,
    November 11, 2026), then Today so far (each entry logged today, with a shape like a badge: mint for an urge ridden out), and
-   Tonight, for (the reason the night is for, one tap to choose: core tonightOf, pickTonightReason) and Tonight (the hard hours and the
+   Tonight I stay free for (the reason the night is for, one tap to choose: core tonightOf, pickTonightReason) and Tonight (the hard hours and the
    two lines of the urge plan that fit them, components/tonight-card.tsx). Nothing here is an ask, so it shows on every day and at
    night. What the person has not filled in yet is a blank to tap (components/blank.tsx), never a hidden part and never a nag (the
    owner, November 13, 2026: "maybe like blanks that they need to press to add"). */
@@ -142,7 +142,7 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
   );
 }
 
-/* "Tonight, for": the reason tonight is for, in the person's own words, as the morning set it (or chosen here). A tap opens the
+/* "Tonight I stay free for": the reason tonight is for, in the person's own words, as the morning set it (or chosen here). A tap opens the
    person's reasons in place, one tap each, and My reasons to write a new one. With none chosen yet, a blank. */
 function TonightFor({ snap, tk }: { snap: Snapshot; tk: DayKey }) {
   const c = useTheme();
@@ -161,7 +161,7 @@ function TonightFor({ snap, tk }: { snap: Snapshot; tk: DayKey }) {
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
-        accessibilityLabel={r ? 'Tonight, for ' + r + '. Change' : 'Tonight, for. No reason chosen yet. Choose one'}
+        accessibilityLabel={r ? 'Tonight I stay free for ' + r + '. Change' : 'Tonight I stay free for. Nothing chosen yet. Choose who or what'}
         onPress={() => {
           buzz('tap');
           setOpen((x) => !x);
@@ -169,7 +169,7 @@ function TonightFor({ snap, tk }: { snap: Snapshot; tk: DayKey }) {
         style={({ pressed }) => [s.for, { opacity: pressed ? 0.85 : 1 }]}>
         <View style={s.beTop}>
           <T v="small" tone="muted">
-            Tonight, for
+            Tonight I stay free for
           </T>
           <View style={s.change}>
             <Text style={[s.changeT, { color: c.accentText }]}>{open ? 'Done' : r ? 'Change' : 'Choose'}</Text>

@@ -11,11 +11,14 @@
    3. the points rise in low and count up, then glide into the level line and are gone into it as it fills; a new level turns
       the label over and the flame blooms once;
    4. the lessons line fills by this one;
+   Each line runs to its next milestone, a round mark at its end (the next level; the end of this step of the path), and never
+   says what it is out of (the owner, November 14, 2026: "show it in perspective to the next milestone ... don't say what it's
+   out of");
    5. the flame says the one line to keep, and the one button, Continue, back to wherever the lesson was opened.
    About four seconds; a tap anywhere brings it all in at once. Reduce Motion: no opener, everything in and settled, one buzz.
    In the hours after a slip (core ptsQuiet) the points and the level line are not shown, as everywhere else: the lesson itself
    is the win. A lesson read again earns no points, so nothing glides. */
-import { gameCompute, lessonCount, lessonWalk, levelOf, ptsQuiet } from '@daybook/core';
+import { gameCompute, lessonCount, lessonWalk, levelOf, ptsQuiet, stepProgress } from '@daybook/core';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View, type ViewInstance } from 'react-native';
@@ -48,6 +51,8 @@ const NIGHT = '#16113A';
 const BAND = '#2E2477';
 const LIP = '#D99A12';
 const ORANGE = '#FF9A2E';
+/** the lessons line, apart from the gold of the points and the level */
+const MINT = '#5EE0B5';
 /** a four-point star, in a 24 box */
 const STAR = 'M12 0C13 8 16 11 24 12C16 13 13 16 12 24C11 16 8 13 0 12C8 11 11 8 12 0Z';
 /* the curves: things arrive decelerating, travel easing both ways, and nothing passes its mark */
@@ -92,9 +97,10 @@ const T = {
 };
 
 type Line = { x0: number; y0: number; x1: number; y1: number };
-type Lessons = { done: number; of: number; from: number; to: number };
+/* name: the step the lesson is in, the milestone the line runs to; null when the line is the whole path */
+type Lessons = { name: string | null; from: number; to: number };
 
-export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFinishProps) {
+export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: LessonFinishProps) {
   const { snap, tk, now } = useStore();
   const st = snap.settings;
   const win = useWindowDimensions();
@@ -111,13 +117,17 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
   const up = m.after.n > m.before.n;
   /* with the level line hidden (the hours after a slip) nothing is shown; with it, the points end up inside it */
   const flying = m.shown > 0 && !m.quiet;
-  /* the lessons line: done of the path, this one included (it is recorded before this page); a read again adds nothing */
+  /* the lessons line runs to the next milestone, the end of this step (the owner, November 14, 2026: "show it in perspective to
+     the next milestone ... don't say what it's out of"), this one included (it is recorded before this page); a read again adds
+     nothing. A lesson off the path runs along the whole path. */
   const [lessons] = useState<Lessons | null>(() => {
     if (!st) return null;
-    const c = lessonCount(lessonWalk(snap.days, st));
+    const w = lessonWalk(snap.days, st);
+    const p = stepProgress(w, lessonId);
+    const c = p ?? lessonCount(w);
     if (!c.of) return null;
     const before = again ? c.done : Math.max(0, c.done - 1);
-    return { done: c.done, of: c.of, from: before / c.of, to: c.done / c.of };
+    return { name: p ? p.name : null, from: before / c.of, to: c.done / c.of };
   });
 
   const [beat, setBeat] = useState(still ? 2 : 0);
@@ -297,6 +307,7 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
   const btnIn = useAnimatedStyle(() => ({ opacity: btn.value, transform: [{ translateY: 12 * (1 - btn.value) }] }));
   const lv = landed ? m.after : m.before;
   const ptsLeft = lv.next == null ? null : lv.toNext;
+  const stepDone = !!lessons && lessons.to >= 1;
 
   return (
     <View ref={root} style={s.page} onLayout={measure}>
@@ -341,29 +352,47 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
             style={[s.lineBox, restIn]}
             accessible
             accessibilityLabel={`Level ${lvl}${ptsLeft != null ? ', ' + ptsLeft + ' points to the next' : ''}`}>
-            <View style={s.lineHead}>
-              <Reanimated.Text style={[s.lineLabel, lvIn]}>Level {lvl}</Reanimated.Text>
-              {ptsLeft != null ? <Text style={s.lineRight}>{ptsLeft} to the next</Text> : null}
-            </View>
-            <View>
+            <Reanimated.Text style={[s.lineLabel, lvIn]}>Level {lvl}</Reanimated.Text>
+            <View style={s.lineRow}>
               <View ref={trackRef} onLayout={measure} style={s.track}>
                 <Reanimated.View style={[s.fill, barIn]}>
                   <View style={s.shine} />
                 </Reanimated.View>
               </View>
+              {/* the milestone at the end of the line: the next level, lit when the line reaches it */}
+              {ptsLeft != null ? (
+                <Reanimated.View style={[s.goal, lvIn]}>
+                  <Text style={s.goalNum}>{lvl + 1}</Text>
+                </Reanimated.View>
+              ) : null}
             </View>
           </Reanimated.View>
         ) : null}
         {lessons ? (
-          <Reanimated.View style={[s.lineBox, lessonsIn]} accessible accessibilityLabel={lessons.done + ' of ' + lessons.of + ' lessons done'}>
+          <Reanimated.View
+            style={[s.lineBox, lessonsIn]}
+            accessible
+            accessibilityLabel={`Lesson ${n}${lessons.name ? ', on the way to the end of ' + lessons.name : ''}`}>
             <View style={s.lineHead}>
-              <Text style={s.lineLabel}>Lessons</Text>
-              <Text style={s.lineRight}>{lessons.done + ' of ' + lessons.of}</Text>
+              <Text style={s.lineLabel}>Lesson {n}</Text>
+              {lessons.name ? (
+                <Text style={s.lineRight} numberOfLines={1}>
+                  {lessons.name}
+                </Text>
+              ) : null}
             </View>
-            <View style={s.track}>
-              <Reanimated.View style={[s.fill, lessonsBar]}>
-                <View style={s.shine} />
-              </Reanimated.View>
+            <View style={s.lineRow}>
+              <View style={s.track}>
+                <Reanimated.View style={[s.fill, s.fillLessons, lessonsBar]}>
+                  <View style={s.shine} />
+                </Reanimated.View>
+              </View>
+              {/* the milestone: the end of the step, a star that is full once the step is done */}
+              <View style={[s.goal, s.goalLessons, stepDone && s.goalLessonsOn]}>
+                <Svg width={14} height={14} viewBox="0 0 24 24">
+                  <Path d={STAR} fill={stepDone ? NIGHT : MINT} />
+                </Svg>
+              </View>
             </View>
           </Reanimated.View>
         ) : null}
@@ -490,11 +519,18 @@ const s = StyleSheet.create({
   ptsNum: { fontFamily: font.display, fontSize: 40, color: GOLD },
   ptsWord: { fontFamily: font.bodyBold, fontSize: 20, color: GOLD },
   lineBox: { alignSelf: 'center', width: '100%', maxWidth: 360, gap: 8 },
-  lineHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  lineHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 },
+  lineRow: { flexDirection: 'row', alignItems: 'center' },
   lineLabel: { fontFamily: font.display, fontSize: 17, color: nightInk.ink },
-  lineRight: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted },
-  track: { height: 20, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
-  fill: { height: 20, borderRadius: 10, backgroundColor: GOLD, paddingTop: 4, paddingHorizontal: 8 },
+  lineRight: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted, flexShrink: 1 },
+  track: { flex: 1, height: 18, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden', marginRight: -14 },
+  fill: { height: 18, borderRadius: 9, backgroundColor: GOLD, paddingTop: 4, paddingHorizontal: 8 },
+  fillLessons: { backgroundColor: MINT },
+  /* the round milestone the line runs into, sitting over its end */
+  goal: { width: 34, height: 34, borderRadius: 17, borderWidth: 3, borderColor: GOLD, backgroundColor: NIGHT, alignItems: 'center', justifyContent: 'center' },
+  goalNum: { fontFamily: font.display, fontSize: 13, color: GOLD },
+  goalLessons: { borderColor: MINT },
+  goalLessonsOn: { backgroundColor: MINT },
   shine: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.45)' },
   btn: {
     minHeight: 56,

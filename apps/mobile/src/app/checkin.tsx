@@ -19,6 +19,7 @@ import {
   gameCompute,
   goodnightOpens,
   healthHasNight,
+  levelOf,
   rateKeys,
   ratingOf,
   rhythm,
@@ -37,7 +38,7 @@ import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
 import { Field, Link } from '@/components/choices';
-import { CountUp } from '@/components/count-up';
+import { PointsInto } from '@/components/reward-kit';
 import { YesNo } from '@/components/form';
 import { Fold, GoingToBed, GoodnightButton, LoudFold, useGoodnight, WindFold, type Bed } from '@/components/goodnight';
 import { NightMiddle } from '@/components/night-flame';
@@ -53,6 +54,7 @@ import { close, closeAll } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { useNights } from '@/lib/health';
+import { useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { WORDS } from '@/lib/words';
 import { font, useTheme } from '@/lib/theme';
@@ -77,6 +79,7 @@ const HINT: Partial<Record<RateKey, string>> = {
 
 export default function Checkin() {
   const c = useTheme();
+  const reduce = useReducedMotion();
   const { snap, tk, now, update, say } = useStore();
   const prefs = useReminderPrefs();
   const goodnight = useGoodnight();
@@ -335,7 +338,6 @@ export default function Checkin() {
       <>
         {/* the day is logged, and the flame takes it in */}
         <Finish level={Math.max(1, g.level.n)} title="Day logged." text={msg} always least={0.6} cheer />
-        {gain ? <CountUp to={gain} prefix="+" suffix=" points" delay={700} style={[s.pts, { color: c.mintText }]} /> : null}
         <View style={s.tiles}>
           {rateKeys(form).map((f, j) => (
             <Appear key={f} delay={360 + j * 70} by={14} style={s.tile}>
@@ -346,6 +348,22 @@ export default function Checkin() {
             </Appear>
           ))}
         </View>
+        {/* the points rise, count up and glide down into the level line, which fills */}
+        {gain ? (
+          <View style={s.into}>
+            <PointsInto
+              gain={gain}
+              was={levelOf(pts0)}
+              now={g.level}
+              at={reduce ? 0 : 900}
+              still={reduce}
+              ink={c.ink}
+              muted={c.muted}
+              track={c.line}
+              color={c.mintText}
+            />
+          </View>
+        ) : null}
         {form.md != null && form.md <= 3 ? (
           <Appear delay={640} style={{ alignSelf: 'stretch' }}>
             <TalkDoor line="A heavy day is a state, not who you are. Walk it through before tonight." />
@@ -437,7 +455,7 @@ const s = StyleSheet.create({
   stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', minHeight: 180 },
   tap: { fontFamily: font.bodySemi, marginTop: 4 },
-  pts: { fontFamily: font.display, fontSize: 17 },
+  into: { alignSelf: 'stretch', paddingHorizontal: 8, marginTop: 6, marginBottom: 14 },
   offer: { alignItems: 'center' },
   saveLink: { alignItems: 'center' },
   moreOpen: { alignSelf: 'stretch', gap: 12 },

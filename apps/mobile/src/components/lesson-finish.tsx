@@ -157,6 +157,13 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
   const lessonsFill = useSharedValue(still || !lessons ? (lessons?.to ?? 0) : lessons.from);
   const say = useSharedValue(still ? 1 : 0);
   const btn = useSharedValue(still ? 1 : 0);
+  /* the flame acting, as Duolingo's owl does on its finish (the owner, November 14, 2026: "the owl has like clever movements"):
+     its eyes (0 open, 1 shut), a slow sway on its feet once it is home, and a nod toward the level line as the points land */
+  const lid = useSharedValue(0);
+  const sway = useSharedValue(0);
+  const nod = useSharedValue(0);
+  /* the line to keep writes itself out, letter by letter, once the flame says it */
+  const [typed, setTyped] = useState(still ? keep.length : 0);
 
   /* the flame, the points and the level line, measured in the window: the flame starts in the middle of the screen, and the
      points glide from where they rose into the line (to where it will end, or to its end when it fills to a new level) */
@@ -202,6 +209,9 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
     if (lessons) lessonsFill.value = withTiming(lessons.to, q);
     setLvl(m.after.n);
     setCount(m.shown);
+    setTyped(keep.length);
+    lid.value = 0;
+    nod.value = withTiming(0, q);
     setLanded(true);
     setBeat(2);
   };
@@ -220,6 +230,17 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
     drift.value = withTiming(1, { duration: T.settle + T.settleMs, easing: Easing.linear });
     shout.value = withDelay(140, withTiming(1, { duration: 420, easing: OUT }));
     glint.value = withDelay(180, withTiming(1, { duration: 1700, easing: Easing.linear }));
+    /* the flame comes home pleased with itself: a happy squint, eyes open, then it sways a little on its feet and blinks now
+       and then, at no exact beat, for as long as the page is open */
+    const home = T.settle + T.settleMs;
+    lid.value = withDelay(home - 80, withSequence(withTiming(1, { duration: 90 }), withDelay(620, withTiming(0, { duration: 140 }))));
+    sway.value = withDelay(home + 300, withRepeat(withTiming(1, { duration: 1700, easing: Easing.inOut(Easing.sin) }), -1, true));
+    let wink = home + 2600;
+    for (let k = 0; k < 12; k++) {
+      const t = wink;
+      at(t, () => (lid.value = withSequence(withTiming(1, { duration: 80 }), withDelay(60, withTiming(0, { duration: 120 })))));
+      wink += 2600 + ((k * 7919) % 5) * 450;
+    }
     /* 2. one continuous move: the band fades as the flame travels to its place */
     open.value = withDelay(T.settle, withTiming(0, { duration: T.settleMs, easing: BOTH }));
     rest.value = withDelay(T.rest, withTiming(1, { duration: 480, easing: OUT }));
@@ -235,6 +256,11 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
       }
       go.value = withDelay(T.glide, withTiming(1, { duration: T.glideMs, easing: BOTH }));
       const into = T.glide + T.glideMs - 120;
+      /* the flame looks down at the line as the points go in, and back up */
+      nod.value = withDelay(
+        T.glide,
+        withSequence(withTiming(1, { duration: T.glideMs, easing: BOTH }), withDelay(260, withTiming(0, { duration: 520, easing: BOTH }))),
+      );
       at(into, () => {
         buzz('tick');
         if (!up) setLanded(true);
@@ -249,6 +275,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
           setLanded(true);
           buzz('lit');
           setPulse((p) => p + 1);
+          lid.value = withSequence(withTiming(1, { duration: 90 }), withDelay(520, withTiming(0, { duration: 140 })));
           bar.value = 0;
           bar.value = withTiming(m.after.frac, { duration: 520, easing: OUT });
         });
@@ -263,7 +290,8 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
       lessonsFill.value = withDelay(next, withTiming(lessons.to, { duration: 600, easing: OUT }));
       next += 200;
     }
-    say.value = withDelay(next, withTiming(1, { duration: 420, easing: OUT }));
+    say.value = withDelay(next, withTiming(1, { duration: 300, easing: OUT }));
+    for (let k = 1; k <= keep.length; k++) at(next + 160 + k * 26, () => setTyped(k));
     btn.value = withDelay(next + 200, withTiming(1, { duration: 420, easing: OUT }));
     at(next + 200, () => setBeat(2));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -274,7 +302,8 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
     opacity: still || spot ? Math.min(1, enter.value * 1.4) : 0,
     transform: [
       { translateY: dy * open.value },
-      { scale: ((1 + (K - 1) * open.value) / K) * (0.92 + 0.08 * enter.value) * (1 + 0.025 * drift.value * open.value) },
+      /* the camera pushes in slowly while the opener holds, as Duolingo's does */
+      { scale: ((1 + (K - 1) * open.value) / K) * (0.92 + 0.08 * enter.value) * (1 + 0.1 * drift.value * open.value) },
     ],
   }));
   /* the band glides in from the left, drifts a little while it holds, and fades as the flame leaves it */
@@ -284,11 +313,15 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
       { translateX: -win.width * 0.6 * (1 - enter.value) + 16 * drift.value },
       { rotate: '-8deg' },
       { scaleY: interpolate(open.value, [0, 1], [0.7, 1]) },
+      { scale: 1 + 0.08 * drift.value },
     ],
   }));
   const shoutIn = useAnimatedStyle(() => ({
     opacity: shout.value * interpolate(open.value, [0.55, 1], [0, 1], 'clamp'),
     transform: [{ translateY: 10 * (1 - shout.value) }],
+  }));
+  const actIn = useAnimatedStyle(() => ({
+    transform: [{ translateY: 4 * nod.value }, { rotate: `${(sway.value * 2 - 1) * 2.2 * rest.value + 4 * nod.value}deg` }],
   }));
   const restIn = useAnimatedStyle(() => ({ opacity: rest.value, transform: [{ translateY: 8 * (1 - rest.value) }] }));
   const ptsIn = useAnimatedStyle(() => {
@@ -318,13 +351,15 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
       <Pressable style={StyleSheet.absoluteFill} accessible={false} onPress={() => beat === 1 && all()} />
       <View style={[s.col, { paddingTop: inset.top + (SHORT ? 12 : 28) }]} pointerEvents="box-none">
         <Reanimated.View style={[s.bubble, sayIn]} pointerEvents="none">
-          <Bubble text={keep} />
+          <Bubble text={keep} shown={typed} />
         </Reanimated.View>
         <View ref={flameRef} onLayout={measure} style={{ width: big, height: big, marginVertical: 14 }} pointerEvents="none">
           <Halo v={rest} size={big} still={still} />
           <Sparkles v={rest} size={big} still={still} />
           <Reanimated.View style={[{ position: 'absolute', width: B, height: B, left: (big - B) / 2, top: (big - B) / 2 }, flameIn]}>
-            <BigFlame level={lvl} size={B} pulse={pulse} noLand />
+            <Reanimated.View style={[{ transformOrigin: '50% 88%' }, actIn]}>
+              <BigFlame level={lvl} size={B} pulse={pulse} noLand lid={still ? undefined : lid} />
+            </Reanimated.View>
           </Reanimated.View>
         </View>
         <Reanimated.View style={restIn}>

@@ -11,7 +11,7 @@
 import { emblemLayers, figAsleep, fireOf, formOfLevel, gradOf, lowXml, sadXml, type EmblemLayers, type Fire } from '@daybook/core';
 import { memo, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
-import Reanimated, { Easing as REasing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import Reanimated, { Easing as REasing, useAnimatedStyle, useSharedValue, withDelay, withTiming, type SharedValue } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
 
 import { FireLayer } from '@/components/fire-layer';
@@ -108,6 +108,7 @@ export const BigFlame = memo(function BigFlame({
   asleep,
   heart,
   relight,
+  lid,
 }: {
   level: number;
   size: number;
@@ -129,6 +130,8 @@ export const BigFlame = memo(function BigFlame({
   heart?: ReactNode;
   /** lit again faster than the usual catch and climb: [when it catches, how long it climbs] in ms (the lighting, components/ignite.tsx) */
   relight?: [number, number];
+  /** its eyes, driven from outside: 0 open, 1 closed (a blink, or the happy squint at the end of a lesson, components/lesson-finish.tsx) */
+  lid?: SharedValue<number>;
 }) {
   const still = useReducedMotion();
   const { snap } = useStore();
@@ -167,6 +170,12 @@ export const BigFlame = memo(function BigFlame({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the relight timing is read when it is lit, never a reason to light again
   }, [low, still, lv, burst]);
   const dimmed = useAnimatedStyle(() => ({ opacity: lv.value }));
+  /* the eyes: the face with its eyes closed lies over the open one and takes its place while the lid is down */
+  const lid0 = useSharedValue(0);
+  const lidV = lid ?? lid0;
+  const eyesOpen = useAnimatedStyle(() => ({ opacity: lidV.value > 0.5 ? 0 : 1 }));
+  const eyesShut = useAnimatedStyle(() => ({ opacity: lidV.value > 0.5 ? 1 : 0 }));
+  const shutStill = useMemo(() => (lid && b && !asleep ? figAsleep(b.layers.still) : null), [lid, b, asleep]);
   const glowLow = useAnimatedStyle(() => ({ opacity: 1 - 0.8 * lv.value }));
   const lowOn = low != null;
   const lowFig = useMemo(() => (lowOn && b ? { still: ember(b.layers.still), side: ember(b.layers.side), fig: ember(b.layers.fig) } : null), [lowOn, b]);
@@ -277,7 +286,18 @@ export const BigFlame = memo(function BigFlame({
               fine={zoom > 1 ? 1.5 / zoom : 1}
               smoke={smoke}
             />
-            <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, S / 120)} />
+            {shutStill ? (
+              <>
+                <Reanimated.View style={[StyleSheet.absoluteFill, eyesOpen]} pointerEvents="none">
+                  <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, S / 120)} />
+                </Reanimated.View>
+                <Reanimated.View style={[StyleSheet.absoluteFill, eyesShut]} pointerEvents="none">
+                  <SvgXml xml={stillIn(shutStill, fire)} {...stillBox(fire, S / 120)} />
+                </Reanimated.View>
+              </>
+            ) : (
+              <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, S / 120)} />
+            )}
             {lowFig ? (
               <Reanimated.View style={[StyleSheet.absoluteFill, dimmed]} pointerEvents="none">
                 <SvgXml xml={stillIn(lowFig.still, fire)} {...stillBox(fire, S / 120)} />

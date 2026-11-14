@@ -32,6 +32,7 @@ import Reanimated, {
   withSequence,
   withSpring,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
@@ -426,58 +427,155 @@ function Rise({ level, size, still, quiet }: { level: number; size: number; stil
   );
 }
 
-/** a badge: soft rays turn behind it, and the medal drops in from above, bouncing once, with a firm knock as it lands */
+/** a badge, Duolingo's reward beat: two layers of rays turn behind an empty spot, the medal drops in from above and lands with a
+   squash, a gold ring rolls out from under it and sparks fly up, a light sweeps across its face, and then it floats, slowly
+   turning in the rays. Reduce Motion: the medal is simply there, in still rays. */
 function Drop({ id, icon, tone, size, still, quiet }: { id: string; icon: string; tone: string; size: number; still: boolean; quiet: boolean }) {
   const fall = useSharedValue(still ? 1 : 0);
   const rays = useSharedValue(still ? 1 : 0);
   const spin = useSharedValue(0);
+  const squash = useSharedValue(0);
+  const ring = useSharedValue(0);
+  const shine = useSharedValue(0);
+  const bob = useSharedValue(0);
+  const flare = useSharedValue(0);
+  const LAND = 500 + 330;
   useEffect(() => {
-    if (!still) {
-      rays.value = withTiming(1, { duration: 600 });
-      spin.value = withRepeat(withTiming(1, { duration: 16000, easing: Easing.linear }), -1);
-    }
     if (still) return;
-    fall.value = withDelay(500, withSpring(1, { damping: 7, stiffness: 120, mass: 0.9 }));
-    const t = setTimeout(() => !quiet && buzz('land'), 760);
-    return () => clearTimeout(t);
+    rays.value = withTiming(1, { duration: 700, easing: Easing.out(Easing.quad) });
+    spin.value = withRepeat(withTiming(1, { duration: 14000, easing: Easing.linear }), -1);
+    fall.value = withDelay(500, withTiming(1, { duration: 330, easing: Easing.in(Easing.quad) }));
+    const tm: ReturnType<typeof setTimeout>[] = [];
+    const at = (ms: number, f: () => void) => tm.push(setTimeout(f, ms));
+    at(LAND, () => {
+      if (!quiet) {
+        knock(Haptics.ImpactFeedbackStyle.Heavy);
+        buzz('land');
+      }
+      /* the landing: a squash, then it springs back to its shape */
+      squash.value = withSequence(withTiming(1, { duration: 90, easing: Easing.out(Easing.quad) }), withSpring(0, { damping: 6, stiffness: 260, mass: 0.7 }));
+      ring.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) });
+      flare.value = withSequence(withTiming(1, { duration: 120 }), withTiming(0, { duration: 900, easing: Easing.out(Easing.quad) }));
+    });
+    at(LAND + 350, () => {
+      shine.value = withTiming(1, { duration: 650, easing: Easing.inOut(Easing.quad) });
+    });
+    at(LAND + 900, () => {
+      bob.value = withRepeat(
+        withSequence(withTiming(1, { duration: 1700, easing: Easing.inOut(Easing.sin) }), withTiming(0, { duration: 1700, easing: Easing.inOut(Easing.sin) })),
+        -1,
+      );
+    });
+    return () => tm.forEach(clearTimeout);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const R = size * 1.7;
-  const rayIn = useAnimatedStyle(() => ({ opacity: rays.value * 0.9, transform: [{ rotate: `${spin.value * 360}deg` }] }));
+  const R = size * 1.9;
+  const M = size * 0.78;
+  const rayIn = useAnimatedStyle(() => ({
+    opacity: rays.value * (0.85 + flare.value * 0.15),
+    transform: [{ rotate: `${spin.value * 360}deg` }, { scale: interpolate(rays.value, [0, 1], [0.6, 1]) + flare.value * 0.08 }],
+  }));
+  const rayBack = useAnimatedStyle(() => ({
+    opacity: rays.value * 0.55,
+    transform: [{ rotate: `${-spin.value * 360 * 0.6 + 15}deg` }, { scale: interpolate(rays.value, [0, 1], [0.5, 1.18]) }],
+  }));
+  const glow = useAnimatedStyle(() => ({ opacity: flare.value * 0.9, transform: [{ scale: 0.9 + flare.value * 0.5 }] }));
   const dropIn = useAnimatedStyle(() => ({
     opacity: Math.min(1, fall.value * 3),
-    transform: [{ translateY: -size * 2.2 * (1 - fall.value) }, { scale: interpolate(fall.value, [0, 1], [0.8, 1]) }],
+    transform: [
+      { translateY: -size * 2.4 * (1 - fall.value) + bob.value * -6 },
+      { rotate: `${(1 - fall.value) * -14 + (bob.value - 0.5) * 4}deg` },
+      { scaleX: interpolate(fall.value, [0, 1], [0.8, 1]) + squash.value * 0.16 },
+      { scaleY: interpolate(fall.value, [0, 1], [0.8, 1]) - squash.value * 0.2 },
+    ],
+  }));
+  const ringSt = useAnimatedStyle(() => ({
+    opacity: ring.value === 0 ? 0 : interpolate(ring.value, [0, 0.15, 1], [0, 0.9, 0]),
+    transform: [{ scale: interpolate(ring.value, [0, 1], [0.5, 2.3]) }],
+  }));
+  const shineSt = useAnimatedStyle(() => ({
+    opacity: shine.value === 0 || shine.value === 1 ? 0 : interpolate(shine.value, [0, 0.3, 0.7, 1], [0, 0.75, 0.75, 0]),
+    transform: [{ translateX: interpolate(shine.value, [0, 1], [-M * 0.9, M * 0.9]) }, { rotate: '22deg' }],
   }));
   return (
     <View style={[StyleSheet.absoluteFill, s.center]}>
-      <Reanimated.View style={[{ position: 'absolute', width: R, height: R }, rayIn]}>
-        <Rays size={R} />
+      <Reanimated.View style={[{ position: 'absolute', width: R, height: R }, rayBack]}>
+        <Rays size={R} n={8} soft />
       </Reanimated.View>
+      <Reanimated.View style={[{ position: 'absolute', width: R, height: R }, rayIn]}>
+        <Rays size={R} n={12} />
+      </Reanimated.View>
+      <Reanimated.View style={[{ position: 'absolute', width: M * 1.6, height: M * 1.6, borderRadius: M * 0.8, backgroundColor: '#FFE9A8' }, glow]} />
+      <Reanimated.View style={[{ position: 'absolute', width: M, height: M, borderRadius: M / 2, borderWidth: 3, borderColor: GOLD }, ringSt]} />
+      {!still && !quiet ? <Sparks size={M} at={LAND} /> : null}
       <Reanimated.View style={dropIn}>
-        <Medal id={id} icon={icon} tone={tone} size={size * 0.78} earned />
+        <View style={{ width: M, height: M, alignItems: 'center', justifyContent: 'center' }}>
+          <Medal id={id} icon={icon} tone={tone} size={M} earned />
+          <View style={{ position: 'absolute', width: M * 0.74, height: M * 0.74, borderRadius: M * 0.37, overflow: 'hidden' }} pointerEvents="none">
+            <Reanimated.View
+              style={[{ position: 'absolute', left: M * 0.23, top: -M * 0.3, width: M * 0.28, height: M * 1.6, backgroundColor: '#FFFFFF' }, shineSt]}
+            />
+          </View>
+        </View>
       </Reanimated.View>
     </View>
   );
 }
 
-function Rays({ size }: { size: number }) {
+/** gold sparks that fly up and out from where the medal landed, and fall */
+function Sparks({ size, at }: { size: number; at: number }) {
+  const v = useSharedValue(0);
+  const [bits] = useState(() =>
+    Array.from({ length: 14 }, (_, i) => {
+      const a = -Math.PI / 2 + (i / 14 - 0.5) * Math.PI * 1.5 + (Math.random() - 0.5) * 0.3;
+      const sp = 0.7 + Math.random() * 0.6;
+      return { vx: Math.cos(a) * sp * size * 1.1, vy: Math.sin(a) * sp * size * 1.3, r: 2.5 + Math.random() * 2.5, d: 0.75 + Math.random() * 0.25 };
+    }),
+  );
+  useEffect(() => {
+    const t = setTimeout(() => {
+      v.value = withTiming(1, { duration: 1100, easing: Easing.linear });
+    }, at);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <View style={[StyleSheet.absoluteFill, s.center]} pointerEvents="none">
+      {bits.map((b, i) => (
+        <Spark key={i} v={v} b={b} />
+      ))}
+    </View>
+  );
+}
+function Spark({ v, b }: { v: SharedValue<number>; b: { vx: number; vy: number; r: number; d: number } }) {
+  const st = useAnimatedStyle(() => {
+    const t = Math.min(1, v.value / b.d);
+    const e = 1 - Math.pow(1 - t, 2);
+    return {
+      opacity: v.value === 0 ? 0 : interpolate(t, [0, 0.1, 0.8, 1], [0, 1, 1, 0]),
+      transform: [{ translateX: b.vx * e }, { translateY: b.vy * e + t * t * b.r * 60 }, { scale: 1 - t * 0.5 }],
+    };
+  });
+  return <Reanimated.View style={[{ position: 'absolute', width: b.r * 2, height: b.r * 2, borderRadius: b.r, backgroundColor: GOLD }, st]} />;
+}
+
+function Rays({ size, n = 12, soft }: { size: number; n?: number; soft?: boolean }) {
   const r = size / 2;
-  const n = 12;
   const d = Array.from({ length: n }, (_, i) => {
     const a = (i / n) * Math.PI * 2;
-    const w = Math.PI / n / 2.2;
+    const w = Math.PI / n / (soft ? 1.6 : 2.2);
     const p = (ang: number, rr: number) => `${r + Math.cos(ang) * rr} ${r + Math.sin(ang) * rr}`;
     return `M${p(a - w * 0.3, r * 0.25)}L${p(a - w, r)}L${p(a + w, r)}L${p(a + w * 0.3, r * 0.25)}Z`;
   }).join('');
+  const gid = soft ? 'rayGs' : 'rayG';
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <Defs>
-        <RadialGradient id="rayG" cx={r} cy={r} r={r} gradientUnits="userSpaceOnUse">
-          <Stop offset="0" stopColor="#FFE9A8" stopOpacity="0.55" />
+        <RadialGradient id={gid} cx={r} cy={r} r={r} gradientUnits="userSpaceOnUse">
+          <Stop offset="0" stopColor={soft ? '#FFB84D' : '#FFE9A8'} stopOpacity={soft ? '0.35' : '0.6'} />
           <Stop offset="1" stopColor="#FFD25A" stopOpacity="0" />
         </RadialGradient>
       </Defs>
-      <Circle cx={r} cy={r} r={r * 0.62} fill="url(#rayG)" />
-      <Path d={d} fill="url(#rayG)" />
+      {soft ? null : <Circle cx={r} cy={r} r={r * 0.62} fill={`url(#${gid})`} />}
+      <Path d={d} fill={`url(#${gid})`} />
     </Svg>
   );
 }

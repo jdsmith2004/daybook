@@ -2,7 +2,7 @@
    every scene settles into, a label, a person, a thought cloud and the white bear. Scenes are flat shapes in the lesson's own
    colors, 300 by 200, with one short line of words at most. */
 import { type ReactNode } from 'react';
-import { Animated } from 'react-native';
+import { Animated, useWindowDimensions } from 'react-native';
 import Svg, { Circle, Ellipse, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { pop, useAppear } from '@/lib/motion';
@@ -16,11 +16,13 @@ export const useInk = (t: Tone): Ink => {
 
 export const W = 300;
 export const H = 200;
+/* a scene is the main thing on its card: it spans the width of the phone, up to a limit, and keeps its shape */
 export function Frame({ label, children, h = H }: { label: string; children: ReactNode; h?: number }) {
   const v = useAppear(0, 520);
+  const w = Math.min(useWindowDimensions().width - 32, 420);
   return (
     <Animated.View style={pop(v, 0.94)} accessible accessibilityLabel={label}>
-      <Svg width={W} height={h} viewBox={`0 0 ${W} ${h}`}>
+      <Svg width={w} height={(w * h) / W} viewBox={`0 0 ${W} ${h}`}>
         {children}
       </Svg>
     </Animated.View>

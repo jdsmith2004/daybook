@@ -1119,6 +1119,42 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
   /* a card that builds on an earlier lesson names it, as part of the thought, not as a review */
   const B = card.back ? lessonById(card.back) : null;
   const bn = B ? lessonNo(B, st) : null;
+  /* a lesson told as a story leads with its picture, big, and the words under it; the flame steps to the side and waits, and comes
+     back to the middle on a card with no picture (the owner, November 14, 2026: "the visual should be like the main part ... the
+     flame's kind of off to the side and then it can come in every once in a while") */
+  /* something to try is touched, so it sits low, under its heading, where the thumb reaches */
+  if (L.form && art && art[0] === 'try')
+    return (
+      <>
+        <T style={[s.h, s.hsm]} accessibilityRole="header">
+          {h}
+        </T>
+        <View style={s.storyFoot}>
+          <LessonArt key={L.id + card.h} art={art} ic={L.ic} t={tone} st={st} />
+        </View>
+      </>
+    );
+  if (L.form && art && card.e !== 'move' && !own.length)
+    return (
+      <>
+        <FitArt style={s.storyArt} drop={0.4} stretch={art[0] === 'research' || art[0] === 'wave'}>
+          <LessonArt key={L.id + card.h} art={art} ic={L.ic} t={tone} st={st} />
+        </FitArt>
+        {B ? (
+          <T v="small" tone="muted">
+            {(bn ? 'From lesson ' + bn : 'From') + ', ' + B.title}
+          </T>
+        ) : null}
+        <T style={[s.h, s.hsm]} accessibilityRole="header">
+          {h}
+        </T>
+        {beat.p ? <Rich text={beat.p} st={st} style={s.p} /> : null}
+        {card.fact ? <Fact text={card.fact.s} onPress={onSrc} /> : null}
+        <View style={s.storyFoot}>
+          <FlameSlot size={92} min={84} side style={s.storyFlame} />
+        </View>
+      </>
+    );
   return (
     <>
       {B ? (
@@ -1332,6 +1368,9 @@ const s = StyleSheet.create({
   x: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   guessMid: { alignItems: 'center', justifyContent: 'center', minHeight: 110 },
   art: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+  storyFoot: { flexGrow: 1, justifyContent: 'flex-end' },
+  storyFlame: { flexGrow: 0, height: 84 },
+  storyArt: { alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   eye2: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   h: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
   hsm: { fontSize: 22, lineHeight: 28 },

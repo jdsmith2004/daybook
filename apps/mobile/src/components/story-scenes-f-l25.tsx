@@ -195,7 +195,7 @@ function Lamp({ k }: { k: Ink }) {
       <Person x={96} y={166} s={1.25} fill={k.ink} face={k.bg} />
       <Person x={218} y={166} s={1.25} fill={k.acc} />
       <Circle cx={218} cy={106} r={13.75} fill={GOLD} opacity={0.3} />
-      <Path d="M208.5 96.5 A13.75 13.75 0 0 0 208.5 115.5" stroke={GOLD} strokeWidth={4} strokeLinecap="round" fill="none" />
+      <Path d="M208.5 96.5 A13.75 13.75 0 0 0 208.5 115.5" stroke="#FFF3C4" strokeWidth={4} strokeLinecap="round" fill="none" />
       <Circle cx={213} cy={106} r={2.2} fill={GOLD} />
       <Arm x1={108} y1={130} x2={150} y2={122} fill={k.ink} />
       <Arm x1={206} y1={132} x2={176} y2={124} fill={k.acc} />
@@ -259,8 +259,8 @@ function Circle6({ k }: { k: Ink }) {
             <G stroke={BEAR_LINE} strokeWidth={1}>
               <Rect x={-7} y={2} width={6} height={15} rx={3} fill={who} />
               <Rect x={1} y={2} width={6} height={15} rx={3} fill={who} />
-              <Path d="M-8 2 L-8 -12 Q-8 -20 0 -20 Q8 -20 8 -12 L8 2 Z" fill={who} />
-              <Circle cx={0} cy={-29} r={7} fill={who} />
+              <Path d="M-10 2 L-10 -12 Q-10 -21 0 -21 Q10 -21 10 -12 L10 2 Z" fill={who} />
+              <Circle cx={0} cy={-30} r={8} fill={who} />
             </G>
           ) : null}
           <Rect x={-13} y={-1} width={26} height={6} rx={2} fill={who ? WOOD : GOLD} stroke={BEAR_LINE} strokeWidth={1.2} />

@@ -162,14 +162,14 @@ function Wings({ k }: { k: Ink }) {
     <Frame label="The same empty, lit stage. Three small gray figures wait in the wings at the left: two stand just behind the curtain edge, and the third has stepped out onto the stage">
       <Theater>
         <G opacity={0.8}>
-          <Person x={58} y={148} s={0.85} fill={k.muted} />
+          <Person x={64} y={148} s={0.85} fill={k.muted} />
         </G>
         <G opacity={0.8}>
-          <Person x={92} y={148} s={0.85} fill={k.muted} />
+          <Person x={98} y={148} s={0.85} fill={k.muted} />
         </G>
         <G opacity={0.8}>
-          <Person x={128} y={152} s={0.85} fill={k.muted} />
-          <Ellipse cx={146} cy={151} rx={7} ry={3} fill={k.muted} />
+          <Person x={134} y={152} s={0.85} fill={k.muted} />
+          <Ellipse cx={152} cy={151} rx={7} ry={3} fill={k.muted} />
         </G>
       </Theater>
       <Cap k={k} s="Whatever is nearest walks on" />

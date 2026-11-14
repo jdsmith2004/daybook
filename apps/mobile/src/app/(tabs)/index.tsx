@@ -447,11 +447,15 @@ export default function Today() {
           </View>
         }>
         {night ? (
-          /* after the night hour, Phone to bed leads (WP5, mockup m3), and the rest of Today stays under it: the person's own words, tonight's
+          /* after the night hour, under the care row, Phone to bed leads (WP5, mockup m3), and the rest of Today stays under it: the person's own words, tonight's
              reason, the hard hours and the plan (the owner, November 13, 2026: "I don't like the main screen just being empty like that").
              What waits for the day (the line of stops, its lesson, the asks) is left for the morning. On the night of a slip, its own card
              leads instead (its Go to bed is the same act): bringing the person back is the job then. */
           <>
+            {/* the care row always sits at the top, right under the flame, as on the day page (the owner, November 13, 2026: "already
+                hapened and walk it through are always on the top") */}
+            <WaitingPlan snap={snap} tk={tk} now={now} />
+            <LogLink walk={!walkWaits} />
             {pick.card.k === 'slip-day' ? (
               <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />
             ) : nightTile ? (
@@ -464,8 +468,6 @@ export default function Today() {
                 t={nightTile}
               />
             ) : null}
-            <WaitingPlan snap={snap} tk={tk} now={now} />
-            <LogLink walk={!walkWaits} />
             <NotifyBanner />
             {/* Screen Time not working: said here too, since the night is when it matters (WP2) */}
             <PullTroubleStrip />

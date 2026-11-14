@@ -32,7 +32,12 @@ export type Art =
       against a fact, closeness in turns, the road home, and a side gate passed by */
   | ['path' | 'memory' | 'screen' | 'rooms' | 'rule' | 'turns' | 'home' | 'gate', Record<string, never>]
   /** one of the moving research pictures from Talk it through (talk.ts) or Rekindle (rekindle-learn.ts), by its key */
-  | ['research', { k: string }];
+  | ['research', { k: string }]
+  /** a lesson told as a story (lesson-stories.ts): one drawn moment of the story, a hundred people with a share lit, and something
+      to try on the card itself */
+  | ['scene', { k: string }]
+  | ['people', { n: number; was?: number; s?: string }]
+  | ['try', { k: 'bell' }];
 export interface Guess {
   min: number;
   max: number;

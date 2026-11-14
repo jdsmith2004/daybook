@@ -12,7 +12,7 @@ const SWEAR = /\b(hell|damn|crap|sucks?|screw(ed)?|pissed|freaking)\b/i;
 const wordsOf = (S: Story): string[] => [
   S.title,
   S.key,
-  ...S.tell.flatMap((t) => (t.k === 'guess' ? [t.h, ...t.o.flat()] : t.k === 'flip' ? [t.think, t.see] : [t.h, t.p || ''])),
+  ...S.tell.flatMap((t) => (t.k === 'guess' || t.k === 'ask' ? [t.h, ...t.o.flat()] : t.k === 'flip' ? [t.think, t.see] : [t.h, t.p || ''])),
   S.today.h,
   ...(S.today.l || []),
   S.you.h,

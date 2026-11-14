@@ -4,9 +4,11 @@
    nothing done or earned moves.
 
    The shape, in order:
-     tell   the story, a card at a time: a study, a tale, a word, a moment from a life, or a question broken down. A card marked long
-            is in Long only; every other card is in both. A guess (k: 'guess') asks about the story before its answer, and has a
-            right answer, since the answer is a surprise. A flip (k: 'flip') turns one thought over, only where it reveals something.
+     tell   the story, a card at a time: a study, a tale, a word, a moment from a life, or a question broken down, each card with
+            its own picture (art: a scene, a hundred people, something to try). A card marked long is in Long only; every other card
+            is in both. A question inside the story (k: 'ask') has no right answer: what the person would do in the scene, or what
+            they have lived. Never ask a person to guess a fact they cannot know (the owner, November 14, 2026: "this is a bad
+            question bc they have no way of knowing"); k: 'guess' stays only for a guess a person can reason out. A flip (k: 'flip') turns one thought over, only where it reveals something.
      line   the one line that sticks, on the sun card
      mine   a true line from the person's own log, where it fits (lessonMine)
      today  one thing to do, tied to the idea
@@ -40,6 +42,8 @@ export type StoryPart =
       long?: 1;
     }
   | { k: 'guess'; h: string; o: Opt[]; a: number; long?: 1 }
+  /** a question inside the story with no right answer: what the person would do, or what they have lived */
+  | { k: 'ask'; h: string; o: Opt[]; long?: 1 }
   | { k: 'flip'; think: string; see: string; long?: 1 };
 
 export interface Story {
@@ -71,6 +75,7 @@ export function storyLesson(S: Story, was: Lesson): { L: Lesson; beats: LessonBe
   S.tell.forEach((t, i) => {
     const q = t.long ? undefined : (1 as const);
     if (t.k === 'guess') return add({ k: 'choose', q, e: 'predict', el: 'Guess', h: t.h, a: t.a, c: t.o }, { h: t.h, c: t.o.map((x) => x[1]) });
+    if (t.k === 'ask') return add({ k: 'choose', q, e: 'predict', el: 'You', h: t.h, c: t.o }, { h: t.h, c: t.o.map((x) => x[1]) });
     if (t.k === 'flip') return add({ k: 'flip', q, e: 'answer', el: 'Look again', h: t.think, see: t.see }, { h: t.think, p: t.see });
     add(
       {

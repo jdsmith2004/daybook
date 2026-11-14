@@ -32,6 +32,7 @@ export * from './habit';
 export * from './crisis';
 export * from './lesson-beats';
 export * from './lesson-turns';
+export { STORIES, storyLesson, type StoryForm, type StoryPart } from './lesson-stories';
 export * from './practice';
 export * from './lesson-map';
 export * from './section-art';

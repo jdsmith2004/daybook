@@ -10,6 +10,7 @@ import Svg, { Circle, G, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { RkArtView } from '@/components/rk-art';
 import { Shape, type ShapeKind } from '@/components/shapes';
+import { People, StoryScene, TryBell } from '@/components/story-art';
 import { TalkArtView } from '@/components/talk-art';
 import { Icon } from '@/components/ui';
 import { pop, rise, useAppear, useReducedMotion } from '@/lib/motion';
@@ -740,6 +741,9 @@ export function LessonArt({ art, ic, t, st }: { art: Art; ic: string; t: Tone; s
   if (k === 'turns') return <Turns t={t} />;
   if (k === 'home') return <Home t={t} />;
   if (k === 'gate') return <Gate t={t} />;
+  if (k === 'scene') return <StoryScene k={(opts as { k: string }).k} t={t} />;
+  if (k === 'people') return <People n={opts.n} was={opts.was} s={opts.s} t={t} />;
+  if (k === 'try') return <TryBell t={t} />;
   if (k === 'research') {
     const key = (opts as { k: string }).k;
     return TALK_CARDS.some((x) => x.k === key) ? <TalkArtView k={key as TalkArt} /> : <RkArtView k={key as RkArt} />;

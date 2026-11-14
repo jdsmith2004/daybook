@@ -125,8 +125,13 @@ interface Got {
   was?: string;
 }
 
+/* the lesson preview exists only in the demo build (EXPO_PUBLIC_SHOTS=1), whose log is a made-up person kept in memory */
+const PREVIEW_ON = process.env.EXPO_PUBLIC_SHOTS === '1';
+
 export default function LessonScreen() {
-  const { id, at, pick: picked } = useLocalSearchParams<{ id: string; at?: string; pick?: string }>();
+  const { id, at, pick: picked, len: lenQ } = useLocalSearchParams<{ id: string; at?: string; pick?: string; len?: string }>();
+  /* the lesson preview (dev only, the demo build: /lesson-preview): any lesson opens at the length asked for, with nothing in the way */
+  const preview = PREVIEW_ON && at === 'preview';
   const { snap, tk, update, apply, say } = useStore();
   /* the first week's part for today (WP10, unlock.ts): it opens after the lesson, never on a care lesson */
   const part = useUnlock();
@@ -166,12 +171,12 @@ export default function LessonScreen() {
   );
   /* one way in (C8): the length last picked on a lesson's first page or in Settings (core lessonLen; short until long). Short plays the
      short cards, with More on each; long, or a lesson with no short cut, runs in full. Held for the whole lesson. */
-  const [len, setLen] = useState<'q' | 'f'>(() => (found && lessonHasQuick(found) ? lessonLen(st) : 'f'));
+  const [len, setLen] = useState<'q' | 'f'>(() => (preview ? (lenQ === 'q' ? 'q' : 'f') : found && lessonHasQuick(found) ? lessonLen(st) : 'f'));
   /* a lesson the person starts (pick=1: Today, Learn, a link) asks Short or Long first, as it did before the rework; a lesson the app
      opens by itself (the first tour, the morning, after signing up, a care door) goes straight in at the saved length (the owner,
      November 14, 2026: "if a lesson automatically pops up, we don't ask them which version, we just go into it. But if they choose a
      lesson from the homepage, ask them if they want to go like longer or shorter like we did before") */
-  const [chose, setChose] = useState(() => !(picked === '1' && found && lessonHasQuick(found)));
+  const [chose, setChose] = useState(() => preview || !(picked === '1' && found && lessonHasQuick(found)));
   /* how a card without a question landed with the person (two answers, or the line they will try), by card */
   const [ans, setAns] = useState<Record<number, number>>({});
   /* a turn card's reply has landed */
@@ -250,9 +255,9 @@ export default function LessonScreen() {
      (never after a slip). It comes back to where it was opened. */
   /* the morning after a slip, the day's lesson comes from the after-a-hard-night list (core lessonWalk hook): care, never gated */
   const care = at === 'care' || (w.hook === 'slip' && w.today === L);
-  if (gate !== 'open' && !care && !(at === 'all' && done.has(L.id))) return <PathGate L={L} w={w} gate={gate} />;
+  if (gate !== 'open' && !care && !preview && !(at === 'all' && done.has(L.id))) return <PathGate L={L} w={w} gate={gate} />;
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
-  if (!care && !lessonOpen(L, done, account, st)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
+  if (!care && !preview && !lessonOpen(L, done, account, st)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
   /* the step whose deed comes after this lesson (its last on the path), shown once the lesson is read, unless it was done already */
   const dk = care ? -1 : deedAfter(L, st);
   const deedNext = dk >= 0 && !deedDone(st, dk) && deedA == null;

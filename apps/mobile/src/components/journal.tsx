@@ -356,7 +356,10 @@ export function WeekLights({
           accessibilityRole="button"
           accessibilityLabel={d.colors.length ? `${d.short}, go to this day` : `${d.short}, nothing named`}
           disabled={!d.colors.length}
-          onPress={() => onPick(d.k)}
+          onPress={() => {
+            buzz('tap');
+            onPick(d.k);
+          }}
           hitSlop={4}
           style={({ pressed }) => [s.wd, { opacity: pressed ? 0.6 : 1 }]}>
           <View style={s.wl}>{d.colors.length ? <WeekOrb colors={d.colors} sharp={d.k === on} /> : <View style={s.wEmpty} />}</View>

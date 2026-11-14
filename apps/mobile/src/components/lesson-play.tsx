@@ -7,6 +7,7 @@ import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { RIGHT, RIGHT_LIP } from '@/lib/lesson-look';
 import { font } from '@/lib/theme';
@@ -103,7 +104,14 @@ export function Praise({
           {word}
         </Text>
         {onMore ? (
-          <Pressable accessibilityRole="button" onPress={onMore} hitSlop={10} style={s.more}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              buzz('tap');
+              onMore();
+            }}
+            hitSlop={10}
+            style={s.more}>
             <Text style={s.moreT}>More</Text>
           </Pressable>
         ) : null}
@@ -119,7 +127,10 @@ export function Go({ label, onPress, icon }: { label: string; onPress: () => voi
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.go, { shadowOffset: { width: 0, height: pressed ? 1 : 4 }, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
       <Text style={s.goT} numberOfLines={2}>
         {label}

@@ -473,7 +473,10 @@ export function FeelGrid({
           accessibilityLabel={live ? 'Name it: ' + f.w + '. ' + f.how : 'Tap the feeling that fits best'}
           accessibilityState={{ disabled: !live }}
           disabled={!live}
-          onPress={() => onNext(sel.r, sel.c)}
+          onPress={() => {
+            buzz('tap');
+            onNext(sel.r, sel.c);
+          }}
           style={({ pressed }) => [s.bar, { opacity: pressed ? 0.85 : 1 }]}>
           <View style={s.barText}>
             {live ? (

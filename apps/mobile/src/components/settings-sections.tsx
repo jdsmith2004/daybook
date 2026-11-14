@@ -636,7 +636,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
               onPick={(v) => setThemePref(v)}
             />
           </SetGroup>
-          <SetGroup foot="Confetti and pop-ups for level-ups and badges. Off gives a quiet message instead. If your phone is set to reduce motion, the movement is already off.">
+          <SetGroup foot="A moment on screen for a new level, a new form of the flame and badges. Off gives a quiet message instead. If your phone is set to reduce motion, the movement is already off.">
             <SetSwitch label="Celebrations" on={st.celebrate} onChange={(on) => apply({ st: setCelebrate(st, on) })} />
             <SetRow
               label="Preview a celebration"

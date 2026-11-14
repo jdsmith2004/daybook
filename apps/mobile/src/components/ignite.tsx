@@ -57,7 +57,7 @@ import { Bubble } from '@/components/lesson-flame';
 import { Text } from '@/components/text';
 import { Button, Icon } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
-import { useReducedMotion } from '@/lib/motion';
+import { SETTLE, useReducedMotion } from '@/lib/motion';
 import { play } from '@/lib/sound';
 import { font, nightInk } from '@/lib/theme';
 
@@ -255,7 +255,7 @@ export function Ignition({
       squish.value = withSequence(
         withTiming(1, { duration: AT.squash - AT.stretch, easing: Easing.out(Easing.quad) }),
         withTiming(-1, { duration: 50, easing: Easing.in(Easing.quad) }),
-        withSpring(0, { damping: 13, stiffness: 520 }),
+        withSpring(0, SETTLE),
       );
     });
     at(AT.squash, () => {
@@ -266,7 +266,7 @@ export function Ignition({
     at(AT.puff, () => {
       knock(Haptics.ImpactFeedbackStyle.Light);
       puffs.value = withTiming(1, { duration: 520, easing: Easing.linear });
-      words.value = withSpring(1, { damping: 13, stiffness: 260 });
+      words.value = withSpring(1, SETTLE);
     });
     at(AT.wake, () => {
       setAwake(true);
@@ -304,7 +304,7 @@ export function Ignition({
       });
       at(goalAt + 400, () => {
         knock(goal.kept ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Light);
-        segV.value = withSpring(1, { damping: 8, stiffness: 200 });
+        segV.value = withSpring(1, SETTLE);
       });
     }
     /* the button, last, after the quiet */
@@ -719,17 +719,11 @@ function FlashBit({ v, x, y, a, d, z, spin }: { v: SharedValue<number>; x: numbe
 /* the stars and bits over the whole screen at the height of the wash: [x, y as shares of the screen, size, star or bit, phase] */
 const WASH_STARS: [number, number, number, boolean, number][] = [
   [0.12, 0.14, 16, true, 0],
-  [0.86, 0.1, 12, true, 0.3],
   [0.08, 0.5, 10, true, 0.6],
-  [0.92, 0.42, 14, true, 0.15],
   [0.2, 0.78, 12, true, 0.45],
-  [0.8, 0.72, 16, true, 0.75],
   [0.5, 0.06, 10, true, 0.9],
-  [0.3, 0.3, 6, false, 0.2],
   [0.72, 0.24, 5, false, 0.5],
-  [0.16, 0.64, 6, false, 0.8],
   [0.88, 0.6, 5, false, 0.35],
-  [0.6, 0.86, 6, false, 0.65],
 ];
 function WashStars({ v, w, h }: { v: SharedValue<number>; w: number; h: number }) {
   return (
@@ -824,18 +818,10 @@ function SlashOne({ v, x, y, a, d }: { v: SharedValue<number>; x: number; y: num
   return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: w, height: h, borderRadius: w, backgroundColor: '#FFFFFF' }, st]} />;
 }
 
-/* the burst as the flame catches: big petals of fire, bits and stars thrown across the whole screen. A fixed spread, so it falls the
+/* the burst as the flame catches: a few small bits and stars close round the flame, no petals across the screen (the owner,
+   November 14, 2026: too much confetti). A fixed spread, so it falls the
    same way every time. [angle, distance as a share of the reach, width, length, spin in degrees, kind: 0 petal, 1 bit, 2 star] */
 const BURST: [number, number, number, number, number, 0 | 1 | 2][] = [
-  [-90, 1.1, 36, 104, 40, 0],
-  [-55, 1.2, 30, 90, -70, 0],
-  [-125, 1.2, 34, 98, 60, 0],
-  [-20, 1.0, 28, 82, -90, 0],
-  [-160, 1.0, 28, 78, 80, 0],
-  [20, 0.95, 25, 70, 110, 0],
-  [160, 0.95, 25, 72, -110, 0],
-  [70, 1.0, 22, 66, 70, 0],
-  [115, 1.0, 22, 64, -60, 0],
   [-72, 0.3, 9, 9, 180, 1],
   [-108, 0.28, 8, 8, -160, 1],
   [-38, 0.26, 8, 8, 200, 1],
@@ -1178,7 +1164,7 @@ export function StepUp({ from, to, unit, color }: { from: string; to: string; un
   const t = useSharedValue(still || from === to ? 1 : 0);
   useEffect(() => {
     if (still || from === to) return;
-    t.value = withDelay(160, withSpring(1, { damping: 9, stiffness: 170 }));
+    t.value = withDelay(160, withSpring(1, SETTLE));
     const id = setTimeout(() => knock(Haptics.ImpactFeedbackStyle.Medium), 220);
     return () => clearTimeout(id);
   }, [still, from, to, t]);

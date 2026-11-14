@@ -47,6 +47,7 @@ import {
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LinkCard } from '@/components/link-card';
+import { buzz } from '@/lib/feel';
 import { useCountFocus } from '@/lib/pulse';
 import { useQuietAsks } from '@/lib/quiet-asks';
 import { useSos } from '@/lib/sos';
@@ -569,7 +570,10 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
                 key={id}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: range === id }}
-                onPress={() => setRange(id)}
+                onPress={() => {
+                  if (range !== id) buzz('tap');
+                  setRange(id);
+                }}
                 style={({ pressed }) => [s.rangeTab, { opacity: pressed ? 0.6 : 1 }]}>
                 <T style={{ fontFamily: range === id ? font.bodyBold : font.bodySemi, color: range === id ? c.ink : c.muted }}>{l}</T>
               </Pressable>
@@ -596,6 +600,7 @@ function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
                   accessibilityHint="Shows the graph behind it"
                   disabled={cardOf(x.go) < 0}
                   onPress={() => {
+                    buzz('tap');
                     deck.current?.show(cardOf(x.go));
                     onGo(deckY);
                   }}

@@ -17,7 +17,7 @@
    (CelebrateHost queues). A tap anywhere brings it all in at once. Reduce Motion: everything there, settled, one buzz.
    Quiet (anything that arrives in the hours after a slip, or the honesty badge): no shout, no confetti, no knocks, no ask; the
    moment is calm, and says what was earned. The tip ask rides only on a new form, never when quiet (core tipMoment). */
-import { addDays, gameCompute, nextLine, type CelItem, type Level } from '@daybook/core';
+import { addDays, badgeDone, gameCompute, nextLine, shownBadges, type CelItem, type Level } from '@daybook/core';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
@@ -159,8 +159,10 @@ function Moment({
     title = it.b.name;
     sub = it.b.desc;
     picture = (z: number) => <Drop id={it.b.id} icon={it.b.icon} tone={it.b.tone} size={Math.min(z, 190)} still={still} quiet={quiet} />;
-    const n = g ? g.badges.filter((b) => b.done).length : 0;
-    const of = g ? g.badges.length : 0;
+    /* counted as Settings and Milestones count them: retired badges only for someone who earned them */
+    const shown = g ? shownBadges(g.badges, snap.settings) : [];
+    const n = shown.filter((b) => badgeDone(b, snap.settings)).length;
+    const of = shown.length;
     /* the badges line, one more filling in, unless the rows of what else was earned already fill the space */
     lines =
       of && rest.length < 2

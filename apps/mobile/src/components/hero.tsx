@@ -477,8 +477,9 @@ function Sky({
               {proof}
             </Text>
           ) : null}
-          {/* the way to graduation is said once: under the number when it is the number's own line (core heroNumber's chip) */}
-          {finish && finish !== h?.chip ? (
+          {/* the way to graduation is said once: under the number when it is the number's own line (core heroNumber's chip), or not
+              at all when it is the number itself (gentle, past the first month: "46 of 90, Toward graduation") */}
+          {finish && finish !== h?.chip && h?.eb !== 'Toward graduation' ? (
             <Text maxFontSizeMultiplier={ON_ART} style={[s.small, { color: soft, textAlign: 'right' }]}>
               {finish}
             </Text>

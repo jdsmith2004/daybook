@@ -372,7 +372,7 @@ export default function Checkin() {
         {wind && r ? (
           <Appear delay={700}>
             <T style={s.c}>
-              <T v="label">Next: Goodnight, when the phone goes down.</T> {stopStatus(wind, r.windMin)}.
+              <T v="label">Next: Good night, when the phone goes down.</T> {stopStatus(wind, r.windMin)}.
             </T>
           </Appear>
         ) : null}

@@ -170,6 +170,18 @@ describe('setup in two minutes (WP10)', () => {
   it('asks the same questions on a walk-through, then the changes to keep', () => {
     expect(core.obPages({}, { redo: true, account: true }).map((p) => p.id)).toEqual(['hello', 'habit', 'freq', 'when', 'for', 'faith', 'review', 'done']);
   });
+  it('on a walk-through, taking off a "who for" pick takes its reason off, and leaves the rest in their order', () => {
+    const tk = '2026-11-14' as core.DayKey;
+    const st = core.obBegin({ freq: 'f2', for: ['love', 'partner', 'health'] }, '2026-09-15' as core.DayKey, 0);
+    const pre = core.obPrefill(st);
+    expect(pre.for).toEqual(['love', 'partner', 'health']);
+    expect(core.obChanges(pre, st, tk).some((c) => c.k === 'rs')).toBe(false);
+    const a = { ...pre, for: ['partner', 'health', 'faith'] };
+    expect(core.obReasonList(a)).toEqual(['Being ready for a real, honest relationship', 'Clear mornings and steady energy', 'Living by my faith']);
+    expect(core.obChanges(a, st, tk).find((c) => c.k === 'rs')?.to).toBe(
+      'Being ready for a real, honest relationship · Clear mornings and steady energy · Living by my faith',
+    );
+  });
   it('starts counting tonight, counts how often says, and keeps who it is for as reasons', () => {
     const tk = '2026-11-12' as core.DayKey;
     const st = core.obBegin({ habit: 'alcohol', freq: 'f3', when: ['late'], for: ['love', 'health'], faith: 'no', first: 3 }, tk, 0);

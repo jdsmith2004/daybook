@@ -1,7 +1,7 @@
 /* Lessons told as a story, batch E (the shape is in lesson-stories.ts, the standard in docs/lessons.md, the remap brief in the
    side-session notes, lesson-remap-brief.md). Written November 14, 2026: lessons 33 to 40 and 42 to 44. Lesson 36 follows the
    dragon's gold sample the owner called "excellent" that day. */
-import type { Story } from './lesson-stories';
+import type { Story, StoryPart } from './lesson-stories';
 
 type Src = [string, string];
 const S = {
@@ -26,7 +26,10 @@ const S = {
     'Neal, Wood, Wu & Kurlander (2011): the pull of the past, when do habits persist despite conflict with motives? Personality and Social Psychology Bulletin',
     'https://doi.org/10.1177/0146167211419863',
   ],
-  wood02: ['Wood, Quinn & Kashy (2002): habits in everyday life, thought, emotion, and action, Journal of Personality and Social Psychology', 'https://pubmed.ncbi.nlm.nih.gov/12500811/'],
+  wood02: [
+    'Wood, Quinn & Kashy (2002): habits in everyday life, thought, emotion, and action, Journal of Personality and Social Psychology',
+    'https://pubmed.ncbi.nlm.nih.gov/12500811/',
+  ],
   quinn10: [
     'Quinn, Pascoe, Wood & Neal (2010): watching for unwanted habits and telling yourself not to, Personality and Social Psychology Bulletin',
     'https://doi.org/10.1177/0146167209360665',
@@ -35,6 +38,16 @@ const S = {
   bothe21m: [
     'Bőthe et al. (2021): why do people watch pornography? The motivational basis of pornography use, Psychology of Addictive Behaviors',
     'https://pubmed.ncbi.nlm.nih.gov/32730047/',
+  ],
+  carter: ['Carter & Tiffany (1999): a meta-analysis of cue-reactivity in addiction research, Addiction', 'https://doi.org/10.1046/j.1360-0443.1999.9433273.x'],
+  limbrick: [
+    'Limbrick-Oldfield and colleagues (2017): neural substrates of cue reactivity and craving in gambling disorder, Translational Psychiatry',
+    'https://doi.org/10.1038/tp.2016.256',
+  ],
+  cooper: ['Cooper (1994): motivations for alcohol use, a four-factor model, Psychological Assessment', 'https://doi.org/10.1037/1040-3590.6.2.117'],
+  blaszczynski: [
+    'Blaszczynski & Nower (2002): a pathways model of problem and pathological gambling, Addiction',
+    'https://doi.org/10.1046/j.1360-0443.2002.00015.x',
   ],
 } satisfies Record<string, Src>;
 
@@ -433,5 +446,88 @@ export const STORIES_E: Record<string, Story> = {
     scope:
       'The dragon and its gold are old stories, not studies, read here for what they say about a habit. The survey asked adults why they watch and shows what goes together, not what causes what. Together they point one hopeful way: the feeling a habit helps you skip is often guarding something you want.',
     src: [S.hobbit, S.bothe21m],
+  },
+};
+
+/* Another habit (lesson-habit.ts HABIT_OPEN): the cards that rest on a porn study are told again with that habit's own study, and the
+   rest is said in the habit's words. l33 and l38 hold for every habit as written. */
+const swap = (S: Story, parts: Record<number, StoryPart>): StoryPart[] => S.tell.map((t, i) => parts[i] || t);
+const l34 = STORIES_E.l34;
+l34.hab = {
+  alcohol: {
+    tell: swap(l34, {
+      5: {
+        long: 1,
+        h: 'Across 41 studies, the sight of a drink alone set off the craving.',
+        p: 'A bottle, a bar, a smell. People felt the pull, and their bodies answered, **before a single sip**. The light, again, mattered more than the juice.',
+        dx: 'In 1999, two researchers pulled together 41 studies of people with drinking, smoking and drug problems. In each, people were shown the cues of their habit: a bottle, a glass, a bar, the smell of a drink. They reported strong craving, and their bodies reacted, heart and skin and all, **before a single sip**. Nothing had been poured. The cue was enough to start the wanting. The light, again, mattered more than the juice.',
+        art: ['chain', { n: ['Home from work', 'The pull starts', 'Nothing poured yet'] }],
+        fact: { s: 'Review · 41 studies · Carter & Tiffany, 1999', i: [1] },
+      },
+    }),
+    scope:
+      'The monkey studies were about juice, and the review pooled cue studies across several habits, alcohol among them. Together they show a pattern that holds widely: a learned signal starts the wanting before the reward arrives, and a signal you know is one you can move at.',
+    src: [S.schultz, S.carter],
+  },
+  gambling: {
+    tell: swap(l34, {
+      5: {
+        long: 1,
+        h: 'People with a gambling problem lit up at gambling pictures alone.',
+        p: 'In a brain scanner, they felt more craving than other people, and their reward areas answered the cue, **with no bet placed**. The light, again, mattered more than the juice.',
+        dx: 'In 2017, researchers in London scanned the brains of people with a gambling problem and people without one, while they looked at gambling pictures and plain ones. The people with the problem felt more craving at the gambling pictures, and reward areas of their brains responded more. All of it happened **with no bet placed** and no money moving. The cue was enough to start the wanting. The light, again, mattered more than the juice.',
+        art: ['chain', { n: ['Game about to start', 'The pull starts', 'No bet placed yet'] }],
+        fact: { s: 'Brain-scan study · Limbrick-Oldfield and colleagues, 2017', i: [1] },
+      },
+    }),
+    scope:
+      'The monkey studies were about juice, and the brain-scan study was small, with people with and without a gambling problem. Together they show a pattern, not every person’s story: learned signals start the wanting before the reward arrives. Signals are learned, and they can be moved.',
+    src: [S.schultz, S.limbrick],
+  },
+};
+
+const l36 = STORIES_E.l36;
+const l36Ask = (last: [string, string]): StoryPart => ({
+  k: 'ask',
+  h: 'Just before the pull, what are you usually feeling?',
+  o: [
+    ['Stressed or tense', 'Then the habit is offering relief. That is a dragon with a name.'],
+    ['Bored or empty', 'Then it fills a gap. Gaps have gold in them too.'],
+    ['Lonely or low', 'Then it stands in for closeness. That is worth knowing, not hiding.'],
+    last,
+  ],
+});
+l36.hab = {
+  alcohol: {
+    tell: swap(l36, {
+      6: l36Ask(['I just like the taste', 'Sometimes it is. Watch the next few. A feeling often comes first.']),
+      7: {
+        long: 1,
+        h: 'A psychologist asked young people why they drink.',
+        p: 'For fun, to fit in, to be social, or to cope with a bad feeling. **Drinking to cope** went with drinking problems, more than how much people drank.',
+        dx: 'In 1994, a psychologist named Lynne Cooper asked young people why they drink. The answers fell into four kinds: for fun, to fit in, to be social, or to cope with bad feelings. One kind stood apart. **Drinking to cope** went with drinking problems, over and above how much people drank. The trouble was less in the amount and more in what the drink was being used to avoid.',
+        art: ['scene', { k: 'l36-reasons' }],
+        fact: { s: 'Surveys · Cooper, 1994', i: [1] },
+      },
+    }),
+    scope:
+      'The dragon and its gold are old stories, not studies. The surveys asked young people why they drink, and show what goes together, not what causes what. Together they point one hopeful way: the feeling a drink helps you skip is often guarding something you want.',
+    src: [S.hobbit, S.cooper],
+  },
+  gambling: {
+    tell: swap(l36, {
+      6: l36Ask(['The money, plain and simple', 'Sometimes it is. Watch the next few. A feeling often comes first.']),
+      7: {
+        long: 1,
+        h: 'Two researchers drew together years of work on how gambling problems grow.',
+        p: 'They found several paths in. One stood out: people who bet **to escape stress, low mood or loneliness**. For them the bet is relief, and relief keeps calling.',
+        dx: 'In 2002, two researchers, Alex Blaszczynski and Lia Nower, drew together years of studies on how gambling problems grow. They found several paths in, not one. One path stood out: people who bet **to escape stress, low mood or loneliness**. For them the bet is not mainly about money. It is relief, and relief keeps calling, because the feeling it skips comes back. The reason behind the bet mattered more than the bet.',
+        art: ['scene', { k: 'l36-reasons' }],
+        fact: { s: 'Model · Blaszczynski & Nower, 2002', i: [1] },
+      },
+    }),
+    scope:
+      'The dragon and its gold are old stories, not studies, and the pathways model draws together many studies of how gambling problems grow, with escape as one path among several. Together they point one hopeful way: the feeling a bet helps you skip is often guarding something you want.',
+    src: [S.hobbit, S.blaszczynski],
   },
 };

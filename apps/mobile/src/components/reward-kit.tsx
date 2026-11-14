@@ -23,6 +23,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Text } from '@/components/text';
 import { buzz, knock } from '@/lib/feel';
+import { SETTLE } from '@/lib/motion';
 import { font, nightInk } from '@/lib/theme';
 
 export const GOLD = '#FFD25A';
@@ -165,16 +166,16 @@ function Star({ v, i, n, x1, w }: { v: SharedValue<number>; i: number; n: number
   );
 }
 
-/** a short word that pops in sun yellow, overshooting a little, at `at` */
+/** a short word that comes in in sun yellow and settles, at `at` (no overshoot, no wobble) */
 export function Shout({ text, at, still, size = 40 }: { text: string; at: number; still: boolean; size?: number }) {
   const v = useSharedValue(still ? 1 : 0);
   useEffect(() => {
     if (still) return;
-    v.value = withDelay(at, withSpring(1, { damping: 7, stiffness: 210 }));
+    v.value = withDelay(at, withSpring(1, SETTLE));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const st = useAnimatedStyle(() => ({
     opacity: Math.min(1, v.value * 1.6),
-    transform: [{ scale: interpolate(v.value, [0, 1], [0.3, 1]) }, { rotate: `${(1 - Math.min(1, v.value)) * -8}deg` }],
+    transform: [{ scale: interpolate(v.value, [0, 1], [0.8, 1]) }],
   }));
   return (
     <Reanimated.View style={st}>

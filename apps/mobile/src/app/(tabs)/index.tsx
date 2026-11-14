@@ -255,22 +255,20 @@ export default function Today() {
     );
   }, [ready, st, snap.days, tk, now, update, say, syncing]);
 
-  /* Today always opens on the flame and the next step: once it is out of sight (another tab, a lesson, a page, or the app
-     put away), it goes back to the top, so coming back never shows it jump. A sheet only covers part of it, so a sheet
-     keeps the place. */
+  /* coming back to Today keeps the place: a page opened from Today (If it gets hard tonight, Who you are becoming, a lesson)
+     returns to where it was opened (the owner, November 14, 2026: "when I go back, it starts me at the top of today instead of
+     where I opened the page"). Today goes back to the flame only after the app was put away, or after a long time away. */
   const scroll = useRef<ScrollViewInstance>(null);
   const top = useCallback(() => scroll.current?.scrollTo({ y: 0, animated: false }), []);
   const away = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const left = useRef(false);
+  const leftAt = useRef(0);
   useFocusEffect(
     useCallback(() => {
       clearTimeout(away.current);
-      /* a hidden tab cannot scroll on the web, so it also goes up as it comes back, before it is drawn */
-      if (left.current) top();
-      left.current = false;
+      if (leftAt.current && Date.now() - leftAt.current > AWAY_LONG) top();
+      leftAt.current = 0;
       return () => {
-        left.current = !sheetOnTop();
-        if (left.current) away.current = setTimeout(top, 450);
+        leftAt.current = Date.now();
       };
     }, [top]),
   );
@@ -519,6 +517,9 @@ export default function Today() {
     </View>
   );
 }
+
+/** how long away from Today before it goes back to the flame */
+const AWAY_LONG = 30 * 60 * 1000;
 
 /** the room under Today while a tour is open: about the flame's panel and the tab bar */
 const TOUR_ROOM = 380;

@@ -49,7 +49,10 @@ export function Ext({ url, label }: { url: string; label: string }) {
     <Pressable
       accessibilityRole="link"
       accessibilityHint="Opens outside the app"
-      onPress={() => Linking.openURL(url).catch(() => undefined)}
+      onPress={() => {
+        buzz('tap');
+        Linking.openURL(url).catch(() => undefined);
+      }}
       hitSlop={6}
       style={s.ext}>
       <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText }}>{label}</Text>

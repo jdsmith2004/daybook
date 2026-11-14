@@ -36,6 +36,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Appear } from '@/components/appear';
 import { Editable, Hair, PageLink, PageSec } from '@/components/editable';
 import { Check } from '@/components/form';
+import { buzz } from '@/lib/feel';
 import { useGoodNightPerson } from '@/lib/person';
 import { RelLesson } from '@/components/help-bits';
 import { KeepAbove } from '@/components/keyboard';
@@ -187,7 +188,10 @@ function Lines({ at }: { at?: string }) {
             <Pressable
               accessibilityRole="button"
               accessibilityHint="Opens it to change"
-              onPress={() => setOpen(r.i)}
+              onPress={() => {
+                buzz('tap');
+                setOpen(r.i);
+              }}
               style={({ pressed }) => [s.line, { opacity: pressed ? 0.6 : 1 }]}>
               <View style={{ flex: 1, gap: 4 }}>
                 <T style={s.if}>If {r.when}</T>
@@ -293,7 +297,10 @@ function IfThenForm({
                   key={x}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
-                  onPress={() => setThen(x)}
+                  onPress={() => {
+                    if (!on) buzz('tap');
+                    setThen(x);
+                  }}
                   style={({ pressed }) => [s.idea, { opacity: pressed ? 0.6 : 1 }]}>
                   <Icon name={on ? 'check' : 'plus'} size={16} color={c.ink} />
                   <T style={{ flex: 1 }}>{x}</T>
@@ -323,7 +330,13 @@ function IfThenForm({
             </View>
           </View>
         ) : (
-          <Pressable accessibilityRole="button" onPress={() => setAsk(true)} style={s.remove}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              buzz('save');
+              setAsk(true);
+            }}
+            style={s.remove}>
             <Icon name="trash" size={16} color={c.danger} />
             <T v="small" style={{ color: c.danger, fontFamily: font.bodySemi }}>
               Remove this line
@@ -427,7 +440,7 @@ function Slip() {
           onSave={(v) => apply((cur) => ({ st: setMyLine(cur, v) }))}
         />
         <T v="small" tone="muted">
-          Already happened shows it, so you never have to wonder if a hard moment counts.
+          Logging a slip shows it, so you never have to wonder if a hard moment counts.
         </T>
       </Card>
       <Card>

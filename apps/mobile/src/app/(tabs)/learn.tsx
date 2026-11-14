@@ -56,6 +56,7 @@ import { LinkCard, Rows } from '@/components/link-card';
 import { PauseBanner } from '@/components/today-log';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { Packed } from '@/components/packed';
+import { buzz } from '@/lib/feel';
 import { useCountFocus } from '@/lib/pulse';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
@@ -248,7 +249,10 @@ function Floating({ show, due, children }: { show: boolean; due: number; childre
       {show && due ? (
         <Pressable
           accessibilityRole="button"
-          onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(due) } })}
+          onPress={() => {
+            buzz('tap');
+            router.push({ pathname: '/lwrite/[n]', params: { n: String(due) } });
+          }}
           style={({ pressed }) => [s.due, { backgroundColor: c.violetSoft, opacity: pressed ? 0.9 : 1 }]}>
           <Icon name="pencil" size={16} color={c.violetText} />
           <Text style={[s.dueT, { color: c.violetText }]}>Checkpoint {lcheckNo(due, snap.settings)} is ready: write it out</Text>
@@ -405,7 +409,10 @@ function LessonRow({ L, done, locked, side, sub }: { L: Lesson; done?: boolean; 
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${no ? 'Lesson ' + no : L.f ? 'Faith lesson' : 'Lesson'}: ${L.title}. ${done ? 'Done, ' + side + '.' : locked ? 'Opens with a free account.' : side + '.'}`}
-      onPress={() => openLesson(L.id)}
+      onPress={() => {
+        buzz('tap');
+        openLesson(L.id);
+      }}
       style={({ pressed }) => [s.row, { borderTopColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
       <View style={s.lrIc}>
         {done ? (

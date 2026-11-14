@@ -29,7 +29,14 @@ export const LowInk = createContext('#FFFFFF');
 export function Quiet({ label, onPress, half }: { label: string; onPress: () => void; half?: boolean }) {
   const low = useContext(LowInk);
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={4} style={({ pressed }) => [half ? s.quietHalf : s.quiet, { opacity: pressed ? 0.6 : 1 }]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      hitSlop={4}
+      style={({ pressed }) => [half ? s.quietHalf : s.quiet, { opacity: pressed ? 0.6 : 1 }]}>
       <Text style={[s.quietT, { color: low }]}>{label}</Text>
     </Pressable>
   );

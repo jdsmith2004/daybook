@@ -7,6 +7,7 @@ import { Text } from '@/components/text';
 import { Field } from '@/components/choices';
 import { PageLink } from '@/components/editable';
 import { Button, Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -145,7 +146,10 @@ function Sq({ icon, label, off, danger, onPress }: { icon: string; label: string
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!off }}
       disabled={off}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.sq, { opacity: off ? 0.3 : pressed ? 0.6 : 1 }]}>
       <Icon name={icon} size={18} color={danger ? c.danger : c.accentText} />
     </Pressable>

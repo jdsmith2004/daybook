@@ -41,7 +41,7 @@ export default function MyPlan() {
   const { width, height } = useWindowDimensions();
   const inset = useSafeAreaInsets();
   const over = useOverModal();
-  const backLabel = useBackLabel('More');
+  const backLabel = useBackLabel('Settings');
   const holdsBar = useHoldsBar();
   const base = useTheme();
   /* the sky runs under the clock: the clock takes the sky's ink until the page has scrolled past it */

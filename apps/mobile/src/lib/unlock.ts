@@ -57,3 +57,12 @@ export function useUnlockMark() {
     });
   return { shown: (id: UnlockId) => set(id, false), opened: (id: UnlockId) => set(id, true) };
 }
+
+/** the lock's page can follow a first written journal entry (components/journal-page.tsx): a phone with the lock off, that page
+    never shown before (here or as a part of the first week), and not in the quiet hours after an SOS or a slip */
+export function useLockOffer(): boolean {
+  const sos = useSos();
+  const quiet = useQuietAsks();
+  const lock = useLockPref();
+  return lockOffered && Platform.OS !== 'web' && lock === false && !quiet && !normUnlockMem(sos.mem.unl).lock;
+}

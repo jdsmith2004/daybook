@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Appear } from '@/components/appear';
 import { FitArt, FitProvider, SHORT, useFitRoom } from '@/components/fit';
 import { FlameMedallion } from '@/components/flame-medallion';
+import { Burst, Sparkles } from '@/components/reward-kit';
 import { KeyboardRoom } from '@/components/keyboard';
 import { Icon, InkContext, T } from '@/components/ui';
 import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
@@ -260,6 +261,7 @@ export function Finish({
   size: want,
   always,
   least,
+  cheer,
 }: {
   level: number;
   title?: string;
@@ -270,6 +272,8 @@ export function Finish({
   always?: boolean;
   /** with always: the smallest the flame gets, as a share of its size (a celebration keeps it big and lets the rest scroll) */
   least?: number;
+  /** a finished day: confetti thrown up from the flame as it lands, and gold stars twinkling round it (the check-in) */
+  cheer?: boolean;
 }) {
   const reduce = useReducedMotion();
   const win = useWindowDimensions();
@@ -324,6 +328,14 @@ export function Finish({
             }}>
             <FlameMedallion level={level} size={size} pulse={pulse} />
           </Animated.View>
+          {cheer && !reduce ? (
+            <>
+              <View pointerEvents="none" style={{ position: 'absolute', left: (room - size) / 2, top: (room - size) / 2, width: size, height: size }}>
+                <Sparkles size={size} at={420} still={false} />
+              </View>
+              <Burst fire={pulse} x={room / 2} y={room * 0.42} w={size} n={30} />
+            </>
+          ) : null}
         </View>
       </FitArt>
       {title ? (

@@ -34,9 +34,9 @@ export default function AppTabs() {
           <NativeTabs.Trigger.Icon sf={{ default: 'book', selected: 'book.fill' }} />
           <NativeTabs.Trigger.Label>Learn</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
-        <NativeTabs.Trigger disableAutomaticContentInsets name="more" listeners={{ tabPress: () => buzz('tap') }}>
-          <NativeTabs.Trigger.Icon sf={{ default: 'ellipsis', selected: 'ellipsis' }} />
-          <NativeTabs.Trigger.Label>More</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger disableAutomaticContentInsets name="journal" listeners={{ tabPress: () => buzz('tap') }}>
+          <NativeTabs.Trigger.Icon sf={{ default: 'pencil.line', selected: 'pencil.line' }} />
+          <NativeTabs.Trigger.Label>Journal</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger
           disableAutomaticContentInsets

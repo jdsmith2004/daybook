@@ -31,8 +31,8 @@ export default function Privacy() {
       </T>
       <SheetH title="Removing it" />
       <T>
-        Delete everything (in More) clears your log, and your account keeps a copy for a week in case it was a mistake. Delete my account (in More, Sync between
-        devices) removes your account, that copy and your sign-in for good.
+        Delete everything (in Settings) clears your log, and your account keeps a copy for a week in case it was a mistake. Delete my account (in Settings, Sync
+        between devices) removes your account, that copy and your sign-in for good.
       </T>
       <Rows>
         <LinkCard icon="sliders" title="Sync between devices" onPress={() => router.push({ pathname: '/settings', params: { open: 's-sync' } })} />

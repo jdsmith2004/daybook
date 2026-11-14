@@ -41,7 +41,7 @@ export function openStop(go: StopGo, id?: string) {
     return;
   }
   /* the any-time stops: the journal opens on its feeling picker, a new entry's first step (reaching out is marked in place, Row) */
-  if (go === 'journal') return router.push({ pathname: '/journal', params: { new: '1' } });
+  if (go === 'journal') return router.push({ pathname: '/write', params: { new: '1' } });
   if (go === 'reach') return;
   if (go === 'morning') return router.push('/morning');
   router.push(go === 'checkin' ? '/checkin' : '/night');

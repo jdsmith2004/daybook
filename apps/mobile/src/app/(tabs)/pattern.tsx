@@ -86,6 +86,7 @@ import { Card, Icon, T } from '@/components/ui';
 import { WeeksPane } from '@/components/weeks-pane';
 import { connectHealth, healthOffered, useNights } from '@/lib/health';
 import { Link } from '@/components/choices';
+import { SettingsButton } from '@/components/settings-button';
 import { useStore } from '@/lib/store';
 import { font, useTheme, palettes } from '@/lib/theme';
 
@@ -109,7 +110,7 @@ export default function Pattern() {
   /* before setup the tabs wait behind the welcome page ((tabs)/_layout.tsx) */
   if (!st) return null;
   return (
-    <Screen title="Pattern" scrollRef={scroll}>
+    <Screen title="Pattern" scrollRef={scroll} action={<SettingsButton />}>
       <Segments
         label="Pattern sections"
         list={[

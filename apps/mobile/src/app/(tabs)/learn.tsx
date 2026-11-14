@@ -61,6 +61,7 @@ import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { useAccount, useSync } from '@/lib/sync';
+import { SettingsButton } from '@/components/settings-button';
 import { TAB_TOP } from '@/lib/tab-room';
 import { font, toneOf, useTheme } from '@/lib/theme';
 
@@ -165,6 +166,7 @@ export default function Learn() {
       scrollRef={scroll}
       hidden={!placed}
       title="Learn"
+      action={<SettingsButton />}
       onScroll={(y, h) => {
         geo.current.y = y;
         geo.current.h = h;

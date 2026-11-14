@@ -13,7 +13,11 @@
    6. only then the one button, Continue, back to wherever the lesson was opened.
    About five seconds; a tap anywhere brings it all in at once. Reduce Motion: no opener, everything in, settled, one buzz.
    In the hours after a slip (core ptsQuiet) the points are not shown or flown, as everywhere else: the lesson itself is the win.
-   A lesson read again earns no points, so nothing flies. */
+   A lesson read again earns no points, so nothing flies.
+   The look (the owner, November 13, 2026: "i want them to look better"; every beat keeps its time): in the opener a sunburst of rays
+   turns behind the flame and a white flash blooms as it bursts up (`Rays`, `Flash`), the shout glows warm; at rest the flame stands in
+   a breathing gold halo (`Halo`); the points glow, and as they land the level bar lights up and a sheen runs along its fill (`Sheen`);
+   a new level sends a ring out from the bar and throws the confetti again; the confetti has gold stars in it. */
 import { gameCompute, lessonCount, lessonWalk, levelOf, ptsQuiet } from '@daybook/core';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
@@ -32,7 +36,7 @@ import Reanimated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
 
 import { BigFlame } from '@/components/big-flame';
 import { SHORT } from '@/components/fit';
@@ -49,7 +53,10 @@ const GOLD = '#FFD25A';
 const NIGHT = '#16113A';
 const BAND = '#3A2C8F';
 const LIP = '#D99A12';
-const CONFETTI = [GOLD, '#FF8A5B', '#FFFFFF', '#A898FF', GOLD];
+const ORANGE = '#FF9A2E';
+const CONFETTI = [GOLD, '#FF8A5B', '#FFFFFF', '#A898FF', '#7FE0B5', GOLD];
+/** the warm glow behind the words that shout */
+const WARM = { textShadowColor: 'rgba(255,154,46,0.6)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 18 } as const;
 /** a four-point star, in a 24 box */
 const STAR = 'M12 0C13 8 16 11 24 12C16 13 13 16 12 24C11 16 8 13 0 12C8 11 11 8 12 0Z';
 
@@ -130,6 +137,13 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
   const shout = useSharedValue(0);
   const conf = useSharedValue(0);
   const twinkle = useSharedValue(still ? 1 : 0);
+  /* the look: the white flash as the flame bursts up, the bar lighting up as the points land, the sheen along its fill, the ring a
+     new level sends out */
+  const flash = useSharedValue(0);
+  const lit = useSharedValue(0);
+  const sheen = useSharedValue(0);
+  const ring = useSharedValue(0);
+  const [trackW, setTrackW] = useState(0);
 
   const head = useSharedValue(still ? 1 : 0);
   const star = useSharedValue(0);
@@ -180,6 +194,7 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
     conf.value = 1;
     twinkle.value = withTiming(1, q);
     for (const v of [head, say, btn, go]) v.value = withTiming(1, q);
+    for (const v of [flash, lit, sheen, ring]) v.value = 0;
     fly.value = 0;
     bar.value = withTiming(m.after.frac, q);
     setLvl(m.after.n);
@@ -198,6 +213,7 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
     /* 1. the band sweeps in and the flame bursts up inside it */
     band.value = withSpring(1, { damping: 16, stiffness: 140 });
     grow.value = withDelay(80, withSpring(1, { damping: 9, stiffness: 160 }));
+    flash.value = withDelay(80, withTiming(1, { duration: 460, easing: Easing.out(Easing.cubic) }));
     knock(Haptics.ImpactFeedbackStyle.Heavy);
     at(OPEN.title, () => {
       play('chime');
@@ -240,6 +256,9 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
       for (let i = 0; i < dots; i++) at(into + i * 60, () => buzz('tick'));
       at(into, () => {
         gulp.value = withSequence(withTiming(1.25, { duration: 110 }), withSpring(1, { damping: 6, stiffness: 260 }));
+        /* the bar lights up while the stars land, then the light fades and a sheen runs along the fill */
+        lit.value = withSequence(withTiming(1, { duration: 160 }), withDelay(dots * 60, withTiming(0, { duration: 700 })));
+        sheen.value = withDelay(dots * 60 + 80, withTiming(1, { duration: 520, easing: Easing.inOut(Easing.cubic) }));
       });
       const landed = into + dots * 60 + 60;
       if (up) {
@@ -250,6 +269,11 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
           lvPop.value = 1.5;
           lvPop.value = withSpring(1, { damping: 7, stiffness: 180 });
           setPulse((p) => p + 1);
+          /* a ring goes out from the bar, and the confetti is thrown once more */
+          ring.value = 0;
+          ring.value = withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) });
+          conf.value = 0;
+          conf.value = withTiming(1, { duration: 1600, easing: Easing.linear });
           bar.value = 0;
           bar.value = withTiming(m.after.frac, { duration: 450, easing: Easing.out(Easing.cubic) });
         });
@@ -306,6 +330,20 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
   const btnIn = useAnimatedStyle(() => ({ opacity: btn.value, transform: [{ translateY: 16 * (1 - btn.value) }] }));
   const barIn = useAnimatedStyle(() => ({ width: `${Math.max(0.04, Math.min(1, bar.value)) * 100}%` }));
   const trackIn = useAnimatedStyle(() => ({ transform: [{ scaleY: gulp.value }] }));
+  /* the flash lives in the opener, with the rays: in with the flame, gone with the band */
+  const flashIn = useAnimatedStyle(() => ({
+    opacity: 0.95 * (1 - flash.value) * grow.value,
+    transform: [{ scale: 0.35 + 1.25 * flash.value }],
+  }));
+  const litIn = useAnimatedStyle(() => ({ opacity: 0.45 * lit.value }));
+  const sheenIn = useAnimatedStyle(() => ({
+    opacity: sheen.value <= 0 || sheen.value >= 1 ? 0 : 0.7,
+    transform: [{ translateX: -60 + (trackW + 120) * sheen.value }, { skewX: '-20deg' }],
+  }));
+  const ringIn = useAnimatedStyle(() => ({
+    opacity: ring.value <= 0 ? 0 : 0.9 * (1 - ring.value),
+    transform: [{ scaleX: 1 + 0.1 * ring.value }, { scaleY: 1 + 0.9 * ring.value }],
+  }));
   const ptsLeft = m.after.next == null ? null : m.after.toNext;
   const bandH = win.height * 0.56;
 
@@ -318,12 +356,28 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
           style={[s.band, { width: win.width * 1.8, height: bandH, left: -win.width * 0.4, top: midY - bandH / 2 + 40 }, bandIn]}
         />
       ) : null}
+      {!still ? <Rays x={win.width / 2} y={midY} r={win.width * 0.8} grow={grow} band={band} /> : null}
+      {!still ? (
+        <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', width: B, height: B, left: win.width / 2 - B / 2, top: midY - B / 2 }, flashIn]}>
+          <Svg width={B} height={B} viewBox="0 0 100 100">
+            <Defs>
+              <RadialGradient id="flash" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
+                <Stop offset="0" stopColor="#FFF9EE" stopOpacity={1} />
+                <Stop offset="0.4" stopColor="#FFF9EE" stopOpacity={0.55} />
+                <Stop offset="1" stopColor="#FFF9EE" stopOpacity={0} />
+              </RadialGradient>
+            </Defs>
+            <Circle cx={50} cy={50} r={50} fill="url(#flash)" />
+          </Svg>
+        </Reanimated.View>
+      ) : null}
       <Pressable style={StyleSheet.absoluteFill} accessible={false} onPress={() => beat === 1 && all()} />
       <View style={[s.col, { paddingTop: inset.top + (SHORT ? 12 : 28) }]} pointerEvents="box-none">
         <Reanimated.View style={[s.bubble, sayIn]} pointerEvents="none">
           <Bubble text={keep} />
         </Reanimated.View>
         <View ref={flameRef} onLayout={measure} style={{ width: big, height: big, marginVertical: 14 }} pointerEvents="none">
+          <Halo v={twinkle} size={big} still={still} />
           <Sparkles v={twinkle} size={big} />
           <Reanimated.View style={[{ position: 'absolute', width: B, height: B, left: (big - B) / 2, top: (big - B) / 2 }, flameIn]}>
             <BigFlame level={lvl} size={B} pulse={pulse} noLand />
@@ -359,11 +413,22 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
               <Reanimated.Text style={[s.levelText, lvIn]}>Level {lvl}</Reanimated.Text>
               {ptsLeft != null ? <Text style={s.levelLeft}>{ptsLeft} to the next</Text> : null}
             </View>
-            <Reanimated.View ref={trackRef} onLayout={measure} style={[s.track, trackIn]}>
-              <Reanimated.View style={[s.fill, barIn]}>
-                <View style={s.shine} />
+            <View>
+              {!still ? <Reanimated.View pointerEvents="none" style={[s.lit, litIn]} /> : null}
+              {!still ? <Reanimated.View pointerEvents="none" style={[s.ring, ringIn]} /> : null}
+              <Reanimated.View
+                ref={trackRef}
+                onLayout={(e) => {
+                  setTrackW(e.nativeEvent.layout.width);
+                  measure();
+                }}
+                style={[s.track, trackIn]}>
+                <Reanimated.View style={[s.fill, barIn]}>
+                  <View style={s.shine} />
+                </Reanimated.View>
+                {!still ? <Reanimated.View pointerEvents="none" style={[s.sheen, sheenIn]} /> : null}
               </Reanimated.View>
-            </Reanimated.View>
+            </View>
           </View>
         ) : null}
         {lessons && lessonsAt != null ? (
@@ -394,6 +459,67 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
       {!still ? <Confetti v={conf} x={win.width / 2} y={midY} w={win.width} /> : null}
       {path && flying && !still ? <Fly v={fly} path={path} dots={dots} /> : null}
     </View>
+  );
+}
+
+/** the sunburst behind the flame in the opener: twelve sun-yellow rays turning slowly, like Duolingo's */
+const RAYS = Array.from({ length: 12 }, (_, i) => {
+  const a = (i * 30 * Math.PI) / 180;
+  const h = (7 * Math.PI) / 180;
+  const p = (t: number) => `${50 + 60 * Math.cos(t)} ${50 + 60 * Math.sin(t)}`;
+  return `M50 50 L${p(a - h)} L${p(a + h)} Z`;
+}).join(' ');
+function Rays({ x, y, r, grow, band }: { x: number; y: number; r: number; grow: SharedValue<number>; band: SharedValue<number> }) {
+  const turn = useSharedValue(0);
+  /* in with the flame, gone with the band */
+  const style = useAnimatedStyle(() => ({ opacity: 0.6 * grow.value * interpolate(band.value, [1, 1.25], [1, 0], 'clamp') }));
+  useEffect(() => {
+    turn.value = withRepeat(withTiming(1, { duration: 16000, easing: Easing.linear }), -1);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const spin = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.value * 360}deg` }] }));
+  return (
+    <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', width: r * 2, height: r * 2, left: x - r, top: y - r }, style]}>
+      <Reanimated.View style={[StyleSheet.absoluteFill, spin]}>
+        <Svg width={r * 2} height={r * 2} viewBox="0 0 100 100">
+          <Defs>
+            <RadialGradient id="rays" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
+              <Stop offset="0" stopColor={GOLD} stopOpacity={0.5} />
+              <Stop offset="0.45" stopColor={GOLD} stopOpacity={0.14} />
+              <Stop offset="0.85" stopColor={GOLD} stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Path d={RAYS} fill="url(#rays)" />
+        </Svg>
+      </Reanimated.View>
+    </Reanimated.View>
+  );
+}
+
+/** the warm halo the resting flame stands in: a soft gold light that breathes, in with the twinkling stars */
+function Halo({ v, size, still }: { v: SharedValue<number>; size: number; still: boolean }) {
+  const breath = useSharedValue(0);
+  useEffect(() => {
+    if (still) return;
+    breath.value = withRepeat(
+      withSequence(withTiming(1, { duration: 1900, easing: Easing.inOut(Easing.sin) }), withTiming(0, { duration: 1900, easing: Easing.inOut(Easing.sin) })),
+      -1,
+    );
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const st = useAnimatedStyle(() => ({ opacity: v.value * (0.8 + 0.2 * breath.value), transform: [{ scale: 1 + 0.06 * breath.value }] }));
+  const R = Math.round(size * 1.5);
+  return (
+    <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', width: R, height: R, left: (size - R) / 2, top: (size - R) / 2 + size * 0.06 }, st]}>
+      <Svg width={R} height={R} viewBox="0 0 100 100">
+        <Defs>
+          <RadialGradient id="halo" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={ORANGE} stopOpacity={0.5} />
+            <Stop offset="0.4" stopColor={ORANGE} stopOpacity={0.16} />
+            <Stop offset="1" stopColor={ORANGE} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={50} cy={50} r={50} fill="url(#halo)" />
+      </Svg>
+    </Reanimated.View>
   );
 }
 
@@ -439,11 +565,11 @@ function Twinkle({ v, left, top, r, delay }: { v: SharedValue<number>; left: num
   );
 }
 
-type Piece = { vx: number; vy: number; spin: number; c: string; s: number };
-/** confetti: small squares thrown up from the flame, tumbling as they fall */
+type Piece = { vx: number; vy: number; spin: number; c: string; s: number; star: boolean };
+/** confetti: small squares and a few gold stars thrown up from the flame, tumbling as they fall */
 function Confetti({ v, x, y, w }: { v: SharedValue<number>; x: number; y: number; w: number }) {
   const [bits] = useState<Piece[]>(() =>
-    Array.from({ length: 28 }, (_, i) => {
+    Array.from({ length: 34 }, (_, i) => {
       const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.3;
       const sp = 0.45 + Math.random() * 0.6;
       return {
@@ -452,6 +578,7 @@ function Confetti({ v, x, y, w }: { v: SharedValue<number>; x: number; y: number
         spin: (Math.random() - 0.5) * 900,
         c: CONFETTI[i % CONFETTI.length],
         s: 7 + Math.random() * 6,
+        star: i % 5 === 0,
       };
     }),
   );
@@ -472,10 +599,18 @@ function Bit({ v, x, y, b }: { v: SharedValue<number>; x: number; y: number; b: 
         { translateX: x + b.vx * t - b.s / 2 },
         { translateY: y + b.vy * t + 900 * t * t - b.s / 2 },
         { rotate: `${b.spin * t}deg` },
-        { scaleY: 0.5 + 0.5 * Math.abs(Math.cos(t * 12 + b.spin)) },
+        { scaleY: b.star ? 1 : 0.5 + 0.5 * Math.abs(Math.cos(t * 12 + b.spin)) },
       ],
     };
   });
+  if (b.star)
+    return (
+      <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: b.s + 8, height: b.s + 8 }, st]}>
+        <Svg width={b.s + 8} height={b.s + 8} viewBox="0 0 24 24">
+          <Path d={STAR} fill={GOLD} />
+        </Svg>
+      </Reanimated.View>
+    );
   return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: b.s, height: b.s, borderRadius: 2, backgroundColor: b.c }, st]} />;
 }
 
@@ -522,13 +657,13 @@ const s = StyleSheet.create({
   col: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 10 },
   bubble: { alignSelf: 'stretch', maxWidth: 340, marginHorizontal: 'auto' },
   shout: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
-  shoutText: { fontFamily: font.display, fontSize: 46, lineHeight: 50, color: GOLD, textAlign: 'center' },
+  shoutText: { fontFamily: font.display, fontSize: 46, lineHeight: 50, color: GOLD, textAlign: 'center', ...WARM },
   title: { fontFamily: font.display, fontSize: 34, color: nightInk.ink, textAlign: 'center' },
   sub: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted, textAlign: 'center', marginTop: 2 },
   dock: { paddingHorizontal: 16, gap: 18 },
   pts: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, alignSelf: 'center' },
   ptsRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  ptsNum: { fontFamily: font.display, fontSize: 52, color: GOLD },
+  ptsNum: { fontFamily: font.display, fontSize: 52, color: GOLD, ...WARM },
   ptsWord: { fontFamily: font.bodyBold, fontSize: 20, color: GOLD },
   levelBox: { alignSelf: 'center', width: '100%', maxWidth: 360, gap: 8 },
   /* the lessons line's place, held so nothing moves when it comes in */
@@ -537,6 +672,24 @@ const s = StyleSheet.create({
   levelText: { fontFamily: font.display, fontSize: 17, color: nightInk.ink },
   levelLeft: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted },
   track: { height: 20, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
+  /* the light the bar gives off as the points land: a gold glow behind the track */
+  lit: {
+    position: 'absolute',
+    left: -4,
+    right: -4,
+    top: -4,
+    bottom: -4,
+    borderRadius: 14,
+    backgroundColor: GOLD,
+    shadowColor: GOLD,
+    shadowOpacity: 1,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  /* the ring a new level sends out from the bar */
+  ring: { position: 'absolute', left: -6, right: -6, top: -6, bottom: -6, borderRadius: 16, borderWidth: 2, borderColor: GOLD },
+  /* the sheen that runs along the fill once the points are in */
+  sheen: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 36, backgroundColor: '#FFFFFF' },
   fill: { height: 20, borderRadius: 10, backgroundColor: GOLD, paddingTop: 4, paddingHorizontal: 8 },
   shine: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.45)' },
   btn: {

@@ -293,7 +293,7 @@ export const STORIES_F: Record<string, Story> = {
     np: 'What I want my partner to be able to count on from me',
     tell: [
       {
-        h: 'People in this place often ask one question: would telling my partner only hurt them?',
+        h: 'People quitting often ask one question, quietly: would telling my partner only hurt them?',
         p: 'It sounds like kindness. You carry the weight so they do not have to. The question deserves **an honest answer**, not a quick one.',
         art: ['scene', { k: 'l47-weight' }],
       },

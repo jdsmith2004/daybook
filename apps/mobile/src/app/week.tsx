@@ -2,8 +2,8 @@
    days, big in the middle; who they said they are becoming; the next small step; Keep going at the bottom. Opening it
    marks it seen, so Today stops offering it. */
 import { firstWeek, firstWeekDue, firstWeekSeen, gameCompute } from '@daybook/core';
-import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { FitArt } from '@/components/fit';
@@ -11,6 +11,7 @@ import { FlameMedallion } from '@/components/flame-medallion';
 import { Dock, SceneFrame } from '@/components/scene';
 import { MomentAsk, useTipMoment } from '@/components/support';
 import { Button, T } from '@/components/ui';
+import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -37,21 +38,24 @@ export default function Week() {
       {/* the flame, big: this week is what fed it */}
       <View style={s.mid}>
         <FitArt min={0.55}>
-          <FlameMedallion level={level} size={196} />
+          <Spring delay={120} from={0.6}>
+            <FlameMedallion level={level} size={196} />
+          </Spring>
         </FitArt>
         {w.facts.length ? (
           <View style={s.facts}>
-            {w.facts.map((f) => (
-              <View
+            {w.facts.map((f, i) => (
+              <Spring
                 key={f.one}
+                delay={520 + i * 260}
                 style={[s.fact, { width: w.facts.length === 4 ? '22%' : '29%' }]}
                 accessible
                 accessibilityLabel={f.n + ' ' + (f.n === 1 ? f.one : f.many)}>
-                <Text style={[s.n, { color: c.ink }]}>{f.n}</Text>
+                <Count n={f.n} delay={520 + i * 260} style={[s.n, { color: c.ink }]} />
                 <T v="small" tone="muted" style={s.c}>
                   {f.n === 1 ? f.one : f.many}
                 </T>
-              </View>
+              </Spring>
             ))}
           </View>
         ) : (
@@ -67,6 +71,48 @@ export default function Week() {
       </Dock>
     </SceneFrame>
   );
+}
+
+/* Duolingo's stat reveal, in Daybook's night: the flame springs in first, then each thing the week held lands one after
+   another with a small overshoot while its number counts up to what was done. Reduce Motion shows it all at once. */
+function Spring({ delay, from = 0.4, children, ...rest }: { delay: number; from?: number; children: React.ReactNode } & React.ComponentProps<typeof View>) {
+  const reduce = useReducedMotion();
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduce) return v.setValue(1);
+    const t = setTimeout(() => Animated.spring(v, { toValue: 1, ...SPRING.fast, useNativeDriver: NATIVE }).start(), delay);
+    return () => clearTimeout(t);
+  }, [reduce, delay, v]);
+  const scale = v.interpolate({ inputRange: [0, 1], outputRange: [from, 1] });
+  const opacity = v.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1], extrapolate: 'clamp' });
+  return (
+    <Animated.View {...rest} style={[rest.style, { opacity, transform: [{ scale }] }]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+function Count({ n, delay, style }: { n: number; delay: number; style: React.ComponentProps<typeof Text>['style'] }) {
+  const reduce = useReducedMotion();
+  const [shown, setShown] = useState(reduce ? n : 0);
+  useEffect(() => {
+    if (reduce || n <= 1) return setShown(n);
+    const steps = Math.min(n, 14);
+    let k = 0;
+    let tick: ReturnType<typeof setInterval> | undefined;
+    const start = setTimeout(() => {
+      tick = setInterval(() => {
+        k += 1;
+        setShown(Math.round((n * k) / steps));
+        if (k >= steps && tick) clearInterval(tick);
+      }, 520 / steps);
+    }, delay);
+    return () => {
+      clearTimeout(start);
+      if (tick) clearInterval(tick);
+    };
+  }, [n, delay, reduce]);
+  return <Text style={style}>{shown}</Text>;
 }
 
 const s = StyleSheet.create({

@@ -1149,7 +1149,7 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
         <T style={[s.h, h.length > 64 && s.hsm]} accessibilityRole="header">
           {h}
         </T>
-        {beat.p ? <StoryWords key={L.id + card.h} text={beat.p} st={st} /> : null}
+        {beat.p ? <Rich text={beat.p} st={st} style={s.storyP} /> : null}
         {card.fact ? <Fact text={card.fact.s} onPress={onSrc} /> : null}
         <View style={s.storyFoot}>
           <FlameSlot size={92} min={84} side style={s.storyFlame} />
@@ -1198,35 +1198,9 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
     </>
   );
 }
-/* a story card's words come in a sentence at a time, so a paragraph never lands as a wall (a reading study found sentence by
-   sentence read as well as a whole page, and people preferred it). Every sentence holds its place from the start, so nothing moves
-   as it comes in, and a tap shows the rest at once. With Reduce Motion on, all of it is there. The words are a little larger and a
-   little softer than the heading, which is easier on the eye in light on a dark sky. (The owner, November 14, 2026: "ways that we
-   could make the words or text easier to read or bigger".) */
-const SENTENCE_MS = 650;
-function StoryWords({ text, st }: { text: string; st: Settings }) {
-  const still = useReducedMotion();
-  const parts = text.match(/[^.?!]+[.?!]+[”’"]?\s*|[^.?!]+$/g) || [text];
-  const [n, setN] = useState(still ? parts.length : 0);
-  useEffect(() => {
-    if (n >= parts.length) return;
-    const id = setTimeout(() => setN((x) => x + 1), n === 0 ? 350 : SENTENCE_MS);
-    return () => clearTimeout(id);
-  }, [n, parts.length]);
-  return (
-    <Pressable onPress={() => setN(parts.length)} accessible accessibilityLabel={text.replace(/\*\*/g, '')} disabled={n >= parts.length}>
-      <T style={s.storyP}>
-        {parts.map((x, i) =>
-          lfmt(x, st).map((y, k) => (
-            <Text key={i + '.' + k} style={[y.b ? s.storyB : null, i < n ? null : s.unseen]}>
-              {y.t}
-            </Text>
-          )),
-        )}
-      </T>
-    </Pressable>
-  );
-}
+/* a story card's words are a little larger and a little softer than the heading, which is easier on the eye in light on a dark sky
+   (the owner, November 14, 2026: "ways that we could make the words or text easier to read or bigger", and on the sample: "it looks
+   great with the bigger words"). They land all at once: sentences coming in one by one felt glitchy (the owner, the same day). */
 /** the solid violet card: a giant number that starts a sentence, one line of what it means, and where it comes from. No sky, no flame. */
 function NumberCard({ n, h, lead, p, st, fact, onSrc }: { n: string; h: string; lead?: string; p?: string; st: Settings; fact?: string; onSrc: () => void }) {
   const c = useTheme();
@@ -1399,8 +1373,6 @@ const s = StyleSheet.create({
   guessMid: { alignItems: 'center', justifyContent: 'center', minHeight: 110 },
   art: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   storyP: { fontSize: 20, lineHeight: 28, opacity: 0.92 },
-  storyB: { fontFamily: font.bodyBold },
-  unseen: { color: 'transparent' },
   storyFoot: { flexGrow: 1, justifyContent: 'flex-end' },
   storyFlame: { flexGrow: 0, height: 84 },
   storyArt: { alignItems: 'center', justifyContent: 'center', marginBottom: 8 },

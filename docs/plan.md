@@ -78,6 +78,20 @@ hard moment from setup and the log, never a clock time for everyone.
 | l58 When the habit is carrying something heavier                                          | Breakdown                   | "Is it weak to need help?"                                                                                                                                                                                                              |
 | g1 to g12 (faith)                                                                         | Faith versions of all kinds | Wilcox's piano lessons, Holland's "Be Ye Therefore Perfect, Eventually" (perfect means complete), Lot's wife (look back for embers, not ashes), Cowley (borrow faith until you have your own), Jacob wrestling and walking away changed |
 
+**How a story card looks (the owner, November 14, 2026, settled on samples):** the picture first and big, the heading under it (28
+points, 22 when long), the words at 20 points in a slightly softer white, one key phrase in bold, and the flame small at the side,
+coming back to the middle on questions and cards with no picture. The words land all at once: sentences fading in one by one felt
+"glitchy". Every card in the remap gets its one bold phrase.
+
+**A third length, Deep, about 10 minutes (the owner, November 14, 2026: "if we've got more content and we can like make it good ... we
+should also have a 10-minute lesson option ... But only suggest that if they go into the settings and enable like the 10-minute option,
+because I don't want to overwhelm them").** Short (about 2 minutes) and Long (about 5) stay as they are. Each lesson in the remap gets
+Deep cards (`deep: 1` in a story): the rest of the study, the story around it, a second study or tale, and a question to sit with. Deep
+plays every card. It is offered only in Settings, Lesson length, never on a lesson's first page or in a nudge, and once a person picks it,
+the lesson's first page shows it beside Short and Long. Settings shows the choice only once every lesson on the path has its Deep cards,
+so the label is never a promise the lesson does not keep. Medium effort for the player and settings (`learn.len` gains `d`, mapped in
+`normSettings`); the Deep words are written with each batch.
+
 **New lessons the research found, to add later with the owner's yes:** Cain and Abel (resentment, "it is not fair, so why try"),
 your conscience is information and not only punishment, Jacob's limp, borrow someone's faith until you have your own (in plain words
 for everyone), and the load that gave the truck traction (Bednar).

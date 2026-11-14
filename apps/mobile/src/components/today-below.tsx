@@ -4,12 +4,13 @@
    November 11, 2026), then Today so far (each entry logged today, with a shape like a badge: mint for an urge ridden out), and
    Tonight (the hard hours and the two lines of the urge plan that fit them, components/tonight-card.tsx). Nothing here is an ask,
    so it shows on every day. */
-import { eventRow, identityLines, planBlank, planTonight, rodeProof, sortedEvents, type DayKey, type Snapshot } from '@daybook/core';
+import { eventRow, identityLines, planBlank, planTonight, rodeProof, sortedEvents, timeBack, type DayKey, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Shape } from '@/components/shapes';
 import { Text } from '@/components/text';
+import { TimeBackRow } from '@/components/time-back';
 import { TonightCard } from '@/components/tonight-card';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -24,6 +25,8 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
   const lines = planTonight(snap.days, st, tk);
   const all = (st.plan || []).filter((p) => !planBlank(p) && String(p.then || '').trim()).length;
   const be = String(st.becoming || '').trim();
+  /* the time given back, under the sentence: what becoming free has already bought (core time-back.ts) */
+  const back = timeBack(snap.days, st, tk);
   const proof = rodeProof(snap.days, st, tk) || newest(snap, tk, downs);
   const openBe = () => {
     buzz('tap');
@@ -65,6 +68,8 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
           </View>
         </View>
       )}
+
+      {back ? <TimeBackRow t={back} tk={tk} /> : null}
 
       {evs.length ? (
         <View style={s.sec}>

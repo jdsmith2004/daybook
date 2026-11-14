@@ -38,6 +38,7 @@ export * from './section-art';
 export * from './day';
 export * from './plan';
 export * from './miles';
+export * from './time-back';
 export * from './proof';
 export * from './journal';
 export * from './journal-entries';

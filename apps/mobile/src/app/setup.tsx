@@ -58,6 +58,7 @@ import { Ignition } from '@/components/ignite';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
 import { Answer, AnswerText, BESIDE, Prog, Question, Shell } from '@/components/lesson-parts';
 import { Ghost, Next } from '@/components/lx';
+import { Packed } from '@/components/packed';
 import { Middle } from '@/components/scene';
 import { useClock } from '@/components/shapes';
 import { TIP_ON } from '@/components/support';
@@ -794,24 +795,23 @@ function Say({ text }: { text: string | null }) {
     </View>
   );
 }
-/** the answers of a question with more than one: paper, the icon beside the words (one across) or over them (two across) */
+/** the answers of a question with more than one: paper. Two across (cols 2), the icon over the words, as an even grid; one across,
+    pills the size of their words, packed into the fewest rows (Packed, as every chip list in the app), never one to a row
+    (the owner, November 14, 2026: "the options should be grouped") */
 function Tiles({ list, cols, cur, onPick }: { list: ObOpt[]; cols: number; cur: string[]; onPick: (v: string) => void }) {
   const two = cols === 2;
-  return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-      {list.map((it) => {
-        const sel = cur.indexOf(it[0]) >= 0;
-        return (
-          <Answer key={it[0]} sel={sel} right={sel} onPress={() => onPick(it[0])} style={two ? s.tall : s.wide} label={String(it[1])}>
-            {typeof it[2] === 'string' ? <Icon name={it[2]} size={24} color={sel ? '#FFFFFF' : PAPER_INK} /> : null}
-            <AnswerText right={sel} center={two}>
-              {it[1]}
-            </AnswerText>
-          </Answer>
-        );
-      })}
-    </View>
-  );
+  const items = list.map((it) => {
+    const sel = cur.indexOf(it[0]) >= 0;
+    return (
+      <Answer key={it[0]} sel={sel} right={sel} onPress={() => onPick(it[0])} style={two ? s.tall : s.pill} corner={two} label={String(it[1])}>
+        {typeof it[2] === 'string' ? <Icon name={it[2]} size={two ? 24 : 20} color={sel ? '#FFFFFF' : PAPER_INK} /> : null}
+        <AnswerText right={sel} center={two}>
+          {it[1]}
+        </AnswerText>
+      </Answer>
+    );
+  });
+  return two ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{items}</View> : <Packed gap={8}>{items}</Packed>;
 }
 function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useTheme();
@@ -836,7 +836,7 @@ const s = StyleSheet.create({
   titleShort: { fontSize: 22, lineHeight: 28 },
   p: { fontSize: SHORT ? 15 : 17, lineHeight: SHORT ? 21 : 24 },
   optSub: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
-  wide: { flexBasis: '100%', flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 14 },
   tall: { flexBasis: '46%', flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: SHORT ? 72 : 84, paddingLeft: 8, paddingRight: 8 },
   rows: { alignSelf: 'stretch', gap: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },

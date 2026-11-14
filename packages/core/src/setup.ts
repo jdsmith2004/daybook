@@ -231,6 +231,18 @@ export const OB_FOR: [string, string, string, string][] = [
   ['me', 'Who I am becoming', 'sparkle', 'Becoming someone I am proud of'],
 ];
 export const FOR_MAX = 3;
+/** how long a lesson runs (Settings learn.len): short plays a lesson's quick cards, long plays every card. Asked in setup again
+    after the lessons rework took the choice off each lesson's cover (the owner, November 14, 2026: "what happened to the short
+    and long lesson option i actually liked that"). */
+export const OB_LEN: ObOpt[] = [
+  ['q', 'Short, about 2 minutes', 'bolt'],
+  ['f', 'Long, about 5 minutes', 'book'],
+];
+/** the length a lesson plays at: short until the person picks long */
+export const lessonLen = (st: Settings | null | undefined): 'q' | 'f' => (st && st.learn && st.learn.len === 'f' ? 'f' : 'q');
+/** Settings, or setup: keep the lesson length */
+export const setLessonLen = (st: Settings, len: 'q' | 'f', now = Date.now()): Settings =>
+  st.learn.len === len ? st : changeSettings(st, (s) => void (s.learn.len = len), now);
 /** the reasons the "who for" picks keep */
 export const obForReasons = (a: SetupAnswers): string[] =>
   (Array.isArray(a.for) ? (a.for as string[]) : []).map((id) => (OB_FOR.find((x) => x[0] === id) || [])[3]).filter((x): x is string => !!x);
@@ -260,10 +272,12 @@ export const OB_PAGES: ObPage[] = [
     list: OB_FOR.map((x) => [x[0], x[1], x[2]] as ObOpt),
     h: 'Who are you doing this for?',
     sub: 'Pick up to three.',
-    cols: 1,
+    /* two across, an even grid like "When does it pull hardest?" (the owner, November 14, 2026: "the options should be grouped") */
+    cols: 2,
     max: FOR_MAX,
     keep: 1,
   },
+  { id: 'len', k: 'tiles', key: 'len', list: OB_LEN, h: 'How long should a lesson be?', keep: 1 },
   { id: 'faith', k: 'tiles', key: 'faith', list: OB_FAITH, h: 'Does faith play a part in this for you?', keep: 1 },
   /* after a Yes or a Somewhat: which faith the God lessons speak from (faith.ts) */
   { id: 'creed', k: 'tiles', key: 'creed', list: OB_CREED, h: 'Which faith is yours?', keep: 1, need: (a) => a.faith === 'big' || a.faith === 'some' },
@@ -314,6 +328,7 @@ export function obPrefill(st: Settings | null): SetupAnswers {
   a.person = st.safePerson || '';
   a.be = st.becoming || '';
   a.rs = (st.reasons || []).slice();
+  if (st.learn && (st.learn.len === 'q' || st.learn.len === 'f')) a.len = st.learn.len;
   return a;
 }
 
@@ -335,7 +350,7 @@ export const obBecoming = (a: SetupAnswers) =>
 
 /* ---------- the plan: what the answers would change ---------- */
 export interface ObChange {
-  k: 'goal' | 'rs' | 'so' | 'plan' | 'person' | 'be';
+  k: 'goal' | 'rs' | 'so' | 'plan' | 'person' | 'be' | 'len';
   l: string;
   from: string;
   to: string;
@@ -403,6 +418,15 @@ export function obChanges(a: SetupAnswers, st: Settings | null, tk: DayKey): ObC
     .slice(0, 80);
   if (pn && (!st || pn !== cur.safePerson))
     out.push({ k: 'person', l: 'Safe person', from: cur.safePerson || 'Not set', to: pn, apply: (s) => void (s.safePerson = pn) });
+  const ln = a.len === 'q' || a.len === 'f' ? a.len : null;
+  if (ln && (!st || ln !== lessonLen(cur)))
+    out.push({
+      k: 'len',
+      l: 'Lessons',
+      from: lessonLen(cur) === 'f' ? 'Long' : 'Short',
+      to: ln === 'f' ? 'Long' : 'Short',
+      apply: (s) => void (s.learn.len = ln),
+    });
   const be = obBecoming(a);
   if (be && (!st || be !== cur.becoming))
     out.push({ k: 'be', l: 'Who I am becoming', from: cur.becoming || 'Not set', to: be, apply: (s) => void (s.becoming = be) });
@@ -414,7 +438,7 @@ export function obRecord(a: SetupAnswers, st: Settings | null, tk: DayKey, now =
   const prev = (st && st.onb) || null;
   const r = obScore(a);
   const keep: Record<string, unknown> = {};
-  [...OB_KEYS, 'for', 'first'].forEach((k) => {
+  [...OB_KEYS, 'for', 'first', 'len'].forEach((k) => {
     const v = a[k];
     if (v != null && v !== '') keep[k] = Array.isArray(v) ? v.slice() : v;
   });
@@ -493,6 +517,7 @@ export function obBegin(a: SetupAnswers, tk: DayKey, now = Date.now()): Settings
          it never crowds the first week. freeNo is when a closed ask was let go; it is due FREE_WAIT days after. */
       s.freeNo = addDays(tk, FREE_AT - FREE_WAIT);
       if (okFirst(a.first)) s.fwGoal = a.first;
+      if (a.len === 'q' || a.len === 'f') s.learn.len = a.len;
     },
     now,
   );
@@ -749,6 +774,7 @@ const OB_SAY: Record<string, string> = {
   freq: 'Rough is fine. Only you see this.',
   when: 'Pick any. I will be ready for these.',
   for: 'On a hard night, I will remind you.',
+  len: 'One lesson a day. Pick the size that fits your day.',
   faith: 'It changes which lessons come up.',
   tonight: 'Set it now, while it is easy.',
   light: 'Swipe up. Light me.',
@@ -776,6 +802,10 @@ export const OB_REPLY: Record<string, Record<string, string>> = {
     f2: 'A few times a week. Then there are already free days to build on.',
     f1: 'About once a week. You already have more free days than not.',
     f0: 'Less than that. Then we catch it before it grows.',
+  },
+  len: {
+    q: 'Short it is. Two minutes a day adds up fast.',
+    f: 'Long it is. You get the whole story behind each one.',
   },
   faith: {
     big: 'Then your faith will be part of this. Some lessons are written for it.',

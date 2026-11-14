@@ -340,12 +340,20 @@ export function PointsInto({
     const steps = 16;
     for (let k = 1; k <= steps; k++) {
       const e = 1 - Math.pow(1 - k / steps, 2);
-      tm.push(setTimeout(() => setCount(Math.round((gain * k) / steps)), at + 120 + e * 560));
+      tm.push(
+        setTimeout(
+          () => {
+            setCount(Math.round((gain * k) / steps));
+            if (k % 4 === 0) buzz('tick');
+          },
+          at + 120 + e * 560,
+        ),
+      );
     }
     const glide = at + 1000;
     go.value = withDelay(glide, withTiming(1, { duration: 600, easing: Easing.inOut(Easing.cubic) }));
     const into = glide + 480;
-    tm.push(setTimeout(() => buzz('tick'), into));
+    tm.push(setTimeout(() => buzz('land'), into));
     if (up) {
       fill.value = withDelay(into, withTiming(1, { duration: 480, easing: Easing.in(Easing.quad) }));
       const turn = into + 480;

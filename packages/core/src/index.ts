@@ -49,6 +49,7 @@ export * from './markdown';
 export * from './data';
 export * from './setup';
 export * from './emblem';
+export * from './hero-room';
 export * from './flame-fire';
 export * from './flame-low';
 export * from './flame-widget';

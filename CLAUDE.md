@@ -90,6 +90,13 @@ need, without letting the screen turn into a list of features.
 - **Lessons inspire hope; that is their main goal.** A lesson must be wholesome, true to its spirit, motivating and hopeful,
   written plainly and surely. The quality of the lesson matters far more than checking its sources: do not spend effort
   validating sources, and do not rewrite, flag or ask about the "Behind this" notes. That work is not wanted.
+- **The lessons are set in stone (the owner, November 14, 2026: "these lessons need to be enshrined in stone ... what i don't want
+  to happen is have the lessons lose their soul and spirit when i'm doing design changes").** Read `docs/lessons.md` before touching
+  any lesson's words or the lesson player. A lesson's words change only with the owner's yes for that change. A design change, a
+  player rewrite or a "tighten the words" pass never cuts, hides, grades or reorders them. Short plays the Short cards, and Long plays
+  every card. `packages/core/test/lesson-lock.test.ts` fails when a lesson's words change. Better ideas go to the owner as samples,
+  never as a batch rewrite. The lessons lost their quality in November 2026 through two design passes that meant no harm, so this
+  rule is not a formality.
 - **Never use one of the 15 monthly EAS builds without the owner's explicit yes (the owner, November 11, 2026, after a
   Screen Time build was started without asking).** Anything that runs on Expo's servers and counts against the free plan's 15
   iOS builds a month (`eas build` without `--local`, the App Store or Play workflow) needs the owner's yes for that exact build

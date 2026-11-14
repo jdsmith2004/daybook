@@ -9,7 +9,7 @@
 
    As in a lesson (components/lesson-parts.tsx): one sky, one flame that glides from page to page and answers each pick in its
    bubble, one question a page with big answers low, a bar of dashes across the top. Every question can be skipped; setup
-   itself cannot (closing it brings it back). Opened again from More ("How Daybook works"), it asks the same questions and ends
+   itself cannot (closing it brings it back). Opened again from More ("Redo setup"), it asks the same questions and ends
    on the changes to keep; nothing changes until then. */
 import {
   accountLater,
@@ -310,7 +310,11 @@ export default function Setup() {
         const prev = st && st.onb;
         body = (
           <>
-            <Head h="Walk through it again." />
+            {/* the owner, November 14, 2026: redoing setup is fine, "it should just like be more obvious what they're doing" */}
+            <Head
+              h="Change your setup answers."
+              sub="These are your real answers: your goal, counting, reasons and plan follow them. You choose what to keep at the end."
+            />
             <Talk text={voice} want={want} />
             {prev && prev.at ? (
               <T v="small" tone="muted" style={s.c}>
@@ -721,7 +725,7 @@ export default function Setup() {
     );
   const fin = f.saved && !f.redo;
   const noBack = i === 0 || f.saved;
-  const barLabel = fin ? 'Setup complete' : (f.redo ? 'How Daybook works: ' : 'Set up Daybook: ') + 'page ' + (i + 1) + ' of ' + P.length;
+  const barLabel = fin ? 'Setup complete' : (f.redo ? 'Redo setup: ' : 'Set up Daybook: ') + 'page ' + (i + 1) + ' of ' + P.length;
   return (
     <View style={{ flex: 1 }}>
       <Shell

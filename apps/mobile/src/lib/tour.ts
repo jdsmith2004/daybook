@@ -82,6 +82,20 @@ export const markWalkOpen = (m: UrMem): UrMem => ({ ...m, walk: 'open' });
 /** finished or skipped: never again */
 export const markTourDone = (m: UrMem): UrMem => ({ ...m, tour: 'done' });
 
+/* ---------- "How Daybook works" in More plays the same tour again, on Today (the owner, November 14, 2026: "If we want to have a how
+   daybook works, it should go to something else"). Asked for here, taken once by Today; it changes nothing that is kept. ---------- */
+let replay = false;
+/** More asks for the tour again; Today takes it the next time it is in front */
+export const askTour = () => {
+  replay = true;
+};
+/** Today takes the ask, once */
+export const takeTour = (): boolean => {
+  const r = replay;
+  replay = false;
+  return r;
+};
+
 /** a stable callback from a changing one */
 export function useLatest<A extends unknown[]>(f: (...a: A) => void) {
   const r = useRef(f);

@@ -72,7 +72,7 @@ import { Welcome } from '@/components/welcome';
 import { StopCard, YourDay } from '@/components/your-day';
 import { FirstTour, tourSteps, walkSteps } from '@/components/tour';
 import { buzz } from '@/lib/feel';
-import { markTourDone, markWalkOpen, tourDue, useSpot, walkLocked } from '@/lib/tour';
+import { markTourDone, markWalkOpen, takeTour, tourDue, useSpot, walkLocked } from '@/lib/tour';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
 import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
@@ -188,7 +188,12 @@ export default function Today() {
   /* a celebration sheet ends it: there is never both on one open (the owner, October 30, 2026) */
   const celebrating = useCelebrating();
   /* the first look at Today (components/tour.tsx), once, after setup: it waits for a calm, settled Today */
-  const tourWaits = tourDue(sos.mem);
+  /* or again, asked for from More ("How Daybook works"): taken as Today comes to the front */
+  const [again, setAgain] = useState(false);
+  useEffect(() => {
+    if (focused && takeTour()) setAgain(true);
+  }, [focused]);
+  const tourWaits = tourDue(sos.mem) || again;
   useEffect(() => {
     if (celebrating && askFeel) setAskFeel(false);
   }, [celebrating, askFeel]);
@@ -296,8 +301,15 @@ export default function Today() {
   /* the tour: on Today in front, with nothing else opening, never in the hours after an SOS or a slip (it waits for them to pass),
      and never during an SOS or a pause. A short wait first, so a page still closing (setup's end) is gone by then. */
   const [touring, setTouring] = useState(false);
+  /* asked for again from More, it plays now: only an SOS, a pause or a sync holds it */
   const tourNow =
-    ready && !!st && tourWaits && !syncing && focused && !quiet && !backNow && !gradNow && !morningNow && !celebrating && !miNow && !sos.ur && !sos.timer;
+    ready &&
+    !!st &&
+    !syncing &&
+    focused &&
+    !sos.ur &&
+    !sos.timer &&
+    (again || (tourWaits && !quiet && !backNow && !gradNow && !morningNow && !celebrating && !miNow));
   useEffect(() => {
     if (!tourNow || touring) return;
     const t = setTimeout(() => {
@@ -500,10 +512,12 @@ export default function Today() {
             lessonDone: lessonsDone(snap.days).size > 0,
             lessonId: lessonsDone(snap.days).size ? null : (lessonStop(snap.days, st, tk).L?.id ?? null),
             walk: !walkWaits,
+            again,
           })}
           level={Math.max(1, g.level.n)}
           onEnd={() => {
-            sos.setMem(markTourDone);
+            if (!again) sos.setMem(markTourDone);
+            setAgain(false);
             setTouring(false);
           }}
           scrollBy={(dy) => {

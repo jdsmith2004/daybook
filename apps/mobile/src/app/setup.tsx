@@ -465,17 +465,24 @@ export default function Setup() {
         <>
           <Head h="This is how I grow with you." />
           <Talk text={g.line} want={want} />
-          <GrowStops
-            a={a}
-            at={Math.max(0, growAt)}
-            onAt={(j) => {
-              walk.pick(j);
-              buzz('tap');
-            }}
-          />
+          <GrowStops a={a} at={Math.max(0, growAt)} onAt={walk.pick} />
         </>
       );
-      foot = nextBtn('Next');
+      /* Next walks the stops first, and leaves the page only from the last one */
+      foot = walk.last ? (
+        nextBtn('Next')
+      ) : (
+        <View key="n" style={s.footOne}>
+          <Next
+            label="Next"
+            onPress={() => {
+              buzz('tap');
+              walk.step();
+            }}
+            off={false}
+          />
+        </View>
+      );
       break;
     }
     case 'why': {

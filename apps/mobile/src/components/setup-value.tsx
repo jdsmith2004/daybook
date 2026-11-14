@@ -4,10 +4,11 @@
    form), and a slip taking nothing away here (obWhyLines). Words come from core setup.ts. */
 import { obGrow, obWhyLines, obYearMarks, type SetupAnswers } from '@daybook/core';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { SHORT } from '@/components/fit';
+import { Slider } from '@/components/slider';
 import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
@@ -64,64 +65,35 @@ export function YearMarks({ n, onBack }: { n: number; onBack?: () => void }) {
 
 /** the stops the flame grows through: a thin line with a dot for each, the one shown filled. The page walks them once on its own;
     a tap goes to one. */
+/** the stops, on the app's own slider (components/slider.tsx), as on the other setup questions (the owner, November 14, 2026:
+    "the slider should copy from our good sliders already build"). Its readout is the flame's bubble, which names the stop. */
 export function GrowStops({ a, at, onAt }: { a: SetupAnswers; at: number; onAt: (i: number) => void }) {
-  const c = useTheme();
   const stops = obGrow(a);
   return (
-    <View style={s.stops} accessibilityRole="tablist">
-      <View style={[s.track, { backgroundColor: c.line }]} />
-      <View style={[s.track, { backgroundColor: c.accent, right: undefined, width: `${(at / (stops.length - 1)) * 75}%` }]} />
-      {stops.map((x, i) => {
-        const on = i === at;
-        const past = i <= at;
-        return (
-          <Pressable
-            key={x.at}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: on }}
-            accessibilityLabel={x.line}
-            onPress={() => onAt(i)}
-            style={s.stop}>
-            <View style={s.dotBox}>
-              <View
-                style={[
-                  s.dot,
-                  { backgroundColor: past ? c.accent : c.bg, borderColor: past ? c.accent : c.line },
-                  on && { width: 22, height: 22, borderRadius: 11 },
-                ]}
-              />
-            </View>
-            <Text style={[s.stopT, { color: on ? c.ink : c.muted, fontFamily: on ? font.bodyBold : font.body }]}>{x.at}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <Slider
+      label="How I grow with you"
+      value={at}
+      min={0}
+      max={stops.length - 1}
+      show={(v) => stops[v]?.at || ''}
+      lo={stops[0].at}
+      hi={stops[stops.length - 1].at}
+      endsShowValue={false}
+      readout={false}
+      onChange={onAt}
+    />
   );
 }
 
-/** the walk through the stops: one every so often, once, then it rests on the last */
+/** where the person is on the stops: tonight first, and Next (or the slider) moves on, one stop at a time (the owner, November 14,
+    2026: "the next button should move to the next dot not the next screen"). Each time the page comes up it starts from tonight. */
 export function useGrowWalk(n: number, on: boolean) {
-  const still = useReducedMotion();
   const [at, setAt] = useState(0);
-  const [held, setHeld] = useState(false);
-  /* each time the page comes up, the walk starts again from tonight */
   useEffect(() => {
-    if (!on) return;
-    setAt(0);
-    setHeld(false);
+    if (on) setAt(0);
   }, [on]);
-  useEffect(() => {
-    if (!on || still || held || at >= n - 1) return;
-    const t = setTimeout(() => setAt((x) => x + 1), at === 0 ? 1800 : 2100);
-    return () => clearTimeout(t);
-  }, [at, held, n, still, on]);
-  return {
-    at,
-    pick: (i: number) => {
-      setHeld(true);
-      setAt(i);
-    },
-  };
+  const last = at >= n - 1;
+  return { at, last, pick: (i: number) => setAt(Math.max(0, Math.min(n - 1, i))), step: () => setAt((x) => Math.min(n - 1, x + 1)) };
 }
 
 /** eight weeks with two slips: a streak counter falls to zero at each, the free days on the record here keep climbing */
@@ -169,12 +141,6 @@ export function WhyChart() {
 
 const s = StyleSheet.create({
   month: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
-  stops: { flexDirection: 'row', justifyContent: 'space-between', alignSelf: 'stretch', paddingTop: 4 },
-  track: { position: 'absolute', left: '12.5%', right: '12.5%', top: 13, height: 3, borderRadius: 2 },
-  stop: { flex: 1, alignItems: 'center', gap: 6, minHeight: 52 },
-  dotBox: { height: 22, justifyContent: 'center', alignItems: 'center' },
-  dot: { width: 16, height: 16, borderRadius: 8, borderWidth: 3 },
-  stopT: { fontSize: 15, lineHeight: 20 },
   lab: { position: 'absolute', fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   slipKey: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   slipDot: { width: 10, height: 10, borderRadius: 5 },

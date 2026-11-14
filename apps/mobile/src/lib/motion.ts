@@ -85,3 +85,10 @@ export const SPRING = {
   /** color and opacity: no bounce */
   effects: spr(1600, 1),
 };
+
+/* Celebrations settle, they never bounce (the owner, November 14, 2026: too bouncy; smooth and clean, like Duolingo's perfect
+   lesson). A damping ratio of 1 lands on the mark with no overshoot. Works for React Native's Animated.spring and Reanimated's
+   withSpring alike. See "Celebrations: calm, rare confetti" in docs/design-standards.md. */
+export const SETTLE = spr(220, 1);
+/** a bigger thing settling slowly: a flame, a medal */
+export const SETTLE_SLOW = spr(120, 1);

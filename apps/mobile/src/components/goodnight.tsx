@@ -28,7 +28,7 @@ import { Dock, SceneFrame } from '@/components/scene';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { NATIVE, SETTLE, useReducedMotion } from '@/lib/motion';
 import { close } from '@/lib/nav';
 import { count } from '@/lib/pulse';
 import { track } from '@/lib/events';
@@ -493,7 +493,7 @@ function PointsPop({ gain, delay, reduce }: { gain: number; delay: number; reduc
   const v = useRef(new Animated.Value(reduce ? 1 : 0)).current;
   useEffect(() => {
     if (reduce) return;
-    const a = Animated.sequence([Animated.delay(delay), Animated.spring(v, { toValue: 1, friction: 4, tension: 140, useNativeDriver: NATIVE })]);
+    const a = Animated.sequence([Animated.delay(delay), Animated.spring(v, { toValue: 1, ...SETTLE, useNativeDriver: NATIVE })]);
     a.start();
     return () => a.stop();
   }, [reduce, delay, v]);

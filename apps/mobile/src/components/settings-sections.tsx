@@ -39,6 +39,8 @@ import {
   lessonLast,
   OB_CREED,
   setFaith,
+  lessonLen,
+  setLessonLen,
   NIGHT_TIMES,
   PULL_LIFT,
   PULL_LONG,
@@ -168,6 +170,7 @@ export type PartId =
   | 'habit'
   | 'count'
   | 'faith'
+  | 'lessons'
   | 'answers'
   | 'sos'
   | 'pull'
@@ -182,7 +185,7 @@ export type PartId =
 
 /** the list, grouped by what the person came to do; each group's icons take one tone. Delete everything stands alone at the end. */
 const GROUPS: [string, Tone, PartId[]][] = [
-  ['Your quit', 'coral', ['habit', 'count', 'faith']],
+  ['Your quit', 'coral', ['habit', 'count', 'faith', 'lessons']],
   ['Your days', 'sky', ['routine', 'bed', 'remind']],
   ['When it hits', 'violet', ['sos', 'pull', 'nightpack', 'answers']],
   ['This phone', 'mint', ['look', 'lock', 'health', 'notes']],
@@ -391,6 +394,24 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
             <SetRow label="Tracking week, quitting and just tracking" onPress={() => router.push('/mode')} />
           </SetGroup>
         </>
+      ),
+    },
+
+    lessons: {
+      icon: 'book',
+      title: 'Lesson length',
+      value: lessonLen(st) === 'f' ? 'Long' : 'Short',
+      body: (
+        <SetGroup head="How long should a lesson be?" foot="Short plays the main idea and one check. Long adds the science and the questions behind it.">
+          <SetPick
+            options={[
+              ['q', 'Short, about 2 minutes'],
+              ['f', 'Long, about 5 minutes'],
+            ]}
+            value={lessonLen(st)}
+            onPick={(v) => v && apply({ st: setLessonLen(st, v) })}
+          />
+        </SetGroup>
       ),
     },
 
@@ -636,7 +657,7 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
               onPick={(v) => setThemePref(v)}
             />
           </SetGroup>
-          <SetGroup foot="Confetti and pop-ups for level-ups and badges. Off gives a quiet message instead. If your phone is set to reduce motion, the movement is already off.">
+          <SetGroup foot="A moment on screen for a new level, a new form of the flame and badges. Off gives a quiet message instead. If your phone is set to reduce motion, the movement is already off.">
             <SetSwitch label="Celebrations" on={st.celebrate} onChange={(on) => apply({ st: setCelebrate(st, on) })} />
             <SetRow
               label="Preview a celebration"

@@ -44,8 +44,8 @@ export default function Graduated() {
   const ink = nightInk.ink;
   return (
     <SceneFrame title="Graduation" sky="night" onClose={close} pin={<Button label="Keep going" onPress={close} />}>
-      <Fireworks bursts={6} />
-      <Confetti big />
+      <Fireworks bursts={3} />
+      <Confetti big={false} />
       <View style={s.body}>
         <Animated.View style={pop(flame, 0.5)}>
           <GradFlame level={g.level.n} size={size} />

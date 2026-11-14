@@ -30,7 +30,7 @@ import { Text } from '@/components/text';
 import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { BigFlame } from '@/components/big-flame';
-import { useChartColors, useGrow } from '@/components/charts';
+import { useChartColors, useCountUp, useGrow } from '@/components/charts';
 import { SVG_HIDE, type ShapeKind } from '@/components/shapes';
 import { FEEL_COLORS, feelKind } from '@/components/tools/feel';
 import { shapePath, type AnyShape } from '@/lib/m3-shapes';
@@ -990,10 +990,12 @@ function PairBar({ d, which, delay, H, w }: { d: PatDiff; which: 'clean' | 'slip
   const top = Math.max(d.clean, d.slip) || 1;
   const v = which === 'clean' ? d.clean : d.slip;
   const bar = Math.max(w, (v / top) * (H - 40));
+  /* the number counts up with its bar */
+  const shown = useCountUp(v, delay, 650);
   return (
     <View style={{ width: w, height: H, justifyContent: 'flex-end', alignItems: 'center' }}>
-      <Text numberOfLines={1} style={{ fontFamily: font.display, fontSize: w < 56 ? 17 : 22, lineHeight: 30, color: k.c.ink }}>
-        {fmtDiff(d, v)}
+      <Text numberOfLines={1} style={{ fontFamily: font.display, fontSize: w < 56 ? 17 : 22, lineHeight: 30, color: k.c.ink, fontVariant: ['tabular-nums'] }}>
+        {fmtDiff(d, shown)}
       </Text>
       <Rise h={bar} w={w} delay={delay}>
         <Svg width={w} height={bar} {...SVG_HIDE}>

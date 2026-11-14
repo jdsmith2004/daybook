@@ -8,6 +8,7 @@ import { Text } from '@/components/text';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 
 import { Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
@@ -232,7 +233,14 @@ export function NumbersTable({ cap, head, rows }: { cap: string; head: string[];
   const [open, setOpen] = useState(false);
   return (
     <View>
-      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={s.tv}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => {
+          buzz('tap');
+          setOpen(!open);
+        }}
+        style={s.tv}>
         <Text style={{ fontFamily: font.bodySemi, fontSize: 13, color: c.accentText }}>{open ? 'Hide the numbers' : 'Show the numbers'}</Text>
         <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
           <Icon name="next" size={16} color={c.accentText} />

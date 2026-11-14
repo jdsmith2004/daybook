@@ -146,8 +146,16 @@ need, without letting the screen turn into a list of features.
   - **Ask the real questions early,** each with the options and a recommendation, then build without stopping. When the
     owner says to use your judgment, decide and say what you chose.
   - **Build it on a feature branch, look at it on the web, and show the owner on the web** (the simulator only when the
-    part is native and the web cannot show it; see "Web first" below). Never merge it before the owner has seen it; this
-    overrides "merge when the tests pass" above.
+    part is native and the web cannot show it; see "Web first" below). Merge it when it is good, then show the owner on the
+    web (see "Merge, then show it on the web" below).
+- **Merge, then show it on the web (the owner, November 14, 2026: "just do a solid, thorough QA on the web, but we don't need
+  to use a simulator. And then all of them, I want to show me what changes they made on the web. And they're free to merge as
+  well. And then I can just tell them to make changes if they need to. But just merge it and say, here's the changes on the
+  web that I made. Take a look. And would you like to archive the chat?").** Every chat, redesigns included: a thorough QA
+  on the web (no simulator), merge to `main` without waiting for a yes, then leave the web preview open on the change in the
+  browser pane with pictures in the report ("here are the changes I made on the web, take a look"), and ask "Archive this
+  chat?" with Yes and No. The owner asks for changes after. A question the owner was asked to decide (a choice of direction,
+  sample lessons to judge) still waits for the answer before the work it decides. The iPhone QA happens before publishing.
 - **Merge to main, then archive; the iPhone check is TestFlight from main (the owner, November 13, 2026: "i want the chats
   to merge to main then archive alot of these chats keep not merging to main bc it's not tested on iphone, we will test it on
   iphone by making a build from main and publishing it to testflight").** A chat whose work is done (tests pass, QA on the web

@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
 /** what a payment opens: an icon, the name and a line, with a check once it is open */
@@ -53,7 +54,10 @@ export function PayRow({
       accessibilityLabel={`${name}, ${price}${sub ? '. ' + sub : ''}${badge ? ', ' + badge : ''}`}
       accessibilityState={{ disabled: off, busy }}
       disabled={off}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [
         s.row,
         { backgroundColor: c.surface, borderColor: pick ? c.accent : 'transparent', opacity: off && !busy ? 0.6 : pressed ? 0.8 : 1 },
@@ -113,7 +117,10 @@ export function Plans({ list, on, off, onPick }: { list: PlanChoice[]; on: strin
             accessibilityLabel={`${p.name}, ${p.price} ${p.per}. ${p.sub}${p.badge ? '. ' + p.badge : ''}`}
             accessibilityState={{ checked: here, disabled: off }}
             disabled={off}
-            onPress={() => onPick(p.id)}
+            onPress={() => {
+              if (!here) buzz('tap');
+              onPick(p.id);
+            }}
             style={({ pressed }) => [
               s.plan,
               i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line },

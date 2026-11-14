@@ -169,7 +169,14 @@ function Tile({ m, sky, onPress, onAlt }: { m: Moment; sky: StopTile['sky']; onP
         </Pressable>
       ) : null}
       {m.alt && onAlt ? (
-        <Pressable accessibilityRole="button" onPress={onAlt} hitSlop={8} style={s.alt}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            buzz('tap');
+            onAlt();
+          }}
+          hitSlop={8}
+          style={s.alt}>
           <Text style={[s.altT, { color: soft }]}>{m.alt}</Text>
         </Pressable>
       ) : null}

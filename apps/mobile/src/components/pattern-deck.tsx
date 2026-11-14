@@ -15,6 +15,7 @@ import { CARD_SKY } from '@/components/pattern-charts';
 import { LockAsk } from '@/components/support';
 import { Text } from '@/components/text';
 import { T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { NATIVE } from '@/lib/motion';
 import { tabRoom } from '@/lib/tab-room';
 import { font, nightInk, palettes, PaletteOverride, useTheme } from '@/lib/theme';
@@ -184,7 +185,10 @@ export function Deck({
                 accessibilityRole="tab"
                 accessibilityLabel={d.title}
                 accessibilityState={{ selected: i === index }}
-                onPress={() => sv.current?.scrollTo({ x: i * step, animated: true })}
+                onPress={() => {
+                  if (i !== index) buzz('tap');
+                  sv.current?.scrollTo({ x: i * step, animated: true });
+                }}
                 style={[s.tickHit, { width: tick }]}>
                 <View style={[s.tick, { backgroundColor: c.muted, opacity: 0.45 }]} />
               </Pressable>

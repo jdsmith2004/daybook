@@ -29,7 +29,14 @@ export const LowInk = createContext('#FFFFFF');
 export function Quiet({ label, onPress, half }: { label: string; onPress: () => void; half?: boolean }) {
   const low = useContext(LowInk);
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={4} style={({ pressed }) => [half ? s.quietHalf : s.quiet, { opacity: pressed ? 0.6 : 1 }]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      hitSlop={4}
+      style={({ pressed }) => [half ? s.quietHalf : s.quiet, { opacity: pressed ? 0.6 : 1 }]}>
       <Text style={[s.quietT, { color: low }]}>{label}</Text>
     </Pressable>
   );
@@ -262,11 +269,14 @@ export function Answer({
   onPress,
   label,
   style,
+  corner,
   children,
 }: {
   sel: boolean;
   right: boolean;
   quiet?: boolean;
+  /** a tile in a grid, its words centered: the check sits in the top corner, clear of the words */
+  corner?: boolean;
   onPress: () => void;
   label?: string;
   style?: ViewStyle;
@@ -283,8 +293,12 @@ export function Answer({
     }
     wasRight.current = right;
   }, [right, still, land]);
+  /* the bounce wraps the answer, so the wrapper is what sits in the row: where the answer goes and how wide it is (a two-across
+     grid's flexBasis) belong to it, and the answer fills it. Put on the answer inside, a grid came out ragged and one-across
+     rows shrank to their words (November 14, 2026). */
+  const { outer, inner } = splitPlace(style);
   return (
-    <Animated.View style={{ transform: [{ scale: land }] }}>
+    <Animated.View style={[outer, { transform: [{ scale: land }] }]}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ selected: sel }}
@@ -301,17 +315,47 @@ export function Answer({
               ? { backgroundColor: sel ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.62)', shadowOpacity: 0 }
               : { backgroundColor: PAPER, shadowColor: PAPER_LIP, shadowOpacity: 1 },
           { borderColor: sel && !right ? PAPER_INK : 'transparent', transform: [{ translateY: pressed && !quiet ? 2 : 0 }] },
-          style,
+          inner,
         ]}>
         {children}
         {right ? (
-          <View style={s.optTick}>
+          <View style={corner ? s.optCorner : s.optTick}>
             <Icon name="check" size={18} color="#FFFFFF" />
           </View>
         ) : null}
       </Pressable>
     </Animated.View>
   );
+}
+/** an answer's style, split: what places it in its row goes on the bounce wrapper, the rest on the answer, which fills the wrapper */
+const PLACE = [
+  'flex',
+  'flexBasis',
+  'flexGrow',
+  'flexShrink',
+  'width',
+  'minWidth',
+  'maxWidth',
+  'alignSelf',
+  'margin',
+  'marginTop',
+  'marginBottom',
+  'marginLeft',
+  'marginRight',
+  'marginHorizontal',
+  'marginVertical',
+] as const;
+function splitPlace(style?: ViewStyle): { outer: ViewStyle; inner: ViewStyle } {
+  const flat = { ...(style || {}) } as Record<string, unknown>;
+  const outer: Record<string, unknown> = {};
+  const inner: Record<string, unknown> = {};
+  for (const k in flat) {
+    if ((PLACE as readonly string[]).includes(k)) outer[k] = flat[k];
+    else inner[k] = flat[k];
+  }
+  /* a placed answer fills its wrapper, down to the height of the tallest in its row */
+  if (Object.keys(outer).length) inner.flexGrow = 1;
+  return { outer: outer as ViewStyle, inner: inner as ViewStyle };
 }
 /** the words on an answer, in its ink */
 export function AnswerText({ right, quiet, sel, children, center }: { right: boolean; quiet?: boolean; sel?: boolean; children: ReactNode; center?: boolean }) {
@@ -394,4 +438,5 @@ const s = StyleSheet.create({
   },
   optT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   optTick: { position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' },
+  optCorner: { position: 'absolute', right: 10, top: 8 },
 });

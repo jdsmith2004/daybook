@@ -154,7 +154,14 @@ export default function DaySheet() {
           <SheetH title="Check-in" />
         </View>
         {x.ci && !editing ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Edit the check-in" onPress={() => setEdit(date)} style={s.editB}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Edit the check-in"
+            onPress={() => {
+              buzz('tap');
+              setEdit(date);
+            }}
+            style={s.editB}>
             <Text style={[s.edit, { color: c.accentText }]}>Edit</Text>
           </Pressable>
         ) : null}

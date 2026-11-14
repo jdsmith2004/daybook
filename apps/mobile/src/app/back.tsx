@@ -13,7 +13,7 @@ import { Dock, SceneFrame } from '@/components/scene';
 import { Slider, SliderValue } from '@/components/slider';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { NATIVE, SETTLE_SLOW, useReducedMotion } from '@/lib/motion';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 
@@ -126,7 +126,7 @@ function Rekindle({ size, children }: { size: number; children: React.ReactNode 
       return;
     }
     Animated.parallel([
-      Animated.spring(up, { toValue: 1, friction: 5, tension: 70, useNativeDriver: NATIVE }),
+      Animated.spring(up, { toValue: 1, ...SETTLE_SLOW, useNativeDriver: NATIVE }),
       Animated.timing(ring, { toValue: 1, duration: 1100, delay: 160, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE }),
     ]).start();
   }, [reduce, up, ring]);

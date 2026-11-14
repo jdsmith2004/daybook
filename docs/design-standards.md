@@ -79,6 +79,23 @@ tap away as More. Colors come from `lessonLook` through `PaletteOverride`, so wh
 - **Text does not jump.** A choice on a screen (like how strong an urge is) must not swap the words above it or move the
   layout. Lines picked at random are picked once per visit and kept.
 
+## Celebrations: calm, rare confetti (the owner, November 14, 2026)
+
+"The app has too much confetti, it needs more subtlety", and the celebrations were "too bouncy". The feel to match is Duolingo's
+perfect-lesson screen: smooth and clean, things slide and settle into place, nothing wobbles.
+
+- **Confetti is rare.** Only the biggest moments throw it: a new form of the flame (`Earned`, kind `form`) and graduation. Even
+  then it is light, short and soft: under twenty pieces close round the flame (`Burst` with a small `n`), or one soft fall for
+  graduation, gone in under two seconds. Never a shower across the whole screen, never two layers of it.
+- **Everyday moments get no confetti.** The morning, the check-in, a plain level, a badge, an urge ridden out, the comeback, Good
+  night, a feature unlocking and the streak lighting carry themselves with the flame's own bloom, a quiet glow or ring, and at most
+  a few twinkling stars (`Sparkles`). If a moment seems flat without confetti, make the flame and the words land better instead.
+- **Settle, never bounce.** Anything that comes in on a celebration settles with `SETTLE` (or `SETTLE_SLOW` for a flame or a
+  medal) from `lib/motion.ts`: springs with a damping ratio of 1, which land on the mark with no overshoot. No `Easing.back`, no
+  low-friction springs, no squash that springs back past its rest, no wobbling rotation on a shout. A scale-in starts close to
+  full size (0.8 or more), so it reads as arriving, not popping.
+- **The lesson finish** follows the same rule; it is its own component (`components/lesson-finish.tsx`).
+
 ## Timers
 
 - **One timer.** A tool that runs for a set time uses `ToolTimer` (`components/tools/timer.tsx`): the squiggle ring
@@ -116,7 +133,7 @@ tap away as More. Colors come from `lessonLook` through `PaletteOverride`, so wh
 
 - **One ending for each kind of moment.** An urge ridden out ends on the same celebration wherever it is logged: the
   ride's It passed, the 10-minute pause's It passed (from SOS or on its own) and Already happened, I rode it out all use
-  `RodeOut` (`components/rode-out.tsx`): the flame with its burst, confetti, how long it took, how many have been ridden
+  `RodeOut` (`components/rode-out.tsx`): the flame with a few twinkling stars (no confetti), how long it took, how many have been ridden
   out, what helped (the moves of an SOS, or what you did) and what set it off, each one tap or none.
 - **A slip always reaches the comeback, from its first page.** Every way in starts at the hold: I slipped in SOS, the pause, Already
   happened, the entry sheet (a new slip, or an entry changed to Slipped) and "I went ahead" in Talk it through's look back. The hold

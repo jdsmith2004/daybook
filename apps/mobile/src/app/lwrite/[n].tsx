@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LxCheck } from '@/components/lesson-art';
 import { Button, Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { close, closeAll } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -139,7 +140,13 @@ export default function Lwrite() {
 function Route({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s.soft, { backgroundColor: c.accentSoft, opacity: pressed ? 0.7 : 1 }]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      style={({ pressed }) => [s.soft, { backgroundColor: c.accentSoft, opacity: pressed ? 0.7 : 1 }]}>
       <T v="label" tone="accentText" style={{ flex: 1 }}>
         {label}
       </T>

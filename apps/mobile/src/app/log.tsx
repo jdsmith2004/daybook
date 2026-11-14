@@ -295,7 +295,7 @@ export default function Log() {
   let body: React.ReactNode;
   let footer: React.ReactNode = null;
   let sky: Sky = 'sky';
-  let title = from === 'urge' ? 'SOS' : from === 'pause' ? 'Pause' : 'Already happened';
+  let title = from === 'urge' ? 'SOS' : from === 'pause' ? 'Pause' : 'Log a slip';
   let dots: { n: number; i: number; label: string } | null = null;
 
   /* an urge ridden out: the one celebration, with what helped and what set it off inside it */
@@ -412,7 +412,10 @@ export default function Log() {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={crisis.how + ', ' + crisis.called.replace('&', 'and')}
-                  onPress={() => Linking.openURL('tel:' + crisis.dial)}
+                  onPress={() => {
+                    buzz('tap');
+                    Linking.openURL('tel:' + crisis.dial);
+                  }}
                   hitSlop={6}
                   style={({ pressed }) => [s.help, { opacity: pressed ? 0.6 : 1 }]}>
                   <Icon name="phone" size={16} color={nightInk.muted} />
@@ -463,7 +466,14 @@ function SavedPill({ text, onUndo }: { text: string; onUndo?: () => void }) {
         Saved · {text.replace(/ (AM|PM)/, '\u00A0$1')}
       </T>
       {onUndo ? (
-        <Pressable accessibilityRole="button" onPress={onUndo} hitSlop={10} style={{ paddingHorizontal: 8, minHeight: 36, justifyContent: 'center' }}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            buzz('tap');
+            onUndo();
+          }}
+          hitSlop={10}
+          style={{ paddingHorizontal: 8, minHeight: 36, justifyContent: 'center' }}>
           <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText, textDecorationLine: 'underline' }}>Undo</Text>
         </Pressable>
       ) : (
@@ -479,7 +489,10 @@ function QuietButton({ icon, label, sub, a11y, onPress }: { icon: string; label:
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={a11y || label}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.quiet, { backgroundColor: nightInk.btn, opacity: pressed ? 0.75 : 1 }]}>
       <Icon name={icon} size={20} color={nightInk.ink} />
       <View style={{ flexShrink: 1 }}>

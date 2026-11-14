@@ -5,13 +5,13 @@
 
    - A new form of the flame, the biggest moment of all (about 6 seconds): the old form stands big in the night, so the person
      sees what it was; it trembles and gathers its light, with knocks that come faster; a white flash fills the screen; the new
-     form lands, huge, with a heavy knock and a burst of confetti and stars; "Your flame grew!" pops; the form's name lands and
+     form lands, huge, with a heavy knock and a light, short burst of confetti; "Your flame grew!" settles in; the form's name lands and
      the level number turns over; the form's meaning fades in; the points line fills as gold stars fly into it and turns over
      to the new level, then the form's own line steps on; then the button.
-   - A level (about 4 seconds): the flame springs up and blooms, "Level up!" pops with confetti and a buzz, the number turns
+   - A level (about 4 seconds): the flame rises and blooms, "Level up!" settles in with sparks (no confetti) and a buzz, the number turns
      over, the step of the form shows, the points line fills and turns over, the form's line steps on, then the button.
-   - A badge (about 4 seconds): rays turn behind an empty spot, "New badge!" pops, the medal drops in from above and bounces
-     with a firm knock, the stars twinkle, its name lands, what it was for fades in, then the button.
+   - A badge (about 4 seconds): rays turn behind an empty spot, "New badge!" settles in, the medal drops in from above and
+     settles with a firm knock (no bounce, no confetti), the stars twinkle, its name lands, what it was for fades in, then the button.
 
    Anything else earned at the same time lands under it as small rows, one at a time: never a second moment on top of this one
    (CelebrateHost queues). A tap anywhere brings it all in at once. Reduce Motion: everything there, settled, one buzz.
@@ -48,7 +48,7 @@ import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
 import { useFuture } from '@/lib/future';
-import { useReducedMotion } from '@/lib/motion';
+import { SETTLE, SETTLE_SLOW, useReducedMotion } from '@/lib/motion';
 import { useQuietAsks } from '@/lib/quiet-asks';
 import { play } from '@/lib/sound';
 import { useStore } from '@/lib/store';
@@ -286,7 +286,8 @@ function Moment({
           </Pressable>
         </Reanimated.View>
       </View>
-      {!still && !quiet && shout ? <Burst fire={boom} x={win.width / 2} y={burstY} w={win.width} n={kind === 'form' ? 44 : 32} /> : null}
+      {/* confetti only for a new form, and light (docs/design-standards.md, Celebrations); a level and a badge get the glow and sparks */}
+      {!still && !quiet && kind === 'form' ? <Burst fire={boom} x={win.width / 2} y={burstY} w={win.width} n={16} /> : null}
     </View>
   );
 }
@@ -327,7 +328,7 @@ function Row({ it, at, still, quiet }: { it: CelItem; at: number; still: boolean
     if (still) return;
     const t = setTimeout(() => {
       if (!quiet) knock(Haptics.ImpactFeedbackStyle.Light);
-      v.value = withSpring(1, { damping: 16, stiffness: 320, mass: 0.8 });
+      v.value = withSpring(1, SETTLE);
     }, at);
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -360,7 +361,7 @@ function Row({ it, at, still, quiet }: { it: CelItem; at: number; still: boolean
 function Title({ text, at, still, big }: { text: string; at: number; still: boolean; big: boolean }) {
   const v = useSharedValue(still ? 1 : 0);
   useEffect(() => {
-    if (!still) v.value = withDelay(at, withSpring(1, { damping: 9, stiffness: 200 }));
+    if (!still) v.value = withDelay(at, withSpring(1, SETTLE));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const st = useAnimatedStyle(() => ({ opacity: Math.min(1, v.value * 2), transform: [{ scale: interpolate(v.value, [0, 1], [0.6, 1]) }] }));
   return (
@@ -381,7 +382,7 @@ function Turn({ from, to, at, still, quiet }: { from: number; to: number; at: nu
     show.value = withDelay(at - 250, withTiming(1, { duration: 220 }));
     const t = setTimeout(() => {
       if (!quiet) knock(Haptics.ImpactFeedbackStyle.Medium);
-      v.value = withSpring(1, { damping: 8, stiffness: 170 });
+      v.value = withSpring(1, SETTLE);
     }, at + 120);
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -409,7 +410,7 @@ function Rise({ level, size, still, quiet }: { level: number; size: number; stil
   useEffect(() => {
     if (still) return;
     if (!quiet) knock(Haptics.ImpactFeedbackStyle.Heavy);
-    v.value = withSpring(1, { damping: 9, stiffness: 150 });
+    v.value = withSpring(1, SETTLE_SLOW);
     const t = setTimeout(() => setPulse((p) => p + 1), BEATS.level.shout);
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -438,7 +439,7 @@ function Halo({ size, at, still, quiet }: { size: number; at: number; still: boo
   const ring = useSharedValue(0);
   useEffect(() => {
     if (still) return;
-    rays.value = withDelay(at - 120, withTiming(1, { duration: 650, easing: Easing.out(Easing.back(1.6)) }));
+    rays.value = withDelay(at - 120, withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) }));
     spin.value = withRepeat(withTiming(1, { duration: 18000, easing: Easing.linear }), -1);
     ring.value = withDelay(at, withTiming(1, { duration: 850, easing: Easing.out(Easing.cubic) }));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -496,7 +497,7 @@ function Drop({ id, icon, tone, size, still, quiet }: { id: string; icon: string
         buzz('land');
       }
       /* the landing: a squash, then it springs back to its shape */
-      squash.value = withSequence(withTiming(1, { duration: 90, easing: Easing.out(Easing.quad) }), withSpring(0, { damping: 6, stiffness: 260, mass: 0.7 }));
+      squash.value = withSequence(withTiming(1, { duration: 90, easing: Easing.out(Easing.quad) }), withSpring(0, SETTLE));
       ring.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) });
       flare.value = withSequence(withTiming(1, { duration: 120 }), withTiming(0, { duration: 900, easing: Easing.out(Easing.quad) }));
     });
@@ -658,7 +659,7 @@ function Grow({ from, to, size, still, quiet }: { from: number; to: number; size
       gather.value = withTiming(0, { duration: 500 });
       shake.value = 0;
       light.value = withTiming(0, { duration: 900, easing: Easing.out(Easing.quad) });
-      land.value = withSpring(1, { damping: 8, stiffness: 120 });
+      land.value = withSpring(1, SETTLE_SLOW);
     });
     return () => tm.forEach(clearTimeout);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

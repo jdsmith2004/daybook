@@ -129,7 +129,7 @@ interface Got {
 const PREVIEW_ON = process.env.EXPO_PUBLIC_SHOTS === '1';
 
 export default function LessonScreen() {
-  const { id, at, pick: picked, len: lenQ } = useLocalSearchParams<{ id: string; at?: string; pick?: string; len?: string }>();
+  const { id, at, pick: picked, len: lenQ, card: cardQ } = useLocalSearchParams<{ id: string; at?: string; pick?: string; len?: string; card?: string }>();
   /* the lesson preview (dev only, the demo build: /lesson-preview): any lesson opens at the length asked for, with nothing in the way */
   const preview = PREVIEW_ON && at === 'preview';
   const { snap, tk, update, apply, say } = useStore();
@@ -149,7 +149,8 @@ export default function LessonScreen() {
   const L = found && lessonTo(found, st);
   /* back from a tool or a page the practice step sent the person to: straight to the result, nothing is replayed */
   const [stage, setStage] = useState<Stage>(at === 'practiced' ? 'practiced' : 'cover');
-  const [i, setI] = useState(0);
+  /* the preview may open on one card (card=N, counted from 1), to look at a single screen */
+  const [i, setI] = useState(preview && cardQ ? Math.max(0, Number(cardQ) - 1) : 0);
   /* what Daybook learns: when it opened, each part reached, and a lesson left before its end (lib/events.ts) */
   const opened = useRef(Date.now());
   /* how long the cards took, for the finish's time tile */
@@ -1145,10 +1146,10 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
             {(bn ? 'From lesson ' + bn : 'From') + ', ' + B.title}
           </T>
         ) : null}
-        <T style={[s.h, s.hsm]} accessibilityRole="header">
+        <T style={[s.h, h.length > 64 && s.hsm]} accessibilityRole="header">
           {h}
         </T>
-        {beat.p ? <Rich text={beat.p} st={st} style={s.p} /> : null}
+        {beat.p ? <StoryWords key={L.id + card.h} text={beat.p} st={st} /> : null}
         {card.fact ? <Fact text={card.fact.s} onPress={onSrc} /> : null}
         <View style={s.storyFoot}>
           <FlameSlot size={92} min={84} side style={s.storyFlame} />
@@ -1195,6 +1196,35 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
       {beat.say ? <Bubble text={beat.say} style={{ marginTop: 16 }} /> : null}
       <FlameSlot size={art || own.length ? Math.min(want, SHORT ? 180 : 230) : want} min={art || own.length ? 84 : 96} />
     </>
+  );
+}
+/* a story card's words come in a sentence at a time, so a paragraph never lands as a wall (a reading study found sentence by
+   sentence read as well as a whole page, and people preferred it). Every sentence holds its place from the start, so nothing moves
+   as it comes in, and a tap shows the rest at once. With Reduce Motion on, all of it is there. The words are a little larger and a
+   little softer than the heading, which is easier on the eye in light on a dark sky. (The owner, November 14, 2026: "ways that we
+   could make the words or text easier to read or bigger".) */
+const SENTENCE_MS = 650;
+function StoryWords({ text, st }: { text: string; st: Settings }) {
+  const still = useReducedMotion();
+  const parts = text.match(/[^.?!]+[.?!]+[”’"]?\s*|[^.?!]+$/g) || [text];
+  const [n, setN] = useState(still ? parts.length : 0);
+  useEffect(() => {
+    if (n >= parts.length) return;
+    const id = setTimeout(() => setN((x) => x + 1), n === 0 ? 350 : SENTENCE_MS);
+    return () => clearTimeout(id);
+  }, [n, parts.length]);
+  return (
+    <Pressable onPress={() => setN(parts.length)} accessible accessibilityLabel={text.replace(/\*\*/g, '')} disabled={n >= parts.length}>
+      <T style={s.storyP}>
+        {parts.map((x, i) =>
+          lfmt(x, st).map((y, k) => (
+            <Text key={i + '.' + k} style={[y.b ? s.storyB : null, i < n ? null : s.unseen]}>
+              {y.t}
+            </Text>
+          )),
+        )}
+      </T>
+    </Pressable>
   );
 }
 /** the solid violet card: a giant number that starts a sentence, one line of what it means, and where it comes from. No sky, no flame. */
@@ -1368,6 +1398,9 @@ const s = StyleSheet.create({
   x: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   guessMid: { alignItems: 'center', justifyContent: 'center', minHeight: 110 },
   art: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+  storyP: { fontSize: 20, lineHeight: 28, opacity: 0.92 },
+  storyB: { fontFamily: font.bodyBold },
+  unseen: { color: 'transparent' },
   storyFoot: { flexGrow: 1, justifyContent: 'flex-end' },
   storyFlame: { flexGrow: 0, height: 84 },
   storyArt: { alignItems: 'center', justifyContent: 'center', marginBottom: 8 },

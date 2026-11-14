@@ -80,7 +80,7 @@ export const STORIES_B: Record<string, Story> = {
       },
       {
         h: 'The tired brains lit up more for the same pictures.',
-        p: 'After one lost night, the part of the brain that answers to reward fired harder, and the tired group rated plain, ordinary pictures as more pleasant. Nothing about the pictures had changed.',
+        p: 'After one lost night, the part of the brain that answers to reward **fired harder**, and the tired group rated plain, ordinary pictures as more pleasant. Nothing about the pictures had changed.',
         art: ['scene', { k: 'brain-glow' }],
         fact: { s: 'Study · Gujar, Yoo, Hu & Walker, 2011', i: [0] },
       },

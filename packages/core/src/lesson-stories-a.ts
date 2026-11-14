@@ -73,7 +73,7 @@ export const STORIES_A: Record<string, Story> = {
       },
       {
         h: 'Then those people were asked about the big lawn sign.',
-        p: 'About 76 in every 100 said yes. One tiny yes, weeks before, made the big yes more than four times as likely.',
+        p: 'About 76 in every 100 said yes. One tiny yes, weeks before, made the big yes **more than four times as likely**.',
         art: ['people', { n: 76, was: 17, s: 'said yes' }],
       },
       {
@@ -455,7 +455,7 @@ export const STORIES_A: Record<string, Story> = {
       },
       {
         h: 'Nobody is dragged there.',
-        p: 'The coachman has a sweet voice and asks nothing. Every boy climbs into the coach because he wants to.',
+        p: 'The coachman has a sweet voice and asks nothing. Every boy climbs into the coach **because he wants to**.',
         art: ['scene', { k: 'coach-ride' }],
       },
       {

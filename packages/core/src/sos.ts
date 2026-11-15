@@ -62,8 +62,10 @@ export interface UrMem {
   sosAt?: number;
   /** when Talk it through or Walk it through was last open on this device: the asks wait after them as after an SOS */
   careAt?: number;
-  /** how many times the ride was swiped to the next move, counted up to 3: until then SOS shows how to swipe */
+  /** how many times the ride was swiped to the next move, counted up to 3 (in SOS or in setup's try) */
   swiped?: number;
+  /** the ride showed how to swipe (the page lifting by itself) once: it never does again (rideHint) */
+  hinted?: boolean;
   [bucket: string]: unknown;
 }
 
@@ -398,6 +400,24 @@ export function urNote(mem: UrMem, sug: string | null, picked: string | null): U
     if (picked && urTool(picked)) pick[picked] = Math.min(4, (pick[picked] | 0) + 1);
   }
   return Object.keys(pick).length ? { ...mem, pass, pick } : { ...mem, pass };
+}
+
+/** whether the ride shows how to swipe: the page lifts by itself to show the next move below, once ever, and only for someone who has
+    never swiped to the next move (in SOS or in setup's try). After that it is assumed they know (the owner, November 14, 2026: "it
+    should only do it once, and then we just assume they know"); the next page's edge is the only cue left. */
+export function rideHint(mem: UrMem): boolean {
+  return !(Number(mem.swiped) > 0) && !mem.hinted;
+}
+
+/** the ride's swipe lesson played: it never plays again */
+export function rideHinted(mem: UrMem): UrMem {
+  return mem.hinted ? mem : { ...mem, hinted: true };
+}
+
+/** swiped to the next move: one more swipe learned, counted up to 3 */
+export function rideSwiped(mem: UrMem): UrMem {
+  const n = Number(mem.swiped) || 0;
+  return n >= 3 ? mem : { ...mem, swiped: n + 1 };
 }
 
 /** an SOS that ended in "It passed": each tool you chose yourself whose round passed counts once (up to 4), for the tag */

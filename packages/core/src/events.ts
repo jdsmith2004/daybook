@@ -54,15 +54,15 @@ export const EV_NAMES = {
   /* the log */
   urge: 'Logged an urge (str, trigger, outcome)',
   slip: 'Logged a slip (trigger, hrs: hours since the slip before, in bands; after and nh: a reminder that came in the hour before the slip, its kind and the hour it came)',
-  happened: 'Used Already happened',
-  planning: 'Used Planning a slip?',
+  happened: 'Used Log a slip',
+  planning: 'Made a plan for tonight',
   rekindle: 'Did a Rekindle step (step)',
   comeback: 'Came back from a slip: all three of its flames lit',
   checkin: 'Saved a check-in (mood, sleep, str)',
   recheck: 'Answered the monthly five questions (q1 to q5)',
   free: 'Answered "How much do you see yourself as someone free of this?" (free: 0 to 10; rode30 and slips30: urges ridden out and slips in the last 30 days)',
   sunday: 'Finished the Sunday review',
-  wind: 'Said Goodnight in the wind-down',
+  wind: 'Said Good night in the wind-down',
   /* the flame */
   level_up: 'Reached a new level (lvl)',
   form: 'The flame reached a new form (ix)',

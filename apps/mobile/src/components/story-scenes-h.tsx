@@ -12,4 +12,13 @@ import { SCENES_H6 } from './story-scenes-h6';
 import { SCENES_H7 } from './story-scenes-h7';
 import { SCENES_H8 } from './story-scenes-h8';
 
-export const SCENES_H: Record<string, ComponentType<{ k: Ink }>> = { ...SCENES_H1, ...SCENES_H2, ...SCENES_H3, ...SCENES_H4, ...SCENES_H5, ...SCENES_H6, ...SCENES_H7, ...SCENES_H8 };
+export const SCENES_H: Record<string, ComponentType<{ k: Ink }>> = {
+  ...SCENES_H1,
+  ...SCENES_H2,
+  ...SCENES_H3,
+  ...SCENES_H4,
+  ...SCENES_H5,
+  ...SCENES_H6,
+  ...SCENES_H7,
+  ...SCENES_H8,
+};

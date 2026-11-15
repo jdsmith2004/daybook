@@ -101,3 +101,4 @@ export * from './night-pack';
 export * from './mithras';
 export * from './mithras-feelings';
 export * from './journal-insights';
+export * from './voice';

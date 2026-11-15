@@ -470,22 +470,22 @@ const help = (t: string, v: string, sub = '', ic = 'life'): Go => ({ t, a: 'help
 
 export const NIGHT_PRACTICE: Record<string, PStep> = {
   l54: {
-    h: 'Let the morning decide for tonight.',
-    p: 'Add the line that fits your nights while your head is clear. Tonight only has to follow it.',
+    h: 'Let your rested self set up the worn-out hours.',
+    p: 'Add the line that fits your hardest hours while you still have energy. The worn-out you only has to follow it.',
     mins: 1,
     items: [
-      plan('it is 10 p.m.', 'Put the phone on its charger outside my room, and get ready for bed.'),
-      plan('I am in bed and want my phone', 'Leave it where it is. Read, or lie still until sleep comes.'),
+      plan('I am worn out and the pull starts', 'Do the one thing I set up while I was rested, before anything else.'),
+      plan('the hour that usually wears me down comes', 'Move what I reach for out of reach first, then eat, rest or call someone.'),
     ],
-    go: [{ t: 'Set my screens-off time', a: 'tab', v: 'settings', open: 's-sched', ic: 'moon' }],
-    ok: 'Tonight is set up already.',
+    go: [{ t: 'Open my plan', a: 'tab', v: 'plan', ic: 'calendar' }],
+    ok: 'Your worn-out hours have a plan now.',
   },
   l55: {
-    h: 'Give your phone its own bed.',
-    p: 'Pick where it charges tonight, and add the line, so the plan is there when the night comes.',
+    h: 'Give your phone its own place to sleep.',
+    p: 'Pick where it charges, and add the line, so the plan is there before your hard hours come.',
     mins: 1,
     items: [
-      plan('it is time for bed', 'Plug the phone in outside my room, and use my alarm clock to wake up.'),
+      plan('I am going to sleep', 'Plug the phone in outside my room, and use my alarm clock to wake up.'),
       line('wind', 'Phone on its charger in the kitchen'),
     ],
     go: [help('Phone and night setup', 'phone', 'night', 'phone')],
@@ -497,7 +497,7 @@ export const NIGHT_PRACTICE: Record<string, PStep> = {
     mins: 2,
     items: [
       copy('To someone I trust', 'Could you set a passcode on my phone limits for me, and keep it to yourself? It helps me stay on track.'),
-      plan('I find a way around my block', 'Put the phone down for ten minutes, and close that door in the morning.'),
+      plan('I find a way around my block', 'Put the phone down for ten minutes, and close that door in my next calm hour.'),
     ],
     go: [help('Block it on my phone', 'phone', '', 'shield')],
     ok: 'You know your doors now.',

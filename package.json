@@ -18,7 +18,8 @@
     "journey": "node --experimental-strip-types --no-warnings scripts/journey.ts",
     "release-check": "node scripts/release-check.mjs",
     "story": "node --experimental-strip-types --no-warnings scripts/story.ts",
-    "story:walk": "node --experimental-strip-types --no-warnings scripts/walk-story.ts"
+    "story:walk": "node --experimental-strip-types --no-warnings scripts/walk-story.ts",
+    "voice": "node --no-warnings --import ./scripts/ts-resolve.mjs scripts/voice.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

@@ -160,12 +160,27 @@ describe('setup in two minutes (WP10)', () => {
       const y = core.obYear({ freq: f })!;
       expect(core.obYearMarks(y.n).filter(Boolean).length).toBe(y.n);
     }
-    /* the flame grows at every stop, and the last one says it in their own reason */
+    /* the flame grows at every stop, from the first week, not tonight (the owner, November 15, 2026), and Day 90 is who the person
+       is, never a promise about their life */
     const g = core.obGrow({ for: ['health', 'love'] });
-    expect(g.map((x) => x.at)).toEqual(['Tonight', 'Week 1', 'Month 1', 'Day 90']);
+    expect(g.map((x) => x.at)).toEqual(['Week 1', 'Month 1', 'Month 2', 'Day 90']);
     for (let i = 1; i < g.length; i++) expect(core.formOfLevel(g[i].level)).toBeGreaterThan(core.formOfLevel(g[i - 1].level));
-    expect(g[3].line).toMatch(/clear mornings/);
-    expect(core.obGrow({})[3].line).toMatch(/free of it/);
+    expect(g.map((x) => x.line).join(' ')).not.toMatch(/people you love|Tonight/);
+    expect(g[3].line).toMatch(/free of it/);
+    expect(
+      core
+        .obGrow({ habit: 'alcohol' })
+        .map((x) => x.line)
+        .join(' '),
+    ).not.toMatch(/porn/);
+    /* Next visits every stop in turn and leaves only from the last (the owner: "they press next and it skips EVERYTHING") */
+    const seen: number[] = [];
+    let at = 0;
+    for (let k = 0; k < 10 && at >= 0; k++) {
+      seen.push(at);
+      at = core.obGrowNext(at, g.length);
+    }
+    expect(seen).toEqual([0, 1, 2, 3]);
     /* the record never drops at a slip; the streak does */
     const w = core.obWhyLines();
     for (let d = 1; d < w.record.length; d++) expect(w.record[d]).toBeGreaterThanOrEqual(w.record[d - 1]);

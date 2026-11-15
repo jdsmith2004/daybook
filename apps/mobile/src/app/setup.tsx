@@ -64,7 +64,7 @@ import { Ghost, Next } from '@/components/lx';
 import { Packed } from '@/components/packed';
 import { Middle } from '@/components/scene';
 import { useClock } from '@/components/shapes';
-import { GrowStops, SlipDemo, useGrowWalk, YearMarks } from '@/components/setup-value';
+import { GrowHow, GrowPath, GrowStops, SlipDemo, useGrowWalk, YearMarks } from '@/components/setup-value';
 import { TIP_ON } from '@/components/support';
 import { UnlockSheet } from '@/components/unlocked';
 import { useSos } from '@/lib/sos';
@@ -495,13 +495,20 @@ export default function Setup() {
       break;
     }
     case 'grow': {
-      /* what grows: the flame itself takes the form a steady pace reaches at each stop, and says what that stop looks like */
-      const g = grow[Math.max(0, growAt)];
+      /* how the habit is unlearned (the owner, November 15, 2026: "this app rewires your brain ... we need to hype that up"): the
+         flame takes the form a steady pace reaches at each stop and says what has changed by then, the path picture shows the old
+         way fading and the new one wearing in, and one quiet line names the part of Daybook that does it */
+      const at = Math.max(0, growAt);
+      const g = grow[at];
       body = (
         <>
-          <Head h="This is how I grow with you." />
-          <Talk text={g.line} want={want} />
-          <GrowStops a={a} at={Math.max(0, growAt)} onAt={walk.pick} />
+          <Head h="Your brain can unlearn this." />
+          <Talk text={g.line} want={want * 0.78} />
+          <View style={s.growPic}>
+            <GrowPath at={at} n={grow.length} height={SHORT ? 104 : 150} />
+            <GrowHow icon={g.how[0]} words={g.how[1]} />
+          </View>
+          <GrowStops a={a} at={at} onAt={walk.pick} />
         </>
       );
       /* Next walks the stops first, and leaves the page only from the last one */
@@ -971,6 +978,7 @@ export const SETUP_W = MAX_WIDTH;
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
   footOne: { flex: 1 },
+  growPic: { alignSelf: 'stretch', gap: 10, marginBottom: 14 },
   say: { alignSelf: 'stretch', justifyContent: 'center', minHeight: BESIDE },
   head: { gap: 8, alignSelf: 'stretch' },
   title26: { fontSize: 28, lineHeight: 34 },

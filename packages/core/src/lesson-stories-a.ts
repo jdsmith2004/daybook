@@ -510,7 +510,7 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'Then one morning, Pinocchio wakes up with long ears.',
         p: 'Look at what he does first. He does not run for help. He pulls a cap down over his ears and goes to find his friend.',
-        dx: 'Then one morning Pinocchio reaches up and finds long, hairy ears on his head, donkey ears. What he does next is the most human thing in the story. He does not run for help or tell anyone. He pulls a big cotton cap down over his head, almost to his nose, and goes out as if nothing were wrong. **The first thing he does with the change is hide it.**',
+        dx: 'He reaches up and feels them, long and hairy, the ears of a donkey. What he does next is the most human thing in the story. He does not run for help or tell anyone. He pulls a big cotton cap down over his head, almost to his nose, and goes out as if nothing were wrong. **The first thing he does with the change is hide it.**',
         art: ['scene', { k: 'cap-ears' }],
       },
       {

@@ -11,6 +11,9 @@ import { SCENES_L27 } from './story-scenes-f-l27';
 import { SCENES_L28 } from './story-scenes-f-l28';
 import { SCENES_L29 } from './story-scenes-f-l29';
 import { SCENES_L30 } from './story-scenes-f-l30';
+import { SCENES_L26 } from './story-scenes-f-l26';
+import { SCENES_L31 } from './story-scenes-f-l31';
+import { SCENES_L32 } from './story-scenes-f-l32';
 
 export const SCENES_F: Record<string, ComponentType<{ k: Ink }>> = {
   ...SCENES_L22,
@@ -21,4 +24,7 @@ export const SCENES_F: Record<string, ComponentType<{ k: Ink }>> = {
   ...SCENES_L28,
   ...SCENES_L29,
   ...SCENES_L30,
+  ...SCENES_L26,
+  ...SCENES_L31,
+  ...SCENES_L32,
 };

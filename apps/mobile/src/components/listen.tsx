@@ -41,7 +41,8 @@ interface Word {
 }
 /* splits text into words and the spaces after them, keeping each word's place in the whole string */
 function words(text: string, from: number, b: boolean, out: Word[]) {
-  const re = /\S+\s*/g;
+  /* a run of spaces on its own is kept too: the words after a bold phrase start with one */
+  const re = /\S+\s*|\s+/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text))) out.push({ t: m[0], at: from + m.index, b });
 }

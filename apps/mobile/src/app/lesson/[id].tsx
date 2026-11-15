@@ -25,10 +25,6 @@ import {
   type Go,
   guessFeedback,
   type Lesson,
-  lcheckAbout,
-  lcheckAfter,
-  lcheckNo,
-  lcheckPair,
   lessonBeats,
   lessonById,
   lessonAs,
@@ -848,10 +844,6 @@ export default function LessonScreen() {
   /* the one ending (C8): WP8's finish, the score landing tile by tile and the points flying into the flame */
   if (stg === 'practiced') {
     const nx = care ? null : nextLessonOk(L, w, snap.days, st, tk, account);
-    /* the checkpoint this lesson completed, as an offer only (the owner, November 15, 2026: "sure do it only as an offer though not
-       required"). Not on a care lesson, a read again, or before a first-week part: one ask per moment. */
-    const ck = care || again || part ? 0 : lcheckAfter(L, snap.days, st);
-    const ckPair = ck ? lcheckPair(ck) : null;
     return (
       <LessonFinish
         lessonId={L.id}
@@ -863,15 +855,6 @@ export default function LessonScreen() {
         keep={beats?.key || L.key}
         next={nx ? { id: nx.L.id, title: nx.L.title } : null}
         onNext={() => nx && router.replace({ pathname: '/lesson/[id]', params: { id: nx.L.id } })}
-        offer={
-          ck
-            ? {
-                title: 'Write it out: checkpoint ' + lcheckNo(ck, st, snap.days),
-                sub: 'About ' + (ckPair ? lcheckAbout(ckPair, st, snap.days) : 'these two lessons') + '. 3 to 5 minutes, if you like.',
-                onPress: () => router.replace({ pathname: '/lwrite/[n]', params: { n: String(ck) } }),
-              }
-            : null
-        }
         onDone={() => (part && !care ? router.replace({ pathname: '/unlock', params: { id: part } }) : closeAll())}
       />
     );

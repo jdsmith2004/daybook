@@ -241,16 +241,6 @@ describe('checkpoints follow the path', () => {
       'lesson ' + core.lessonNo(core.lessonById('l25')!) + ' and “SMART Recovery: four points and a toolbox”',
     );
   });
-  it('offers the checkpoint of a pair on the finish of the lesson that completes it, until it is written (the owner, November 15, 2026)', () => {
-    const st = st0();
-    const p = core.lcheckPair(1)!;
-    expect(core.lcheckAfter(path[0], rec(ids(1)), st)).toBe(0);
-    expect(core.lcheckAfter(path[1], rec(ids(2)), st)).toBe(1);
-    expect(core.lcheckAfter(p.a, rec(ids(2)), st)).toBe(1);
-    expect(core.lcheckAfter(path[1], rec(ids(2)), core.lwriteSave(st, 1, 0, 'line', 1))).toBe(0);
-    /* a lesson in another pair offers nothing for this one */
-    expect(core.lcheckAfter(core.lessonById('l3')!, rec(ids(2)), st)).toBe(0);
-  });
   it('the one due is the first on the path whose two lessons are reached and not written', () => {
     const st = st0();
     const upTo = (L: core.Lesson) => rec(path.slice(0, path.indexOf(L) + 1).map((x) => x.id));

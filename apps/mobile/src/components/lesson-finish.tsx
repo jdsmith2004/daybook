@@ -40,7 +40,6 @@ import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg'
 import { BigFlame } from '@/components/big-flame';
 import { SHORT } from '@/components/fit';
 import { Bubble } from '@/components/lesson-flame';
-import { Icon } from '@/components/ui';
 import { Text } from '@/components/text';
 import { buzz } from '@/lib/feel';
 import { pulseOffered } from '@/lib/pulse';
@@ -93,8 +92,6 @@ export interface LessonFinishProps {
       horizon, and a row of marks (the goal's nights or days) lights one by one under the title */
   look?: 'band' | 'dawn';
   marks?: number;
-  /** a checkpoint this lesson completed, offered and never required (the owner, November 15, 2026): a quiet row above Continue */
-  offer?: { title: string; sub: string; onPress: () => void } | null;
 }
 
 /* when each beat starts, in ms */
@@ -136,7 +133,6 @@ export function LessonFinish({
   feedback = true,
   look: kind = 'band',
   marks = 0,
-  offer = null,
 }: LessonFinishProps) {
   const dawn = kind === 'dawn';
   const done = head ?? 'Lesson ' + n + ' done';
@@ -232,9 +228,7 @@ export function LessonFinish({
     });
   };
 
-  /* a checkpoint offered takes a row above Continue; on a short phone the flame gives it room, so the bubble stays on screen */
-  const offering = !!offer && !m.quiet;
-  const big = Math.min(win.width - 120, win.height * (SHORT ? (offering ? 0.16 : 0.22) : 0.27), 240);
+  const big = Math.min(win.width - 120, win.height * (SHORT ? 0.22 : 0.27), 240);
   /* how big the flame is in the opener, and where: a little above the middle, the words under it */
   const K = Math.min(1.6, (win.width * 0.9) / big);
   const B = Math.round(big * K);
@@ -556,25 +550,6 @@ export function LessonFinish({
           </Reanimated.View>
         ) : null}
         <Reanimated.View style={btnIn} pointerEvents={beat === 2 ? 'auto' : 'none'}>
-          {/* the checkpoint, when this lesson completed its pair and the hours after a slip are past: an invitation, never a step.
-              Continue stays the gold button, so passing on it is the easy way. */}
-          {offer && offering ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={offer.title + '. ' + offer.sub}
-              onPress={() => {
-                buzz('tap');
-                offer.onPress();
-              }}
-              style={({ pressed }) => [s.offer, pressed && { opacity: 0.75 }]}>
-              <Icon name="pencil" size={20} color={MINT} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={s.offerT}>{offer.title}</Text>
-                <Text style={s.offerSub}>{offer.sub}</Text>
-              </View>
-              <Icon name="next" size={18} color={nightInk.muted} />
-            </Pressable>
-          ) : null}
           <Pressable accessibilityRole="button" onPress={onDone}>
             {({ pressed }) => (
               <View style={[s.btn, pressed && s.btnDown]}>
@@ -781,19 +756,6 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   quiet: { alignSelf: 'center', paddingTop: 14, paddingHorizontal: 12 },
-  offer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    minHeight: 64,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 14,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  offerT: { fontFamily: font.display, fontSize: 17, color: nightInk.ink },
-  offerSub: { fontFamily: font.body, fontSize: 15, color: nightInk.muted },
   quietText: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted },
   btnDown: { borderBottomWidth: 0, marginTop: 5 },
   btnText: { fontFamily: font.display, fontSize: 20, color: '#3A2A00' },

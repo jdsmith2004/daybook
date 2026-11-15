@@ -1480,6 +1480,17 @@ through)` and the forgetting of a removed list, Settings (Your lists, `app/setti
   checks in the shared notes' `screentime-nightpack-handover.md`. Known edge: an app in one list and its whole kind (Social) in
   another stays behind the second list's shield when only the first opens; Daybook cannot tell an app's kind.
 
+**The look (the owner, November 15, 2026: "It looks like a settings page right now ... I literally said that our app has beautiful
+visuals and I wanted to match how good it is").** Settings, Screen Time is now its own page (components/screen-time.tsx): the
+flame's own sky, as on Milestones, with a ring on the ground under it for adult sites and for each list, the ring as full as the
+wait is long (one scale from 5 seconds to 30 minutes, so a longer wait is always a fuller ring), the wait inside, the name and the
+number of apps under it, and a + ring to add a list. Off, the rings are drawn empty and three short lines (pick, it waits, you
+choose) sit over Turn on Screen Time. Under the sky: tonight on a night card of its own (the hours big, Start earlier as tiles, the
+notes switch), the note after long use as tiles, then Lift every wait and the beta switch. A ring opens its own page
+(app/settings/list.tsx, `?id=a|b|c|adult`): the big ring, the wait as tiles, Call it as six named tiles with a picture each, and
+Change the apps at the bottom; adult sites has its switch, its minutes and Start the wait now. Radio lists are gone from Screen
+Time. A ring glides to its new fill when the wait changes (still with Reduce Motion).
+
 ### To a real iPhone (November 11, 2026, branch `claude/screen-time-device`)
 
 - **Apple granted Family Controls (Distribution).** Turned on in the portal for `com.jdsmith2004.daybook`; the three extension

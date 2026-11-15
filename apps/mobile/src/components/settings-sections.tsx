@@ -42,28 +42,6 @@ import {
   deepOn,
   DEEP_READY,
   setDeep,
-  NIGHT_TIMES,
-  PULL_LIFT,
-  pullListNew,
-  pullWaitLabel,
-  pullWaitShort,
-  PULL_LONG,
-  PULL_NIGHT_END,
-  pullEarly,
-  pullEarlier,
-  pullInNight,
-  pullLater,
-  pullMorningNow,
-  pullNightStart,
-  pullQuietUntil,
-  pullSettle,
-  pullShown,
-  tonightOf,
-  keyOfDate,
-  clockOf,
-  type Days,
-  type PullPrefs,
-  type Settings,
   setHabit,
   habitOf,
   HABIT_NAME,
@@ -84,6 +62,7 @@ import { SYNC_NEED_SHORT } from '@/components/support';
 import { STORAGE_LINE } from '@/components/home-screen';
 import { Stepper } from '@/components/form';
 import { Screen } from '@/components/screen';
+import { ScreenTimePage } from '@/components/screen-time';
 import { ScriptureSetting } from '@/components/scripture';
 import { SetCell, SetGroup, SetPick, SetRow, SetSwitch, useTone, type Tone } from '@/components/settings-ui';
 import { confirmUnlock, lockOffered } from '@/components/lock';
@@ -114,22 +93,8 @@ import {
 import { useNotifyEnv } from '@/lib/notify-env';
 import { allowReminders, exactAlarmsAsk, exactAlarmsOk, remindersOffered } from '@/lib/reminders';
 import { NightPackBody } from '@/components/night-pack';
-import { packOffered, packShown, usePack } from '@/lib/night-pack';
-import {
-  getPullTrouble,
-  PULL_DENIED,
-  pullFix,
-  pullLiftAll,
-  pullAddList,
-  pullOffered,
-  pullSet,
-  usePullPicked,
-  pullStart,
-  pullStop,
-  setPullPrefs,
-  usePullPrefs,
-  usePullTrouble,
-} from '@/lib/pull';
+import { packShown, usePack } from '@/lib/night-pack';
+import { pullOffered, usePullPrefs, usePullTrouble } from '@/lib/pull';
 import { connectHealth, forgetHealth, healthOffered, useNights } from '@/lib/health';
 import { play } from '@/lib/sound';
 import { buzz, setHapticsOn } from '@/lib/feel';
@@ -638,7 +603,8 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
           icon: 'phone',
           title: PULL_NAME,
           value: pullBad ? 'Not working' : pull.on ? 'On' : 'Beta',
-          body: <PullBody pull={pull} days={snap.days} st={st} now={now} say={say} />,
+          /* its own page, the flame's sky and a ring for each wait (components/screen-time.tsx) */
+          body: <></>,
         }
       : null,
 
@@ -888,6 +854,7 @@ export function SettingsSections({ lead, foot }: { lead?: ReactNode; foot?: Reac
 export function SettingsPart({ id }: { id: PartId }) {
   const parts = useParts();
   const tint = useTone(toneOf(id));
+  if (id === 'pull' && parts?.pull) return <ScreenTimePage />;
   if (!parts) return <Redirect href="/" />;
   const p = parts[id];
   if (!p || !p.body) return <Redirect href="/settings" />;
@@ -895,159 +862,6 @@ export function SettingsPart({ id }: { id: PartId }) {
     <Screen title={p.title} back="Settings" icon={id === 'wipe' || id === 'sync' ? undefined : <Icon name={p.icon} size={30} color={tint} />}>
       <View style={{ gap: 28 }}>{p.body}</View>
     </Screen>
-  );
-}
-
-/* Screen Time (iPhone only; core pull.ts). Apple's own list picks the apps and Daybook never learns which. A stricter choice works
-   at once; a looser one made outside the morning waits for 6 AM and says so (loosen slowly, tighten at once). Lift every wait now
-   and Turn Screen Time off are always instant, as is Settings, Screen Time on the phone. */
-function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; st: Settings; now: number; say: (m: string) => void }) {
-  const start = async () => {
-    const r = await pullStart().catch(() => 'closed' as const);
-    if (r === 'denied') say(PULL_DENIED);
-    else if (r === 'closed') say('Nothing was picked, so nothing changed.');
-  };
-  const trouble = usePullTrouble();
-  /* how many each list has picked: read here, before the page can return early (a hook) */
-  const picked = usePullPicked(pullShown(pull).lists.map((l) => l.id));
-  if (!pull.on)
-    return (
-      <SetGroup
-        head="Beta"
-        foot={
-          (pull.lost ? 'Screen Time access was turned off in the phone’s Settings, so nothing waits now. ' : '') +
-          'Pick the apps that pull you in. Each one waits a few seconds before it opens, and at night adult sites wait longer. Apple keeps the list, and nothing about your apps leaves this phone.'
-        }>
-        <SetSwitch label="Screen Time (beta)" on={false} onChange={(on) => on && void start()} />
-      </SetGroup>
-    );
-  const fix = async () => {
-    if (!trouble) return;
-    const r = await pullFix(trouble.fix).catch(() => 'closed' as const);
-    if (r === 'denied') say(PULL_DENIED);
-    else if (r === 'ok') say(getPullTrouble() ? 'It is still not working. Restart the phone, then try again.' : 'It is working again.');
-  };
-  const t = Date.now();
-  const p = pullSettle(pull, t);
-  const shown = pullShown(p);
-  const waits = p.later ? fmtClock(PULL_NIGHT_END) : null;
-  const held = (k: keyof PullPrefs) => !!p.later && k in p.later.p;
-  /* a choice from here: when it waits for the morning, the flame says so */
-  const set = (c: Partial<PullPrefs>) => {
-    const at = pullSet(c);
-    if (at) say('Looser settings start in the morning. This one starts at ' + fmtClock(PULL_NIGHT_END) + '.');
-  };
-  const porn = habitOf(st) === 'porn';
-  const from = pullNightStart(days, st, p, t);
-  const night = pullInNight(t, from);
-  const quiet = (pullQuietUntil(days, st, now) ?? 0) > now;
-  const span = fmtClock(from) + ' to ' + fmtClock(PULL_NIGHT_END);
-  /* by day, tonight can start earlier than the morning said (never later: that is the morning's choice) */
-  const morning = tonightOf(days, st, keyOfDate(new Date(t))).at;
-  const earlier = NIGHT_TIMES.filter((x) => x !== morning && pullEarlier(morning, x) === x).slice(-3);
-  const hours = (n: number) => (n === 0 ? 'Off' : n === 1 ? '1 hour' : n + ' hours');
-  const mins = (n: number) => n + ' minutes';
-  const foot = (k: keyof PullPrefs, base?: string) => (held(k) ? (base ? base + ' ' : '') + 'Your change starts at ' + waits + '.' : base);
-  return (
-    <>
-      {trouble ? (
-        <SetGroup head="Not working" foot={trouble.line.replace(/^Screen Time is not working: (.)/, (_m, c: string) => c.toUpperCase())}>
-          <SetRow
-            label={trouble.fix === 'ask' ? 'Give Screen Time your yes' : trouble.fix === 'pick' ? 'Pick the apps again' : 'Try again'}
-            act="accent"
-            onPress={fix}
-          />
-        </SetGroup>
-      ) : null}
-      {/* the beta switch (the owner, November 15, 2026: "just add them as like a beta toggle in settings"): off is the same as
-          Turn Screen Time off below, instant, and tonight it counts as a night gone through */}
-      <SetGroup head="Beta" foot="Screen Time is new. Tell us in Feedback if something does not work.">
-        <SetSwitch label="Screen Time (beta)" on onChange={(on) => (on ? undefined : void pullStop(night && !quiet))} />
-      </SetGroup>
-      {porn ? (
-        <SetGroup
-          head="Adult sites"
-          foot={foot(
-            'lift',
-            'All day, in Safari and other browsers, through Apple’s adult filter. After the wait you choose how long they open, then it is back.',
-          )}>
-          <SetSwitch label="A long wait first" on={shown.adult} onChange={(on) => set({ adult: on })} />
-          {shown.adult ? (
-            <>
-              <SetPick options={PULL_LIFT.map((n) => [n, n === 1 ? '1 minute' : mins(n)] as const)} value={shown.lift} onPick={(n) => set({ lift: n })} />
-              {p.adult ? (
-                <SetRow
-                  label={'Start the ' + (p.lift === 1 ? '1-minute' : p.lift + '-minute') + ' wait'}
-                  onPress={() => router.push({ pathname: '/pause', params: { w: 'long' } })}
-                />
-              ) : null}
-            </>
-          ) : null}
-        </SetGroup>
-      ) : null}
-      <SetGroup
-        head="Your lists"
-        foot={
-          (held('lists') ? 'Your change starts at ' + waits + '. ' : '') +
-          'Each list has its own apps and its own wait. After it, you choose how long they open.'
-        }>
-        {shown.lists.map((l) => (
-          <SetRow
-            key={l.id}
-            label={l.name}
-            value={pullWaitShort(l.wait) + (picked[l.id] != null ? ' · ' + picked[l.id] + ' picked' : '')}
-            onPress={() => router.push({ pathname: '/settings/list', params: { id: l.id } })}
-          />
-        ))}
-        {pullListNew(p) ? (
-          <SetRow
-            label="Add a list"
-            act="accent"
-            onPress={async () => {
-              const l = await pullAddList();
-              if (l) say(l.name + ' is added. Each app in it waits ' + pullWaitLabel(l.wait) + '.');
-            }}
-          />
-        ) : null}
-      </SetGroup>
-      <SetGroup head={'Tonight, ' + span} foot={night ? undefined : 'Set each morning. You can start it earlier tonight.'}>
-        <SetSwitch label="Notes at 10 and 20 minutes" on={p.hard} onChange={(on) => setPullPrefs({ hard: on })} />
-      </SetGroup>
-      {!night && earlier.length ? (
-        <SetGroup head="Start tonight at">
-          <SetPick
-            options={[...earlier, morning].map((x) => [x, fmtClock(x)] as const)}
-            value={from}
-            onPick={(x) => {
-              const e = pullEarly(p, days, st, x, Date.now()).early;
-              setPullPrefs({ early: e });
-              /* a later start than the one already set for tonight waits for the morning (core pullHoldStart) */
-              if (p.armed && pullLater(p.armed.at, e?.at ?? morning) && !pullMorningNow(Date.now()))
-                say('Looser settings start in the morning. Tonight still starts at ' + fmtClock(p.armed.at) + '.');
-            }}
-          />
-        </SetGroup>
-      ) : null}
-      <SetGroup head="A note after long use" foot="One note a day. When today’s lesson is not done, a tap takes you to it.">
-        <SetPick options={PULL_LONG.map((n) => [n, hours(n)] as const)} value={p.long} onPick={(n) => setPullPrefs({ long: n })} />
-      </SetGroup>
-      <SetGroup
-        foot={
-          (night && !quiet ? 'Tonight, lifting every wait or turning this off counts as a night you went through. ' : '') +
-          'You can also turn this off in the phone’s Settings, under Screen Time.'
-        }>
-        {packOffered ? <SetRow label="The night pack, for the whole phone" onPress={() => router.push('/nightpack')} /> : null}
-        <SetRow
-          label="Lift every wait now"
-          act="accent"
-          onPress={async () => {
-            const until = await pullLiftAll(days, st, !quiet);
-            say('Every wait is lifted until ' + fmtClock(clockOf(until)) + '.');
-          }}
-        />
-        <SetRow label="Turn Screen Time off" act="danger" onPress={() => pullStop(night && !quiet)} />
-      </SetGroup>
-    </>
   );
 }
 

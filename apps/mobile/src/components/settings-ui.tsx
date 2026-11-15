@@ -160,7 +160,8 @@ export function SetSwitch({ label, sub, on, onChange }: { label: string; sub?: s
 const TW = 51;
 const TH = 31;
 const KNOB = 27;
-function Toggle({ on, label, onChange }: { on: boolean; label: string; onChange: (on: boolean) => void }) {
+/** the switch itself, for a row drawn somewhere other than a settings group */
+export function Toggle({ on, label, onChange }: { on: boolean; label: string; onChange: (on: boolean) => void }) {
   const c = useTheme();
   const still = useReducedMotion();
   const x = useRef(new Animated.Value(on ? 1 : 0)).current;

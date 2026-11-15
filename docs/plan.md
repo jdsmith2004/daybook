@@ -6906,3 +6906,26 @@ say, and what is your answer?", "Who are you becoming?", each with a one-line ex
 often than rides that do not.
 
 Pictures: `docs/future-you/` (the page on the web, a written note in SOS on the web, a recorded note in SOS on an iPhone 17 Pro simulator, release build).
+
+## Real love: ideas the owner is still weighing
+
+From a quick look at the Real love page (November 15, 2026). The owner has not chosen any of these ("none just save the ideas ... i still
+need to think about it"), so none is built. The page is labelled "Real love (beta)" in Settings meanwhile.
+
+1. **Add a one-line reason under each video.** Right now it only says the artist. A line like "Watch how they look at each other. Nobody is performing."
+   tells the person what to notice. This is the part that turns watching into remembering real love, so it would go first. The `LoveVideo` type already
+   has a `note` field, so it is one line of words per video.
+2. **Grow the list to about 8-10 videos, grouped in two sections.** The "People in love" and "Words that lift" headings are already built and only appear
+   once both kinds exist. Two videos is a poster, not a feed.
+3. **Add one question after each video, with no typing.** For example "What did you notice?" with 2-3 tap answers. It saves to the log and the person never
+   sees it as homework. It is also how this page ties to the habit change. The biggest addition here; only if liked.
+4. **Offer one video at the right moment.** After an urge is ridden out, or in the Sunday review, show "Remember what real love looks like" and open one
+   video. Nobody finds a buried Settings row on a hard night. It keeps the page buried in Settings as wanted, with a second way in. The Sunday review and
+   SOS work would need to agree to it.
+5. **Handle videos that stop playing.** YouTube videos get taken down. Today a dead id shows an error inside the player. Add a quiet "This one is gone" line
+   that skips to the next video, and hide a video whose still picture fails to load. Offline already shows a calm "No connection" message.
+6. **FLAG: check the "Cry" picture before any store build.** Its YouTube still has the song's name written on it, "Cigarettes after S\*x", with the word
+   partly starred out. The page is in Settings, not in the listing, but the store-text rule (no explicit words in anything the store might see) makes it worth
+   a look. Fix: choose a different video, or hide the still picture for that one.
+
+Not suggested: a "watch later" list. With about 10 videos it is clutter.

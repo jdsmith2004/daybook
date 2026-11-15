@@ -234,6 +234,46 @@ const L58_TELL: StoryPart[] = [
 ];
 const L58_AT = 5;
 
+/* the sources lessons 50 to 53 add (the lessons of one habit, lesson-habit.ts HABIT_TURNS, told as stories) */
+const S3 = {
+  gilovich: [
+    'Gilovich, Medvec & Savitsky (2000): the spotlight effect in social judgment, Journal of Personality and Social Psychology',
+    'https://doi.org/10.1037/0022-3514.78.2.211',
+  ],
+  prentice: [
+    'Prentice & Miller (1993): pluralistic ignorance and alcohol use on campus, Journal of Personality and Social Psychology',
+    'https://doi.org/10.1037/0022-3514.64.2.243',
+  ],
+  devisser: [
+    'de Visser, Robinson & Bond (2016): voluntary temporary abstinence from alcohol during “Dry January” and subsequent alcohol use, Health Psychology',
+    'https://doi.org/10.1037/hea0000297',
+  ],
+  gottman: [
+    'Smith (2014): Masters of love, on John Gottman’s research with newlywed couples, The Atlantic',
+    'https://www.theatlantic.com/health/archive/2014/06/happily-ever-after/372573/',
+  ],
+  fehr: ['Fehr, Gelfand & Nag (2010): the road to forgiveness, a meta-analysis, Psychological Bulletin', 'https://doi.org/10.1037/a0019993'],
+  powers: [
+    'Powers, Vedel & Emmelkamp (2008): behavioral couples therapy for alcohol and drug use disorders, a meta-analysis, Clinical Psychology Review',
+    'https://doi.org/10.1016/j.cpr.2008.02.002',
+  ],
+  fallacy: ['The gambler’s fallacy, and the Monte Carlo story of 1913 (overview)', 'https://en.wikipedia.org/wiki/Gambler%27s_fallacy'],
+  clark09: [
+    'Clark, Lawrence, Astley-Jones & Gray (2009): gambling near-misses enhance motivation to gamble and recruit win-related brain circuitry, Neuron',
+    'https://doi.org/10.1016/j.neuron.2008.12.031',
+  ],
+  kassinove: [
+    'Kassinove & Schare (2001): effects of the near miss and the big win at persistence at slot machine gambling, Psychology of Addictive Behaviors',
+    'https://doi.org/10.1037/0893-164X.15.2.155',
+  ],
+  zhang: ['Zhang & Clark (2020): loss-chasing in gambling behaviour, Current Opinion in Behavioral Sciences', 'https://doi.org/10.1016/j.cobeha.2019.10.006'],
+  dsm: ['American Psychiatric Association: DSM-5, gambling disorder', 'https://www.psychiatry.org/psychiatrists/practice/dsm'],
+  words: [
+    'Etymology: secret, from Latin secernere, to set apart; debt, from debitum, a thing owed; confess, from confiteri, to acknowledge',
+    'https://www.etymonline.com/word/secret',
+  ],
+} satisfies Record<string, Src>;
+
 export const STORIES_F: Record<string, Story> = {
   l45: {
     id: 'l45',
@@ -1094,5 +1134,368 @@ export const STORIES_F: Record<string, Story> = {
         src: [N.freeman17, N.niaaa],
       },
     },
+  },
+
+  l50: {
+    id: 'l50',
+    form: 'study',
+    title: 'The drink in every hand',
+    ic: 'glass',
+    ask: 'How do I stay free when everyone around me is drinking?',
+    key: 'People notice your glass far less than you fear. Pick your drink and your words before you go.',
+    np: 'What I will order, and the words I will say when someone asks',
+    tell: [
+      {
+        h: 'Around the year 2000, psychologists at Cornell asked students to put on an embarrassing T-shirt.',
+        p: 'It had a big picture of Barry Manilow, a singer their classmates found very uncool. Each student then walked into a room where others were already sitting, **and walked out again.**',
+        dx: 'Thomas Gilovich and his colleagues at Cornell wanted to know how much other people really notice us. They chose a shirt their students had rated as one of the most embarrassing they could think of: a big, smiling picture of Barry Manilow. One student at a time put it on and was sent into a room where other students were already seated, filling in forms. The wearer was a little late, so everyone looked up. A moment later, the wearer was asked to step out again, **and walked out again** into the hall, shirt and all.',
+        art: ['scene', { k: 'l50-shirt' }],
+      },
+      {
+        k: 'ask',
+        h: 'Say that was you, in that shirt. How much of the room would you guess noticed it?',
+        o: [
+          ['Almost everyone', 'That is how it feels from inside the shirt. Look at what the room said.'],
+          ['About half', 'That is close to what the wearers guessed. Look at what the room said.'],
+          ['Only a few', 'Then you guessed closer than the wearers did.'],
+          ['I would not care', 'Then you are ahead of most of the students. Look at why it matters.'],
+        ],
+      },
+      {
+        h: 'The wearers guessed about half the room had noticed.',
+        p: 'When the researchers asked the room, about a quarter could say what was on the shirt. **People noticed half as much as the wearers feared.** The researchers called it the spotlight effect.',
+        dx: 'Out in the hall, each wearer was asked how many of the people in the room could name the face on the shirt. They guessed about half. Then the researchers asked the people in the room. About a quarter could. **People noticed half as much as the wearers feared.** The researchers called it the spotlight effect: we feel lit up, as if everyone is watching us, because we are watching ourselves so closely. Everyone else is busy feeling lit up too.',
+        art: ['people', { n: 25, was: 50, s: 'noticed the shirt' }],
+        fact: { s: 'Study · Gilovich, Medvec & Savitsky, 2000', i: [0] },
+      },
+      {
+        h: 'A glass in your hand is a far smaller thing than that shirt.',
+        p: 'At a table, most people are watching their own drink, their own words, their own shirt. **Your glass is far less interesting to them than it is to you.**',
+        dx: 'Now think of the table, the toast, the round being ordered. If a giant face of Barry Manilow drew only a quarter of a room, a soda water in your hand draws far less. Most people at the table are watching their own drink, their own words, how they come across. **Your glass is far less interesting to them than it is to you.** The spotlight you feel when you order something else is mostly your own.',
+        art: ['scene', { k: 'l50-table' }],
+      },
+      {
+        h: 'At Princeton, students were asked how comfortable they were with how much people drank on campus.',
+        p: 'Then they were asked how comfortable they thought the average student was. **Most said the average student was more at ease with it than they were.**',
+        dx: 'In the early 1990s, Deborah Prentice and Dale Miller asked Princeton students a pair of questions. First: how comfortable are you with the amount of drinking that goes on here? Then: how comfortable do you think the average student is? The answers did not match. **Most said the average student was more at ease with it than they were.** Asked about their own friends, they said the same. Almost everyone placed themselves a little outside the crowd.',
+        art: ['scene', { k: 'l50-survey' }],
+        fact: { s: 'Study · Prentice & Miller, 1993', i: [1] },
+      },
+      {
+        h: 'Almost everyone thought they were the odd one out.',
+        p: 'Each person felt less at ease than they thought everyone else was, so each acted the way they thought the room wanted. **The room was full of people going along, for each other.**',
+        dx: 'Put those answers together and something strange appears. If most students were less comfortable than the average student, then the average student they pictured did not exist. Each person felt privately uneasy, believed everyone else was fine, and so acted the way they thought the room wanted: raised the glass, laughed it off, ordered the next one. **The room was full of people going along, for each other.** Researchers call it pluralistic ignorance: everyone wrong about everyone, in the same direction.',
+        art: ['scene', { k: 'l50-odd-one' }],
+      },
+      {
+        long: 1,
+        h: 'Over a term, the young men moved toward the norm they had imagined.',
+        p: 'They began to feel the way they thought everyone felt, though nobody had felt that way to begin with. **A guess about others became their own habit.**',
+        dx: 'The researchers followed students through a term. The young men, over the months, shifted their own feelings toward the comfort with drinking they believed everyone else had, though it had never been there to begin with. The young women did not shift. **A guess about others became their own habit.** That is how a table can push without anyone pushing: each person bends a little toward a crowd that is only in their heads.',
+      },
+      {
+        h: 'So at the table, you may not be the only one who would rather not.',
+        p: 'When you say a plain no, you show the room what one person really thinks. **Someone at that table may be glad you said it first.**',
+        dx: 'So the next time you sit down at a table where a round is being ordered, remember what the Princeton students did not know about each other. You may not be the only one there who would rather not, or who would rather have one and stop. When you say a plain no, warmly and without a speech, you show the room what one person really thinks, which is rarer than it should be. **Someone at that table may be glad you said it first.**',
+        art: ['scene', { k: 'l50-no-thanks' }],
+      },
+      {
+        h: 'And saying no gets easier every time you do it.',
+        p: 'Among 857 adults who took a month off drinking, six months later many felt surer turning down a drink and drank less, even some who did not finish. **Saying no is a skill, and it grows with use.**',
+        dx: 'Researchers in England followed 857 adults who signed up to take January off drinking. Six months later, many of them felt surer they could turn down a drink in company, and were drinking less than before. It held even for some who had not made the whole month, though it was stronger for those who had. **Saying no is a skill, and it grows with use.** The first no at a table is the hardest one you will ever say.',
+        fact: { s: 'Study · 857 adults · de Visser, Robinson & Bond, 2016', i: [2] },
+      },
+      {
+        long: 1,
+        h: 'Plan the push before it comes.',
+        p: 'Pick your drink before you go: soda, tea, an alcohol-free beer. Pick your words too. **“I am not drinking tonight” is a full answer.** You do not owe anyone a reason.',
+        dx: 'The hardest moment is the one where someone holds out a glass and you have to decide on the spot. So decide at home. Pick your drink before you go: soda, tea, an alcohol-free beer, whatever you will enjoy holding. Pick your words too, and say them once out loud so they come easily. **“I am not drinking tonight” is a full answer.** You do not owe anyone a reason, and if someone keeps pushing, that says something about their glass, not yours.',
+        back: 'l9',
+      },
+    ],
+    mine: { h: 'Look at what has set your urges off.', k: 'trigger' },
+    today: {
+      h: 'Pick your drink and your words before you go.',
+      l: ['Choose your drink now: soda, tea, alcohol-free', 'Say it plainly: “I am not drinking.”', 'Hold a glass, and leave early if you need'],
+    },
+    you: {
+      h: 'When you picture saying no at a table, what do you fear most?',
+      o: [
+        ['That they will think I am boring', 'Most of them will hardly notice. The ones who do may be glad.'],
+        ['That they will ask why', 'Then have your words ready. One plain sentence ends the question.'],
+        ['That I will not have fun', 'Watch what the evening is made of besides the glass.'],
+        ['That I will give in when they push', 'Then plan the push at home. A plan made ahead holds better.'],
+      ],
+    },
+    scope:
+      'The shirt study was about being noticed, not about drinking, and the Princeton and month-off studies asked students and volunteers who chose to take part. They point one hopeful way: the pressure at a table is often smaller than it feels, and saying no gets easier every time you do it.',
+    src: [S3.gilovich, S3.prentice, S3.devisser],
+  },
+
+  l51: {
+    id: 'l51',
+    form: 'study',
+    title: 'The people around the glass',
+    ic: 'heart',
+    ask: 'My drinking hurt people. How do I make it right?',
+    key: 'Trust comes back the way it left, in small moments. Turn toward them, sober, again and again.',
+    np: 'One person I want to show up for, and how',
+    tell: [
+      {
+        h: 'In 1990, a psychologist named John Gottman invited newlywed couples to spend a day in his lab in Seattle.',
+        p: 'It was set up like a bed and breakfast, with a kitchen, a sofa and quiet cameras. **The couples did nothing special.** They cooked, read and talked, the way couples do.',
+        dx: 'John Gottman had spent years studying couples in arguments. This time he wanted to see them on an ordinary day. He fitted out a room at the University of Washington like a little bed and breakfast, with a kitchen, a sofa, books and a view, and invited 130 newlywed couples to spend a day there, one couple at a time, with cameras quietly running. **The couples did nothing special.** They made lunch, read the paper, talked about nothing much. That was the point.',
+        art: ['scene', { k: 'l51-lab' }],
+      },
+      {
+        h: 'He was watching for something small.',
+        p: 'One would say, “Look at that bird outside.” A small reach for attention, which he called a bid. The other could turn toward it, or carry on reading. **Most bids were about almost nothing.**',
+        dx: 'What Gottman watched for was tiny. One partner would look up and say, “Look at that bird outside,” or “Listen to this,” or just sigh. He called these bids: small reaches for the other person’s attention. The other partner could turn toward the bid, look up, ask about the bird, laugh. Or they could turn away, keep reading, say nothing. **Most bids were about almost nothing**, and that is what made them easy to miss.',
+        art: ['scene', { k: 'l51-bird' }],
+      },
+      {
+        k: 'ask',
+        h: 'Think of the person your drinking touched most. What were your ordinary moments with them like?',
+        o: [
+          ['I was often not really there', 'That is honest, and it is the place this lesson starts.'],
+          ['There in body, not in attention', 'Many people say that. Look at what those moments turned out to hold.'],
+          ['We still had good moments', 'Then there is something to build on. Look at how it grows.'],
+          ['I am not sure', 'Fair. Ask them sometime. Their answer will tell you a lot.'],
+        ],
+      },
+      {
+        h: 'Six years later, he checked which couples were still together.',
+        p: 'By his count, the couples still married had turned toward each other’s bids about 86 times in 100. The couples who had split, about 33. **Trust was built in the small moments, not the big ones.**',
+        dx: 'Gottman and his team kept in touch with the couples, and six years later they checked who was still together. Then they went back to the tapes from that ordinary day. By their count, the couples still married had turned toward each other’s small bids about 86 times in every 100. The couples who had divorced had done it about 33 times. Not the big fights, not the anniversaries. **Trust was built in the small moments, not the big ones**, the bird, the joke, the look up from the page.',
+        art: ['people', { n: 86, was: 33, s: 'bids turned toward, couples still together' }],
+        fact: { s: 'Research · Gottman, newlywed couples', i: [0] },
+      },
+      {
+        h: 'Drinking takes the small moments first.',
+        p: 'The missed call, the half-heard story, the evening you were there and not there. **Most of what it cost the people at home was made of moments like these.**',
+        dx: 'Now look at what drinking does to a home. It rarely takes everything at once. It takes the small moments first: the call you did not pick up, the story you half heard, the game you said you would come to, the evening you were in the room and not really there. Each one alone seems like nothing. **Most of what it cost the people at home was made of moments like these**, thousands of small bids that met no one.',
+        art: ['scene', { k: 'l51-missed' }],
+      },
+      {
+        h: 'So a sincere apology opens the door, and small moments walk through it.',
+        p: 'Across 175 studies, a sincere apology was one of the strongest roads to being forgiven. **But trust comes back the way it left: one small moment at a time.**',
+        dx: 'An apology matters. A review that pooled 175 studies of forgiveness found that a sincere apology, one that names what happened without excuses, was among the things that went most with being forgiven. Say it, once, plainly. But an apology is a door, not the room. **Trust comes back the way it left: one small moment at a time.** The call answered. The phone put down when they talk. The ordinary evening, there and sober, again and again.',
+        fact: { s: 'Review · 175 studies · Fehr, Gelfand & Nag, 2010', i: [1] },
+      },
+      {
+        long: 1,
+        h: 'Bringing them in helps the drinking too.',
+        p: 'In 12 trials where a partner joined the treatment, couples did better than with treatment for the drinker alone, especially in the months after. **The people around the glass are part of how it heals.**',
+        dx: 'Researchers gathered 12 trials of a kind of treatment where the partner takes part, learning together how to support the change and how to talk again. Compared with treatment for the drinker alone, couples who did it together ended up with less drinking, fewer problems from it and happier relationships, and the gains showed most in the months after treatment ended. **The people around the glass are part of how it heals**, not only the ones it hurt.',
+        fact: { s: 'Review · 12 trials · Powers, Vedel & Emmelkamp, 2008', i: [2] },
+      },
+      {
+        h: 'Each bid you turn toward is a small repair.',
+        p: 'Look up when they talk. Answer the call. Be there, sober, for the ordinary evening. **Nobody sees it as a speech. Everyone sees it over a month.**',
+        dx: 'So the repair is not a performance. It is a habit, built the same way the drinking was: by repetition. Look up when they talk to you. Answer the call. Ask about the bird. Be there, sober, for the evening when nothing happens. **Nobody sees it as a speech. Everyone sees it over a month.** And it works on you too: every bid you turn toward is one more piece of evidence that you are someone who shows up.',
+        art: ['scene', { k: 'l51-turn' }],
+      },
+      {
+        long: 1,
+        h: 'Leave out any repair that would hurt someone.',
+        p: 'Or one that is only for your own relief. If drinking led to danger at home, a counselor can help you do this safely. **Their hurt and their timeline are theirs.**',
+        dx: 'Some repairs do more harm than good: a confession that wounds someone who did not need to know, or an apology that is really a request to feel better. Leave those out. If drinking led to anger or danger at home, do not do this alone: a counselor can help you make things right safely. And let the people you hurt set the pace. **Their hurt and their timeline are theirs**, and your part is to keep showing up while they decide.',
+      },
+    ],
+    mine: { h: 'Look at what you have already done.', k: 'acted' },
+    today: {
+      h: 'Turn toward one small bid today.',
+      l: ['Notice when someone reaches for you', 'Put everything down, and turn toward them', 'Say sorry once, plainly, if it is owed'],
+    },
+    you: {
+      h: 'Who has paid the most for your drinking, besides you?',
+      o: [
+        ['My partner', 'Then the ordinary evenings with them are where the repair lives.'],
+        ['My kids', 'Children notice what you do far more than what you promise.'],
+        ['A friend or family member', 'Then one answered call could start something.'],
+        ['No one, really', 'Maybe. Ask one person close to you, and listen to the answer.'],
+      ],
+    },
+    scope:
+      'The bids research comes from couples followed in one lab, as Gottman reports it, and the couples and forgiveness reviews pooled many kinds of studies. Together they point one sure way: repair is real, it takes time, and it is made of small moments of showing up.',
+    src: [S3.gottman, S3.fehr, S3.powers],
+  },
+
+  l52: {
+    id: 'l52',
+    form: 'life',
+    title: 'Chasing it back',
+    ic: 'dice',
+    ask: 'Why do I keep betting to win back what I lost?',
+    key: 'The wheel keeps no account of what you lost. Every chase is a new bet, at the same odds.',
+    np: 'What I will do the next time I feel I have to win it back',
+    tell: [
+      {
+        h: 'The story goes that one evening in August 1913, at the casino in Monte Carlo, the roulette ball kept landing on black.',
+        p: 'Ten times in a row. Fifteen. People left the other tables and crowded round. **Surely red was due.**',
+        dx: 'The story has been told for over a century. One evening in August 1913, at the grand casino in Monte Carlo, the little ball at one roulette table landed on black. Then black again. Then again. Ten times in a row. Fifteen. Word went round the room, and players left the other tables and crowded in. Everyone could feel it. A run that long could not go on. **Surely red was due.**',
+        art: ['scene', { k: 'l52-wheel' }],
+      },
+      {
+        h: 'They bet on red, and lost, and bet more to win it back.',
+        p: 'Black came up 26 times in a row, the story says, and fortunes went with it. **The wheel had no idea what it had just done.** Each spin was a fresh one, with the same odds as the first.',
+        dx: 'So they bet on red, and lost. Then they bet more on red, to win back what they had lost, because now red was even more due. Black came up 26 times in a row, the story says, and large sums of money went across the table. But one thing every one of them felt, none of them saw. **The wheel had no idea what it had just done.** It is a wooden wheel and a small ball. Each spin was a fresh one, with exactly the same odds as the first.',
+        art: ['scene', { k: 'l52-red' }],
+        fact: { s: 'Story · Monte Carlo, 1913, the gambler’s fallacy', i: [0] },
+      },
+      {
+        k: 'ask',
+        h: 'When you were down, what did you tell yourself you would do with a win?',
+        o: [
+          ['Stop, once I was even', 'Most people say that. Watch how often even was where they stopped.'],
+          ['Pay off what I owed', 'The wish is real. A bet is the most expensive way to try.'],
+          ['Win big enough to make it worth it', 'Then the goal kept moving. That is how chasing works.'],
+          ['I did not think, I just bet', 'That is honest. The next cards are about that moment.'],
+        ],
+      },
+      {
+        h: 'Researchers call it the gambler’s fallacy.',
+        p: 'It feels like a loss earns you a win, the way a long wait earns a bus. **The game keeps no account of what you lost.** Every bet starts from zero, with the house edge built in.',
+        dx: 'The feeling those players had now has a name: the gambler’s fallacy. A loss feels like it earns you a win, the way a long wait earns you a bus, or a run of rain earns a sunny day. Your mind keeps a ledger: I am owed. But the game keeps no ledger. **The game keeps no account of what you lost.** The cards, the reels and the odds on the screen start from zero every time, with the house edge built in, and they will start from zero on the next bet too.',
+      },
+      {
+        h: 'In 2009, a team in Cambridge watched what a near miss does in the brain.',
+        p: 'Volunteers played a simple slot game. A near miss felt worse than a plain loss. **And yet it made them want to keep playing**, and lit up the same parts of the brain as a win.',
+        dx: 'Luke Clark and his colleagues at the University of Cambridge built a simple slot game and had volunteers play it, some of them inside a brain scanner. Sometimes the reels lined up for a win. Sometimes they missed by miles. And sometimes they stopped just one place off: a near miss. The volunteers said the near misses felt worse than plain losses. **And yet it made them want to keep playing**, and in the scanner, a near miss lit up the same reward areas of the brain that a win does. A miss, dressed as almost.',
+        art: ['scene', { k: 'l52-near-miss' }],
+        fact: { s: 'Study · Clark and colleagues, 2009', i: [1] },
+      },
+      {
+        long: 1,
+        h: 'One classic study found how often an almost keeps people playing.',
+        p: 'Players kept going longest when about 3 in 10 spins were near misses, more than after a big win. **A near miss is built to feel like nearly there.**',
+        dx: 'In one classic study, researchers let people play a slot machine where they could stop whenever they liked, and changed how often the reels came up as near misses. When about 3 in every 10 spins were near misses, people kept playing longest, longer than with fewer, longer than with more, and longer than after a big win. **A near miss is built to feel like nearly there.** The game is telling you that you were close. You were exactly as far away as every other loss.',
+        fact: { s: 'Study · Kassinove & Schare, 2001', i: [2] },
+      },
+      {
+        h: 'After a loss, people bet more, and faster.',
+        p: 'A review of research on chasing found losses push stakes up and speed betting up, more so in people with gambling problems. **The pull to get even is a known pattern of the brain, not a sign a win is coming.**',
+        dx: 'Researchers who gathered the studies on loss chasing found the same pattern in the lab and in real betting records. After a loss, people tend to bet more, bet faster and take bigger risks, and this is stronger in people who struggle with gambling. It feels like a hunch, or like being on the edge of a turn. **The pull to get even is a known pattern of the brain, not a sign a win is coming.** It is the gambler’s fallacy with your money on it.',
+        fact: { s: 'Review · Zhang & Clark, 2020', i: [3] },
+      },
+      {
+        h: 'So call the money what it is: gone.',
+        p: 'Not owed to you. Not waiting at the next spin. **Every chase is a new bet, at the same odds.** Stopping is the one move that keeps the rest.',
+        dx: 'So say the hardest sentence plainly: that money is gone. It is not owed to you. It is not waiting for you at the next spin or the next match. **Every chase is a new bet, at the same odds**, and chasing is how one bad evening becomes many. Stopping does not get the money back. Nothing does. What stopping does is keep everything you still have, and that is the only win on the table.',
+        art: ['scene', { k: 'l52-walk-away' }],
+      },
+      {
+        long: 1,
+        h: '“I will win it back” is a permission thought.',
+        p: 'It sounds like a plan. It is the habit handing you a reason. **Catch it by name, and it loses much of its pull.**',
+        dx: '“I will win it back” sounds like a plan. It even sounds responsible: you are trying to fix the hole. But look at what it asks you to do, which is bet again, right now, at the same odds that made the hole. It is the habit handing you a reason. **Catch it by name, and it loses much of its pull**: there it is, the chase. Then close the app, leave the room, and tell someone the true number.',
+        back: 'l18',
+      },
+    ],
+    mine: { h: 'Your busiest hours show when the chase is likely.', k: 'hour' },
+    today: {
+      h: 'Call the loss what it is, and stop the chase.',
+      l: ['Say it: “That money is gone.”', 'Close the app, and leave the place', 'Tell one person the true number today'],
+    },
+    you: {
+      h: 'What will you do the next time you feel you have to win it back?',
+      o: [
+        ['Say out loud: that money is gone', 'Out loud is stronger than in your head. The ledger closes.'],
+        ['Close the app and walk away', 'Distance does what willpower cannot. Twenty steps is a lot.'],
+        ['Call someone before I bet again', 'A voice on the line breaks the spell faster than anything.'],
+        ['I do not know yet', 'Fair. Pick one now, while you are not in it.'],
+      ],
+    },
+    scope:
+      'The Monte Carlo story is told and retold more than it is recorded, and the near-miss studies were with volunteers, not people with gambling problems. The chasing review gathered lab and real-world studies. They point one sure way: the pull to win it back is a known pattern, and it can be caught and stopped.',
+    src: [S3.fallacy, S3.clark09, S3.kassinove, S3.zhang],
+  },
+
+  l53: {
+    id: 'l53',
+    form: 'word',
+    title: 'The money and the truth',
+    ic: 'shield',
+    ask: 'Do I have to tell anyone about the money?',
+    key: 'A secret sets you apart. Tell one person the true number, and face it together.',
+    np: 'The one person I will tell the true number to, and when',
+    tell: [
+      {
+        h: 'The word secret comes from a Latin word that means to set apart.',
+        p: 'A secret is not only something hidden. It is something that **sets you apart** from the people closest to you, behind a wall only you can see.',
+        dx: 'Secret comes from the Latin secretus, set apart, from a verb that meant to separate or divide. So a secret is not only something hidden in a drawer. It is something that **sets you apart**. Every day you keep it, you live a little to one side of the people closest to you: at the same table, behind a wall only you can see, doing sums in your head they do not know about.',
+        art: ['scene', { k: 'l53-apart' }],
+      },
+      {
+        h: 'A gambling debt kept secret sets you apart twice.',
+        p: 'From the people you hide it from, and from any help they could give. **It needs more secrets to stay hidden**, and more bets to cover them.',
+        dx: 'A debt from gambling, kept secret, sets you apart twice over. From the people you hide it from, who cannot understand why you are tense or short with them. And from the help they could give, because nobody can help with a number they have never heard. Worse, the secret needs feeding. **It needs more secrets to stay hidden**: a story about the bills, a moved payment, a second account. And it needs more bets, to cover the gap before anyone sees it.',
+        art: ['scene', { k: 'l53-twice' }],
+      },
+      {
+        k: 'ask',
+        h: 'If the people closest to you knew the whole number, what do you think would happen?',
+        o: [
+          ['They would leave', 'That fear is heavy. Many families stay, and telling is where help starts.'],
+          ['They would be angry, then help', 'Anger and help often come together. Both can be lived through.'],
+          ['They already suspect something', 'Then the secret may be costing more than the truth would.'],
+          ['I do not know', 'That is honest. Hold it for the next cards.'],
+        ],
+      },
+      {
+        h: 'Doctors list hiding the gambling as one of the signs of the problem.',
+        p: 'Lying about how much you gamble, and leaning on others to cover the losses. **The secret is not a side effect. It is one of the ways the habit keeps itself safe.**',
+        dx: 'The main manual doctors use to name gambling problems lists lying to hide how much a person gambles as one of its signs, along with relying on others for money to cover the losses. That is worth sitting with. **The secret is not a side effect. It is one of the ways the habit keeps itself safe.** As long as nobody knows the number, nobody can stand between you and the next bet.',
+        fact: { s: 'Manual · DSM-5, gambling disorder', i: [0] },
+      },
+      {
+        h: 'Now a second word. Debt comes from the Latin for a thing owed.',
+        p: 'A debt is a number, and a number has an end. It can be paid down, with a plan and with help. **A secret has no end, because it only grows.**',
+        dx: 'Now look at a second word. Debt comes from the Latin debitum, a thing owed. That is all a debt is: a number, owed to someone. It can be large and frightening, but a number has an end. It can be written down, looked at, planned for and paid down over time, with help, and free debt advisers do exactly this every day. **A secret has no end, because it only grows.** Telling turns the secret back into a debt, and a debt is something people get out of.',
+        art: ['scene', { k: 'l53-ledger' }],
+      },
+      {
+        h: 'And confess comes from a word that means to acknowledge, fully.',
+        p: 'Not to grovel, or to punish yourself. **To say plainly what is true**, to someone who can stand beside you while you face it.',
+        dx: 'And a third word. Confess comes from the Latin confiteri, to acknowledge, to admit fully. It does not mean to grovel, or to punish yourself, or to hand yourself over for a sentence. It means **to say plainly what is true**: here is the whole number, here is how it happened. Said to the right person, it is the moment you stop standing apart and someone can stand beside you while you face it.',
+        art: ['scene', { k: 'l53-tell' }],
+        fact: { s: 'Etymology · secret, debt, confess', i: [1] },
+      },
+      {
+        h: 'People who put a wall around the money gambled less.',
+        p: 'In studies of self-exclusion, where people ask to be barred from betting, many gambled less and felt more in control. **A wall around the money works better than willpower at the edge of it.**',
+        dx: 'Telling one person also makes something else possible: a wall around the money. A review of self-exclusion, where people ask casinos or betting sites to bar them, found that many who signed up gambled less, felt more in control and had fewer problems afterward. Shared control of a card or an account works the same way. **A wall around the money works better than willpower at the edge of it**, and you cannot build that wall alone in secret.',
+        fact: { s: 'Review · Gainsbury, 2014', i: [2] },
+      },
+      {
+        h: 'So tell one person the true number, and share the keys.',
+        p: 'The whole total, not the easy half. Let them hold a card or see the account, and call a free debt adviser. **The day you tell is the day the number stops growing in the dark.**',
+        dx: 'So pick one person and tell them the true number. The whole total, not the easy half, because half the truth keeps half the secret. Let them hold a card, or see the account, or be the second name on it. Call a free debt adviser this week: the gambling helpline in Get help can point you to one, and they hear this every day. **The day you tell is the day the number stops growing in the dark.** It may still be big. It is no longer yours alone.',
+        art: ['scene', { k: 'l53-keys' }],
+      },
+      {
+        long: 1,
+        h: 'Leave out anyone who would use it to hurt you.',
+        p: 'If telling might not be safe, start with a counselor or the gambling helpline in Get help. **They hear this every day, and they will help you plan.**',
+        dx: 'Not everyone is safe to tell. If someone would use the number to hurt you, or if telling could bring danger at home, start somewhere else: a counselor, a doctor, or the gambling helpline in Get help. **They hear this every day, and they will help you plan** who to tell, how, and what to do about the money first. You still get to stop standing apart. You just start with someone whose job is to stand beside you.',
+      },
+    ],
+    mine: { h: 'Look at what you have already done.', k: 'acted' },
+    today: {
+      h: 'Tell one person the true number, and share the keys.',
+      l: ['Tell one person the full total', 'Let them hold a card or see the account', 'Call a free debt adviser this week'],
+    },
+    you: {
+      h: 'Who is the one person you could tell the true number to?',
+      o: [
+        ['My partner', 'Then plan the words, and pick a calm moment. The whole number, once.'],
+        ['A family member', 'Family often carries more than we expect. Let them carry some of this.'],
+        ['A friend I trust', 'One friend who knows can check in, and help you hold the keys.'],
+        ['A counselor or helpline first', 'A strong first step. They will help you plan the rest.'],
+      ],
+    },
+    scope:
+      'Where a word comes from does not decide what it means today. Here secret, debt and confess are a way to see the money more clearly. The manual describes what doctors look for, and the self-exclusion review gathered studies of people who chose to bar themselves. Together they point one hopeful way: the truth and a wall around the money help people get free.',
+    src: [S3.dsm, S3.words, N.gainsbury14],
   },
 };

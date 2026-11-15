@@ -403,23 +403,23 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
 
     lessons: {
       icon: 'book',
-      title: 'Lesson length',
-      value: deepOn(st) ? 'Deep on' : 'Asks each time',
+      title: 'Lesson length, and 10-minute lessons',
+      value: deepOn(st) ? '2, 5 or 10 min' : '2 or 5 min',
       body: (
         /* every lesson asks its length (core lessonLen); Deep, the 10-minute lesson, is offered only here, never on a lesson or in a
            nudge, and only once every lesson has its fuller telling (core DEEP_READY) */
         <SetGroup
-          head="Each lesson asks how long you want it"
+          head="Want the 10-minute Deep lessons?"
           foot={
             DEEP_READY
-              ? 'Short is about 2 minutes and Long about 5. Deep, about 10, tells each part of the story in full.'
+              ? 'Every lesson asks how long you want it. Short is about 2 minutes and Long about 5. Turn on Deep, and each lesson also offers about 10 minutes, with every part of the story told in full.'
               : 'Short is about 2 minutes and Long about 5. The one you pick most is marked first.'
           }>
           {DEEP_READY ? (
             <SetPick
               options={[
-                ['off', 'Short and Long'],
-                ['on', 'Short, Long and Deep'],
+                ['on', 'Yes, offer Deep, about 10 minutes'],
+                ['off', 'No, Short and Long only'],
               ]}
               value={deepOn(st) ? 'on' : 'off'}
               onPick={(v) => v && apply({ st: setDeep(st, v === 'on') })}

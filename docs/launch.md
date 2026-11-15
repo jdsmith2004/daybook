@@ -108,6 +108,28 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 > repository, which also has the Spanish (Mexico) locale). The name stays the same.
 > Check every screenshot for the banned words before it goes in.
 
+> **Submitted November 15, 2026: 1.3.4 (build 25, main dec56082), Waiting for Review.** Resubmitted on the same submission
+> as 1.3.3 (it was Rejected with Unresolved Issues). Apple's full message for 1.3.3 (Resolution Center, November 11): Guideline
+> 1.1, "the app's marketing includes terms or images that reference objectionable content", naming the **description, subtitle,
+> What's New text and keywords**, "including, but not limited to"; reviewed on an iPad Air; marked Extended Review, with a
+> warning that repeat submissions risk the developer account. The owner replied on November 11; Apple's answer was only
+> "resubmit once adjusted".
+>
+> What changed in App Store Connect: the version number 1.3.3 to 1.3.4 and build 14 to 25; subtitle "Break a habit. Stay free."
+> to "Quit a habit. Become free."; the keywords and What's New below; review notes (below); all seven screenshots in both slots
+> (6.9-inch from `ios69`, 6.3-inch from `ios63`, which held older pictures) and the search results card; a new Spanish (Mexico)
+> locale (subtitle, keywords, the English description and What's New, support URL and privacy policy URL; it uses the English
+> pictures). **The Marketing URL is now empty in both locales**, because about.html names porn throughout and Apple said the
+> list of fields was not complete; support.html, which is required, names it once and stays. **Age rating:** "Alcohol, Tobacco,
+> or Drug Use or References" moved from None to Infrequent (the app has an alcohol mode); the rating stays 16+. Unchanged and
+> read: name, description, promotional text (empty), copyright, header picture, app icon, the three tips (names and
+> descriptions clean, already Approved), content rights, the privacy label. Release stays "automatically after approval",
+> as it was set.
+>
+> The flag check: every field in both locales (name, subtitle, description, promotional text, What's New, keywords, URLs)
+> searched for porn, nofap, sex, nude, xxx, explicit, adult, erotic and starred spellings: none. Every picture looked at:
+> none. The review notes name "adult" only to say there is no adult content and to describe Apple's own adult-website filter.
+
 - **Name:** Daybook: Master Yourself
 - **Subtitle:** Quit a habit. Become free.
 - **Category:** Health & Fitness. Second: Lifestyle.
@@ -162,7 +184,7 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 
 - **Privacy Policy URL:** https://d3c9g6kent5bsr.cloudfront.net/privacy.html
 - **Support URL:** https://d3c9g6kent5bsr.cloudfront.net/support.html
-- **Marketing URL:** https://d3c9g6kent5bsr.cloudfront.net/about.html
+- **Marketing URL:** left empty since 1.3.4 (about.html names porn throughout; see the note at the top of this section).
 - **Copyright:** 2026 Jeff Smith
 - The three public pages (support, privacy, terms) are plain HTML in `apps/mobile/public`, published with every deploy
   (and on GitHub Pages under /daybook/). The app links to them from More (Help and support) and the privacy sheet.
@@ -225,35 +247,25 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
     the phone, outside the log: never synced, backed up, counted or sent. Apple's label lists only data that leaves the
     device. The App ID needs the HealthKit capability (EAS turns it on from the entitlement on the next build; if the
     build says it is missing, tick HealthKit for `com.jdsmith2004.daybook` under Identifiers in the developer account).
-- **Notes for App Review:**
+- **Notes for App Review** (as submitted with 1.3.4, November 15, 2026):
 
-  > Daybook works without an account: SOS, logging, Rekindle, the plan and the tools never ask for one. An optional
-  > free account (email, or Sign in with Apple) opens the lessons after the first eight. Accounts can be deleted in the
-  > app: More, Sync between devices, Delete my account (an account made with Apple asks Apple once more and revokes its token).
+  > Daybook is a private companion for changing a habit. A person logs urges and slips honestly, uses short guided tools to ride out an urge (SOS), learns their own pattern, and reads one short lesson a day. It has no explicit or adult content of any kind: no such images, media, links or descriptions, no web browsing, no user chat, and nothing in it can be used to make or find such content.
   >
-  > Tips: three non-consumable in-app purchases (daybook.tip.kind $5, daybook.tip.generous $10, daybook.tip.amazing
-  > $20). Any of them makes the person a supporter, which opens sync and a safe copy, and the full pattern page.
-  > Restore is on the tip sheet ("I already tipped" on the sync card does the same). To try it: sign in with the demo
-  > account below, open More, Support Daybook (or Sync between devices), and buy any tip with the sandbox account; sync then
-  > turns on. On the United States storefront only, a second link under the in-app tips opens the same three tips on our
-  > web page (Stripe), as guideline 3.1.1(a) allows there. On every other storefront the app reads the storefront from
-  > StoreKit and shows the in-app tips alone, with no link to or mention of paying on the web.
+  > Since the last review (Guideline 1.1): every reference to objectionable content is gone from the store listing. The subtitle, keywords, description, What's New and every screenshot speak only of quitting a habit.
   >
-  > Apple Health: on iPhone, a person can let Daybook read sleep (read only, sleep only), from More, Apple Health, or
-  > the hard-days card on Pattern. It fills the check-in's sleep question and shows how their nights compare before days
-  > with and without a slip. The nights stay on the device: they are never sent to our server, synced, backed up or used
-  > for anything else. To see it, connect Apple Health in More with sleep data in the simulator's Health app.
+  > No account is needed: SOS, logging, Rekindle (after a slip), the plan and Today never ask for one. An optional free account (email, or Sign in with Apple) opens the lessons after the first eight; the demo account below reaches them, or a free account can be made in the app. Accounts can be deleted in the app: More, Settings, Sync, Delete my account (an account made with Apple asks Apple once more and revokes its token).
   >
-  > Journal Insights (new in 1.3.4): open the journal and tap the chart at the top.
+  > Screen Time (new, an optional beta): in More, Settings, Screen Time, a person can choose to use Apple's Screen Time on their own iPhone (Family Controls, individual authorization). They pick their own apps, and can turn on Apple's own adult-website filter, and set a wait before those open, so that in a hard moment they meet a pause instead of the app. Only the person sets it up, for themselves; iOS asks their permission first, and it can be turned off at any time. Daybook never sees which apps were chosen or how the phone is used: the choice stays inside Apple's Screen Time.
   >
-  > Bringing a Mithras journal (new in 1.3.4): Mithras is our other app, from the same developer. People moving from it can bring
-  > their own journal and streak into Daybook from More, Save a copy, Bring a Mithras journal (Mithras also opens this page with a
-  > link). It signs in to Mithras with that person's own Mithras sign-in (Sign in with Apple, or email and password), reads only
-  > their own journal and streak once, straight onto the phone, and keeps no Mithras sign-in afterwards. It needs a Mithras
-  > account, so without one the page stops at the sign-in.
+  > Tips: three non-consumable in-app purchases (daybook.tip.kind $5, daybook.tip.generous $10, daybook.tip.amazing $20). Any of them makes the person a supporter, which opens sync and a safe copy, and the full pattern page. Restore is on the tip sheet ("I already tipped" on the sync card does the same). To try it: sign in with the demo account below, open More, Support Daybook (or Settings, Sync), and buy any tip with the sandbox account; sync then turns on. On the United States storefront only, a second link under the in-app tips opens the same three tips on our web page (Stripe), as guideline 3.1.1(a) allows there. On every other storefront the app reads the storefront from StoreKit and shows the in-app tips alone.
   >
-  > The app has no ads, sells nothing, and counts only anonymous totals of how it is used. Reminders are local notifications made on the device, with plain words that do
-  > not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
+  > Apple Health: a person can let Daybook read sleep (read only, sleep only) from More, Apple Health. It fills the check-in's sleep question; the nights stay on the device and are never sent, synced or backed up.
+  >
+  > Journal Insights (new): open the journal and tap the chart at the top.
+  >
+  > Bringing a Mithras journal (new): Mithras is our other app, from the same developer. From More, Save a copy, Bring a Mithras journal, a person signs in to their own Mithras account to copy their own journal and streak onto the phone once; no Mithras sign-in is kept. Without a Mithras account the page stops at the sign-in.
+  >
+  > The app has no ads. Reminders are local notifications made on the device, with plain words that do not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
 
 - **Sign-in for App Review:** make a test account in the TestFlight app first (More, then Sync between devices), with a
   new email address you control, and type its email and password into App Review Information yourself. Never put that

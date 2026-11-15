@@ -807,6 +807,127 @@ export const lessonPractice = (L: Lesson | null, st?: Settings | null): PStep | 
 };
 export const practiceOf = (id: string) => lessonPractice(lessonById(id));
 
+/* ---------- the one invitation ---------- */
+/** The practice step shows one invitation, never two (the owner, November 15, 2026: "it should just be like one invitation per
+    page, not or per lesson, not two. Never two like that"): a line to write with examples to tap, one ready-made line, or one
+    place to go. ONE holds the pick for each lesson, chosen by hand to fit its story (the owner liked l31's prayer line best: "helping
+    them like pray better and know what to say"). A lesson missing here shows its line to write, else its first line, else its first
+    place to go. The other lines in PRACTICE stay for the pages that offer more than one. */
+export type POne = { write: string[] } | { item: PItem } | { go: Go };
+const w = (...write: string[]): POne => ({ write });
+const one = (item: PItem): POne => ({ item });
+export const ONE: Record<string, POne> = {
+  l1: w('Opening Daybook once a day, even for a minute.', 'Leaving the room when the pull starts.', 'Writing one honest line in my log.'),
+  l2: one(plan('an urge hits', 'Name it (“this is an urge”), breathe out slowly, and give it ten minutes before I decide anything.')),
+  l3: one(line('slip', 'Say it out loud: “One slip is one slip. The day is not ruined. I do the next small thing.”')),
+  l4: one(plan('I am worn out and the pull starts', 'Meet the need first: rest, eat, or reach someone, before I decide anything.')),
+  l5: w(
+    'I slipped. That is something I did, not who I am.',
+    'I had a hard day. I am still someone who is changing.',
+    'I gave in once. Now I know more about what comes before it.',
+  ),
+  l6: one(line('slip', 'Talk to myself like a friend: “That was hard. It happened. What do I need now?”')),
+  l7: one(
+    copy(
+      'To my safe person',
+      'I am working on something, and I might tell you when I slip. All I need is for you to say “thanks for telling me.” No advice, no fixing.',
+    ),
+  ),
+  l8: one(copy('To a friend', 'Hey, it has been a while. Want to get coffee or take a walk this week?')),
+  l9: one(plan('I am home alone and an urge starts', 'Leave the room, get a glass of water, and text someone.')),
+  l10: one(plan('I go to the place it usually happens', 'Change one thing first: the light on, the door open, or the phone left in another room.')),
+  l11: w('My sleep, and clear mornings.', 'Time I wanted for the people I love.', 'The feeling that I keep my word to myself.'),
+  l12: one(line('reason', 'I am growing a whole life, not protecting a streak.')),
+  l13: one(plan('an urge starts after a rough day', 'Say “I notice I feel ___,” name the feeling in a word or two, then meet that feeling another way.')),
+  l14: one(plan('I feel the first pull of an urge', 'Take three slow breaths with a long breath out before I do anything else.')),
+  l15: one(plan('an urge starts while I am sitting still', 'Stand up and move for two minutes first, then decide.')),
+  l16: one(line('words', 'I am having the thought that just once will not matter. It is a thought, not an order.')),
+  l17: w(
+    'Staying on my phone “just a little longer” when I was tired.',
+    'Skipping a meal and getting home tired and alone.',
+    'Telling myself I would only scroll for a minute.',
+  ),
+  l18: w('“I have earned it after this week.”', '“Just once will not matter.”', '“Nobody will know.”'),
+  l19: one(plan('my weekly review comes', 'Read it and name one thing I do better than a month ago, then pick one thing to change.')),
+  l20: one(plan('the hour I usually have to fight is coming', 'Put what I reach for out of reach first, so there is no fight to win.')),
+  l21: one(plan('I miss a day of my routine', 'Come back the next day in the smallest way: one check-in, even a short one.')),
+  l22: w(
+    'It hurts because I care about being honest with the people I love.',
+    'It hurts because this is not who I want to be, and I know I can change.',
+    'It hurts because I keep my word to others, and I want to keep it to myself.',
+  ),
+  l23: one(plan('an hour opens up with nothing in it', 'Start the thing I planned for it, a walk, a call or my project, before anything else.')),
+  l24: one(
+    copy(
+      'A first message to a therapist',
+      'Hi, I would like to set up counseling for a habit I have not been able to stop on my own. Do you have openings, and do you offer a sliding scale?',
+    ),
+  ),
+  l25: w('A friend who is struggling. I would tell them it can get better.', 'Someone new at a group. I would tell them what helped me first.'),
+  l26: one(plan('an urge starts and I want to act on it', 'Delay ten minutes, then escape the room or swap in one small task.')),
+  l27: one(plan('I notice I started on autopilot', 'Run the one-minute pause: stop, notice, breathe, widen my view, then choose.')),
+  l28: one(
+    copy(
+      'Ask someone to check in',
+      'I respect how you have handled your own recovery. Would you check in with me once a week? I am not asking you to fix anything. I want someone who knows, so I stay honest.',
+    ),
+  ),
+  l29: one(plan('I am struggling', 'Say a short prayer in my own words, then do one thing on my plan right away.')),
+  l30: w('“Be still, and know that I am God.”', '“The Lord is my shepherd, I shall not want.”', 'The first verse of a hymn I have loved since I was young.'),
+  l31: w(
+    'I have been carrying this alone, and I am tired of hiding it.',
+    'I feel I have let God down, and I want to be honest about it.',
+    'I am ashamed, and I am ready to tell one person.',
+  ),
+  l32: w('God, I am sorry. Help me start again today.', 'I forgive myself for yesterday. Today I take the next right step.'),
+  l33: one(plan('the pull feels like a need', 'Say “that is the ad,” and remember how it felt afterward last time.')),
+  l34: one(plan('I notice my first signal', 'Move right then: stand up and go somewhere else, before the urge has time to build.')),
+  l35: one(plan('I catch myself on autopilot', 'Stop, say “Wait, I can stop here,” and put down what is in my hand.')),
+  l36: w('Feeling like I am not enough. It might be guarding my wish to matter.', 'Loneliness. It might be guarding how much I want to be close to someone.'),
+  l37: one(line('be', 'I am someone who keeps my word to myself.')),
+  l38: one(line('be', 'I do not watch porn. That is who I am now.')),
+  l39: one(line('note', 'It is me, a year from now. Today matters more than it feels. Every urge you ride out, I am grateful for. Keep going.')),
+  l40: one(line('be', 'I am someone who rides out urges. My log shows it.')),
+  l41: one(plan('I catch myself reaching for my cap', 'Name it out loud, and tell one person one thing this habit has been costing me.')),
+  l42: one(plan('a picture of it starts in my head', 'Play Fit the shapes for one minute, eyes on the board. Then stand up and do the next thing.')),
+  l43: one(plan('an urge starts as a picture in my head', 'Look up and name 5 things I can see, then 4 things I can feel. Come back to the room.')),
+  l44: w(
+    'Giving in: tired, ashamed, and more alone. Riding it out: calm, and more like myself.',
+    'Giving in: empty, and behind on things. Riding it out: proud, rested, and clear-headed.',
+  ),
+  l45: one(line('note', 'It is me, on a calm day. You know what you want. This will pass, and I will be glad you waited.')),
+  l46: w('The empty hour after, and the hiding.', 'How tired and behind I felt the next day.'),
+  l47: one(
+    copy(
+      'Telling for the first time',
+      'There is something I have been hiding from you, and I want to stop hiding it. I have been struggling with porn, and I am working on it. You do not have to say anything now. I will answer what you want to ask.',
+    ),
+  ),
+  l48: w(
+    'Honest, wanted, and with nothing to hide.',
+    'Close to one person, and something I am glad to remember.',
+    'I am giving my body time, and I am not testing it.',
+  ),
+  l49: one(plan('I catch myself thinking I could test myself', 'Say “I have nothing to test,” tell my safe person, and do the next thing on my plan.')),
+  l50: one(plan('someone offers me a drink', 'Say “No thanks, I am set with this one,” and keep my soda in my hand.')),
+  l51: one(plan('I want to make a big promise to fix things', 'Pick one small thing I will do this week instead, and do it.')),
+  l54: one(plan('the hour that usually wears me down comes', 'Move what I reach for out of reach first, then eat, rest or call someone.')),
+  l52: one(plan('I am down and want to win it back', 'Say “That money is gone,” close the app, and tell one person the true number.')),
+};
+
+/** the one invitation a lesson's practice step shows, in the person's own habit's words */
+export const practiceOne = (L: Lesson | null, st?: Settings | null): POne | null => {
+  const P = lessonPractice(L, st);
+  if (!L || !P) return null;
+  const o = ONE[L.id];
+  const h = habitOf(st);
+  if (o) return 'item' in o && h !== 'porn' ? { item: { ...o.item, text: habitSay(o.item.text, h) } } : o;
+  if (P.write) return { write: P.write };
+  if (P.items && P.items[0]) return { item: P.items[0] };
+  if (P.go && P.go[0]) return { go: P.go[0] };
+  return null;
+};
+
 /* ---------- one ready-made line ---------- */
 /** where the line goes, in a few words */
 export const ITEM_WHERE: Record<PKind, string> = {

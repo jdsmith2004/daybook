@@ -32,6 +32,36 @@ describe.each(core.LESSONS.map((L) => [L.id, L] as const))('%s', (_id, L) => {
   });
 });
 
+describe('the one invitation', () => {
+  /* one invitation per lesson, chosen by hand (the owner, November 15, 2026); its words hold for everyone, at any hour */
+  const HOUR = /\b\d{1,2}(:\d\d)?\s?(AM|PM)\b|\bin bed\b|\bbefore bed\b|\bgo to bed\b|\btonight\b|\blate at night\b|\blast night\b/i;
+  const BANNED = /\b(simply|actually|truly|deeply|journey|powerful|the real)\b|[—–;]/i;
+  it.each(core.LESSONS.map((L) => [L.id, L] as const))('%s shows one thing', (_id, L) => {
+    const o = core.practiceOne(L)!;
+    expect(o).toBeTruthy();
+    expect(Object.keys(o)).toHaveLength(1);
+  });
+  it.each(Object.entries(core.ONE))('%s reads well for everyone', (id, o) => {
+    expect(core.lessonById(id)).toBeTruthy();
+    const words = 'write' in o ? o.write : 'item' in o ? [o.item.text, o.item.when || ''] : [o.go.t];
+    words.forEach((x) => {
+      expect(x).not.toMatch(CONTRACTION);
+      expect(x).not.toMatch(HOUR);
+      expect(x).not.toMatch(BANNED);
+    });
+    if ('item' in o) {
+      expect(o.item.text.length).toBeLessThanOrEqual(core.itemLen(o.item));
+      if (o.item.when) expect(o.item.when.length).toBeLessThanOrEqual(core.ITEM_WHEN_LEN);
+      for (const h of ['alcohol', 'gambling', 'other'] as const) {
+        const st = st0();
+        st.onb = { ...(st.onb || {}), a: { ...((st.onb && st.onb.a) || {}), habit: h } } as typeof st.onb;
+        const x = core.practiceOne(core.lessonById(id), st)!;
+        expect('item' in x && x.item.text).not.toMatch(/\bporn\b/i);
+      }
+    }
+  });
+});
+
 describe('one tap adds a line, and Undo takes it back off', () => {
   const kinds: PItem[] = [
     { k: 'plan', when: 'I am struggling', text: 'Say a short prayer, then do one thing on my plan.' },

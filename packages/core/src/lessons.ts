@@ -257,8 +257,12 @@ export const FRONT_N = 7;
 export const NIGHT_TRACK = ['l54', 'l34', 'l55', 'l20', 'l10', 'l9', 'l4'];
 const NIGHT_FIRST = ['l54', 'l34', 'l55', 'l9', 'l4'];
 const NIGHT_SPARE = ['l20', 'l10'];
-/** after the night lessons, the two that hold hope for someone slipping most nights */
-const NIGHT_HOPE = ['l1', 'l3'];
+/** the first lesson after setup, for everyone, the night track too: the small sign in the window, the lesson about becoming someone
+    free (the owner, November 14, 2026: "when they finish onboarding and they do the first lesson, it has to be a freaking amazing
+    lesson") */
+export const FIRST_LESSON = 'l1';
+/** after the night lessons, the one that holds hope for someone slipping most nights */
+const NIGHT_HOPE = ['l3'];
 /** the lesson for a rare slip, moved after the first week for someone who said most days */
 export const RARE_SLIP_LESSON = 'l22';
 const answers = (st: Settings | null | undefined) => (st && st.onb && st.onb.a) || {};
@@ -296,10 +300,10 @@ function personalPath(base: Lesson[], st: Settings | null | undefined, v: FrontK
     const night = NIGHT_FIRST.map(fit).filter((L): L is Lesson => !!L);
     NIGHT_SPARE.forEach((id) => {
       const L = fit(id);
-      if (L && night.length < FRONT_N - NIGHT_HOPE.length) night.push(L);
+      if (L && night.length < FRONT_N - NIGHT_HOPE.length - 1) night.push(L);
     });
     night.sort((a, b) => NIGHT_TRACK.indexOf(a.id) - NIGHT_TRACK.indexOf(b.id));
-    front.push(...night, ...NIGHT_HOPE.map(fit).filter((L): L is Lesson => !!L));
+    front.push(...[FIRST_LESSON].map(fit).filter((L): L is Lesson => !!L), ...night, ...NIGHT_HOPE.map(fit).filter((L): L is Lesson => !!L));
     /* a path with fewer night lessons (another habit) is filled from the start of its own order */
     for (const L of base) {
       if (front.length >= FRONT_N) break;
@@ -653,7 +657,7 @@ export const lessonCore = (L: Lesson) => L.cards.filter((c) => c.k !== 'try');
     14, 2026: a 10-minute lesson, "only ... if they go into the settings and enable" it) */
 export type LessonLen = 'q' | 'f' | 'd';
 /** Deep is offered in Settings once every lesson on the path has its deep cards (docs/plan.md); until then a saved Deep plays Long */
-export const DEEP_READY = false;
+export const DEEP_READY = true;
 export const lessonCards = (L: Lesson, len: LessonLen | null) => {
   const all = lessonCore(L);
   if (len === 'q' && lessonHasQuick(L)) return all.filter((c) => c.q === 1);

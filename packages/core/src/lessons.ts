@@ -651,7 +651,8 @@ export const reviewPick = (tk: DayKey, st?: Settings | null) => {
 /* ---------- one lesson ---------- */
 export const lessonHasQuick = (L: Lesson) => !!(L.cards && L.cards.some((c) => c.q === 1));
 /** the length shown in lists */
-export const lmin = (L: Lesson) => (lessonHasQuick(L) ? '1–5 min' : (L.mins || 3) + ' min');
+export const lmin = (L: Lesson, st?: Settings | null) =>
+  lessonHasQuick(L) ? (DEEP_READY && st && st.learn && st.learn.deep ? '1–10 min' : '1–5 min') : (L.mins || 3) + ' min';
 export const lessonCore = (L: Lesson) => L.cards.filter((c) => c.k !== 'try');
 /** how long a lesson runs: Short plays the cards marked q, Long every card but the deep ones, and Deep every card (the owner, November
     14, 2026: a 10-minute lesson, "only ... if they go into the settings and enable" it) */

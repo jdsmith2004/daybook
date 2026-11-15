@@ -72,6 +72,8 @@ import {
   type WalkStage,
   NUDGE_WORDS,
   noneTail,
+  keepOwn,
+  ownOf,
 } from '@daybook/core';
 import { router } from 'expo-router';
 import { cloneElement, isValidElement, useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
@@ -137,7 +139,10 @@ export function Walk({
   /** the end: an urge ridden out at this place, and home */
   onHome: (at: TrailPlace | null, n0: number | null) => void;
 }) {
-  const { snap, tk, update } = useStore();
+  const { snap, tk, update, apply } = useStore();
+  /* written answers are kept for good (core saved-answers.ts) and offered again on every walk, and wherever the same is asked */
+  const keepMine = (kind: 'hold' | 'line' | 'move', t: string) => t.trim() && apply((cur) => ({ st: keepOwn(cur, kind, t) }));
+  const sameW = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
   const st = useCareSettings();
   const mem = useSos().mem;
   const faith = useMemo(() => walkFaith(snap.settings), [snap.settings]);
@@ -351,9 +356,10 @@ export function Walk({
   if (part === 'hold' && n0 != null && whyNot != null) {
     const any = holds.length > 0 || holdWords.length > 0;
     /* their own words, written here, are chips of their own beside their reasons */
-    const written = mine.filter((r) => reasons.indexOf(r) < 0);
+    const written = [...ownOf(snap.settings, 'hold'), ...mine].filter((r, i, a) => reasons.indexOf(r) < 0 && a.findIndex((x) => sameW(x, r)) === i);
     const saveOwn = () => {
       const t = holdDraft.trim().replace(/\s+/g, ' ');
+      if (t) keepMine('hold', t);
       if (t && mine.indexOf(t) < 0) setMine((l) => l.concat(t));
       setHoldDraft('');
       setOwnHold(false);
@@ -516,7 +522,13 @@ export function Walk({
               style={s.box}
             />
             <View style={s.write}>
-              <Button label="Next" onPress={() => go('answer')} />
+              <Button
+                label="Next"
+                onPress={() => {
+                  keepMine('line', lineOwn);
+                  go('answer');
+                }}
+              />
               <View style={s.center}>
                 <Link label="Pick from the list" tone="muted" onPress={() => setOwnLine(false)} />
               </View>
@@ -539,17 +551,27 @@ export function Walk({
       <>
         <Chips
           label="What it is telling you"
-          opts={WALK_LINES.map((x): { id: WalkLine | 'own'; label: string; own?: boolean } => ({ id: x.id, label: x.line })).concat([
-            { id: 'own', label: lineOwn.trim() || OWN, own: true },
-          ])}
-          on={line ? [line] : lineOwn.trim() ? ['own'] : []}
+          opts={WALK_LINES.map((x): { id: string; label: string; own?: boolean } => ({ id: x.id, label: x.line }))
+            .concat(
+              [...ownOf(snap.settings, 'line'), ...(lineOwn.trim() ? [lineOwn.trim()] : [])]
+                .filter((t, i, a) => a.findIndex((y) => sameW(y, t)) === i)
+                .map((t) => ({ id: 'l:' + t, label: t })),
+            )
+            .concat([{ id: 'own', label: OWN, own: true }])}
+          on={line ? [line] : lineOwn.trim() ? ['l:' + lineOwn.trim()] : []}
           onPick={(x) => {
             if (x === 'own') {
               setLine(null);
+              setLineOwn('');
               setOwnLine(true);
               return;
             }
-            setLine(x);
+            if (x.startsWith('l:')) {
+              setLine(null);
+              setLineOwn(lineOwn.trim() === x.slice(2) ? '' : x.slice(2));
+              return;
+            }
+            setLine(x as WalkLine);
             setLineOwn('');
           }}
         />
@@ -805,7 +827,14 @@ export function Walk({
             style={s.box}
           />
           <View style={s.write}>
-            <Button label="Add it" disabled={!moveOwn.trim()} onPress={() => setOwnMove(false)} />
+            <Button
+              label="Add it"
+              disabled={!moveOwn.trim()}
+              onPress={() => {
+                keepMine('move', moveOwn);
+                setOwnMove(false);
+              }}
+            />
           </View>
         </Rise>
       );
@@ -884,12 +913,22 @@ export function Walk({
                 label: TALK_MOVES[m][0],
                 tag: talkHeldTag(held, m) || undefined,
               }))
-              .concat([{ id: 'own', label: moveOwn.trim() || OWN, own: true }])}
-            on={(moves as string[]).concat(moveOwn.trim() ? ['own'] : [])}
+              .concat(
+                [...ownOf(snap.settings, 'move'), ...(moveOwn.trim() ? [moveOwn.trim()] : [])]
+                  .filter((t, i, a) => a.findIndex((y) => sameW(y, t)) === i)
+                  .map((t) => ({ id: 'm:' + t, label: t })),
+              )
+              .concat([{ id: 'own', label: OWN, own: true }])}
+            on={(moves as string[]).concat(moveOwn.trim() ? ['m:' + moveOwn.trim()] : [])}
             onPick={(m) => {
               if (m === 'own') {
-                if (moveOwn.trim()) setMoveOwn('');
-                else setOwnMove(true);
+                setMoveOwn('');
+                setOwnMove(true);
+                return;
+              }
+              /* one move in their own words at a time: a written one is picked or put down with a tap, and stays a chip */
+              if (m.startsWith('m:')) {
+                setMoveOwn(moveOwn.trim() === m.slice(2) ? '' : m.slice(2));
                 return;
               }
               const k = m as TalkMove;

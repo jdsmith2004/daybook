@@ -9,7 +9,7 @@
     4. the day of a slip, after it: one small thing
     5. a talk-through due: decide now, it passed, look back
     7. days away not known: fill them in
-    8. the Sunday review, Sunday and Monday
+    8. the Sunday review, Sunday and Monday, is a step on the line (next-step.ts), so it is the calm day's card
     9. one-time moments: first week done, Day 1 tell the safe person, a counting note, the comeback noticed (all
        three flames lit: it celebrates, and its button is the day's next step), a paused reminder, the first pattern
    10. a calm day: the day's next stop; everything done: "All done. Rest well." ("Rest well." alone on the night of a slip)
@@ -26,12 +26,13 @@ import { GRAD_DAYS, GRAD_WINDOW, todayMeasure } from './graduate';
 import { fireLow, LOW_LEAD } from './flame-low';
 import { heroNumber } from './hero';
 import { formWord } from './levels';
-import { openTile, stopTiles, type StopGo } from './day';
+import { type StopGo } from './day';
+import { todayLine } from './next-step';
 import { comebackNow, rkComebackSay, safeName, tellStartDue } from './rekindle';
 import { firstPattern } from './risk';
 import { slipNext } from './slip';
 import { urNight } from './sos';
-import { isSunday, SUN_GOALS, sunDue, sunGoalNow } from './sunday';
+import { isSunday, SUN_GOALS, sunGoalNow } from './sunday';
 import type { CareDoor } from './talk';
 import { talkDueNow } from './talk-log';
 import { stepOffer } from './view';
@@ -159,22 +160,7 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
       'the days away',
     );
 
-  /* 8. the Sunday review */
-  const sd = sunDue(reviews, st, tk);
-  /* the first one is a part unlocked (unlock.ts): its own page says what it is, then opens it */
-  if (sd && !sd.late && !Object.keys(reviews || {}).length)
-    m('sunday', UNLOCK_WORDS.sunday.eb, UNLOCK_WORDS.sunday.h, '', 'Start', 'unlock', 'your Sunday review', sd.sun);
-  else if (sd)
-    m(
-      'sunday',
-      sd.late ? 'Last week' : 'Sunday',
-      sd.late ? 'Last week’s review is still open' : 'Your Sunday review',
-      'Your week in your own graphs, then one goal for the next.',
-      sd.late ? 'Look back on last week' : 'Look back on my week',
-      'review',
-      'your Sunday review',
-      sd.sun,
-    );
+  /* 8. the Sunday review is a step on the line now, not a card of its own (next-step.ts): it is the calm day's next step below */
 
   /* 9. one-time moments */
   if (firstWeekDue(st, tk))
@@ -195,7 +181,7 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
      only takes room): its button is the day's next step, or "Nice" once the day is done, and either puts it away */
   const cb = comebackNow(days, st, tk);
   if (cb && dev.comebackSeen !== cb.k) {
-    const nx = openTile(days, st, tk, now, dev.account !== false);
+    const nx = todayLine(days, st, reviews, tk, now, undefined, dev.account !== false).next;
     m(
       'comeback',
       'Your comeback',
@@ -214,11 +200,13 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
     m('first-pattern', 'Your pattern', 'A first pattern', pat, 'See my pattern', 'pattern', 'your first pattern');
 
   /* 10. a calm day */
-  const d = stopTiles(days, st, tk, now);
-  /* without an account, a lesson that waits behind one is never the card: a re-read instead (day.ts openTile, which Your
-     day uses for its open stop too, so both open the same thing) */
-  const cur = openTile(days, st, tk, now, dev.account !== false);
-  if (cur) m('calm', cur.eyebrow, cur.head, cur.body, cur.btn, cur.go, 'the day', cur.id);
+  /* the one next step on the line (next-step.ts): the morning while it is open, the Sunday review while it is due, then the
+     day's open stop. Without an account, a lesson that waits behind one is never the card: a re-read instead (day.ts openTile,
+     which Your day uses for its open stop too, so both open the same thing) */
+  const d = todayLine(days, st, reviews, tk, now, undefined, dev.account !== false);
+  const cur = d.next;
+  /* the first Sunday review opens its own page first (unlock.ts) */
+  if (cur) m('calm', cur.eyebrow, cur.head, cur.body, cur.btn, cur.intro ? 'unlock' : cur.go, cur.k === 'sunday' ? 'your Sunday review' : 'the day', cur.id);
   if (dev.recheck)
     m('recheck', 'One month on', 'Five questions, one minute', 'The same five from your setup. See where you are now.', 'Start', 'recheck', 'five questions');
   else if (dev.free)

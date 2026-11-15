@@ -11,6 +11,8 @@ const timed = (t: { k: string }) => !['calm', 'reach', 'journal', 'morning'].inc
 const tk = '2026-10-14';
 const at = (s: string) => new Date(s).getTime();
 const st = core.normSettings({ ...core.defaultSettings('2026-09-01'), day1: '2026-09-02', screensOff: '22:30' });
+/* the morning told and tonight set */
+const told: Days = { [tk]: core.normDay({ p: { ...core.blankP(), ms: { at: at(tk + 'T07:00'), set: at(tk + 'T07:00') } } }, tk) } as Days;
 const finish = (days: Days, k: string, when: string) => core.recordLesson(days, k, core.firstUndone(core.lessonsDone(days))!, at(when)).days;
 
 describe('today’s lesson is Next up until it is done or the night opens', () => {
@@ -20,7 +22,8 @@ describe('today’s lesson is Next up until it is done or the night opens', () =
       expect(core.nextUp({}, st, tk, now).k).toBe('lesson');
       expect(core.nextUp({}, st, tk, now).act).toBe('lesson');
       expect(core.stopTiles({}, st, tk, now).cur).toBe('lesson');
-      const pick = core.pickMoment({}, st, {}, tk, now);
+      /* with the morning told (in the morning hours an untold morning is the next step first, next-step.ts) */
+      const pick = core.pickMoment(told, st, {}, tk, now);
       expect([pick.card.k, pick.card.go]).toEqual(['calm', 'lesson']);
     }
   });

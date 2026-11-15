@@ -1,10 +1,10 @@
 /* Scenes for lesson g4, "A new heart is given" (see story-kit.tsx and story-scenes-f-l31.tsx for the approach): the ten lepers on the road (always gray-brown
-   wraps with bandaged hands, turning clean and bright as they are healed), Jesus in a white robe with a red sash and a simple face, the stone heart that becomes
-   a heart of flesh, King Benjamin on his tower, the days that grow a little brighter, the first step on the road at dawn, and young Benjamin Franklin with his
+   wraps with bandaged hands, turning bright as they are healed), Jesus in a white robe with a red sash and a simple face, the stone heart that becomes
+   a heart of flesh, the days that grow a little brighter, the first step on the road at dawn, and young Benjamin Franklin with his
    little book of spots and the speckled axe. Every figure carries a dark outline so it reads on a dark card and a cream one. */
 import { type ComponentType, useEffect, useState } from 'react';
 import { Easing } from 'react-native';
-import { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
+import { Circle, ClipPath, Defs, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
 
 import { useAppear, useReducedMotion } from '@/lib/motion';
 
@@ -26,7 +26,7 @@ const ROBE_W = '#FBF7EC';
 const LEP = '#8C7B6A';
 const LEP_D = '#5E5044';
 const LEP_SKIN = '#BF9F88';
-const CLEAN = '#FFFBEE';
+const BRIGHT = '#FFFBEE';
 const TRAV = '#4F6FBF';
 const HEART_RED = '#E5405A';
 
@@ -121,7 +121,7 @@ function Jesus({ x, y, s = 1, flip = false, pose = 'stand' }: { x: number; y: nu
 }
 
 type LepPose = 'stand' | 'raise' | 'walk' | 'wave';
-/* one of the ten, standing on (x, y): gray-brown wraps with bands across them and bandaged hands. heal runs 0 (sick) to 1 (clean, bright and glowing).
+/* one of the ten, standing on (x, y): gray-brown wraps with bands across them and bandaged hands. heal runs 0 (sick) to 1 (bright and glowing).
    Faces right; flip turns him. */
 function Leper({
   x,
@@ -141,7 +141,7 @@ function Leper({
   heal?: number;
 }) {
   const sw = 1.5 / s;
-  const wrap = mix(LEP, CLEAN, heal);
+  const wrap = mix(LEP, BRIGHT, heal);
   const band = mix(LEP_D, '#E8C46A', heal);
   const skin = mix(LEP_SKIN, SKIN, heal);
   const arm = (d: string) => <Tube fill={wrap} parts={[[d, 5]]} />;
@@ -362,7 +362,7 @@ function GoScene({ k }: { k: Ink }) {
   );
 }
 
-/* ---------- 3. as they went, they were cleansed ---------- */
+/* ---------- 3. as they went, they were healed ---------- */
 function RoadScene({ k }: { k: Ink }) {
   void k;
   const p = useRun(300, 2600);
@@ -440,7 +440,7 @@ function HeartScene({ k }: { k: Ink }) {
   );
 }
 
-/* ---------- 5. clean hands, and a heart slowly warming ---------- */
+/* ---------- 5. washed hands, and a heart slowly warming ---------- */
 function TwoScene({ k }: { k: Ink }) {
   void k;
   const p = useRun(300, 1800);
@@ -449,7 +449,7 @@ function TwoScene({ k }: { k: Ink }) {
     <Frame label="Two panels. On the left, open cupped hands catch pure water falling into them. On the right, a small heart glows a little warmer above five small steps that rise from left to right, one small bar at a time">
       <Rect x={14} y={14} width={132} height={154} rx={10} fill="#4F86A3" />
       <Rect x={154} y={14} width={132} height={154} rx={10} fill="#4A3558" />
-      {/* clean water over open hands */}
+      {/* fresh water over open hands */}
       <Path d="M80 26 Q76 56 80 100" stroke={BEAR_LINE} strokeWidth={9} fill="none" strokeLinecap="round" />
       <Path d="M80 26 Q76 56 80 100" stroke="#CFEFFA" strokeWidth={6} fill="none" strokeLinecap="round" />
       <G fill="#CFEFFA" stroke={BEAR_LINE} strokeWidth={1}>
@@ -497,137 +497,65 @@ function TwoScene({ k }: { k: Ink }) {
   );
 }
 
-/* ---------- 6. King Benjamin on his tower ---------- */
-function Tent({ x, y, s = 1, face, fill }: { x: number; y: number; s?: number; face: 'l' | 'r'; fill: string }) {
-  const d = face === 'r' ? 1 : -1;
-  return (
-    <G transform={`translate(${x} ${y}) scale(${s})`}>
-      <Path d="M-24 0 L0 -38 L24 0 Z" fill={fill} stroke={BEAR_LINE} strokeWidth={1.5 / s} strokeLinejoin="round" />
-      <Path d={`M${-d * 2} -38 L${d * 5} -22 L${d * 24} 0 L${d * 2} 0 Z`} fill={BEAR_LINE} opacity={0.12} />
-      {/* the door, on the side toward the tower, its flap drawn back */}
-      <Path d={`M${d * 4} 0 L${d * 10} -17 L${d * 17} 0 Z`} fill="#2E1E18" stroke={BEAR_LINE} strokeWidth={1.2 / s} strokeLinejoin="round" />
-      <Path d={`M${d * 10} -17 L${d * 20} -3 L${d * 17} 0 Z`} fill={CREAM} stroke={BEAR_LINE} strokeWidth={1 / s} strokeLinejoin="round" />
-      <Path d="M0 -38 L0 -46" stroke={BEAR_LINE} strokeWidth={1.8 / s} strokeLinecap="round" />
-      <Path d="M0 -46 L7 -44 L0 -41 Z" fill={RED} stroke={BEAR_LINE} strokeWidth={0.8 / s} />
-    </G>
-  );
-}
-function TowerScene({ k }: { k: Ink }) {
-  void k;
-  const p = useRun(500, 1400);
-  const fronts = [
-    { x: 42, face: 'r' as const, fill: '#D8A06A' },
-    { x: 96, face: 'r' as const, fill: '#E8D2A6' },
-    { x: 204, face: 'l' as const, fill: '#D8A06A' },
-    { x: 258, face: 'l' as const, fill: '#E8D2A6' },
-  ];
-  const crowd: [number, number, string, boolean][] = [
-    [66, 164, '#4F6FBF', false],
-    [78, 168, '#B8528A', false],
-    [118, 164, '#6E9A5C', false],
-    [182, 164, '#B8528A', true],
-    [194, 168, '#4F6FBF', true],
-    [232, 164, '#6E9A5C', true],
-  ];
-  return (
-    <Frame label="King Benjamin, in a blue robe and a gold crown, stands on top of a tall wooden tower and speaks with a raised hand. Around the tower on both sides are tents with their doors turned toward him, and people stand in front of them looking up at him">
-      <Rect x={10} y={10} width={280} height={162} rx={12} fill="#A8CCE8" />
-      <Circle cx={252} cy={36} r={14} fill={GOLD} />
-      <Circle cx={252} cy={36} r={22} fill={GOLD} opacity={0.3} />
-      <Ellipse cx={60} cy={30} rx={28} ry={7} fill="#FFFFFF" opacity={0.7} />
-      <Path d="M10 118 Q70 96 130 112 Q200 92 290 110 L290 160 L10 160 Z" fill="#8FB07A" />
-      <Path d="M10 136 L290 136 L290 160 Q290 172 278 172 L22 172 Q10 172 10 160 Z" fill="#B7C58A" />
-      {/* the far tents */}
-      <Tent x={34} y={140} s={0.6} face="r" fill="#E8D2A6" />
-      <Tent x={72} y={140} s={0.6} face="r" fill="#D8A06A" />
-      <Tent x={228} y={140} s={0.6} face="l" fill="#D8A06A" />
-      <Tent x={266} y={140} s={0.6} face="l" fill="#E8D2A6" />
-      {/* the tower */}
-      <G stroke={BEAR_LINE} strokeWidth={1.4} strokeLinejoin="round" strokeLinecap="round">
-        <Path d="M134 166 L139 76 M166 166 L161 76" strokeWidth={4.4} stroke={BEAR_LINE} />
-        <Path d="M134 166 L139 76 M166 166 L161 76" strokeWidth={2.8} stroke={WOOD} />
-        <Path d="M136 146 L164 146 M137 120 L163 120 M138 98 L162 98" strokeWidth={3.2} stroke={BEAR_LINE} />
-        <Path d="M136 146 L164 146 M137 120 L163 120 M138 98 L162 98" strokeWidth={1.8} stroke={WOOD} />
-        <Path d="M136 146 L163 120 M164 146 L137 120 M137 120 L162 98 M163 120 L138 98" strokeWidth={2.4} stroke={BEAR_LINE} />
-        <Path d="M136 146 L163 120 M164 146 L137 120 M137 120 L162 98 M163 120 L138 98" strokeWidth={1.2} stroke={WOOD} />
-      </G>
-      <Rect x={120} y={74} width={60} height={7} rx={1.5} fill="#C99560" stroke={BEAR_LINE} strokeWidth={1.4} />
-      <Path d="M122 74 L122 56 M178 74 L178 56 M122 60 L178 60" stroke={BEAR_LINE} strokeWidth={4} strokeLinecap="round" fill="none" />
-      <Path d="M122 74 L122 56 M178 74 L178 56 M122 60 L178 60" stroke={WOOD} strokeWidth={2.2} strokeLinecap="round" fill="none" />
-      {/* King Benjamin: blue robe, gold crown, white hair and beard, one hand raised */}
-      <G transform="translate(150 74) scale(0.78)">
-        <Path d="M-14 0 L-10 -33 Q-10 -42 0 -42 Q10 -42 10 -33 L14 0 Z" fill="#2F5FA8" stroke={BEAR_LINE} strokeWidth={1.6} strokeLinejoin="round" />
-        <Path d="M-11.5 -22 L11.5 -22" stroke={GOLD} strokeWidth={3} strokeLinecap="round" />
-        <Tube fill="#2F5FA8" parts={[['M-9 -34 L-13 -19', 5.5]]} />
-        <Hand x={-13} y={-17} r={3.4} />
-        <Tube fill="#2F5FA8" parts={[['M9 -35 L23 -50', 5.5]]} />
-        <Hand x={24} y={-52} r={3.6} />
-        <Circle cx={0} cy={-50} r={8.6} fill={SKIN} stroke={BEAR_LINE} strokeWidth={1.6} />
-        <Path d="M-9 -50 Q-9.4 -60 0 -60 Q9.4 -60 9 -50 Q5 -55 0 -54.5 Q-5 -55 -9 -50 Z" fill="#E8E4D8" />
-        <Path d="M-8.6 -48 Q-9 -38 0 -36 Q9 -38 8.6 -48 Q4 -43 0 -43 Q-4 -43 -8.6 -48 Z" fill="#E8E4D8" stroke={BEAR_LINE} strokeWidth={1} />
-        <Path d="M-8 -58 L-6 -66 L-2.5 -60 L0 -68 L2.5 -60 L6 -66 L8 -58 Z" fill={GOLD} stroke={BEAR_LINE} strokeWidth={1.2} strokeLinejoin="round" />
-        <Circle cx={4} cy={-50} r={1.4} fill={BEAR_LINE} />
-      </G>
-      {/* his words, going out to both sides */}
-      <G fill="none" stroke={WOOD_D} strokeWidth={1.7} strokeLinecap="round" opacity={clamp(p * 1.4)}>
-        <Path d="M176 36 Q184 42 176 50 M184 32 Q196 42 184 54" />
-        <Path d="M124 36 Q116 42 124 50 M116 32 Q104 42 116 54" />
-      </G>
-      {/* the near tents, their doors toward him, and the people before them */}
-      {fronts.map((t) => (
-        <Tent key={t.x} x={t.x} y={166} s={1} face={t.face} fill={t.fill} />
-      ))}
-      {crowd.map(([cx, cy, fill, fl]) => (
-        <Folk key={`${cx}${cy}`} x={cx} y={cy} s={0.46} fill={fill} flip={fl} hair={cx % 2 ? HAIR : '#6B4528'} />
-      ))}
-    </Frame>
-  );
-}
-
-/* ---------- 7. renewed day by day ---------- */
+/* ---------- 7. renewed day by day, as a walk ---------- */
+const roadY = (x: number) => 148 - (x - 16) * 0.035 + 5 * Math.sin((x - 16) / 38);
 function DaysScene({ k }: { k: Ink }) {
   void k;
-  const p = useRun(300, 2200);
+  const p = useRun(300, 4200);
   const days = [0, 1, 2, 3, 4];
+  const px = 34 + 224 * p;
+  const py = roadY(px);
+  const t = p;
+  const road = Array.from({ length: 36 }, (_, i) => `${i === 0 ? 'M' : 'L'}${16 + i * 7.7} ${roadY(16 + i * 7.7).toFixed(1)}`).join(' ');
   return (
-    <Frame label="A row of five small suns, one for each day, rising a little higher from left to right. In each sun stands the silhouette of a person, a little brighter each day, from dim on the left to warm and bright on the right">
-      <Rect x={10} y={10} width={280} height={162} rx={12} fill="#2E2A52" />
-      <Path d="M14 140 L286 140" stroke="#6B60A8" strokeWidth={1.6} strokeDasharray="1 7" strokeLinecap="round" />
+    <Frame label="A person walks along a road from left to right under five small suns, one for each day. The sky warms a little with each stretch of road, and by the right end the person walks more upright and brighter">
+      <Defs>
+        <ClipPath id="g4days">
+          <Rect x={10} y={10} width={280} height={162} rx={12} />
+        </ClipPath>
+      </Defs>
+      <G clipPath="url(#g4days)">
+        {Array.from({ length: 28 }, (_, i) => (
+          <Rect key={`s${i}`} x={10 + i * 10} y={10} width={10.6} height={162} fill={mix('#3E3A78', '#F8B878', i / 27)} />
+        ))}
+        {Array.from({ length: 28 }, (_, i) => (
+          <Rect key={`g${i}`} x={10 + i * 10} y={118} width={10.6} height={60} fill={mix('#2A2650', '#7A5A86', i / 27)} />
+        ))}
+        <Path d="M10 120 Q80 104 150 116 Q220 100 290 112 L290 126 L10 126 Z" fill="#000000" opacity={0.12} />
+      </G>
+      <Path d={road} stroke={BEAR_LINE} strokeWidth={13} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d={road} stroke="#EFD7A6" strokeWidth={9.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
       {days.map((i) => {
-        const t = i / 4;
-        const cx = 40 + i * 55;
-        const cy = 108 - i * 9;
-        const r = 20 + i * 0.8;
-        const on = clamp(p * 5.5 - i + 0.2);
+        const tt = i / 4;
+        const cx = 42 + i * 54;
+        const cy = 62 - i * 3;
+        const r = 6 + i * 1.6;
+        const on = clamp(p * 5.5 - i + 0.6);
         return (
           <G key={i} opacity={on}>
-            <Circle cx={cx} cy={cy} r={r + 12} fill={GOLD} opacity={0.05 + t * 0.2} />
-            {Array.from({ length: 12 }, (_, n) => {
-              const a = (n / 12) * Math.PI * 2;
-              const r0 = r + 4;
-              const r1 = r + 6 + t * 7;
+            <Circle cx={cx} cy={cy} r={r + 9} fill={GOLD} opacity={0.05 + tt * 0.14} />
+            {Array.from({ length: 10 }, (_, n) => {
+              const a = (n / 10) * Math.PI * 2;
               return (
                 <Line
                   key={n}
-                  x1={cx + Math.cos(a) * r0}
-                  y1={cy + Math.sin(a) * r0}
-                  x2={cx + Math.cos(a) * r1}
-                  y2={cy + Math.sin(a) * r1}
-                  stroke={mix('#8A80C4', GOLD, t)}
-                  strokeWidth={2}
+                  x1={cx + Math.cos(a) * (r + 3)}
+                  y1={cy + Math.sin(a) * (r + 3)}
+                  x2={cx + Math.cos(a) * (r + 5 + tt * 4)}
+                  y2={cy + Math.sin(a) * (r + 5 + tt * 4)}
+                  stroke={mix('#B8B0E0', GOLD, tt)}
+                  strokeWidth={1.8}
                   strokeLinecap="round"
                 />
               );
             })}
-            <Circle cx={cx} cy={cy} r={r} fill={mix('#4C4286', '#F2AA3A', t)} stroke={BEAR_LINE} strokeWidth={1.6} />
-            <G transform={`translate(${cx} ${cy + 12})`}>
-              <Path d="M-10 0 Q-10 -12 0 -12 Q10 -12 10 0 Z" fill={mix('#1C1640', CREAM, t)} stroke={BEAR_LINE} strokeWidth={1.2} strokeLinejoin="round" />
-              <Circle cx={0} cy={-18} r={6} fill={mix('#1C1640', CREAM, t)} stroke={BEAR_LINE} strokeWidth={1.2} />
-            </G>
-            <Circle cx={cx} cy={150} r={2.6} fill={mix('#7E74B8', GOLD, t)} stroke={BEAR_LINE} strokeWidth={0.8} />
+            <Circle cx={cx} cy={cy} r={r} fill={mix('#B8B0E0', GOLD, tt)} stroke={BEAR_LINE} strokeWidth={1.3} />
           </G>
         );
       })}
+      <Circle cx={px} cy={py - 28} r={34} fill={GOLD} opacity={t * 0.22} />
+      <Ellipse cx={px} cy={py + 1} rx={12} ry={3} fill={BEAR_LINE} opacity={0.3} />
+      <Folk x={px} y={py} s={0.95} fill={mix('#3E4A86', '#7FA0F0', t)} rot={12 * (1 - t)} down={20 * (1 - t)} />
     </Frame>
   );
 }
@@ -963,7 +891,6 @@ export const SCENES_I4: Record<string, ComponentType<{ k: Ink }>> = {
   'g4-road': RoadScene,
   'g4-heart': HeartScene,
   'g4-two': TwoScene,
-  'g4-tower': TowerScene,
   'g4-days': DaysScene,
   'g4-start': StartScene,
   'g4-book': BookScene,

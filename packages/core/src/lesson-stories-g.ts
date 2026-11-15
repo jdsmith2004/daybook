@@ -815,16 +815,16 @@ const G6P_END: StoryPart = {
 
 const G7_DENY: StoryPart = {
   h: 'On the night Jesus was arrested, Peter warmed himself at a fire.',
-  p: 'He had followed at a distance into the high priest’s courtyard. Three times someone said he had been with Jesus. Three times Peter said **I know him not**.',
+  p: 'He had followed at a distance into the high priest’s courtyard. Three times someone said he had been with Jesus. Three times he denied it. The first time: **I know him not**.',
   art: ['scene', { k: 'g7-fire' }],
   fact: { s: 'Scripture · Luke 22:54-62 · John 18:18', i: [0] },
-  dx: 'Only hours before, Peter had promised he would go with Jesus to prison and to death. Then the soldiers came, and Peter followed at a distance, into the courtyard of the high priest. It was cold, and the servants had made a fire of coals, and Peter stood with them and warmed himself. A servant girl looked at him in the firelight and said, this man was with Him. **I know him not**, Peter said. A little later, another. Then, an hour after, a third, sure of it from his accent. And three times Peter said he did not know the One he had followed for three years.',
+  dx: 'Only hours before, Peter had promised he would go with Jesus to prison and to death. Then the soldiers came, and Peter followed at a distance, into the courtyard of the high priest. It was cold, and the servants had made a fire of coals, and Peter stood with them and warmed himself. A servant girl looked at him in the firelight and said, this man was with Him. **I know him not**, Peter said. A little later, another. Then, an hour after, a third, sure of it because Peter was a Galilean. And three times Peter said he did not know the One he had followed for three years.',
 };
 const G7_LOOK: StoryPart = {
   h: 'The rooster crowed, and the Lord turned and looked at him.',
   p: 'Jesus had told him this would happen. Now, across the courtyard, **the Lord turned, and looked upon Peter**. Peter went out, and wept bitterly.',
   art: ['scene', { k: 'g7-look' }],
-  dx: 'While Peter was still speaking the third time, the rooster crowed. Luke adds one line no other telling has: **the Lord turned, and looked upon Peter**. Jesus was a prisoner, being led away, and He turned to look at the friend who had just denied Him. Then Peter remembered the words: before the rooster crows, thou shalt deny me thrice. He went out into the dark, and wept bitterly. Anyone who has slipped right after promising they never would knows that walk out of the courtyard.',
+  dx: 'While Peter was still speaking the third time, the rooster crowed. Luke adds one line no other telling has: **the Lord turned, and looked upon Peter**. Jesus, a prisoner in that house, turned to look at the friend who had just denied Him. Then Peter remembered the words: before the rooster crows, thou shalt deny me thrice. He went out into the dark, and wept bitterly. Anyone who has slipped right after promising they never would knows that walk out of the courtyard.',
 };
 const G7_FISH: StoryPart = {
   h: 'After the cross, Peter went back to his old life.',
@@ -871,11 +871,11 @@ const G7_SKI: StoryPart = {
 };
 const G7_OFT: StoryPart = {
   long: 1,
-  h: 'Moroni wrote that the early church forgave as often as people turned back.',
+  h: 'Moroni wrote that in the church of his day, people were forgiven as often as they turned back.',
   p: '**As oft as they repented** and sought forgiveness, with real intent, they were forgiven. Not once. As often as they came.',
   art: ['scene', { k: 'g7-path' }],
   fact: { s: 'Scripture · Moroni 6:8', i: [3] },
-  dx: 'Near the end of the Book of Mormon, Moroni describes how the church of his day worked. They met together often, he wrote, to pray and to take the bread and wine in remembrance of the Lord. And the way back was always open. **As oft as they repented** and sought forgiveness, with real intent, they were forgiven. As often as. The weekly sacrament carries the same promise: a fresh start built into every week, because the Lord expected His people to need it that often.',
+  dx: 'Near the end of the Book of Mormon, Moroni describes how the church of his day worked. They met together often, he wrote, to pray and to take the bread and wine in remembrance of the Lord. And the way back was always open. **As oft as they repented** and sought forgiveness, with real intent, they were forgiven. As often as. Church each week carries the same promise: a fresh start built into every week.',
 };
 const G7_SEVEN: StoryPart = {
   long: 1,
@@ -898,21 +898,21 @@ const G7P_SKI: StoryPart = {
   p: 'Dieter Uchtdorf, once an airline captain and later a church leader, hit an icy spot and made, as he put it, **a glorious crash landing**. He was not hurt.',
   art: ['scene', { k: 'g7-ski' }],
   fact: { s: 'Talk · Uchtdorf, 2013', i: [0] },
-  dx: 'Dieter Uchtdorf had flown airliners for a living before he became a church leader, and he told this story on himself. He was skiing with his 12-year-old grandson, enjoying the day, when he hit an icy spot and made, as he put it, **a glorious crash landing** on a steep slope. Skis, poles, snow everywhere. He was not hurt. Only his pride was bruised, and he hoped the other skiers would not recognize him under his helmet and goggles.',
+  dx: 'Dieter Uchtdorf had flown airliners for a living before he became a church leader, and he told this story on himself. He was skiing with his 12-year-old grandson, enjoying the day, when he hit an icy spot and made, as he put it, **a glorious crash landing** on a steep slope. He was not hurt. Only his pride was bruised, and he hoped the other skiers would not recognize him under his helmet and goggles.',
 };
 const G7P_STUCK: StoryPart = {
   h: 'He tried every trick he knew to stand up, and could not.',
   p: 'On a steep slope, tangled in his skis, every push slid him back. He began to wonder **what it would take to rescue him**.',
   art: ['scene', { k: 'g7-stuck' }],
-  dx: 'He tried to get up. He tried every trick an experienced skier knows: skis below him, poles planted, push. On a slope that steep, tangled the way he was, nothing worked. Every effort slid him back. He was not injured, and that made it stranger. He had the strength, and still he could not stand. He lay there and began to wonder **what it would take to rescue him**. Anyone who has slipped and then stayed down knows that feeling: not hurt beyond help, and yet unable to get up.',
+  dx: 'He tried to get up. He tried every trick an experienced skier knows. On a slope that steep, tangled the way he was, nothing worked. Every effort slid him back. He was not injured, and that made it stranger. He had the strength, and still he could not stand. He lay there and began to wonder **what it would take to rescue him**. Anyone who has slipped and then stayed down knows that feeling: not hurt beyond help, and yet unable to get up.',
 };
 const G7P_ASK: StoryPart = {
   k: 'ask',
   h: 'After a slip, what keeps you down the longest?',
   o: [
     ['Feeling I have ruined everything', 'That one keeps many people down. Watch what got him up.'],
-    ['Being ashamed to face anyone', 'He felt that too, under the goggles. Watch what happened.'],
-    ['Thinking I will only fall again', 'That is a heavy thought. The next card has an answer to it.'],
+    ['Being ashamed to face anyone', 'He felt that too. He hoped no one would know him. Watch what happened.'],
+    ['Thinking I will only fall again', 'That is a heavy thought. Watch what changed on the slope.'],
     ['I get up fairly fast', 'Then keep that. It is a strength.'],
   ],
 };
@@ -920,7 +920,7 @@ const G7P_HAND: StoryPart = {
   h: 'His grandson skied over, took his hand and said: you can do it now.',
   p: 'The boy did not listen to the reasons he could not stand. He looked him in the eyes, took his hand, and said firmly, **Opa, you can do it now!** And instantly, he stood.',
   art: ['scene', { k: 'g7-hand' }],
-  dx: 'His grandson came over. Uchtdorf started explaining why he could not get up: the slope, the ice, the angle of the skis. The boy did not listen to any of it. He looked his grandfather in the eyes, reached out, took his hand, and said in a firm voice, **Opa, you can do it now!** And instantly, Uchtdorf said, he stood. Nothing about the slope had changed. What changed was a hand held out, and someone who did not accept that he had to stay down.',
+  dx: 'His grandson came over. Uchtdorf started explaining why he could not get up. The boy did not listen to any of it. He looked his grandfather in the eyes, reached out, took his hand, and said in a firm voice, **Opa, you can do it now!** And instantly, Uchtdorf said, he stood. Nothing about the slope had changed. What changed was a hand held out, and someone who did not accept that he had to stay down.',
 };
 const G7P_RISE: StoryPart = {
   long: 1,
@@ -934,7 +934,7 @@ const G7P_GOD: StoryPart = {
   h: 'God does not keep count of how many times you have fallen.',
   p: 'For many believers, mercy is not a supply that runs out. **The way back opens every time you turn**, as often as you need it, the way a hand reaches down every time.',
   art: ['scene', { k: 'g7-path' }],
-  dx: 'Shame pictures God keeping a running count, with the door closing a little each time. The faiths that speak of mercy picture something else: a way back that opens every time a person turns, without a limit. **The way back opens every time you turn.** Coming back again and again, for the same thing, is not failing at faith. It is what turning back looks like, and the hand that reaches down to you does not get tired of reaching.',
+  dx: 'The grandson did not count how many times his grandfather had fallen that day. He held out his hand. Shame pictures God keeping a running count, with the door closing a little each time. The faiths that speak of mercy picture something else: a way back that opens every time a person turns, without a limit. **The way back opens every time you turn.** Coming back again and again, for the same thing, is not failing at faith. It is what turning back looks like, and the hand that reaches down to you does not get tired of reaching.',
 };
 const G7P_END: StoryPart = {
   h: 'So after a slip, take the hand and stand up now.',
@@ -954,9 +954,9 @@ const G8_WILD: StoryPart = {
 };
 const G8_THREE: StoryPart = {
   h: 'Three pulls came, each aimed where He was weakest.',
-  p: 'Turn these stones to bread. Throw yourself down and prove who you are. Bow, and have the world. **Each one made sense** to someone who was hungry and alone.',
+  p: 'Turn these stones to bread. Throw yourself down and prove who you are. Bow, and have the world. **Each one sounded reasonable** to someone hungry and alone.',
   art: ['scene', { k: 'g8-stones' }],
-  dx: 'The first pull was aimed at the hunger: if thou be the Son of God, command that these stones be made bread. The second was aimed at doubt, on the pinnacle of the temple: throw thyself down, and prove it. The third offered everything at once: all the kingdoms of the world, if thou wilt fall down and worship me. **Each one made sense**, in its moment, to someone hungry and alone. That is how pulls work. They do not arrive sounding evil. They arrive sounding reasonable.',
+  dx: 'The first pull was aimed at the hunger: if thou be the Son of God, command that these stones be made bread. The second was aimed at doubt, on the pinnacle of the temple: throw thyself down, and prove it. The third offered everything at once: all the kingdoms of the world, if thou wilt fall down and worship me. **Each one sounded reasonable**, in its moment, to someone hungry and alone. That is how pulls work. They do not arrive sounding evil. They arrive sounding reasonable.',
 };
 const G8_WRITTEN: StoryPart = {
   h: 'Each time, He answered in a few words: It is written.',
@@ -968,7 +968,7 @@ const G8_ASK: StoryPart = {
   k: 'ask',
   h: 'When a strong pull comes, what do you feel about yourself?',
   o: [
-    ['Dirty, as if I already did it', 'That feeling counts the pull as a fall. The next card says it is not one.'],
+    ['Guilty, as if I already did it', 'That feeling counts the pull as a fall. Look at where He stood.'],
     ['Far from God, as if He stepped back', 'That one hurts the most. Look at where He stood.'],
     ['Weak, as if others never feel this', 'Almost everyone feels pulls they would not choose.'],
     ['I do not know yet', 'That is honest. Notice it the next time one comes.'],
@@ -976,10 +976,10 @@ const G8_ASK: StoryPart = {
 };
 const G8_HEB: StoryPart = {
   h: 'Hebrews says He was tempted in every way we are, yet without sin.',
-  p: '**In all points tempted like as we are, yet without sin.** He felt the pull, fully. Being tempted did not make Him less. It does not make you unclean.',
+  p: '**In all points tempted like as we are, yet without sin.** He felt the pull, fully. Being tempted did not make Him less. It does not make you guilty.',
   art: ['scene', { k: 'g8-wave' }],
   fact: { s: 'Scripture · Hebrews 4:15', i: [1] },
-  dx: 'The letter to the Hebrews says it plainly. We do not have a high priest who cannot be touched with the feeling of our weakness. He was **in all points tempted like as we are, yet without sin**. Read that slowly. He was tempted, and He was without sin, in the same sentence. So the two are not the same thing. The pull is not the fall. Feeling it, even feeling it hard, hungry and alone, does not make you dirty, and it does not mean God has stepped back. It is the very place He has stood Himself.',
+  dx: 'The letter to the Hebrews says it plainly. We do not have a high priest who cannot be touched with the feeling of our weakness. He was **in all points tempted like as we are, yet without sin**. Read that slowly. He was tempted, and He was without sin, in the same sentence. So the two are not the same thing. The pull is not the fall. Feeling it, even feeling it hard, hungry and alone, does not make you guilty, and it does not mean God has stepped back. It is the very place He has stood Himself.',
 };
 const G8_THIEVES: StoryPart = {
   long: 1,
@@ -1003,13 +1003,13 @@ const G8_TAF: StoryPart = {
   p: 'They called it **thought-action fusion**. It is a way of scoring thoughts, not a fact about them, and it adds guilt for things never done.',
   art: ['scene', { k: 'g8-scale' }],
   fact: { s: 'Study · Shafran, Thordarson & Rachman, 1996', i: [4] },
-  dx: 'Researchers who studied anxiety kept meeting the same belief: that having an unwanted thought is morally the same as acting on it, or makes it more likely to happen. In 1996 Roz Shafran and her colleagues built a scale to measure it, and called it **thought-action fusion**. They found it strongest in people with obsessive worries, and found it in ordinary people too. It is a way of scoring thoughts, not a fact about them, and a way of scoring can change. Many people quitting a habit carry it without knowing: they feel the pull, decide they are already dirty, and then wonder why not give in.',
+  dx: 'Researchers who studied anxiety kept meeting the same belief: that having an unwanted thought is morally the same as acting on it, or makes it more likely to happen. In 1996 Roz Shafran and her colleagues built a scale to measure it, and called it **thought-action fusion**. They found it strongest in people with obsessive worries, and found it in ordinary people too. It is a way of scoring thoughts, not a fact about them, and a way of scoring can change. Many people quitting a habit carry it without knowing: they feel the pull, decide they have already failed, and then wonder why not give in.',
 };
 const G8_END: StoryPart = {
   h: 'So when the pull comes, call it what it is: a pull, not a fall.',
   p: 'Answer it in a few true words, the way He did, and **let it pass over**. You are standing where He once stood, and He knows how to help.',
   art: ['scene', { k: 'g8-wave' }],
-  dx: 'The next time the pull comes, and it comes hardest when you are hungry, tired and alone, remember the wilderness. Being tempted is not falling. It is not proof that you are dirty, or that God has gone. Say a few true words, the way He did: this is a pull, and I do not have to follow it. You know this one, Lord. Then **let it pass over**, like a wave, or a bird. You are standing where He once stood, and because He stood there, He knows how to help you through it.',
+  dx: 'The next time the pull comes, and it comes hardest when you are hungry, tired and alone, remember the wilderness. Being tempted is not falling. It is not proof that you have failed, or that God has gone. Say a few true words, the way He did: this is a pull, and I do not have to follow it. You know this one, Lord. Then **let it pass over**, like a wave, or a bird. You are standing where He once stood, and because He stood there, He knows how to help you through it.',
 };
 
 /* the plain voice: the belief that a thought is as bad as a deed */
@@ -1026,20 +1026,20 @@ const G8P_FOUND: StoryPart = {
   p: 'It was strongest in people with obsessive worries, and common in everyone else. **It is a way of scoring thoughts**, not a fact about them, and a way of scoring can change.',
   art: ['scene', { k: 'g8-door' }],
   fact: { s: 'Study · Shafran, Thordarson & Rachman, 1996', i: [0] },
-  dx: 'The belief was strongest in people with obsessive worries, who could be tormented by a single unwanted image. But it showed up in ordinary people too. Many people quietly score their thoughts as if they were deeds. **It is a way of scoring thoughts**, not a fact about them. A thought arrives uninvited. Feeling a pull is not choosing it. Treating the two as one adds guilt for things never done, and for someone quitting a habit, that guilt is dangerous: if I am already dirty for wanting it, why not give in?',
+  dx: 'The belief was strongest in people with obsessive worries, who could be tormented by a single unwanted image. But it showed up in ordinary people too. Many people quietly score their thoughts as if they were deeds. **It is a way of scoring thoughts**, not a fact about them. A thought arrives uninvited. Feeling a pull is not choosing it. Treating the two as one adds guilt for things never done, and for someone quitting a habit, that guilt is dangerous: if I have already failed by wanting it, why not give in?',
 };
 const G8P_ASK: StoryPart = {
   k: 'ask',
   h: 'When a strong pull comes, what do you feel about yourself?',
   o: [
-    ['Dirty, as if I already did it', 'That is the belief the researchers named. Look at what they found.'],
+    ['Guilty, as if I already did it', 'That is the belief the researchers named. It is a way of scoring thoughts, not a fact.'],
     ['Far from God, as if He stepped back', 'That one hurts the most. The next cards are about it.'],
     ['Weak, as if others never feel this', 'Almost everyone feels pulls they would not choose.'],
     ['I do not know yet', 'That is honest. Notice it the next time one comes.'],
   ],
 };
 const G8P_BIRDS: StoryPart = {
-  h: 'An old saying, nearly five hundred years old, puts it in one picture.',
+  h: 'An old saying, written down nearly five hundred years ago, puts it in one picture.',
   p: '**You cannot stop the birds from flying over your head**, but you can keep them from building a nest in your hair. A thought that passes over is not a deed.',
   art: ['scene', { k: 'g8-birds' }],
   dx: 'Long before psychologists had a name for it, people knew this belief and its weight. An old saying, written down in a letter nearly five hundred years ago to a young man sinking under unwanted thoughts, puts the answer in one picture. **You cannot stop the birds from flying over your head**, but you can keep them from building a nest in your hair. What flies over is not up to you. Whether you invite it to stay is.',
@@ -1048,22 +1048,22 @@ const G8P_GOD: StoryPart = {
   h: 'Being tempted is not falling, and it is not where God steps back.',
   p: 'For many believers, the moment of the pull is **the very place God is there to help**. You have not fallen. You are being pulled, and you are not alone in it.',
   art: ['scene', { k: 'g8-wave' }],
-  dx: 'Shame counts the pull as if it were the act, and then says God has gone. But being tempted and giving in are two different things. One is a feeling that comes to you. The other is a choice. For many believers, the moment of the pull is not the moment God looks away. It is **the very place God is there to help**: you are standing at the edge, and you have not fallen, and you can call on Him right there.',
+  dx: 'Think of the bird again. It flew over, and it was not invited to stay. Shame counts the pull as if it were the act, and then says God has gone. But being tempted and giving in are two different things. One is a feeling that comes to you. The other is a choice. For many believers, the moment of the pull is not the moment God looks away. It is **the very place God is there to help**: you are standing at the edge, and you have not fallen, and you can call on Him right there.',
 };
 const G8P_END: StoryPart = {
   ...G8_END,
   p: 'Name it in a few plain words, ask God for help in the moment, and **let it pass over**. A bird flying over is not a nest.',
-  dx: 'The next time the pull comes, and it often comes hardest when you are hungry, tired and alone, call it what it is. This is a pull, not a fall. It does not make me dirty, and it does not mean God has gone. Say that in a few plain words, ask Him for help right then, and **let it pass over**, like a wave, or a bird crossing the sky. You do not have to win an argument with it. You only have to not invite it to stay.',
+  dx: 'The next time the pull comes, and it often comes hardest when you are hungry, tired and alone, call it what it is. This is a pull, not a fall. It does not make me guilty, and it does not mean God has gone. Say that in a few plain words, ask Him for help right then, and **let it pass over**, like a wave, or a bird crossing the sky. You do not have to win an argument with it. You only have to not invite it to stay.',
 };
 
 /* ---------- g9, Hungry for more (step 9, Fill the empty hour) ---------- */
 
 const G9_WELL: StoryPart = {
   h: 'Tired from the road, Jesus sat down by a well in Samaria.',
-  p: 'It was Jacob’s well, old and deep. A woman came to draw water, **alone, at the hottest part of the day**, when no one else would be there.',
+  p: 'It was Jacob’s well, old and deep. A woman came to draw water, **alone, at the hottest part of the day**. Many readers think she came then to be left alone.',
   art: ['scene', { k: 'g9-well' }],
   fact: { s: 'Scripture · John 4:5-29', i: [0] },
-  dx: 'Jesus was walking from Judea back to Galilee, through Samaria, and He was tired from the road, John says. So He sat on the edge of Jacob’s well, an old, deep well dug by the patriarch centuries before. His disciples had gone into the town to buy food. Then a woman came with her water pot, **alone, at the hottest part of the day**. Most women drew water together, in the cool of the morning or the evening. Coming alone at midday was a way to avoid people.',
+  dx: 'Jesus was walking from Judea back to Galilee, through Samaria, and He was tired from the road, John says. So He sat on the edge of Jacob’s well, an old, deep well dug by the patriarch centuries before. His disciples had gone into the town to buy food. Then a woman came with her water pot, **alone, at the hottest part of the day**. Most women drew water together, in the cooler hours. Many readers think she came alone in the heat to be left alone, though John does not say.',
 };
 const G9_DRINK: StoryPart = {
   h: 'He asked her for a drink, and then offered her a different water.',
@@ -1075,7 +1075,7 @@ const G9_ASK: StoryPart = {
   k: 'ask',
   h: 'When an empty feeling comes, what do you reach for to fill it?',
   o: [
-    ['Something to numb it for a while', 'That is the water you come back to again. Watch what she found.'],
+    ['Something to numb it for a while', 'Many people reach for that. Watch what she found.'],
     ['Someone to feel close to', 'That is a true thirst. Keep it in mind.'],
     ['Anything to pass the time', 'That is common. The time passes, and the thirst comes back.'],
     ['I do not know yet', 'That is honest. Ask it the next time it comes.'],
@@ -1085,13 +1085,13 @@ const G9_KNEW: StoryPart = {
   h: 'He knew her whole story, and He did not send her away.',
   p: 'He spoke plainly about her life: the marriages behind her, the man she lived with now. **She was fully known, and still welcomed.** That is when she began to listen.',
   art: ['scene', { k: 'g9-known' }],
-  dx: 'Then Jesus told her to go and call her husband. I have no husband, she said. That is true, He answered: you have had five, and the man you have now is not your husband. He did not say it to shame her, and He did not leave. He went on talking with her about God, about worship, about what was coming, longer than with almost anyone else in John’s gospel. **She was fully known, and still welcomed.** The thing she had come at midday to avoid, being seen, turned out to be the thing she was most thirsty for.',
+  dx: 'Then Jesus told her to go and call her husband. I have no husband, she said. That is true, He answered: you have had five, and the man you have now is not your husband. John never calls her a sinner, and neither does Jesus. He does not tell her what to fix. He tells her that He knows, and He does not leave. He went on talking with her about God, about worship, about what was coming, longer than with almost anyone else in John’s gospel. **She was fully known, and still welcomed.** The thing she had come at midday to avoid, being seen, turned out to be the thing she was most thirsty for.',
 };
 const G9_POT: StoryPart = {
   h: 'She left her water pot and ran into the town.',
-  p: 'The thing she had come for, she **left her waterpot** behind. Come, she told everyone, see a man who told me all things that ever I did.',
+  p: 'The thing she had come for, she **left her waterpot** behind, and went back into the town. Come, she told them, see a man who told me all things that ever I did.',
   art: ['scene', { k: 'g9-pot' }],
-  dx: 'Then the woman **left her waterpot**, John says, and went her way into the city. The thing she had come for, the reason she had walked out alone in the heat, she left sitting by the well. She ran to the very people she had been avoiding and said: come, see a man, which told me all things that ever I did. Is not this the Christ? Her thirst had not been for water at all. When it was met, the old way of filling it did not matter anymore.',
+  dx: 'Then the woman **left her waterpot**, John says, and went her way into the city. The thing she had come for, the reason she had walked out alone in the heat, she left sitting by the well. She went back to the very town she had come out alone to escape, and said: come, see a man, which told me all things that ever I did. Is not this the Christ? Her deepest thirst had never been for water. When it was met, the old way of filling it did not matter anymore.',
 };
 const G9_BLESSED: StoryPart = {
   long: 1,
@@ -1099,7 +1099,7 @@ const G9_BLESSED: StoryPart = {
   p: '**Blessed are they which do hunger and thirst** after righteousness, He said, for they shall be filled. He did not tell them to stop being hungry.',
   art: ['scene', { k: 'g9-bread' }],
   fact: { s: 'Scripture · Matthew 5:6', i: [1] },
-  dx: 'In the Sermon on the Mount, Jesus said: **blessed are they which do hunger and thirst** after righteousness, for they shall be filled. He named the hunger as the start of being filled, not a flaw to grind out. Many people try to stop wanting, as if the empty feeling itself were the enemy, and it wears them out. The hunger was never the mistake. It was looking for the wrong water, at the wrong well.',
+  dx: 'In the Sermon on the Mount, Jesus said: **blessed are they which do hunger and thirst** after righteousness, for they shall be filled. He named the hunger as the start of being filled, not a flaw to grind out. The empty feeling under an urge is often that same hunger, looking in the wrong place. Many people try to stop wanting, as if the empty feeling itself were the enemy, and it wears them out. The hunger was never the mistake. It was looking for the wrong water, at the wrong well.',
 };
 const G9_TRUCK: StoryPart = {
   long: 1,
@@ -1107,11 +1107,11 @@ const G9_TRUCK: StoryPart = {
   p: 'The friend had driven into the mountains for firewood. When all four wheels spun, he filled the truck bed with heavy wood, and **the load gave it traction** to drive out.',
   art: ['scene', { k: 'g9-truck' }],
   fact: { s: 'Talk · Bednar, 2014', i: [3] },
-  dx: 'David A. Bednar, an apostle of the Church of Jesus Christ of Latter-day Saints, told of a friend who wanted a four-wheel-drive pickup. His wife thought he wanted it more than he needed it. He bought it anyway, and drove up into the snowy mountains to cut firewood and prove its worth. He went too far, and got stuck. All four wheels spun. So he climbed out, started cutting wood, and filled the back of the truck with the heavy load. Then the truck inched forward and drove out. It was the load, Bednar said. **The load gave it traction.** We sometimes think happiness is the absence of a load. An empty life spins.',
+  dx: 'David A. Bednar, an apostle of the Church of Jesus Christ of Latter-day Saints, told of a friend who wanted a four-wheel-drive pickup. His wife thought he wanted it more than he needed it. He bought it anyway, and drove up into the snowy mountains to cut firewood and prove its worth. He went too far, and got stuck. All four wheels spun. So he climbed out, started cutting wood, and filled the back of the truck with the heavy load. Then the truck inched forward and drove out. It was the load, Bednar said. **The load gave it traction.** We sometimes think happiness is the absence of a load, Bednar said. A life with nothing in it spins.',
 };
 const G9_ELLIOT: StoryPart = {
   long: 1,
-  h: 'Students whose goals were only about stopping things grew less happy.',
+  h: 'Students with more goals about avoiding things grew less happy over a term.',
   p: 'Over a term, goals to avoid things wore them down, and they felt they made less progress. **A hunger needs something to move toward**, not only something to stop.',
   art: ['scene', { k: 'g9-goals' }],
   fact: { s: 'Study · Elliot, Sheldon & Church, 1997', i: [2] },
@@ -1140,17 +1140,17 @@ const G9P_STUCK: StoryPart = {
 };
 const G9P_ASK: StoryPart = {
   k: 'ask',
-  h: 'What would you have tried, stuck alone up that road?',
+  h: 'When your hardest hour comes, what is usually in it?',
   o: [
-    ['Push the gas harder', 'That is what most of us try first. It dug the wheels in.'],
-    ['Wait for someone to come', 'That can work. He found something closer.'],
-    ['Walk back down for help', 'That is sensible. Look at what he did instead.'],
-    ['I would not know what to do', 'That is honest. Neither did he, at first.'],
+    ['Nothing planned', 'That is the light truck. Watch what got it out.'],
+    ['Too much, and I am worn out', 'Then the hour needs a different load, not more.'],
+    ['People, but I still feel alone', 'That is a real emptiness too.'],
+    ['I do not know yet', 'That is honest. Look the next time it comes.'],
   ],
 };
 const G9P_LOAD: StoryPart = {
   h: 'So he cut wood and filled the back of the truck with it.',
-  p: 'With a heavy load in the bed, the truck inched forward and drove out. It was the load, the friend said. **The load gave it traction.**',
+  p: 'With a heavy load in the bed, the truck inched forward and drove out. It was the load, Bednar said. **The load gave it traction.**',
   art: ['scene', { k: 'g9-load' }],
   dx: 'With nothing else to do, he got out and started cutting the firewood he had come for. He loaded the back of the truck until it was full and heavy. Then he climbed in and tried again, and the truck inched forward, gripped, and drove out of the snow. It was the load, Bednar said. **The load gave it traction.** We sometimes think happiness is having nothing pulling on us. But an empty truck spins, and an empty hour does too.',
 };
@@ -1158,13 +1158,13 @@ const G9P_GOD: StoryPart = {
   h: 'The empty feeling is a hunger for more, and it can be filled.',
   p: 'For many believers, that hunger is part of being made for God. The habit was the wrong food for it. **Fill the hour with something worth carrying.**',
   art: ['scene', { k: 'g9-spring' }],
-  dx: 'Many people try to stop wanting, as if the empty feeling itself were the enemy. For many believers, a hunger for more is part of being made for God: the soul reaching for something it was made to have. The habit was never the right food for it. An empty hour, with nothing in it, spins in place, and the pull is waiting there. **Fill the hour with something worth carrying**: a prayer, a person, a task, something good to do with your hands.',
+  dx: 'The truck did not need less in it. It needed the right weight. Many people try to stop wanting, as if the empty feeling itself were the enemy. For many believers, a hunger for more is part of being made for God: the soul reaching for something it was made to have. The habit was never the right food for it. An empty hour, with nothing in it, spins in place, and the pull is waiting there. **Fill the hour with something worth carrying**: a prayer, a person, a task, something good to do with your hands.',
 };
 const G9P_END: StoryPart = {
   h: 'So put a load in your hardest hour, not an empty space.',
   p: 'Name the hunger: lonely, tired, restless. Ask God what would feed it. Then **pick up one thing worth carrying**, and let it give you grip.',
   art: ['scene', { k: 'g9-load' }],
-  dx: 'Look at the hour when the pull is strongest for you. Most likely, it is an empty one: nothing planned, nobody near, the day done and nothing in its place. That is the light truck on the snowy road. Name what you are hungry for: company, rest, meaning, a break. Ask God what would feed it today. Then **pick up one thing worth carrying** in that hour, a call, a task, a walk, a prayer, a page, and let its weight give you grip.',
+  dx: 'Look at the hour when the pull is strongest for you. Most likely, it is an empty one: nothing planned, nobody near, nothing in its place. That is the light truck on the snowy road. Name what you are hungry for: company, rest, meaning, a break. Ask God what would feed it today. Then **pick up one thing worth carrying** in that hour, a call, a task, a walk, a prayer, a page, and let its weight give you grip.',
 };
 
 export const STORIES_G: Record<string, Story> = {
@@ -1198,7 +1198,20 @@ export const STORIES_G: Record<string, Story> = {
       plain: {
         form: 'study',
         tag: 'The students who wrote the truth felt worse first, then better.',
-        tell: [G1P_ROOM, G1P_HARD, G1P_GUESS, G1P_FOUND, { ...G1_WORD, fact: { s: 'Word · Latin integer, whole', i: [1] } }, G1P_GOD, G1P_END],
+        tell: [
+          G1P_ROOM,
+          G1P_HARD,
+          G1P_GUESS,
+          G1P_FOUND,
+          {
+            ...G1_WORD,
+            p: 'One person people see, and one who hides. The word **integrity** comes from the Latin integer: whole, one. Each true sentence brings the two closer.',
+            dx: 'A secret habit lives in the space between two people who share your name: the one at work, at worship, at the dinner table, and the one alone with it. Keeping it hidden keeps that space open, and keeping the space open is tiring. The word **integrity** comes from the Latin integer, the same word that gives us whole numbers. It means whole, one, not divided. Integrity is not being perfect. It is being one person. Every true sentence you say, to God or to someone you trust, closes the space a little.',
+            fact: { s: 'Word · Latin integer, whole', i: [1] },
+          },
+          G1P_GOD,
+          G1P_END,
+        ],
         you: G1P_YOU,
         close: 'God, here is where I am. Help me take one step toward you.',
         scope:
@@ -1475,9 +1488,9 @@ export const STORIES_G: Record<string, Story> = {
       h: 'After a slip, what is your boat: the thing you go back to instead of swimming?',
       o: [
         ['Staying away from prayer for a while', 'That is the boat most people sit in. You can jump.'],
-        ['Staying away from church', 'The weekly fresh start was made for a week like this one.'],
+        ['Staying away from church', 'Go anyway. Church each week is for weeks like this, whatever your bishop asks of you.'],
         ['Going quiet with everyone', 'Then one person, maybe your bishop, could be the shore.'],
-        ['I come back fairly fast', 'Then keep that. Peter would know what it costs.'],
+        ['I come back fairly fast', 'Then keep that. Peter did the same.'],
       ],
     },
     close: 'Father, I am turning back again. Thank you that the way was built for this.',
@@ -1493,7 +1506,7 @@ export const STORIES_G: Record<string, Story> = {
             ['Staying away from prayer for a while', 'That is the boat most people sit in. You can jump.'],
             ['Staying away from church', 'Sunday was made for a week like this one too.'],
             ['Going quiet with everyone', 'Then one person you trust could be the shore.'],
-            ['I come back fairly fast', 'Then keep that. Peter would know what it costs.'],
+            ['I come back fairly fast', 'Then keep that. Peter did the same.'],
           ],
         },
         scope:
@@ -1576,7 +1589,7 @@ export const STORIES_G: Record<string, Story> = {
           o: [
             ['“This is a pull. I do not have to follow it.”', 'Short enough to say when it is loud. Keep it.'],
             ['“God, help me through this one.”', 'That puts you beside Him, right at the edge.'],
-            ['A line I know by heart', 'Then keep it ready, for when you are hungry and tired.'],
+            ['A line I know by heart', 'Then keep it ready, for when the pull is loud.'],
             ['I do not have words yet', 'Then start with this one: tempted is not fallen.'],
           ],
         },
@@ -1600,14 +1613,14 @@ export const STORIES_G: Record<string, Story> = {
     tell: [G9_WELL, G9_DRINK, G9_ASK, G9_KNEW, G9_POT, G9_BLESSED, G9_TRUCK, G9_ELLIOT, G9_END],
     mine: { h: 'Here is when your hunger tends to come.', k: 'hour' },
     today: {
-      h: 'Put a feast in your hardest hour, not a bite.',
-      l: ['Name the hunger: lonely, tired or restless', 'Read slowly until one line speaks to you', 'Do the one thing it tells you'],
+      h: 'Bring your hardest hour to the well today.',
+      l: ['Name the hunger: lonely, tired or restless', 'Read slowly until one line speaks to you', 'Do one small good thing that line points to'],
     },
     you: {
       h: 'Under the urge, what are you most thirsty for?',
       o: [
         ['To be seen and still welcomed', 'That is what she found at the well. It is a true thirst.'],
-        ['Rest, after a long day', 'Then rest is the water. Bring that hour to Him.'],
+        ['Rest', 'Then rest is the water. Bring that hour to Him.'],
         ['Something that matters', 'Then the empty hour is a place to do something that does.'],
         ['I do not know yet', 'That is honest. Ask it the next time it comes.'],
       ],
@@ -1636,7 +1649,7 @@ export const STORIES_G: Record<string, Story> = {
           h: 'Under the urge, what are you most hungry for?',
           o: [
             ['To be close to someone', 'That is a true hunger. A call can be the load.'],
-            ['Rest, after a long day', 'Then rest is the load worth carrying. Plan it.'],
+            ['Rest', 'Then rest is the load worth carrying. Plan it.'],
             ['Something that matters', 'Then the empty hour is a place to do something that does.'],
             ['I do not know yet', 'That is honest. Ask it the next time it comes.'],
           ],

@@ -372,7 +372,50 @@ export const sectionsOf = (path: Lesson[]) => {
 export const lessonSections = (st?: Settings | null) => sectionsOf(lessonPathFor(st));
 /** the number a person sees for a lesson: its place on the path (so Up next after lesson 2 is lesson 3). lessonIndex
     stays the lesson's fixed place in LESSONS, for checkpoints and stored records. */
-export const lessonNo = (L: Lesson, st?: Settings | null) => lessonPathFor(st).indexOf(own(L)) + 1;
+export const lessonNo = (L: Lesson, st?: Settings | null, days?: Days | null) => lessonPathMine(days, st).indexOf(own(L)) + 1;
+
+/* ---------- the path as this person walked it (the owner, November 15, 2026: "I'd like the app to be done in such a way that it
+   plans on us doing it in the order that we're doing it") ----------
+   The planned path (lessonPathFor) is the order lessons are offered in. The path drawn on Learn, numbered, cut into steps and
+   walked is this person's own: every lesson on the plan they finished, in the order they first finished it (lessonsInOrder), then
+   the lessons not finished yet in the planned order. So a lesson read from Today, the night track or a help page, or one finished
+   in an order the path had in an earlier beta, slips in behind them, and nobody stands in the middle of finished lessons. Finished
+   lessons never move once they are behind (the order of first finishing never changes), so the numbers behind Up next hold. A God
+   lesson walked past (godPassed on the plan) never holds the path back: it waits at the very end, open in full. The steps are cut by
+   place, not by lesson: the person's first lessons fill the first step's room, the next ones the second's, the same sizes as the
+   plan's, so the step and its deed follow the order walked and never go backwards. Points, badges, done marks and checkpoints come
+   from the record and the settings, which this does not touch. */
+const MINE = new WeakMap<Days, { plan: Lesson[]; sig: string; path: Lesson[] }>();
+export function lessonPathMine(days: Days | null | undefined, st: Settings | null | undefined): Lesson[] {
+  const plan = lessonPathFor(st);
+  if (!days) return plan;
+  const order = lessonsInOrder(days);
+  const sig = order.map((x) => x.L.id).join(' ');
+  const c = MINE.get(days);
+  if (c && c.plan === plan && c.sig === sig) return c.path;
+  const path = minePath(order, plan);
+  MINE.set(days, { plan, sig, path });
+  return path;
+}
+function minePath(order: { L: Lesson }[], plan: Lesson[]): Lesson[] {
+  const on = new Set(plan);
+  const fin = order.map((x) => own(x.L)).filter((L) => on.has(L));
+  const done = new Set(fin.map((L) => L.id));
+  const passed = godPassed(plan, done);
+  /* walked in the planned order, with nothing passed: the plan itself, so its lands and front track hold as they are */
+  if (!passed.size && fin.every((L, i) => plan[i] === L)) return plan;
+  const list = [...fin, ...plan.filter((L) => !done.has(L.id) && !passed.has(L.id)), ...plan.filter((L) => passed.has(L.id))];
+  const lands = new Map<string, number>();
+  let i = 0;
+  sectionsOf(plan).forEach(({ u, lessons }) => lessons.forEach(() => lands.set(list[i++].id, u)));
+  LANDS.set(list, lands);
+  return list;
+}
+/** the step (an index in PATH_STEPS) a lesson stands in on a path: its place on this person's path (lessonPathMine), or its own step */
+export const landOfIn = (path: Lesson[], L: Lesson): number => {
+  const lands = LANDS.get(path);
+  return lands && lands.has(L.id) ? lands.get(L.id)! : lessonStep(L);
+};
 /** the first lesson on the path not finished. Up next is lessonWalk().next, which also stops at a lesson read early. */
 export const firstUndone = (done: Set<string>, st?: Settings | null) => lessonPathFor(st).find((l) => !done.has(l.id)) || null;
 
@@ -415,11 +458,11 @@ export function lessonsEarly(days: Days, st?: Settings | null): Set<string> {
 }
 /* ---------- a step's deed (steps.ts) ---------- */
 /** the last lesson of each step on this person's path, by step index */
-const stepEnds = (st: Settings | null | undefined) =>
-  sectionsOf(lessonPathFor(st)).map((x) => ({ k: x.u, first: x.lessons[0], last: x.lessons[x.lessons.length - 1] }));
+const stepEnds = (st: Settings | null | undefined, days?: Days | null) =>
+  sectionsOf(lessonPathMine(days, st)).map((x) => ({ k: x.u, first: x.lessons[0], last: x.lessons[x.lessons.length - 1] }));
 /** the step whose deed comes at the end of this lesson (its last lesson on this person's path), or -1 */
-export function deedAfter(L: Lesson, st: Settings | null | undefined): number {
-  const e = stepEnds(st).find((x) => x.last === own(L));
+export function deedAfter(L: Lesson, st: Settings | null | undefined, days?: Days | null): number {
+  const e = stepEnds(st, days).find((x) => x.last === own(L));
   return e ? e.k : -1;
 }
 /** what a step's deed asks, in this person's words: no God for someone who said No to faith */
@@ -441,7 +484,7 @@ export function deedSet(st: Settings, k: number, a: 'did' | 'later', tk: DayKey,
     it on this person's path was walked to its end, and that step's deed was not done and not asked about yet. Never on the
     day of a slip or the day after. -1 when there is nothing to ask. */
 export function deedAskBack(L: Lesson, days: Days, st: Settings, tk: DayKey): number {
-  const ends = stepEnds(st);
+  const ends = stepEnds(st, days);
   const i = ends.findIndex((x) => x.first === own(L));
   if (i < 1) return -1;
   const prev = ends[i - 1];
@@ -512,21 +555,29 @@ export function lessonWalk(days: Days, st: Settings | null | undefined, tk?: Day
 }
 function walkCore(days: Days, st: Settings | null | undefined): LessonWalk {
   const done = lessonsDone(days);
-  const early = lessonsEarly(days, st);
+  /* every finished lesson is behind Up next on this person's own path (lessonPathMine), so none is read early any more and no
+     welcome back is waited for (the owner, November 15, 2026) */
+  const early = new Set<string>();
   const reached = lessonsReached(st);
-  const path = lessonPathFor(st);
-  const passed = godPassed(path, done);
-  const at = path.findIndex((L) => !passed.has(L.id) && stopsAt(L, done, early, reached));
+  const path = lessonPathMine(days, st);
+  /* walked past on the plan: waiting at the end of the path, open in full */
+  const passed = godPassed(lessonPathFor(st), done);
+  const at = path.findIndex((L) => !done.has(L.id));
   const next = at < 0 ? null : path[at];
-  const walked = new Set(path.filter((L, i) => !passed.has(L.id) && (at < 0 || i < at || (i > at && !stopsAt(L, done, early, reached)))).map((L) => L.id));
-  return { done, early, reached, walked, next, back: !!next && done.has(next.id), path, passed, today: null, hook: null };
+  const walked = new Set(path.filter((L) => done.has(L.id)).map((L) => L.id));
+  return { done, early, reached, walked, next, back: false, path, passed, today: null, hook: null };
 }
 /** a walk from finished lessons only, with nothing read early: for a map or a test that has no record */
 export function walkOf(done: Set<string>, st?: Settings | null): LessonWalk {
-  const path = lessonPathFor(st);
-  const passed = godPassed(path, done);
-  const next = path.find((L) => !passed.has(L.id) && !done.has(L.id)) || null;
-  const walked = new Set((next ? path.slice(0, path.indexOf(next)) : path).filter((L) => !passed.has(L.id)).map((L) => L.id));
+  const plan = lessonPathFor(st);
+  /* the same shape as a walk from a record (lessonPathMine), with the finished lessons taken in the planned order */
+  const path = minePath(
+    plan.filter((L) => done.has(L.id)).map((L) => ({ L })),
+    plan,
+  );
+  const passed = godPassed(plan, done);
+  const next = path.find((L) => !done.has(L.id)) || null;
+  const walked = new Set(path.filter((L) => done.has(L.id)).map((L) => L.id));
   return { done, early: new Set(), reached: new Set(), walked, next, back: false, path, passed, today: null, hook: null };
 }
 /** "N of M done": the path, plus any lesson finished off it, which stays counted (a faith lesson read from Learn) */
@@ -537,11 +588,14 @@ export function lessonCount(w: LessonWalk): { done: number; of: number } {
 /** the step a lesson belongs to and how far through it this person is, on their own path (the end of a lesson shows it as the
     next milestone, with no total: the owner, November 14, 2026) */
 export function stepProgress(w: LessonWalk, id: string): { name: string; done: number; of: number } | null {
-  const k = stepAt(id);
+  const L = lessonById(id);
+  if (!L) return null;
+  /* the step it stands in on this person's path, by place (lessonPathMine), so the count follows the order walked */
+  const k = w.path.indexOf(own(L)) >= 0 ? landOfIn(w.path, own(L)) : stepAt(id);
   if (k < 0) return null;
-  const mine = w.path.filter((L) => stepAt(L.id) === k);
+  const mine = w.path.filter((x) => landOfIn(w.path, x) === k);
   if (!mine.length) return null;
-  const done = mine.filter((L) => w.walked.has(L.id) || w.done.has(L.id) || w.passed.has(L.id)).length;
+  const done = mine.filter((x) => w.walked.has(x.id) || w.done.has(x.id)).length;
   return { name: PATH_STEPS[k].name, done, of: mine.length };
 }
 /** how a lesson opens: in full when it is Up next or behind it ('open'); as a welcome back when Up next was read early
@@ -563,7 +617,7 @@ export function nextAfter(L0: Lesson, w: LessonWalk): Lesson | null {
   const L = own(L0);
   if (w.next !== L) return w.next;
   const path = w.path;
-  return path.slice(path.indexOf(L) + 1).find((x) => !w.passed.has(x.id) && stopsAt(x, w.done, w.early, w.reached)) || null;
+  return path.slice(path.indexOf(L) + 1).find((x) => stopsAt(x, w.done, w.early, w.reached)) || null;
 }
 /** "Keep going" on a welcome back: the path moves past a lesson read early. A plain marker in the settings: no points,
     no lesson day, nothing counted twice. */
@@ -720,13 +774,31 @@ export function lcheckOrder(): number[] {
   }
   return CHECKS;
 }
-/** the number a person sees for checkpoint n: its place on the path */
-export const lcheckNo = (n: number, st?: Settings | null) => {
-  if (!faithOut(st) && habitOf(st) === 'porn') return lcheckOrder().indexOf(n) + 1;
+/** the checkpoints in the order this person's own path reaches them (lessonPathMine): by the later of its two lessons there, so a
+    checkpoint whose lessons were finished first comes first and the numbers behind them hold */
+function lcheckOrderMine(days: Days | null | undefined, st: Settings | null | undefined): number[] {
+  const plan = lcheckOrder();
+  if (!days) return plan;
+  const path = lessonPathMine(days, st);
+  if (path === lessonPathFor(st)) return plan;
+  const at = (L: Lesson) => {
+    const i = path.indexOf(L);
+    return i < 0 ? Infinity : i;
+  };
+  const later = (n: number) => {
+    const p = lcheckPair(n)!;
+    return Math.max(at(p.a), at(p.b));
+  };
+  return plan.slice().sort((p, q) => later(p) - later(q) || plan.indexOf(p) - plan.indexOf(q));
+}
+/** the number a person sees for checkpoint n: its place on the path (their own path, given their record) */
+export const lcheckNo = (n: number, st?: Settings | null, days?: Days | null) => {
+  const order = lcheckOrderMine(days, st);
+  if (!faithOut(st) && habitOf(st) === 'porn') return order.indexOf(n) + 1;
   /* with lessons off the path, their checkpoints are not counted, so the numbers do not skip */
   const off = offFor(st);
-  const on = lcheckOrder().filter((x) => lcheckOn(x, off));
-  return on.indexOf(n) >= 0 ? on.indexOf(n) + 1 : lcheckOrder().indexOf(n) + 1;
+  const on = order.filter((x) => lcheckOn(x, off));
+  return on.indexOf(n) >= 0 ? on.indexOf(n) + 1 : order.indexOf(n) + 1;
 };
 /** the checkpoint that comes right after this lesson, when this is the later of its two */
 export function lessonPairOf(L: Lesson) {
@@ -744,7 +816,7 @@ export function lcheckDue(days: Days, st: Settings, w: LessonWalk = lessonWalk(d
   const reached = (L: Lesson) => w.walked.has(L.id) || (w.path.indexOf(L) < 0 && w.done.has(L.id));
   /* a checkpoint about a lesson written for porn never comes for another habit, even when both were finished before */
   const forHabit = (L: Lesson) => habitOff(L, st);
-  for (const n of lcheckOrder()) {
+  for (const n of lcheckOrderMine(days, st)) {
     const p = lcheckPair(n)!;
     if (!lcheckOn(n, forHabit)) continue;
     if (reached(p.a) && reached(p.b) && !lcheckWritten(st, n)) return n;
@@ -752,9 +824,9 @@ export function lcheckDue(days: Days, st: Settings, w: LessonWalk = lessonWalk(d
   return 0;
 }
 /** the two lessons a checkpoint is about, in words: "lessons 3 and 12", or a lesson off the path by its name */
-export function lcheckAbout(p: { a: Lesson; b: Lesson }, st?: Settings | null): string {
-  const a = lessonNo(p.a, st);
-  const b = lessonNo(p.b, st);
+export function lcheckAbout(p: { a: Lesson; b: Lesson }, st?: Settings | null, days?: Days | null): string {
+  const a = lessonNo(p.a, st, days);
+  const b = lessonNo(p.b, st, days);
   if (a && b) return 'lessons ' + a + ' and ' + b;
   return (b ? 'lesson ' + b : '“' + p.b.title + '”') + ' and ' + (a ? 'lesson ' + a : '“' + p.a.title + '”');
 }
@@ -972,8 +1044,8 @@ export function lessonStop(days: Days, st: Settings, tk: DayKey, account = true)
   const note = (L: Lesson) => (st.learn && st.learn.notes && st.learn.notes[L.id]) || '';
   if (nl) {
     const total = lessonPathFor(st).length;
-    if (w.hook || lessonOpen(nl, w.done, account, st)) return { kind: 'next' as const, L: nl, n: lessonNo(nl, st), total, hook: w.hook, locked: false };
-    if (!slipNear(days, tk)) return { kind: 'next' as const, L: nl, n: lessonNo(nl, st), total, hook: null, locked: true };
+    if (w.hook || lessonOpen(nl, w.done, account, st)) return { kind: 'next' as const, L: nl, n: lessonNo(nl, st, days), total, hook: w.hook, locked: false };
+    if (!slipNear(days, tk)) return { kind: 'next' as const, L: nl, n: lessonNo(nl, st, days), total, hook: null, locked: true };
     const R = lessonReread(w, tk, st, account);
     return { kind: 'review' as const, L: R, note: note(R), wait: true };
   }
@@ -1046,7 +1118,7 @@ function hookFor(days: Days, st: Settings | null | undefined, tk: DayKey, w: Les
   const p = days[tk]?.p;
   /* not once a lesson was finished today */
   if (p && p.ls && p.ls.length) return null;
-  return hookPick(days, st, tk, w.done, w.path, account);
+  return hookPick(days, st, tk, w.done, lessonPathFor(st), account);
 }
 /** the moment's lesson for day tk, from the lessons finished before it (done): also read back by lessonsEarly, so a lesson read as
     a day's moment is never early. Not before the path's first lesson is finished: it is the way in. */

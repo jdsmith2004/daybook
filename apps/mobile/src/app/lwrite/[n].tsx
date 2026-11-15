@@ -39,7 +39,9 @@ export default function Lwrite() {
       <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 12 }}>
         <View style={s.top}>
           <T v="eyebrow" tone="muted">
-            {C && A && B ? 'Checkpoint ' + lcheckNo(n, st) + (lessonNo(B, st) ? ' · ' + lcheckAbout(pair!, st) : '') : 'Checkpoint'}
+            {C && A && B
+              ? 'Checkpoint ' + lcheckNo(n, st, snap.days) + (lessonNo(B, st, snap.days) ? ' · ' + lcheckAbout(pair!, st, snap.days) : '')
+              : 'Checkpoint'}
           </T>
           <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={close} style={[s.x, { backgroundColor: c.scBtn }]}>
             <Icon name="x" color={c.ink} />

@@ -255,7 +255,7 @@ function Floating({ show, due, children }: { show: boolean; due: number; childre
           }}
           style={({ pressed }) => [s.due, { backgroundColor: c.violetSoft, opacity: pressed ? 0.9 : 1 }]}>
           <Icon name="pencil" size={16} color={c.violetText} />
-          <Text style={[s.dueT, { color: c.violetText }]}>Checkpoint {lcheckNo(due, snap.settings)} is ready: write it out</Text>
+          <Text style={[s.dueT, { color: c.violetText }]}>Checkpoint {lcheckNo(due, snap.settings, snap.days)} is ready: write it out</Text>
           <Icon name="next" size={16} color={c.violetText} />
         </Pressable>
       ) : null}
@@ -307,7 +307,8 @@ function LessonsPane({
           <View style={{ gap: 2 }}>
             <T v="h2">Write it out</T>
             <T v="small">
-              Checkpoint {lcheckNo(due, st)}: {LCHECKS[due - 1].t}. About {pair ? lcheckAbout(pair, st) : 'two lessons'}. 3 to 5 minutes, and only you see it.
+              Checkpoint {lcheckNo(due, st, snap.days)}: {LCHECKS[due - 1].t}. About {pair ? lcheckAbout(pair, st, snap.days) : 'two lessons'}. 3 to 5 minutes,
+              and only you see it.
             </T>
           </View>
           <Button label="Start writing" onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(due) } })} />
@@ -404,7 +405,7 @@ function LessonRow({ L, done, locked, side, sub }: { L: Lesson; done?: boolean; 
   const c = useTheme();
   const t = toneOf(c, lessonUnit(L).tone);
   const { snap } = useStore();
-  const no = lessonNo(L, snap.settings);
+  const no = lessonNo(L, snap.settings, snap.days);
   return (
     <Pressable
       accessibilityRole="button"

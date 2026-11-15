@@ -197,7 +197,8 @@ describe('the lessons for another habit', () => {
     let st = gamb;
     while (n && seen.length < 40) {
       const p = core.lcheckPair(n)!;
-      expect(core.PORN_ONLY.has(p.a.id) || core.PORN_ONLY.has(p.b.id)).toBe(false);
+      /* a lesson written for porn that opens to this habit (HABIT_OPEN) is in its words, so its checkpoint may come */
+      expect(core.habitOff(p.a, gamb) || core.habitOff(p.b, gamb)).toBe(false);
       seen.push(n);
       st = { ...st, learn: { ...st.learn, wr: { ...(st.learn.wr || {}), ['c' + n]: { a: ['x', 'x', 'x'], d: TK } } } } as core.Settings;
       n = core.lcheckDue(days, st);

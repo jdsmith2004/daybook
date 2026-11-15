@@ -63,7 +63,8 @@ import {
   deedDone,
   deedSet,
   deedWords,
-  lessonStep,
+  landOfIn,
+  lessonPathMine,
   lessonUnit,
   questionOf,
   nextAfter,
@@ -252,7 +253,7 @@ export default function LessonScreen() {
   /* the morning set comes before today's lesson (core morning-set.ts): today's new lesson, opened while the morning set is
      due (from the morning note, or Learn), opens the morning set first, and the morning set opens this lesson after it */
   if (!at && morningFirst === id) return <Redirect href={{ pathname: '/morning', params: { then: id } }} />;
-  const n = lessonNo(L, st);
+  const n = lessonNo(L, st, snap.days);
   const w = lessonWalk(snap.days, st, tk, account);
   const done = w.done;
   /* one lesson opens at a time: further on, the key idea; read early and reached now, the welcome back. "Read it all
@@ -267,7 +268,7 @@ export default function LessonScreen() {
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
   if (!care && !preview && !lessonOpen(L, done, account, st)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
   /* the step whose deed comes after this lesson (its last on the path), shown once the lesson is read, unless it was done already */
-  const dk = care ? -1 : deedAfter(L, st);
+  const dk = care ? -1 : deedAfter(L, st, snap.days);
   const deedNext = dk >= 0 && !deedDone(st, dk) && deedA == null;
   /* the step before this one, asked about once more as its first lesson opens (never after a slip) */
   const askK = care || askedBack ? -1 : deedAskBack(L, snap.days, st, tk);
@@ -520,7 +521,7 @@ export default function LessonScreen() {
     body = (
       <>
         <T v="small" tone="muted">
-          Before step {lessonStep(L) + 1}
+          Before step {landOfIn(lessonPathMine(snap.days, st), L) + 1}
         </T>
         <T style={s.h} accessibilityRole="header">
           You were going to {PATH_STEPS[askK].back}. Did you get to?
@@ -896,7 +897,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
   const [went, setWent] = useState<Record<number, boolean>>({});
   const scroll = useRef<ScrollViewInstance>(null);
   const fit = useFitRoom();
-  const n = lessonNo(L, st);
+  const n = lessonNo(L, st, snap.days);
   const k = lessonKeyIdea(L);
   const first = lessonStats(snap.days).first[L.id];
   const read = first
@@ -948,7 +949,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
         {read ? (
           <Quiet label="Read it all again" onPress={again} />
         ) : nx ? (
-          <Quiet label={'Up next: lesson ' + lessonNo(nx, st)} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } })} />
+          <Quiet label={'Up next: lesson ' + lessonNo(nx, st, snap.days)} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } })} />
         ) : null}
       </View>
     );
@@ -1187,6 +1188,7 @@ function TextCard({
   onListen?: () => void;
   onSrc: () => void;
 }) {
+  const days = useStore().snap.days;
   const art = cardArt(card);
   const h = beat.h || card.h;
   /* what is the person's own stays on the card; the rest of the original words are in More */
@@ -1194,7 +1196,7 @@ function TextCard({
   const tone = look.art as Tone;
   /* a card that builds on an earlier lesson names it, as part of the thought, not as a review */
   const B = card.back ? lessonById(card.back) : null;
-  const bn = B ? lessonNo(B, st) : null;
+  const bn = B ? lessonNo(B, st, days) : null;
   /* a lesson told as a story leads with its picture, big, and the words under it; the flame steps to the side and waits, and comes
      back to the middle on a card with no picture (the owner, November 14, 2026: "the visual should be like the main part ... the
      flame's kind of off to the side and then it can come in every once in a while") */

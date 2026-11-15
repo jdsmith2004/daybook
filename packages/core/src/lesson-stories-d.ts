@@ -98,7 +98,7 @@ export const STORIES_D: Record<string, Story> = {
         h: 'People who are quitting often ask one question, quietly, after a slip.',
         p: '**Does it hurt this much because I am out of control?** The guilt can feel far bigger than the slip, and the size of it seems to be saying something.',
         art: ['scene', { k: 'l22-gauge' }],
-        dx: 'It usually comes after a slip that was rare, a day or two after a long good stretch. The slip itself took minutes. The guilt has lasted for days, and it will not let up. So the mind does the obvious math: if it hurts this much, it must be this bad. **Does it hurt this much because I am out of control?** It is a fair question, and it deserves a real answer, not a pat on the back.',
+        dx: 'It often comes after a slip that broke a long good stretch. The slip itself took minutes. The guilt has lasted for days, and it will not let up. So the mind does the obvious math: if it hurts this much, it must be this bad. **Does it hurt this much because I am out of control?** It is a fair question, and it deserves a real answer, not a pat on the back.',
       },
       {
         k: 'ask',
@@ -147,12 +147,11 @@ export const STORIES_D: Record<string, Story> = {
       {
         long: 1,
         h: 'Each answer has its own kind of help.',
-        p: 'Losing control needs skills and a plan, the tools in this app. A clash with what you hold needs **a calm, honest look**, often with someone who shares your values. Many people have some of each.',
+        p: 'Losing control needs skills and a plan, the tools in this app. A clash with what you hold needs something else: **less punishing, and steady closing of the gap**, often with someone who shares your values. Many people have some of each.',
         art: ['scene', { k: 'l22-two-helps' }],
-        dx: 'If the log shows a habit that runs over your choices, the help is practical: a plan for hard hours, changes to the setting, tools for an urge, people who know. If the hurt is mostly about the clash with what you hold, more willpower will not quiet it. What helps is **a calm, honest look** at what you believe and why, often with someone who shares your values and will not push you toward an answer. Most people find some of each, and both are real.',
+        dx: 'If the log shows a habit that runs over your choices, the help is practical: a plan for hard hours, changes to the setting, tools for an urge, people who know. If the hurt is mostly about the clash with what you hold, beating yourself up will not quiet it. What helps is **less punishing, and steady closing of the gap**: separating what you did from who you are, so the hurt points you forward instead of crushing you, one kept choice at a time, often with someone who shares your values. Most people find some of each, and both are real.',
       },
       {
-        long: 1,
         h: 'The part of you that hurts is on your side.',
         p: 'Pain after a slip is easy to read as a verdict. It is closer to a compass needle, pointing at **what you want your life to be about**. Someone who did not care would not feel it.',
         art: ['scene', { k: 'l22-compass' }],
@@ -162,13 +161,13 @@ export const STORIES_D: Record<string, Story> = {
     mine: { h: 'Your log answers the first question honestly.', k: 'clean30' },
     today: {
       h: 'Answer the two questions apart today.',
-      l: ['Look at your log: how often, this month?', 'Name the one thing it goes against', 'Pick one kind of help for each'],
+      l: ['Look at your log: how often, this month?', 'Name the one thing it goes against', 'Pick the help that fits what you found'],
     },
     you: {
       h: 'When it hurts the most, what is the thing you hold that the habit goes against?',
       o: [
         ['Being faithful to someone I love', 'Then the hurt is guarding a person. That is worth more than any count.'],
-        ['Being honest about who I am', 'Then the hurt is asking you to close the gap, one honest day at a time.'],
+        ['What I believe is right', 'Then the hurt is keeping faith with that. Let it guide the next choice.'],
         ['The respect I want to have for myself', 'That comes back too, one kept choice at a time.'],
         ['I do not know yet', 'Fair. Next time it hurts, ask it plainly what it is pointing at.'],
       ],
@@ -189,18 +188,6 @@ export const STORIES_D: Record<string, Story> = {
     np: 'The hour I will claim, and what goes in it first',
     tell: [
       {
-        h: 'Picture your mind as a small theater.',
-        p: 'The curtain is always up. Something is always playing on the stage, **from the moment you wake** to the moment you fall asleep.',
-        art: ['scene', { k: 'l22-stage' }],
-        dx: 'Picture your mind as a small theater with one stage. The odd thing about this theater is that the curtain never comes down. Something is always playing on the stage, **from the moment you wake** to the moment you fall asleep: a plan, a worry, a song, a conversation you are having in your head with someone who is not there. You are the audience, and most of the time you did not choose the show.',
-      },
-      {
-        h: 'When nothing is planned, the stage does not stay empty.',
-        p: 'Thoughts wait in the wings. Onto **an empty stage**, whatever is nearest walks on: a worry, a memory, a picture. It plays whatever it is allowed to.',
-        art: ['scene', { k: 'l22-wings' }],
-        dx: 'Some thoughts wait just off the stage, in the wings, for a gap. While something you chose is playing, they stay there. But when the stage goes quiet, when the plan runs out and nothing is next, the nearest one walks on. It might be a worry, an old memory or a picture you do not want. Nobody sent for it. It came because **an empty stage** is an invitation, and it will play for as long as it is allowed to stay.',
-      },
-      {
         h: 'In 2014, researchers left people alone in a plain room for fifteen minutes.',
         p: 'No phone, no book, nothing to do but think. On the table was a button that gave **a mild electric shock**, one they had already felt and said they would pay money to avoid.',
         art: ['scene', { k: 'l22-button-room' }],
@@ -214,7 +201,7 @@ export const STORIES_D: Record<string, Story> = {
           ['Sit and think. It is only fifteen minutes', 'That is what most people expect of themselves. Look at what they did.'],
           ['Press the button once, to see', 'Then you know something about empty time already. Look at how many did.'],
           ['Get restless fast', 'That is honest, and it is the feeling this study caught.'],
-          ['I do not know', 'Fair. Almost nobody guesses this one right about themselves.'],
+          ['I do not know', 'Fair. Look at what they did.'],
         ],
       },
       {
@@ -231,6 +218,18 @@ export const STORIES_D: Record<string, Story> = {
         dx: 'The shock was only one part of the work. Across eleven studies, with students and with adults of every age from a farmers’ market and a church, the finding kept coming back: most people did not enjoy six to fifteen minutes alone with their thoughts, and found it hard to keep their minds on anything. When people were asked to try it at home, about a third admitted they had cheated, and many **reached for a phone** or got up before the time was done.',
       },
       {
+        h: 'Here is one way to see what happened. Picture your mind as a small theater.',
+        p: 'The curtain is always up. Something is always playing on the stage, **from the moment you wake** to the moment you fall asleep.',
+        art: ['scene', { k: 'l22-stage' }],
+        dx: 'Picture your mind as a small theater with one stage. The odd thing about this theater is that the curtain never comes down. Something is always playing on the stage, **from the moment you wake** to the moment you fall asleep: a plan, a worry, a song, a conversation you are having in your head with someone who is not there. You are the audience, and most of the time you did not choose the show.',
+      },
+      {
+        h: 'When nothing is planned, the stage does not stay empty.',
+        p: 'Thoughts wait in the wings. Onto **an empty stage**, whatever is nearest walks on: a worry, a memory, a pull. It plays whatever it is allowed to.',
+        art: ['scene', { k: 'l22-wings' }],
+        dx: 'Some thoughts wait just off the stage, in the wings, for a gap. While something you chose is playing, they stay there. But when the stage goes quiet, when the plan runs out and nothing is next, the nearest one walks on. It might be a worry, an old memory or a pull you do not want. Nobody sent for it. It came because **an empty stage** is an invitation, and it will play for as long as it is allowed to stay.',
+      },
+      {
         long: 1,
         h: 'Boredom is not having nothing to do. It is having nothing to hold.',
         p: 'Researchers who study attention describe it as wanting to be engaged and finding **nothing that holds you**. It is uncomfortable, so the mind grabs whatever is closest.',
@@ -242,17 +241,18 @@ export const STORIES_D: Record<string, Story> = {
         h: 'So the hard hours are often not the busy ones.',
         p: 'They are **the hours nobody has claimed**: the hour after work, a free afternoon, a long wait. The habit does not need a reason to show up. It needs room.',
         art: ['scene', { k: 'l22-unclaimed' }],
-        dx: 'Ask people when their hardest moments come, and many expect the answer to be the stressful hours, the arguments, the bad days. Often it is not. It is the gap after the stress: the hour after work, a free afternoon, a long wait, the stretch of a day off with nothing planned. These are **the hours nobody has claimed**. The habit does not need a crisis to show up. It needs room, and an unclaimed hour is room.',
-      },
-      {
-        h: 'Here is the hard part. Whatever you do not take charge of, something else will.',
-        p: 'An hour left open is not neutral ground. It goes to whatever is nearest, and the habit is good at being nearest. But it works the other way too: **an hour you claim is yours**.',
-        art: ['scene', { k: 'l22-flag' }],
-        dx: 'This is the truth under all of it, and it is not comfortable. Wherever nobody takes charge, something else does. A field nobody tends grows weeds. A team nobody leads gets led by the loudest voice. An hour you leave open is not neutral ground, and the habit is very good at being the nearest thing in it. But that same truth carries the hope. Wherever you step in and take charge, the ground is yours. **An hour you claim is yours**, and the habit has to find somewhere else to stand.',
+        dx: 'Ask people when their hardest moments come, and many expect the answer to be the stressful hours, the arguments, the bad days. Often it is the gap after the stress: the hour after work, a free afternoon, a long wait, the stretch of a day off with nothing planned. These are **the hours nobody has claimed**. The habit does not need a crisis to show up. It needs room, and an unclaimed hour is room.',
       },
       {
         long: 1,
-        h: 'Getting active on a plan did as well as talk therapy, a year on.',
+        h: 'The hard part is plain. Whatever you do not take charge of, something else will.',
+        p: 'An hour left open is not neutral ground. It goes to whatever is nearest, and the habit is good at being nearest. But it works the other way too: **an hour you claim is yours**.',
+        art: ['scene', { k: 'l22-flag' }],
+        dx: 'Under all of it is a hard truth, and it is not comfortable. Wherever nobody takes charge, something else does. A field nobody tends grows weeds. A team nobody leads gets led by the loudest voice. An hour you leave open is not neutral ground, and the habit is very good at being the nearest thing in it. But that same truth carries the hope. Wherever you step in and take charge, the ground is yours. **An hour you claim is yours**, and the habit has to find somewhere else to stand.',
+      },
+      {
+        long: 1,
+        h: 'Getting active on a plan did as well as the best-known talking therapy, a year on.',
         p: 'In a large trial for depression, people who planned small, real things into their days, and did them before they felt like it, did **about as well** as people in therapy.',
         art: ['scene', { k: 'l22-planner' }],
         fact: { s: 'Trial · 440 adults · Richards and colleagues, 2016', i: [2] },
@@ -276,7 +276,7 @@ export const STORIES_D: Record<string, Story> = {
       o: [
         ['A walk, out of the house', 'Out of the house changes the stage and the hour at once.'],
         ['A call or a message to someone', 'A person on the stage leaves little room for anything else.'],
-        ['Something with my hands', 'Hands that are busy make a picture hard to hold.'],
+        ['Something with my hands', 'Busy hands leave the pull less room.'],
         ['I do not know yet', 'Fair. Watch which hour goes empty this week, and start there.'],
       ],
     },
@@ -295,10 +295,10 @@ export const STORIES_D: Record<string, Story> = {
     np: 'One question I would ask a therapist',
     tell: [
       {
-        h: 'Most people picture therapy the same way.',
-        p: 'A stranger behind a desk, a notepad, a long silence, and **a verdict at the end** about what is wrong with you.',
-        art: ['scene', { k: 'l22-judge' }],
-        dx: 'Ask people what they picture when they think of seeing a therapist, and the answers are much the same. A stranger behind a desk. A notepad, and a pen that writes while you talk. A long silence that you are meant to fill. And when it is over, **a verdict at the end** about what is wrong with you, in words you do not understand. It is no wonder people put it off for years. Nobody wants to walk into a courtroom.',
+        h: 'For fifty years, researchers argued about which kind of therapy works best.',
+        p: 'This school against that one, long courses against short ones. Hundreds of studies piled up, each measuring how people did. And **one answer kept coming back**, in almost every kind of therapy.',
+        art: ['scene', { k: 'l22-stacks' }],
+        dx: 'For more than fifty years, researchers have argued about what makes therapy work. Some said it was the method: this school against that one. Some said it was the number of sessions, or the training, or the kind of problem a person brought in. Hundreds of studies piled up, each measuring how people did and what they had received. When the studies were finally gathered and compared side by side, **one answer kept coming back**, in almost every kind of therapy, whatever its name.',
       },
       {
         k: 'ask',
@@ -311,13 +311,7 @@ export const STORIES_D: Record<string, Story> = {
         ],
       },
       {
-        h: 'Researchers have spent decades asking what makes therapy work.',
-        p: 'Which method is best, how long it should last, what kind of training helps. And one answer kept coming back, in **almost every kind of therapy** they looked at.',
-        art: ['scene', { k: 'l22-stacks' }],
-        dx: 'For more than fifty years, researchers have argued about what makes therapy work. Some said it was the method: this school against that one. Some said it was the number of sessions, or the training, or the kind of problem. Hundreds of studies piled up, each measuring how people did and what they had received. When the studies were gathered and compared, one answer kept coming back, in **almost every kind of therapy**, whatever its name.',
-      },
-      {
-        h: 'It was how well the two people worked together.',
+        h: 'The answer was how well the two people worked together.',
         p: 'In 295 studies with more than 30,000 people, how well the person and the therapist **agreed on goals and trusted each other** was one of the steadiest signs of how it would go.',
         art: ['scene', { k: 'l22-two-chairs' }],
         fact: { s: 'Review · 295 studies · Flückiger and colleagues, 2018', i: [0] },
@@ -327,7 +321,7 @@ export const STORIES_D: Record<string, Story> = {
         h: 'So therapy is not a verdict. It is closer to a partnership.',
         p: 'You are not the one on trial. You are **choosing a partner** to work with, and the fit is something you get to judge, from the first session.',
         art: ['scene', { k: 'l22-partners' }],
-        dx: 'That changes the picture of the courtroom completely. If the bond between the two of you is one of the best signs of how it will go, then you are not walking in to be judged. You are walking in to find out whether this is someone you can work with. You are **choosing a partner**, the way you would choose a coach or a doctor you trust. And the fit is yours to judge, from the very first hour.',
+        dx: 'That changes the picture many people carry, of a stranger with a notepad and a verdict at the end. If the bond between the two of you is one of the best signs of how it will go, then you are not walking in to be judged. You are walking in to find out whether this is someone you can work with. You are **choosing a partner**, the way you would choose a coach or a doctor you trust. And the fit is yours to judge, from the very first hour.',
       },
       {
         long: 1,
@@ -340,13 +334,12 @@ export const STORIES_D: Record<string, Story> = {
       {
         long: 1,
         h: 'For this habit, help has been tested.',
-        p: 'A review of 24 studies found that treatment for problem porn use helped, and **skills-based therapy** (CBT) had the most support. A typical course is about five to fifteen sessions.',
+        p: 'A review of 24 studies found that treatment for problem porn use seemed to help, though most studies were small. **Skills-based therapy** (CBT) had the most support. A typical course is about five to twenty sessions.',
         art: ['scene', { k: 'l22-toolkit' }],
         fact: { s: 'Review · 24 studies · Antons and colleagues, 2022 · Guide · NHS', i: [2, 3] },
-        dx: 'In 2022, a review gathered the studies of treatment for compulsive sexual behavior and problem porn use. There were not as many as for drinking or depression, and many were small. But across 24 of them, treatment appeared to help, and **skills-based therapy**, called cognitive behavioral therapy or CBT, had the strongest support. In CBT you learn to notice the thoughts and moments that lead to the habit, and practice other moves between sessions. A course often runs about five to fifteen sessions.',
+        dx: 'In 2022, a review gathered the studies of treatment for compulsive sexual behavior and problem porn use. There were not as many as for drinking or depression, and many were small. But across 24 of them, treatment appeared to help, and **skills-based therapy**, called cognitive behavioral therapy or CBT, had the strongest support. In CBT you learn to notice the thoughts and moments that lead to the habit, and practice other moves between sessions. A course often runs about five to twenty sessions.',
       },
       {
-        long: 1,
         h: 'The first hour is mostly talking about what you want.',
         p: 'They ask what brings you in and what you hope will change. You can say it in one sentence. They have heard it many times, and **what you say stays in the room**, with a few limits they will explain.',
         art: ['scene', { k: 'l22-first-hour' }],
@@ -362,7 +355,7 @@ export const STORIES_D: Record<string, Story> = {
     mine: { h: 'You have already started the work, before any session.', k: 'acted' },
     today: {
       h: 'Take one step toward the right partner.',
-      l: ['Look up two therapists, near or online', 'Write one question to ask them', 'Ask it on the first call'],
+      l: ['Find two therapists: near, online, low-cost', 'Write one question to ask them', 'Ask it on the first call'],
     },
     you: {
       h: 'What would make a therapist the right fit for you?',
@@ -388,17 +381,11 @@ export const STORIES_D: Record<string, Story> = {
     np: 'One person I could help, and the one thing I would tell them',
     tell: [
       {
-        h: 'Most people picture the twelve steps as a ladder.',
-        p: 'You start at the bottom, admitting you have a problem, and climb toward the top, helping others. You only reach that last rung **once you have it all figured out**.',
-        art: ['scene', { k: 'l22-ladder' }],
-        dx: 'The twelve steps began with Alcoholics Anonymous in the 1930s, and since then they have been borrowed by groups for almost every habit there is. Most people who have heard of them picture a ladder. At the bottom is step one, admitting that you have a problem. At the top is step twelve, carrying the message to others. You climb one rung at a time, and you only reach the top **once you have it all figured out**. This study turns that picture over.',
-      },
-      {
-        h: 'In plain words, the steps come down to three things.',
-        p: 'Be honest about where you are. Let other people in. Act. Admit willpower alone has not been enough, tell someone the truth, **make things right where you can**, and help others.',
+        h: 'The twelve steps began with Alcoholics Anonymous, in the 1930s.',
+        p: 'In plain words they ask three things. Be honest about where you are. Let other people in. Then act: **make things right where you can**, and help someone else. Many groups speak of a higher power, and each person reads that their own way.',
         art: ['scene', { k: 'l22-three' }],
         fact: { s: 'Program · Alcoholics Anonymous, the Twelve Steps', i: [0] },
-        dx: 'In plain words, not their own, the steps run like this. Admit that willpower alone has not been enough, and reach for help bigger than yourself. Take an honest look at your life and tell another person what you find. **Make things right where you can**, where doing so would not hurt anyone. Keep checking yourself, and keep going. And help someone else who is where you were. Under all twelve are three things: honesty, other people, and action.',
+        dx: 'The steps were written by the first members of Alcoholics Anonymous, and since then they have been borrowed by groups for almost every habit there is. In plain words, not their own, they run like this. Admit that willpower alone has not been enough, and reach for help bigger than yourself. Take an honest look at your life and tell another person what you find. **Make things right where you can**, where doing so would not hurt anyone. Keep checking yourself, and keep going. And help someone else who is where you were. Many groups speak of a higher power, and each person reads that their own way.',
       },
       {
         h: 'Researchers wanted to know which part of it did the most good.',
@@ -419,15 +406,15 @@ export const STORIES_D: Record<string, Story> = {
       },
       {
         h: 'A year after treatment, 40 in 100 of the helpers had not had a drink.',
-        p: 'Among the people who were not helping, it was 22 in 100. And the gap held **however many meetings people went to**. Sitting in the room was not the whole of it. Giving was.',
+        p: 'Among the people who were not helping, it was 22 in 100. And it held **when the researchers took meeting attendance into account**. Sitting in the room was not the whole of it.',
         art: ['people', { n: 40, was: 22, s: 'stayed sober' }],
-        dx: 'In the year after treatment, 40 in every 100 of the people who were helping others had not had a single drink. Among the people who were not helping, it was 22 in 100. The researchers checked whether the helpers had only gone to more meetings, and the gap held **however many meetings people went to**. Being in the room was good. But the people who gave something away while they were there did better again, by a wide margin.',
+        dx: 'In the year after treatment, 40 in every 100 of the people who were helping others had not had a single drink. Among the people who were not helping, it was 22 in 100. The researchers checked whether the helpers had only gone to more meetings, and the gap held **when they took meeting attendance into account**. Being in the room was good. But the people who gave something away while they were there did better again, by a wide margin.',
       },
       {
-        h: 'And the helpers were not near the top of any ladder.',
-        p: 'They were only months into their own recovery, still shaky, still learning. Helping was not a reward for being well. **It was part of how they got well.**',
+        h: 'The steps are often drawn as a ladder, with helping others on the top rung.',
+        p: 'These helpers were nowhere near the top. They were still in their first months of recovery, still shaky, still learning. Helping was not a reward for being well. **It was part of how they got well.**',
         art: ['scene', { k: 'l22-early-help' }],
-        dx: 'Look at who these helpers were. They were not people with ten years behind them. They were only months out of treatment, many of them still shaky, still learning the same things they were passing on. If the steps were a ladder, they were near the bottom. They did not wait until they were sure of themselves to help. Helping was not the reward at the end for being well. **It was part of how they got well.**',
+        dx: 'People who know the steps often picture a ladder. Step one at the bottom, admitting there is a problem. Step twelve at the top, carrying the message to others, a rung you reach once you have it all figured out. Now look at who these helpers were. They were not people with ten years behind them. They were still in their first months of recovery, many of them shaky, still learning the same things they were passing on. They did not wait until they were sure of themselves. **It was part of how they got well.**',
       },
       {
         long: 1,
@@ -463,7 +450,7 @@ export const STORIES_D: Record<string, Story> = {
     mine: { h: 'You already know things someone newer does not.', k: 'acted' },
     today: {
       h: 'Take the last step first, in a small way.',
-      l: ['Think of one person who is struggling', 'Tell them one thing that helped you', 'Keep it short and honest'],
+      l: ['Think of one person who is struggling', 'Tell them one thing that helped you', 'Or write one honest reply in a group'],
     },
     you: {
       h: 'Who could you help right now, with what you already know?',
@@ -477,6 +464,20 @@ export const STORIES_D: Record<string, Story> = {
     scope:
       'The helping study was about drinking, not porn, and it followed people rather than testing helping as a treatment, so the helpers may have differed in other ways. The review of 12-step programs was about alcohol too. What carries over is the shape: honesty, other people and action, with helping part of it from early on.',
     src: [S.aa12, S.pagano04, S.riessman, S.cochrane],
+    hab: {
+      alcohol: {
+        scope:
+          'The helping study and the review of 12-step programs were both about drinking. The helping study followed people rather than testing helping as a treatment, so the helpers may have differed in other ways. What it shows is the shape: honesty, other people and action, with helping part of it from early on.',
+      },
+      gambling: {
+        scope:
+          'The helping study and the review of 12-step programs were about drinking, not gambling, and the helping study followed people rather than testing helping as a treatment. What carries over is the shape: honesty, other people and action, with helping part of it from early on.',
+      },
+      other: {
+        scope:
+          'The helping study and the review of 12-step programs were about drinking, not this habit, and the helping study followed people rather than testing helping as a treatment. What carries over is the shape: honesty, other people and action, with helping part of it from early on.',
+      },
+    },
   },
   l27: {
     id: 'l27',
@@ -492,7 +493,7 @@ export const STORIES_D: Record<string, Story> = {
         h: 'In 2014, a team in Seattle followed 286 people for a year after treatment.',
         p: 'They had finished treatment for drugs or alcohol. Now came **the hardest stretch**: the months back in ordinary life, when most people who go back to a habit do.',
         art: ['scene', { k: 'l22-out-door' }],
-        dx: 'A team led by the psychologist Sarah Bowen, working with the man who built relapse prevention, Alan Marlatt, signed up 286 adults who had just finished treatment for drugs or alcohol. Everyone in the field knew where the danger was. Treatment ends, and a person walks back into the same streets, the same moods, the same people. That is **the hardest stretch**, the months after, and it is when most people who go back to a habit do. The question was what would carry them through it.',
+        dx: 'A team led by the psychologist Sarah Bowen, which grew out of Alan Marlatt’s lab, where relapse prevention was built, signed up 286 adults who had just finished treatment for drugs or alcohol. Everyone in the field knew where the danger was. Treatment ends, and a person walks back into the same streets, the same moods, the same people. That is **the hardest stretch**, the months after, and it is when most people who go back to a habit do. The question was what would carry them through it.',
       },
       {
         h: 'Each person was given one of three kinds of help.',
@@ -514,14 +515,14 @@ export const STORIES_D: Record<string, Story> = {
         h: 'Six months in, the planners looked strongest.',
         p: 'Both new kinds of help beat the usual support, and **the group with plans** had a slight edge. Steer around the risky moment, and you steer around the slip. It made sense.',
         art: ['scene', { k: 'l22-map' }],
-        dx: 'At six months, both of the new kinds of help were doing better than the usual support. And **the group with plans** had a slight edge, even over the group that also practiced noticing. It made good sense. If you know your risky moments and steer around them, you avoid most of the chances to slip. On that reading, a good plan was all anyone needed.',
+        dx: 'At six months, both of the new kinds of help were doing better than the usual support. And **the group with plans** had a slight edge, even over the group that also practiced noticing: they went longer, on average, before their first use of a drug. It made good sense. If you know your risky moments and steer around them, you avoid most of the chances to slip. On that reading, a good plan was all anyone needed.',
       },
       {
         h: 'A year in, the noticing group had pulled ahead.',
         p: 'They used on fewer days than either other group, and heavy drinking had dropped further. The plans had started to wear thin. **The skill of noticing was still working.**',
         art: ['scene', { k: 'l22-year-on' }],
         fact: { s: 'Trial · 286 adults · Bowen and colleagues, 2014', i: [0] },
-        dx: 'Then came the twelve-month check. The people who had practiced noticing now reported fewer days of using than either other group, and their heavy drinking had fallen further too. The planners had slipped back toward the usual-care group. Something about the plans had worn thin over the year, while **the skill of noticing was still working**, months after the classes had ended. The researchers called for more work to be sure, and the pattern was hard to miss.',
+        dx: 'Then came the twelve-month check. The people who had practiced noticing now reported fewer days of using than either other group, and their heavy drinking had fallen further too. The planners’ edge had faded. Something about the plans had worn thin over the year, while **the skill of noticing was still working**, months after the classes had ended. The researchers called for more work to be sure, and the pattern was hard to miss.',
       },
       {
         h: 'A plan works in the moments you saw coming.',
@@ -549,7 +550,7 @@ export const STORIES_D: Record<string, Story> = {
         h: 'So the urge does not have to leave before you are safe.',
         p: 'You do not need a calm mood or an empty mind. You need a pause long enough to see the urge for what it is, **and then choose**. Each time you do, the skill grows.',
         art: ['scene', { k: 'l22-pause' }],
-        dx: 'Many people wait for a better mood before they feel safe from an urge, or try to empty their minds of it. This trial points somewhere else. You do not need a calm mood, an empty mind, or a perfect plan. You need a pause long enough to see the urge for what it is, a wave rising in you, **and then choose**. Like any skill, it is clumsy at first and grows with every try, and unlike a plan, it does not wear thin.',
+        dx: 'Many people wait for a better mood before they feel safe from an urge, or try to empty their minds of it. This trial points somewhere else. You do not need a calm mood, an empty mind, or a perfect plan. You need a pause long enough to see the urge for what it is, a wave rising in you, **and then choose**. Like any skill, it is clumsy at first and grows with every try, and in this trial it kept working after the plans had worn thin.',
         back: 'l2',
       },
     ],
@@ -576,14 +577,14 @@ export const STORIES_D: Record<string, Story> = {
     id: 'l28',
     form: 'study',
     title: 'Why groups help',
-    tag: 'What a town of 12,000 people showed about quitting.',
+    tag: 'What the friendships of 12,000 people showed about quitting.',
     ic: 'dots',
     ask: 'Why would a group help me quit?',
-    key: 'A group does not change you directly. It changes who you spend time with, and those people do the rest.',
+    key: 'You do not quit on willpower alone. You quit inside a circle, and you can choose the circle.',
     np: 'One group or one person I could spend an hour with',
     tell: [
       {
-        h: 'In 1948, a small town in Massachusetts agreed to be studied for life.',
+        h: 'In 1948, a town in Massachusetts agreed to be studied for life.',
         p: 'Framingham signed up to help doctors learn about the heart. For decades its people came in for checkups, and the clinic kept careful records, **including who their friends were**.',
         art: ['scene', { k: 'l22-town' }],
         dx: 'After the Second World War, doctors knew almost nothing about why hearts fail. So the town of Framingham, near Boston, agreed to be watched, for life. Every few years thousands of its people came in to be measured and asked about their habits, and later their children joined too. To be able to find people again, the clinic wrote down the names of those close to them, **including who their friends were**: spouses, brothers and sisters, neighbors, coworkers. Nobody planned to use those lists for anything else.',
@@ -608,7 +609,7 @@ export const STORIES_D: Record<string, Story> = {
         h: 'People did not quit one at a time. They quit in clusters.',
         p: 'As smoking fell, **whole circles of friends stopped together**, like lights going out in groups. The smokers who were left drifted to the edges of the web, with fewer ties to anyone.',
         art: ['scene', { k: 'l22-clusters' }],
-        dx: 'When the researchers played the thirty years forward on their map, they saw something nobody had expected. Smokers did not drop out one by one, scattered at random. **Whole circles of friends stopped together**, like lights going out in groups across a city. And the smokers who were left did not stay in the middle of things. Year by year they drifted to the edges of the web, with fewer ties to anyone, until smoking became something people on the margins did.',
+        dx: 'When the researchers played the thirty years forward on their map, they saw something nobody had expected. Smokers did not drop out one by one, scattered at random. **Whole circles of friends stopped together**, like lights going out in groups across a city. And the smokers who were left did not stay in the middle of things. Year by year they drifted to the edges of the web, with fewer ties to anyone, until smoking became something people on the margins did. The edges were not a fixed place, though. One new tie moved a person in.',
       },
       {
         n: '36%',
@@ -618,10 +619,10 @@ export const STORIES_D: Record<string, Story> = {
         dx: 'Then they put numbers on it. When a person’s friend quit, the odds that the person was still smoking dropped by 36 in every 100. When a husband or wife quit, by 67. A brother or sister, by 25. Even a coworker, in a small firm where people saw each other every day, **made a difference**. Nobody had asked anyone to quit together. The study shows what moved together over time, not proof of cause, and the pattern held across thirty years.',
       },
       {
-        h: 'Willpower is something you carry alone. Company is something you live inside.',
-        p: 'Nobody in that town gave a speech or signed a pledge. The people around them made quitting **feel normal**, one friend at a time. That is what a group does.',
+        h: 'Nobody in that town signed a pledge.',
+        p: 'Nobody gave a speech or asked their friends to quit together. They watched the people around them stop, and quitting started to **feel normal**, one friend at a time.',
         art: ['scene', { k: 'l22-inside' }],
-        dx: 'Think about what that means. Nobody in Framingham joined a campaign or signed a pledge with their friends. They watched the people around them stop, and something shifted: what people like us do had changed. Quitting stopped being strange and started to **feel normal**. Willpower is something you carry alone, and it gets heavy. Company is something you live inside, and it carries you without your noticing. That is the thing a group gives.',
+        dx: 'Think about what that means. Nobody in Framingham joined a campaign or signed a pledge with their friends. They watched the people around them stop, and something shifted: what people like us do had changed. Quitting stopped being strange and started to **feel normal**. Willpower is something you carry alone, and it gets heavy. Company is something you live inside, and it carries you without your noticing.',
       },
       {
         long: 1,
@@ -629,7 +630,7 @@ export const STORIES_D: Record<string, Story> = {
         p: 'Across 25 years of studies, members changed who they spent time with: fewer people who drank, more who backed the change. **The company did more** than any one idea.',
         art: ['scene', { k: 'l22-new-circle' }],
         fact: { s: 'Review · 25 years of studies · Kelly, 2017', i: [1] },
-        dx: 'People have argued for decades about why groups like AA help: the steps, the meetings, the sponsor, the faith. A review of about 25 years of research found that the biggest route was plainer than any of those. Members changed who they spent time with. They dropped heavy drinkers from their circle and spent more time with people who did not drink or were in recovery. Confidence, less craving and better coping helped too. But **the company did more** than any one idea.',
+        dx: 'People have argued for decades about why groups like AA help: the steps, the meetings, the sponsor, the spiritual side. A review of about 25 years of research found that the biggest route was plainer than any of those. Members changed who they spent time with. They dropped heavy drinkers from their circle and spent more time with people who did not drink or were in recovery. Confidence, less craving and better coping helped too. But **the company did more** than any one idea.',
       },
       {
         h: 'So a group does not have to change you directly.',
@@ -650,7 +651,7 @@ export const STORIES_D: Record<string, Story> = {
       l: ['Find one group, online or near you', 'Or ask one person to check in weekly', 'Listen first, and speak when ready'],
     },
     you: {
-      h: 'Who could be one of the people around you who does the rest?',
+      h: 'Who could be the first new tie in your web?',
       o: [
         ['A friend I trust', 'Then one honest message can start it. They may be glad you asked.'],
         ['Someone who is quitting too', 'Two people changing together is a cluster of two.'],
@@ -684,7 +685,7 @@ export const STORIES_D: Record<string, Story> = {
         h: 'When you pray about this, what are you mostly asking for?',
         o: [
           ['That the urge be taken away', 'Many people pray for that. Look at what an old builder did.'],
-          ['Strength to get through it', 'Hold on to that one. The next cards are about it.'],
+          ['Strength to get through it', 'Look at what Paul was given when he asked for the other kind.'],
           ['Forgiveness, after', 'That prayer matters. This lesson is about the one before.'],
           ['I am not sure how to pray about it', 'That is honest. The scriptures give a plain pattern.'],
         ],
@@ -698,7 +699,7 @@ export const STORIES_D: Record<string, Story> = {
       },
       {
         h: 'He did not treat the watch as doubt.',
-        p: 'Praying and posting a guard were not two rival plans. They were **one act of faith**. Later the builders worked with a tool in one hand and a sword in the other.',
+        p: 'Praying and posting a guard were not two rival plans. They were **one act of faith**. Later the builders worked with a tool in one hand and a weapon in the other.',
         art: ['scene', { k: 'l22-trowel' }],
         fact: { s: 'Scripture · Nehemiah 4:17', i: [0] },
         dx: 'Nehemiah never seems to wonder whether setting a guard showed a lack of trust in God. To him, praying and posting a watch were **one act of faith**: the prayer asked for help, and the watch was how they took it. A few verses later the picture gets plainer still. Those who built the wall worked with one hand, and held a weapon in the other. Faith, in that story, had both hands busy.',
@@ -708,15 +709,15 @@ export const STORIES_D: Record<string, Story> = {
         p: 'He called it a thorn in the flesh. It was not taken. The answer he heard was: **My grace is sufficient for thee**, for my strength is made perfect in weakness.',
         art: ['scene', { k: 'l22-thorn' }],
         fact: { s: 'Scripture · 2 Corinthians 12:7 to 9', i: [1] },
-        dx: 'The apostle Paul wrote of a thorn in the flesh, something that troubled him, which he never names. Three times he asked the Lord to take it away. It was not taken. The answer he heard instead was: **My grace is sufficient for thee**, for my strength is made perfect in weakness. Paul did not read that as a prayer that failed. He read it as a different gift than the one he asked for: not the thorn removed, but strength to carry on with it.',
+        dx: 'The apostle Paul wrote of a thorn in the flesh, something that troubled him, which he never names. Three times he asked the Lord to take it away. It was not taken. The answer he heard instead was: **My grace is sufficient for thee**, for my strength is made perfect in weakness. Paul did not read that as a prayer that failed. He read it as a different gift than the one he asked for: not the thorn removed, but strength to carry on with it. And the strength, not the thorn, was what grew.',
       },
       {
         long: 1,
         h: 'A church leader, David A. Bednar, noticed the same pattern.',
-        p: 'In the Book of Mormon, Nephi is tied up by his brothers. He does not pray to be untied. He prays for **strength to burst the bands**. Pray for strength to change things, Bednar taught, more than for things to change.',
+        p: 'In the Book of Mormon, Nephi is tied up by his brothers. He asks to be delivered, and then he asks for more: **strength to burst the bands**. Pray for strength to change things, Bednar taught, more than for things to change.',
         art: ['scene', { k: 'l22-bands' }],
         fact: { s: 'Scripture · 1 Nephi 7:17 · Talk · Bednar, 2001', i: [2, 3] },
-        dx: 'David A. Bednar, a Latter-day Saint apostle, once pointed to a short verse. Nephi, bound with cords by his own brothers, prays: give me **strength to burst the bands** with which I am bound. Bednar noticed what Nephi did not ask for. He did not ask to be untied, or for his brothers to change their minds. He asked for strength. Bednar suggested that Nephi may have had to strain against the cords until they gave. His counsel: pray for strength to change your situation, more than for your situation to be changed.',
+        dx: 'David A. Bednar, a Latter-day Saint apostle, once pointed to a short verse. Nephi, bound with cords by his own brothers, prays: give me **strength to burst the bands** with which I am bound. Nephi asks first to be delivered from his brothers, and then he asks for more. Bednar noticed that last part: he asked for strength. Bednar suggested that Nephi may have had to strain against the cords until they gave. His counsel: pray for strength to change your situation, more than for your situation to be changed.',
       },
       {
         h: 'So a pull that comes back is not a failed prayer.',
@@ -741,9 +742,9 @@ export const STORIES_D: Record<string, Story> = {
       h: 'What will your guard be, the move that goes with your prayer?',
       o: [
         ['Standing up and leaving the room', 'Simple and strong. Your body carries the prayer out of the room.'],
-        ['Putting the phone somewhere else', 'A watch on the wall. It stands guard while you rest.'],
+        ['Putting the phone somewhere else', 'A watch on the wall. It stands guard while you live your day.'],
         ['Messaging someone I trust', 'The builders did not guard the wall alone either.'],
-        ['I do not know yet', 'Fair. Ask for strength tonight, and watch for the move it shows you.'],
+        ['I do not know yet', 'Fair. Ask for strength today, and watch for the move it shows you.'],
       ],
     },
     scope:
@@ -758,7 +759,7 @@ export const STORIES_D: Record<string, Story> = {
     tag: 'Why a song learned by heart works where a fight does not.',
     ic: 'sunrise',
     ask: 'What can I do in the hard moment, using my faith?',
-    key: 'Choose your song before you need it. When a shady thought walks on, let it fill the stage.',
+    key: 'Choose your song before you need it. When a shady thought walks on, let the song fill the stage.',
     np: 'The hymn, scripture or prayer I will learn by heart',
     tell: [
       {
@@ -773,16 +774,15 @@ export const STORIES_D: Record<string, Story> = {
         p: 'Something is always playing. Now and then **a shady thought** slips in from the wings and tries to take over the show. Left alone, it plays whatever it likes.',
         art: ['scene', { k: 'l22-shady' }],
         dx: 'Packer asked his listeners to picture the mind as a stage in a theater, with the curtain always up. Except when we sleep, something is always on it: a plan, a worry, a memory, a song. And now and then, he said, **a shady thought** edges in from the wings. It does not ask. If you let it stay, it draws in others like it, and the whole stage is given over to a show you never chose. He was honest that this happens to everyone.',
-        back: 'l23',
       },
       {
         k: 'ask',
         h: 'When a thought you do not want walks on, what do you usually do?',
         o: [
-          ['Argue with it', 'An argument keeps it in the spotlight. Look at what he did instead.'],
-          ['Try to push it off the stage', 'Pushing keeps your eyes on it. Look at his way.'],
-          ['Pray for it to leave', 'That is a good instinct. Look at the kind of prayer he chose.'],
-          ['Let it play', 'Then it is running the show. Look at how to take the stage back.'],
+          ['Argue with it', 'Many people do. Look at what he tried.'],
+          ['Try to push it off the stage', 'Most people try that first. Look at his way.'],
+          ['Pray for it to leave', 'Look at what he kept ready beside the prayer.'],
+          ['Let it play', 'That is honest. Look at how he took the stage back.'],
         ],
       },
       {
@@ -796,11 +796,11 @@ export const STORIES_D: Record<string, Story> = {
         h: 'He told of a pilot in a desperate flight.',
         p: 'With the engines straining and the danger real, the man held a favorite hymn in his mind, and **the engines seemed to sing it back** to him. He lived to tell it.',
         art: ['scene', { k: 'l22-pilot' }],
-        dx: 'Packer told the story of a pilot in a flight that had become desperate. In the worst of it, the man held a favorite hymn in his mind, and as he flew on, **the engines seemed to sing it back** to him. The danger did not vanish because of the song. But the song held his mind steady through the danger, long enough to do what had to be done. He lived to tell it, and he told it as the moment he learned what a hymn was for.',
+        dx: 'Packer told the story of a pilot in a flight that had become desperate, with the danger real and nothing certain. In the worst of it, the man held a favorite hymn in his mind, and as he flew on, **the engines seemed to sing it back** to him. He lived to tell it, and Packer passed it on as a picture of what a hymn learned by heart can do in a hard moment.',
       },
       {
         h: 'Here is why a song works where a fight does not.',
-        p: 'You cannot push a thought off a stage by staring at it. A song you know by heart **starts at once**, needs no thinking, and fills the stage before the shady one can settle.',
+        p: 'Staring a thought down keeps it in the spotlight. A song you know by heart **starts at once**, needs no thinking, and fills the stage before the shady one can settle.',
         art: ['scene', { k: 'l22-song-stage' }],
         dx: 'Staring a thought down keeps it in the spotlight, because to keep checking that it is gone, part of the mind has to keep looking at it. A song works the other way. Because you know it by heart, it **starts at once**, with no effort and no decision to make in a hard moment. It takes up the same space in the mind that the shady thought wanted. And because it is a hymn, it brings something with it: what you love, and who you want to be.',
         back: 'l2',

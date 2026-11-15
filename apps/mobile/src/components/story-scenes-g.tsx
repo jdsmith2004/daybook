@@ -10,6 +10,9 @@ import { SCENES_G37 } from './story-scenes-g37';
 import { SCENES_G38 } from './story-scenes-g38';
 import { SCENES_G39 } from './story-scenes-g39';
 import { SCENES_G40 } from './story-scenes-g40';
+import { SCENES_G42 } from './story-scenes-g42';
+import { SCENES_G43 } from './story-scenes-g43';
+import { SCENES_G44 } from './story-scenes-g44';
 
 export const SCENES_G: Record<string, ComponentType<{ k: Ink }>> = {
   ...SCENES_G33,
@@ -20,4 +23,7 @@ export const SCENES_G: Record<string, ComponentType<{ k: Ink }>> = {
   ...SCENES_G38,
   ...SCENES_G39,
   ...SCENES_G40,
+  ...SCENES_G42,
+  ...SCENES_G43,
+  ...SCENES_G44,
 };

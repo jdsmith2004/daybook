@@ -76,6 +76,32 @@ const S = {
     'Harkin and colleagues (2016): does monitoring goal progress promote goal attainment? A meta-analysis, Psychological Bulletin',
     'https://doi.org/10.1037/bul0000025',
   ],
+  kavanagh: [
+    'Kavanagh, Andrade & May (2005): imaginary relish and exquisite torture, the elaborated intrusion theory of desire, Psychological Review',
+    'https://doi.org/10.1037/0033-295X.112.2.446',
+  ],
+  skorka: [
+    'Skorka-Brown, Andrade, Whalley & May (2015): playing Tetris decreases drug and other cravings in real world settings, Addictive Behaviors',
+    'https://doi.org/10.1016/j.addbeh.2015.07.020',
+  ],
+  iyadurai: [
+    'Iyadurai and colleagues (2018): preventing intrusive memories after trauma with a brief intervention involving Tetris, Molecular Psychiatry',
+    'https://doi.org/10.1038/mp.2017.23',
+  ],
+  kemps12: ['Kemps, Tiggemann & Bettany (2012): non-food odorants reduce chocolate cravings, Appetite', 'https://pubmed.ncbi.nlm.nih.gov/22407134/'],
+  kemps07: [
+    'Kemps & Tiggemann (2007): modality-specific imagery reduces cravings for food, Journal of Experimental Psychology: Applied',
+    'https://doi.org/10.1037/1076-898x.13.2.95',
+  ],
+  collodi: ['Collodi (1883): The Adventures of Pinocchio, chapters 30 to 36 (public domain)', 'https://www.gutenberg.org/ebooks/500'],
+  kober10: [
+    'Kober, Mende-Siedlecki, Kross, Weber, Mischel, Hart & Ochsner (2010): prefrontal-striatal pathway underlies cognitive regulation of craving, Proceedings of the National Academy of Sciences',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC2930456/',
+  ],
+  lopez22: [
+    'Lopez, Ochsner & Kober (2022): brief training in regulation of craving reduces cigarette smoking, Journal of Substance Abuse Treatment',
+    'https://doi.org/10.1016/j.jsat.2022.108749',
+  ],
 } satisfies Record<string, Src>;
 
 export const STORIES_E: Record<string, Story> = {
@@ -85,8 +111,8 @@ export const STORIES_E: Record<string, Story> = {
     title: 'Wanting is not liking',
     ic: 'bolt',
     ask: 'Why is the pull so strong when porn does not even feel that good anymore?',
-    key: 'A strong pull is an ad, not a review. For the review, recall how it felt ten minutes after.',
-    np: 'How it felt ten minutes after, compared with how much I wanted it before',
+    key: 'A strong pull is an ad, not a review. For the review, recall how it felt afterward.',
+    np: 'How it felt afterward, compared with how much I wanted it before',
     tell: [
       {
         h: 'In the 1980s, a young scientist named Kent Berridge set out to prove what everyone already believed.',
@@ -109,7 +135,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'The rats stopped eating.',
         p: 'They would not walk to food or water, even when hungry. Left alone, **they would have starved**, so the scientists fed them by hand.',
-        dx: 'At first, it looked like the theory was right. The rats stopped eating. They would not walk across the cage to food or water, even when they were hungry. Left alone, **they would have starved**, so the scientists fed them by hand. Everything about them said they had lost interest in rewards.',
+        dx: 'The dopamine had been taken away with a chemical that destroys the cells that make it, a standard method in those labs. At first, it looked like the theory was right. The rats stopped eating. They would not walk across the cage to food or water, even when they were hungry. Left alone, **they would have starved**, so the scientists fed them by hand, with a tube, for days. Everything about them said they had lost interest in rewards, and the natural reading was the old one: no dopamine, no pleasure, so nothing was worth going for.',
         art: ['scene', { k: 'l33-bowl' }],
       },
       {
@@ -143,18 +169,18 @@ export const STORIES_E: Record<string, Story> = {
       },
       {
         k: 'ask',
-        h: 'Think of the last time the pull was strong. Ten minutes after, how did it feel?',
+        h: 'Think of the last time the pull was strong. How did you feel afterward?',
         o: [
           ['About as good as it promised', 'Then you have a fair reading. Watch whether it holds next time.'],
           ['Smaller than it promised', 'Many people notice that gap. Now you know where it comes from.'],
           ['Flat, or worse than before', 'Keep that. It is the review the pull never shows you.'],
-          ['I have never noticed', 'Few people do. Next time, notice the ten minutes after.'],
+          ['I rode it out', 'Then you saw the wave fall. That is the other half of this lesson.'],
         ],
       },
       {
         h: 'So how hard it pulls is not how good it will be.',
-        p: 'A strong pull tells you how well the wanting was trained. It is **an ad, not a review**. For the review, look at how you felt ten minutes after.',
-        dx: 'So how hard it pulls is not a measure of how good it will be. A strong pull tells you how well the wanting was trained: how many times, with which cues, in which places. It is **an ad, not a review**. Ads are loud and bright and always promise more than they give. The review comes later, in the ten minutes after, and it is quieter. If you want to know what the habit is worth to you, that is where to look.',
+        p: 'A strong pull tells you how well the wanting was trained. It is **an ad, not a review**. For the review, look at how you felt afterward.',
+        dx: 'So how hard it pulls is not a measure of how good it will be. A strong pull tells you how well the wanting was trained: how many times, with which cues, in which places. It is **an ad, not a review**. Ads are loud and bright and always promise more than they give. The review comes later, afterward, and it is quieter. If you want to know what the habit is worth to you, that is where to look.',
         art: ['scene', { k: 'l33-ad' }],
       },
       {
@@ -169,7 +195,7 @@ export const STORIES_E: Record<string, Story> = {
     mine: { h: 'Each pull you outlast gets less practice.', k: 'rode' },
     today: {
       h: 'When the pull is loud, ask for the review.',
-      l: ['Name it: “This is wanting, not liking.”', 'Recall how it felt ten minutes after', 'Give the pull ten minutes to fall'],
+      l: ['Name it: “This is wanting, not liking.”', 'Recall how it felt afterward', 'Give the pull ten minutes to fall'],
     },
     you: {
       h: 'When the pull is strongest, what does it promise you?',
@@ -177,7 +203,7 @@ export const STORIES_E: Record<string, Story> = {
         ['That this time will feel amazing', 'It promised that last time too. Check the review before you believe the ad.'],
         ['Relief from how I feel', 'Then it is selling relief. Look at how long the relief lasted.'],
         ['Nothing. It just pulls', 'That is the wanting on its own, with little liking behind it. Name it as that.'],
-        ['I do not know yet', 'Fair. Listen to what it says next time, and then check the ten minutes after.'],
+        ['I do not know yet', 'Fair. Listen to what it says next time, and then check how you feel afterward.'],
       ],
     },
     scope:
@@ -203,7 +229,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'Then he added a light.',
         p: 'A small light came on, and a moment later, the juice came. He did it again and again, **always in the same order**: light, then juice.',
-        dx: 'Then he changed one thing. Before each drop of juice, a small light came on. A moment later, the juice came. He did it again and again, **always in the same order**: light, then juice. The monkeys did not need to do anything. They only had to watch, and their brains did the rest.',
+        dx: 'Then he changed one thing. Before each drop of juice, a small light came on. A moment later, about a second, the juice came. He did it again and again, many times in a session and over many sessions, **always in the same order**: light, then juice. The monkeys did not need to do anything to earn it. No lever, no button. They only had to sit and watch, and their brains did the rest, learning the order without being asked to.',
         art: ['scene', { k: 'l34-light' }],
       },
       {
@@ -223,7 +249,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'Your brain has learned what comes before the habit.',
         p: 'A room, a mood, an app, being alone. When that signal shows up, the wanting starts, **before anything is on the screen**. The pull is a reaction to the light.',
-        dx: 'You have your own lights. Your brain has learned what comes before the habit: a certain room, a mood like bored or low, an app you open, being alone with nothing planned. It learned them the way the monkeys learned the light, through the same order again and again. So when that signal shows up, the wanting starts, **before anything is on the screen**. The pull you feel is not a reaction to a picture. It is a reaction to the light.',
+        dx: 'You have your own lights. Your brain has learned what comes before the habit: a certain room, a mood like bored or low, an app you open, being alone with nothing planned. It learned them the way the monkeys learned the light, through the same order again and again. So when that signal shows up, the wanting starts, **before anything is on the screen**. The pull you feel is not a reaction to the thing itself. It is a reaction to the light.',
         art: ['scene', { k: 'l34-signals' }],
       },
       {
@@ -296,7 +322,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'The old popcorn was bad, and people knew it.',
         p: 'It was soft and chewy and tasted stale. Asked afterward, the people who got it said **they did not like it**.',
-        dx: 'A week makes popcorn bad. It goes soft and chewy, and it tastes like cardboard. There was nothing hidden about it. Asked afterward, the people who got the stale buckets said so plainly: **they did not like it**. If people eat what they like, the stale buckets should have come back nearly full.',
+        dx: 'A week makes popcorn bad. It goes soft and chewy, and it tastes like cardboard. There was nothing hidden about it. Asked afterward, the people who got the stale buckets said so plainly: **they did not like it**. The researchers had weighed every bucket before it was handed out, and they weighed it again when it came back. So they would know exactly how much each person ate, not what they said they ate. If people eat what they like, the stale buckets should have come back nearly full.',
         art: ['scene', { k: 'l35-stale' }],
       },
       {
@@ -354,7 +380,7 @@ export const STORIES_E: Record<string, Story> = {
     mine: { h: 'Your autopilot keeps hours. Here is where to watch.', k: 'hour' },
     today: {
       h: 'Give your autopilot an awkward hand.',
-      l: ['Pick where it usually starts', 'Change one thing there: hand, room or app', 'When you notice, say “not this time”'],
+      l: ['Pick where it usually starts', 'Change one thing there: hand, room or app', 'When you notice, say “Wait, I can stop.”'],
     },
     you: {
       h: 'When you catch yourself already halfway there, what do you tell yourself?',
@@ -409,7 +435,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'The old stories all say the same thing.',
         p: '**What you most need is usually guarded by what you most fear.** The place you least want to look is where the gold is.',
-        dx: 'Put all those stories side by side, and they say the same thing in different words. **What you most need is usually guarded by what you most fear.** The place you least want to look is where the gold is. Comfort is safe, and it is small. The cave is frightening, and it is where the life you want is kept. The hero is not the one with no fear. The hero is the one who goes down anyway.',
+        dx: 'Put all those stories side by side, and they say the same thing in different words. **What you most need is usually guarded by what you most fear.** The place you least want to look is where the gold is. Comfort is safe, and it is small. The cave is frightening, and it is where the life you want is kept.',
         art: ['scene', { k: 'l36-guarded' }],
       },
       {
@@ -445,7 +471,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'Every time you go around, the dragon keeps the gold.',
         p: 'And you keep the life you have now. Not a worse one. The same one, **with the gold still under the dragon**.',
-        dx: 'Every time you go around the cave, the dragon keeps the gold. And you keep the life you have now. Not a worse one, and not a ruined one. The same one, **with the gold still under the dragon**, another day. That is the cost of the habit that is easy to miss. It does not only take an hour. It keeps the door to the cave shut.',
+        dx: 'Every time you go around the cave, the dragon keeps the gold. And you keep the life you have now. Not a worse one, and not a ruined one. The same one, **with the gold still under the dragon**, another day. Think of the friend you have not called. Each time the habit gets you through the lonely hour, the call waits one more day, and a call that waits long enough stops being made. The work you keep putting off stays a someday. The talk you are afraid of stays unsaid. That is the cost that is easy to miss. It does not only take an hour. It keeps the door to the cave shut, and the gold stays where it is.',
         art: ['scene', { k: 'l36-keeps' }],
       },
       {
@@ -458,7 +484,7 @@ export const STORIES_E: Record<string, Story> = {
     ],
     mine: { h: 'Your log can show which feeling comes first.', k: 'trigger' },
     today: {
-      h: 'Name the feeling you run from most, and spend five minutes facing it without the phone.',
+      h: 'Spend five minutes in the cave today.',
       l: ['Name the feeling you run from most', 'Sit with it for five minutes, no phone', 'Ask what it guards: a person, a task, rest'],
     },
     you: {
@@ -507,7 +533,7 @@ export const STORIES_E: Record<string, Story> = {
         k: 'ask',
         h: 'What would it take for you to believe you are someone who is free of this?',
         o: [
-          ['A long run with no slips', 'That makes one slip feel like losing who you are. The next cards offer another way.'],
+          ['A long run with no slips', 'Many people wait for that. The next cards offer another way to get there.'],
           ['Someone else seeing it in me', 'Being seen helps a lot. You can start the cutting yourself.'],
           ['Feeling it inside, one day', 'That feeling tends to follow the strokes, not come before them.'],
           ['I do not know yet', 'That is honest. Hold it for the next card.'],
@@ -522,7 +548,7 @@ export const STORIES_E: Record<string, Story> = {
         fact: { s: 'Book · Aristotle, Nicomachean Ethics, book 2', i: [1] },
       },
       {
-        h: 'So who you are becoming is not a prize at the end.',
+        h: 'So who you are becoming is being cut today, not handed out later.',
         p: 'It is being cut right now, in the small things you do today. **Each choice is a stroke.** A message sent, a phone put down, an urge ridden out.',
         dx: 'This turns the usual picture around. Most people treat a new way of seeing themselves like a trophy, handed out after a long run with no slips. But a character is not handed out. It is cut. It is being cut right now, in the small things you do today. **Each choice is a stroke.** A message sent to a friend, a phone put down in another room, an urge ridden out to the end. None of them looks like much alone. Together, they are the face.',
         art: ['scene', { k: 'l37-stroke' }],
@@ -586,7 +612,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'They gave students a temptation, and a sentence to say back.',
         p: 'Half practiced “I cannot,” as in “I cannot eat that.” Half practiced “I do not.” Then, on the way out, each was **offered a thank-you snack**: a chocolate bar or a granola bar.',
-        dx: 'They brought 120 students into a study that looked like it was about something else. Each student pictured a temptation and practiced saying no to it. Half used “I cannot,” as in “I cannot eat that.” Half used “I do not,” as in “I do not eat that.” Then the study seemed to end. On the way out, each student was **offered a thank-you snack**, and had to pick: a chocolate bar or a granola bar. Nobody was watching which one they took, or so they thought.',
+        dx: 'They brought 120 students into a study that looked like it was about something else. Each student pictured a temptation and practiced saying no to it. Half used “I cannot,” as in “I cannot eat that.” Half used “I do not,” as in “I do not eat that.” Then the study seemed to end. On the way out, each student was **offered a thank-you snack**, and had to pick: a chocolate bar or a granola bar.',
         art: ['scene', { k: 'l38-snacks' }],
       },
       {
@@ -626,7 +652,7 @@ export const STORIES_E: Record<string, Story> = {
       },
       {
         h: '“I do not” is a sentence about the person you are becoming.',
-        p: 'It does not need a judge in the room. **It is a fact you are making true**, one urge at a time, and every urge you outlast makes it more true.',
+        p: 'A rule held from outside gets argued with. **It is a fact you are making true**, one urge at a time, and every urge you outlast makes it more true.',
         dx: '“I do not” is a sentence about the person you are becoming. It does not need anyone to enforce it, and it does not need a judge in the room. **It is a fact you are making true**, one urge at a time. The first few times you say it, it may feel a little ahead of you. That is fine. Every urge you outlast catches the fact up to the sentence, until it is plainly true.',
         art: ['scene', { k: 'l38-door' }],
         back: 'l37',
@@ -676,10 +702,11 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'Giving up something now for something better later may be the oldest wisdom people have.',
         p: 'Every coin saved, every field planted, every year of study is the same trade. **The easy thing now, or the good thing later.** The habit is that same choice, made small.',
-        dx: 'Giving up something now for something better later may be the oldest wisdom people have. It is in every coin saved, every field planted, every year of study, every promise kept when breaking it would be easier. It is the same trade each time. **The easy thing now, or the good thing later.** People did not get from caves to cities by taking the easy thing. And the habit is that same choice, made small enough to fit in a few minutes.',
+        dx: 'Giving up something now for something better later may be the oldest wisdom people have. It is in every coin saved, every field planted, every year of study, every promise kept when breaking it would be easier. It is the same trade each time. **The easy thing now, or the good thing later.** People did not get from caves to cities by taking the easy thing. And the habit is that same choice, made small enough to fit in one choice.',
         art: ['scene', { k: 'l39-trade' }],
       },
       {
+        long: 1,
         h: 'The hard part: the easy thing and the good thing are rarely the same thing.',
         p: 'What feels good now and what you will be glad of later **almost never line up**. A life gets its shape from which one a person picks, again and again.',
         dx: 'This is the hard part, and it is worth saying plainly. The easy thing and the good thing are rarely the same thing. What feels good now and what you will be glad of later **almost never line up**. If they did, nobody would need courage. A life gets its shape from which one a person picks, not once, but again and again, on ordinary days when nobody is watching.',
@@ -697,7 +724,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'Every time you take the easy thing, you eat a little of the seed.',
         p: 'It feels like nothing in the moment. One handful. But **the field you could have had is made of those handfuls**, and so is the one you will have.',
-        dx: 'Every time you take the easy thing, you eat a little of the seed. It never feels like much. One handful, on one hard evening. Nobody starves from one handful. But the field is made of handfuls. **The field you could have had is made of those handfuls**, and so is the one you will have. That is what the habit costs. Not one evening, but what that evening could have grown into.',
+        dx: 'Every time you take the easy thing, you eat a little of the seed. It never feels like much. One handful, on one hard day. Nobody starves from one handful. But the field is made of handfuls. **The field you could have had is made of those handfuls**, and so is the one you will have. That is what the habit costs. Not one day, but what that day could have grown into.',
         art: ['scene', { k: 'l39-handful' }],
       },
       {
@@ -772,7 +799,7 @@ export const STORIES_E: Record<string, Story> = {
       },
       {
         k: 'ask',
-        h: 'Then they were asked: which one would you rather do again? Which would you pick?',
+        h: 'If you had done both, which would you choose to do again?',
         o: [
           ['The short one, it hurt for less time', 'That is the sensible answer. Look at what most people chose.'],
           ['The long one, it ended easier', 'Then your memory works like most people’s. Look at the number.'],
@@ -790,14 +817,14 @@ export const STORIES_E: Record<string, Story> = {
         long: 1,
         h: 'Doctors later found the same thing in patients.',
         p: 'People after a painful medical test judged it by its worst moment and its last few minutes. When the end was made a little gentler, they **remembered the whole test as easier**.',
-        dx: 'Doctors later tested the same idea with patients having a painful medical exam. Half had the exam as usual. For the other half, the end was made a little gentler, with a few extra minutes that hurt less. Those patients **remembered the whole test as easier**, and more of them came back for the next one, even though their exam had lasted longer. Memory had judged it by its worst moment and its last few minutes.',
+        dx: 'Doctors later tested the same idea with patients having a painful medical exam. Half had the exam as usual. For the other half, the end was made a little gentler, with a few extra minutes that hurt less. Those patients **remembered the whole test as easier**, and were a little more willing to come back for the next one, even though their exam had lasted longer. Memory had judged it by its worst moment and its last few minutes.',
         art: ['scene', { k: 'l40-doctor' }],
         fact: { s: 'Trial · Redelmeier, Katz & Kahneman, 2003', i: [1] },
       },
       {
         h: 'Your memory scores your weeks the same way.',
-        p: 'After a slip, memory keeps the worst moment and the last one. **The quiet days fall away**: the evenings you got through, the urges you rode out, the mornings you woke up clear.',
-        dx: 'Your memory scores your weeks the same way it scored the cold water. After a slip, it keeps the worst moment, and it keeps the last one, which is often the same moment. **The quiet days fall away**: the evenings you got through without a fight, the urges you rode out, the mornings you woke up clear. They were real, and they were most of the week. They left almost no mark, because nothing in them was sharp.',
+        p: 'After a slip, memory keeps the worst moment and the last one. **The quiet days fall away**: the days you got through, the urges you rode out, the mornings you woke up clear.',
+        dx: 'Your memory scores your weeks the same way it scored the cold water. After a slip, it keeps the worst moment, and it keeps the last one, which is often the same moment. **The quiet days fall away**: the days you got through without a fight, the urges you rode out, the mornings you woke up clear. They were real, and they were most of the week. They left almost no mark, because nothing in them was sharp.',
         art: ['scene', { k: 'l40-week' }],
       },
       {
@@ -808,7 +835,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'A log does not forget the quiet days.',
         p: 'It counts every one, the same size as the hard one. It is a fairer witness than a hard morning. **Trust the log, not your memory.**',
-        dx: 'A log does not work like memory. It does not keep the sharp moments and drop the plain ones. It counts every day, and each one takes the same space as the hard one. The evening you got through is a line, just like the slip is a line. That makes it a fairer witness than a hard morning will ever be. **Trust the log, not your memory**, especially on the mornings when memory is loudest.',
+        dx: 'A log does not work like memory. It does not keep the sharp moments and drop the plain ones. It counts every day, and each one takes the same space as the hard one. The day you got through is a line, just like the slip is a line. That makes it a fairer witness than a hard morning will ever be. **Trust the log, not your memory**, especially on the mornings when memory is loudest.',
         art: ['scene', { k: 'l40-log' }],
       },
       {
@@ -845,6 +872,282 @@ export const STORIES_E: Record<string, Story> = {
     scope:
       'The cold-water and patient studies were about remembered pain, not habits, and they show how memory tends to work, not how it always works. The tracking review pooled 138 experiments, mostly on health goals. Together they show why an honest log is a fairer witness than a hard morning.',
     src: [S.kahneman, S.redelmeier, S.harkin],
+  },
+
+  l42: {
+    id: 'l42',
+    form: 'study',
+    title: 'Crowd out the picture',
+    ic: 'sparkle',
+    ask: 'Why would a small puzzle help when an urge is strong?',
+    key: 'An urge grows by painting a picture. The mind has one small screen, so give it a puzzle.',
+    np: 'What my eyes and hands can do when an urge starts',
+    tell: [
+      {
+        h: 'Craving researchers asked people what a craving is like from the inside.',
+        p: 'The answers were close to the same. It starts as a passing thought. Then it **turns into a picture**: the taste, the smell, the feel of it, filling in. The sharper the picture gets, the stronger the pull.',
+        dx: 'Psychologists in England and Australia pulled together years of studies in which people described their cravings, for food, for cigarettes, for drink. The same pattern kept coming up. A craving starts as a passing thought, almost nothing. Then it **turns into a picture**: the taste, the smell, the feel of it, filling in detail by detail. People were not only wanting. They were watching something in their heads. And the sharper the picture got, the stronger the pull.',
+        art: ['scene', { k: 'l42-picture' }],
+        fact: { s: 'Theory · Kavanagh, Andrade & May, 2005', i: [0] },
+      },
+      {
+        h: 'And the mind has only one small screen for pictures.',
+        p: 'Try to picture a red apple and, **at the same time**, the face of a friend, both sharp. One always slips. The screen holds one picture well, and not two.',
+        dx: 'That gave them an idea, because the mind has only one small screen for pictures. You can test it now. Picture a red apple, shiny, with a leaf on the stem. Now, **at the same time**, picture the face of a good friend, just as sharp. One of them always slips, or both go blurry. The screen holds one picture well, and not two. Whatever fills it leaves less room for anything else.',
+        art: ['scene', { k: 'l42-screen' }],
+      },
+      {
+        h: 'So they wondered what would happen if the screen had something else to show.',
+        p: 'Not a thought in words, which leaves the screen free. A job for the eyes: **a puzzle of falling blocks** that has to be watched, turned and fitted, the game called Tetris.',
+        dx: 'So the researchers wondered what would happen if they gave the screen something else to show. Not a thought in words, like counting or reciting, because words use a different part of the mind and leave the picture screen free. They wanted a job for the eyes: **a puzzle of falling blocks** that has to be watched, turned and fitted before it lands. The game called Tetris was perfect. It is plain, it has nothing in it to start a new craving, and it fills the screen.',
+        art: ['scene', { k: 'l42-blocks' }],
+      },
+      {
+        h: 'In 2015, they texted 31 young adults seven times a day, for a week.',
+        p: 'Each time, people rated any craving they had: food, coffee, cigarettes, drink, and sexual urges among them. Then half of them **played the block game for three minutes**.',
+        dx: 'In 2015, they took the idea out of the lab and into ordinary days. For a week, 31 young adults got a text message seven times a day. Each time, they rated any craving they had right then: for food, coffee, cigarettes, drink, and sexual urges among them. Then half of them **played the block game for three minutes** on their phones, and rated the craving again. The other half rated it again without playing.',
+        art: ['scene', { k: 'l42-texts' }],
+      },
+      {
+        k: 'ask',
+        h: 'When an urge turns into a picture, what usually happens next?',
+        o: [
+          ['It gets sharper the longer I wait', 'Waiting with nothing to do leaves it the whole screen.'],
+          ['I push it away, and it stays', 'Pushing tends to keep it close. Hold on to that.'],
+          ['Something grabs me, and it fades', 'Then you have seen something the study looked at. Hold on to that.'],
+          ['I have never noticed', 'Watch the next one. Notice the moment it turns into a picture.'],
+        ],
+      },
+      {
+        h: 'On average, a game cut the craving by about 14 points out of 100.',
+        p: 'It worked **for every kind of craving** they had, not only one. And it did not wear off as the week went on. Each game was a small win.',
+        dx: 'On average, each three-minute game cut the craving by about 14 points on a scale of 100. It worked **for every kind of craving** they had, food, drink, cigarettes and the rest, not only one. And it did not wear off as the week went on, the way a trick might. The last day worked as well as the first. Each game was a small win, three minutes long, and it was there every time they reached for it.',
+        art: ['scene', { k: 'l42-drop' }],
+        fact: { s: 'Field study · 31 people · Skorka-Brown and colleagues, 2015', i: [1] },
+      },
+      {
+        long: 1,
+        h: 'In an emergency room in Oxford, the same game did something else.',
+        p: 'People who had just been in a road accident played it for 20 minutes. Over the next week, they had **fewer flashbacks** of the crash than people who did not.',
+        dx: 'Another team tried the same game in an emergency room in Oxford. People who had just been in a road accident, still waiting in the hospital, either played it for 20 minutes or wrote down what they had done that day. Over the next week, the players had **fewer flashbacks** of the crash, the pictures that push in uninvited. It was a small first trial. The puzzle used the same small screen the crash pictures needed.',
+        art: ['scene', { k: 'l42-er' }],
+        fact: { s: 'Trial · 71 patients · Iyadurai and colleagues, 2018', i: [2] },
+      },
+      {
+        h: 'Pushing a picture away keeps you looking at it. Filling the screen does not.',
+        p: 'A puzzle is not a fight with the picture. **It takes the room the picture needs**, and the pull loses its color.',
+        dx: 'This is why the puzzle works when pushing does not. Pushing a picture away keeps your eyes on it, the way the white bear came back to everyone told not to think of it. Filling the screen is different. A puzzle is not a fight with the picture at all. **It takes the room the picture needs**, and a picture with no room cannot stay sharp. The pull loses its color, and an urge without its picture is much easier to ride out.',
+        art: ['scene', { k: 'l42-full' }],
+        back: 'l2',
+      },
+      {
+        long: 1,
+        h: 'It has to be a puzzle with nothing in it to start a new picture.',
+        p: 'A feed of videos fills the screen too, and it is full of **cues for new pictures**. Shapes, numbers, a word game: plain things for the eyes and hands.',
+        dx: 'One warning. Not everything that fills the screen helps. A feed of videos fills it too, and it is full of **cues for new pictures**, one swipe from the habit. The puzzle works because it is plain: shapes, numbers, a word game, something to draw. It gives the eyes and hands a job and nothing to dream about. That is why Daybook keeps one in SOS, Fit the shapes, one tap away.',
+        art: ['scene', { k: 'l42-plain' }],
+      },
+    ],
+    mine: { h: 'Here is when to have the puzzle ready.', k: 'hour' },
+    today: {
+      h: 'When the picture starts, give your eyes a job.',
+      l: ['Open Fit the shapes in SOS', 'Play a few minutes, eyes on the board', 'Then stand up and do the next thing'],
+    },
+    you: {
+      h: 'What could your eyes and hands do the next time a picture starts?',
+      o: [
+        ['Fit the shapes in SOS', 'That is the closest thing to the study. Keep it one tap away.'],
+        ['A word or number puzzle', 'Plain, with nothing in it to start a new picture. That works.'],
+        ['Something with my hands, like drawing', 'Hands and eyes together take up a lot of the screen.'],
+        ['I do not know yet', 'Fair. Try Fit the shapes once, at the next urge, and see.'],
+      ],
+    },
+    scope:
+      'The block game studies were with young adults and their everyday cravings, and with crash patients, not with the habit you are quitting, and one author calls it a tool, not a treatment. The pattern carries over well: the mind’s screen is small, and a puzzle for the eyes takes the space a picture needs.',
+    src: [S.kavanagh, S.skorka, S.iyadurai],
+  },
+
+  l43: {
+    id: 'l43',
+    form: 'works',
+    title: 'Come back to the room',
+    ic: 'compass',
+    ask: 'When an urge pulls me into my head, how do I get back out?',
+    key: 'You do not need a better thought. Come back through what you can see, feel and smell.',
+    np: 'The things around me that bring me back',
+    tell: [
+      {
+        h: 'In SOS, one tool asks you to name five things you can see.',
+        p: 'Then four you can feel, three you can hear, two you can smell, one you can taste. It looks **too plain to stand up to a strong urge**. The next cards show why it is not.',
+        dx: 'In SOS, there is a tool called 5-4-3-2-1. It asks you to name five things you can see. Then four you can feel, three you can hear, two you can smell, and one you can taste. It looks almost **too plain to stand up to a strong urge**, like a trick for children, and it is easy to skip for that reason. The research behind it says otherwise. Try a small piece of it now: look up, and find one thing in the room you had not noticed today. That small jump is the whole tool.',
+        art: ['scene', { k: 'l43-count' }],
+      },
+      {
+        h: 'An urge pulls you out of the room and into a scene in your head.',
+        p: 'Your body is in a chair, or on a couch. Your mind is somewhere else, in a picture it is painting. **The urge lives in that picture**, not in the room around you.',
+        dx: 'Think of where you are during a strong urge. Your body is on the couch, or at a desk, or in a car. Your mind is somewhere else, in a scene it is painting, filling in what it wants. You can be sitting in a room and hardly see it. **The urge lives in that picture**, not in the room around you. The lamp, the floor and the window are still there. You have stopped noticing them.',
+        art: ['scene', { k: 'l43-away' }],
+      },
+      {
+        h: 'And the picture borrows your senses.',
+        p: 'A pictured taste uses the mind’s sense of taste. A pictured scene uses the mind’s eyes. In experiments, **keeping the eyes or the nose busy** turned cravings down.',
+        dx: 'This is the key. The picture is built out of your senses. A pictured taste uses the mind’s sense of taste. A pictured scene uses the mind’s eyes. In a set of experiments in Australia, people craving a food were given small tasks for different senses. **Keeping the eyes or the nose busy**, picturing a rainbow or imagining a smell, turned cravings down more than a task for the ears. The senses the craving was using were busy.',
+        art: ['scene', { k: 'l43-senses' }],
+        fact: { s: 'Experiments · Kemps & Tiggemann, 2007', i: [1] },
+      },
+      {
+        h: 'In 2012, the same researchers made young women crave chocolate.',
+        p: 'They showed them photos of it until they wanted some. Then each one smelled jasmine, green apple, or plain water. **Jasmine cut the craving the most.**',
+        dx: 'In 2012, the same researchers went further. They showed 67 young women photos of chocolate, one after another, until they wanted some. Then each one smelled a small bottle: jasmine, green apple, or plain water. **Jasmine cut the craving the most.** The smell had nothing to do with chocolate. It did not answer the craving at all. It gave the senses something real, here and now, and the craving lost ground.',
+        art: ['scene', { k: 'l43-jasmine' }],
+        fact: { s: 'Study · 67 women · Kemps, Tiggemann & Bettany, 2012', i: [0] },
+      },
+      {
+        k: 'ask',
+        h: 'When an urge pulls you into your head, what do you usually try?',
+        o: [
+          ['Think about something else', 'Notice how long that holds next time. The next cards are about a faster way.'],
+          ['Tell myself firmly to stop', 'Many people start there. Notice where your attention goes after.'],
+          ['Reach for my phone', 'Notice where that leads. The room is the other choice.'],
+          ['I do not know yet', 'Notice next time where your attention goes first.'],
+        ],
+      },
+      {
+        h: 'A better thought is hard to find under pressure. The room is already here.',
+        p: 'Hunting for something to think about takes effort, right when effort is low. The room takes none: **the floor under your feet**, the air on your skin, the lamp across from you.',
+        dx: 'Under pressure, a better thought is hard to find. You hunt for something to think about, and the hunt takes effort right when effort is lowest, while the urge sits next to whatever you find. The room takes no hunting. **The floor under your feet** is already there. So is the air on your skin, the hum of the fridge, the lamp across from you. Each one uses a sense the picture was borrowing, and each one is real and here.',
+        art: ['scene', { k: 'l43-floor' }],
+      },
+      {
+        h: 'So each thing you name takes a little of the screen back.',
+        p: 'Five things to see is five jobs for the eyes. Four to feel is four for the skin. **Each one is a piece of the room** the picture cannot have.',
+        dx: 'Now the tool makes sense. Five things to see is five jobs for the eyes, the same eyes the picture was borrowing. Four to feel is four for the skin. Three to hear, two to smell, one to taste. **Each one is a piece of the room** the picture cannot have. By the end, your senses are full of where you are, and there is far less of them left for where the urge wanted you to be.',
+        art: ['scene', { k: 'l43-five' }],
+      },
+      {
+        long: 1,
+        h: 'If the picture comes back, come back again.',
+        p: 'Minds wander back. That is not the tool failing. **Coming back again is the skill**, and it gets quicker every time you do it.',
+        dx: 'The picture will often come back, especially the first few times. Minds wander back to what pulls them. That is not the tool failing, and it is not you failing. **Coming back again is the skill**: notice you have drifted, and name one more thing you can see. It gets quicker every time. The room is always there, so you can always come back to it.',
+        art: ['scene', { k: 'l43-again' }],
+        back: 'l42',
+      },
+    ],
+    today: {
+      h: 'Count your way back into the room.',
+      l: ['5 things you can see, 4 you can feel', '3 you can hear, 2 smell, 1 taste', 'If the picture returns, come back again'],
+    },
+    you: {
+      h: 'What in your own room could bring you back fastest?',
+      o: [
+        ['Something to touch, like cold water', 'Cold water on the hands is hard to ignore. That is what makes it work.'],
+        ['A smell I like', 'Keep it near. The jasmine worked because it was real and here.'],
+        ['Looking out a window', 'Far-off things give the eyes real work, and that brings you back.'],
+        ['I do not know yet', 'Fair. Try the five things once, and notice which sense brings you back first.'],
+      ],
+    },
+    scope:
+      'The smell study and the senses experiments were about food cravings in young women, not the habit you are quitting. What carries over is the direction: something real for the senses turns a craving down, and the room around you is always there to use.',
+    src: [S.kemps12, S.kemps07],
+  },
+
+  l44: {
+    id: 'l44',
+    form: 'meaning',
+    title: 'Play it forward',
+    ic: 'compass',
+    ask: 'What can I think about during an urge that makes it weaker?',
+    key: '“It does not matter” only sounds true while the hour after is out of sight. Play it forward, both ways.',
+    np: 'How I feel an hour after, both ways',
+    tell: [
+      {
+        h: 'In the old book of Pinocchio, the boy who talks him onto the coach is called Lampwick.',
+        p: 'He is long and thin, the laziest boy in the school, and Pinocchio’s favorite. In his way, **he has one answer for every worry**: none of it matters.',
+        dx: 'In Collodi’s old book of Pinocchio, the boy who talks him onto the coach to the Land of Toys is called Lampwick, because he is long and thin like the wick of a lamp. He is the laziest boy in the class, and the most fun, and Pinocchio loves him more than anyone at school. Lampwick is never worried about anything. **He has one answer for every worry**: none of it matters. School does not matter. Home does not matter. Tomorrow does not matter.',
+        art: ['scene', { k: 'l44-wick' }],
+        fact: { s: 'Story · Collodi, The Adventures of Pinocchio, 1883', i: [0] },
+      },
+      {
+        h: 'At the coach, Pinocchio stops.',
+        p: 'He thinks of the fairy waiting for him at home, and of his promise. He almost turns back. Lampwick shrugs. **One day of fun**, he says, will not change anything.',
+        dx: 'The night the coach comes, Pinocchio stops at the side of the road. He had promised the fairy he would come home and become a real boy the next day. He thinks of her waiting. He almost turns back. Lampwick only shrugs. Go home if you like, he says. Nobody is making you come. It is **one day of fun**, and one day will not change anything. Pinocchio climbs on.',
+        art: ['scene', { k: 'l44-coach' }],
+      },
+      {
+        h: 'That sentence is the urge’s favorite.',
+        p: '“Just once.” “It does not matter.” “Nobody will know.” Each one shrinks the world down to **the next few minutes**, where nothing seems to cost anything. The cost lives outside the frame.',
+        dx: 'Lampwick’s sentence is the urge’s favorite, in all its forms. “Just once.” “It does not matter.” “Nobody will know.” “You can start again tomorrow.” Listen to what each one does. It shrinks the world down to **the next few minutes**, where nothing seems to cost anything. In that small world, it is even true. Nothing in the next few minutes costs much. The cost lives outside the frame.',
+        art: ['scene', { k: 'l44-small' }],
+      },
+      {
+        k: 'ask',
+        h: 'When the urge is loud, what does it tell you?',
+        o: [
+          ['“Just once.”', 'That is Lampwick at the coach. Look at where the coach went.'],
+          ['“It does not matter.”', 'That is his favorite. The next cards are about whether it is true.'],
+          ['“You deserve this.”', 'That one sounds kind. Look at what it leaves out.'],
+          ['Nothing. I am on autopilot', 'Then the sentence is under the surface. It is often there all the same.'],
+        ],
+      },
+      {
+        h: 'Months later, Pinocchio is sent to turn a farmer’s wheel, because the donkey that turned it is dying.',
+        p: 'He goes into the stable to see the donkey, and knows him. It is Lampwick. The boy who said nothing mattered **had worked that wheel until he fell**.',
+        dx: 'The story does not leave Lampwick in the Land of Toys. Both boys turn into donkeys there, and are sold. Many months later, Pinocchio, a puppet again, needs milk for his sick father. A farmer offers him a glass a day if he will turn the wheel that draws water from the well, because the donkey that turned it is too ill to work. Pinocchio goes into the stable to see it, lying on the straw, and knows him. It is Lampwick. The boy who said nothing mattered **had worked that wheel until he fell**, and he dies there, in Pinocchio’s arms.',
+        art: ['scene', { k: 'l44-stable' }],
+      },
+      {
+        h: 'It always mattered. The urge only keeps the hour after in the dark.',
+        p: 'In the moment, the next ten minutes fill the whole screen. The hour after, and tomorrow, **are kept out of view**. That is how “it does not matter” sounds true.',
+        dx: 'It always mattered. Lampwick was not wrong because he was bad. He was wrong because he only ever looked at the next few minutes. The urge does the same thing to you. In the moment, the next ten minutes fill the whole screen, bright and close. The hour after, and tomorrow, **are kept out of view**. You know they are coming. You just cannot see them. That is how “it does not matter” sounds true.',
+        art: ['scene', { k: 'l44-dark' }],
+      },
+      {
+        h: 'Smokers who thought about later wanted the cigarette less.',
+        p: 'In a brain scanner, they saw pictures of cigarettes. When they thought about **what would come later**, their craving fell, with the same pictures in front of them.',
+        dx: 'In 2010, researchers in New York put 21 smokers in a brain scanner and showed them pictures of cigarettes and rich food. Sometimes they were asked to think about how it would feel right now. Sometimes they were asked to think about **what would come later**, the long run, the cost. Thinking of later turned their craving down, with the same pictures in front of them. The planning parts at the front of the brain grew busier, and the reward center grew quieter.',
+        art: ['scene', { k: 'l44-later' }],
+        fact: { s: 'Study · 21 smokers · Kober and colleagues, 2010', i: [1] },
+      },
+      {
+        long: 1,
+        n: '93',
+        h: 'smokers practiced looking past the moment, in one short session.',
+        p: 'In the weeks after, they **smoked about a quarter to a half fewer cigarettes** a day. Smokers who did not practice stayed about the same. The view past the moment can be trained.',
+        dx: 'Later, the same group ran two trials with 93 smokers. In one short session, they practiced thinking of what comes later while looking at pictures of cigarettes. That was all. In the weeks after, they **smoked about a quarter to a half fewer cigarettes** a day. The smokers who did not practice stayed about the same. Looking past the moment is not a gift some people have. It is a skill, and it grows with practice.',
+        fact: { s: 'Trials · 93 smokers · Lopez, Ochsner & Kober, 2022', i: [2] },
+      },
+      {
+        h: 'So when the urge says it does not matter, play it forward.',
+        p: 'Both ways. The hour after giving in, in your own words. The hour after riding it out. **Look at both, and pick one.** That is the look Lampwick never took.',
+        dx: 'So when the urge says it does not matter, do what Lampwick never did. Play it forward, both ways. First, the hour after giving in, in your own words: maybe tired, flat, hiding something. Then the hour after riding it out: maybe calm, clear, glad. Do not argue with the urge. Only turn the lights on in the hour after. **Look at both, and pick one.** That is the look Lampwick never took, and it is yours to take every time.',
+        art: ['scene', { k: 'l44-both' }],
+      },
+      {
+        long: 1,
+        h: 'Pinocchio took up the same wheel.',
+        p: 'He turned it every day for months, for a glass of milk for his father. **His days at it added up**, and he became real.',
+        dx: 'Pinocchio took up the same wheel. Where Lampwick had worked it until he fell, Pinocchio turned it every day for months, for a glass of milk for his sick father, and studied at night. None of those days felt like much on its own. But **his days at it added up**, and one morning he woke up a real boy. Same wheel, two endings. Lampwick said his days did not matter. Pinocchio’s did.',
+        art: ['scene', { k: 'wheel' }],
+        back: 'l41',
+      },
+    ],
+    mine: { h: 'Every urge you ride out gives you an hour after to see.', k: 'rode' },
+    today: {
+      h: 'At the next urge, play the hour forward, both ways.',
+      l: ['The hour after giving in: name it', 'The hour after riding it out: name it', 'Look at both, and pick one'],
+    },
+    you: {
+      h: 'When you play forward the hour after riding it out, what is in it?',
+      o: [
+        ['A clear head', 'Name it in those words at the next urge. It is easier to pick what you can see.'],
+        ['Time for something I care about', 'That is what the hour after holds. Keep it in view.'],
+        ['Feeling steady with the people around me', 'That is worth looking at when the urge says it does not matter.'],
+        ['I cannot see it yet', 'That is common at first. Play it forward once, and look again.'],
+      ],
+    },
+    scope:
+      'Pinocchio is a story, not a study, and the brain-scan study and the practice trials were with smokers, not people quitting your habit. What carries over is the skill: looking past the moment turned craving down, and it grew stronger with practice.',
+    src: [S.collodi, S.kober10, S.lopez22],
   },
 };
 

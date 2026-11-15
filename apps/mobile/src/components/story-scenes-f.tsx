@@ -7,5 +7,18 @@ import { SCENES_L22 } from './story-scenes-f-l22';
 import { SCENES_L23 } from './story-scenes-f-l23';
 import { SCENES_L24 } from './story-scenes-f-l24';
 import { SCENES_L25 } from './story-scenes-f-l25';
+import { SCENES_L27 } from './story-scenes-f-l27';
+import { SCENES_L28 } from './story-scenes-f-l28';
+import { SCENES_L29 } from './story-scenes-f-l29';
+import { SCENES_L30 } from './story-scenes-f-l30';
 
-export const SCENES_F: Record<string, ComponentType<{ k: Ink }>> = { ...SCENES_L22, ...SCENES_L23, ...SCENES_L24, ...SCENES_L25 };
+export const SCENES_F: Record<string, ComponentType<{ k: Ink }>> = {
+  ...SCENES_L22,
+  ...SCENES_L23,
+  ...SCENES_L24,
+  ...SCENES_L25,
+  ...SCENES_L27,
+  ...SCENES_L28,
+  ...SCENES_L29,
+  ...SCENES_L30,
+};

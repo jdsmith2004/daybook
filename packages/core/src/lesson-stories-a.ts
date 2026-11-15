@@ -58,7 +58,7 @@ export const STORIES_A: Record<string, Story> = {
         o: [
           ['Yes, it is for safe roads', 'Then you would be one of the few. Look at what most people said.'],
           ['No, that is too much to ask', 'Most people said the same. Look at what changed their answer.'],
-          ['I would want to think about it', 'Fair. Most people did not think long. Look at what they said.'],
+          ['I would want to think about it', 'Fair. Look at what most people said.'],
         ],
       },
       {
@@ -163,7 +163,7 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'The people in the room rang the bell about once a minute.',
         p: 'Then came the part nobody expected. Told afterward that they could think of the bear, the ones who had pushed it away thought of it more than people who had been free to all along.',
-        dx: 'Trying their hardest, they still could not keep it out, and they said the bear out loud even more often than they rang. That part Dostoevsky could have guessed. The surprise came in the second five minutes. Now the students were told the opposite: go ahead, think of a white bear. A second group had been free to think of it from the start. **The ones who had pushed it away thought of it more.** Wegner called it a rebound. Pushing a thought down did not empty it. It wound it up like a spring.',
+        dx: 'Trying their hardest, they still could not keep it out. That part Dostoevsky could have guessed. The surprise came in the second five minutes. Now the students were told the opposite: go ahead, think of a white bear. A second group had been free to think of it from the start. **The ones who had pushed it away thought of it more.** Wegner called it a rebound. Pushing a thought down did not empty it. It wound it up like a spring.',
         art: ['scene', { k: 'rebound' }],
         fact: { s: 'Study · Wegner and colleagues, 1987', i: [0] },
       },
@@ -177,8 +177,8 @@ export const STORIES_A: Record<string, Story> = {
       },
       {
         h: 'An urge works the same way.',
-        p: 'When you fight hard to keep a picture out, the fight keeps it close. The urge is not winning because you are weak. It is winning because you are pushing.',
-        dx: 'Think of how this goes with a picture or an urge. The thought arrives. You tell yourself no, do not think about it, stop. Every no is a check, and every check brings the picture back for one more look. Minutes later you are worn out from a fight you did not seem to be winning, and the fight itself feels like proof that the urge is strong. It is not proof of that. **The urge is not winning because you are weak.** It is winning because the push keeps carrying it back in, the same way it carried the bear back to the students in that room.',
+        p: 'When you fight hard to keep a thought out, the fight keeps it close. The urge is not winning because you are weak. **Part of what keeps it loud is the push.**',
+        dx: 'Think of how this goes with an urge. The thought arrives. You tell yourself no, do not think about it, stop. Every no is a check, and every check brings it back for one more look. Minutes later you are worn out from a fight you did not seem to be winning, and the fight itself feels like proof that the urge is strong. It is not proof of that. **The urge is not winning because you are weak.** Part of what keeps it loud is the push, carrying it back in, the same way it carried the bear back to the students in that room.',
         art: ['scene', { k: 'push-door' }],
       },
       {
@@ -206,7 +206,7 @@ export const STORIES_A: Record<string, Story> = {
     mine: { h: 'Every urge you watched to the end came down.', k: 'rode' },
     today: {
       h: 'Watch the next urge instead of fighting it.',
-      l: ['Name it: “This is an urge, and it passes.”', 'Let it be there, and breathe out slowly', 'Watch it for ten minutes, and see it fall'],
+      l: ['Name it: “This is an urge, and it passes.”', 'Let it be there, and breathe out slowly', 'Watch it for ten minutes, and see what it does'],
     },
     you: {
       h: 'When an urge comes, what do you usually do first?',
@@ -214,7 +214,7 @@ export const STORIES_A: Record<string, Story> = {
         ['Push it out of my head', 'Now you know why it comes back. Try letting it be there next time, and watch.'],
         ['Argue with it', 'An argument keeps it close too. Naming it is enough.'],
         ['Look for something to distract me', 'That can help. Notice whether you are running from it or letting it pass.'],
-        ['Give in before it gets bad', 'Then you have never seen one fall on its own. The next one is your chance.'],
+        ['Give in before it gets bad', 'Then the next one is your chance to see one fall on its own.'],
       ],
     },
     scope:
@@ -249,28 +249,28 @@ export const STORIES_A: Record<string, Story> = {
         o: [
           ['It turned into more', 'Many people know that day. This study is about why.'],
           ['I stopped there and moved on', 'Then you already do what this lesson teaches. Look at why it works.'],
-          ['I gave up on the day', 'That is the most common answer. The next card shows where it comes from.'],
+          ['I gave up on the day', 'Many people know that day. The next card shows where it comes from.'],
           ['That has not happened to me yet', 'Then this is worth knowing before it does.'],
         ],
       },
       {
         h: 'People not on a diet ate less after a milkshake. People on a diet ate more.',
         p: 'The dieters who had already broken the diet ate more ice cream than the dieters who had nothing first.',
-        dx: 'The students who were not on a diet behaved as anyone would guess: after a milkshake, they ate less ice cream. The dieters turned it upside down. Those who had nothing first held back carefully. Those who had already had a milkshake ate far more ice cream than any other group. **The full stomach did not stop them. It seemed to set them loose.** Herman called it counter-regulation, and other labs found it again and again.',
+        dx: 'The students who were not on a diet behaved as anyone would guess: after a milkshake, they ate less ice cream. The dieters turned it upside down. Those who had nothing first held back carefully. Those who had already had a milkshake ate far more ice cream than the dieters who had nothing first. **The full stomach did not stop them. It seemed to set them loose.** Herman called it counter-regulation, and other labs found it again and again.',
         art: ['scene', { k: 'ice-results' }],
         fact: { s: 'Study · Herman & Mack, 1975', i: [0] },
       },
       {
         h: 'The milkshake was not the problem. The thought after it was.',
         p: '“I already broke the diet today, so it does not matter now.” Once the day was scored as ruined, there was nothing left to protect.',
-        dx: 'Asked about it afterward, the dieters described the same thought. The milkshake had already broken the diet for the day. Once it was broken, careful eating seemed pointless, so they stopped trying. The day had become a pass or a fail, and it had already failed. **The milkshake was a small thing. The rule that scored the day as ruined turned it into a big one.**',
+        dx: 'Herman’s explanation was one thought: the milkshake had already broken the diet for the day. Once it was broken, careful eating seemed pointless, so they stopped trying. The day had become a pass or a fail, and it had already failed. **The milkshake was a small thing. The rule that scored the day as ruined turned it into a big one.**',
         art: ['scene', { k: 'ruined-day' }],
       },
       {
         long: 1,
         h: 'Researchers have a name for it.',
-        p: 'Alan Marlatt, who built relapse prevention, called it the abstinence violation effect. He found it in every habit he studied: the slip is small, and the thought “I blew it” makes it big.',
-        dx: 'Alan Marlatt spent his career on why people who quit drinking, smoking or overeating so often go back. He noticed the same pattern again and again. The first slip was rarely the disaster. The disaster was the story people told about it: I have no willpower, I have failed, it is over. That story brought shame and the feeling that trying was pointless, and the second slip followed easily. **He called it the abstinence violation effect.** The slip is small, and the thought that follows makes it big.',
+        p: 'Alan Marlatt, who built relapse prevention, called it the abstinence violation effect. He found it in drinking, smoking and eating alike.',
+        dx: 'Alan Marlatt spent his career on why people who quit drinking, smoking or overeating so often go back. He noticed the same pattern again and again. The first slip was rarely the disaster. The disaster was the story people told about it: I have no willpower, I have failed, it is over. That story brought shame and the feeling that trying was pointless, and the second slip followed easily. **He called it the abstinence violation effect**, and found it in drinking, smoking and eating alike.',
         art: ['chain', { n: ['One slip', '“I blew it”', 'Many more'], i: ['dots', 'bolt', 'x'] }],
         fact: { s: 'Model · Marlatt’s relapse prevention', i: [1] },
       },
@@ -331,18 +331,18 @@ export const STORIES_A: Record<string, Story> = {
       },
       {
         k: 'ask',
-        h: 'Say you came home after a year like that. What would you expect to happen?',
+        h: 'Think of a time you were somewhere new: a trip, a new job, a move. What happened to the pull?',
         o: [
-          ['I would keep using', 'That is what the doctors expected too. Look at what happened.'],
-          ['It would depend on the person', 'That is what most people would say. Look at what mattered more.'],
-          ['I would stop once I was home', 'Then you saw what almost nobody did. Look at the number.'],
+          ['It was weaker', 'Many people notice that. Look at what Robins found.'],
+          ['It came with me', 'That happens too. Look at what made the difference for the soldiers.'],
+          ['I have not noticed', 'Watch for it next time. Look at what Robins found.'],
         ],
       },
       {
-        h: 'Only about 5 in 100 went back to it.',
+        h: 'Only about 5 in 100 became addicted again.',
         p: 'That was in their first year home. Most people treated for heroin at home went back to it. These men mostly stopped.',
-        dx: 'Robins found that among the men who had been addicted in Vietnam, only about one in twenty went back to it in the first year home. Even after three years, most were still free. No treatment program on earth had numbers like that. Many of the men had not been treated at all. **They came home, and most of them stopped.** Robins spent years making sure it was not a mistake.',
-        art: ['people', { n: 5, s: 'went back to it' }],
+        dx: 'Robins found that among the men who had been addicted in Vietnam, only about one in twenty became addicted again in the first year home. Even after three years, most were still free. Treatment at home rarely came close. Many of the men had not been treated at all. **They came home, and most of them stopped.** Robins spent years making sure it was not a mistake.',
+        art: ['people', { n: 5, s: 'addicted again' }],
       },
       {
         h: 'They were the same men, with the same bodies and the same memories.',
@@ -528,7 +528,7 @@ export const STORIES_A: Record<string, Story> = {
       },
       {
         h: 'The trip was free. The cost was the boys themselves.',
-        p: 'A pleasure that asks nothing of you slowly makes you less of a person, and more of something that carries other people’s loads.',
+        p: 'A pleasure that asks nothing of you can slowly take your days, until you are **carrying someone else’s load**.',
         dx: 'The trip cost the boys nothing, and the coachman had never wanted their money. He wanted them. Every boy he brought to the Land of Toys became a donkey he could sell. **A pleasure that asks nothing of you can still take you**, slowly, until you become something that carries other people’s loads.',
         art: ['scene', { k: 'donkey-load' }],
         fact: { s: 'Story · Collodi, The Adventures of Pinocchio, 1883', i: [0] },
@@ -547,7 +547,7 @@ export const STORIES_A: Record<string, Story> = {
         art: ['scene', { k: 'big-fish' }],
       },
       {
-        h: 'Even then, he does not become real that night.',
+        h: 'Pinocchio does get free. But he does not become real that night.',
         p: 'He becomes real months later, after working every day to care for his sick father, turning a heavy wheel for a glass of milk.',
         dx: 'Even then, the story does not end with a miracle. Pinocchio becomes real months later. Every day, he turns a heavy water wheel for a farmer, a hundred buckets, to earn one glass of milk for his weak father. He learns to weave baskets and stays up to study. **He becomes real through ordinary work done for someone he loves.**',
         art: ['scene', { k: 'wheel' }],
@@ -561,7 +561,7 @@ export const STORIES_A: Record<string, Story> = {
     ],
     today: {
       h: 'Take off the cap.',
-      l: ['Pick one person you trust', 'Tell them one true thing about where you are', 'Let them see the ears, and see what happens'],
+      l: ['Pick one person you trust', 'Tell them one true thing about where you are', 'Show the ears: the boys never did'],
     },
     you: {
       h: 'What is your cap, the thing you do to hide the ears?',

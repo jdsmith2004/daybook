@@ -122,7 +122,7 @@ export const STORIES_C: Record<string, Story> = {
         h: 'Say you had worked since first light. What would you feel, watching that?',
         o: [
           ['That it is not fair', 'That is what the first workers felt. Look at what they said.'],
-          ['Glad for them', 'That is rare. The story is about why it is worth learning.'],
+          ['Glad for them', 'That is rare, and it frees you. Watch what the first workers felt.'],
           ['That I should get more', 'So did they. Look at what they got.'],
           ['I am not sure', 'Fair. Watch what the first workers did with it.'],
         ],
@@ -148,7 +148,7 @@ export const STORIES_C: Record<string, Story> = {
       },
       {
         h: 'Getting better looks like that.',
-        p: 'Not a line that only climbs, but staying in the field. A slip, a bad week or a hard morning is **an hour, not the day**.',
+        p: 'The first workers carried more heat than anyone, and were paid the same as the last hour, because they stayed. A slip, a bad week or a hard morning is **an hour, not the day**.',
         dx: 'Most people picture getting better as a line that only climbs, so the first setback makes the whole line feel false. Getting better looks more like that vineyard. There are hot hours and hard ones. There are mornings that go wrong. A slip, a bad week or a hard morning is **an hour, not the day**, and the day is not over while you are still in the field.',
         art: ['path', {}],
       },
@@ -242,9 +242,9 @@ export const STORIES_C: Record<string, Story> = {
         fact: { s: 'Study · Kircanski, Lieberman & Craske, 2012', i: [2] },
       },
       {
-        h: 'Most urges ride in on a feeling with no name.',
+        h: 'Many urges ride in on a feeling with no name.',
         p: 'It is a fog called bad, or off. A fog gives you nothing to do, and **the habit is always there** to clear it for a while.',
-        dx: 'Most urges ride in on a feeling, and most of the time that feeling has no name. It is a fog called bad, or off, or I do not know. A fog cannot be fixed, because nothing in it says what is wrong. So you reach for whatever clears any fog for a while, and **the habit is always there** to do it. Then the fog comes back, because nothing under it was met.',
+        dx: 'Many urges ride in on a feeling, and much of the time that feeling has no name. It is a fog called bad, or off, or I do not know. A fog cannot be fixed, because nothing in it says what is wrong. So you reach for whatever clears any fog for a while, and **the habit is always there** to do it. Then the fog comes back, because nothing under it was met.',
         art: ['scene', { k: 'l12-fog' }],
       },
       {
@@ -301,7 +301,7 @@ export const STORIES_C: Record<string, Story> = {
         k: 'ask',
         h: 'What did you notice about the beats?',
         o: [
-          ['They sped up as I breathed in', 'That is it. Look at the other half.'],
+          ['They sped up as I breathed in', 'Good noticing. Look at the other half.'],
           ['They slowed as I breathed out', 'That is the half this lesson is about.'],
           ['I could not tell', 'It is small and easy to miss. The next card shows it.'],
           ['I did not try it', 'Fair. Try it once now, then go on.'],
@@ -422,20 +422,20 @@ export const STORIES_C: Record<string, Story> = {
       },
       {
         h: 'An urge is not only in your head.',
-        p: 'It is a heart rate, a restlessness in the legs, a tightness in the chest. Those are **body states**, and moving is the quickest way to change one.',
+        p: 'Those are **body states**, and moving is the quickest way to change one.',
         dx: 'We talk about urges as if they were only thoughts, a fight between what you want and what you know. But an urge is also a heart rate, a restlessness in the legs, a tightness in the chest or the stomach, a buzzing that wants something done. Those are **body states**. A body that stays still and slumped keeps them the way they are. A body that stands up and moves changes them, and the urge loses part of what it stands on.',
         art: ['scene', { k: 'l12-body-spots' }],
       },
       {
-        h: 'Your legs do not have to agree with the urge to walk out of the room.',
+        h: 'Your legs can walk you out of the room without winning the argument.',
         p: 'Arguing keeps the whole fight in your head, where the urge is loudest. Standing up **moves the fight** somewhere you can win it.',
-        dx: 'When the pull builds, most people stay where they are and argue with it: thoughts against thoughts, in the same chair, in front of the same screen. That keeps the whole fight in your head, where the urge is loudest and you are most tired. Your legs do not need to win that argument. They do not even need to agree. Standing up and walking out of the room **moves the fight** somewhere you can win it, one step at a time.',
+        dx: 'When the pull builds, most people stay where they are and argue with it: thoughts against thoughts, in the same chair, in the same room. That keeps the whole fight in your head, where the urge is loudest and you are most tired. Your legs do not need to win that argument. They do not even need to agree. Standing up and walking out of the room **moves the fight** somewhere you can win it, one step at a time.',
         art: ['scene', { k: 'l12-stand-up' }],
       },
       {
         long: 1,
         h: 'A walk also changes the setting.',
-        p: 'It takes you out of the room where the habit lives. For ten minutes you leave the chair, the screen and the hour behind, **the way the soldiers left a country behind**.',
+        p: 'It takes you out of the room where the habit lives. For ten minutes you leave the chair, the room and the hour behind, **the way the soldiers left a country behind**.',
         dx: 'A walk does a second thing. It takes you out of the room where the habit lives. The chair, the screen, the corner and the hour are all part of the pull, as the lesson on changing the setting showed. For ten minutes, a walk leaves every one of them behind, **the way the soldiers left a country behind**. When you come back, the room is the same, but the moment usually is not.',
         art: ['scene', { k: 'l12-door-out' }],
         back: 'l10',
@@ -504,16 +504,16 @@ export const STORIES_C: Record<string, Story> = {
         art: ['scene', { k: 'l12-thought-cards' }],
       },
       {
-        h: 'The experts could not tell them apart.',
+        h: 'The experts mostly could not tell them apart.',
         p: 'The same thoughts, about harm, about something shocking, about something wild, came to both. **The thoughts were not the difference.**',
-        dx: 'The experts could not reliably tell them apart. The same kinds of thoughts, about harm, about something shocking, about something wild, came to the patients and to the ordinary people alike. **The thoughts were not the difference.** Whatever made one person suffer and another shrug, it was not what drifted into their heads.',
+        dx: 'Rachman and de Silva handed the two piles of written thoughts to experts who treated these patients for a living, and asked which came from whom. They could not reliably tell. The same kinds of thoughts, about harm, about something shocking, about something wild, came to the patients and to the ordinary people alike. **The thoughts were not the difference.** Whatever made one person suffer and another shrug, it was not what drifted into their heads.',
         art: ['scene', { k: 'l12-cannot-sort' }],
         fact: { s: 'Study · Rachman & de Silva, 1978', i: [0] },
       },
       {
         h: 'The difference was what each person did with the thought.',
-        p: 'Ordinary people let it pass. The ones who suffered read it as a message about who they were, fought it hard, and **the fight kept it coming back**.',
-        dx: 'The difference was what each person did with the thought. Ordinary people noticed it, found it odd, and let it pass. The thought came less often and went more quickly. The ones who suffered read it as a message about who they were: what kind of person thinks that? They fought it hard, checked for it, tried to push it out. And as with the white bear, **the fight kept it coming back**.',
+        p: 'Rachman spent the next twenty years on what made the difference. Ordinary people let the thought pass. The ones who suffered read it as a message about who they were, fought it, and **the fight kept it coming back**.',
+        dx: 'The 1978 study showed the same thoughts in everyone, louder and stickier in the patients. Rachman spent the next twenty years asking why, and his answer was what each person did with the thought. Ordinary people noticed it, found it odd, and let it pass. The thought came less often and went more quickly. The ones who suffered read it as a message about who they were: what kind of person thinks that? They fought it hard, checked for it, tried to push it out. And as with the white bear, **the fight kept it coming back**.',
         art: ['scene', { k: 'l12-let-pass' }],
         back: 'l2',
       },
@@ -555,7 +555,7 @@ export const STORIES_C: Record<string, Story> = {
       h: 'Which thought shows up first for you?',
       o: [
         ['“Just once will not matter”', 'Now it has a name. Next time, say it out loud as a thought.'],
-        ['“I deserve this”', 'A thought dressed as a reward. Name it, then find a real one.'],
+        ['“This is who I am”', 'A thought about who you are is still only a thought. Name it.'],
         ['“I will start again tomorrow”', 'That one gives away today. Name it, and keep today.'],
         ['I am not sure yet', 'Listen for it this week. Naming it is the skill.'],
       ],
@@ -588,24 +588,24 @@ export const STORIES_C: Record<string, Story> = {
       },
       {
         k: 'ask',
-        h: 'Think of your last hard day. When could you have turned it most easily?',
+        h: 'Think of your last hard day. When did it start to lean?',
         o: [
-          ['At the peak, with more willpower', 'That is the hardest place to stand. Look at where pilots turn.'],
-          ['A while before, while it was quiet', 'That one asks little. It is the point this lesson is about.'],
-          ['Early on, in how the day was set up', 'Far back, and often the easiest turn of all.'],
-          ['I do not know yet', 'That is honest. The next cards give you a way to look.'],
+          ['That morning, in how it was set up', 'Then you can see the day from far back. Hold on to that.'],
+          ['A while before the worst of it', 'Many people find a moment like that. Keep it in mind.'],
+          ['Only at the very end', 'It can feel that way from inside. The next cards look again.'],
+          ['I cannot tell yet', 'That is honest. The next cards give you a way to look.'],
         ],
       },
       {
         h: 'A slip has a point of safe return too, and it comes early.',
-        p: 'In the last minute, the pull is loud and you are tired. Hours before, it was **one small choice**: the phone carried along, the scroll that ran on, the empty evening.',
+        p: 'In the last minute, the pull is loud and you are tired. Hours before, it was **one small choice**: the phone carried along, the route past the easy place, the empty stretch.',
         dx: 'Most people judge a slip by its last minute, when the pull is loud, they are tired, and it feels like a test nobody could pass. Look at the hours before it, and the day looks different. Long before the peak, it was **one small choice**: the phone carried somewhere you are alone, the scroll that ran on past when you meant to stop, the evening left empty with nothing planned. At that point, turning was easy, and it cost almost nothing.',
         art: ['scene', { k: 'l12-chain-links' }],
       },
       {
         long: 1,
         h: 'Smokers trying to quit carried a small computer until their first slip.',
-        p: 'Through each day, 215 of them reported their mood. On the day of a slip that came from stress, **the low mood was already climbing hours before**.',
+        p: 'Through each day, 215 of them reported their mood. On the day of a slip, **the low mood was already climbing hours before**.',
         dx: 'In 2004, researchers gave 215 people who were quitting smoking a small handheld computer, and asked them to report their mood through the day, every day, until their first slip. A bad mood one day did not predict a slip the next day. But on the day of a slip that came from stress or a low mood, **the low mood was already climbing hours before** the cigarette. The slip had a beginning, long before its last minute.',
         art: ['scene', { k: 'l12-mood-climb' }],
         fact: { s: 'Study · 215 smokers · Shiffman & Waters, 2004', i: [1] },
@@ -634,7 +634,7 @@ export const STORIES_C: Record<string, Story> = {
         long: 1,
         h: 'Turning late costs more than turning early. It is never too late.',
         p: 'In the middle of a hard day, or the morning after the worst one, **the way home is still there**. Early is easier. Late still counts.',
-        dx: 'Turning late does cost more than turning early. In the middle of a hard day, the pull is louder and the turn takes more out of you. The morning after the worst night, it can feel like there is nothing left to save. But **the way home is still there**, every time, from anywhere. Early is easier, so plan to turn early. Late still counts, so turn late when you have to.',
+        dx: 'Turning late does cost more than turning early. In the middle of a hard day, the pull is louder and the turn takes more out of you. The day after the worst one, it can feel like there is nothing left to save. But **the way home is still there**, every time, from anywhere. Early is easier, so plan to turn early. Late still counts, so turn late when you have to.',
         art: ['scene', { k: 'l12-always-turn' }],
       },
     ],
@@ -646,7 +646,7 @@ export const STORIES_C: Record<string, Story> = {
     you: {
       h: 'Where was the first small yes on your last hard day?',
       o: [
-        ['Taking the phone somewhere alone', 'Then that is your turning point. It costs almost nothing there.'],
+        ['Going where it is easy to reach', 'Then that is your turning point. It costs almost nothing there.'],
         ['An empty stretch with no plan', 'Then fill one ahead of time. That is turning early.'],
         ['A low mood I did not deal with', 'Then turn there: meet the mood, not the urge.'],
         ['I cannot find it yet', 'Look at the next hard day in your log. The first link is there.'],
@@ -683,7 +683,7 @@ export const STORIES_C: Record<string, Story> = {
         h: 'Say you were in that chair. How sure are you that you would notice?',
         o: [
           ['Sure, I would see it at once', 'Most people would say the same. Look at what happened.'],
-          ['Fairly sure', 'So were they. Look at the next card.'],
+          ['Fairly sure', 'Most people are. Look at the next card.'],
           ['I am not sure', 'That is the honest answer. Look at why.'],
         ],
       },
@@ -746,7 +746,7 @@ export const STORIES_C: Record<string, Story> = {
       h: 'Which permission thought do you hear most?',
       o: [
         ['“I earned this” after a hard week', 'Under it is a need for reward. Find one that costs nothing tomorrow.'],
-        ['“It hurts no one”', 'Ask what it costs the next morning. That is its price.'],
+        ['“It hurts no one”', 'Ask what it costs tomorrow. That is its price.'],
         ['“Just to relax”', 'Under it is stress. Let it out another way.'],
         ['I have not caught one yet', 'Listen this week. It will sound calm and sensible.'],
       ],
@@ -817,8 +817,8 @@ export const STORIES_C: Record<string, Story> = {
       {
         long: 1,
         h: 'A little better, kept up for a year, makes a different life.',
-        p: 'The rule asks for very little at a time: a little further than last week. Small steps are easy to sneer at. **Kept up, they add up.**',
-        dx: 'The rule asks for very little at a time: not a new person by Friday, only a little further than last week. One more urge ridden out. One evening planned instead of left empty. Small steps like that are easy to sneer at. **Kept up, they add up**, the way a path is worn into a field by many ordinary walks. Look back after a year of them, and the person in the log from the first week is hard to recognize.',
+        p: 'Week 1: one urge ridden out, three logged. Week 12: most urges ridden out, and the hard hours planned. **Each week asked only a little more** than the one before it.',
+        dx: 'The rule asks for very little at a time: not a new person by Friday, only a little further than last week. One more urge ridden out. One empty stretch planned instead of left open. Small steps like that are easy to sneer at. **Kept up, they add up**, the way a path is worn into a field by many ordinary walks. Look back after a year of them, and the person in the log from the first week is hard to recognize.',
         art: ['scene', { k: 'l12-small-steps' }],
       },
       {
@@ -853,7 +853,7 @@ export const STORIES_C: Record<string, Story> = {
     title: 'Fewer fights, not more willpower',
     ic: 'shield',
     ask: 'Do I just need more willpower to quit?',
-    key: 'People with strong self-control mostly fight less. Count a night with nothing to fight as a win.',
+    key: 'People with strong self-control mostly fight less. Count a day with nothing to fight as a win.',
     np: 'One fight I could stop having',
     tell: [
       {
@@ -863,6 +863,7 @@ export const STORIES_C: Record<string, Story> = {
         art: ['scene', { k: 'l12-beeper' }],
       },
       {
+        long: 1,
         h: 'It was a close look at temptation in ordinary life.',
         p: 'Not a plate of cookies in a lab. On the bus, at work, at home on a dull evening. **Thousands of small moments** of wanting something.',
         dx: 'Most research on self-control had happened in labs, with a plate of cookies and a stopwatch. This was different. It caught people on the bus, at work, at home on a dull evening, in the middle of whatever they were doing. By the end of the week the team had **thousands of small moments** of wanting something: food, sleep, a break, a phone, someone. For the first time, they could see what self-control looks like across an ordinary week.',
@@ -870,12 +871,12 @@ export const STORIES_C: Record<string, Story> = {
       },
       {
         k: 'ask',
-        h: 'Picture someone with strong self-control. What are they doing, most of the day?',
+        h: 'Think of a stretch when you did well. What did those days look like?',
         o: [
-          ['Saying no to a lot of urges', 'That is the usual picture. Look at what the beeps found.'],
-          ['Never feeling tempted at all', 'They still want things. Look at what set them apart.'],
-          ['Staying away from the hard places', 'Hold that one. The next card is about it.'],
-          ['I do not know', 'Fair. Look at what the beeps found.'],
+          ['I fought hard all day', 'That takes a lot out of a person. Look at what the beeps found.'],
+          ['Nothing much pulled at me', 'Hold on to that. Look at what the beeps found.'],
+          ['I was busy with other things', 'Busy days can be quiet ones. Look at what the beeps found.'],
+          ['I am not sure', 'Fair. Look at what the beeps found.'],
         ],
       },
       {
@@ -888,26 +889,27 @@ export const STORIES_C: Record<string, Story> = {
       {
         long: 1,
         n: '159',
-        h: 'students then tracked their temptations, and their goals, for a term.',
+        h: 'students tracked their temptations for a week, then their goals at the end of term.',
         p: 'The ones who met fewer temptations got further toward their goals. **How hard they resisted did not predict it at all.**',
         dx: 'A few years later, two researchers in Canada followed 159 university students. For a week, the students reported their temptations and how hard they resisted them. At the end of the term, they reported how far they had got on their goals. The ones who had met fewer temptations got further. **How hard they resisted did not predict it at all.** Effort spent in the fight did not show up in the results. Fewer fights did.',
         fact: { s: 'Study · 159 students · Milyavskaya & Inzlicht, 2017', i: [1] },
       },
       {
-        h: 'From outside, their best evenings looked like nothing happened.',
+        h: 'From outside, their best days looked like nothing happened.',
         p: 'No fight, no drama, no story to tell. **That is what winning looks like**: the bell never rang, so there was nothing to resist.',
-        dx: 'This is why strong self-control is so easy to miss. From outside, the best evenings of the people who had it looked like nothing happened. There was no fight, no drama, no story to tell anyone the next day. **That is what winning looks like**. The phone was in another room, the evening had a plan, the hard place was never visited. The bell never rang, so there was nothing to resist.',
+        dx: 'This is why strong self-control is so easy to miss. From outside, the best days of the people who had it looked like nothing happened. There was no fight, no drama, no story to tell anyone the next day. **That is what winning looks like**. The phone, the bottle or the app was out of reach, the empty stretch had a plan, the hard place was never visited. The bell never rang, so there was nothing to resist.',
         art: ['scene', { k: 'l12-quiet-evening' }],
       },
       {
         k: 'flip',
+        long: 1,
         think: 'If I keep losing a fight, I need more willpower.',
         see: 'Losing the same one again says the setup needs changing. Fewer fights is the skill.',
       },
       {
         h: 'So spend your strength before the fight, not in it.',
-        p: 'Find the fight that comes back most, and change the setup so it never starts. Then **count the quiet night as a win**, even though nothing happened.',
-        dx: 'So spend your strength before the fight, not in it, while you are rested and clear. Find the fight that comes back most often: the phone alone in one room, the empty stretch after a long day, the one app you always end up on. Change the setup so that fight never starts. Then **count the quiet night as a win**, even though nothing happened. Nothing happening was the win.',
+        p: 'Find the fight that comes back most, and change the setup so it never starts. Then **count the quiet stretch as a win**, even though nothing happened.',
+        dx: 'So spend your strength before the fight, not in it, while you are rested and clear. Find the fight that comes back most often: the phone alone in one room, the empty stretch after a long day, the one app you always end up on. Change the setup so that fight never starts. Then **count the quiet stretch as a win**, even though nothing happened. Nothing happening was the win.',
         art: ['scene', { k: 'l12-remove-fight' }],
         back: 'l10',
       },
@@ -922,7 +924,7 @@ export const STORIES_C: Record<string, Story> = {
       o: [
         ['The phone, when I am alone with it', 'Then where the phone stays is the fight to remove.'],
         ['An empty stretch with nothing planned', 'Then plan that stretch, and the fight never starts.'],
-        ['One app I always end up on', 'Log out, or move it. One fight fewer.'],
+        ['Something I keep within reach', 'Move it out of reach. One fight fewer.'],
         ['I am not sure yet', 'Watch this week for the fight that repeats. That is the one.'],
       ],
     },
@@ -979,7 +981,7 @@ export const STORIES_C: Record<string, Story> = {
         long: 1,
         h: 'What did make a difference was gaps that piled up.',
         p: 'The volunteers who missed many days got less far. **It is the gaps that add up**, not the one day.',
-        dx: 'What did make a difference was gaps that piled up. The volunteers who missed many days, even spread out, did not get as far before the twelve weeks ended. So the lesson is not that missing does not matter. It is that **it is the gaps that add up**, not the one day. One missed day is a step off the path. A string of them lets the grass grow back.',
+        dx: 'What did make a difference was gaps that piled up. The volunteers who missed many days, even spread out, did not get as far before the twelve weeks ended. So the lesson is not that missing does not matter. It is that **it is the gaps that add up**, not the one day. One missed day is a step off the path, and the days that come after it decide the rest.',
         art: ['scene', { k: 'l12-two-misses' }],
       },
       {
@@ -997,15 +999,15 @@ export const STORIES_C: Record<string, Story> = {
       },
       {
         h: 'So make the way back smaller than the gap.',
-        p: 'Come back the next day with one small step: no catching up and no explaining. **Walk the path again**, and it starts wearing in again.',
-        dx: 'So make the way back smaller than the gap. Come back the next day with one small step: no catching up, no making up for it, no explaining to anyone, including yourself. In Daybook, a day without a check-in still counts as a day with no slip, and nothing is waiting to be made up. **Walk the path again**, and it starts wearing in again, from about where you left it.',
+        p: 'Come back the next day with one small step: no catching up and no explaining. **Walk the path again**, and it starts wearing in again. Even a path the grass has covered is easier to find than a new one.',
+        dx: 'So make the way back smaller than the gap. Come back the next day with one small step: no catching up, no making up for it, no explaining to anyone, including yourself. In Daybook, a day without a check-in still counts as a day with no slip, and nothing is waiting to be made up. **Walk the path again**, and it starts wearing in again, from about where you left it. Even a path the grass has covered is easier to find than a new one.',
         art: ['scene', { k: 'l12-step-back' }],
       },
     ],
     mine: { h: 'Here, a missed check-in takes no day away.', k: 'clean30' },
     today: {
       h: 'Decide your way back before you need it.',
-      l: ['Pick the smallest step back after a miss', 'No catching up and no explaining', 'Try not to let one miss become two'],
+      l: ['Pick the smallest step back after a miss', 'No catching up and no explaining', 'If you miss one, make the next day a yes'],
     },
     you: {
       h: 'When you miss a day, what makes coming back hard?',

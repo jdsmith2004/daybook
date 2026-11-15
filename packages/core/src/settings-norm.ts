@@ -4,6 +4,7 @@
    own default for the frozen golden fixtures, which all name their mode. */
 import { normSettings as normLegacy } from './legacy/core.js';
 import { MY_LINE_LEN } from './plan';
+import { normOwn } from './saved-answers';
 import type { Settings } from './types';
 
 const MODES = ['strict', 'gentle', 'step'];
@@ -15,6 +16,10 @@ export function normSettingsLoaded(s: unknown): Settings {
   /* my line (plan.ts): a string, or nothing at all */
   if (typeof o.myLine === 'string' && o.myLine.trim()) o.myLine = o.myLine.trim().slice(0, MY_LINE_LEN);
   else delete o.myLine;
+  /* saved answers (saved-answers.ts): known kinds only, cleaned; left out when empty */
+  const own = normOwn(o.own);
+  if (own) o.own = own;
+  else delete o.own;
   /* haptics: off is false, on is left out */
   if (o.haptics !== false) delete o.haptics;
   return o;

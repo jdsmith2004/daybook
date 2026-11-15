@@ -81,6 +81,7 @@ export * from './week';
 export * from './away';
 export * from './truth';
 export * from './settings-norm';
+export * from './saved-answers';
 export * from './health';
 export * from './back';
 export * from './night-win';

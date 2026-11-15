@@ -1,9 +1,10 @@
 /* The lesson map on Learn: the lessons as stepping stones on one path, a land for each of the twelve steps, top to bottom in
    the order of the path. Each land has its picture (section-art) on a little hill beside the stones and a small stand of trees; the
    next lesson's name sits beside its stone, so the picture and the trees move out of its way. The map is laid out on a
-   phone-wide page, MAP_W across; the app scales it to the screen. Lessons open one at a time, in the order of the path
-   (lessons.ts lessonWalk): the stones behind Up next are done, Up next is the one bright stone, and every stone after it
-   waits, quiet, also one read early (nothing finished ever shows past Up next). */
+   phone-wide page, MAP_W across; the app scales it to the screen. The path is this person's own (lessons.ts lessonPathMine): every
+   lesson they finished, in the order they finished it, then the rest in the planned order. So the stones behind Up next are all
+   done, as one walked road, Up next is the one bright stone, and every stone after it waits, quiet (nothing finished ever shows
+   past Up next, the owner, November 15, 2026). */
 import { sectionsOf, walkOf, type Lesson, type LessonWalk } from './lessons';
 
 export const MAP_W = 390;
@@ -26,6 +27,8 @@ export interface MapStone {
   j: number;
   /** the number the person sees: its place on their path */
   n: number;
+  /** the step (an index in PATH_STEPS) of the land it stands in */
+  u: number;
   x: number;
   y: number;
   state: StoneState;
@@ -81,6 +84,7 @@ export function lessonMap(walk: LessonWalk | Set<string>): LessonMap {
         L,
         j,
         n: w.path.indexOf(L) + 1,
+        u,
         x: base + (right ? 1 : -1) * SWAY[j % SWAY.length],
         y: top + HEAD + j * STEP,
         state: w.walked.has(L.id) ? 'done' : L === nx ? 'next' : 'todo',

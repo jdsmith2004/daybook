@@ -2,12 +2,15 @@
    (Apple's own picker: Daybook never learns which), and Daybook watches use of them through Apple's DeviceActivity, which tells it
    only that a threshold was passed, never the numbers:
 
-   - The short wait (one sec's evidence): the picked apps (the feeds that start it) wait all day. Apple's shield is up; its button
-     brings the person to Daybook's /pause, a wait of 10, 30 or 60 seconds, then the apps open for a few minutes of use (3, 5 or
-     10), then the wait is back.
+   - The short wait (one sec's evidence), in lists (the owner, November 15, 2026: "for Instagram or something, it's like 5 or 10
+     seconds ... and then how long they get access after that. Like 5 minutes, 10 minutes, 30 minutes. It's up to them"): up to
+     three lists, each its own apps from Apple's list and its own wait (5, 10, 30 or 60 seconds, or none), all day. Apple's shield
+     is up; its button brings the person to Daybook's /pause for that list's wait, then they choose how long it opens (5, 10 or 30
+     minutes of use), then the wait is back. Only that list opens; no cap on how often.
+   - Adult sites, all day (the owner, November 15, 2026: "all day for adult sites"): they wait behind Apple's adult filter, lifted
+     only after a long wait (1, 5, 15 or 30 minutes), for the minutes the person then chooses, then it is back: a wait, not a wall.
    - The night (docs/plan.md, "The morning, not the moment", step 2; the owner, November 11, 2026): from the time the morning set
-     chose (core morning-set.ts tonightOf) to 6 AM. Adult websites wait behind Apple's adult filter, lifted only after a long wait
-     (5, 15 or 30 minutes) for PULL_WEB_OPEN minutes, then it is back: a wait, not a wall. Two notes at 10 and 20 minutes of use.
+     chose (core morning-set.ts tonightOf) to 6 AM. Two notes at 10 and 20 minutes of use, and the night's words on the waits.
    - Loosen slowly, tighten at once: a looser choice made outside the morning waits for 6 AM (pullChange). Lift every wait now and
      Turn Screen Time off stay instant (and in Settings, as Apple requires), and at night they count as a night the lock did not hold.
    - After long use (1, 2 or 3 hours in a day), one note a day: to today's lesson when it is not done, otherwise to put it down.
@@ -36,16 +39,15 @@ export interface PullPrefs {
   long: 0 | 1 | 2 | 3;
   /** the two notes in the night hours (at 10 and 20 minutes of use) */
   hard: boolean;
-  /** the short wait before the picked apps, all day (one sec's evidence: the wait and the way out do the work) */
-  feeds: boolean;
-  /** seconds of the short wait */
-  wait: 10 | 30 | 60;
-  /** minutes of use the apps stay open after it, then the wait is back */
-  open: 3 | 5 | 10;
-  /** adult websites wait in the night hours (Apple's adult filter; only when the habit is porn) */
+  /** the lists, at least one: each its own apps from Apple's list (kept on the phone under its id, never here) and its own wait,
+      all day (one sec's evidence: the wait and the way out do the work) */
+  lists: PullList[];
+  /** the minutes last chosen after a wait: the answer drawn first next time */
+  opened: PullOpen;
+  /** adult websites wait, all day (Apple's adult filter; only when the habit is porn) */
   adult: boolean;
-  /** minutes of the long wait before adult sites open for PULL_WEB_OPEN minutes */
-  lift: 5 | 15 | 30;
+  /** minutes of the long wait before adult sites open */
+  lift: PullLift;
   /** the setup page was seen (picked or skipped), so a redo does not ask again unless it was skipped */
   asked?: 'picked' | 'skipped';
   /** tonight starts earlier than the morning said, for that one night (k is the clock's day it was chosen on, by day) */
@@ -58,23 +60,43 @@ export interface PullPrefs {
   /** Screen Time access was taken back in the phone's Settings, so it was turned off here (More says so until it is on again) */
   lost?: boolean;
 }
-/** the choices that can loosen the night, and so wait for the morning */
-export type PullLooseKey = 'feeds' | 'wait' | 'open' | 'adult' | 'lift';
+/** the lists' ids: Apple's picks are kept on the phone under these, one ManagedSettingsStore each (targets/_shared) */
+export type PullListId = 'a' | 'b' | 'c';
+export const PULL_LIST_IDS: PullListId[] = ['a', 'b', 'c'];
+/** a list's name: one of a few plain words (never typed: nothing a person writes sits next to Screen Time) */
+export const PULL_LIST_NAMES = ['Apps', 'Social', 'Games', 'Videos', 'Shopping', 'News'] as const;
+/** seconds of a list's wait; 0 is No wait (the list is open) */
+export type PullWait = 0 | 5 | 10 | 30 | 60;
+export type PullOpen = 5 | 10 | 30;
+export type PullLift = 1 | 5 | 15 | 30;
+export interface PullList {
+  id: PullListId;
+  name: string;
+  wait: PullWait;
+}
+/** the choices that can loosen it, and so wait for the morning */
+export type PullLooseKey = 'adult' | 'lift' | 'lists';
 export type PullLoose = Partial<Pick<PullPrefs, PullLooseKey>>;
-const LOOSE_KEYS: PullLooseKey[] = ['feeds', 'wait', 'open', 'adult', 'lift'];
+const LOOSE_KEYS: ('adult' | 'lift')[] = ['adult', 'lift'];
 
 /** the plain name of this part in Settings and on its unlock page (the owner, November 9, 2026: "Apps that pull you in" said nothing) */
 export const PULL_NAME = 'Screen Time';
 
-/** "10 seconds", "1 minute" */
-export const pullWaitLabel = (w: number) => (w === 60 ? '1 minute' : w + ' seconds');
+/** "10 seconds", "1 minute", "No wait" */
+export const pullWaitLabel = (w: number) => (w === 0 ? 'No wait' : w === 60 ? '1 minute' : w + ' seconds');
+/** "10 sec", for a list's row */
+export const pullWaitShort = (w: number) => (w === 0 ? 'No wait' : w === 60 ? '1 min' : w + ' sec');
+/** the lists that wait (a list with No wait is open) */
+export const pullWaiting = (p: PullPrefs) => p.lists.filter((l) => l.wait > 0);
 
 /** the line under Screen Time in Settings: what it does now, in a few words */
 export function pullLine(p: PullPrefs, porn = true): string {
   if (!p.on) return 'Off · a short wait before the apps that pull you in';
   const parts: string[] = [];
-  if (p.feeds) parts.push('a ' + (p.wait === 60 ? 'one-minute' : p.wait + '-second') + ' wait');
-  if (p.adult && porn) parts.push('adult sites wait at night');
+  const w = pullWaiting(p);
+  if (w.length === 1) parts.push('a ' + (w[0].wait === 60 ? 'one-minute' : w[0].wait + '-second') + ' wait');
+  else if (w.length > 1) parts.push(w.length + ' lists wait');
+  if (p.adult && porn) parts.push('adult sites wait all day');
   if (!parts.length && p.long) parts.push('a note after ' + (p.long === 1 ? '1 hour' : p.long + ' hours'));
   if (!parts.length && p.hard) parts.push('notes at night');
   if (!parts.length) return 'On · every wait off';
@@ -82,13 +104,21 @@ export function pullLine(p: PullPrefs, porn = true): string {
   return s[0].toUpperCase() + s.slice(1);
 }
 
-export const PULL_DEFAULTS: PullPrefs = { on: false, long: 2, hard: true, feeds: true, wait: 10, open: 5, adult: true, lift: 15 };
+export const PULL_DEFAULTS: PullPrefs = {
+  on: false,
+  long: 2,
+  hard: true,
+  lists: [{ id: 'a', name: 'Apps', wait: 10 }],
+  opened: 10,
+  adult: true,
+  lift: 15,
+};
 export const PULL_LONG = [0, 1, 2, 3] as const;
-export const PULL_WAIT = [10, 30, 60] as const;
-export const PULL_OPEN = [3, 5, 10] as const;
-export const PULL_LIFT = [5, 15, 30] as const;
-/** minutes adult sites stay open after the long wait, then the filter is back (the plan: "lifts the filter for 10 minutes") */
-export const PULL_WEB_OPEN = 10;
+/** a list's wait, in the order Settings shows them: No wait last */
+export const PULL_WAIT: readonly PullWait[] = [5, 10, 30, 60, 0];
+/** minutes it opens for, chosen after each wait */
+export const PULL_OPEN: readonly PullOpen[] = [5, 10, 30];
+export const PULL_LIFT: readonly PullLift[] = [1, 5, 15, 30];
 /** minutes of use inside the night for the first note, the second, and the mark that the notes were ignored (pullDrift) */
 export const PULL_HARD_AT = [10, 20, 30] as const;
 /** the shortest schedule Apple allows, in minutes: the few minutes open are watched inside one this long */
@@ -106,14 +136,16 @@ const isKey = (k: unknown): k is DayKey => typeof k === 'string' && /^\d{4}-\d{2
     all-day wait, so a saved pause on reads as the wait on, and a saved pause off as the wait off (nothing new is sprung on
     someone who chose notes only). */
 export function normPull(x: unknown): PullPrefs {
-  const o = (x && typeof x === 'object' ? x : {}) as Partial<PullPrefs> & { pause?: unknown };
+  const o = (x && typeof x === 'object' ? x : {}) as Partial<PullPrefs> & { pause?: unknown; feeds?: unknown; wait?: unknown };
+  /* before the lists (November 15, 2026): one pick, its wait, and the wait on or off. That pick is list one, with the same wait, so
+     nobody's setup changes; the wait off is a list with No wait (nothing new sprung on someone who chose notes only). */
+  const feeds = typeof o.feeds === 'boolean' ? o.feeds : typeof o.pause === 'boolean' ? o.pause : true;
   const out: PullPrefs = {
     on: o.on === true,
     long: pick(PULL_LONG, o.long, PULL_DEFAULTS.long),
     hard: o.hard !== false,
-    feeds: typeof o.feeds === 'boolean' ? o.feeds : typeof o.pause === 'boolean' ? o.pause : PULL_DEFAULTS.feeds,
-    wait: pick(PULL_WAIT, o.wait, PULL_DEFAULTS.wait),
-    open: pick(PULL_OPEN, o.open, PULL_DEFAULTS.open),
+    lists: normLists(o.lists) ?? [{ id: 'a', name: 'Apps', wait: feeds ? pick(PULL_WAIT, o.wait, 10) : 0 }],
+    opened: pick(PULL_OPEN, o.opened, PULL_DEFAULTS.opened),
     adult: o.adult !== false,
     lift: pick(PULL_LIFT, o.lift, PULL_DEFAULTS.lift),
   };
@@ -125,14 +157,40 @@ export function normPull(x: unknown): PullPrefs {
   if (l && typeof l === 'object' && typeof l.at === 'number' && l.p && typeof l.p === 'object') {
     const p: PullLoose = {};
     const src = l.p as Record<string, unknown>;
-    if (typeof src.feeds === 'boolean') p.feeds = src.feeds;
     if (typeof src.adult === 'boolean') p.adult = src.adult;
-    if (PULL_WAIT.includes(src.wait as 10)) p.wait = src.wait as PullPrefs['wait'];
-    if (PULL_OPEN.includes(src.open as 3)) p.open = src.open as PullPrefs['open'];
-    if (PULL_LIFT.includes(src.lift as 5)) p.lift = src.lift as PullPrefs['lift'];
+    if (PULL_LIFT.includes(src.lift as 5)) p.lift = src.lift as PullLift;
+    const ls = normLists(src.lists);
+    if (ls) p.lists = ls;
     if (Object.keys(p).length) out.later = { p, at: l.at };
   }
   return out;
+}
+
+/** lists read safely: known ids once each, known names, known waits; null when there are none */
+function normLists(x: unknown): PullList[] | null {
+  if (!Array.isArray(x)) return null;
+  const out: PullList[] = [];
+  for (const l of x) {
+    if (!l || typeof l !== 'object') continue;
+    const o = l as Record<string, unknown>;
+    const id = o.id as PullListId;
+    if (!PULL_LIST_IDS.includes(id) || out.some((y) => y.id === id)) continue;
+    const name = PULL_LIST_NAMES.includes(o.name as 'Apps') ? (o.name as string) : pullListName(out);
+    out.push({ id, name, wait: pick(PULL_WAIT, o.wait, 10) });
+  }
+  return out.length ? out : null;
+}
+/** a new list's name: the first of Social, Games, Videos... not yet taken */
+export function pullListName(lists: PullList[]): string {
+  return PULL_LIST_NAMES.slice(1).find((n) => !lists.some((l) => l.name === n)) ?? 'Apps';
+}
+/** a new list (Add a list), or null when there are already three. Its id is one no list now or waiting for the morning has, so a
+    removed list's apps (still held until the morning) are never mixed into it. */
+export function pullListNew(p: PullPrefs): PullList | null {
+  const taken = [...p.lists, ...(p.later?.p.lists ?? [])];
+  const id = PULL_LIST_IDS.find((i) => !taken.some((l) => l.id === i));
+  const shown = pullShown(p).lists;
+  return id && shown.length < PULL_LIST_IDS.length ? { id, name: pullListName(shown), wait: 10 } : null;
 }
 
 /* ---------- the night: from the morning's time to 6 AM ---------- */
@@ -197,12 +255,13 @@ export const pullLooseAt = (now: number): number | null => (pullMorningNow(now) 
 
 /* ---------- loosen slowly, tighten at once (the owner, November 11, 2026) ---------- */
 
-/** whether going from a to b loosens the night */
-function looser(k: PullLooseKey, a: PullPrefs[PullLooseKey], b: PullPrefs[PullLooseKey]): boolean {
-  if (k === 'feeds' || k === 'adult') return a === true && b === false;
-  if (k === 'open') return (b as number) > (a as number);
+/** whether going from a to b loosens it */
+function looser(k: 'adult' | 'lift', a: PullPrefs['adult' | 'lift'], b: PullPrefs['adult' | 'lift']): boolean {
+  if (k === 'adult') return a === true && b === false;
   return (b as number) < (a as number);
 }
+/** a list's wait going from a to b lets its apps through sooner: shorter, or none */
+const waitLooser = (a: PullWait, b: PullWait | undefined) => a > 0 && (b == null || b === 0 || b < a);
 /** a change from More. A stricter one works now. A looser one works now in the morning, and otherwise waits for 6 AM in `later`
     (choosing the value that holds now takes it back). The rest (Screen Time on or off, the notes, the long-use note, the apps'
     setup) works now: turning off is always instant, as Apple requires, and a nag must be easy to stop. `held` is when the change
@@ -213,6 +272,29 @@ export function pullChange(prefs: PullPrefs, change: Partial<PullPrefs>, now: nu
   const o = out as unknown as Record<string, unknown>;
   const later: Record<string, unknown> = { ...(p0.later?.p ?? {}) };
   let held: number | null = null;
+  /* the lists, one by one: what `change.lists` asks for is the whole list as it should end up. A list removed or given a shorter
+     wait keeps its old wait until the morning (the whole asked-for list then waits in `later`); a new list, a longer wait, a new
+     name work now. */
+  if (change.lists) {
+    const want = change.lists;
+    const at = p0.on ? pullLooseAt(now) : null;
+    const nowL: PullList[] = [];
+    let loose = false;
+    for (const x of p0.lists) {
+      const y = want.find((z) => z.id === x.id);
+      if (at != null && waitLooser(x.wait, y?.wait)) {
+        loose = true;
+        nowL.push(y ? { ...y, wait: x.wait } : x);
+      } else if (y) nowL.push(y);
+    }
+    for (const y of want) if (!p0.lists.some((x) => x.id === y.id)) nowL.push(y);
+    out.lists = nowL;
+    delete later.lists;
+    if (loose) {
+      later.lists = want;
+      held = at;
+    }
+  }
   for (const k of LOOSE_KEYS) {
     if (!(k in change)) continue;
     const v = change[k] as PullPrefs[typeof k];
@@ -273,16 +355,12 @@ export function pullHoldStart(prefs: PullPrefs, days: Days, st: Settings, now: n
   return { ...p, armed: { k, at: from } };
 }
 
-/** the night waits are on: the morning page then says what waits ("Adult sites wait from 10:30 PM", core tonightLine). The feeds
-    wait all day, so the night's own wait is the adult sites'. */
-export const nightWaitOn = (prefs: PullPrefs): boolean => prefs.on && prefs.adult;
-
-/** what is held right now (mirrored in the extensions' Pull.guardNow and the module's): the picked apps behind the short wait,
-    and adult sites behind the filter in the night. Each hold is ms until it ends (0 for none): `lift` Lift every wait now, `open`
-    the minutes opened after the short wait, `web` the minutes adult sites opened after the long wait. */
+/** what is held right now (mirrored in the extensions' Pull.guardNow and the module's): each list's apps behind its wait, and adult
+    sites behind the filter, all day. Each hold is ms until it ends (0 for none): `lift` Lift every wait now, `open` each list's
+    minutes opened after its wait, `web` the minutes adult sites opened after the long wait. */
 export interface PullHolds {
   lift: number;
-  open: number;
+  open: Partial<Record<PullListId, number>>;
   web: number;
 }
 /** minutes Apple's callbacks at the night's start and end are read ahead by: one that comes a few seconds early still finds the
@@ -292,15 +370,13 @@ export const PULL_GRACE = 2;
 export function pullGuard(
   p: PullPrefs,
   o: { adult: boolean; from: Clock; holds: PullHolds; now: number; boundary?: boolean },
-): { apps: boolean; web: boolean } {
+): { apps: Partial<Record<PullListId, boolean>>; web: boolean } {
   const { holds: h, now } = o;
   /* Lift every wait ends at a night's start or end, where Apple's callback can come a few seconds early: a minute's grace */
   const free = now >= h.lift - 60_000;
-  const clock = o.boundary ? now + PULL_GRACE * 60_000 : now;
-  return {
-    apps: p.on && p.feeds && free && now >= h.open,
-    web: p.on && p.adult && o.adult && free && now >= h.web && pullInNight(clock, o.from),
-  };
+  const apps: Partial<Record<PullListId, boolean>> = {};
+  for (const l of p.lists) apps[l.id] = p.on && l.wait > 0 && free && now >= (h.open[l.id] ?? 0);
+  return { apps, web: p.on && p.adult && o.adult && free && now >= h.web };
 }
 
 /* ---------- Apple's schedules for the night (core decides them; the module sets exactly these) ----------
@@ -446,9 +522,10 @@ export function pullNudges(o: { lessonUrl: string; long: number }): Record<PullN
     },
     hard2: { t: '🔥 Still here', b: 'This is the choice that counts tonight. Put the phone in another room. If it pulls, open me.', url: '/pause' },
     quiet: { t: '🔥 Tonight', b: 'You do not have to fight it alone tonight. SOS is one tap away.', url: '/sos' },
-    /* posted when the shield's button is pressed before iOS 26.5, since a shield cannot open Daybook itself */
+    /* posted when the shield's button is pressed before iOS 26.5, since a shield cannot open Daybook itself (the shield adds which
+       list asked: ?l=a) */
     open: { t: '🔥 Here', b: 'Tap, and I will be right there.', url: '/pause' },
-    /* the same, from Apple's page over a site in the night: the long wait */
+    /* the same, from Daybook's shield over an adult site: the long wait */
     openLong: { t: '🔥 Here', b: 'Tap, and the wait starts.', url: '/pause?w=long' },
   };
 }
@@ -481,11 +558,19 @@ export function pullShield(o: {
   plan: string | null;
   tonight: PullTonight | null;
   quiet: boolean;
-  /** over a site in the night: the long wait's minutes */
+  /** over an adult site: the long wait's minutes */
   long?: number;
 }): PullShield {
-  const primary = o.long ? 'Wait ' + o.long + ' minutes' : 'Wait ' + pullWaitLabel(o.wait);
+  const primary = o.long ? 'Wait ' + (o.long === 1 ? '1 minute' : o.long + ' minutes') : 'Wait ' + pullWaitLabel(o.wait);
   const downs = 'You have put it down {n}. Close it, and that makes {next}.';
+  if (!o.night && o.long)
+    return {
+      title: 'A long wait first',
+      sub: 'You asked for a long wait before these. Close it, or take the wait.',
+      subDowns: downs,
+      primary,
+      secondary: 'Close',
+    };
   /* by day, never the plan: it is the night's ("back to bed without my phone" at noon reads wrong) */
   if (!o.night)
     return {
@@ -516,7 +601,7 @@ export interface PullPauseWords {
   hold: string;
   /** the main button: away from the app */
   down: string;
-  /** the quiet link once the wait is over */
+  /** over the three answers (5, 10 or 30 minutes) once the wait is over */
   open: string;
   /** the stake, said before the choice (never after, never in the quiet after a slip): only in the night, where Open counts as a
       night gone through */
@@ -530,38 +615,40 @@ export interface PullPauseWords {
 export const PULL_AWAKE = 'Awake after 20 minutes? Get up, leave the phone, come back sleepy.';
 /** "7:40 AM" */
 const timeOf = (ms: number) => fmtClock(clockOf(ms));
-/** `mode`: 'day' the short wait by day, 'night' the short wait in the night hours, 'long' the long wait before adult sites */
+/** `mode`: 'day' the short wait by day, 'night' the short wait in the night hours, 'long' the long wait before adult sites (all
+    day; `night` says whether it is the night now) */
 export function pullPauseWords(o: {
   mode: 'day' | 'night' | 'long';
   quiet: boolean;
-  open: number;
   plan: string | null;
   tonight?: PullTonight | null;
   downs?: number;
+  /** the long wait: whether it is the night now */
+  night?: boolean;
 }): PullPauseWords {
   const n = o.downs ?? 0;
-  if (o.mode === 'day')
+  const long = o.mode === 'long';
+  if (o.mode === 'day' || (long && !o.night))
     return {
-      title: 'A short wait first',
-      line: 'You asked me for a moment before this one.',
+      title: long ? 'A long wait first' : 'A short wait first',
+      line: long ? 'You asked for a long wait before these.' : 'You asked me for a moment before this one.',
       say: 'You can put it down right now.',
-      hold: 'Breathe while it runs.',
+      hold: long ? 'It keeps counting if you leave.' : 'Breathe while it runs.',
       down: 'Put it down',
-      open: 'Open it for ' + o.open + ' minutes',
+      open: long ? 'Open them for' : 'Open it for',
       stake: null,
       thanks: n >= 2 ? 'You put it down. That makes ' + n + '.' : 'You put it down. That is what someone free does.',
       awake: null,
     };
   const t = o.tonight;
   const said = t?.r ? (t.rAt ? 'You, at ' + timeOf(t.rAt) + ': ' : 'You: ') + quote(t.r) : null;
-  const long = o.mode === 'long';
   return {
     title: t?.today ? 'You set this up this morning.' : t?.r ? 'You set this up for tonight.' : 'Tonight is set.',
     line: said ?? (o.quiet ? 'Tonight is not a night to be alone with your phone.' : 'Put the phone down. This is the choice that keeps your fire burning.'),
     say: o.plan ?? (o.quiet ? 'Put it down, and I will stay right here.' : 'Stand up and walk to another room. I will be right here.'),
     hold: long ? 'It keeps counting if you leave.' : 'Breathe while it runs.',
     down: 'Put it down and go to bed',
-    open: long ? 'Open them for ' + PULL_WEB_OPEN + ' minutes' : 'Open it for ' + o.open + ' minutes',
+    open: long ? 'Open them for' : 'Open it for',
     stake: o.quiet ? null : (long ? 'Open them' : 'Open it') + ', and tonight goes in the week as a night you went through.',
     thanks: o.quiet
       ? 'That was the strong choice. It is in your log as a win.'
@@ -573,10 +660,10 @@ export function pullPauseWords(o: {
 }
 
 /** what the flame says on setup's Screen Time page (setup.ts, the night page): what waits, and that it lifts whenever they want */
-export function pullSetupSay(o: { porn: boolean; at: Clock; lift?: number }): string {
+export function pullSetupSay(o: { porn: boolean; at?: Clock; lift?: number }): string {
   return (
     (o.porn ? 'It usually starts with scrolling. Each feed will wait ten seconds before it opens' : 'Each app you pick will wait ten seconds before it opens') +
-    (o.porn ? ', and from ' + fmtClock(o.at) + ' adult sites wait ' + (o.lift ?? PULL_DEFAULTS.lift) + ' minutes.' : '.') +
+    (o.porn ? ', and adult sites wait ' + (o.lift ?? PULL_DEFAULTS.lift) + ' minutes, all day.' : '.') +
     ' You can lift it whenever you want.'
   );
 }
@@ -633,8 +720,10 @@ export interface PullBridge {
   /** the night: when the one running or coming starts (the morning's time, or earlier) and ends, by the clock; `next` is this
       evening's start, which Apple's schedules follow */
   night: { from: Clock; to: Clock; next: Clock };
-  /** adult sites wait in the night: the person's choice, and only when the habit is porn */
+  /** adult sites wait: the person's choice, and only when the habit is porn */
   adult: boolean;
+  /** each list's shield button ("Wait 10 seconds"), by list */
+  waits: Partial<Record<PullListId, string>>;
   notes: Record<PullNoteKind, PullNote>;
   /** the shield by day */
   shield: PullShield;
@@ -642,7 +731,9 @@ export interface PullBridge {
   shieldNight: PullShield;
   /** the shield in the night, in the quiet after a slip */
   shieldQuiet: PullShield;
-  /** over a site in the night, if Apple shows Daybook's shield there: the long wait (quiet after a slip in shieldWebQuiet) */
+  /** over an adult site, if Apple shows Daybook's shield there: the long wait by day, and in the night (quiet after a slip in
+      shieldWebQuiet) */
+  shieldWebDay: PullShield;
   shieldWeb: PullShield;
   shieldWebQuiet: PullShield;
   /** Apple's schedules for the night, exactly as the module sets them (pullParts of night.next) */
@@ -656,6 +747,10 @@ export function pullBridge(days: Days, st: Settings, prefs: PullPrefs, now: numb
   const plan = pullPlanLine(st);
   const t = tonightOf(days, st, pullNightOf(now));
   const tonight: PullTonight = { r: t.r, rAt: t.rAt, today: t.today };
+  /* the shield words name the first waiting list's wait; each list's own button rides in `waits` */
+  const wait = pullWaiting(p)[0]?.wait ?? 10;
+  const waits: Partial<Record<PullListId, string>> = {};
+  for (const l of p.lists) waits[l.id] = 'Wait ' + pullWaitLabel(l.wait);
   return {
     day,
     rollover: st.rollover,
@@ -664,12 +759,14 @@ export function pullBridge(days: Days, st: Settings, prefs: PullPrefs, now: numb
     prefs: p,
     night: { from, to: PULL_NIGHT_END, next: pullNextStart(days, st, p, now) },
     adult: habitOf(st) === 'porn',
+    waits,
     notes: pullNudges({ lessonUrl: lid ? '/lesson/' + lid : '/', long: p.long }),
-    shield: pullShield({ night: false, wait: p.wait, plan, tonight: null, quiet: false }),
-    shieldNight: pullShield({ night: true, wait: p.wait, plan, tonight, quiet: false }),
-    shieldQuiet: pullShield({ night: true, wait: p.wait, plan: null, tonight, quiet: true }),
-    shieldWeb: pullShield({ night: true, wait: p.wait, plan, tonight, quiet: false, long: p.lift }),
-    shieldWebQuiet: pullShield({ night: true, wait: p.wait, plan: null, tonight, quiet: true, long: p.lift }),
+    shield: pullShield({ night: false, wait, plan, tonight: null, quiet: false }),
+    shieldNight: pullShield({ night: true, wait, plan, tonight, quiet: false }),
+    shieldQuiet: pullShield({ night: true, wait, plan: null, tonight, quiet: true }),
+    shieldWebDay: pullShield({ night: false, wait, plan: null, tonight: null, quiet: false, long: p.lift }),
+    shieldWeb: pullShield({ night: true, wait, plan, tonight, quiet: false, long: p.lift }),
+    shieldWebQuiet: pullShield({ night: true, wait, plan: null, tonight, quiet: true, long: p.lift }),
     parts: pullParts(pullNextStart(days, st, p, now)),
   };
 }

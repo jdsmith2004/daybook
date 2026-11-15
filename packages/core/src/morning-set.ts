@@ -450,9 +450,8 @@ export const morningWhenSet = (t: string): string => 'Last night it was ' + t + 
 /** the eyebrow on the first page: "Good morning · Wednesday" */
 export const morningHello = (now: number): string => MORNING_WORDS.title + ' · ' + new Date(now).toLocaleDateString('en-US', { weekday: 'long' });
 
-/** the line over tonight's time: what happens then. With Screen Time's night wait on (core pull.ts nightWaitOn), adult sites wait
-    from then (the feeds wait all day, so they are not the night's); without it, the time the phone goes down, which is the
-    person's own plan. The night wait is only for porn, so any other habit keeps the plan's words. */
+/** the line over tonight's time: what happens then. Before November 15, 2026, Screen Time's adult sites waited from then; they wait
+    all day now (core pull.ts), so the app passes `waits` false and it is the time the phone goes down, the person's own plan. */
 export function tonightLine(o: { waits: boolean; habit: 'porn' | 'alcohol' | 'gambling' | 'other' }): string {
   return o.waits && o.habit === 'porn' ? 'Adult sites wait from' : 'Phone down at';
 }

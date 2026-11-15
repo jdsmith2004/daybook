@@ -7,7 +7,8 @@
 //   pull.morning          6:05 AM: the filter is lifted even if 6 AM's end did not come, and the night just gone is checked as held
 // The parts are core pullParts, handed over in the bridge. The night's own callbacks read the clock two minutes ahead
 // (Pull.grace), so one that comes a few seconds early still sets or lifts the filter it was set for.
-//   pull.open             the few minutes open after the short wait, event "open" at those minutes of use
+//   pull.open.<list>      the minutes a list is open after its wait (5, 10 or 30, chosen each time), event "open" at those
+//                         minutes of use; each list its own, so the others keep waiting
 //   pull.relock           10 minutes after adult sites opened from the long wait: the filter is back
 //   pull.unlift           when Lift every wait now ends: the waits are back
 // Every start and end runs Pull.guardNow, which sets the shield and the adult filter from the clock and the App Group, so a
@@ -35,12 +36,13 @@ class DeviceActivityMonitorExtension: DeviceActivityMonitor {
 
   override func intervalDidEnd(for activity: DeviceActivityName) {
     super.intervalDidEnd(for: activity)
-    if activity.rawValue == "pull.open" {
+    if let id = Self.openList(activity.rawValue) {
       /* its time is up even if the minutes of use were not: the wait is back. An end sooner than that is the app starting a new
          one (a second Open), not the end. */
-      let at = Pull.defaults?.double(forKey: Pull.openAtKey) ?? 0
-      if Pull.nowMs < at + Pull.openSpan - 60_000 { return }
-      Pull.defaults?.set(0.0, forKey: Pull.openKey)
+      let at = Pull.defaults?.double(forKey: Pull.openAtKey(id)) ?? 0
+      let mins = Pull.defaults?.double(forKey: Pull.openMinsKey(id)) ?? 5
+      if Pull.nowMs < at + Pull.openSpan(mins) - 60_000 { return }
+      Pull.defaults?.set(0.0, forKey: Pull.openUntilKey(id))
     }
     let name = activity.rawValue
     Pull.guardNow(boundary: Pull.isBoundary(name))
@@ -61,12 +63,17 @@ class DeviceActivityMonitorExtension: DeviceActivityMonitor {
       if let k = Pull.noteFor(b, kind: "long") { Pull.post(b, kind: k, once: Pull.logDay(b)) }
       return
     }
-    if name == "pull.open" {
-      /* the minutes open are used up: the wait is back */
-      let at = Pull.defaults?.double(forKey: Pull.openAtKey) ?? 0
-      let mins = Pull.defaults?.double(forKey: Pull.openMinsKey) ?? 3
+    if let id = Self.openList(name) {
+      /* the minutes open are used up: this list's wait is back */
+      let at = Pull.defaults?.double(forKey: Pull.openAtKey(id)) ?? 0
+      let mins = Pull.defaults?.double(forKey: Pull.openMinsKey(id)) ?? 5
       if !Pull.enoughSince(max(at, since), minutes: mins) { return }
-      Pull.defaults?.set(0.0, forKey: Pull.openKey)
+      Pull.defaults?.set(0.0, forKey: Pull.openUntilKey(id))
+      Pull.guardNow(b)
+      return
+    }
+    /* the one pull.open from before the lists: nothing of it is kept, so only catch up */
+    if name == "pull.open" {
       Pull.guardNow(b)
       return
     }
@@ -83,5 +90,13 @@ class DeviceActivityMonitorExtension: DeviceActivityMonitor {
     if (Pull.prefs(b)["hard"] as? Bool) == false || Pull.quiet(b) { return }
     if !Pull.mark("ignored", once: once) { return }
     Pull.defaults?.set(Pull.nowMs, forKey: Pull.ignoredKey)
+  }
+
+  /// the list a pull.open.<list> schedule is for, or nil
+  private static func openList(_ name: String) -> String? {
+    let pre = "pull.open."
+    guard name.hasPrefix(pre) else { return nil }
+    let id = String(name.dropFirst(pre.count))
+    return Pull.ids.contains(id) ? id : nil
   }
 }

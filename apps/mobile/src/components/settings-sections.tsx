@@ -44,11 +44,11 @@ import {
   setDeep,
   NIGHT_TIMES,
   PULL_LIFT,
+  pullListNew,
+  pullWaitLabel,
+  pullWaitShort,
   PULL_LONG,
   PULL_NIGHT_END,
-  PULL_OPEN,
-  PULL_WAIT,
-  PULL_WEB_OPEN,
   pullEarly,
   pullEarlier,
   pullInNight,
@@ -58,7 +58,6 @@ import {
   pullQuietUntil,
   pullSettle,
   pullShown,
-  pullWaitLabel,
   tonightOf,
   keyOfDate,
   clockOf,
@@ -121,9 +120,10 @@ import {
   PULL_DENIED,
   pullFix,
   pullLiftAll,
+  pullAddList,
   pullOffered,
-  pullPick,
   pullSet,
+  usePullPicked,
   pullStart,
   pullStop,
   setPullPrefs,
@@ -908,6 +908,8 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
     else if (r === 'closed') say('Nothing was picked, so nothing changed.');
   };
   const trouble = usePullTrouble();
+  /* how many each list has picked: read here, before the page can return early (a hook) */
+  const picked = usePullPicked(pullShown(pull).lists.map((l) => l.id));
   if (!pull.on)
     return (
       <SetGroup
@@ -962,30 +964,53 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
       <SetGroup head="Beta" foot="Screen Time is new. Tell us in Feedback if something does not work.">
         <SetSwitch label="Screen Time (beta)" on onChange={(on) => (on ? undefined : void pullStop(night && !quiet))} />
       </SetGroup>
-      <SetGroup foot="Apple keeps the list, and nothing about your apps leaves this phone.">
-        <SetRow
-          label="Change the apps"
-          onPress={async () => {
-            const at = await pullPick();
-            if (at) say('The apps you took out still wait until ' + fmtClock(PULL_NIGHT_END) + '. Looser settings start in the morning.');
-          }}
-        />
-      </SetGroup>
-      <SetGroup head="A short wait before them" foot={foot('feeds', 'All day, each time you open one.')}>
-        <SetSwitch label="Wait first" on={shown.feeds} onChange={(on) => set({ feeds: on })} />
-      </SetGroup>
-      {shown.feeds ? (
-        <>
-          <SetGroup head="The wait" foot={foot('wait')}>
-            <SetPick options={PULL_WAIT.map((n) => [n, pullWaitLabel(n)] as const)} value={shown.wait} onPick={(n) => set({ wait: n })} />
-          </SetGroup>
-          <SetGroup head="Then open for" foot={foot('open', 'Minutes of use, then the wait is back.')}>
-            <SetPick options={PULL_OPEN.map((n) => [n, mins(n)] as const)} value={shown.open} onPick={(n) => set({ open: n })} />
-          </SetGroup>
-        </>
+      {porn ? (
+        <SetGroup
+          head="Adult sites"
+          foot={foot(
+            'lift',
+            'All day, in Safari and other browsers, through Apple’s adult filter. After the wait you choose how long they open, then it is back.',
+          )}>
+          <SetSwitch label="A long wait first" on={shown.adult} onChange={(on) => set({ adult: on })} />
+          {shown.adult ? (
+            <>
+              <SetPick options={PULL_LIFT.map((n) => [n, n === 1 ? '1 minute' : mins(n)] as const)} value={shown.lift} onPick={(n) => set({ lift: n })} />
+              {p.adult ? (
+                <SetRow
+                  label={'Start the ' + (p.lift === 1 ? '1-minute' : p.lift + '-minute') + ' wait'}
+                  onPress={() => router.push({ pathname: '/pause', params: { w: 'long' } })}
+                />
+              ) : null}
+            </>
+          ) : null}
+        </SetGroup>
       ) : null}
+      <SetGroup
+        head="Your lists"
+        foot={
+          (held('lists') ? 'Your change starts at ' + waits + '. ' : '') +
+          'Each list has its own apps and its own wait. After it, you choose how long they open.'
+        }>
+        {shown.lists.map((l) => (
+          <SetRow
+            key={l.id}
+            label={l.name}
+            value={pullWaitShort(l.wait) + (picked[l.id] != null ? ' · ' + picked[l.id] + ' picked' : '')}
+            onPress={() => router.push({ pathname: '/settings/list', params: { id: l.id } })}
+          />
+        ))}
+        {pullListNew(p) ? (
+          <SetRow
+            label="Add a list"
+            act="accent"
+            onPress={async () => {
+              const l = await pullAddList();
+              if (l) say(l.name + ' is added. Each app in it waits ' + pullWaitLabel(l.wait) + '.');
+            }}
+          />
+        ) : null}
+      </SetGroup>
       <SetGroup head={'Tonight, ' + span} foot={night ? undefined : 'Set each morning. You can start it earlier tonight.'}>
-        {porn ? <SetSwitch label="Adult sites wait" on={shown.adult} onChange={(on) => set({ adult: on })} /> : null}
         <SetSwitch label="Notes at 10 and 20 minutes" on={p.hard} onChange={(on) => setPullPrefs({ hard: on })} />
       </SetGroup>
       {!night && earlier.length ? (
@@ -1001,19 +1026,6 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
                 say('Looser settings start in the morning. Tonight still starts at ' + fmtClock(p.armed.at) + '.');
             }}
           />
-        </SetGroup>
-      ) : null}
-      {porn && shown.adult ? (
-        <SetGroup
-          head="Before adult sites open"
-          foot={foot(
-            'lift',
-            'Apple’s adult filter, in Safari and other browsers. After the wait they open for ' + PULL_WEB_OPEN + ' minutes, then it is back.',
-          )}>
-          <SetPick options={PULL_LIFT.map((n) => [n, mins(n)] as const)} value={shown.lift} onPick={(n) => set({ lift: n })} />
-          {night && p.adult ? (
-            <SetRow label={'Start the ' + p.lift + '-minute wait'} onPress={() => router.push({ pathname: '/pause', params: { w: 'long' } })} />
-          ) : null}
         </SetGroup>
       ) : null}
       <SetGroup head="A note after long use" foot="One note a day. When today’s lesson is not done, a tap takes you to it.">

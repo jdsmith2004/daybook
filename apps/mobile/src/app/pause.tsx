@@ -1,15 +1,17 @@
 /* The wait (Screen Time, core pull.ts; the owner, November 9 and 11, 2026). Apple's shield is a still picture and cannot count down,
    so its button and the night's notes bring the person here. Three waits, one screen:
 
-   - By day, the short wait before a picked app (10, 30 or 60 seconds): the flame big in the ring, Put it down, and once the wait
-     is over a quiet link opens the app for a few minutes. Nothing dims: opening a feed at noon is not the fight.
+   - By day, the short wait before an app in one of the lists (`?l=a`: that list's 5, 10, 30 or 60 seconds; with no list, the
+     longest): the flame big in the ring, Put it down, and once the wait is over three answers ask how long it opens, 5, 10 or 30
+     minutes, the last choice ringed (the owner, November 15, 2026: "how long they get access after that ... It's up to them").
+     Only that list opens. Nothing dims: opening a feed at noon is not the fight.
    - In the night, the same short wait, but it shows the morning (docs/plan.md, "The morning, not the moment", step 2): "You set
      this up this morning.", the person's reason quoted with when they chose it, their future-you note if they made one, and Put
      it down and go to bed. The flame burns low here, as before: it is seen burning fully, then goes down with its smoke, and Put
      it down lights it again in front of them.
-   - `?w=long`, the long wait before adult sites (5, 15 or 30 minutes, from More in the night). It keeps counting if the person
-     leaves, and the stake is said before the choice, never after: "Open it, and tonight goes in the week as a night you went
-     through." Once over, Open them for 10 minutes; then Apple's filter is back.
+   - `?w=long`, the long wait before adult sites (1, 5, 15 or 30 minutes), all day. It keeps counting if the person leaves, and
+     in the night the stake is said before the choice, never after: "Open them, and tonight goes in the week as a night you went
+     through." Once over, the same three answers; then Apple's filter is back.
 
    At night, once the wait is over, sleep care's one line for the person lying awake takes the place of "Breathe while it runs."
    (the plan, C3), so it costs the screen no room.
@@ -23,7 +25,7 @@
 import {
   addEvent,
   gameCompute,
-  PULL_WEB_OPEN,
+  PULL_OPEN,
   pullDownEvent,
   pullInNight,
   pullNightOf,
@@ -32,14 +34,16 @@ import {
   pullPlanLine,
   pullQuietUntil,
   pullSettle,
+  pullWaiting,
   tonightOf,
+  type PullListId,
+  type PullOpen,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { Link } from '@/components/choices';
 import { BigFlame, DOUSE_MS, DOUSE_WAIT, RELIGHT_CATCH, RELIGHT_MS } from '@/components/big-flame';
 import { FutureNoteCard, useHasFutureNote } from '@/components/future-note';
 import { Bubble } from '@/components/lesson-flame';
@@ -49,7 +53,7 @@ import { Button, T } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { packOpenFor } from '@/lib/night-pack';
-import { Pull, pullCountDown, pullLongEnd, pullLongStart, usePullPrefs } from '@/lib/pull';
+import { Pull, pullCountDown, pullLongEnd, pullLongStart, setPullPrefs, usePullPrefs } from '@/lib/pull';
 import { useStore } from '@/lib/store';
 import { font, nightInk, useTheme } from '@/lib/theme';
 import { useReducedMotion } from '@/lib/motion';
@@ -69,7 +73,7 @@ const STALE_S = 120;
 const leftLabel = (s: number, long: boolean) => (long ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : String(s));
 
 export default function PullPause() {
-  const { w: which, t: token, dev } = useLocalSearchParams<{ w?: string; t?: string; dev?: string }>();
+  const { w: which, t: token, dev, l } = useLocalSearchParams<{ w?: string; t?: string; dev?: string; l?: string }>();
   const { snap, tk, now, say, update } = useStore();
   const c = useTheme();
   const saved = usePullPrefs();
@@ -78,18 +82,21 @@ export default function PullPause() {
   const note = useHasFutureNote();
   const { height } = useWindowDimensions();
   const st = snap.settings;
-  /* the mode is fixed when the screen opens, so a wait running across the night's start does not change under the person */
-  const [mode, setMode] = useState<'day' | 'night' | 'long'>(() => {
-    /* `dev=night` opens it as the night in a development build or a preview build (EXPO_PUBLIC_PULL_PREVIEW=1), to show the
-       screens by day (the simulator keeps the Mac's clock); a store build never reads it */
-    const night =
+  /* the mode is fixed when the screen opens, so a wait running across the night's start does not change under the person.
+     `dev=night` opens it as the night in a development build or a preview build (EXPO_PUBLIC_PULL_PREVIEW=1), to show the screens
+     by day (the simulator keeps the Mac's clock); a store build never reads it */
+  const [night] = useState(
+    () =>
       ((__DEV__ || process.env.EXPO_PUBLIC_PULL_PREVIEW === '1') && dev === 'night') ||
-      (!!st && pullInNight(Date.now(), pullNightStart(snap.days, st, saved, Date.now())));
-    /* the long wait is only the night's: by day adult sites do not wait, so a stale link opens the short one */
-    return night ? (which === 'long' ? 'long' : 'night') : 'day';
-  });
-  const dark = mode !== 'day';
+      (!!st && pullInNight(Date.now(), pullNightStart(snap.days, st, saved, Date.now()))),
+  );
+  /* adult sites wait all day, so the long wait is any time (only while they wait: a stale link opens the short one) */
+  const [mode, setMode] = useState<'day' | 'night' | 'long'>(() => (which === 'long' && prefs.on && prefs.adult ? 'long' : night ? 'night' : 'day'));
   const long = mode === 'long';
+  const dark = mode === 'night' || (long && night);
+  /* the list that asked, and its wait; with none (a note, or a shield that could not tell), the longest, and every list opens */
+  const list = prefs.lists.find((x) => x.id === l && x.wait > 0) ?? null;
+  const wait = list?.wait ?? Math.max(10, ...pullWaiting(prefs).map((x) => x.wait));
   /* small enough that the reason, a future-you note, the stake and Open it all fit under the flame on a small phone */
   const ring = Math.min(280, Math.round(height * (dark ? (note || height < 700 ? 0.13 : 0.22) : 0.26)));
   const level = st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1;
@@ -97,7 +104,7 @@ export default function PullPause() {
   const plan = st ? pullPlanLine(st) : null;
   const t = st ? tonightOf(snap.days, st, pullNightOf(Date.now())) : null;
   const tonight = t ? { r: t.r, rAt: t.rAt, today: t.today } : null;
-  const w = pullPauseWords({ mode, quiet, open: prefs.open, plan, tonight });
+  const w = pullPauseWords({ mode, night, quiet, plan, tonight });
   /* the count after this put-down, for the thanks */
   const downs = useRef(0);
   /* the short wait runs from the moment this opens; the long one from when it first started, so leaving does not start it again */
@@ -113,7 +120,7 @@ export default function PullPause() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
   useClock(true);
-  const total = long ? prefs.lift * 60 : prefs.wait;
+  const total = long ? prefs.lift * 60 : wait;
   /* a short wait that has sat over in the background for a while starts again on return: the wait is for this moment */
   const live = useRef({ from, total, long });
   live.current = { from, total, long };
@@ -149,7 +156,7 @@ export default function PullPause() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const home = () => {
-    say(pullPauseWords({ mode, quiet, open: prefs.open, plan, tonight, downs: downs.current }).thanks);
+    say(pullPauseWords({ mode, night, quiet, plan, tonight, downs: downs.current }).thanks);
     router.replace('/');
   };
   const down = () => {
@@ -190,7 +197,8 @@ export default function PullPause() {
       RELIGHT_CATCH + RELIGHT_MS + 500,
     );
   };
-  const open = async () => {
+  /** opens for `min` minutes of use, the person's own choice (kept, so it is the one lit next time) */
+  const open = async (min: PullOpen) => {
     if (leaving.current) return;
     /* opened by day and the night has started since: it is the night's wait now, from the start, before anything opens */
     if (mode === 'day' && st && pullInNight(Date.now(), pullNightStart(snap.days, st, saved, Date.now()))) {
@@ -199,15 +207,16 @@ export default function PullPause() {
       return;
     }
     leaving.current = true;
+    if (min !== saved.opened) setPullPrefs({ opened: min });
     /* the stake was said before the choice, so it counts; in the quiet after a slip it was not said, so it does not */
     if (long) {
       pullLongEnd();
-      await Pull?.openWeb(PULL_WEB_OPEN, !quiet);
-    } else if (Pull) await Pull.openFor(prefs.open, dark && !quiet);
+      await Pull?.openWeb(min, dark && !quiet);
+    } else if (Pull) await Pull.openFor((list?.id as PullListId | undefined) ?? null, min, dark && !quiet);
     else {
       /* the night pack's wait (no Screen Time in this build): the action lets the apps through for the same minutes */
-      packOpenFor(prefs.open);
-      say('It opens for ' + prefs.open + ' minutes. Go back to it.');
+      packOpenFor(min);
+      say('It opens for ' + min + ' minutes. Go back to it.');
     }
     close();
   };
@@ -243,11 +252,42 @@ export default function PullPause() {
         ) : null}
       </Middle>
       <Dock>
-        {w.stake ? <T style={[s.stake, { color: soft }]}>{w.stake}</T> : null}
-        <Button label={w.down} onPress={down} kind="warm" />
-        <View style={s.c}>
-          <Link label={w.open} onPress={open} hidden={!over} color={ink} />
+        {/* once the wait is over: how long it opens, three answers low, above the way out (held in place until then, so nothing
+            moves when they come) */}
+        <View
+          style={[s.opens, { opacity: over ? 1 : 0 }]}
+          pointerEvents={over ? 'auto' : 'none'}
+          accessibilityElementsHidden={!over}
+          importantForAccessibility={over ? 'auto' : 'no-hide-descendants'}>
+          {w.stake ? <T style={[s.stake, { color: soft }]}>{w.stake}</T> : null}
+          <T v="small" style={{ color: soft, textAlign: 'center' }}>
+            {w.open}
+          </T>
+          <View style={s.row}>
+            {PULL_OPEN.map((m) => {
+              const lit = m === prefs.opened;
+              return (
+                <Pressable
+                  key={m}
+                  accessibilityRole="button"
+                  accessibilityLabel={w.open + ' ' + m + ' minutes'}
+                  onPress={() => {
+                    buzz('tap');
+                    void open(m);
+                  }}
+                  /* the last choice is ringed, never filled: the one filled button here is Put it down */
+                  style={({ pressed }) => [
+                    s.tile,
+                    { backgroundColor: dark ? 'rgba(255,255,255,0.12)' : c.surface, borderColor: lit ? c.sun : 'transparent', opacity: pressed ? 0.75 : 1 },
+                  ]}>
+                  <Text style={[s.tileN, { color: ink }]}>{m}</Text>
+                  <Text style={[s.tileU, { color: soft }]}>minutes</Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
+        <Button label={w.down} onPress={down} kind="warm" />
       </Dock>
     </SceneFrame>
   );
@@ -257,5 +297,10 @@ const s = StyleSheet.create({
   c: { alignItems: 'center', gap: 8 },
   note: { marginTop: 16, alignSelf: 'stretch', alignItems: 'center' },
   stake: { textAlign: 'center', marginBottom: 4 },
+  opens: { gap: 8, marginBottom: 4 },
+  row: { flexDirection: 'row', gap: 10 },
+  tile: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 20, minHeight: 72, borderWidth: 2 },
+  tileN: { fontFamily: font.displayBold, fontSize: 28, lineHeight: 32, fontVariant: ['tabular-nums'] },
+  tileU: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
   left: { fontFamily: font.display, fontSize: 38, lineHeight: 44, marginTop: 8, fontVariant: ['tabular-nums'] },
 });

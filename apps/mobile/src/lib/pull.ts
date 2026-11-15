@@ -29,8 +29,12 @@ import {
   type Days,
   type PullBridge,
   type PullNights,
+  type PullList,
+  type PullListId,
   type PullPrefs,
   type Settings,
+  pullListNew,
+  pullShown,
 } from '@daybook/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { requireOptionalNativeModule } from 'expo';
@@ -55,19 +59,20 @@ export interface PullModule {
   confirm(): void;
   /** Good night: the same write with the night starting now; whether adult sites wait now */
   armNow(bridge: string): Promise<boolean>;
-  /** Apple's app list; how many apps and kinds are picked, or null when it was closed. `laterAt` (core pullLooseAt): a pick that
-      leaves an app out keeps it in until then; null when it all works now */
-  pick(laterAt: number | null): Promise<number | null>;
-  /** how many are picked now */
-  picked(): Promise<number>;
-  /** ms when a smaller pick starts, or null when none waits */
-  pickWaits(): number | null;
+  /** Apple's app list for one list; how many apps and kinds are picked, or null when it was closed. `laterAt` (core
+      pullLooseAt): a pick that leaves an app out keeps it in until then; null when it all works now. `fresh`: a new list, empty. */
+  pick(list: PullListId, laterAt: number | null, fresh: boolean): Promise<number | null>;
+  /** how many a list has picked now */
+  picked(list: PullListId): Promise<number>;
+  /** ms when a list's smaller pick starts, or null when none waits */
+  pickWaits(list: PullListId): number | null;
   /** hands the extensions what they need (core pullBridge, as JSON) and sets the watching to match */
   write(bridge: string): Promise<void>;
   /** Lift every wait now: nothing held until `until` ms (core pullLiftUntil) */
   lift(until: number): Promise<void>;
-  /** after the short wait: the apps open for this many minutes of use, then the wait is back; `through` in the night (counted) */
-  openFor(minutes: number, through: boolean): Promise<void>;
+  /** after a list's wait: that list (null: every list) opens for this many minutes of use, then its wait is back; `through` in
+      the night (counted) */
+  openFor(list: PullListId | null, minutes: number, through: boolean): Promise<void>;
   /** after the long wait: adult sites open for this many minutes, then the filter is back; the night counts as gone through */
   openWeb(minutes: number, count: boolean): Promise<void>;
   /** tonight counts as a night the person went through */
@@ -78,8 +83,9 @@ export interface PullModule {
   stop(): Promise<void>;
   /** when the night's notes were ignored (core pullDrift), or null */
   ignoredAt(): number | null;
-  /** when a pause's button asked for Daybook (in the last two minutes), and whether it was over a site in the night; taken once */
-  takeWant(): { at: number; long: boolean } | null;
+  /** when a pause's button asked for Daybook (in the last two minutes), whether it was over an adult site, and which list asked
+      ('' when it cannot be told); taken once */
+  takeWant(): { at: number; long: boolean; list?: string } | null;
   /** the times the person put it down (the shield's Close and the wait screen's Put it down), on this phone only */
   downs(): number;
   /** Put it down on the wait screen: one more (at most one in core PULL_COUNT_GAP minutes); the count after it */
@@ -92,7 +98,7 @@ interface PullNative extends PullModule {
 const native = Platform.OS === 'ios' ? requireOptionalNativeModule<PullNative>('DaybookPull') : null;
 const real: PullModule | null = native?.on ? native : null;
 const preview = (Platform.OS === 'ios' && __DEV__) || process.env.EXPO_PUBLIC_PULL_PREVIEW === '1';
-let fakeCount = 0;
+const fakeCount: Partial<Record<PullListId, number>> = {};
 let fakeDowns = 0;
 /* EXPO_PUBLIC_PULL_TROUBLE=ask, retry or pick shows that failure (core pullTrouble), to look at those screens; the fix clears it */
 let fakeTrouble = process.env.EXPO_PUBLIC_PULL_TROUBLE ?? '';
@@ -103,15 +109,19 @@ const fake: PullModule = {
     return true;
   },
   status: async () => (fakeTrouble === 'ask' ? 'notDetermined' : 'approved'),
-  health: () => ({ failed: fakeTrouble === 'retry' ? ['pull.night.a'] : [], decodeFail: fakeTrouble === 'pick', apps: fakeCount }),
+  health: () => ({
+    failed: fakeTrouble === 'retry' ? ['pull.night.a'] : [],
+    decodeFail: fakeTrouble === 'pick',
+    apps: Math.max(0, ...Object.values(fakeCount)),
+  }),
   retry: async () => void (fakeTrouble = ''),
   confirm: () => undefined,
   armNow: async () => true,
-  pick: async () => {
+  pick: async (list) => {
     if (fakeTrouble === 'pick') fakeTrouble = '';
-    return (fakeCount = 2);
+    return (fakeCount[list] = list === 'a' ? 4 : 2);
   },
-  picked: async () => fakeCount,
+  picked: async (list) => fakeCount[list] ?? 0,
   pickWaits: () => null,
   write: async () => undefined,
   lift: async () => undefined,
@@ -119,7 +129,9 @@ const fake: PullModule = {
   openWeb: async () => undefined,
   through: () => undefined,
   nights: () => ({}),
-  stop: async () => void (fakeCount = 0),
+  stop: async () => {
+    for (const k of Object.keys(fakeCount)) delete fakeCount[k as PullListId];
+  },
   ignoredAt: () => null,
   takeWant: () => null,
   downs: () => fakeDowns,
@@ -185,20 +197,69 @@ export const usePullPrefs = () =>
 export async function pullStart(): Promise<'on' | 'denied' | 'closed'> {
   if (!Pull) return 'closed';
   if (!(await Pull.authorize().catch(() => false))) return 'denied';
-  const n = await Pull.pick(null).catch(() => null);
+  /* the first list: the one that is there (list one, from before or from setup) */
+  const first = prefs.lists[0]?.id ?? 'a';
+  const n = await Pull.pick(first, null, false).catch(() => null);
   if (!n) return 'closed';
   setPullPrefs({ on: true, asked: 'picked', lost: undefined });
+  readPicked(first);
   if (real) await allowReminders().catch(() => false);
   readHealth(await Pull.status().catch(() => 'approved' as const));
   return 'on';
 }
 /** what the flame says when Screen Time said no */
 export const PULL_DENIED = 'Screen Time said no, so nothing changed. Try again whenever you want, and choose Continue when it asks.';
-/** Change the apps: a pick that leaves an app out, outside the morning, keeps it in until 6 AM. When it waits, the ms it starts. */
-export async function pullPick(): Promise<number | null> {
+/** Change the apps of a list: a pick that leaves an app out, outside the morning, keeps it in until 6 AM. When it waits, the ms it
+    starts. */
+export async function pullPick(list: PullListId): Promise<number | null> {
   if (!Pull) return null;
-  await Pull.pick(pullLooseAt(Date.now())).catch(() => null);
-  return Pull.pickWaits();
+  await Pull.pick(list, pullLooseAt(Date.now()), false).catch(() => null);
+  readPicked(list);
+  return Pull.pickWaits(list);
+}
+/** Add a list: Apple's list for a new, empty one, then the list itself (stricter, so it works now). The new list, or null when
+    nothing was picked or there are already three. */
+export async function pullAddList(): Promise<PullList | null> {
+  const l = Pull ? pullListNew(prefs) : null;
+  if (!Pull || !l) return null;
+  const n = await Pull.pick(l.id, null, true).catch(() => null);
+  if (!n) return null;
+  pullSet({ lists: [...pullShown(prefs).lists, l] });
+  readPicked(l.id);
+  return l;
+}
+/** a change to one list (its wait or name), or its removal (null). A shorter wait or a removal waits for the morning (core
+    pullChange); the ms it starts when it waits. */
+export function pullListSet(id: PullListId, change: Partial<Omit<PullList, 'id'>> | null): number | null {
+  const shown = pullShown(prefs).lists;
+  const lists = change ? shown.map((l) => (l.id === id ? { ...l, ...change } : l)) : shown.filter((l) => l.id !== id);
+  if (!lists.length) return null;
+  return pullSet({ lists });
+}
+
+/* how many each list has picked, read from the phone when Settings shows them */
+let picked: Partial<Record<PullListId, number>> = {};
+function readPicked(id: PullListId) {
+  Pull?.picked(id)
+    .then((n) => {
+      if (picked[id] === n) return;
+      picked = { ...picked, [id]: n };
+      emit();
+    })
+    .catch(() => undefined);
+}
+/** how many apps, kinds and sites each list has picked (read fresh for the lists shown) */
+export function usePullPicked(ids: PullListId[]): Partial<Record<PullListId, number>> {
+  const key = ids.join(',');
+  useEffect(() => {
+    ids.forEach(readPicked);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return useSyncExternalStore(
+    sub,
+    () => picked,
+    () => picked,
+  );
 }
 /** turn it all off: nothing watched, nothing held. In the night, it counts as a night the person went through. Instant, always.
     `lost`: it was access taken back in the phone's Settings (More says so). */
@@ -242,7 +303,7 @@ export async function pullFix(fix: PullFix): Promise<'ok' | 'denied' | 'closed'>
     /* the schedules failed while it had no yes: set them again */
     await Pull.retry().catch(() => undefined);
   } else if (fix === 'pick') {
-    const n = await Pull.pick(pullLooseAt(Date.now())).catch(() => null);
+    const n = await Pull.pick(prefs.lists[0]?.id ?? 'a', pullLooseAt(Date.now()), false).catch(() => null);
     if (!n) return 'closed';
   } else await Pull.retry().catch(() => undefined);
   readHealth();
@@ -358,7 +419,11 @@ export function PullKeeper() {
       settle();
       /* the wait counts from the shield's tap; a fresh token each time, so a wait screen still open from before starts again */
       const want = mod.takeWant();
-      if (want) router.navigate({ pathname: '/pause', params: { t: String(want.at), ...(want.long ? { w: 'long' } : {}) } });
+      if (want)
+        router.navigate({
+          pathname: '/pause',
+          params: { t: String(want.at), ...(want.long ? { w: 'long' } : want.list ? { l: want.list } : {}) },
+        });
       if (!getPullPrefs().on) return readHealth();
       /* Apple's answer, once it has loaded. A plain no is access taken back in Settings: it is turned off here too, More says
          why, and in the night it counts as a night gone through (not in the quiet after a slip, where no stake is said). Not

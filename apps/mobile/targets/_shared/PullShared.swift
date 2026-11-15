@@ -14,8 +14,27 @@ import UserNotifications
 enum Pull {
   static let group = "group.com.jdsmith2004.daybook"
   static let bridgeKey = "pull.bridge"
+  /// the lists (core PULL_LIST_IDS): each its own apps, its own wait and its own ManagedSettingsStore, so opening one list after
+  /// its wait leaves the others waiting (the owner, November 15, 2026)
+  static let ids = ["a", "b", "c"]
+  /// a list's apps (Apple's opaque tokens)
+  static func selKey(_ id: String) -> String { "pull.selection." + id }
+  /// a smaller pick (fewer apps) for a list, held until the morning: loosen slowly. Its apps until then are both picks together.
+  static func selNextKey(_ id: String) -> String { "pull.selectionNext." + id }
+  static func selAtKey(_ id: String) -> String { "pull.selectionAt." + id }
+  /// ms when a list's apps were last picked: a list missing from the bridge is forgotten only once its pick is older than this
+  /// (a new list is picked a moment before the app writes it into the bridge)
+  static func pickedAtKey(_ id: String) -> String { "pull.pickedAt." + id }
+  /// the minutes a list is open after its wait: ms until it waits again, when that started, and the minutes chosen
+  static func openUntilKey(_ id: String) -> String { "pull.openUntil." + id }
+  static func openAtKey(_ id: String) -> String { "pull.openAt." + id }
+  static func openMinsKey(_ id: String) -> String { "pull.openMins." + id }
+  /// the list whose shield button asked for Daybook ("" for adult sites or none)
+  static let wantListKey = "pull.wantList"
+  /// set once the one pick from before the lists has moved to list a
+  static let migratedKey = "pull.lists"
+  /// before the lists: the one pick, and its open minutes (moved to list a by migrate)
   static let selectionKey = "pull.selection"
-  /// a smaller pick (fewer apps), held until the morning: loosen slowly. The apps in use until then are both lists together.
   static let selectionNextKey = "pull.selectionNext"
   static let selectionAtKey = "pull.selectionAt"
   /// ms when the night's notes were ignored (core pullDrift)
@@ -27,18 +46,18 @@ enum Pull {
   /// ms when the app last started each schedule, by its name. Apple counts use only from then, and a threshold can come early
   /// right after a start (iOS 17 to 26), so one that comes sooner than its minutes after this is ignored.
   static let startedKey = "pull.started"
-  /// ms when Open it for a few minutes started pull.open, and those minutes
+  /// before the lists: the one list's open minutes
   static let openAtKey = "pull.openAt"
   static let openMinsKey = "pull.openMins"
-  /// the holds (core PullHolds), ms until each ends: Lift every wait now, the minutes open after the short wait, the minutes adult
-  /// sites are open after the long wait
+  /// the holds (core PullHolds), ms until each ends: Lift every wait now (each list's minutes open are openUntilKey), the minutes
+  /// adult sites are open after the long wait
   static let liftKey = "pull.liftUntil"
   static let openKey = "pull.openUntil"
   static let webKey = "pull.webUntil"
   /// the nights, on this phone only (core pullNightHeld): night to 1 (the waits were on at its start), 2 (went through) or 3
   /// (held to the morning)
   static let nightsKey = "pull.nights"
-  /// a shield's button over a site in the night (the long wait, not the short one)
+  /// a shield's button over an adult site (the long wait, not the short one)
   static let wantLongKey = "pull.wantLong"
   /// the picked apps were there but could not be read back (an iOS update): ms when that was seen, 0 when they read fine
   static let decodeFailKey = "pull.decodeFail"
@@ -46,8 +65,8 @@ enum Pull {
   static let failedKey = "pull.failed"
   /// minutes the night's own callbacks read ahead by (core PULL_GRACE): one a few seconds early still finds its night
   static let grace: Double = 2
-  /// pull.open lasts this long (the app's openSchedule)
-  static let openSpan: Double = 20 * 60_000
+  /// pull.open.<list> lasts the minutes chosen plus this, and at least Apple's shortest schedule (the app's openSchedule)
+  static func openSpan(_ mins: Double) -> Double { max(20, mins + 5) * 60_000 }
   /// the times the person put it down (the shield's Close, the wait screen's Put it down), and ms of the last one counted
   static let downsKey = "pull.downs"
   static let downAtKey = "pull.downAt"
@@ -55,7 +74,11 @@ enum Pull {
   static let downGap: Double = 10
   /// the night ends at 6 AM (core PULL_NIGHT_END)
   static let nightEnd = 6 * 60
+  /// the adult filter (before the lists it held the apps' shield too: migrate clears that)
   static let store = ManagedSettingsStore(named: ManagedSettingsStore.Name("daybook.pull"))
+  /// each list's shield
+  static let stores: [String: ManagedSettingsStore] = Dictionary(
+    uniqueKeysWithValues: ids.map { ($0, ManagedSettingsStore(named: ManagedSettingsStore.Name("daybook.pull." + $0))) })
 
   static var defaults: UserDefaults? { UserDefaults(suiteName: group) }
   static var nowMs: Double { Date().timeIntervalSince1970 * 1000 }
@@ -72,13 +95,42 @@ enum Pull {
     return (try? JSONSerialization.jsonObject(with: d)) as? [String: Any]
   }
 
-  static func selection() -> FamilyActivitySelection? {
-    let s: FamilyActivitySelection? = decode(selectionKey)
-    /* there, but unreadable: said in More and on Today, never "On" over nothing */
-    let there = defaults?.data(forKey: selectionKey) != nil
-    let failed = there && s == nil
+  /// the one pick from before the lists becomes list a, and the old store keeps only the adult filter. Once; safe to run twice.
+  static func migrate() {
+    guard let d = defaults, !d.bool(forKey: migratedKey) else { return }
+    for (old, new) in [(selectionKey, selKey("a")), (selectionNextKey, selNextKey("a"))] {
+      if let v = d.data(forKey: old), d.data(forKey: new) == nil { d.set(v, forKey: new) }
+      d.removeObject(forKey: old)
+    }
+    let at = d.double(forKey: selectionAtKey)
+    if at > 0 { d.set(at, forKey: selAtKey("a")) }
+    for k in [selectionAtKey, openKey, openAtKey, openMinsKey] { d.removeObject(forKey: k) }
+    clearShield(store)
+    d.set(true, forKey: migratedKey)
+  }
+
+  /// a list's apps, or nil (none picked, or unreadable)
+  static func selection(_ id: String) -> FamilyActivitySelection? {
+    migrate()
+    return decode(selKey(id))
+  }
+
+  /// every list's apps together: the minutes of use for the long-use note and the night's notes
+  static func union() -> FamilyActivitySelection {
+    var all = FamilyActivitySelection()
+    for id in ids {
+      guard let s = selection(id) else { continue }
+      all.applicationTokens.formUnion(s.applicationTokens)
+      all.categoryTokens.formUnion(s.categoryTokens)
+      all.webDomainTokens.formUnion(s.webDomainTokens)
+    }
+    return all
+  }
+
+  /// picked apps there but unreadable (an iOS update): said in More and on Today, never "On" over nothing
+  static func readFail() {
+    let failed = ids.contains { defaults?.data(forKey: selKey($0)) != nil && selection($0) == nil }
     if failed != ((defaults?.double(forKey: decodeFailKey) ?? 0) > 0) { defaults?.set(failed ? nowMs : 0.0, forKey: decodeFailKey) }
-    return s
   }
 
   static func decode(_ key: String) -> FamilyActivitySelection? {
@@ -86,10 +138,33 @@ enum Pull {
     return try? JSONDecoder().decode(FamilyActivitySelection.self, from: d)
   }
 
-  /// a site held by the adult filter, not one the person picked as a feed (a picked one gets the short wait like any app)
-  static func filtered(_ t: WebDomainToken?) -> Bool {
-    guard let t = t else { return true }
-    return !(selection()?.webDomainTokens.contains(t) ?? false)
+  /// the list an app, a kind of app or a site was picked in (the first, when it is in more than one), or nil
+  static func listOf(app t: ApplicationToken?) -> String? {
+    guard let t = t else { return nil }
+    return ids.first { selection($0)?.applicationTokens.contains(t) ?? false }
+  }
+  static func listOf(category t: ActivityCategoryToken?) -> String? {
+    guard let t = t else { return nil }
+    return ids.first { selection($0)?.categoryTokens.contains(t) ?? false }
+  }
+  static func listOf(web t: WebDomainToken?) -> String? {
+    guard let t = t else { return nil }
+    return ids.first { selection($0)?.webDomainTokens.contains(t) ?? false }
+  }
+
+  /// a site held by the adult filter, not one the person picked in a list (a picked one gets its list's wait like any app)
+  static func filtered(_ t: WebDomainToken?) -> Bool { listOf(web: t) == nil }
+
+  /// the lists in the choices as they stand: id and seconds of wait (0 is No wait)
+  static func lists(_ p: [String: Any]) -> [(id: String, wait: Int)] {
+    /* a bridge from before the lists (the app updated, not opened since): its one pick is list a, with its wait */
+    guard let ls = p["lists"] as? [[String: Any]] else {
+      return p["feeds"] == nil ? [] : [("a", (p["feeds"] as? Bool) == true ? ((p["wait"] as? Int) ?? 10) : 0)]
+    }
+    return ls.compactMap { l in
+      guard let id = l["id"] as? String, ids.contains(id) else { return nil }
+      return (id, (l["wait"] as? Int) ?? 0)
+    }
   }
 
   static func count(_ s: FamilyActivitySelection) -> Int {
@@ -170,32 +245,38 @@ enum Pull {
     return f > nightEnd ? (m >= f || m < nightEnd) : (m >= f && m < nightEnd)
   }
 
-  /// core pullGuard, the same rule: the picked apps behind the short wait, adult sites behind Apple's filter in the night.
-  /// `boundary`: one of the night's own callbacks (a start, an end, the heartbeat, the morning check), read `grace` minutes ahead,
-  /// so a callback that comes a few seconds early still sets (or lifts) the filter it was set for.
-  static func wanted(_ b: [String: Any], boundary: Bool = false) -> (apps: Bool, web: Bool) {
+  /// core pullGuard, the same rule: each list's apps behind its wait (unless opened after it), adult sites behind Apple's filter,
+  /// all day
+  static func wanted(_ b: [String: Any]) -> (apps: [String: Bool], web: Bool) {
     let p = prefs(b)
-    guard (p["on"] as? Bool) == true else { return (false, false) }
+    guard (p["on"] as? Bool) == true else { return ([:], false) }
     let now = nowMs
     let d = defaults
     /* Lift every wait ends at a night's start or end, where Apple's callback can come a few seconds early: a minute's grace */
     let free = now >= (d?.double(forKey: liftKey) ?? 0) - 60_000
-    let apps = (p["feeds"] as? Bool) == true && free && now >= (d?.double(forKey: openKey) ?? 0)
-    let clock = boundary ? Date().addingTimeInterval(grace * 60) : Date()
-    let web =
-      (p["adult"] as? Bool) == true && (b["adult"] as? Bool) == true && free && now >= (d?.double(forKey: webKey) ?? 0) && inNight(b, at: clock)
+    var apps: [String: Bool] = [:]
+    for l in lists(p) { apps[l.id] = l.wait > 0 && free && now >= (d?.double(forKey: openUntilKey(l.id)) ?? 0) }
+    let web = (p["adult"] as? Bool) == true && (b["adult"] as? Bool) == true && free && now >= (d?.double(forKey: webKey) ?? 0)
     return (apps, web)
   }
 
-  /// sets Apple's shield and adult filter to what is wanted now, and marks the night as one the waits were on. Every monitor
-  /// callback and every write from the app runs this, so a missed callback is caught up by the next one, or by the next open.
+  /// sets each list's shield and the adult filter to what is wanted now, and marks the night as one the waits were on. Every
+  /// monitor callback and every write from the app runs this, so a missed callback is caught up by the next one, or by the next
+  /// open. `boundary`: one of the night's own callbacks, read `grace` minutes ahead, so a start a few seconds early still marks
+  /// the night it was set for.
   static func guardNow(_ b: [String: Any]? = Pull.bridge(), boundary: Bool = false) {
     guard let b = b else { return }
-    let w = wanted(b, boundary: boundary)
-    if w.apps, let s = selection() { shield(s) } else { clearShield() }
+    let w = wanted(b)
+    for id in ids {
+      guard let st = stores[id] else { continue }
+      if w.apps[id] == true, let s = selection(id) { shield(st, s) } else { clearShield(st) }
+    }
     store.webContent.blockedByFilter = w.web ? .auto([], except: []) : nil
+    readFail()
     let p = prefs(b)
-    let on = (p["on"] as? Bool) == true && ((p["feeds"] as? Bool) == true || ((p["adult"] as? Bool) == true && (b["adult"] as? Bool) == true))
+    let on =
+      (p["on"] as? Bool) == true
+      && (lists(p).contains { $0.wait > 0 } || ((p["adult"] as? Bool) == true && (b["adult"] as? Bool) == true))
     let clock = boundary ? Date().addingTimeInterval(grace * 60) : Date()
     if on && inNight(b, at: clock) { markNight(1, night: nightOf(clock)) }
   }
@@ -268,7 +349,7 @@ enum Pull {
   /// posts one of the bridge's notes, once per `once` key (a night or a day). Only the screen to open travels with it: no id, so
   /// nothing about it is ever counted. It waits (up to 2 seconds) for Apple to take the note, since the extension can be put away
   /// the moment it returns; a note Apple refused is not marked, so the next threshold can try again.
-  static func post(_ b: [String: Any], kind: String, once: String) {
+  static func post(_ b: [String: Any], kind: String, once: String, list: String? = nil) {
     guard let notes = b["notes"] as? [String: Any], let n = notes[kind] as? [String: Any] else { return }
     if !mark(kind, once: once) { return }
     let c = UNMutableNotificationContent()
@@ -277,7 +358,11 @@ enum Pull {
     let d = downs
     if d > 0, let w = n["bDowns"] as? String { c.body = fill(w, d) } else { c.body = (n["b"] as? String) ?? "" }
     c.sound = .default
-    if let url = n["url"] as? String { c.userInfo = ["url": url] }
+    if var url = n["url"] as? String {
+      /* the list that asked, so the wait screen runs its wait */
+      if let l = list { url += (url.contains("?") ? "&" : "?") + "l=" + l }
+      c.userInfo = ["url": url]
+    }
     let r = UNNotificationRequest(identifier: "daybook.pull." + kind + "." + once, content: c, trigger: nil)
     let done = DispatchSemaphore(value: 0)
     UNUserNotificationCenter.current().add(r) { err in
@@ -307,16 +392,23 @@ enum Pull {
     s.replacingOccurrences(of: "{n}", with: n == 1 ? "once" : "\(n) times").replacingOccurrences(of: "{next}", with: String(n + 1))
   }
 
-  static func shield(_ s: FamilyActivitySelection) {
-    store.shield.applications = s.applicationTokens.isEmpty ? nil : s.applicationTokens
-    store.shield.applicationCategories = s.categoryTokens.isEmpty ? nil : .specific(s.categoryTokens)
-    store.shield.webDomains = s.webDomainTokens.isEmpty ? nil : s.webDomainTokens
+  static func shield(_ st: ManagedSettingsStore, _ s: FamilyActivitySelection) {
+    st.shield.applications = s.applicationTokens.isEmpty ? nil : s.applicationTokens
+    st.shield.applicationCategories = s.categoryTokens.isEmpty ? nil : .specific(s.categoryTokens)
+    st.shield.webDomains = s.webDomainTokens.isEmpty ? nil : s.webDomainTokens
   }
 
-  static func clearShield() {
-    store.shield.applications = nil
-    store.shield.applicationCategories = nil
-    store.shield.webDomains = nil
+  static func clearShield(_ st: ManagedSettingsStore) {
+    st.shield.applications = nil
+    st.shield.applicationCategories = nil
+    st.shield.webDomains = nil
+  }
+
+  /// whether two picks share an app, a kind or a site: opening one after its wait opens the other too, or the shared app would
+  /// stay behind the other list's shield
+  static func overlaps(_ a: FamilyActivitySelection, _ b: FamilyActivitySelection) -> Bool {
+    !a.applicationTokens.isDisjoint(with: b.applicationTokens) || !a.categoryTokens.isDisjoint(with: b.categoryTokens)
+      || !a.webDomainTokens.isDisjoint(with: b.webDomainTokens)
   }
 
   /// ms when the app last started this schedule, or 0

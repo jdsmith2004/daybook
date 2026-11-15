@@ -43,7 +43,8 @@ import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
 import { Link } from '@/components/choices';
-import { SHORT } from '@/components/fit';
+import { FitArt, SHORT } from '@/components/fit';
+import { FlameMedallion } from '@/components/flame-medallion';
 import { LessonFinish } from '@/components/lesson-finish';
 import { OwnChip, OwnField, useOwn } from '@/components/own';
 import { usePatternCards } from '@/components/pattern-cards';
@@ -119,9 +120,12 @@ export default function Review() {
     goal && !goal.k ? [goal.t] : [],
   );
   if (!st || !S) return null;
+  const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
 
   /* the week's graphs: the Pattern cards that have something this week */
-  const graphs = ORDER.map((id) => cards.find((x) => x.id === id && !x.ghost && !x.bare)).filter((x) => !!x).slice(0, MAX_GRAPHS);
+  const graphs = ORDER.map((id) => cards.find((x) => x.id === id && !x.ghost && !x.bare))
+    .filter((x) => !!x)
+    .slice(0, MAX_GRAPHS);
   const pages: Page[] = ['intro', ...graphs.map((g) => 'g:' + g!.id)];
   if (S.last) pages.push('last');
   pages.push('pick', 'set');
@@ -212,6 +216,11 @@ export default function Review() {
           Your week
         </Text>
         <View style={s.zone}>
+          <FitArt>
+            <Appear delay={150} by={10}>
+              <FlameMedallion level={level} size={SHORT ? 130 : 170} />
+            </Appear>
+          </FitArt>
           <DaysRow days={S.days} />
           <View style={s.nums}>
             {nums.map(([v, l, col], j) => (
@@ -233,7 +242,7 @@ export default function Review() {
         <Dock>
           {/* the two halves, so the person knows what is coming and how long */}
           <View style={s.map} accessible accessibilityLabel={'First, ' + (graphs.length + 1) + ' pages on your week. Then one goal for next week.'}>
-            <MapStep icon="chart" text={graphs.length ? 'Your graphs for the week' : 'Your week'} on />
+            <MapStep icon="chart" text={graphs.length ? 'Your graphs' : 'Your week'} on />
             <Icon name="next" size={14} color={c.muted} />
             <MapStep icon="flag" text="One goal for next week" />
           </View>
@@ -250,7 +259,7 @@ export default function Review() {
       <>
         {eyebrow('Your graphs · ' + (k + 1) + ' of ' + graphs.length)}
         <View style={s.cardZone}>
-          <PatternCard d={card} H={Math.max(SHORT ? 300 : 360, win.height - (SHORT ? 330 : 380))} />
+          <PatternCard d={card} H={Math.max(SHORT ? 300 : 360, win.height - (SHORT ? 300 : 340))} />
         </View>
         <Dock>
           <Appear delay={500} by={6}>
@@ -328,20 +337,24 @@ export default function Review() {
         <T tone="muted" style={[s.c, s.lead]}>
           Just one. One goal gets kept far more often than three.
         </T>
+        <FitArt>
+          <FlameMedallion level={level} size={SHORT ? 96 : 130} />
+        </FitArt>
         <Dock>
           <View style={{ alignSelf: 'stretch', gap: 10 }}>
             {options.map((o) => (
-              <GoalCard
-                key={o.id}
-                o={o}
-                on={!!goal?.k && goal.k === o.g.k}
-                onPress={() => setGoal(goal?.k === o.g.k ? null : sunGoalOf(o.g.k!, st, o.g.n))}
-              />
+              <GoalCard key={o.id} o={o} on={!!goal?.k && goal.k === o.g.k} onPress={() => setGoal(goal?.k === o.g.k ? null : sunGoalOf(o.g.k!, st, o.g.n))} />
             ))}
           </View>
           <ChipWrap last={1}>
             {ownGoals.map((t) => (
-              <AnswerChip key={t} label={t} tone="sun" on={!!goal && !goal.k && goal.t === t} onPress={() => setGoal(goal && !goal.k && goal.t === t ? null : sunOwnGoal(t))} />
+              <AnswerChip
+                key={t}
+                label={t}
+                tone="sun"
+                on={!!goal && !goal.k && goal.t === t}
+                onPress={() => setGoal(goal && !goal.k && goal.t === t ? null : sunOwnGoal(t))}
+              />
             ))}
             <OwnChip onPress={() => setOwnOpen(true)} />
           </ChipWrap>
@@ -371,17 +384,24 @@ export default function Review() {
             </View>
             <Step label="One more" sign="+" off={gn >= 7} onPress={() => setGoal(sunGoalOf(goal.k!, st, gn + 1))} />
           </View>
-        ) : null}
+        ) : (
+          <FitArt>
+            <FlameMedallion level={level} size={SHORT ? 110 : 150} />
+          </FitArt>
+        )}
+        {kind ? <GoalDots key={gn} n={gn} done={0} /> : null}
         <Dock>
           {/* what happens, said plainly: every row is a thing that will really change */}
           <View style={{ alignSelf: 'stretch' }}>
             <Happens
               icon="sun"
-              title="On Today, under your count"
-              text={kind ? '0 of ' + gn + ' ' + kind.unit + ' this week, filling in as you go' : 'In Pattern, Days, all week. Next Sunday asks how it went.'}
+              title="On Today, from Monday"
+              text={
+                kind ? '0 of ' + gn + ' ' + kind.unit + ' this week, filling in as you go' : 'Your goal, under your next step. Next Sunday asks how it went.'
+              }
             />
             {goal.k ? <Happens icon="check" title="What counts it" text={SUN_HOW[goal.k].count} /> : null}
-            {plan ? <Happens icon="compass" title="Your plan, on Today and in SOS" text={storyIfLine(plan)} /> : null}
+            {plan ? <Happens icon="compass" title="Your plan, in Pattern all week" text={storyIfLine(plan)} /> : null}
             {remindLine && remindersOffered ? (
               <Happens
                 icon="timer"

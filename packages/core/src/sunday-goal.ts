@@ -84,15 +84,25 @@ function seen(w: SunWeek): Seen[] {
     out.push({
       id: 'late',
       k: 'phone',
-      why: (w.lateSlips === w.slipped ? (w.slipped === 1 ? 'Your slip' : 'All ' + w.slipped + ' of your slips') : w.lateSlips + ' of your ' + w.slipped + ' slips') + ' came after 9 PM.',
+      why:
+        (w.lateSlips === w.slipped
+          ? w.slipped === 1
+            ? 'Your slip'
+            : 'All ' + w.slipped + ' of your slips'
+          : w.lateSlips + ' of your ' + w.slipped + ' slips') + ' came after 9 PM.',
     });
   else if (w.lateUrges >= 3) out.push({ id: 'late', k: 'phone', why: n(w.lateUrges, 'urge') + ' came after 9 PM. Late nights are your hard hours.' });
   if (w.screensLate >= 2) out.push({ id: 'screens', k: 'phone', why: 'Your screens were on late ' + n(w.screensLate, 'night') + '.' });
   const sl = w.sleep.length >= 3 ? w.sleep.reduce((a, b) => a + b, 0) / w.sleep.length : null;
-  if (sl != null && sl < 6.5) out.push({ id: 'sleep', k: 'sleep', why: 'You slept about ' + Math.round(sl * 10) / 10 + ' hours a night. Tired nights are harder ones.' });
+  if (sl != null && sl < 6.5)
+    out.push({ id: 'sleep', k: 'sleep', why: 'You slept about ' + Math.round(sl * 10) / 10 + ' hours a night. Tired nights are harder ones.' });
   const lonely = trig('lonely');
   if (lonely.slipped || lonely.rode >= 2)
-    out.push({ id: 'lonely', k: 'reach', why: 'Feeling lonely came up ' + n(lonely.rode + lonely.slipped, 'time') + '. Reaching out is the answer to that one.' });
+    out.push({
+      id: 'lonely',
+      k: 'reach',
+      why: 'Feeling lonely came up ' + n(lonely.rode + lonely.slipped, 'time') + '. Reaching out is the answer to that one.',
+    });
   const tired = trig('tired');
   if (tired.slipped || tired.rode >= 2) out.push({ id: 'tired', k: 'sleep', why: 'Being tired set it off ' + n(tired.rode + tired.slipped, 'time') + '.' });
   const scroll = trig('scroll');
@@ -106,6 +116,7 @@ function seen(w: SunWeek): Seen[] {
     why: w.phone ? 'Your phone went down for the night ' + n(w.phone, 'time') + '. Less to fight in bed.' : 'The phone in bed is where most late urges start.',
   });
   out.push({ id: 'checkin', k: 'checkin', why: 'Each check-in is one more true day for next Sunday to show you.' });
+  out.push({ id: 'lesson', k: 'lesson', why: 'You read lessons on ' + n(w.lessons, 'day') + '. Keep the work going.' });
   return out;
 }
 
@@ -131,7 +142,10 @@ export function sunOptions(
   for (const s of seen(w)) {
     if (out.length >= 3) break;
     if (has(s.k)) continue;
-    const up = last && last.met && last.g.k === s.k && last.g.n ? Math.min(7, last.g.n + 1) : undefined;
+    /* never below what the week already did: one more than that, or one more than last week's goal when it was kept */
+    const did: Partial<Record<SunGoalKind, number>> = { lesson: w.lessons, checkin: w.checkins, phone: w.phone, reach: w.reach, sleep: w.sleep7 };
+    const base = Math.max(SUN_GOALS[s.k].n, (did[s.k] ?? 0) + 1, last && last.met && last.g.k === s.k && last.g.n ? last.g.n + 1 : 0);
+    const up = Math.min(7, base);
     out.push({ id: s.id, g: sunGoalOf(s.k, st, up), why: s.why, plan: sunPlanFor(s.k, st, checkinAt) });
   }
   return out;

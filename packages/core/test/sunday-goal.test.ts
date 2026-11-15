@@ -37,6 +37,14 @@ describe('the goal options', () => {
     expect(kept.find((x) => x.g.k === 'lesson')!.g.n).toBe(4);
   });
 
+  it('never asks for less than the week already did', () => {
+    const d: Days = {};
+    for (const k of ['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15'])
+      d[k] = { events: [], p: { w: [], wd: false, r: false, c: 0, m: false, tl: [], po: null, ls: ['l1'], lv: [], ov: {} } } as never;
+    const o = sunOptions(sunWeek(d, st, SUN, SUN), st).find((x) => x.g.k === 'lesson')!;
+    expect(o.g.n).toBe(5);
+  });
+
   it('a quiet week still has goals to pick', () => {
     expect(sunOptions(sunWeek({}, st, SUN, SUN), st).length).toBeGreaterThanOrEqual(2);
   });

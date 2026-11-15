@@ -840,7 +840,9 @@ export function LessonMapView({
           ? open(s.L)
             ? 'Up next'
             : 'Up next, opens with a free account'
-          : 'Opens after lesson ' + (no - 1);
+          : s.free
+            ? 'Open to read'
+            : 'Opens after lesson ' + (no - 1);
     return `Lesson ${no}: ${s.L.title}. ${st}.`;
   };
   return (
@@ -921,7 +923,7 @@ export function LessonMapView({
           t={toneOf(c, toneName(pick.u))}
           when={pick.state === 'done' ? (today.has(pick.L.id) ? 'today' : dates[pick.L.id] || '') : null}
           locked={!open(pick.L)}
-          ahead={pick.state === 'todo' ? nx && nx.L : null}
+          ahead={pick.state === 'todo' && !pick.free ? nx && nx.L : null}
           waiting={waiting}
           onStart={() => onStart(pick.L.id)}
           onNext={() => nx && onStart(nx.L.id)}

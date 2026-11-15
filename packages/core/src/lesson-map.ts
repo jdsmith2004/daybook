@@ -32,6 +32,8 @@ export interface MapStone {
   x: number;
   y: number;
   state: StoneState;
+  /** still ahead but open in full now: a God lesson walked past, waiting at the end of the path (lessons.ts lessonPathMine) */
+  free: boolean;
 }
 export interface MapLand {
   /** the step (its index in PATH_STEPS) and its place on the path */
@@ -88,6 +90,7 @@ export function lessonMap(walk: LessonWalk | Set<string>): LessonMap {
         x: base + (right ? 1 : -1) * SWAY[j % SWAY.length],
         y: top + HEAD + j * STEP,
         state: w.walked.has(L.id) ? 'done' : L === nx ? 'next' : 'todo',
+        free: w.passed.has(L.id) && !w.walked.has(L.id) && L !== nx,
       };
       if (s.state === 'next') next = s;
       return s;

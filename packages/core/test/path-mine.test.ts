@@ -137,6 +137,9 @@ describe('a history like the owner’s: many betas, the path reordered, a night 
     expect(tail.every((L) => w.passed.has(L.id))).toBe(true);
     tail.forEach((L) => expect(core.lessonGate(L, w)).toBe('open'));
     expect(w.passed.has(w.next!.id)).toBe(false);
+    /* the map says so: those stones are open, not waiting */
+    const stones = core.lessonMap(w).lands.flatMap((l) => l.stones);
+    expect(stones.filter((x) => x.free).map((x) => x.L.id)).toEqual(tail.map((L) => L.id));
   });
   it('the steps are cut by place, with the plan’s own sizes, so step 1 holds the first lessons walked', () => {
     for (const st of [night, faith]) {

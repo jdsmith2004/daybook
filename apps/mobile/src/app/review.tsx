@@ -1,18 +1,19 @@
-/* The Sunday review, rebuilt from its purpose (the owner, November 15, 2026: "clear feedback on what happened the previous
-   week. And then clear feedback on what goals I should have for the next week", "walk them through their graphs", and "if I
-   press late nights, what does that mean I'm gonna do?"). Two halves, and every page says what it is for:
+/* The Sunday review, rebuilt from its purpose. Its two jobs (the owner, November 15, 2026): help the person understand the week
+   they had, and get ready for the next one with a goal that changes them, "not on not watching porn but on changing your mindset
+   and doing things that will make you not want to watch porn more". Every page changes something real for next week.
 
-   1. Look back. The week in seven days and three numbers, then the person's own graphs for that week, one a page: the very
-      same cards as the Pattern page (components/pattern-cards.tsx, read for the seven days that end on this Sunday), each with
-      one line on what it means for next week. A card with nothing this week is left out. Then last week's goal, when there was one.
-   2. One goal. Two or three goals from the week (core sunday-goal.ts), each with why ("3 of your 4 slips came after 9 PM") and
-      the plan it comes with ("When it gets to 10:30 PM, I will put my phone in another room"). One only, on purpose, and the
-      page says so. Then the goal set: how many nights, and what happens, in plain rows: where it shows (Today, under the count),
-      what counts it, the plan on Today and in SOS, and the reminder it turns on.
-   Saving ends on the lesson finish, the app's best moment: the band, the flame gliding home, the points into the level line,
-   and the Sundays line to the next month of them, with the flame saying the plan. Worth 20 points once.
-   Every "Write my own" keeps the words for good (core saved-answers.ts, the owner: "If I write an option, it should persist").
-   ?s=<a Sunday> opens that week's review (to write it late, or change it). */
+   1. Look back. The week in seven days and three numbers, then up to three of the person's own graphs for that week: the very
+      same cards as the Pattern page (components/pattern-cards.tsx, read for the seven days that end on this Sunday). A card the
+      free side does not keep shows locked, with the tip ask, as on Pattern ("they need to donate for that"), and only one of
+      those. Then what the week says, in three plain lines (core sunSays), and last week's goal, when there was one.
+   2. One goal. Three goals that grow the person, from the week (core sunday-goal.ts): a lesson every day, the phone out of the
+      bedroom, sleep, real connection, moving, faith for the person it matters to, who they are becoming. Each says why and comes
+      with its plan; the rest are a tap away, and their own words are welcome. One only, on purpose, and the page says so. Then
+      the goal set: how many, and what happens, in plain rows: where it shows, what counts it, the plan, the reminder it turns on.
+   Saving ends on its own celebration (the owner: "it has to be a different animation"): dawn, the lesson finish's engine with
+   no band, the flame rising from below like a sun into a warm horizon, the goal's nights lighting in a row, the points into the
+   level line, and the Sundays line. Worth 20 points once.
+   Every "Write my own" keeps the words for good (core saved-answers.ts). ?s=<a Sunday> opens that week's review. */
 import {
   gameCompute,
   isSunday,
@@ -24,12 +25,14 @@ import {
   SUN_LAST,
   sunDue,
   sunGoalLine,
-  sunGoalOf,
   sunKey,
   sunList,
   sunOf,
+  sunGoalNamed,
+  sunMore,
   sunOptions,
   sunOwnGoal,
+  sunSays,
   sunRange,
   sunRemindLine,
   type SunGoal,
@@ -42,15 +45,16 @@ import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
-import { Link } from '@/components/choices';
 import { FitArt, SHORT } from '@/components/fit';
 import { FlameMedallion } from '@/components/flame-medallion';
 import { LessonFinish } from '@/components/lesson-finish';
 import { OwnChip, OwnField, useOwn } from '@/components/own';
-import { usePatternCards } from '@/components/pattern-cards';
+import { FREE_CARDS, usePatternCards } from '@/components/pattern-cards';
 import { PatternCard } from '@/components/pattern-deck';
 import { DaysRow, GoalDots, StoryBars } from '@/components/review-art';
 import { Dock, SceneFrame, Stage } from '@/components/scene';
+import { useLocked } from '@/components/support';
+import { useQuietAsks } from '@/lib/quiet-asks';
 import { Text } from '@/components/text';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -65,7 +69,7 @@ import { WORDS } from '@/lib/words';
 
 /* the graphs a week is walked through, in this order (the feelings cards stay on Pattern: the week rarely has them) */
 const ORDER = ['ride', 'nights', 'when', 'what', 'helps', 'held', 'learn', 'days', 'apart'];
-const MAX_GRAPHS = 5;
+const MAX_GRAPHS = 3;
 /* what each graph means for next week, in one line under it */
 const BRIDGE: Record<string, string> = {
   ride: 'Every urge ridden out is the skill growing. Your goal protects it.',
@@ -78,10 +82,10 @@ const BRIDGE: Record<string, string> = {
   days: 'Small things the day before change the hard days.',
   apart: 'The long view. One goal next week moves it.',
 };
-const SKY: Record<string, Sky> = { intro: 'violet', last: 'sun', pick: 'violet', set: 'sun' };
+const SKY: Record<string, Sky> = { intro: 'violet', says: 'sun', last: 'sun', pick: 'violet', set: 'sun' };
 const UNIT_ONE = { nights: 'night', days: 'day' } as const;
 
-type Page = string; // 'intro' | 'g:<card id>' | 'last' | 'pick' | 'set'
+type Page = string; // 'intro' | 'g:<card id>' | 'says' | 'last' | 'pick' | 'set'
 
 export default function Review() {
   const c = useTheme();
@@ -101,6 +105,9 @@ export default function Review() {
   const [goal, setGoal] = useState<SunGoal | null>(() => saved?.g || null);
   const [last, setLast] = useState<SunLast | undefined>(() => saved?.last);
   const [ownOpen, setOwnOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const isLocked = useLocked('stats');
+  const quiet = useQuietAsks();
   const [remind, setRemind] = useState(true);
   const [i, setI] = useState(0);
   const [dir, setDir] = useState<1 | -1>(1);
@@ -113,20 +120,27 @@ export default function Review() {
     [snap.days, st, sun, tk, health.nights],
   );
   const options = useMemo<SunOption[]>(() => (S && st ? sunOptions(S.w, st, S.last, prefs.checkinAt) : []), [S, st, prefs.checkinAt]);
+  const more = useMemo<SunOption[]>(() => (S && st ? sunMore(S.w, st, options, prefs.checkinAt) : []), [S, st, options, prefs.checkinAt]);
   /* the goals the person wrote before, kept for good, offered after Daybook's */
   const own = useOwn(
     'goal',
-    options.map((o) => o.g.t),
+    options.concat(more).map((o) => o.g.t),
     goal && !goal.k ? [goal.t] : [],
   );
   if (!st || !S) return null;
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
 
-  /* the week's graphs: the Pattern cards that have something this week */
-  const graphs = ORDER.map((id) => cards.find((x) => x.id === id && !x.ghost && !x.bare))
-    .filter((x) => !!x)
-    .slice(0, MAX_GRAPHS);
-  const pages: Page[] = ['intro', ...graphs.map((g) => 'g:' + g!.id)];
+  /* the week's graphs: the Pattern cards that have something this week, and at most one the free side keeps locked */
+  const shut = (id: string) => isLocked && !FREE_CARDS.includes(id);
+  const graphs: typeof cards = [];
+  for (const id of ORDER) {
+    const d = cards.find((x) => x.id === id && !x.ghost && !x.bare);
+    if (!d || graphs.length >= MAX_GRAPHS) continue;
+    if (shut(id) && graphs.some((g) => shut(g.id))) continue;
+    graphs.push(d);
+  }
+  const says = sunSays(S.w, S.when.hard.weekdays?.label || S.when.hard.weekends?.label || null);
+  const pages: Page[] = ['intro', ...graphs.map((g) => 'g:' + g.id), 'says'];
   if (S.last) pages.push('last');
   pages.push('pick', 'set');
   const page = pages[Math.min(i, pages.length - 1)];
@@ -135,12 +149,14 @@ export default function Review() {
     buzz('tap');
     setDir(to > i ? 1 : -1);
     setOwnOpen(false);
+    setMoreOpen(false);
     setI(Math.max(0, Math.min(pages.length - 1, to)));
   };
   const next = () => go(i + 1);
-  const opt = goal?.k ? options.find((o) => o.g.k === goal.k) : null;
-  /* the plan that comes with the goal: the option's, or for a goal the log counts but no option offered, its own */
-  const plan = goal?.k ? opt?.plan || null : null;
+  const all = options.concat(more);
+  const same = (o: SunOption, g: SunGoal) => (g.k ? o.g.k === g.k : o.g.t === g.t);
+  /* the plan that comes with the goal (one in the person's own words has none) */
+  const plan = goal ? all.find((o) => same(o, goal))?.plan || null : null;
   const remindLine = goal?.k ? sunRemindLine(goal.k, st, prefs.checkinAt) : null;
   const remindKey = goal?.k ? SUN_HOW[goal.k].remind : null;
   const remindOn = !!remindKey && !!prefs[remindKey];
@@ -169,7 +185,7 @@ export default function Review() {
     setDone(true);
   };
 
-  /* the finish: the lesson finish, with the week's words, and the Sundays line to the next four */
+  /* the finish: dawn, its own celebration on the lesson finish's engine, the goal's nights lighting, and the Sundays line to the next four */
   if (done) {
     const n = sunList(snap.reviews).length;
     const to = Math.ceil(Math.max(1, n) / 4) * 4;
@@ -182,7 +198,13 @@ export default function Review() {
           gain={gain}
           again={!!saved}
           stats={{ cards: 0, combo: 0, secs: 0 }}
-          keep={plan ? storyIfLine(plan) : goal ? 'I will be on Today all week, counting it with you.' : 'A week looked back on, honestly. See you on Today.'}
+          keep={
+            plan
+              ? storyIfLine(plan)
+              : goal
+                ? 'It waits on Today all week. I will be right there with you.'
+                : 'A week looked back on, honestly. See you on Today.'
+          }
           next={null}
           onNext={closeAll}
           onDone={closeAll}
@@ -190,6 +212,8 @@ export default function Review() {
           line={{ label: n === 1 ? '1 Sunday' : n + ' Sundays', right: to === 4 ? 'a month of them' : to + ' Sundays', from: (n - 1) / to, to: n / to }}
           button="Done"
           feedback={false}
+          look="dawn"
+          marks={goal?.n || 0}
         />
       </View>
     );
@@ -253,13 +277,13 @@ export default function Review() {
   } else if (page.startsWith('g:')) {
     /* ---------- one of the week's graphs, as Pattern shows it ---------- */
     const id = page.slice(2);
-    const card = graphs.find((g) => g!.id === id)!;
-    const k = graphs.findIndex((g) => g!.id === id);
+    const card = graphs.find((g) => g.id === id)!;
+    const k = graphs.findIndex((g) => g.id === id);
     body = (
       <>
         {eyebrow('Your graphs · ' + (k + 1) + ' of ' + graphs.length)}
         <View style={s.cardZone}>
-          <PatternCard d={card} H={Math.max(SHORT ? 300 : 360, win.height - (SHORT ? 300 : 340))} />
+          <PatternCard d={card} shut={shut(id)} quiet={quiet} H={Math.max(SHORT ? 300 : 360, win.height - (SHORT ? 300 : 340))} />
         </View>
         <Dock>
           <Appear delay={500} by={6}>
@@ -268,6 +292,32 @@ export default function Review() {
               <T style={{ flex: 1, fontFamily: font.bodySemi }}>{BRIDGE[id] || 'This is yours, from your own log.'}</T>
             </View>
           </Appear>
+          <Button label="Next" onPress={next} />
+        </Dock>
+      </>
+    );
+  } else if (page === 'says') {
+    /* ---------- what the week says, in three plain lines ---------- */
+    body = (
+      <>
+        {eyebrow('Your week, in plain words')}
+        <T v="title" style={s.c} accessibilityRole="header">
+          What your week says
+        </T>
+        <View style={s.zone}>
+          <FitArt>
+            <FlameMedallion level={level} size={SHORT ? 110 : 150} />
+          </FitArt>
+        </View>
+        <Dock>
+          <View style={{ alignSelf: 'stretch', gap: 14 }}>
+            {says.map((x, j) => (
+              <Appear key={x.t} delay={250 + j * 350} by={8} style={s.say}>
+                <Icon name={x.ic} size={24} color={c.accentText} />
+                <T style={{ flex: 1, fontFamily: font.bodySemi }}>{x.t}</T>
+              </Appear>
+            ))}
+          </View>
           <Button label="Next" onPress={next} />
         </Dock>
       </>
@@ -311,13 +361,14 @@ export default function Review() {
     );
   } else if (page === 'pick') {
     /* ---------- one goal: why, and the plan it comes with ---------- */
-    const ownGoals = own.choices.filter((t) => !options.some((o) => o.g.t === t));
+    const ownGoals = own.choices.filter((t) => !all.some((o) => o.g.t === t));
+    const picked = goal ? more.find((o) => same(o, goal)) : null;
     body = ownOpen ? (
       <>
         {eyebrow('Your own goal')}
         <OwnField
           kind="goal"
-          builtIn={options.map((o) => o.g.t)}
+          builtIn={all.map((o) => o.g.t)}
           placeholder="Like: a walk after dinner"
           max={80}
           onSave={(t) => {
@@ -337,16 +388,35 @@ export default function Review() {
         <T tone="muted" style={[s.c, s.lead]}>
           Just one. One goal gets kept far more often than three.
         </T>
-        <FitArt>
-          <FlameMedallion level={level} size={SHORT ? 96 : 130} />
-        </FitArt>
+        {moreOpen || goal ? null : (
+          <FitArt>
+            <FlameMedallion level={level} size={SHORT ? 80 : 110} />
+          </FitArt>
+        )}
         <Dock>
           <View style={{ alignSelf: 'stretch', gap: 10 }}>
-            {options.map((o) => (
-              <GoalCard key={o.id} o={o} on={!!goal?.k && goal.k === o.g.k} onPress={() => setGoal(goal?.k === o.g.k ? null : sunGoalOf(o.g.k!, st, o.g.n))} />
-            ))}
+            {options.map((o) => {
+              const on = !!goal && same(o, goal);
+              return <GoalCard key={o.id} o={o} on={on} onPress={() => setGoal(on ? null : o.g)} />;
+            })}
           </View>
+          {moreOpen ? (
+            <>
+              <ChipWrap>
+                {more.map((o) => {
+                  const on = !!goal && same(o, goal);
+                  return <AnswerChip key={o.id} label={o.g.t} tone="sun" on={on} onPress={() => setGoal(on ? null : o.g)} />;
+                })}
+              </ChipWrap>
+              {picked ? (
+                <T v="small" tone="muted" style={s.c}>
+                  {picked.why}
+                </T>
+              ) : null}
+            </>
+          ) : null}
           <ChipWrap last={1}>
+            {moreOpen ? null : <AnswerChip label="More goals" tone="sun" on={false} onPress={() => setMoreOpen(true)} />}
             {ownGoals.map((t) => (
               <AnswerChip
                 key={t}
@@ -366,7 +436,7 @@ export default function Review() {
     /* ---------- the goal set: how many, and what happens ---------- */
     const kind = goal.k ? SUN_GOALS[goal.k] : null;
     const gn = goal.n || 1;
-    const name = goal.k ? SUN_GOALS[goal.k].t(st) : goal.t;
+    const name = goal.k ? (goal.k === 'lesson' && gn === 7 ? 'A lesson every day' : SUN_GOALS[goal.k].t(st)) : goal.t;
     body = (
       <>
         {eyebrow('Your goal for next week')}
@@ -375,14 +445,14 @@ export default function Review() {
         </T>
         {kind && goal.k ? (
           <View style={s.stepRow} accessibilityLabel={gn + ' ' + kind.unit}>
-            <Step label="One less" sign="−" off={gn <= 1} onPress={() => setGoal(sunGoalOf(goal.k!, st, gn - 1))} />
+            <Step label="One less" sign="−" off={gn <= 1} onPress={() => setGoal(sunGoalNamed(goal.k!, st, gn - 1))} />
             <View style={{ alignItems: 'center', minWidth: 96 }}>
               <Text style={[s.stepN, { color: c.ink }]}>{gn}</Text>
               <T v="small" tone="muted">
                 {gn === 1 ? UNIT_ONE[kind.unit] : kind.unit}
               </T>
             </View>
-            <Step label="One more" sign="+" off={gn >= 7} onPress={() => setGoal(sunGoalOf(goal.k!, st, gn + 1))} />
+            <Step label="One more" sign="+" off={gn >= 7} onPress={() => setGoal(sunGoalNamed(goal.k!, st, gn + 1))} />
           </View>
         ) : (
           <FitArt>
@@ -396,11 +466,13 @@ export default function Review() {
             <Happens
               icon="sun"
               title="On Today, from Monday"
-              text={
-                kind ? '0 of ' + gn + ' ' + kind.unit + ' this week, filling in as you go' : 'Your goal, under your next step. Next Sunday asks how it went.'
-              }
+              text={kind ? '0 of ' + gn + ' ' + kind.unit + ' this week, filling in as you go' : '“This week: ' + goal.t + '”, under your next step'}
             />
-            {goal.k ? <Happens icon="check" title="What counts it" text={SUN_HOW[goal.k].count} /> : null}
+            {goal.k ? (
+              <Happens icon="check" title="What counts it" text={SUN_HOW[goal.k].count} />
+            ) : (
+              <Happens icon="check" title="Next Sunday" text="Daybook asks how it went." />
+            )}
             {plan ? <Happens icon="compass" title="Your plan, in Pattern all week" text={storyIfLine(plan)} /> : null}
             {remindLine && remindersOffered ? (
               <Happens
@@ -460,8 +532,9 @@ function GoalCard({ o, on, onPress }: { o: SunOption; on: boolean; onPress: () =
         <Text style={[s.goalT, { color: ink }]}>{o.g.t}</Text>
         <Icon name={on ? 'check' : 'flag'} size={18} color={on ? t.ink : c.sunText} />
       </View>
-      <Text style={[s.goalWhy, { color: on ? t.ink : c.muted }]}>{o.why}</Text>
-      <Text style={[s.goalPlan, { color: ink }]}>{'Your plan: ' + storyIfLine(o.plan)}</Text>
+      <Text style={[s.goalPlan, { color: on ? t.ink : c.muted }]}>{storyIfLine(o.plan)}</Text>
+      {/* why, from the week, once it is the one picked */}
+      {on ? <Text style={[s.goalWhy, { color: t.ink }]}>{o.why}</Text> : null}
     </Pressable>
   );
 }
@@ -538,10 +611,11 @@ const s = StyleSheet.create({
   goalHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   goalT: { flex: 1, fontFamily: font.display, fontSize: 17, lineHeight: 22 },
   goalWhy: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
-  goalPlan: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
+  goalPlan: { fontFamily: font.body, fontSize: 15, lineHeight: 20 },
   stepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, flexGrow: 1 },
   stepN: { fontFamily: font.display, fontSize: 64, lineHeight: 72 },
   step: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   stepT: { fontFamily: font.bodyBold, fontSize: 22, lineHeight: 24 },
+  say: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch' },
   happen: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 8, borderBottomWidth: 1 },
 });

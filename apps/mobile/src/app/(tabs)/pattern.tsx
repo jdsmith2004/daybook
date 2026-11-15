@@ -18,7 +18,7 @@ import { Text } from '@/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Appear } from '@/components/appear';
-import { usePatternCards } from '@/components/pattern-cards';
+import { FREE_CARDS, usePatternCards } from '@/components/pattern-cards';
 import { Deck, type DeckHandle } from '@/components/pattern-deck';
 import { Segments } from '@/components/form';
 import { Screen } from '@/components/screen';
@@ -106,8 +106,6 @@ const RANGES: [PatRange, string][] = [
   ['30', 'Month'],
   ['all', 'All'],
 ];
-/* the cards the free side keeps (core PAT_FREE: felt, apart): they show a person changing. The rest explain why, and are what a tip or Daybook Pattern opens */
-const FREE_CARDS = ['felt', 'ride', 'apart', 'named'];
 function PatternsPane({ onGo }: { onGo: (y: number) => void }) {
   const c = useTheme();
   const { tk } = useStore();

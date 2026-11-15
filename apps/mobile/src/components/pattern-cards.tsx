@@ -70,6 +70,10 @@ const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 /* how tall the days of the week stand under the hours */
 const WEEK_ROW = 64;
 
+/* the cards the free side keeps (core PAT_FREE: felt, apart): they show a person changing. The rest explain why, and are what a
+   tip or Daybook Pattern opens, on Pattern and in the Sunday review alike (the owner, November 15, 2026: "they need to donate for that") */
+export const FREE_CARDS = ['felt', 'ride', 'apart', 'named'];
+
 export function usePatternCards(range: PatRange, end?: DayKey) {
   const { snap, tk: today, now, say } = useStore();
   const tk = end && end < today ? end : today;

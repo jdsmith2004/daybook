@@ -88,6 +88,10 @@ export interface LessonFinishProps {
   button?: string;
   /** the quiet "Feedback on this lesson" link, on for a lesson */
   feedback?: boolean;
+  /** the opener: the band (a lesson), or dawn (the Sunday review): no band, the flame rises from below like a sun into a warm
+      horizon, and a row of marks (the goal's nights or days) lights one by one under the title */
+  look?: 'band' | 'dawn';
+  marks?: number;
 }
 
 /* when each beat starts, in ms */
@@ -115,7 +119,22 @@ type Line = { x0: number; y0: number; x1: number; y1: number };
 /* name: the step the lesson is in, the milestone the line runs to; null when the line is the whole path */
 type Lessons = { name: string | null; from: number; to: number };
 
-export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone, head, line, button = 'Continue', feedback = true }: LessonFinishProps) {
+export function LessonFinish({
+  lessonId,
+  title,
+  n,
+  gain,
+  again,
+  keep,
+  onDone,
+  head,
+  line,
+  button = 'Continue',
+  feedback = true,
+  look: kind = 'band',
+  marks = 0,
+}: LessonFinishProps) {
+  const dawn = kind === 'dawn';
   const done = head ?? 'Lesson ' + n + ' done';
   const { snap, tk, now } = useStore();
   const st = snap.settings;
@@ -176,6 +195,8 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone, he
   const lessonsFill = useSharedValue(still || !lessons ? (lessons?.to ?? 0) : lessons.from);
   const say = useSharedValue(still ? 1 : 0);
   const btn = useSharedValue(still ? 1 : 0);
+  /* dawn: the marks lit so far, one by one */
+  const lit = useSharedValue(still ? marks : 0);
   /* the flame acting, as Duolingo's owl does on its finish (the owner, November 14, 2026: "the owl has like clever movements"):
      its eyes (0 open, 1 shut), a slow sway on its feet once it is home, and a nod toward the level line as the points land */
   const look = useSharedValue(0);
@@ -234,6 +255,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone, he
     setCount(m.shown);
     setTyped(keep.length);
     slit.value = 1;
+    lit.value = marks;
     look.value = 0;
     lean.value = 0;
     nod.value = withTiming(0, q);
@@ -252,7 +274,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone, he
     play('chime');
     buzz('lit');
     slit.value = withTiming(1, { duration: T.slitMs, easing: OUT });
-    enter.value = withDelay(T.slideAt, withTiming(1, { duration: T.inMs, easing: OUT }));
+    enter.value = withDelay(T.slideAt, withTiming(1, { duration: dawn ? 1000 : T.inMs, easing: OUT }));
     drift.value = withTiming(1, { duration: T.settle + T.settleMs, easing: Easing.linear });
     shout.value = withDelay(T.slideAt + 260, withTiming(1, { duration: 420, easing: OUT }));
     glint.value = withDelay(T.slideAt + 300, withTiming(1, { duration: 1700, easing: Easing.linear }));
@@ -309,6 +331,10 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone, he
     /* 2. one continuous move: the band fades as the flame travels to its place */
     open.value = withDelay(T.settle, withTiming(0, { duration: T.settleMs, easing: BOTH }));
     rest.value = withDelay(T.rest, withTiming(1, { duration: 480, easing: OUT }));
+    if (dawn && marks) {
+      lit.value = withDelay(T.rest + 200, withTiming(marks, { duration: marks * 160, easing: Easing.linear }));
+      for (let k = 1; k <= marks; k++) at(T.rest + 200 + k * 160, () => buzz('tick'));
+    }
     lessonsV.value = withDelay(T.rest + 120, withTiming(1, { duration: 480, easing: OUT }));
     let next = T.rest + 450;
     if (flying) {
@@ -369,15 +395,26 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone, he
 
   /* the flame is drawn at its opener size and scaled down to rest, never up past 1: iOS scales the drawn picture, so scaling
      up made it soft (the owner, November 13, 2026: "super low resolution") */
-  const flameIn = useAnimatedStyle(() => ({
-    opacity: still || spot ? Math.min(1, enter.value * 1.4) : 0,
-    transform: [
-      { translateX: -win.width * 0.75 * (1 - enter.value) },
-      { translateY: dy * open.value },
-      /* the camera pushes in slowly while the opener holds, as Duolingo's does */
-      { scale: ((1 + (K - 1) * open.value) / K) * (0.92 + 0.08 * enter.value) * (1 + 0.1 * drift.value * open.value) },
-    ],
-  }));
+  const flameIn = useAnimatedStyle(() =>
+    dawn
+      ? {
+          /* dawn: up from below the horizon, slowly, then home */
+          opacity: still || spot ? Math.min(1, enter.value * 1.6) : 0,
+          transform: [
+            { translateY: win.height * 0.42 * (1 - enter.value) + dy * open.value },
+            { scale: ((1 + (K - 1) * open.value) / K) * (1 + 0.06 * drift.value * open.value) },
+          ],
+        }
+      : {
+          opacity: still || spot ? Math.min(1, enter.value * 1.4) : 0,
+          transform: [
+            { translateX: -win.width * 0.75 * (1 - enter.value) },
+            { translateY: dy * open.value },
+            /* the camera pushes in slowly while the opener holds, as Duolingo's does */
+            { scale: ((1 + (K - 1) * open.value) / K) * (0.92 + 0.08 * enter.value) * (1 + 0.1 * drift.value * open.value) },
+          ],
+        },
+  );
   /* the band opens from a line across the middle (the owner, November 14, 2026: "the lightning starts in the middle and opens
      vertically"), drifts a little while it holds, and as the flame leaves it, it rises away and fades */
   const bandIn = useAnimatedStyle(() => ({
@@ -424,7 +461,8 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone, he
   return (
     <View ref={root} style={s.page} onLayout={measure}>
       <StatusBar style="light" />
-      {!still ? (
+      {dawn ? <Dawn v={enter} open={open} w={win.width} h={win.height} /> : null}
+      {!still && !dawn ? (
         <Reanimated.View pointerEvents="none" style={[s.band, { width: win.width * 1.6, height: bandH, left: -win.width * 0.3, top: bandTop }, bandIn]} />
       ) : null}
       <Pressable style={StyleSheet.absoluteFill} accessible={false} onPress={() => beat === 1 && all()} />
@@ -448,6 +486,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone, he
           <Text style={s.sub} numberOfLines={1}>
             {title}
           </Text>
+          {dawn && marks ? <Marks v={lit} n={marks} /> : null}
         </Reanimated.View>
       </View>
 
@@ -531,14 +570,14 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone, he
         </Reanimated.View>
       </View>
 
-      {!still ? (
+      {!still && !dawn ? (
         <Reanimated.View pointerEvents="none" style={[s.shout, { top: shoutY }, shoutIn]}>
           <Text style={s.shoutText} numberOfLines={1}>
             {done}
           </Text>
         </Reanimated.View>
       ) : null}
-      {!still ? <Glints v={glint} open={open} x={win.width / 2} y={shoutY + 26} /> : null}
+      {!still && !dawn ? <Glints v={glint} open={open} x={win.width / 2} y={shoutY + 26} /> : null}
     </View>
   );
 }
@@ -585,6 +624,43 @@ function Glint({ v, open, x, y, g, i }: { v: SharedValue<number>; open: SharedVa
 }
 
 /** the warm halo the resting flame stands in: a soft light that breathes slowly */
+/** dawn: a warm sky rising from the horizon as the flame comes up, settling to a low glow once it is home */
+function Dawn({ v, open, w, h }: { v: SharedValue<number>; open: SharedValue<number>; w: number; h: number }) {
+  const st = useAnimatedStyle(() => ({ opacity: v.value * (0.45 + 0.55 * open.value) }));
+  return (
+    <Reanimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, st]}>
+      <Svg width={w} height={h}>
+        <Defs>
+          <RadialGradient id="dawn" cx={w / 2} cy={h} r={h * 0.75} gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={ORANGE} stopOpacity="0.85" />
+            <Stop offset="0.45" stopColor="#C2417A" stopOpacity="0.45" />
+            <Stop offset="1" stopColor={NIGHT} stopOpacity="0" />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={w / 2} cy={h} r={h * 0.75} fill="url(#dawn)" />
+      </Svg>
+    </Reanimated.View>
+  );
+}
+
+/** dawn: the goal's nights or days, a row of open marks that come in one by one: the week ahead, to be filled */
+function Marks({ v, n }: { v: SharedValue<number>; n: number }) {
+  return (
+    <View style={s.marks} accessible accessibilityLabel={n + ' to come'}>
+      {Array.from({ length: n }, (_, i) => (
+        <Mark key={i} v={v} i={i} />
+      ))}
+    </View>
+  );
+}
+function Mark({ v, i }: { v: SharedValue<number>; i: number }) {
+  const st = useAnimatedStyle(() => {
+    const e = interpolate(v.value, [i, i + 1], [0, 1], 'clamp');
+    return { opacity: e, transform: [{ scale: 0.6 + 0.4 * e }] };
+  });
+  return <Reanimated.View style={[s.mark, st]} />;
+}
+
 function Halo({ v, size, still }: { v: SharedValue<number>; size: number; still: boolean }) {
   const breath = useSharedValue(0);
   useEffect(() => {
@@ -650,6 +726,8 @@ const s = StyleSheet.create({
   shoutText: { fontFamily: font.display, fontSize: 40, color: GOLD, textAlign: 'center' },
   title: { fontFamily: font.display, fontSize: 34, color: nightInk.ink, textAlign: 'center' },
   sub: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted, textAlign: 'center', marginTop: 2 },
+  marks: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 14 },
+  mark: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: GOLD, backgroundColor: 'rgba(255,210,90,0.18)' },
   dock: { paddingHorizontal: 16, gap: 18 },
   pts: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, alignSelf: 'center' },
   ptsNum: { fontFamily: font.display, fontSize: 40, color: GOLD },

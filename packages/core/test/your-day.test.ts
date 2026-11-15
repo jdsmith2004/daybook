@@ -7,7 +7,7 @@ import { checkinFormOf, offOnTime, openTile, phoneAway, saveCheckin, stopTiles }
 import { lessonStop, recordLesson } from '../src/lessons';
 import { moments } from '../src/moment';
 import { changeDay, withDay } from '../src/mutate';
-import type { Days } from '../src/types';
+import type { Days, Reviews } from '../src/types';
 /* the stops with a time of day; the any-time ones (calm move, reached out, the journal) have their own tests in routine-stops.test.ts */
 /* the rhythm's own stops; the morning (two-moments.test.ts) is left out here */
 const timed = (t: { k: string }) => !['calm', 'reach', 'journal', 'morning'].includes(t.k);
@@ -120,7 +120,16 @@ describe('the stops as tiles', () => {
 
 describe('the stop that is next, grown in place in Your day', () => {
   /* the calm-day card at the top of Today (moment.ts), which the grown stop must match */
-  const calm = (days: Days, account = true) => moments(days, st, {}, tk, at(9), { account }).find((m) => m.k === 'calm');
+  /* the morning told, so the lesson is the day's next step (in the morning hours an untold morning comes first, next-step.ts) */
+  const told = (days: Days): Days =>
+    withDay(
+      days,
+      tk,
+      changeDay(days[tk], tk, (x) => void (x.p = { ...(x.p || blankP()), ms: { at: at(7), set: at(7) } }), 1),
+    );
+  /* October 18 is a Sunday: with its review done, so the lesson is next (next-step.ts) */
+  const reviewed = { ['s' + tk]: { sun: {} } } as unknown as Reviews;
+  const calm = (days: Days, account = true) => moments(told(days), st, reviewed, tk, at(9), { account }).find((m) => m.k === 'calm');
   it('is the open stop, and opens the same thing as the card at the top of Today', () => {
     const t = openTile({}, st, tk, at(9))!;
     expect(t).toMatchObject({ k: 'lesson', cur: true, done: false, btn: 'Start', go: 'lesson', id: LESSONS[0].id });

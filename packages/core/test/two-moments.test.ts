@@ -20,6 +20,7 @@ import {
   nightPage,
   nightWaitLine,
   skyPhase,
+  morningKnownLine,
 } from '../src/two-moments';
 import type { Days } from '../src/types';
 
@@ -186,5 +187,15 @@ describe('the new setup starts fresh', () => {
     const s = obBegin({} as never, tk, 1);
     expect(s.routine.checkin).toBe(false);
     expect(s.dayFeel).toBe(false);
+  });
+});
+
+describe('last night already told: straight to tonight', () => {
+  it('says it with hope, no contractions, no blame', () => {
+    for (const n of ['free', 'slip'] as const) {
+      const w = morningKnownLine(n);
+      expect(w).not.toMatch(/n[’']t\b|[’'](re|ll|ve|m|d)\b/i);
+      expect(w).not.toMatch(/\b(fail|failed|bad|wrong|should|reset|lost|slip|slipped)\b/i);
+    }
   });
 });

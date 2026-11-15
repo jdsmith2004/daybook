@@ -35,6 +35,7 @@ import {
   morningPicksStart,
   morningReasons,
   morningReply,
+  morningKnownLine,
   morningWhenSet,
   heldByMorning,
   nightAtStart,
@@ -121,7 +122,9 @@ export default function Morning() {
      day"): first the time, starting on last night's, then what tonight is for, as many as are true, nothing picked to start */
   const [rs, setRs] = useState<string[]>(start.picks);
   const [nt, setNt] = useState<Clock>(start.nt);
-  const [part, setPart] = useState<'night' | 'when' | 'why'>('night');
+  /* last night already told (a slip logged that night, or answered earlier this morning): not asked again; it opens on tonight */
+  const known = start.n;
+  const [part, setPart] = useState<'night' | 'when' | 'why'>(known ? 'when' : 'night');
   const [writing, setWriting] = useState(false);
   const leaving = useRef(false);
   /* the morning is here: the night's Live Activity goes (opened from it, or from Today), and again once last night is told */
@@ -219,8 +222,9 @@ export default function Morning() {
   if (part === 'when') {
     const [h, m] = nt.split(':').map(Number);
     return (
-      <SceneFrame title={W.setup} sky="night" backdrop={dawn} onBack={() => setPart('night')} onClose={skip}>
-        <Stage key="when" dir={1}>
+      <SceneFrame title={known ? hello(now) : W.setup} sky="night" backdrop={dawn} onBack={known ? undefined : () => setPart('night')} onClose={skip}>
+        <Stage key="when" dir={known ? 0 : 1}>
+          {known ? <Text style={s.known}>{morningKnownLine(known)}</Text> : null}
           <T v="title" style={s.h} accessibilityRole="header">
             {W.when}
           </T>
@@ -441,6 +445,7 @@ const s = StyleSheet.create({
   pillT: { fontFamily: font.bodySemi, fontSize: 15, color: INK, opacity: 0.86 },
   told: { gap: 14 },
   reply: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 24, color: INK },
+  known: { alignSelf: 'stretch', fontFamily: font.bodySemi, fontSize: 17, lineHeight: 24, color: nightInk.ink, marginBottom: 8 },
   sub: { alignSelf: 'stretch', fontFamily: font.bodyMedium, fontSize: 17, lineHeight: 24, color: nightInk.ink, opacity: 0.86, marginTop: 6 },
   timeL: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22, color: nightInk.ink, opacity: 0.86 },
   time: { fontFamily: font.display, fontSize: 56, lineHeight: 64, color: nightInk.ink },

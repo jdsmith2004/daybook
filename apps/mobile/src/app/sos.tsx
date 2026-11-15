@@ -24,10 +24,7 @@ import {
   newUrge,
   rateUrTool,
   RIDE_MOVES,
-  rideHint,
-  rideHinted,
   rideNext,
-  rideSwiped,
   slipFeltLine,
   sosProof,
   urEntry,
@@ -188,17 +185,6 @@ export default function Sos() {
   const level = Math.max(1, g.level.n);
   const title = practice ? 'Practice' : 'SOS';
 
-  /* how to swipe: the first time a move after the sun is in view, for someone who has never swiped (in SOS or in setup's try), that
-     page lifts by itself to show the next one below. It plays once, ever (core rideHint), and only on that page; after that the
-     next page's edge is the only cue (the owner, November 14, 2026: "it should only do it once, and then we just assume they know") */
-  const [hintAt, setHintAt] = useState<number | null>(null);
-  const atNow = Math.max(0, seq.length - 1 - back);
-  const liveNow = front && !more && !sci;
-  useEffect(() => {
-    if (hintAt !== null || quick || atNow < 1 || !liveNow || !rideHint(sos.mem)) return;
-    setHintAt(atNow);
-    sos.setMem(rideHinted);
-  }, [hintAt, quick, atNow, liveNow, sos]);
   if (won) return <RodeOut won={won} night={night} level={level} />;
   if (practice && seq.length > practiceN) return <PracticeDone sky={sky} level={level} setup={sq === '1'} />;
   if (!ur || !seq.length)
@@ -359,21 +345,17 @@ export default function Sos() {
     lead.current = null;
     setSeq(seq.concat(nx));
   };
-  /* swiped up: the next move, and one more swipe learned (core UrMem.swiped) */
-  const swiped = Number(sos.mem.swiped) || 0;
-  /* landed on page i by a swipe: down to one before, or up to the next (one more swipe learned) */
+  /* landed on page i by a swipe: down to one before, or up to the next */
   const landed = (i: number) => {
     if (i < at) {
       buzz('tap');
       return setBack(n - 1 - i);
     }
-    if (swiped < 3) sos.setMem(rideSwiped);
     next(false);
   };
   /* the pages: every move shown so far, and the one waiting below */
   const pages = peek ? seq.concat(peek) : seq;
   const live = front && !more && !sci;
-  const hint = hintAt !== null && hintAt === at && !swiped;
   /* a ride move picked from More (It is written): it comes next, now */
   const jump = (mv: string) => {
     setMore(false);
@@ -427,7 +409,6 @@ export default function Sos() {
         <RidePager
           count={pages.length}
           at={at}
-          hint={hint}
           on={live}
           onLand={landed}
           onNear={setNear}
@@ -480,15 +461,13 @@ export default function Sos() {
               {moveName(near !== null && pages[near] && pages[near] !== 'end' ? pages[near] : id)}
             </Text>
             <View style={s.why}>
-              <Icon name={quick ? 'down' : hint ? 'up' : 'book'} size={quick ? 17 : 13} color={quick ? c.ink : c.muted} />
-              <Text style={[s.whyT, quick ? s.quickT : null, { color: quick ? c.ink : c.muted }]}>
-                {quick ? 'Now tap the arrow' : hint ? 'Swipe up for the next one' : 'Why it works'}
-              </Text>
+              <Icon name={quick ? 'down' : 'book'} size={quick ? 17 : 13} color={quick ? c.ink : c.muted} />
+              <Text style={[s.whyT, quick ? s.quickT : null, { color: quick ? c.ink : c.muted }]}>{quick ? 'Now tap the arrow' : 'Why it works'}</Text>
             </View>
           </Pressable>
           <View style={s.rail}>
             <Bare icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
-            <Bare icon="down" label="Next move" fill loud={hint || quick} onPress={() => next(false)} />
+            <Bare icon="down" label="Next move" fill loud={quick} onPress={() => next(false)} />
           </View>
         </View>
       </View>

@@ -45,3 +45,45 @@ export function accountWords(why: AcctWhy, locked: number, days = 7, canTip = tr
     ? { h: 'You are on your way. Keep learning.', p: open + plus }
     : { h: days < 14 ? 'A week in. Keep learning.' : 'Keep building on what you have.', p: open + plus };
 }
+
+/* The nudge (the owner, November 14, 2026: "if they don't sign up for an account the push to sign up should be more prominent like
+   put it on the top to the right of ideas and push it every once in a while"). The button beside Ideas is there every day without an
+   account; every few days, right after a good moment, it glows and the flame says one line under it. Never in the first days, never
+   on a day with a slip or the day after, never in the quiet hours after an SOS or a slip (the app passes those as `quiet`, from
+   support.ts tipQuiet), and never on a day the account card is already asking. Its X, or a tap on the button, waits ACCT_NUDGE_GAP days. */
+
+/** days between two nudges */
+export const ACCT_NUDGE_GAP = 3;
+/** days from the start before the first nudge */
+export const ACCT_NUDGE_FROM = 2;
+
+export type NudgeWhy = 'lesson' | 'rode' | 'week';
+
+/** whether the account button glows with a line today, and the good moment it follows: a lesson finished today, an urge ridden
+    out today, or a week mark (day 7, 14, ...) */
+export function accountNudge(days: Days, st: Settings, tk: DayKey, account: boolean, quiet: boolean): NudgeWhy | null {
+  if (account || quiet) return null;
+  const since = diffDays(tk, st.start);
+  if (since < ACCT_NUDGE_FROM) return null;
+  const last = isKey(st.acctNudge) ? (st.acctNudge as DayKey) : null;
+  if (last && diffDays(tk, last) < ACCT_NUDGE_GAP) return null;
+  if (slipNear(days, tk)) return null;
+  const d = days[tk];
+  if (d?.p?.ls?.length) return 'lesson';
+  if (d?.events?.some((e) => e.outcome === 'rode')) return 'rode';
+  if (since >= 7 && since % 7 === 0) return 'week';
+  return null;
+}
+
+/** the nudge was seen and closed, or its button tapped */
+export const accountNudged = (st: Settings, tk: DayKey, now = Date.now()): Change => ({
+  st: changeSettings(st, (s) => void (s.acctNudge = tk), now),
+});
+
+/** the flame's line under the button: what a free account opens, after what was just done. Sync and the safe copy need a tip
+    (supporter.ts), so the line sells the lessons, which a free account does open. */
+export function nudgeWords(why: NudgeWhy, locked: number): string {
+  const lead = why === 'lesson' ? 'Good lesson.' : why === 'rode' ? 'You rode that out.' : 'Another week of work.';
+  const more = locked > 0 ? ` A free account opens the other ${locked} lessons.` : ' A free account keeps your lessons going on any device.';
+  return lead + more;
+}

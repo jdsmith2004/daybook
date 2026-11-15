@@ -247,6 +247,8 @@ export interface Settings {
   gradAt?: DayKey | null;
   /** the last "Not now" on the account card (see accounts.ts) */
   acctNo?: DayKey | null;
+  /** the last day the account button's nudge was closed or tapped (see accounts.ts accountNudge) */
+  acctNudge?: DayKey | null;
   /** the first day the app marked the days it was opened (away.ts); the quiet-day rule counts from here. Set once. */
   awayFrom?: DayKey | null;
   /** the first day of the true record (truth.ts): from here a night counts as free only when the person said so. Set once on the

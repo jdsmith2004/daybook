@@ -1207,7 +1207,7 @@ const G10_STOLE: StoryPart = {
 };
 const G10_COMING: StoryPart = {
   h: 'Then God told him to go home, and Esau came to meet him with four hundred men.',
-  p: 'Jacob had to pass through his brother’s land to get home. When he heard Esau was coming with an army, he was **greatly afraid and distressed**.',
+  p: 'Going home meant facing his brother. When he heard Esau was coming with four hundred men, he was **greatly afraid and distressed**.',
   art: ['scene', { k: 'g10-four' }],
   dx: 'After twenty years, God told Jacob to return to the land of his fathers. Going home meant facing the brother he had wronged. He sent messengers ahead to Esau, and they came back with news: your brother is coming to meet you, and four hundred men with him. Jacob was **greatly afraid and distressed**, the story says. He split his family into two camps, so that if Esau attacked one, the other might escape. He had every reason to think his brother still wanted him dead.',
 };
@@ -1217,7 +1217,7 @@ const G10_ASK: StoryPart = {
   o: [
     ['That they will be angry', 'Jacob feared that too, with four hundred reasons. Watch what happened.'],
     ['That it will make things worse', 'That can happen, and some repairs are best left. Read on.'],
-    ['That they will see me differently', 'Many people fear that most. Look at what Esau saw.'],
+    ['That they will see me differently', 'Many people fear that most. Look at how Esau met him.'],
     ['I have not let myself think about it', 'That is honest. This lesson is a safe place to start.'],
   ],
 };
@@ -1232,23 +1232,23 @@ const G10_BOW: StoryPart = {
   h: 'In the morning, Jacob walked out ahead of his family to meet his brother.',
   p: 'He did not send someone else or hide in the second camp. He went first, and **bowed to the ground seven times** as he came near.',
   art: ['scene', { k: 'g10-bow' }],
-  dx: 'Jacob looked up and saw Esau coming, and the four hundred men with him. He arranged his family behind him. Then he did the hardest thing in the story. He did not stay at the back, safe, and let the gifts do the talking. He passed over before them all, and walked toward his brother alone, and **bowed to the ground seven times**, until he came near. Twenty years of running ended in a walk across open ground, toward the one person he had most avoided.',
+  dx: 'Jacob looked up and saw Esau coming, and the four hundred men with him. He arranged his family behind him. Then he did the hardest thing in the story. He did not stay at the back, safe, and let the gifts do the talking. He passed over before them all, and walked toward his brother alone, and **bowed to the ground seven times**, until he came near. The night before, alone by a river, he had wrestled until daybreak with a stranger and come away limping, saying he had seen God face to face. Now twenty years of running ended in a walk across open ground, toward the one person he had most avoided.',
 };
 const G10_RAN: StoryPart = {
   h: 'And Esau ran to meet him.',
-  p: 'He **embraced him, and fell on his neck, and kissed him**, the story says, **and they wept**. The army never moved.',
-  art: ['scene', { k: 'g10-embrace' }],
+  p: 'He **embraced him, and fell on his neck, and kissed him**, the story says, **and they wept**. The four hundred men stood by.',
+  art: ['scene', { k: 'g10-hug' }],
   dx: 'And Esau ran to meet him, and **embraced him, and fell on his neck, and kissed him: and they wept**. Of everything Jacob had feared, none of it came. Esau did not even want the gifts at first. I have enough, my brother, he said, keep what you have. Not every repair goes like this. Some people are not ready, and some never will be. But Jacob would never have known, and never have had his brother back, if he had stayed on the far side of the river.',
 };
 const G10_FACE: StoryPart = {
   h: 'Jacob said that seeing his brother’s face was like seeing the face of God.',
   p: '**As though I had seen the face of God**, he said. Then: take, I pray thee, my blessing. It is the same word as the blessing he had stolen. He was giving it back.',
   art: ['scene', { k: 'g10-face' }],
-  dx: 'Esau said he did not need the gifts. Jacob pressed him: no, I pray thee, receive my present, for I have seen thy face, **as though I had seen the face of God**, and thou wast pleased with me. Then he said, take, I pray thee, my blessing that is brought to thee. In Hebrew it is the same word, berakah, as the blessing Jacob had stolen twenty years before. Whatever else the gifts were, they were the stolen blessing, given back. And in his brother’s welcome, Jacob said, he had met God.',
+  dx: 'Esau said he did not need the gifts. Jacob pressed him: no, I pray thee, receive my present, for I have seen thy face, **as though I had seen the face of God**, and thou wast pleased with me. Then he said, take, I pray thee, my blessing that is brought to thee. In Hebrew it is the same word, berakah, as the blessing Jacob had stolen twenty years before. Whatever else the gifts were, they were the stolen blessing, given back. And his brother’s welcome was, Jacob said, like seeing the face of God.',
 };
 const G10_ALTAR: StoryPart = {
   long: 1,
-  h: 'Jesus told a man at the altar to go and make peace first.',
+  h: 'Jesus taught that a person at the altar should go and make peace first.',
   p: 'If you remember someone has something against you, **leave there thy gift before the altar**, and go. First be reconciled, then come and offer the gift.',
   art: ['scene', { k: 'g10-altar' }],
   fact: { s: 'Scripture · Matthew 5:23-24', i: [1] },
@@ -1266,16 +1266,16 @@ const G10_FEHR: StoryPart = {
   long: 1,
   n: '175',
   h: 'studies of how people forgive found a sincere apology among the strongest roads to it.',
-  p: 'Across more than 26,000 people, **an apology went with being forgiven** more than almost anything else researchers measured.',
+  p: 'Across more than 26,000 people, **an apology was one of the three strongest things** that went with being forgiven.',
   art: ['scene', { k: 'g10-sorry' }],
   fact: { s: 'Meta-analysis · 175 studies · Fehr, Gelfand & Nag, 2010', i: [3] },
-  dx: 'Three researchers gathered 175 studies, with more than 26,000 people, on what goes with forgiving someone who hurt you. They looked at twenty-two things, from how bad the harm was to how close the two people were. Among the strongest was a plain one: **an apology went with being forgiven**, more than almost anything else they measured. The studies show what goes together, not a promise, and some hurts take a long time. But a sincere sorry, asking nothing back, is one of the best things you can bring.',
+  dx: 'Three researchers gathered 175 studies, with more than 26,000 people, on what goes with forgiving someone who hurt you. They looked at twenty-two things, from how bad the harm was to how close the two people were. **An apology was one of the three strongest things** that went with being forgiven, beside the hurt person’s empathy and whether the harm was meant. The studies show what goes together, not a promise, and some hurts take a long time. But a sincere sorry, asking nothing back, is one of the best things you can bring.',
 };
 const G10_END: StoryPart = {
   h: 'So walk out ahead, and make one thing right.',
-  p: 'Not every repair is met with open arms. **Your part is to go**, with care: one person, one true sorry, nothing asked back. Leave out any repair that would hurt them.',
+  p: 'Not every repair is met with open arms. **Your part is to go**, with care: one person, one true sorry, nothing asked back. Leave out any repair that would hurt them or put you at risk, and with a spouse, go slowly, with help.',
   art: ['scene', { k: 'g10-walk' }],
-  dx: 'A habit like this leaves small harms behind it: a lie to cover it, time taken from someone, a promise broken. Telling God you are sorry is the first half. The other half is walking across the open ground. You do not have to fix everything, and you do not owe anyone every detail. Pick one person and one true thing. Say sorry plainly, and ask for nothing. Leave out any repair that would only hurt them, and with a spouse, go slowly, with a counselor or a faith leader to help. **Your part is to go.** How they meet you is theirs. Jacob found God in his brother’s face. You may find Him on that road too.',
+  dx: 'A habit like this leaves harms behind it: a lie to cover it, time taken from someone, a promise broken. Telling God you are sorry is the first half. The other half is walking across the open ground. You do not have to fix everything, and you do not owe anyone every detail. Pick one person and one true thing. Say sorry plainly, and ask for nothing. Leave out any repair that would only hurt them, and with a spouse, go slowly, with a counselor or a faith leader to help. **Your part is to go.** How they meet you is theirs. Jacob found God in his brother’s face. You may find Him on that road too.',
 };
 
 /* the plain voice: the hospitals that started saying sorry */
@@ -1287,7 +1287,7 @@ const G10P_SILENT: StoryPart = {
 };
 const G10P_TRIED: StoryPart = {
   h: 'In 2001, the University of Michigan’s hospitals tried the opposite.',
-  p: 'Led by a former trial lawyer, Richard Boothman, they began to **tell patients what happened**, say sorry when they were wrong, and offer fair payment, before anyone sued.',
+  p: 'Led by a former trial lawyer, Richard Boothman, they began to **tell patients what happened**, say sorry when they were wrong, and offer fair payment, before anyone sued. Many feared a flood of new claims.',
   art: ['scene', { k: 'g10-talk' }],
   fact: { s: 'Study · Kachalia and colleagues, 2010', i: [0] },
   dx: 'At the University of Michigan’s hospitals, a team led by Richard Boothman, who had spent years defending doctors in court, tried something many people thought was reckless. When something went wrong, they would look into it quickly and **tell patients what happened**. If the hospital was at fault, they would say so, apologize, and offer fair payment. If it was not, they would explain why, and stand by their doctors. Many feared that saying sorry would invite a flood of new claims.',
@@ -1304,20 +1304,21 @@ const G10P_GUESS: StoryPart = {
 };
 const G10P_FELL: StoryPart = {
   h: 'Lawsuits fell by more than half.',
-  p: 'From about **39 a year to about 17**. Claims were settled faster, and the cost of each lawsuit nearly halved. Saying sorry did not open a flood. It closed one.',
+  p: 'From about **39 a year to about 17**. Claims were settled in under a year instead of about sixteen months, and the average cost of a lawsuit fell by more than a third. Saying sorry did not open a flood. It closed one.',
   art: ['scene', { k: 'g10-fall' }],
   fact: { s: 'Study · Kachalia and colleagues, 2010', i: [0] },
-  dx: 'Researchers later compared the years before and after the change. Lawsuits fell **from about 39 a year to about 17**. Claims were resolved in about a year instead of well over one, and the average cost of a lawsuit nearly halved. The researchers were careful: claims were falling across the state too, and a study like this cannot prove the apologies caused it. But the fear, that honesty would bring ruin, did not come true. When people were told the truth and heard a real sorry, most of them did not want a fight.',
+  dx: 'Researchers later compared the years before and after the change. Lawsuits fell **from about 39 a year to about 17**. Claims were resolved in under a year instead of about sixteen months, and the average cost of a lawsuit fell by more than a third. The researchers were careful: claims were falling across the state too, and a study like this cannot prove the apologies caused it. But the fear, that honesty would bring ruin, did not come true. When people were told the truth and heard a real sorry, most of them did not want a fight.',
 };
 const G10P_GOD: StoryPart = {
-  h: 'Making peace with a person is part of making peace with God.',
+  h: 'The hospitals found that silence kept the hurt open.',
   p: 'For many believers, what stands between you and someone you hurt **stands between you and God too**. Telling God you are sorry is one half. The other half is the person.',
   art: ['scene', { k: 'g10-face' }],
   dx: 'The hospitals learned that silence kept the hurt alive, and a plain sorry let it close. Many faiths teach the same about God: what stands between you and a person you hurt **stands between you and God too**. Praying about it is the first half. The second half is walking toward the person, with care, and saying the true thing. It is not a punishment. It is how coming back gets finished.',
 };
 const G10P_END: StoryPart = {
   ...G10_END,
-  dx: 'A habit like this leaves small harms behind it: a lie to cover it, time taken from someone, a promise broken. Telling God you are sorry is the first half. The other half is the person. You do not have to fix everything, and you do not owe anyone every detail. Pick one person and one true thing. Say sorry plainly, and ask for nothing. Leave out any repair that would only hurt them, and with a spouse, go slowly, with a counselor or a faith leader to help. **Your part is to go.** How they meet you is theirs, and many people, like those patients, are relieved to hear the truth.',
+  h: 'So go first, and make one thing right.',
+  dx: 'A habit like this leaves harms behind it: a lie to cover it, time taken from someone, a promise broken. Telling God you are sorry is the first half. The other half is the person. You do not have to fix everything, and you do not owe anyone every detail. Pick one person and one true thing. Say sorry plainly, and ask for nothing. Leave out any repair that would only hurt them, and with a spouse, go slowly, with a counselor or a faith leader to help. **Your part is to go.** How they meet you is theirs, and many people, like those patients, are relieved to hear the truth.',
 };
 
 /* ---------- g11, Small and simple (step 11, Keep a daily practice) ---------- */
@@ -1327,7 +1328,7 @@ const G11_NAAMAN: StoryPart = {
   p: 'A young servant girl in his house, taken captive from Israel, said there was a prophet who could heal him. So **Naaman set out with horses and chariots** and gifts of silver and gold.',
   art: ['scene', { k: 'g11-general' }],
   fact: { s: 'Scripture · 2 Kings 5:1-14', i: [0] },
-  dx: 'Naaman was captain of the army of the king of Syria, a great man, honored, a mighty man of valor, the Bible says, and then four more words: but he was a leper. In his house was a young girl taken captive from Israel, who waited on his wife. She said: I wish my master were with the prophet in Samaria, for he would heal him. So **Naaman set out with horses and chariots**, ten talents of silver, six thousand pieces of gold and ten changes of clothes. He was ready for something great.',
+  dx: 'Naaman was captain of the army of the king of Syria, a great man, honored, a mighty man of valor, the Bible says, and then one more line: but he was a leper. In his house was a young girl taken captive from Israel, who waited on his wife. She said: I wish my master were with the prophet in Samaria, for he would heal him. So **Naaman set out with horses and chariots**, ten talents of silver, six thousand pieces of gold and ten changes of clothes. He was ready for something great.',
 };
 const G11_WASH: StoryPart = {
   h: 'Elisha did not even come out. He sent a message: wash in the Jordan seven times.',
@@ -1355,13 +1356,13 @@ const G11_SERVANTS: StoryPart = {
   h: 'His servants came to him with a question.',
   p: 'If the prophet had asked you **to do some great thing**, would you not have done it? How much more, when he only says: wash.',
   art: ['scene', { k: 'g11-servants' }],
-  dx: 'His servants came near and spoke to him, gently, calling him father. My father, they said, if the prophet had bid thee **to do some great thing**, wouldest thou not have done it? How much rather then, when he saith to thee, wash? It was a wise question. Naaman would have climbed a mountain or fought a battle. What he could not face was something so small it seemed beneath him. Many people are the same with change: ready for a great effort, too proud for a small daily one.',
+  dx: 'His servants came near and spoke to him, gently, calling him father. My father, they said, if the prophet had bid thee **to do some great thing**, wouldest thou not have done it? How much rather then, when he saith to thee, wash? It was a wise question. Naaman would have climbed a mountain or fought a battle. What he could not face was something so small it seemed beneath him. Many people are the same with change: ready for a great effort, slow to trust a small daily one.',
 };
 const G11_SEVEN: StoryPart = {
   h: 'So he went down and dipped himself seven times in the Jordan.',
-  p: 'Once, and nothing. Twice, and nothing. Seven times, as he had been told, and his skin **came again like the skin of a little child**.',
+  p: 'He went down and dipped, as he had been told: once, twice, all seven times. And his skin **came again like the skin of a little child**.',
   art: ['scene', { k: 'g11-river' }],
-  dx: 'Then went he down, and dipped himself seven times in Jordan, according to the saying of the man of God. Think of it the way he lived it. The first dip, nothing. The second, nothing. Somewhere around the fourth, he must have felt foolish, standing in a muddy river while his soldiers watched. He kept going. And on the seventh, his flesh **came again like the skin of a little child**. The healing did not come from any one dip. It came from doing the small thing all seven times.',
+  dx: 'Then went he down, and dipped himself seven times in Jordan, according to the saying of the man of God. Think of it the way he lived it. The first dip, nothing. The second, nothing. Somewhere around the fourth, he must have felt foolish, standing in a muddy river while his soldiers watched. He kept going. And on the seventh, his flesh **came again like the skin of a little child**. The healing came from God, and it came when he had done the small thing all seven times.',
 };
 const G11_ALMA: StoryPart = {
   long: 1,
@@ -1372,7 +1373,6 @@ const G11_ALMA: StoryPart = {
   dx: 'Alma, handing the sacred records to his son Helaman, said some would think it foolish to care so much about small things. But **by small and simple things are great things brought to pass**, he said, and by very small means the Lord does great things. Then he told of the Liahona, the brass ball with two spindles that guided Lehi’s family through the wilderness. It worked for them according to their faith in God, day by day. When they were slothful, and forgot to exercise their faith and diligence, its marvelous works ceased, and they did not move forward. A small thing, kept daily, was what kept them on the way.',
 };
 const G11_DANIEL: StoryPart = {
-  long: 1,
   h: 'Daniel prayed three times a day, “as he did aforetime.”',
   p: 'When the king made prayer a crime, Daniel went home, opened his window and knelt, **as he did aforetime**. He did not need a new plan for the crisis. The small habit was already there.',
   art: ['scene', { k: 'g11-window' }],
@@ -1436,7 +1436,7 @@ const G11P_SHARE: StoryPart = {
 };
 const G11P_GOD: StoryPart = {
   h: 'Big moments fade. Small daily things build.',
-  p: 'Many faiths are built on daily prayer, at set times, for this reason. **A few honest minutes, every day,** carry you further than one great night.',
+  p: 'Many faiths are built on daily prayer, at set times. **A few honest minutes, every day,** carry you further than one great night.',
   art: ['scene', { k: 'g11-window' }],
   dx: 'Many people wait for one great spiritual moment that ends the habit for good. Those moments come, and they fade by the next ordinary day. Many faiths are built instead on small daily prayer, at the same times, morning and evening, year after year. The trainees found the same shape in their work. **A few honest minutes, every day,** a short prayer at the start and an honest look back at the end, carry you further than one great night.',
 };
@@ -1457,23 +1457,23 @@ const G12_TOMBS: StoryPart = {
 };
 const G12_HEALED: StoryPart = {
   h: 'Jesus healed him, and the town came out to see.',
-  p: 'They found him **sitting, and clothed, and in his right mind**. The man they had chained was calm, sitting at Jesus’ feet.',
+  p: 'They found him **sitting, and clothed, and in his right mind**. The man they had chained was calm, sitting quietly with Jesus.',
   art: ['scene', { k: 'g12-sitting' }],
-  dx: 'Jesus spoke to what tormented him and set him free. The men who kept pigs nearby ran into the town and told everyone, and people came out to see. They found the man **sitting, and clothed, and in his right mind**. The one they had chained, who had cried in the hills for years, was sitting quietly. It frightened them more than he ever had. They asked Jesus to leave.',
+  dx: 'Jesus spoke to what tormented him and set him free. The men who kept pigs nearby ran into the town and told everyone, and people came out to see. They found the man **sitting, and clothed, and in his right mind**. The one they had chained, who had cried in the hills for years, was sitting quietly. A herd of pigs nearby had rushed down into the sea, and the town was shaken. The calm man frightened them more than the raving one ever had. They asked Jesus to leave. For most people, healing comes more slowly than it did for him, and often through other people: a friend, a counselor, a doctor. If you feel like the man in the hills, tell someone today.',
 };
 const G12_BEGGED: StoryPart = {
   h: 'As Jesus got into the boat, the man begged to come with Him.',
-  p: 'Of course he did. Everyone there knew who he had been. **Take me with you**, away from all of it, somewhere I can start over.',
+  p: 'He **begged to go with Him**. Maybe it was love. Maybe it was also the town, where everyone had seen him at his worst.',
   art: ['scene', { k: 'g12-boat' }],
-  dx: 'As Jesus stepped into the boat to leave, the man who had been healed prayed Him that he might be with Him. Of course he did. The town knew everything he had been. They had seen him at his worst. **Take me with you**, he was saying, away from these hills, somewhere no one knows my story. It is what most of us want after something like this: to bury that part of our lives and start over somewhere free of it.',
+  dx: 'As Jesus stepped into the boat to leave, the man who had been healed **begged to go with Him**. Mark does not say why. Surely he loved the One who had freed him. Perhaps it was also the town, which knew everything he had been, and had seen him at his worst. Away from these hills, somewhere no one knows the story: it is what most of us want after something like this: to bury that part of our lives and start over somewhere free of it.',
 };
 const G12_ASK: StoryPart = {
   k: 'ask',
   h: 'If this part of your life were healed, what would you want to do with it?',
   o: [
-    ['Bury it, and never speak of it', 'That is what the man wanted too. Look at Jesus’ answer.'],
+    ['Bury it, and never speak of it', 'Many people want that. Look at Jesus’ answer.'],
     ['Help someone, if I could do it safely', 'Hold on to that. You can help without telling everything.'],
-    ['I do not think it could help anyone', 'That is how shame sees it. The next card sees it differently.'],
+    ['I do not think it could help anyone', 'Many people feel that at first. See how it looks by the end.'],
     ['I do not know yet', 'That is honest. See how it looks by the end.'],
   ],
 };
@@ -1487,7 +1487,7 @@ const G12_DECAPOLIS: StoryPart = {
   h: 'He went, and told it through ten cities.',
   p: 'He told it all over the Decapolis, the ten towns of that region. **And all men did marvel.** The man the hills had heard crying became the one they heard hope from.',
   art: ['scene', { k: 'g12-towns' }],
-  dx: 'And he departed, and began to publish in Decapolis how great things Jesus had done for him, Mark says, and all men did marvel. The Decapolis was ten towns on that side of the lake. The man who had been a warning to all of them became a messenger to all of them. Nobody could have told that story the way he could, because nobody else had lived it. **And all men did marvel.** When Jesus came back to that region later, crowds were waiting for Him.',
+  dx: 'And he departed, and began to publish in Decapolis how great things Jesus had done for him, Mark says, and all men did marvel. The Decapolis was ten towns on that side of the lake. The man who had been a warning to all of them became a messenger to all of them. Nobody could have told that story the way he could, because nobody else had lived it. **And all men did marvel.** When Jesus came back to that region later, people brought the sick to Him.',
 };
 const G12_COMFORT: StoryPart = {
   long: 1,
@@ -1508,7 +1508,7 @@ const G12_MOSIAH: StoryPart = {
 const G12_HODGES: StoryPart = {
   long: 1,
   h: 'People feel more understood by someone they know has been there.',
-  p: 'New mothers felt more understood when they knew the other woman **had been through it too**. Some comfort can only come from someone who has lived it.',
+  p: 'New mothers felt more understood when they knew the other woman **had been through it too**. Comfort lands differently from someone who has lived it.',
   art: ['scene', { k: 'g12-two' }],
   fact: { s: 'Study · 60 women · Hodges and colleagues, 2010', i: [3] },
   dx: 'Researchers had women watch videos of new mothers talking about their first weeks with a baby. Some of the watchers had never been pregnant, some were expecting their first child, and some had just had their first. The women who had been through it felt more concern for the new mothers. And the mothers felt more understood when they knew the other woman **had been through it too**. Knowing someone has lived it is part of what makes their comfort land.',
@@ -1530,10 +1530,11 @@ const G12P_MATCH: StoryPart = {
 };
 const G12P_GUESS: StoryPart = {
   k: 'guess',
-  h: 'In the year after treatment, did helping others make a difference to the helpers?',
+  h: 'Of the helpers, how many did not drink at all in the year after treatment?',
   o: [
-    ['No, helping others is a distraction', 'It can seem that way. The numbers said otherwise.'],
-    ['Yes, the helpers stayed sober more often', 'Yes. The next card shows how much more.'],
+    ['About 1 in 5', 'That is closer to the people who did not help.'],
+    ['About 2 in 5', 'Yes. And the next card shows how that compares.'],
+    ['About 4 in 5', 'A hopeful guess. The real number is lower, and still striking.'],
   ],
   a: 1,
 };
@@ -2064,7 +2065,7 @@ export const STORIES_G: Record<string, Story> = {
     mine: { h: 'Each day that holds is part of the repair.', k: 'clean30' },
     today: {
       h: 'Make one repair this week, with care.',
-      l: ['Pick one person and one true thing', 'Say sorry plainly, and ask for nothing', 'Skip any repair that would hurt them'],
+      l: ['Pick one person and one true thing', 'Say sorry plainly, and ask for nothing', 'Skip any repair that would hurt them, or you'],
     },
     you: {
       h: 'Who is the person you would most like to walk toward, someday?',
@@ -2134,12 +2135,12 @@ export const STORIES_G: Record<string, Story> = {
       l: ['At the start of the day: one honest prayer', 'At the end: a few lines on what held', 'Miss one? Pick it up the next day'],
     },
     you: {
-      h: 'What is your great thing: the big change you keep waiting for?',
+      h: 'Which small thing could you keep even on your worst day?',
       o: [
-        ['One night of prayer that settles it', 'Those nights are real. Seven small washes carry further.'],
-        ['A clean break, a fresh start date', 'Fresh starts help. Small daily things are what keep them.'],
-        ['Feeling different, finally', 'That often comes after the small things, not before.'],
-        ['I am not waiting for one', 'Then the small daily things are already yours. Keep them.'],
+        ['One honest sentence of prayer', 'Small enough for any day. That is your Jordan.'],
+        ['A few lines at the end of the day', 'Then keep a pen and a page where you will see them.'],
+        ['One line of scripture', 'Then pick it now, so it is ready when the day is hard.'],
+        ['I am not sure yet', 'Then try the smallest one today, and see if it holds.'],
       ],
     },
     close: 'Father, I will come to you again tomorrow, in small and simple ways.',
@@ -2165,16 +2166,16 @@ export const STORIES_G: Record<string, Story> = {
       },
       plain: {
         form: 'study',
-        tag: 'Some trainees stopped working fifteen minutes early each day.',
+        tag: 'New workers in training, and fifteen minutes at the end of each day.',
         key: 'Change comes by small things done daily. Keep the small minutes.',
         tell: [G11P_CENTER, G11P_WROTE, G11P_GUESS, G11P_HIGHER, G11P_SHARE, G11P_GOD, G11P_END],
         you: {
-          h: 'What is the big change you keep waiting for?',
+          h: 'Which small thing could you keep even on your worst day?',
           o: [
-            ['One great moment that settles it', 'Those moments are real. Small daily minutes carry further.'],
-            ['A fresh start date', 'Fresh starts help. Small daily things are what keep them.'],
-            ['Feeling different, finally', 'That often comes after the small things, not before.'],
-            ['I am not waiting for one', 'Then the small daily things are already yours. Keep them.'],
+            ['One honest sentence of prayer', 'Small enough for any day. Keep it.'],
+            ['A few lines at the end of the day', 'That is what the trainees did. Keep a page where you will see it.'],
+            ['A few quiet minutes', 'Then give them a time and a place, so they happen.'],
+            ['I am not sure yet', 'Then try the smallest one today, and see if it holds.'],
           ],
         },
         close: 'God, I will come to you again tomorrow, in a small way.',
@@ -2206,7 +2207,7 @@ export const STORIES_G: Record<string, Story> = {
         ['A friend who seems worn down', 'Then one true sentence from you may land like nothing else.'],
         ['Someone in my family', 'Then start small. A kind word counts.'],
         ['Someone I do not know yet', 'Then watch for them. You will know the look.'],
-        ['No one I can think of', 'That is fine. The day you need it, you will know.'],
+        ['No one I can think of', 'That is fine. When someone needs it, you will know.'],
       ],
     },
     close: 'Father, thank you for the comfort you gave me. Help me pass it on.',
@@ -2232,7 +2233,7 @@ export const STORIES_G: Record<string, Story> = {
       },
       plain: {
         form: 'study',
-        tag: 'Researchers asked whether helping others helped the helpers.',
+        tag: 'Researchers looked at the people who helped others in their recovery.',
         tell: [G12P_MATCH, G12P_GUESS, G12P_FOUND, G12P_HODGES, G12P_GOD, G12P_END],
         close: 'God, thank you for the comfort you gave me. Help me pass it on.',
         scope:

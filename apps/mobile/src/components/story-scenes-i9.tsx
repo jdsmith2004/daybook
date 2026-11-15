@@ -517,7 +517,7 @@ function WellScene({ k }: { k: Ink }) {
   return (
     <Frame label="Midday in Samaria. Jesus, in a white robe with a red sash, sits tired on the edge of an old stone well. A woman in a teal robe and head covering comes toward it alone with her clay water pot, and a small town lies in the distance">
       <Desert />
-      <Town x={206} y={128} s={1.1} />
+      <Town x={178} y={128} s={0.95} />
       <Shadow x={WX + 4} y={WY + 4} rx={50} ry={5} />
       <Well x={WX} y={WY} w={WW} h={WH} />
       <Windlass x0={WX - 34} x1={WX + 36} top={62} base={WY - WH + 6} ropeX={WX - 14} bucketY={WY - WH - 8} />
@@ -661,24 +661,24 @@ function PotLeft({ k }: { k: Ink }) {
   const WW = 64;
   const WH = 32;
   const edge = rimEdge(WY, WW, WH);
-  const rx = 128 + 52 * p;
+  const rx = 126 + 34 * p;
   const hop = Math.abs(Math.sin(p * 9)) * 2.5;
   const folk: [number, number, number][] = [
-    [248, 152, 0],
-    [264, 156, 3],
-    [281, 152, 5],
+    [222, 152, 0],
+    [238, 156, 3],
+    [254, 152, 5],
   ];
   return (
     <Frame label="The clay water pot sits by the well where the woman left it. She runs toward the town with her arms open wide, calling to the people there, who turn to look. Jesus waits at the well">
       <Desert />
-      <Town x={206} y={134} s={1.15} big />
+      <Town x={170} y={134} s={0.8} big />
       <Shadow x={WX + 3} y={WY + 4} rx={40} ry={5} />
       <Well x={WX} y={WY} w={WW} h={WH} />
       <JesusSeated x={WX + 13} y={edge} s={0.78} tilt={4} arms={[[9, 18, -12]]} />
       <Shadow x={98} y={163} rx={17} ry={3.4} />
       <Pot x={98} y={162} s={1.7} />
       {folk.map(([x, y, i]) => (
-        <Folk key={x} x={x} y={y} s={0.7} i={i + 1} flip />
+        <Folk key={x} x={x} y={y} s={0.66} i={i + 1} flip />
       ))}
       <G fill="#EBD3A2" stroke="none" opacity={0.85}>
         <Circle cx={rx - 20} cy={163} r={4} />
@@ -1076,22 +1076,29 @@ function Kneeler({ x, y, s = 1, robe, sash, hair }: { x: number; y: number; s?: 
   const sw = 1.5 / s;
   return (
     <G transform={`translate(${x} ${y}) scale(${s})`}>
-      <Ellipse cx={-30} cy={-2} rx={5.4} ry={2.6} fill={BEAR_LINE} />
+      <Ellipse cx={-20} cy={-1.4} rx={4.6} ry={2.2} fill={BEAR_LINE} />
       <Tube
         fill={robe}
         parts={[
-          ['M-26 -5 L2 -7', 12],
-          ['M2 -7 L4 -22', 15],
-          ['M5 -23 L22 -37', 16],
+          ['M-16 -4 L7 -4', 11],
+          ['M7 -4 L1 -21', 13],
+          ['M1 -21 L12 -42', 16],
         ]}
       />
-      <Path d="M-4 -22 L16 -34" stroke={sash} strokeWidth={3.4} strokeLinecap="round" />
-      <Path d="M23 -45 Q22 -54 31 -52 Q37 -50 38 -45 Q32 -48 29 -47 Z" fill={hair} />
-      <Circle cx={31} cy={-43} r={8} fill={SKIN} stroke={BEAR_LINE} strokeWidth={sw} />
-      <Path d="M23.4 -45 Q22.4 -53.4 31 -52 Q37.4 -50.6 38.4 -45.6 Q32 -48.6 29 -48 Q26 -47.6 23.4 -45 Z" fill={hair} />
-      <Circle cx={35} cy={-42} r={1.4} fill={BEAR_LINE} />
-      <Tube fill={robe} parts={[['M20 -36 L34 -15', 5]]} />
-      <Hand x={36} y={-12} r={3.8} />
+      <Path d="M-0.9 -36 L12.9 -28" stroke={sash} strokeWidth={3.2} strokeLinecap="round" />
+      <Circle cx={20} cy={-52} r={8} fill={SKIN} stroke={BEAR_LINE} strokeWidth={sw} />
+      <Path d="M12.4 -54 Q11.4 -62.4 20 -61 Q26.4 -59.6 27.4 -54.6 Q21 -57.6 18 -57 Q15 -56.6 12.4 -54 Z" fill={hair} />
+      <Circle cx={24} cy={-51} r={1.4} fill={BEAR_LINE} />
+      <Tube
+        fill={robe}
+        parts={[
+          ['M12 -41 L28 -16', 5],
+          ['M10 -38 L32 -18', 5],
+        ]}
+      />
+      <Path d="M24 -15 Q30 -8.6 38 -16" fill="none" stroke={BEAR_LINE} strokeWidth={1.2} strokeLinecap="round" />
+      <Hand x={29} y={-15} r={3.6} />
+      <Hand x={34} y={-17} r={3.4} />
     </G>
   );
 }
@@ -1168,8 +1175,8 @@ function Spring({ k }: { k: Ink }) {
       <Spark x={SX - 15} y={SY - 20} r={3} fill={CREAM} />
       <Spark x={SX + 2} y={SY - 38} r={3.4} fill={GOLD} />
       {/* the person drinking */}
-      <Shadow x={90} y={153} rx={36} ry={4} />
-      <Kneeler x={104} y={151} s={1.5} robe="#4F6FBF" sash="#2F4A8C" hair={HAIR} />
+      <Shadow x={108} y={153} rx={30} ry={4} />
+      <Kneeler x={120} y={151} s={1.5} robe="#4F6FBF" sash="#2F4A8C" hair={HAIR} />
       {/* green growing around the water, thinner and drier as it goes away */}
       <Tuft x={150} y={160} s={1.2} />
       <Tuft x={156} y={168} s={1} c="#5FAE5E" />

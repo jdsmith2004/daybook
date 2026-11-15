@@ -11,6 +11,9 @@ import { SCENES_I6 } from './story-scenes-i6';
 import { SCENES_I7 } from './story-scenes-i7';
 import { SCENES_I8 } from './story-scenes-i8';
 import { SCENES_I9 } from './story-scenes-i9';
+import { SCENES_I10 } from './story-scenes-i10';
+import { SCENES_I11 } from './story-scenes-i11';
+import { SCENES_I12 } from './story-scenes-i12';
 
 export const SCENES_I: Record<string, ComponentType<{ k: Ink }>> = {
   ...SCENES_I1,
@@ -22,4 +25,7 @@ export const SCENES_I: Record<string, ComponentType<{ k: Ink }>> = {
   ...SCENES_I7,
   ...SCENES_I8,
   ...SCENES_I9,
+  ...SCENES_I10,
+  ...SCENES_I11,
+  ...SCENES_I12,
 };

@@ -93,7 +93,8 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   for (let x = riskToKeep(days, sn, tk, at), n = 0; x && n < 4; x = riskToKeep(days, sn, tk, at), n++) days = keepHard(days, x.k, x.r.win.start, at);
   /* this morning is already set (last night free, tonight's reason and time), as a person who opens Daybook every morning has it, so the
      pictures open on Today and not on the morning page over it */
-  days = setTonight(answerNight(days, sn, tk, 'free', at), sn, tk, { r: st.reasons[0]!, nt: '22:30' }, at).days;
+  /* (not for the lighting's key moments: their morning is left open, so Free of it lights the flame) */
+  if (!late.length) days = setTonight(answerNight(days, sn, tk, 'free', at), sn, tk, { r: st.reasons[0]!, nt: '22:30' }, at).days;
   const out: Record<string, string> = { 'daybook:settings': JSON.stringify(st) };
   for (const k in days) out['daybook:days/' + k] = JSON.stringify(days[k]);
   /* a few journal entries over the last week and a half, each started with a feeling, one with only the feeling */

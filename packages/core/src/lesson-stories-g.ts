@@ -836,7 +836,7 @@ const G6P_TELL: StoryPart = {
 const G6P_END: StoryPart = {
   h: 'So pick one safe person, and tell them one true sentence.',
   p: 'You do not have to tell everything. **One sentence lets someone stand beside you**, and it often goes both ways: the person you tell may have a hill of their own.',
-  art: ['scene', { k: 'g6-corner' }],
+  art: ['scene', { k: 'g6-lean' }],
   dx: 'You do not need to tell your whole story, and you do not need to tell everyone. Pick one person who is safe: a friend, a faith leader, a counselor. Say one true sentence, not the whole history. Ask them to pray for you, or just to stand beside you, and offer the same back. Often it goes both ways: the person you tell may have a hill of their own, and your honesty helps them climb too. **One sentence lets someone stand beside you**, and a hill with company is a different hill.',
 };
 
@@ -1312,7 +1312,7 @@ const G10P_FELL: StoryPart = {
 const G10P_GOD: StoryPart = {
   h: 'The hospitals found that silence kept the hurt open.',
   p: 'For many believers, what stands between you and someone you hurt **stands between you and God too**. Telling God you are sorry is one half. The other half is the person.',
-  art: ['scene', { k: 'g10-face' }],
+  art: ['scene', { k: 'g10-sorry' }],
   dx: 'The hospitals learned that silence kept the hurt alive, and a plain sorry let it close. Many faiths teach the same about God: what stands between you and a person you hurt **stands between you and God too**. Praying about it is the first half. The second half is walking toward the person, with care, and saying the true thing. It is not a punishment. It is how coming back gets finished.',
 };
 const G10P_END: StoryPart = {

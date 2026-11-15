@@ -1,8 +1,8 @@
 /* The cards on Pattern: one big card at a time, swiped sideways, with the edge of the next one showing and a small ruler under
    them that says where you are. Each is a scene of its own, in its own night sky in either theme, with its picture running out to
    the card's edges. A chart grows when its card first comes in, not while it is out of sight. A card that is locked shows the
-   person's own chart faded, with the ask under it (components/support.tsx). A card with nothing in it yet is a ghost: its title and its own picture
-   drawn empty (Ghost, components/pattern-charts.tsx), with no words, no ask and no numbers, until the log fills it. */
+   person's own chart faded, with the ask under it (components/support.tsx). A card with nothing in it yet is a ghost: its title, one plain line on how to fill it
+   (core PAT_FILL) and its own picture drawn empty (Ghost, components/pattern-charts.tsx), with no ask and no numbers, until the log fills it. */
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react';
@@ -35,6 +35,8 @@ export interface DeckCard {
   numbers?: ReactNode;
   /** nothing in it yet: the chart is its empty shape, and there is nothing to lock */
   ghost?: boolean;
+  /** the whole log has it, but this range has nothing to draw (the Sunday review leaves it out) */
+  bare?: boolean;
 }
 export interface DeckHandle {
   show: (i: number) => void;
@@ -135,43 +137,9 @@ export function Deck({
           onScroll={onScroll}
           style={[s.scroll, SNAP_ROW]}
           contentContainerStyle={s.row}>
-          {cards.map((d, i) => {
-            const shut = !d.ghost && locked(d.id);
-            const sky = CARD_SKY[d.id] || CARD_SKY.what;
-            return (
-              <PaletteOverride.Provider key={d.id} value={NIGHT}>
-                <View style={[s.card, { width: W, minHeight: H, backgroundColor: sky[1] }, SNAP_CARD]}>
-                  <LinearGradient colors={sky} style={StyleSheet.absoluteFill} />
-                  <View style={s.words}>
-                    <T v="small" tone="muted" accessibilityRole="header">
-                      {d.title}
-                    </T>
-                    {!shut && d.head ? <Text style={[s.head, { color: NIGHT.ink }]}>{d.head}</Text> : null}
-                    {shut ? null : d.say}
-                  </View>
-                  <ChartOn.Provider value={i <= Math.max(seen, index)}>
-                    <View key={from} style={s.chart}>
-                      {shut ? (
-                        <View style={s.chart} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-                          <View style={[s.chart, { opacity: 0.55 }, BLUR]}>{d.chart}</View>
-                          <LinearGradient colors={[sky[1] + '00', sky[1]]} style={s.fade} />
-                        </View>
-                      ) : (
-                        d.chart
-                      )}
-                    </View>
-                  </ChartOn.Provider>
-                  {shut && !quiet ? (
-                    <View style={s.foot}>
-                      <LockAsk />
-                    </View>
-                  ) : !shut && d.foot ? (
-                    <View style={s.foot}>{d.foot}</View>
-                  ) : null}
-                </View>
-              </PaletteOverride.Provider>
-            );
-          })}
+          {cards.map((d, i) => (
+            <PatternCard key={d.id} d={d} W={W} H={H} shut={!d.ghost && locked(d.id)} quiet={quiet} on={i <= Math.max(seen, index)} from={from} />
+          ))}
         </Animated.ScrollView>
       ) : (
         <View style={{ height: H }} />
@@ -221,6 +189,61 @@ const s = StyleSheet.create({
   tick: { width: 2, height: 8, borderRadius: 1 },
   mark: { position: 'absolute', top: 12, width: 4, height: 20, borderRadius: 2 },
 });
+
+/** one card of the deck, as Pattern shows it: the Sunday review shows the same card for its week. W undefined: the width of its place. */
+export function PatternCard({
+  d,
+  W,
+  H,
+  shut = false,
+  quiet = true,
+  on = true,
+  from = '',
+}: {
+  d: DeckCard;
+  W?: number;
+  H: number;
+  shut?: boolean;
+  quiet?: boolean;
+  /** the chart grows once this is true */
+  on?: boolean;
+  from?: string;
+}) {
+  const sky = CARD_SKY[d.id] || CARD_SKY.what;
+  return (
+    <PaletteOverride.Provider value={NIGHT}>
+      <View style={[s.card, { width: W ?? '100%', minHeight: H, backgroundColor: sky[1] }, SNAP_CARD]}>
+        <LinearGradient colors={sky} style={StyleSheet.absoluteFill} />
+        <View style={s.words}>
+          <T v="small" tone="muted" accessibilityRole="header">
+            {d.title}
+          </T>
+          {!shut && d.head ? <Text style={[s.head, { color: NIGHT.ink }]}>{d.head}</Text> : null}
+          {shut ? null : d.say}
+        </View>
+        <ChartOn.Provider value={on}>
+          <View key={from} style={s.chart}>
+            {shut ? (
+              <View style={s.chart} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                <View style={[s.chart, { opacity: 0.55 }, BLUR]}>{d.chart}</View>
+                <LinearGradient colors={[sky[1] + '00', sky[1]]} style={s.fade} />
+              </View>
+            ) : (
+              d.chart
+            )}
+          </View>
+        </ChartOn.Provider>
+        {shut && !quiet ? (
+          <View style={s.foot}>
+            <LockAsk />
+          </View>
+        ) : !shut && d.foot ? (
+          <View style={s.foot}>{d.foot}</View>
+        ) : null}
+      </View>
+    </PaletteOverride.Provider>
+  );
+}
 
 /** the plain line under a card's answer */
 export function Say({ children }: { children: ReactNode }) {

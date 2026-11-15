@@ -7,6 +7,8 @@ const isMs = (n: unknown): n is number => typeof n === 'number' && isFinite(n) &
 
 /** the longest reason kept, in characters (a reason is a short line in the person's own words) */
 export const MORNING_REASON_MAX = 120;
+/** the most reasons kept for one night */
+export const MORNING_REASONS_MAX = 12;
 
 /** a morning set record cleaned up, or undefined when nothing in it is usable */
 export function normMorning(x: unknown): MorningSet | undefined {
@@ -19,10 +21,22 @@ export function normMorning(x: unknown): MorningSet | undefined {
   if (typeof s.ev2 === 'string' && s.ev2) o.ev2 = s.ev2.slice(0, 40);
   if (s.f === 1 || s.f === 2 || s.f === 3) o.f = s.f;
   if (typeof s.r === 'string' && s.r.trim()) o.r = s.r.trim().slice(0, MORNING_REASON_MAX);
+  /* several reasons (November 15, 2026); a record from before has only r, which becomes the list, so no answer is lost */
+  if (Array.isArray(s.rs)) {
+    const rs: string[] = [];
+    for (const x of s.rs) {
+      if (typeof x !== 'string') continue;
+      const t = x.replace(/\s+/g, ' ').trim().slice(0, MORNING_REASON_MAX);
+      if (t && !rs.some((y) => y.toLowerCase() === t.toLowerCase()) && rs.length < MORNING_REASONS_MAX) rs.push(t);
+    }
+    if (rs.length) o.rs = rs;
+  }
+  if (!o.rs && o.r) o.rs = [o.r];
+  if (o.rs) o.r = o.rs[0];
   if (isClock(s.nt)) o.nt = s.nt;
   if (isMs(s.set)) o.set = s.set;
   if (isMs(s.x)) o.x = s.x;
-  if (!o.n && !o.n2 && !o.f && !o.r && !o.nt && !o.set && !o.x) return undefined;
+  if (!o.n && !o.n2 && !o.f && !o.r && !o.rs && !o.nt && !o.set && !o.x) return undefined;
   if (!o.at) o.at = o.set || o.x || 1;
   return o;
 }

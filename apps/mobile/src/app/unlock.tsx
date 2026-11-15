@@ -157,7 +157,7 @@ export default function Unlocked() {
     sunday: () => (sun ? router.replace({ pathname: '/review', params: { s: sun } }) : close()),
     routine: saveList,
     health: () => void health(),
-    night: () => router.replace('/settings/nightpack'),
+    night: () => router.replace('/nightpack'),
     lock: () => void lock(),
   };
   const choose = async () => {

@@ -68,8 +68,12 @@ export interface MorningSet {
   ev2?: string;
   /** "And this morning?": 1 Low, 2 Okay, 3 Good */
   f?: 1 | 2 | 3;
-  /** "Who are you doing tonight for?": the reason picked, in the person's own words, as it was shown */
+  /** "What is tonight for?": the first reason picked, in the person's own words, as it was shown (kept for the readers from
+      before several could be picked; always rs[0] when rs is there) */
   r?: string;
+  /** every reason picked for tonight, in the order picked (November 15, 2026: several can be chosen). A record from before
+      has only r, and is read as [r] (morning-norm.ts). */
+  rs?: string[];
   /** when tonight's wait starts, 'HH:MM' */
   nt?: Clock;
   /** when Set tonight was pressed (ms): this morning was set */
@@ -226,6 +230,9 @@ export interface Settings {
   /** my line: what counts as a slip for me and what counts as a clean day, in the person's own words (plan.ts myLineOf). Shown
       where a slip is logged, so "does that count?" is settled by their own words. Synced with the plan; never in an event. */
   myLine?: string;
+  /** saved answers (saved-answers.ts): the options the person wrote with "Write my own", one list per kind, kept for good and
+      offered again everywhere that kind is asked. Joined, never chosen, when two copies meet (keepEarned). Left out when empty. */
+  own?: Partial<Record<import('./saved-answers').OwnKind, string[]>>;
   /** false: no buzz under the finger anywhere in the app (Settings, Appearance). Left out means on, so older records need no change. */
   haptics?: false;
   /** SOS: the tools not to suggest ("Not for me"), and what was said after using each ("Would you use this again?", -3 to 3).

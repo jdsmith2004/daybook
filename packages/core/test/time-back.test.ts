@@ -35,4 +35,30 @@ describe('the time given back, on Today', () => {
     expect(core.timeBackWords(250)).toEqual({ n: '10', unit: 'days' });
     expect(core.timeBackWords(24 * 1500)).toEqual({ n: '1,500', unit: 'days' });
   });
+
+  it('shows for a new person whose setup answered how long it lasts, in every habit, and not when it was skipped (the owner, November 15, 2026)', () => {
+    const start = '2026-10-01' as core.DayKey;
+    for (const habit of ['porn', 'alcohol', 'gambling', 'other']) {
+      const pg = core.obPages({ habit }).find((p) => p.id === 'mins')!;
+      expect(pg, habit).toBeTruthy();
+      expect(
+        core
+          .obPages({ habit })
+          .map((p) => p.id)
+          .indexOf('mins'),
+      ).toBe(
+        core
+          .obPages({ habit })
+          .map((p) => p.id)
+          .indexOf('freq') + 1,
+      );
+      const fresh = core.obBegin({ habit, freq: 'f2', mins: pg.list![1][0] }, start, 0);
+      const t = core.timeBack(days, fresh, '2026-11-09');
+      expect(t, habit).not.toBeNull();
+      expect(t!.n).not.toBe('');
+      /* skipped: nothing is estimated */
+      expect(core.timeBack(days, core.obBegin({ habit, freq: 'f2' }, start, 0), '2026-11-09')).toBeNull();
+    }
+    expect(core.obPages({ habit: 'gambling' }).find((p) => p.id === 'mins')!.h).toMatch(/spend gambling/);
+  });
 });

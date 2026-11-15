@@ -823,6 +823,19 @@ export function lcheckDue(days: Days, st: Settings, w: LessonWalk = lessonWalk(d
   }
   return 0;
 }
+/** the checkpoint a lesson just finished completes, offered on the lesson finish (the owner, November 15, 2026: "sure do it only as
+    an offer though not required"): the pair this lesson is in, once both are reached, on for this habit, and not written (0: none).
+    The Learn tab keeps its own way in (lcheckDue). */
+export function lcheckAfter(L: Lesson, days: Days, st: Settings, w: LessonWalk = lessonWalk(days, st)): number {
+  const reached = (x: Lesson) => w.walked.has(x.id) || (w.path.indexOf(x) < 0 && w.done.has(x.id));
+  const forHabit = (x: Lesson) => habitOff(x, st);
+  for (let n = 1; n <= LCHECK_N; n++) {
+    const p = lcheckPair(n);
+    if (!p || (p.a !== L && p.b !== L)) continue;
+    return lcheckOn(n, forHabit) && reached(p.a) && reached(p.b) && !lcheckWritten(st, n) ? n : 0;
+  }
+  return 0;
+}
 /** the two lessons a checkpoint is about, in words: "lessons 3 and 12", or a lesson off the path by its name */
 export function lcheckAbout(p: { a: Lesson; b: Lesson }, st?: Settings | null, days?: Days | null): string {
   const a = lessonNo(p.a, st, days);

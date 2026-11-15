@@ -4,7 +4,7 @@
    first page) and a trackpad scroll works too. Only the page in view and the two next to it are drawn; the parent shows its
    neighbors as still covers, so nothing in them runs, buzzes or speaks until it is landed on.
 
-   Until the person has swiped a few times (core UrMem.swiped), the page lifts twice by itself to show the next one below,
+   Once ever, for someone who has never swiped (core rideHint), the page lifts twice by itself to show the next one below,
    the way short-video apps teach it. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollViewInstance } from 'react-native';

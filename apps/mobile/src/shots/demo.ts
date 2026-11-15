@@ -1,7 +1,7 @@
 /* The made-up log the screenshot studio shows (dev only): someone about six weeks in, whose flame is still a flame. They started on September 8, the day
    they set as their quit date, rode out an urge every few days, slipped once in September (lonely, late at night) and kept going, checked in most evenings and
    did a lesson now and then. Every value is fixed, so every shot is the same each time. Nothing here is anyone's real data. */
-import { defaultSettings, keepHard, logicalKey, normDay, normSettings, riskToKeep, type Days } from '@daybook/core';
+import { answerNight, defaultSettings, keepHard, logicalKey, normDay, normSettings, riskToKeep, setTonight, type Days } from '@daybook/core';
 
 import { DEMO } from './config';
 
@@ -19,6 +19,11 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
      person, started in July, graduated on October 4 (the graduation page and the flame in its cap) */
   const q = typeof window !== 'undefined' && !!window.location ? new URLSearchParams(window.location.search).get('demo') : null;
   const hard = q === 'hard';
+  /* the key moments of the lighting (core igniteWhy), played from the morning page by telling last night free: ?demo=comeback, a hard
+     stretch (three slips in a week) ending the night before last; climb2 and climb3, the same stretch one and two free nights back;
+     longrun, one slip the night before last, after weeks free */
+  const SLIPS: Record<string, number[]> = { comeback: [-6, -4, -2], climb2: [-7, -5, -3], climb3: [-8, -6, -4], longrun: [-2] };
+  const late = (q && SLIPS[q]) || [];
   const grad = q === 'grad';
   const start = grad ? '2026-06-25' : '2026-09-08';
   const st = {
@@ -54,7 +59,8 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     const events = [];
     if (i % 5 === 0) events.push(ev('21:30', 'rode', i % 2 ? 'Stressed' : 'Bored'));
     /* the one slip, with what was going on before it and how it felt after (the studio opens its comeback pages on it) */
-    if (d === '2026-09-12') events.push({ ...ev('23:50', 'slipped', 'lonely'), id: 'slip', fa: 'flat' });
+    if (late.some((n) => day(DEMO.day, n) === d)) events.push({ ...ev('23:10', 'slipped', 'lonely'), id: 'late' + i });
+    else if (d === '2026-09-12') events.push({ ...ev('23:50', 'slipped', 'lonely'), id: 'slip', fa: 'flat' });
     else if (hard && (i * 37) % 11 < 5) {
       events.push({ ...ev('22:40', 'slipped', 'tired'), id: 'slip' + i });
       if (i % 9 === 4) events.push({ ...ev('23:55', 'slipped', 'tired'), id: 'slip' + i + 'b' });
@@ -85,6 +91,10 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   for (const k in o) if (k.startsWith('daybook:days/')) days[k.slice(13)] = normDay(o[k], k.slice(13));
   const tk = logicalKey(at, sn.rollover);
   for (let x = riskToKeep(days, sn, tk, at), n = 0; x && n < 4; x = riskToKeep(days, sn, tk, at), n++) days = keepHard(days, x.k, x.r.win.start, at);
+  /* this morning is already set (last night free, tonight's reason and time), as a person who opens Daybook every morning has it, so the
+     pictures open on Today and not on the morning page over it */
+  /* (not for the lighting's key moments: their morning is left open, so Free of it lights the flame) */
+  if (!late.length) days = setTonight(answerNight(days, sn, tk, 'free', at), sn, tk, { r: st.reasons[0]!, nt: '22:30' }, at).days;
   const out: Record<string, string> = { 'daybook:settings': JSON.stringify(st) };
   for (const k in days) out['daybook:days/' + k] = JSON.stringify(days[k]);
   /* a few journal entries over the last week and a half, each started with a feeling, one with only the feeling */

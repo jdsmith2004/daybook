@@ -101,26 +101,35 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 
 ## 6. The listing (Claude drafts, you or Claude in Chrome paste)
 
-> **Waiting for 1.3.4 (the owner picked it on November 12, 2026).** The next version after 1.3.3 clears review carries a new
-> subtitle, new keywords (en-US and Spanish, Mexico) and a new first-screenshot caption. The exact text is at the top of
-> `docs/listing-update.md` in the daybook-shorts repository; take it from there, not from here. The "Daybook: App Store listing
-> update" session enters it in App Store Connect once 1.3.4 exists, and stops before Submit for Review. It cannot watch App Store
-> Connect, so whoever makes 1.3.4 messages it (its steps are in `listing-entry-handover.md` in the shared side-session notes). The
-> new first screenshot comes from this repository: run `npm run shots` with the new caption, and tell that session where the file
-> lands. The name stays the same.
-> Check every screenshot for the banned words (CLAUDE.md, the store listing rule) before it goes in.
+> **1.3.4 is next (listing ready November 14, 2026).** Apple turned down 1.3.3 on November 11, 2026 under Guideline 1.1 for
+> the old subtitle ("Quit porn, live your potential") and `pornfree` in the keywords; the build itself was not the problem. Every
+> field below is clean of the banned words (CLAUDE.md, the store listing rule), and so are the screenshots, checked by eye. The
+> subtitle and keywords are the owner's pick of November 12, 2026 (option 1 in `docs/listing-update.md` in the daybook-shorts
+> repository, which also has the Spanish (Mexico) locale). The name stays the same.
+> Check every screenshot for the banned words before it goes in.
 
 - **Name:** Daybook: Master Yourself
-- **Subtitle:** Break a habit. Stay free.
+- **Subtitle:** Quit a habit. Become free.
 - **Category:** Health & Fitness. Second: Lifestyle.
-- **Keywords:** `habit,quit,urges,recovery,relapse,self control,addiction,tracker,clean,sober,journal,accountability`
+- **Keywords:** `urges,surfing,sos,dopamine,detox,relapse,recovery,sobriety,streak,tracker,gambling,craving,clean`
   (no other app's name or trademark, by the store's rules)
+- **Spanish (Mexico) locale** (the US storefront reads it too, for 100 more keyword letters): the same name and description,
+  subtitle `Willpower for hard nights`, keywords `christian,lds,scripture,prayer,grace,purity,temptation,bible,reset,days,breathe,resist,control`.
 - **Promotional text:** Free, with no ads and nothing sold. A slip is data, not a reset.
-- **What's New in This Version** (only once a version has been released before; a first version has no such box):
+- **What's New in This Version** (1.3.4; 1.3.3 never went live, so this covers both):
 
-  > Your flame is bigger, in a clear sky, with nothing written over it. Lessons have a new look, and the fire moves at its
-  > tips. The wind-down now ends by putting your flame to bed. After a slip, every way in leads you back through Rekindle,
-  > and your plan for next time can name the tools already in Daybook.
+  > Lessons are now stories, with pictures on the first lessons and a Short or a Long way through each one. Finishing a lesson
+  > or a check-in is a calmer moment, and a new flame form, badge or level gets a celebration of its own.
+  >
+  > Setup takes about two minutes and ends with a short tour of Today. Mornings ask how last night went and who tonight is
+  > for, and Good night puts the phone to bed in one page.
+  >
+  > Your journal is its own tab now, with Insights: tap the chart at the top to see the days you wrote and the feelings you
+  > name most. Charts and numbers come alive as they appear, and Daybook answers your touch with light haptics (you can turn
+  > them off in Settings).
+  >
+  > Also: the crisis line for your own country, tips in your own currency, fewer and more private reminders, and safer sync
+  > on a weak signal.
 
 - **Description:**
 

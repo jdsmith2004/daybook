@@ -80,6 +80,14 @@ export interface LessonFinishProps {
   next: { id: string; title: string } | null;
   onNext: () => void;
   onDone: () => void;
+  /** the same moment for another win (the Sunday review): its words in place of "Lesson 4 done" */
+  head?: string;
+  /** its second line in place of the lessons line: a label, a word on the right, and where it fills from and to (0 to 1) */
+  line?: { label: string; right?: string; from: number; to: number } | null;
+  /** the button's word (Continue) */
+  button?: string;
+  /** the quiet "Feedback on this lesson" link, on for a lesson */
+  feedback?: boolean;
 }
 
 /* when each beat starts, in ms */
@@ -107,7 +115,8 @@ type Line = { x0: number; y0: number; x1: number; y1: number };
 /* name: the step the lesson is in, the milestone the line runs to; null when the line is the whole path */
 type Lessons = { name: string | null; from: number; to: number };
 
-export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: LessonFinishProps) {
+export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone, head, line, button = 'Continue', feedback = true }: LessonFinishProps) {
+  const done = head ?? 'Lesson ' + n + ' done';
   const { snap, tk, now } = useStore();
   const st = snap.settings;
   const win = useWindowDimensions();
@@ -128,6 +137,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
      the next milestone ... don't say what it's out of"), this one included (it is recorded before this page); a read again adds
      nothing. A lesson off the path runs along the whole path. */
   const [lessons] = useState<Lessons | null>(() => {
+    if (line !== undefined) return line ? { name: line.right ?? null, from: line.from, to: line.to } : null;
     if (!st) return null;
     const w = lessonWalk(snap.days, st);
     const p = stepProgress(w, lessonId);
@@ -232,7 +242,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
   };
 
   useEffect(() => {
-    AccessibilityInfo.announceForAccessibility(`Lesson ${n} done. ${flying ? m.shown + ' points. ' : ''}${keep}`);
+    AccessibilityInfo.announceForAccessibility(`${done}. ${flying ? m.shown + ' points. ' : ''}${keep}`);
     if (still) {
       buzz('lit');
       return;
@@ -433,7 +443,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
         </View>
         <Reanimated.View style={restIn}>
           <Text style={s.title} accessibilityRole="header">
-            Lesson {n} done
+            {done}
           </Text>
           <Text style={s.sub} numberOfLines={1}>
             {title}
@@ -476,9 +486,9 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
           <Reanimated.View
             style={[s.lineBox, lessonsIn]}
             accessible
-            accessibilityLabel={`Lesson ${n}${lessons.name ? ', on the way to the end of ' + lessons.name : ''}`}>
+            accessibilityLabel={`${line ? line.label : 'Lesson ' + n}${lessons.name ? (line ? ', ' : ', on the way to the end of ') + lessons.name : ''}`}>
             <View style={s.lineHead}>
-              <Text style={s.lineLabel}>Lesson {n}</Text>
+              <Text style={s.lineLabel}>{line ? line.label : 'Lesson ' + n}</Text>
               {lessons.name ? (
                 <Text style={s.lineRight} numberOfLines={1}>
                   {lessons.name}
@@ -504,12 +514,12 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
           <Pressable accessibilityRole="button" onPress={onDone}>
             {({ pressed }) => (
               <View style={[s.btn, pressed && s.btnDown]}>
-                <Text style={s.btnText}>Continue</Text>
+                <Text style={s.btnText}>{button}</Text>
               </View>
             )}
           </Pressable>
           {/* a quiet way to tell the owner what this lesson did (the owner, November 14, 2026): the feedback sheet, about this lesson; hidden, like Ideas, in a build with no place to send to */}
-          {pulseOffered ? (
+          {pulseOffered && feedback ? (
             <Pressable
               accessibilityRole="button"
               hitSlop={8}
@@ -524,7 +534,7 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
       {!still ? (
         <Reanimated.View pointerEvents="none" style={[s.shout, { top: shoutY }, shoutIn]}>
           <Text style={s.shoutText} numberOfLines={1}>
-            {'Lesson ' + n + ' done'}
+            {done}
           </Text>
         </Reanimated.View>
       ) : null}

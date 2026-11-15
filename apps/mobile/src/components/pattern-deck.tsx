@@ -35,6 +35,8 @@ export interface DeckCard {
   numbers?: ReactNode;
   /** nothing in it yet: the chart is its empty shape, and there is nothing to lock */
   ghost?: boolean;
+  /** the whole log has it, but this range has nothing to draw (the Sunday review leaves it out) */
+  bare?: boolean;
 }
 export interface DeckHandle {
   show: (i: number) => void;

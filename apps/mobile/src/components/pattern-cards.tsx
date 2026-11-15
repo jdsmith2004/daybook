@@ -181,6 +181,7 @@ export function usePatternCards(range: PatRange, end?: DayKey) {
   if (feltAll)
     cards.push({
       id: 'felt',
+      bare: kinds(felt.by) < 2,
       title: 'How your days felt',
       head: felt.head,
       say: felt.line ? <Say>{felt.line}</Say> : null,
@@ -215,6 +216,7 @@ export function usePatternCards(range: PatRange, end?: DayKey) {
   if (anyEntry)
     cards.push({
       id: 'ride',
+      bare: !rideCols.some((x) => x.rode + x.slipped),
       title: 'Riding it out',
       head: rideSay.head,
       say: rideSay.line ? <Say>{rideSay.line}</Say> : null,
@@ -271,6 +273,7 @@ export function usePatternCards(range: PatRange, end?: DayKey) {
   if (whenAll.timed)
     cards.push({
       id: 'when',
+      bare: !when.timed,
       title: 'When does it happen?',
       head: hard
         ? (when.hard.same || !when.hard.weekends ? '' : when.hard.weekdays ? 'Weekdays ' : 'Weekends ') + hard.label
@@ -321,6 +324,7 @@ export function usePatternCards(range: PatRange, end?: DayKey) {
   if (trigAll || needsAll)
     cards.push({
       id: 'what',
+      bare: !trigItems.length,
       title: 'What sets it off?',
       head: topTrig[0]?.t || needs[0]?.name || (trig.none ? 'No reason picked' : 'A quiet stretch'),
       say:
@@ -394,6 +398,7 @@ export function usePatternCards(range: PatRange, end?: DayKey) {
   if (works.length || ev.chose + ev.went)
     cards.push({
       id: 'helps',
+      bare: !works.length,
       title: 'What helps you',
       head: works[0]?.name,
       say: ev.chose ? (

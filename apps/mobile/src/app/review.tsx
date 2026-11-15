@@ -1,116 +1,95 @@
-/* The Sunday review (core: sunday.ts, sunday-story.ts): a walk through the week, one thing at a time, like a year-in-review
-   story. Bars along the top show where you are; a tap on the right side of the picture goes on, the left side goes back,
-   and Next is always at the bottom too. The screens: the week, the seven days, the urges ridden out, when it came, what
-   set it off, what helped, the slips (honestly, and kindly), the foundations, last week's goal, the long view over eight
-   weeks, and one longer thing to know, picked for the hardest pattern of the week. A screen with nothing to show is left
-   out. Each one has a line of science with its source and the lesson to read.
+/* The Sunday review, rebuilt from its purpose (the owner, November 15, 2026: "clear feedback on what happened the previous
+   week. And then clear feedback on what goals I should have for the next week", "walk them through their graphs", and "if I
+   press late nights, what does that mean I'm gonna do?"). Two halves, and every page says what it is for:
 
-   Then getting ready for the next week, kept short: your take (what worked, what to change), and one small goal. Saving
-   it says All done, with the flame big, worth 20 points once, and the goal waits on Today. A quiet link under Done opens
-   the rest, only if the person wants them: an if-then plan for the hardest moment, the harder days ahead, and a note to
-   their future self, shown midweek.
+   1. Look back. The week in seven days and three numbers, then the person's own graphs for that week, one a page: the very
+      same cards as the Pattern page (components/pattern-cards.tsx, read for the seven days that end on this Sunday), each with
+      one line on what it means for next week. A card with nothing this week is left out. Then last week's goal, when there was one.
+   2. One goal. Two or three goals from the week (core sunday-goal.ts), each with why ("3 of your 4 slips came after 9 PM") and
+      the plan it comes with ("When it gets to 10:30 PM, I will put my phone in another room"). One only, on purpose, and the
+      page says so. Then the goal set: how many nights, and what happens, in plain rows: where it shows (Today, under the count),
+      what counts it, the plan on Today and in SOS, and the reminder it turns on.
+   Saving ends on the lesson finish, the app's best moment: the band, the flame gliding home, the points into the level line,
+   and the Sundays line to the next month of them, with the flame saying the plan. Worth 20 points once.
+   Every "Write my own" keeps the words for good (core saved-answers.ts, the owner: "If I write an option, it should persist").
    ?s=<a Sunday> opens that week's review (to write it late, or change it). */
 import {
-  addDays,
   gameCompute,
   isSunday,
   saveSun,
-  SRC,
-  patSlipTrig,
   story,
-  storyHardDays,
   storyIfLine,
-  storyIfThen,
-  storyIfWhen,
-  storyStretch,
-  storyTeach,
   SUN_GOALS,
+  SUN_HOW,
   SUN_LAST,
-  SUN_LEN,
-  SUN_NOTE_LEN,
-  sunChange,
   sunDue,
   sunGoalLine,
   sunGoalOf,
-  sunGoals,
   sunKey,
+  sunList,
   sunOf,
-  sunPlanSay,
+  sunOptions,
+  sunOwnGoal,
   sunRange,
-  sunWorked,
-  type StoryScreen,
+  sunRemindLine,
   type SunGoal,
   type SunLast,
-  type SunPick,
-  type SunReview,
-  lessonFor,
+  type SunOption,
 } from '@daybook/core';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { KeepAbove } from '@/components/keyboard';
-import { Text } from '@/components/text';
 
 import { AnswerChip, ChipWrap } from '@/components/answer';
 import { Appear } from '@/components/appear';
-import { FitArt, SHORT } from '@/components/fit';
-import { Field, Link } from '@/components/choices';
-import { CountUp } from '@/components/count-up';
-import { FlameMedallion } from '@/components/flame-medallion';
-import { Rows } from '@/components/link-card';
-import { OwnChip, OwnField } from '@/components/own';
-import { Hours } from '@/components/pattern-charts';
-import { SourceLine } from '@/components/research';
-import { Big, DaysRow, GoalDots, HelpList, RideWave, Rings, StoryBars, Teach, TrigBars, WeekBars } from '@/components/review-art';
-import { Dock, Finish, SceneFrame, Stage } from '@/components/scene';
+import { Link } from '@/components/choices';
+import { SHORT } from '@/components/fit';
+import { LessonFinish } from '@/components/lesson-finish';
+import { OwnChip, OwnField, useOwn } from '@/components/own';
+import { usePatternCards } from '@/components/pattern-cards';
+import { PatternCard } from '@/components/pattern-deck';
+import { DaysRow, GoalDots, StoryBars } from '@/components/review-art';
+import { Dock, SceneFrame, Stage } from '@/components/scene';
+import { Text } from '@/components/text';
 import { Button, Chip, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { useNights } from '@/lib/health';
 import { close, closeAll } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { play } from '@/lib/sound';
-import { useNights } from '@/lib/health';
 import { useStore } from '@/lib/store';
-import { font, MAX_WIDTH, toneOf, useTheme, type Sky } from '@/lib/theme';
+import { font, toneOf, useTheme, type Sky } from '@/lib/theme';
 import { WORDS } from '@/lib/words';
 
-type After = 'take' | 'goal' | 'done' | 'more' | 'xIt' | 'xHard' | 'xNote';
-type Own = 'w' | 'c' | 'g' | 'iw' | 'it' | null;
-const SKY: Record<StoryScreen, Sky> = {
-  intro: 'violet',
-  days: 'sun',
-  ride: 'mint',
-  clock: 'sky',
-  trig: 'coral',
-  help: 'mint',
-  slips: 'sun',
-  base: 'violet',
-  last: 'sun',
-  long: 'sky',
-  deep: 'violet',
-  next: 'sun',
+/* the graphs a week is walked through, in this order (the feelings cards stay on Pattern: the week rarely has them) */
+const ORDER = ['ride', 'nights', 'when', 'what', 'helps', 'held', 'learn', 'days', 'apart'];
+const MAX_GRAPHS = 5;
+/* what each graph means for next week, in one line under it */
+const BRIDGE: Record<string, string> = {
+  ride: 'Every urge ridden out is the skill growing. Your goal protects it.',
+  nights: 'Nights shape the days after them. A goal can start here.',
+  when: 'Your hard hours are where one plan does the most.',
+  what: 'Knowing what sets it off means you can plan for it.',
+  helps: 'These worked for you. SOS offers them first.',
+  held: 'Each hard hour held is proof the plan works.',
+  learn: 'Each lesson turns one belief over. Days with one are steadier.',
+  days: 'Small things the day before change the hard days.',
+  apart: 'The long view. One goal next week moves it.',
 };
-const SRCS = SRC as unknown as Record<string, [string, string]>;
-const IF_TEACH = {
-  t: 'Across many studies, people who made if-then plans followed through on their goals more than people who only set the goal.',
-  src: ['gollwitzer'],
-};
-const NOTES = [
-  'You have done this before.',
-  'One day at a time. Today counts.',
-  'Phone in the other room. Then bed.',
-  'Text someone. You are not alone in this.',
-];
+const SKY: Record<string, Sky> = { intro: 'violet', last: 'sun', pick: 'violet', set: 'sun' };
+const UNIT_ONE = { nights: 'night', days: 'day' } as const;
+
+type Page = string; // 'intro' | 'g:<card id>' | 'last' | 'pick' | 'set'
 
 export default function Review() {
   const c = useTheme();
   const win = useWindowDimensions();
-  const { snap, tk, now, update, say } = useStore();
+  const { snap, tk, update, say } = useStore();
   const prefs = useReminderPrefs();
   const params = useLocalSearchParams<{ s?: string }>();
-  /* the plan was said once, on the last page */
-  const [said, setSaid] = useState(false);
   const st = snap.settings;
+  const health = useNights();
   /* which week: the one asked for, the one Today is asking about, or this one so far */
   const [sun] = useState(() => {
     const s = params.s;
@@ -118,249 +97,182 @@ export default function Review() {
     return (st && sunDue(snap.reviews, st, tk)?.sun) || sunOf(tk);
   });
   const saved = snap.reviews[sunKey(sun)]?.sun || null;
-  const [w, setW] = useState<string[]>(() => saved?.w || []);
-  const [ch, setCh] = useState<string[]>(() => saved?.c || []);
   const [goal, setGoal] = useState<SunGoal | null>(() => saved?.g || null);
   const [last, setLast] = useState<SunLast | undefined>(() => saved?.last);
-  const [own, setOwn] = useState<Own>(null);
-  /* where we are: a screen of the story (i), or one of the steps after it */
+  const [ownOpen, setOwnOpen] = useState(false);
+  const [remind, setRemind] = useState(true);
   const [i, setI] = useState(0);
-  const [after, setAfter] = useState<After | null>(null);
   const [dir, setDir] = useState<1 | -1>(1);
-  const [pts0] = useState(() => (st ? gameCompute(snap.days, st, snap.reviews, tk).pts : 0));
-  /* the extras, while being made */
-  const [itW, setItW] = useState<string | null>(() => saved?.it?.w || null);
-  const [itT, setItT] = useState<string | null>(() => saved?.it?.t || null);
-  const [note, setNote] = useState(() => saved?.nt || '');
-  /* the week's step, kept as the plan for the week (one tap on the last screen) */
-  const [keep, setKeep] = useState(false);
-  const health = useNights();
+  const [done, setDone] = useState(false);
+  const [gain, setGain] = useState(0);
+  const { cards } = usePatternCards('7', sun);
   const S = useMemo(
     () => (st ? story(snap.days, st, snap.reviews, sun, tk, Date.now(), gameCompute(snap.days, st, snap.reviews, tk).perDay, health.nights) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [snap.days, st, sun, tk, health.nights],
   );
+  const options = useMemo<SunOption[]>(() => (S && st ? sunOptions(S.w, st, S.last, prefs.checkinAt) : []), [S, st, prefs.checkinAt]);
+  /* the goals the person wrote before, kept for good, offered after Daybook's */
+  const own = useOwn(
+    'goal',
+    options.map((o) => o.g.t),
+    goal && !goal.k ? [goal.t] : [],
+  );
   if (!st || !S) return null;
 
-  const screens = S.screens;
-  const scr = screens[Math.min(i, screens.length - 1)];
+  /* the week's graphs: the Pattern cards that have something this week */
+  const graphs = ORDER.map((id) => cards.find((x) => x.id === id && !x.ghost && !x.bare)).filter((x) => !!x).slice(0, MAX_GRAPHS);
+  const pages: Page[] = ['intro', ...graphs.map((g) => 'g:' + g!.id)];
+  if (S.last) pages.push('last');
+  pages.push('pick', 'set');
+  const page = pages[Math.min(i, pages.length - 1)];
   const over = tk > sun;
-  const toggle = (list: string[], t: string) => (list.indexOf(t) >= 0 ? list.filter((x) => x !== t) : list.concat(t).slice(-6));
-  const worked = sunWorked(S.w, st);
-  const change = sunChange(S.w, st);
-  const changeIds = change.filter((x) => ch.indexOf(x.t) >= 0).map((x) => x.id);
-  /* the goals that fit the week's step come first */
-  const goals = sunGoals((S.read.step.c ? [S.read.step.c] : []).concat(changeIds.length ? changeIds : change.slice(0, 1).map((x) => x.id)), st);
-  const goalKind = goal?.k ? SUN_GOALS[goal.k] : null;
-
-  const next = () => {
+  const go = (to: number) => {
     buzz('tap');
-    setDir(1);
-    if (i < screens.length - 1) setI(i + 1);
-    else setAfter('take');
+    setDir(to > i ? 1 : -1);
+    setOwnOpen(false);
+    setI(Math.max(0, Math.min(pages.length - 1, to)));
   };
-  const back = () => {
-    setDir(-1);
-    if (after === 'goal') setAfter('take');
-    else if (after === 'take') setAfter(null);
-    else if (after === 'more') setAfter('done');
-    else if (after && after[0] === 'x') setAfter('more');
-    else if (i > 0) setI(i - 1);
-  };
-  /* the review as it stands, and saving it (again, for the extras: the points come once) */
-  const cur = (): SunReview => ({
-    ...(saved || {}),
-    w,
-    c: ch,
-    g: goal,
-    ...(last ? { last } : {}),
-    ...(keep && S.read.step.w ? { it: { w: S.read.step.w, t: S.read.step.t } } : {}),
-  });
-  const store = (extra: Partial<SunReview> = {}) => update((s0) => ({ ...s0, reviews: saveSun(s0.reviews, sun, { ...cur(), ...extra }) }));
-  const save = (g: SunGoal | null) => {
-    setGoal(g);
-    update((s0) => ({ ...s0, reviews: saveSun(s0.reviews, sun, { ...cur(), g }) }));
+  const next = () => go(i + 1);
+  const opt = goal?.k ? options.find((o) => o.g.k === goal.k) : null;
+  /* the plan that comes with the goal: the option's, or for a goal the log counts but no option offered, its own */
+  const plan = goal?.k ? opt?.plan || null : null;
+  const remindLine = goal?.k ? sunRemindLine(goal.k, st, prefs.checkinAt) : null;
+  const remindKey = goal?.k ? SUN_HOW[goal.k].remind : null;
+  const remindOn = !!remindKey && !!prefs[remindKey];
+
+  const save = async () => {
+    update((s0) => ({
+      ...s0,
+      reviews: saveSun(s0.reviews, sun, {
+        ...(saved || {}),
+        w: saved?.w || [],
+        c: saved?.c || [],
+        g: goal,
+        ...(last ? { last } : {}),
+        ...(plan ? { it: plan } : {}),
+      }),
+    }));
+    /* the review's points come once (core gameCompute) */
+    setGain(saved ? 0 : 20);
+    if (remindKey && remind && !remindOn && remindersOffered) {
+      const ok = await allowReminders();
+      if (ok) setReminderPrefs({ ...prefs, [remindKey]: true });
+      else say(WORDS.notifyOff);
+    }
     buzz('lit');
     play('chime');
-    setDir(1);
-    setAfter('done');
+    setDone(true);
   };
-  const sky: Sky = after ? (after === 'done' || after === 'more' ? 'sun' : 'violet') : SKY[scr];
 
-  /* the picture area of a story screen: a tap on its right side goes on, on its left side goes back */
-  const tapZone = (e: { nativeEvent: { pageX: number } }) => (e.nativeEvent.pageX < win.width * 0.3 ? i > 0 && back() : next());
+  /* the finish: the lesson finish, with the week's words, and the Sundays line to the next four */
+  if (done) {
+    const n = sunList(snap.reviews).length;
+    const to = Math.ceil(Math.max(1, n) / 4) * 4;
+    return (
+      <View style={StyleSheet.absoluteFill}>
+        <LessonFinish
+          lessonId=""
+          title={goal ? goal.t : 'Your week is saved'}
+          n={n}
+          gain={gain}
+          again={!!saved}
+          stats={{ cards: 0, combo: 0, secs: 0 }}
+          keep={plan ? storyIfLine(plan) : goal ? 'I will be on Today all week, counting it with you.' : 'A week looked back on, honestly. See you on Today.'}
+          next={null}
+          onNext={closeAll}
+          onDone={closeAll}
+          head="Your week is set"
+          line={{ label: n === 1 ? '1 Sunday' : n + ' Sundays', right: to === 4 ? 'a month of them' : to + ' Sundays', from: (n - 1) / to, to: n / to }}
+          button="Done"
+          feedback={false}
+        />
+      </View>
+    );
+  }
+
   const eyebrow = (t: string) => (
-    <T v="eyebrow" tone="muted" style={s.c}>
+    <T v="small" tone="muted" style={s.c}>
       {t}
     </T>
   );
-  const nextBtn = <Button label={i < screens.length - 1 ? 'Next' : 'Get ready for next week'} onPress={next} />;
-
   let body: React.ReactNode = null;
-  let key = after || scr;
 
-  /* ---------- the story ---------- */
-  if (!after) {
-    const teach = storyTeach(scr, { kind: S.read.kind });
-    let main: React.ReactNode = null;
-    if (scr === 'intro') {
-      main = (
-        <>
-          {eyebrow(sunRange(sun) + (over ? ' · last week' : tk < sun ? ' · so far' : ''))}
-          <Text style={[s.h1, { color: c.ink }]} accessibilityRole="header">
-            Your week,{'\n'}looked back on
-          </Text>
-          <FitArt>
-            <Appear delay={200} by={10}>
-              <FlameMedallion level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)} size={200} />
-            </Appear>
-          </FitArt>
-          <T tone="muted" style={[s.c, s.lead]}>
-            A few minutes, one thing at a time. Tap the right side to go on, the left side to go back.
-          </T>
-        </>
-      );
-    } else if (scr === 'days') {
-      const zero = S.w.noSlip === 0;
-      main = (
-        <>
-          {eyebrow('Your seven days')}
-          <Big>{zero ? S.w.days : S.w.noSlip}</Big>
-          <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>
-            {zero ? 'days you showed up and logged it' : S.w.noSlip === 1 ? 'day with no slip' : 'days with no slip'}
-          </T>
+  if (page === 'intro') {
+    /* ---------- the week in seven days and three numbers ---------- */
+    const nums: [number, string, string][] = [
+      [S.w.noSlip, S.w.noSlip === 1 ? 'day with no slip' : 'days with no slip', c.sunText],
+      [S.w.rode, S.w.rode === 1 ? 'urge ridden out' : 'urges ridden out', c.mintText],
+      [S.w.lessons, S.w.lessons === 1 ? 'day with a lesson' : 'days with a lesson', c.violetText],
+    ];
+    body = (
+      <>
+        {eyebrow(sunRange(sun) + (over ? '' : tk < sun ? ' · so far' : ''))}
+        <Text style={[s.h1, { color: c.ink }]} accessibilityRole="header">
+          Your week
+        </Text>
+        <View style={s.zone}>
           <DaysRow days={S.days} />
-          {/* the week, named in plain numbers, and what held (core sunday-read.ts) */}
-          <Appear delay={900} style={{ alignSelf: 'stretch', gap: 4 }}>
+          <View style={s.nums}>
+            {nums.map(([v, l, col], j) => (
+              <Appear key={l} delay={500 + j * 160} by={8} style={s.num}>
+                <Text style={[s.numV, { color: col }]}>{v}</Text>
+                <T v="small" tone="muted" style={s.c}>
+                  {l}
+                </T>
+              </Appear>
+            ))}
+          </View>
+          <Appear delay={1000} style={{ alignSelf: 'stretch', gap: 4 }}>
             <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>{S.read.says}</T>
             <T tone="muted" style={[s.c, s.lead]}>
               {S.read.held}
             </T>
           </Appear>
-          {/* after a long stretch, the stretch inside the week would undersell the run the line above names */}
-          {S.best >= 1 && S.read.kind !== 'after' ? (
-            <Appear delay={1300}>
-              <View style={[s.pill, { backgroundColor: c.surface }]}>
-                <Icon name="flame" size={16} color={c.sunText} />
-                <T v="small" style={{ fontFamily: font.bodySemi }}>
-                  Your longest stretch: {storyStretch(S.best)}
-                </T>
-              </View>
-            </Appear>
-          ) : null}
-        </>
-      );
-    } else if (scr === 'ride') {
-      main = (
-        <>
-          {eyebrow('Urges')}
-          <Big color={c.mintText}>{S.w.rode}</Big>
-          <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>{S.w.rode === 1 ? 'urge ridden out' : 'urges ridden out'}</T>
-          <FitArt>
-            <RideWave mins={S.rideMins} />
-          </FitArt>
-          <T tone="muted" style={[s.c, s.lead]}>
-            {S.w.rode === 1 ? 'That one is proof you can.' : 'Every one of them is proof you can.'}
-          </T>
-        </>
-      );
-    } else if (scr === 'clock') {
-      const top = S.when.hours.slice().sort((a, b) => b.rode + b.slipped - (a.rode + a.slipped))[0];
-      const hard = S.when.hard.weekdays || S.when.hard.weekends;
-      main = (
-        <>
-          {eyebrow('When it came')}
-          <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
-            Most often around {(top.h % 12 || 12) + (top.h < 12 ? ' AM' : ' PM')}
-          </Text>
-          <FitArt stretch>
-            <View style={[s.card, { backgroundColor: c.surface, alignItems: 'center', paddingVertical: 8 }]}>
-              <View style={{ width: Math.min(win.width, MAX_WIDTH + 40) - 72, paddingVertical: 8 }}>
-                <Hours hours={S.when.hours} hard={S.when.hard} H={120} />
-              </View>
-            </View>
-          </FitArt>
-          {hard ? (
-            <T tone="muted" style={[s.c, s.lead]}>
-              {hard.line} Those are your hard hours.
-            </T>
-          ) : null}
-        </>
-      );
-    } else if (scr === 'trig') {
-      main = (
-        <>
-          {eyebrow('What set it off')}
-          <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
-            {S.trig[0].t} came up most
-          </Text>
-          <FitArt stretch>
-            <TrigBars rows={S.trig} />
-          </FitArt>
-        </>
-      );
-    } else if (scr === 'help') {
-      main = (
-        <>
-          {eyebrow('What helped')}
-          <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
-            {S.help[0].t} worked best
-          </Text>
-          <FitArt stretch>
-            <HelpList rows={S.help} />
-          </FitArt>
-          <T tone="muted" style={[s.c, s.lead]}>
-            Keep these close. They are proven, by you.
-          </T>
-        </>
-      );
-    } else if (scr === 'slips') {
-      /* once the last slips show a pattern, what came before them (core patSlipTrig), in place of this week's most common */
-      const pat = patSlipTrig(snap.days, st, tk < sun ? tk : sun);
-      main = (
-        <>
-          {eyebrow('The hard moments')}
-          <Big color={c.slipText}>{S.slips.n}</Big>
-          <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>{S.slips.n === 1 ? 'slip, logged honestly' : 'slips, logged honestly'}</T>
-          <View style={{ alignSelf: 'stretch', gap: 8 }}>
-            {S.slips.waited ? (
-              <Fact icon="timer" text={'You waited first ' + S.slips.waited + ' of ' + S.slips.n + ' times. That wait is the skill growing.'} />
-            ) : null}
-            {pat ? <Fact icon="compass" text={pat.line} /> : S.slips.top ? <Fact icon="compass" text={'Most came with: ' + S.slips.top + '.'} /> : null}
-            <Fact icon="leaf" text="Each one is data for the week ahead, not a reset." />
+        </View>
+        <Dock>
+          {/* the two halves, so the person knows what is coming and how long */}
+          <View style={s.map} accessible accessibilityLabel={'First, ' + (graphs.length + 1) + ' pages on your week. Then one goal for next week.'}>
+            <MapStep icon="chart" text={graphs.length ? 'Your graphs for the week' : 'Your week'} on />
+            <Icon name="next" size={14} color={c.muted} />
+            <MapStep icon="flag" text="One goal for next week" />
           </View>
-        </>
-      );
-    } else if (scr === 'base') {
-      const b = S.base;
-      const line =
-        b.sleep != null && b.sleep < 7
-          ? 'About ' + b.sleep + ' hours of sleep a night. More rest makes the nights easier.'
-          : b.phone >= 3
-            ? 'Phone away ' + b.phone + ' nights. That is less to fight.'
-            : 'Small habits here make every hard moment smaller.';
-      main = (
-        <>
-          {eyebrow('The foundations')}
-          <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
-            What holds the rest up
-          </Text>
-          <FitArt stretch>
-            <Rings base={b} />
-          </FitArt>
-          <T tone="muted" style={[s.c, s.lead]}>
-            {line}
-          </T>
-        </>
-      );
-    } else if (scr === 'last' && S.last) {
-      const L = S.last;
-      main = (
-        <>
-          {eyebrow('Last week’s goal')}
-          <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
-            {L.g.t}
-          </Text>
+          <Button label="Start" onPress={next} />
+        </Dock>
+      </>
+    );
+  } else if (page.startsWith('g:')) {
+    /* ---------- one of the week's graphs, as Pattern shows it ---------- */
+    const id = page.slice(2);
+    const card = graphs.find((g) => g!.id === id)!;
+    const k = graphs.findIndex((g) => g!.id === id);
+    body = (
+      <>
+        {eyebrow('Your graphs · ' + (k + 1) + ' of ' + graphs.length)}
+        <View style={s.cardZone}>
+          <PatternCard d={card} H={Math.max(SHORT ? 300 : 360, win.height - (SHORT ? 330 : 380))} />
+        </View>
+        <Dock>
+          <Appear delay={500} by={6}>
+            <View style={s.bridge}>
+              <Icon name="flag" size={18} color={c.sunText} />
+              <T style={{ flex: 1, fontFamily: font.bodySemi }}>{BRIDGE[id] || 'This is yours, from your own log.'}</T>
+            </View>
+          </Appear>
+          <Button label="Next" onPress={next} />
+        </Dock>
+      </>
+    );
+  } else if (page === 'last' && S.last) {
+    /* ---------- last week's goal ---------- */
+    const L = S.last;
+    body = (
+      <>
+        {eyebrow('Last week’s goal')}
+        <T v="title" style={s.c} accessibilityRole="header">
+          {L.g.t}
+        </T>
+        <View style={s.zone}>
           {L.done != null && L.g.n ? (
             <>
               <GoalDots n={L.g.n} done={L.done} />
@@ -369,7 +281,12 @@ export default function Review() {
               </Appear>
             </>
           ) : (
-            <View style={{ gap: 10, alignItems: 'center' }}>
+            <Icon name="flag" size={56} color={c.sunText} />
+          )}
+        </View>
+        <Dock>
+          {L.done == null ? (
+            <View style={{ gap: 8, alignItems: 'center' }}>
               <T tone="muted">How did it go?</T>
               <View style={s.row}>
                 {SUN_LAST.map(([k, l]) => (
@@ -378,594 +295,182 @@ export default function Review() {
               </View>
               {last ? <T style={s.c}>{SUN_LAST.find((x) => x[0] === last)![2]}</T> : null}
             </View>
-          )}
-        </>
-      );
-    } else if (scr === 'long') {
-      main = (
-        <>
-          {eyebrow('The long view')}
-          <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
-            {S.weeks.length} weeks, side by side
-          </Text>
-          <FitArt stretch>
-            <WeekBars weeks={S.weeks} />
-          </FitArt>
-          <T style={[s.c, s.lead, { fontFamily: font.bodySemi }]}>{S.trend.line}</T>
-          {S.pts ? <CountUp to={S.pts} prefix="+" suffix=" points this week" delay={900} style={[s.pts, { color: c.mintText }]} /> : null}
-          {String(st.becoming || '').trim() ? (
-            <Appear delay={1200}>
-              <T style={[s.c, s.be]}>{String(st.becoming).trim()}</T>
-            </Appear>
           ) : null}
-        </>
-      );
-    } else if (scr === 'deep') {
-      const d = S.deep;
-      const l = lessonFor(d.l, st);
-      main = (
-        <>
-          {eyebrow('One thing to know')}
-          <Icon name={d.ic} size={34} color={c.violetText} />
-          <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
-            {d.title}
-          </Text>
-          <View style={[s.card, { backgroundColor: c.surface }]}>
-            {d.paras.map((p, j) => (
-              <Appear key={j} delay={150 + j * 260}>
-                <T>{p}</T>
-              </Appear>
-            ))}
-            <View style={s.foot2}>
-              {l ? (
-                <Pressable
-                  accessibilityRole="link"
-                  onPress={() => router.push({ pathname: '/lesson/[id]', params: { id: l.id, pick: '1' } })}
-                  style={s.lesson}
-                  hitSlop={6}>
-                  <Icon name="book" size={14} color={c.accentText} />
-                  <Text style={[s.lessonT, { color: c.accentText }]} numberOfLines={1}>
-                    {l.title}
-                  </Text>
-                </Pressable>
-              ) : null}
-              <SourceLine keys={d.src} map={SRCS} />
-            </View>
-          </View>
-        </>
-      );
-    } else if (scr === 'next') {
-      /* one step for next week, from the person's own pattern, and one tap to keep it as the week's plan */
-      const st0 = S.read.step;
-      main = (
-        <>
-          {eyebrow('Next week')}
-          <Text style={[s.h2, { color: c.ink }]} accessibilityRole="header">
-            {S.read.title}
-          </Text>
-          <Appear by={6} style={[s.goalCard, { backgroundColor: c.surface }]}>
-            <Icon name="compass" size={22} color={c.violetText} />
-            <Text style={[s.goalT, { color: c.ink }]}>{st0.line}</Text>
-          </Appear>
-          <View style={{ alignSelf: 'stretch', gap: 8 }}>
-            {st0.why.map((t, j) => (
-              <Appear key={t} delay={350 + j * 250}>
-                <T tone="muted" style={[s.c, s.lead]}>
-                  {t}
-                </T>
-              </Appear>
+          <Button label="Next" onPress={next} />
+        </Dock>
+      </>
+    );
+  } else if (page === 'pick') {
+    /* ---------- one goal: why, and the plan it comes with ---------- */
+    const ownGoals = own.choices.filter((t) => !options.some((o) => o.g.t === t));
+    body = ownOpen ? (
+      <>
+        {eyebrow('Your own goal')}
+        <OwnField
+          kind="goal"
+          builtIn={options.map((o) => o.g.t)}
+          placeholder="Like: a walk after dinner"
+          max={80}
+          onSave={(t) => {
+            setGoal(sunOwnGoal(t));
+            setOwnOpen(false);
+          }}
+          onCancel={() => setOwnOpen(false)}
+        />
+      </>
+    ) : (
+      <>
+        {eyebrow('Next week')}
+        <T v="title" style={s.c} accessibilityRole="header">
+          Pick one goal
+        </T>
+        {/* one, on purpose (Dalton and Spiller 2012): said plainly, so it never surprises */}
+        <T tone="muted" style={[s.c, s.lead]}>
+          Just one. One goal gets kept far more often than three.
+        </T>
+        <Dock>
+          <View style={{ alignSelf: 'stretch', gap: 10 }}>
+            {options.map((o) => (
+              <GoalCard
+                key={o.id}
+                o={o}
+                on={!!goal?.k && goal.k === o.g.k}
+                onPress={() => setGoal(goal?.k === o.g.k ? null : sunGoalOf(o.g.k!, st, o.g.n))}
+              />
             ))}
           </View>
-        </>
-      );
-    }
+          <ChipWrap last={1}>
+            {ownGoals.map((t) => (
+              <AnswerChip key={t} label={t} tone="sun" on={!!goal && !goal.k && goal.t === t} onPress={() => setGoal(goal && !goal.k && goal.t === t ? null : sunOwnGoal(t))} />
+            ))}
+            <OwnChip onPress={() => setOwnOpen(true)} />
+          </ChipWrap>
+          <Button label="Next" disabled={!goal} onPress={next} />
+        </Dock>
+      </>
+    );
+  } else if (page === 'set' && goal) {
+    /* ---------- the goal set: how many, and what happens ---------- */
+    const kind = goal.k ? SUN_GOALS[goal.k] : null;
+    const gn = goal.n || 1;
+    const name = goal.k ? SUN_GOALS[goal.k].t(st) : goal.t;
     body = (
       <>
-        <StoryBars n={screens.length} i={i} />
-        <Pressable accessible={false} onPress={tapZone} style={s.zone}>
-          {main}
-        </Pressable>
-        {teach ? (
-          <Teach key={scr} teach={teach} folded={SHORT && (scr === 'ride' || scr === 'clock' || scr === 'help' || scr === 'base' || scr === 'long')} />
+        {eyebrow('Your goal for next week')}
+        <T v="title" style={s.c} accessibilityRole="header">
+          {name}
+        </T>
+        {kind && goal.k ? (
+          <View style={s.stepRow} accessibilityLabel={gn + ' ' + kind.unit}>
+            <Step label="One less" sign="−" off={gn <= 1} onPress={() => setGoal(sunGoalOf(goal.k!, st, gn - 1))} />
+            <View style={{ alignItems: 'center', minWidth: 96 }}>
+              <Text style={[s.stepN, { color: c.ink }]}>{gn}</Text>
+              <T v="small" tone="muted">
+                {gn === 1 ? UNIT_ONE[kind.unit] : kind.unit}
+              </T>
+            </View>
+            <Step label="One more" sign="+" off={gn >= 7} onPress={() => setGoal(sunGoalOf(goal.k!, st, gn + 1))} />
+          </View>
         ) : null}
         <Dock>
-          {scr === 'next' && S.read.step.w && !saved?.it ? (
-            <View style={s.row}>
-              <Chip
-                label={keep ? 'My plan for the week' : 'Make it my plan for the week'}
-                on={keep}
-                onPress={() => {
-                  buzz('tap');
-                  setKeep(!keep);
-                }}
-              />
-            </View>
-          ) : null}
-          {scr === 'intro' ? <Button label="Start" onPress={next} /> : nextBtn}
-        </Dock>
-      </>
-    );
-  } else if (after === 'take') {
-    /* ---------- your take ---------- */
-    const ownLines = (list: string[], picks: SunPick[]) => list.filter((t) => !picks.some((p) => p.t === t));
-    body =
-      own === 'w' || own === 'c' ? (
-        <>
-          {eyebrow(own === 'w' ? 'What worked' : 'What to change')}
-          <OwnField
-            placeholder={own === 'w' ? 'Like: going for a run after work' : 'Like: Sunday evenings'}
-            max={SUN_LEN}
-            onSave={(t) => {
-              if (own === 'w') setW(toggle(w, t));
-              else setCh(toggle(ch, t));
-              setOwn(null);
-            }}
-            onCancel={() => setOwn(null)}
-          />
-        </>
-      ) : (
-        <>
-          {eyebrow('Getting ready · 1 of 2')}
-          <T v="title" style={s.c} accessibilityRole="header">
-            Your take on the week
-          </T>
-          <T tone="muted" style={[s.c, s.lead]}>
-            Tap what fits. Daybook found these in your log.
-          </T>
-          <Dock>
-            <Part icon="check" tone="mint" title="What worked">
-              {worked.map((p) => (
-                <Pick key={p.id} p={p} tone="mint" on={w.indexOf(p.t) >= 0} onPress={() => setW(toggle(w, p.t))} />
-              ))}
-              {ownLines(w, worked).map((t) => (
-                <AnswerChip key={'o' + t} label={t} tone="mint" on onPress={() => setW(toggle(w, t))} />
-              ))}
-              <OwnChip onPress={() => setOwn('w')} />
-            </Part>
-            <Part icon="compass" tone="coral" title="What to change">
-              {change.map((p) => (
-                <Pick key={p.id} p={p} tone="coral" on={ch.indexOf(p.t) >= 0} onPress={() => setCh(toggle(ch, p.t))} />
-              ))}
-              {ownLines(ch, change).map((t) => (
-                <AnswerChip key={'o' + t} label={t} tone="coral" on onPress={() => setCh(toggle(ch, t))} />
-              ))}
-              <OwnChip onPress={() => setOwn('c')} />
-            </Part>
-            <Button
-              label={w.length + ch.length ? 'Next' : 'Skip'}
-              kind={w.length + ch.length ? 'primary' : 'ghost'}
-              onPress={() => {
-                setDir(1);
-                setAfter('goal');
-              }}
+          {/* what happens, said plainly: every row is a thing that will really change */}
+          <View style={{ alignSelf: 'stretch' }}>
+            <Happens
+              icon="sun"
+              title="On Today, under your count"
+              text={kind ? '0 of ' + gn + ' ' + kind.unit + ' this week, filling in as you go' : 'In Pattern, Days, all week. Next Sunday asks how it went.'}
             />
-          </Dock>
-        </>
-      );
-  } else if (after === 'goal') {
-    /* ---------- one small goal ---------- */
-    body =
-      own === 'g' ? (
-        <>
-          {eyebrow('One small goal')}
-          <OwnField placeholder="Like: a walk after dinner" max={80} onSave={(t) => (setGoal({ t }), setOwn(null))} onCancel={() => setOwn(null)} />
-        </>
-      ) : (
-        <>
-          {eyebrow('Getting ready · 2 of 2')}
-          <T v="title" style={s.c} accessibilityRole="header">
-            One small goal for next week
-          </T>
-          <T tone="muted" style={[s.c, s.lead]}>
-            Small and close. It waits on Today all week, and Daybook counts it for you.
-          </T>
-          {goal ? (
-            <Appear key={goal.t} by={6} style={[s.goalCard, { backgroundColor: c.surface }]}>
-              <Icon name="flag" size={22} color={c.sunText} />
-              <Text style={[s.goalT, { color: c.ink }]}>{goal.t}</Text>
-            </Appear>
-          ) : null}
-          <Dock>
-            <ChipWrap last={1}>
-              {goals.map((g) => {
-                const on = !!goal && (goal.k ? goal.k === g.k : goal.t === g.t);
-                return (
-                  <AnswerChip
-                    key={g.k || g.t}
-                    label={on && goal ? goal.t : g.t}
-                    tone="sun"
-                    on={on}
-                    onPress={() => setGoal(on ? null : g.k ? sunGoalOf(g.k, st, goal?.k === g.k ? goal.n : undefined) : g)}
-                  />
-                );
-              })}
-              {goal && !goals.some((g) => (goal.k ? goal.k === g.k : goal.t === g.t)) ? (
-                <AnswerChip label={goal.t} tone="sun" on onPress={() => setGoal(null)} />
-              ) : null}
-              <OwnChip onPress={() => setOwn('g')} />
-            </ChipWrap>
-            {goal && goal.k && goalKind ? (
-              <View style={s.stepRow} accessibilityLabel={'How many ' + goalKind.unit}>
-                <Step label="One less" sign="−" off={(goal.n || 1) <= 1} onPress={() => setGoal(sunGoalOf(goal.k!, st, Math.max(1, (goal.n || 1) - 1)))} />
-                <T style={{ fontFamily: font.bodyBold, minWidth: 92, textAlign: 'center' }}>
-                  {goal.n} {goalKind.unit}
-                </T>
-                <Step label="One more" sign="+" off={(goal.n || 1) >= 7} onPress={() => setGoal(sunGoalOf(goal.k!, st, Math.min(7, (goal.n || 1) + 1)))} />
-              </View>
-            ) : null}
-            {remindersOffered && !prefs.review ? (
-              <View style={s.row}>
-                <Chip
-                  label="Remind me next Sunday"
-                  on={false}
-                  onPress={async () => {
-                    const ok = await allowReminders();
-                    if (ok) {
-                      setReminderPrefs({ ...prefs, review: true });
-                      say('Daybook will remind you on Sunday evenings.');
-                    } else say(WORDS.notifyOff);
-                  }}
-                />
-              </View>
-            ) : null}
-            <Button label={saved ? 'Save my week' : 'Save my week · +20'} onPress={() => save(goal)} />
-            {!goal ? (
-              <View style={{ alignItems: 'center' }}>
-                <Link label="No goal this week" onPress={() => save(null)} />
-              </View>
-            ) : null}
-          </Dock>
-        </>
-      );
-  } else if (after === 'done') {
-    /* ---------- all done: the flame, big, and the week in a line ---------- */
-    const gain = Math.max(0, gameCompute(snap.days, st, snap.reviews, tk).pts - pts0);
-    const r = snap.reviews[sunKey(sun)]?.sun;
-    const planSay = sunPlanSay(snap.reviews, st, tk, r?.it);
-    body = (
-      <>
-        <Finish
-          level={Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n)}
-          title="All done!"
-          text={goal ? goal.t + '. It waits on Today all week.' : 'Your week is saved.'}
-          size={190}
-          always
-          least={0.6}
-        />
-        <Appear delay={300} style={{ alignSelf: 'stretch', gap: 4 }}>
-          <T style={[s.c, { fontFamily: font.bodySemi }]}>
-            {[
-              S.w.noSlip ? S.w.noSlip + ' of ' + S.w.days + ' days with no slip' : '',
-              S.w.rode ? S.w.rode + (S.w.rode === 1 ? ' urge' : ' urges') + ' ridden out' : '',
-            ]
-              .filter(Boolean)
-              .join(' · ') || 'A week looked back on, honestly.'}
-          </T>
-          {gain ? <CountUp to={gain} prefix="+" suffix=" points" delay={650} style={[s.pts, { color: c.mintText }]} /> : null}
-        </Appear>
-        <Dock>
-          {/* a plan said once comes back at the moment (Sheeran 2025) */}
-          {planSay ? (
-            <View style={{ alignSelf: 'stretch', alignItems: 'center' }}>
-              <T style={[s.c, { fontFamily: font.bodySemi }]}>{'“' + planSay + '”'}</T>
-              {said ? (
-                <View style={s.saidRow}>
-                  <T v="small" style={[s.c, { fontFamily: font.bodySemi }]}>
-                    Good. It comes back to you at the moment.
-                  </T>
-                </View>
-              ) : (
-                <Link
-                  label="Say it once, then tap here"
-                  onPress={() => {
-                    buzz('tap');
-                    setSaid(true);
-                  }}
-                />
-              )}
-            </View>
-          ) : null}
-          <Button label="Done" onPress={closeAll} />
-          <View style={{ alignItems: 'center' }}>
-            {/* the one extra with real evidence behind it stays one tap from here */}
-            {snap.reviews[sunKey(sun)]?.sun?.it ? null : (
-              <Link
-                label="Plan for your hardest moment"
-                onPress={() => {
-                  buzz('tap');
-                  setDir(1);
-                  setAfter('xIt');
-                }}
+            {goal.k ? <Happens icon="check" title="What counts it" text={SUN_HOW[goal.k].count} /> : null}
+            {plan ? <Happens icon="compass" title="Your plan, on Today and in SOS" text={storyIfLine(plan)} /> : null}
+            {remindLine && remindersOffered ? (
+              <Happens
+                icon="timer"
+                title={remindOn ? 'Your reminder is on' : 'Remind me'}
+                text={remindLine}
+                toggle={remindOn ? undefined : { on: remind, set: setRemind }}
               />
-            )}
-            <Link
-              label="Want to do more? All optional."
-              onPress={() => {
-                buzz('tap');
-                setDir(1);
-                setAfter('more');
-              }}
-            />
+            ) : null}
           </View>
+          <Button label={saved ? 'Save my week' : 'Save my week · +20'} onPress={save} />
         </Dock>
-      </>
-    );
-  } else if (after === 'more') {
-    /* ---------- more, only if wanted ---------- */
-    const r = snap.reviews[sunKey(sun)]?.sun;
-    const extra = (k: After, icon: string, tone: string, title: string, sub: string, done: boolean) => {
-      const t = toneOf(c, tone);
-      return (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={title + (done ? ', done' : '')}
-          onPress={() => {
-            buzz('tap');
-            setDir(1);
-            setOwn(null);
-            setAfter(k);
-          }}
-          style={({ pressed }) => [s.extra, { opacity: pressed ? 0.7 : 1 }]}>
-          <Icon name={icon} size={20} color={t.text} />
-          <View style={[s.extraIn, { borderBottomColor: c.line }]}>
-            <View style={{ flex: 1 }}>
-              <T v="label">{title}</T>
-              <T v="small" tone="muted" numberOfLines={1}>
-                {sub}
-              </T>
-            </View>
-            {done ? <Icon name="check" size={20} color={c.mintText} /> : <Icon name="next" size={16} color={c.muted} />}
-          </View>
-        </Pressable>
-      );
-    };
-    body = (
-      <>
-        <T v="title" style={s.c} accessibilityRole="header">
-          Want to do more?
-        </T>
-        <T tone="muted" style={[s.c, s.lead]}>
-          All optional.
-        </T>
-        <Dock>
-          <Rows>
-            {extra('xIt', 'compass', 'violet', 'Plan for your hardest moment', r?.it ? storyIfLine(r.it) : 'An if-then plan, made while you are calm', !!r?.it)}
-            {extra('xHard', 'calendar', 'coral', 'See your harder days ahead', r?.hd ? 'Marked on Today' : 'From your log, with a heads-up', !!r?.hd)}
-            {extra('xNote', 'pencil', 'sun', 'A note to future you', r?.nt ? '“' + r.nt + '”' : 'Shown to you from Wednesday on', !!r?.nt)}
-          </Rows>
-          <Button label="Done" onPress={closeAll} />
-        </Dock>
-      </>
-    );
-  } else if (after === 'xIt') {
-    /* ---------- an if-then plan ---------- */
-    const whens = storyIfWhen(snap.days, st, tk);
-    const thens = storyIfThen(S.w, st);
-    if (itW && whens.indexOf(itW) < 0) whens.push(itW);
-    if (itT && thens.indexOf(itT) < 0) thens.push(itT);
-    body =
-      own === 'iw' || own === 'it' ? (
-        <>
-          {eyebrow(own === 'iw' ? 'When…' : 'I will…')}
-          <OwnField
-            placeholder={own === 'iw' ? 'Like: I get home from work tired' : 'Like: make tea and call my brother'}
-            max={80}
-            onSave={(t) => {
-              const v = t.replace(/[.!]+$/, '');
-              if (own === 'iw') setItW(v.replace(/^when\s+/i, ''));
-              else setItT(v.replace(/^i will\s+/i, ''));
-              setOwn(null);
-            }}
-            onCancel={() => setOwn(null)}
-          />
-        </>
-      ) : (
-        <>
-          {eyebrow('Your hardest moment')}
-          <T v="title" style={s.c} accessibilityRole="header">
-            Decide now, while you are calm
-          </T>
-          <Appear key={(itW || '') + (itT || '')} by={6} style={[s.goalCard, { backgroundColor: c.surface }]}>
-            <Icon name="compass" size={22} color={c.violetText} />
-            <Text style={[s.goalT, { color: itW && itT ? c.ink : c.muted }]}>
-              {itW && itT ? storyIfLine({ w: itW, t: itT }) : 'When ' + (itW || '…') + ', I will ' + (itT || '…')}
-            </Text>
-          </Appear>
-          {/* the science, short here, so the choices fit (left out on a short phone, where the choices need the room) */}
-          {SHORT ? null : (
-            <View style={{ alignSelf: 'stretch', gap: 6 }}>
-              <T v="small" tone="muted" style={s.c}>
-                {IF_TEACH.t}
-              </T>
-              <SourceLine keys={IF_TEACH.src} map={SRCS} />
-            </View>
-          )}
-          <Dock>
-            <Part icon="timer" tone="violet" title="When…">
-              {whens.map((x) => (
-                <AnswerChip key={x} label={x} tone="violet" on={itW === x} onPress={() => setItW(itW === x ? null : x)} />
-              ))}
-              <OwnChip onPress={() => setOwn('iw')} />
-            </Part>
-            <Part icon="check" tone="mint" title="I will…">
-              {thens.map((x) => (
-                <AnswerChip key={x} label={x} tone="mint" on={itT === x} onPress={() => setItT(itT === x ? null : x)} />
-              ))}
-              <OwnChip onPress={() => setOwn('it')} />
-            </Part>
-            <Button
-              label="Save my plan"
-              disabled={!itW || !itT}
-              onPress={() => {
-                store({ it: { w: itW!, t: itT! } });
-                buzz('save');
-                say('Your plan is saved. SOS and Today show it this week.');
-                setDir(-1);
-                setAfter('done');
-              }}
-            />
-          </Dock>
-        </>
-      );
-  } else if (after === 'xHard') {
-    /* ---------- the harder days ahead ---------- */
-    const hd = storyHardDays(snap.days, tk);
-    const dateOf = (d: number) => {
-      const k = addDays(sun, d === 0 ? 7 : d);
-      const [y, m, dd] = k.split('-').map(Number);
-      return new Date(y, m - 1, dd).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-    };
-    body = (
-      <>
-        {eyebrow('The week ahead')}
-        <T v="title" style={s.c} accessibilityRole="header">
-          {hd.length ? (hd.length === 1 ? 'One day to plan for' : 'Two days to plan for') : 'No day stands out'}
-        </T>
-        <T tone="muted" style={[s.c, s.lead]}>
-          {hd.length
-            ? 'From your last two months of slips. Knowing ahead is half the plan.'
-            : 'Your slips are not piling up on any one day of the week. That is good news.'}
-        </T>
-        <View style={{ alignSelf: 'stretch', gap: 10 }}>
-          {hd.map((x, j) => (
-            <Appear key={x.d} delay={150 + j * 200} style={[s.goalCard, { backgroundColor: c.surface }]}>
-              <Icon name="calendar" size={20} color={c.coralText} />
-              <View style={{ flex: 1 }}>
-                <T v="label">{dateOf(x.d)}</T>
-                <T v="small" tone="muted">
-                  {x.slips} of your last {x.of} slips came on a {x.name}.
-                </T>
-              </View>
-            </Appear>
-          ))}
-        </View>
-        <Dock>
-          {hd.length && remindersOffered && !prefs.risk ? (
-            <View style={s.row}>
-              <Chip
-                label="Heads-up before my hard hours"
-                on={false}
-                onPress={async () => {
-                  const ok = await allowReminders();
-                  if (ok) {
-                    setReminderPrefs({ ...prefs, risk: true });
-                    say('Daybook will give you a heads-up before your hard hours.');
-                  } else say(WORDS.notifyOff);
-                }}
-              />
-            </View>
-          ) : null}
-          {hd.length ? (
-            <Button
-              label="Mark them on Today"
-              onPress={() => {
-                store({ hd: hd.map((x) => x.d) });
-                buzz('save');
-                say('On those days, Today reminds you, with your plan.');
-                setDir(-1);
-                setAfter('more');
-              }}
-            />
-          ) : (
-            <Button label="Back" onPress={back} />
-          )}
-        </Dock>
-      </>
-    );
-  } else if (after === 'xNote') {
-    /* ---------- a note to future you: the box and its button stay near the top, above the keyboard ---------- */
-    body = (
-      <>
-        {eyebrow('A note to future you')}
-        <T v="title" style={s.c} accessibilityRole="header">
-          What will you need to hear midweek?
-        </T>
-        <KeepAbove style={{ alignSelf: 'stretch', gap: 14 }}>
-          <Field
-            label="My note"
-            hideLabel
-            multiline
-            maxLength={SUN_NOTE_LEN}
-            value={note}
-            onChangeText={setNote}
-            placeholder="Like: You have done this before."
-          />
-          <Button
-            label="Save my note"
-            disabled={!note.trim()}
-            onPress={() => {
-              store({ nt: note.trim() });
-              buzz('save');
-              say('Today shows it to you from Wednesday on.');
-              setDir(-1);
-              setAfter('more');
-            }}
-          />
-        </KeepAbove>
-        <T v="small" tone="muted" style={s.c}>
-          Or start from one of these:
-        </T>
-        <ChipWrap>
-          {NOTES.map((x) => (
-            <AnswerChip key={x} label={x} tone="sun" on={note === x} onPress={() => setNote(x)} />
-          ))}
-        </ChipWrap>
       </>
     );
   }
-  if (after) key = after + (own || '');
 
+  const sky: Sky = page.startsWith('g:') ? 'violet' : SKY[page] || 'violet';
   return (
-    <SceneFrame title="Sunday review" sky={sky} onBack={(!after && i > 0) || (after && after !== 'done') ? back : null} onClose={close}>
-      <Stage key={key} dir={dir}>
+    <SceneFrame title="Sunday review" sky={sky} onBack={i > 0 ? () => go(i - 1) : null} onClose={close}>
+      <StoryBars n={pages.length} i={i} />
+      <Stage key={page + (ownOpen ? ':own' : '')} dir={dir}>
         {body}
       </Stage>
     </SceneFrame>
   );
 }
 
-function Fact({ icon, text }: { icon: string; text: string }) {
+/* one of the two halves on the first page */
+function MapStep({ icon, text, on }: { icon: string; text: string; on?: boolean }) {
   const c = useTheme();
   return (
-    <View style={[s.fact, { backgroundColor: c.surface }]}>
-      <Icon name={icon} size={18} color={c.accentText} />
-      <T style={{ flex: 1 }}>{text}</T>
+    <View style={s.mapStep}>
+      <Icon name={icon} size={16} color={on ? c.accentText : c.muted} />
+      <T v="small" style={{ fontFamily: font.bodySemi, color: on ? c.ink : c.muted }}>
+        {text}
+      </T>
     </View>
   );
 }
 
-/* one of the answers: its title, and its choices */
-function Part({ icon, tone, title, children }: { icon: string; tone: string; title: string; children: React.ReactNode }) {
+/* a goal to pick: the goal, why (from the week), and the plan it comes with */
+function GoalCard({ o, on, onPress }: { o: SunOption; on: boolean; onPress: () => void }) {
   const c = useTheme();
-  const t = toneOf(c, tone);
-  return (
-    <View style={s.part}>
-      <View style={s.partHead}>
-        <Icon name={icon} size={16} color={t.text} />
-        <T v="label">{title}</T>
-      </View>
-      {/* every part ends with its "Write my own" chip, which stays last */}
-      <ChipWrap last={1}>{children}</ChipWrap>
-    </View>
-  );
-}
-
-/* a choice Daybook saw in the log: its words, and what it saw, small, underneath */
-function Pick({ p, tone, on, onPress }: { p: SunPick; tone: string; on: boolean; onPress: () => void }) {
-  const c = useTheme();
-  const t = toneOf(c, tone);
+  const t = toneOf(c, 'sun');
+  const ink = on ? t.ink : c.ink;
   return (
     <Pressable
-      accessibilityRole="checkbox"
+      accessibilityRole="radio"
       accessibilityState={{ checked: on }}
-      accessibilityLabel={p.t + (p.ev ? ', ' + p.ev : '')}
+      accessibilityLabel={o.g.t + '. ' + o.why + ' Plan: ' + storyIfLine(o.plan)}
       onPress={() => {
         buzz('tap');
         onPress();
       }}
-      style={({ pressed }) => [s.pick, { backgroundColor: on ? t.ic : c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
-      <Text style={[s.pickT, { color: on ? t.ink : c.ink }]}>{p.t}</Text>
-      {p.ev ? <Text style={[s.pickS, { color: on ? t.ink : c.muted }]}>{p.ev}</Text> : null}
+      style={({ pressed }) => [s.goal, { backgroundColor: on ? t.ic : c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
+      <View style={s.goalHead}>
+        <Text style={[s.goalT, { color: ink }]}>{o.g.t}</Text>
+        <Icon name={on ? 'check' : 'flag'} size={18} color={on ? t.ink : c.sunText} />
+      </View>
+      <Text style={[s.goalWhy, { color: on ? t.ink : c.muted }]}>{o.why}</Text>
+      <Text style={[s.goalPlan, { color: ink }]}>{'Your plan: ' + storyIfLine(o.plan)}</Text>
+    </Pressable>
+  );
+}
+
+/* one thing that will happen, in a plain row: an icon at its own size, a small title, the words, and a switch when it is a choice */
+function Happens({ icon, title, text, toggle }: { icon: string; title: string; text: string; toggle?: { on: boolean; set: (v: boolean) => void } }) {
+  const c = useTheme();
+  const row = (
+    <View style={[s.happen, { borderBottomColor: c.line }]}>
+      <Icon name={icon} size={20} color={c.accentText} />
+      <View style={{ flex: 1 }}>
+        <T v="small" tone="muted">
+          {title}
+        </T>
+        <T style={{ fontFamily: font.bodySemi }}>{text}</T>
+      </View>
+      {toggle ? <Icon name={toggle.on ? 'check' : 'plus'} size={20} color={toggle.on ? c.mintText : c.muted} /> : null}
+    </View>
+  );
+  if (!toggle) return row;
+  return (
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityState={{ checked: toggle.on }}
+      onPress={() => {
+        buzz('tap');
+        toggle.set(!toggle.on);
+      }}>
+      {row}
     </Pressable>
   );
 }
@@ -991,39 +496,32 @@ function Step({ label, sign, off, onPress }: { label: string; sign: string; off:
 const s = StyleSheet.create({
   c: { textAlign: 'center' },
   lead: { maxWidth: 380, alignSelf: 'center' },
-  zone: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 6 },
+  zone: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', gap: 20, paddingVertical: 8 },
+  cardZone: { flexGrow: 1, alignSelf: 'stretch' },
   h1: { fontFamily: font.displayBold, fontSize: 38, lineHeight: 44, textAlign: 'center' },
-  h2: { fontFamily: font.display, fontSize: 28, lineHeight: 33, textAlign: 'center', maxWidth: 400 },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999 },
-  card: { alignSelf: 'stretch', gap: SHORT ? 8 : 12, padding: SHORT ? 12 : 16, borderRadius: 20 },
-  fact: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 12 },
-  lesson: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 28, flexShrink: 1 },
-  lessonT: { fontFamily: font.bodySemi, fontSize: 13, textDecorationLine: 'underline', flexShrink: 1 },
-  foot2: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 12 },
-  be: { fontFamily: font.display, fontSize: 17, lineHeight: 23, opacity: 0.85 },
+  nums: { flexDirection: 'row', alignSelf: 'stretch', justifyContent: 'space-around', gap: 8 },
+  num: { flex: 1, alignItems: 'center', gap: 2 },
+  numV: { fontFamily: font.display, fontSize: 38, lineHeight: 44 },
+  map: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' },
+  mapStep: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  bridge: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch', paddingHorizontal: 4 },
   row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
-  part: { alignSelf: 'stretch', gap: 8 },
-  partHead: { flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center' },
-  pick: {
-    minHeight: 44,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    justifyContent: 'center',
+  goal: {
+    padding: 14,
+    borderRadius: 20,
+    gap: 4,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 2,
   },
-  pickT: { fontFamily: font.bodySemi, fontSize: 15 },
-  pickS: { fontFamily: font.body, fontSize: 12, marginTop: 1 },
-  stepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  step: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  stepT: { fontFamily: font.bodyBold, fontSize: 20, lineHeight: 22 },
-  saidRow: { minHeight: 44, justifyContent: 'center' },
-  goalCard: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 20 },
-  goalT: { flex: 1, fontFamily: font.display, fontSize: 20, lineHeight: 26 },
-  extra: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 16 },
-  extraIn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 56, paddingVertical: 8, paddingRight: 12, borderBottomWidth: 1 },
-  pts: { fontFamily: font.display, fontSize: 17, textAlign: 'center' },
+  goalHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  goalT: { flex: 1, fontFamily: font.display, fontSize: 17, lineHeight: 22 },
+  goalWhy: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
+  goalPlan: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
+  stepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, flexGrow: 1 },
+  stepN: { fontFamily: font.display, fontSize: 64, lineHeight: 72 },
+  step: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  stepT: { fontFamily: font.bodyBold, fontSize: 22, lineHeight: 24 },
+  happen: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 8, borderBottomWidth: 1 },
 });

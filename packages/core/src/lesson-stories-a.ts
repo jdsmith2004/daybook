@@ -49,6 +49,7 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'In 1966, two researchers knocked on doors in California with an odd request.',
         p: 'Could they put a big, badly painted sign on your front lawn? It said Drive Carefully, and it would hide most of the house.',
+        dx: 'Jonathan Freedman and Scott Fraser were at Stanford, and they wanted to know why people say yes to things they would normally refuse. So they made up a group, Citizens for Safe Driving, and sent volunteers to knock on doors in a quiet California suburb. The ask was deliberately too much: a huge billboard on the front lawn, so badly lettered that it would block the view of the house. The volunteers even showed a photo of a house half hidden behind it. **It was meant to be the kind of request almost anyone turns down.**',
         art: ['scene', { k: 'lawn-sign' }],
       },
       {
@@ -63,46 +64,54 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'Most people said no.',
         p: 'About 17 in every 100 homeowners agreed. It was an ugly sign, on their own lawn.',
+        dx: 'Fewer than one in five said yes. The rest were polite, and firm. It was their lawn, their house, their street, and the sign was ugly. Nobody thought less of them for saying no. **This was the baseline**: what ordinary people do when a stranger asks for something big, out of nowhere.',
         art: ['people', { n: 17, s: 'said yes' }],
         fact: { s: 'Study · Freedman & Fraser, 1966', i: [0] },
       },
       {
         h: 'Two weeks earlier, they had asked other homeowners for something tiny.',
         p: 'A card three inches wide, for a window, that said Be a safe driver. Almost everyone said yes. It cost nothing.',
+        dx: 'Other homeowners had been visited two weeks earlier by a different volunteer with a tiny request: put a small card in a window, three inches square, that said Be a safe driver. It was so small it would hardly be noticed from the street. Almost everyone agreed, because there was no reason not to. **Nobody felt they had decided anything about themselves.** They had only said yes to a card.',
         art: ['scene', { k: 'window-sign' }],
       },
       {
         h: 'Then those people were asked about the big lawn sign.',
         p: 'About 76 in every 100 said yes. One tiny yes, weeks before, made the big yes **more than four times as likely**.',
+        dx: 'Two weeks later, a new volunteer came to these same homes with the same giant, ugly sign, and asked the same question. This time about three out of four said yes. Same lawn, same sign, same kind of homeowner. The only difference was a small card in a window, put up two weeks before and long forgotten. **One tiny yes made the big yes more than four times as likely.**',
         art: ['people', { n: 76, was: 17, s: 'said yes' }],
       },
       {
         h: 'The small yes changed who they thought they were.',
         p: 'The lawn and the ugly sign were the same. What changed was the person in the doorway, who now saw someone who does things for safe roads.',
+        dx: 'Freedman and Fraser came to believe the card had changed something inside the homeowner. Before it, they were someone who had never done anything for safe driving. After it, they were someone who had. When the big sign came, they were not weighing a stranger’s favor. They were answering a quieter question: what does a person like me do? **The small yes had changed who they thought they were**, and the big yes followed from that.',
         art: ['scene', { k: 'doorway' }],
       },
       {
         long: 1,
         h: 'Then came the strangest group.',
         p: 'Some homeowners had first signed a petition about something else: keeping California beautiful. Even they were far more willing to take the lawn sign later, close to half of them.',
+        dx: 'This group surprised the researchers most. Their first request had nothing to do with driving. They had been asked to sign a petition to keep California beautiful, an easy yes for almost anyone. Weeks later, close to half of them took the driving sign, far more than the people never asked anything. The small step had not taught them about safe roads. **It had taught them that they were the kind of person who helps** when asked, and that carried into something new.',
         art: ['scene', { k: 'petition' }],
       },
       {
         long: 1,
         h: 'You learn who you are partly by watching what you do.',
         p: 'A psychologist named Daryl Bem put it this way: people read their own actions the way an outsider would, and decide who they are from what they see.',
+        dx: 'We usually assume we know ourselves from the inside, and then act on it. Daryl Bem argued that much of the time it runs the other way. When we are not sure how we feel, we watch what we do, the way a friend would watch us, and draw the obvious conclusion. I keep going for walks, so I must be someone who likes walking. **You learn who you are partly by watching your own steps**, which means every step you take is also a message to yourself.',
         art: ['scene', { k: 'mirror' }],
         fact: { s: 'Theory · Bem, self-perception, 1972', i: [1] },
       },
       {
         h: 'So waiting to feel ready gets it backward.',
         p: 'Most people wait to feel like someone who can quit, and then plan to start. The feeling comes after the first small steps, not before them.',
+        dx: 'Most people trying to quit wait for a feeling first: ready, sure, strong enough. They plan to start once they feel like someone who can do it. But that feeling is built from evidence, and the only evidence that counts is what you have done. Waiting for it means waiting for something that cannot arrive on its own. **The feeling comes after the first small steps, not before them.** Take one step small enough to be easy, and let it tell you who you are becoming.',
         art: ['ready', {}],
       },
       {
         long: 1,
         h: 'Mixed feelings are not a sign you are not serious.',
         p: 'A guide written for addiction counselors calls them a normal part of any change. You do not have to finish being unsure. You need one small yes.',
+        dx: 'Counselors who work with addiction every day expect people to arrive with two minds about it: wanting to stop and wanting to keep going, sometimes in the same hour. Their guide calls this a normal part of change, not a sign that someone is not serious. They do not wait for the doubt to clear before helping someone take a first step. **You do not have to finish being unsure.** You can be unsure and still put a small card in the window today.',
         art: ['scene', { k: 'mixed-feelings' }],
         fact: { s: 'Treatment guide · US SAMHSA, TIP 35', i: [2] },
       },
@@ -225,11 +234,13 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'In 1975, two researchers invited people to an ice cream taste test.',
         p: 'Some were on strict diets, and some were not. They could eat as much as they liked. The researchers were not measuring taste. They weighed the tubs afterward.',
+        dx: 'Peter Herman and Deborah Mack ran the study at Northwestern University with students who believed they were rating flavors. Each sat alone with three big tubs of ice cream and a set of rating forms, and was told to taste as much as they needed to judge them. Before that, a short survey had sorted them quietly into two groups: people who were strictly watching what they ate, and people who were not. **The forms were a cover.** What the researchers wanted was the weight of the tubs when each student left.',
         art: ['scene', { k: 'tasting' }],
       },
       {
         h: 'Before the tasting, some of them drank a milkshake.',
         p: 'The others had nothing. You would expect a full stomach to mean less ice cream.',
+        dx: 'Before the tasting, some students were asked to drink a milkshake for a separate taste test, and some drank two. Others had nothing at all. Common sense says the milkshake should fill people up, so they would eat less ice cream afterward. **For one group it did. For the other, it did the opposite.**',
         art: ['scene', { k: 'milkshake' }],
       },
       {
@@ -245,18 +256,21 @@ export const STORIES_A: Record<string, Story> = {
       {
         h: 'People not on a diet ate less after a milkshake. People on a diet ate more.',
         p: 'The dieters who had already broken the diet ate more ice cream than the dieters who had nothing first.',
+        dx: 'The students who were not on a diet behaved as anyone would guess: after a milkshake, they ate less ice cream. The dieters turned it upside down. Those who had nothing first held back carefully. Those who had already had a milkshake ate far more ice cream than any other group. **The full stomach did not stop them. It seemed to set them loose.** Herman called it counter-regulation, and other labs found it again and again.',
         art: ['scene', { k: 'ice-results' }],
         fact: { s: 'Study · Herman & Mack, 1975', i: [0] },
       },
       {
         h: 'The milkshake was not the problem. The thought after it was.',
         p: '“I already broke the diet today, so it does not matter now.” Once the day was scored as ruined, there was nothing left to protect.',
+        dx: 'Asked about it afterward, the dieters described the same thought. The milkshake had already broken the diet for the day. Once it was broken, careful eating seemed pointless, so they stopped trying. The day had become a pass or a fail, and it had already failed. **The milkshake was a small thing. The rule that scored the day as ruined turned it into a big one.**',
         art: ['scene', { k: 'ruined-day' }],
       },
       {
         long: 1,
         h: 'Researchers have a name for it.',
         p: 'Alan Marlatt, who built relapse prevention, called it the abstinence violation effect. He found it in every habit he studied: the slip is small, and the thought “I blew it” makes it big.',
+        dx: 'Alan Marlatt spent his career on why people who quit drinking, smoking or overeating so often go back. He noticed the same pattern again and again. The first slip was rarely the disaster. The disaster was the story people told about it: I have no willpower, I have failed, it is over. That story brought shame and the feeling that trying was pointless, and the second slip followed easily. **He called it the abstinence violation effect.** The slip is small, and the thought that follows makes it big.',
         art: ['chain', { n: ['One slip', '“I blew it”', 'Many more'], i: ['dots', 'bolt', 'x'] }],
         fact: { s: 'Model · Marlatt’s relapse prevention', i: [1] },
       },
@@ -264,11 +278,13 @@ export const STORIES_A: Record<string, Story> = {
         long: 1,
         h: 'He also found who gets back up fastest.',
         p: 'People who saw a slip as one mistake, in one moment, with a cause they could change, got back on track sooner. People who blamed something fixed in themselves kept going.',
+        dx: 'Marlatt found that how a person explained a slip predicted what came next. Some said: I was tired, I was alone, I did not have a plan for that moment. One event, one time, with a cause they could do something about. They tended to get back on track quickly. Others said: this is who I am, I am weak, I always fail. **A cause that is fixed in you leaves nothing to fix**, and those people tended to keep going.',
         art: ['scene', { k: 'get-up' }],
       },
       {
         h: 'So score it as one.',
         p: 'One slip is one milkshake, and the rest of the day still counts. Twelve days with one slip read eleven of twelve, not zero. The next urge is a wave like any other.',
+        dx: 'The way out is not to pretend the slip did not happen. It is to score it honestly: one event, at one time, with a cause. The rest of the day is still yours, and so is everything you did before it. Twelve days with one slip read eleven of twelve, not zero. **One slip is one milkshake.** The next urge is a wave like any other, and you already know how to watch a wave.',
         art: ['dots', {}],
         back: 'l2',
       },

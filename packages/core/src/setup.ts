@@ -240,6 +240,28 @@ export const OB_FREQ4: ObOpt[] = [
   ['f1', 'About once a week', 'leaf'],
   ['f0', 'Less than that', 'sunrise'],
 ];
+/** how long it usually lasts, as four big answers (the owner, November 15, 2026: the "Time given back" line on Today and the hours on
+    Miles need it, and setup stopped asking it on November 12). The ids are the legacy OB_MINS ones, so obHours reads them as they are.
+    A drinking or gambling session runs longer than a porn one, so those habits get the longer four; nothing is guessed when skipped. */
+export const OB_MINS4: ObOpt[] = [
+  ['m0', 'Under 15 minutes', 'bolt'],
+  ['m1', '15 to 30 minutes', 'timer'],
+  ['m2', '30 minutes to an hour', 'moon'],
+  ['m3', 'More than an hour', 'sunrise'],
+];
+export const OB_MINS4_LONG: ObOpt[] = [
+  ['m1', 'Under half an hour', 'bolt'],
+  ['m2', '30 minutes to an hour', 'timer'],
+  ['m3', '1 to 2 hours', 'moon'],
+  ['m4', 'More than 2 hours', 'sunrise'],
+];
+/** the length question, in each habit's words: for gambling it is the time spent, for drinking the time it goes on */
+const OB_MINS_H: Record<Habit, string> = {
+  porn: 'How long does it usually last?',
+  alcohol: 'When you drink, how long does it usually go on?',
+  gambling: 'How long do you usually spend gambling at a time?',
+  other: 'How long does it usually last?',
+};
 /** who it is for: up to three, each kept as one of the person's reasons (shown in SOS and the morning) */
 export const OB_FOR: [string, string, string, string][] = [
   ['love', 'The people I love', 'heart', 'Being fully present with the people I love'],
@@ -305,6 +327,8 @@ export const OB_PAGES: ObPage[] = [
   /* what the person is quitting (habit.ts): first, so every word after it is theirs */
   { id: 'habit', k: 'tiles', key: 'habit', list: OB_HABIT, h: 'What are you quitting?', keep: 1 },
   { id: 'freq', k: 'tiles', key: 'freq', list: OB_FREQ4, h: 'How often does it happen?', keep: 1 },
+  /* the time it takes, for the hours given back on Today and Miles (obHours); skipped, nothing is shown */
+  { id: 'mins', k: 'tiles', key: 'mins', list: OB_MINS4, h: OB_MINS_H.porn, keep: 1 },
   { id: 'when', k: 'multi', key: 'when', list: OB_WHEN, h: 'When does it pull hardest?', sub: 'Pick any.', cols: 2, keep: 1 },
   /* what it takes now, as a year of marks from the person's own "how often" (the owner, November 14, 2026: setup "needs a couple
      screens just demonstrating the extreme beneifi and need of daybook it is all business (setup) and no pleasure"). Only with an answer. */
@@ -355,6 +379,7 @@ export const obAskCount = (a: SetupAnswers, env: ObEnv = {}) => obPages(a, env).
 /** a page in the words of the habit chosen: the questions name it, and for another habit the first question carries the
     doctor line (habit.ts habitMedical) */
 function obPageIn(pg: ObPage, h: Habit): ObPage {
+  if (pg.id === 'mins') return { ...pg, h: OB_MINS_H[h], list: h === 'alcohol' || h === 'gambling' ? OB_MINS4_LONG : OB_MINS4 };
   if (h === 'porn' || !pg.h) return pg;
   const out = { ...pg, h: habitSay(pg.h, h) };
   return out;
@@ -910,6 +935,7 @@ const OB_SAY: Record<string, string> = {
   sos: 'When an urge hits, tap SOS. Try it now, while it is calm. It takes a few seconds.',
   habit: 'Pick the closest one. I can help with each.',
   freq: 'Rough is fine. Only you see this.',
+  mins: 'A rough guess. I will count the time you take back.',
   when: 'I will be ready for these.',
   for: 'On a hard night, I will remind you.',
   faith: 'It changes which lessons come up.',
@@ -953,6 +979,13 @@ export const OB_REPLY: Record<string, Record<string, string>> = {
     f2: 'A few times a week. Then there are already free days to build on.',
     f1: 'About once a week. You already have more free days than not.',
     f0: 'Less than that. Then we catch it before it grows.',
+  },
+  mins: {
+    m0: 'Even short ones add up. I will count every minute you take back.',
+    m1: 'Then every free day gives some of that back. I will keep the count.',
+    m2: 'That is real time. Every free day hands it back to you.',
+    m3: 'That is a lot of your life. Every free day gives it back, and I will show you how much.',
+    m4: 'That is a lot of your life. Every free day gives it back, and I will show you how much.',
   },
   faith: {
     big: 'Then your faith will be part of this. Some lessons are written for it.',

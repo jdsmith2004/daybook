@@ -120,9 +120,23 @@ describe('the goal it suggests', () => {
 
 describe('setup in two minutes (WP10)', () => {
   it('asks a new person a few things, sets tonight, lights the flame, then asks for the account', () => {
-    expect(core.obPages({}).map((p) => p.id)).toEqual(['how', 'habit', 'freq', 'when', 'sos', 'promise', 'for', 'grow', 'faith', 'tonight', 'light', 'why']);
+    expect(core.obPages({}).map((p) => p.id)).toEqual([
+      'how',
+      'habit',
+      'freq',
+      'mins',
+      'when',
+      'sos',
+      'promise',
+      'for',
+      'grow',
+      'faith',
+      'tonight',
+      'light',
+      'why',
+    ]);
     expect(core.obPages({ faith: 'big', freq: 'f2' }, { account: true }).map((p) => p.id)).toEqual(
-      'how habit freq when need sos promise for grow faith creed tonight light why account'.split(' '),
+      'how habit freq mins when need sos promise for grow faith creed tonight light why account'.split(' '),
     );
     expect(core.obPages({}, { redo: true })[0].id).toBe('hello');
   });
@@ -205,7 +219,17 @@ describe('setup in two minutes (WP10)', () => {
     expect(core.obPages({ freq: 'f3' }, { redo: true }).some((p) => ['need', 'grow', 'why'].includes(p.id))).toBe(false);
   });
   it('asks the same questions on a walk-through, then the changes to keep', () => {
-    expect(core.obPages({}, { redo: true, account: true }).map((p) => p.id)).toEqual(['hello', 'habit', 'freq', 'when', 'for', 'faith', 'review', 'done']);
+    expect(core.obPages({}, { redo: true, account: true }).map((p) => p.id)).toEqual([
+      'hello',
+      'habit',
+      'freq',
+      'mins',
+      'when',
+      'for',
+      'faith',
+      'review',
+      'done',
+    ]);
   });
   it('on a walk-through, taking off a "who for" pick takes its reason off, and leaves the rest in their order', () => {
     const tk = '2026-11-14' as core.DayKey;

@@ -49,6 +49,33 @@ const S = {
     'Blaszczynski & Nower (2002): a pathways model of problem and pathological gambling, Addiction',
     'https://doi.org/10.1046/j.1360-0443.2002.00015.x',
   ],
+  character: ['Etymology: character, from Greek kharaktēr, an engraving tool and the mark it stamps', 'https://www.etymonline.com/word/character'],
+  aristotle: ['Aristotle: Nicomachean Ethics, book 2, chapter 1 (public domain)', 'https://www.gutenberg.org/ebooks/8438'],
+  dingle: [
+    'Dingle, Stark, Cruwys & Best (2015): breaking good, breaking ties with social groups may be good for recovery from substance misuse, British Journal of Social Psychology',
+    'https://shura.shu.ac.uk/9437/',
+  ],
+  patrick: [
+    'Patrick & Hagtvedt (2012): when empowered refusal motivates goal-directed behavior, Journal of Consumer Research',
+    'https://doi.org/10.1086/663212',
+  ],
+  pronin: [
+    'Pronin, Olivola & Kennedy (2008): doing unto future selves as you would do unto others, Personality and Social Psychology Bulletin',
+    'https://collaborate.princeton.edu/en/publications/doing-unto-future-selves-as-you-would-do-unto-others-psychologica/',
+  ],
+  hershfield: [
+    'Hershfield and colleagues (2011): increasing saving behavior through age-progressed renderings of the future self, Journal of Marketing Research',
+    'https://clear.dol.gov/study/increasing-saving-behavior-through-age-progressed-renderings-future-self-hershfield-et-al-2011',
+  ],
+  kahneman: [
+    'Kahneman, Fredrickson, Schreiber & Redelmeier (1993): when more pain is preferred to less, Psychological Science',
+    'https://doi.org/10.1111/j.1467-9280.1993.tb00589.x',
+  ],
+  redelmeier: ['Redelmeier, Katz & Kahneman (2003): memories of colonoscopy, a randomized trial, Pain', 'https://doi.org/10.1016/S0304-3959(03)00179-1'],
+  harkin: [
+    'Harkin and colleagues (2016): does monitoring goal progress promote goal attainment? A meta-analysis, Psychological Bulletin',
+    'https://doi.org/10.1037/bul0000025',
+  ],
 } satisfies Record<string, Src>;
 
 export const STORIES_E: Record<string, Story> = {
@@ -446,6 +473,378 @@ export const STORIES_E: Record<string, Story> = {
     scope:
       'The dragon and its gold are old stories, not studies, read here for what they say about a habit. The survey asked adults why they watch and shows what goes together, not what causes what. Together they point one hopeful way: the feeling a habit helps you skip is often guarding something you want.',
     src: [S.hobbit, S.bothe21m],
+  },
+
+  l37: {
+    id: 'l37',
+    form: 'word',
+    title: 'Who you are becoming',
+    ic: 'star',
+    ask: 'Can I really stop seeing myself as someone with this problem?',
+    key: 'Character is a mark cut by many small strokes. Each choice today is one of them.',
+    np: 'Who I am becoming, in one sentence',
+    tell: [
+      {
+        h: 'The word character comes from an old Greek tool.',
+        p: 'A kharaktēr was the sharp tool an engraver used to cut a design into metal, and then the mark it left behind. **A character was a mark cut in**, not something a person was born with.',
+        dx: 'The word character comes from Greek. A kharaktēr was the sharp tool an engraver used to cut a design into metal, the way a face was cut into the die that made a coin. Then the word came to mean the mark itself, the design the tool left behind. So when the Greeks spoke of a person’s character, the picture under the word was a carving. **A character was a mark cut in**, by work, not something a person was handed at birth.',
+        art: ['scene', { k: 'l37-engraver' }],
+        fact: { s: 'Word · character, from Greek kharaktēr', i: [0] },
+      },
+      {
+        h: 'And that mark was cut one small stroke at a time.',
+        p: 'An engraver cut a coin’s face with hundreds of tiny strokes. No single stroke made the face. **Every stroke added to it**, and none of them could be skipped.',
+        dx: 'Look at how the mark was made. An engraver did not cut a coin’s face in one blow. He bent over the metal with his tool and cut it with hundreds of tiny strokes: a line for the brow, a curve for the cheek, a fleck for the eye. No single stroke made the face. A stroke on its own looked like nothing much. But **every stroke added to it**, and none of them could be skipped. The face came out of the plain, patient work.',
+        art: ['scene', { k: 'l37-strokes' }],
+      },
+      {
+        h: 'Then the finished die stamped coin after coin.',
+        p: 'Once the mark was cut, it showed up on everything it touched. That is what character came to mean: **the mark that shows in everything you do**.',
+        dx: 'Then the finished die went to work. It stamped coin after coin, thousands of them, and every one carried the same face. Once the mark was cut, it showed up on everything it touched. That is how the word grew into what it means today: **the mark that shows in everything you do**. How you talk to people, what you do alone, what you reach for on a hard day. All of it is stamped with the same face, and the face was cut by strokes.',
+        art: ['scene', { k: 'l37-coins' }],
+      },
+      {
+        k: 'ask',
+        h: 'What would it take for you to believe you are someone who is free of this?',
+        o: [
+          ['A long run with no slips', 'That makes one slip feel like losing who you are. The next cards offer another way.'],
+          ['Someone else seeing it in me', 'Being seen helps a lot. You can start the cutting yourself.'],
+          ['Feeling it inside, one day', 'That feeling tends to follow the strokes, not come before them.'],
+          ['I do not know yet', 'That is honest. Hold it for the next card.'],
+        ],
+      },
+      {
+        long: 1,
+        h: 'More than two thousand years ago, Aristotle said it the same way.',
+        p: 'People become builders by building, he wrote, and harp players by playing the harp. In the same way, **we become brave by doing brave things**. The acts come first.',
+        dx: 'More than two thousand years ago, the Greek thinker Aristotle wrote about how a person gets their character. Nobody is born a builder, he said. People become builders by building, and harp players by playing the harp. In the same way, **we become brave by doing brave things**, fair by doing fair things, and steady by doing steady things. The acts come first. Who we are is what they leave behind, the way strokes leave a face.',
+        art: ['scene', { k: 'l37-builder' }],
+        fact: { s: 'Book · Aristotle, Nicomachean Ethics, book 2', i: [1] },
+      },
+      {
+        h: 'So who you are becoming is not a prize at the end.',
+        p: 'It is being cut right now, in the small things you do today. **Each choice is a stroke.** A message sent, a phone put down, an urge ridden out.',
+        dx: 'This turns the usual picture around. Most people treat a new way of seeing themselves like a trophy, handed out after a long run with no slips. But a character is not handed out. It is cut. It is being cut right now, in the small things you do today. **Each choice is a stroke.** A message sent to a friend, a phone put down in another room, an urge ridden out to the end. None of them looks like much alone. Together, they are the face.',
+        art: ['scene', { k: 'l37-stroke' }],
+      },
+      {
+        n: '132',
+        h: 'adults in treatment were followed through their first month.',
+        p: 'Most began to see themselves less as users and more as people in recovery. The bigger that shift, **the less often they drank later**, and the more satisfied with life they were.',
+        dx: 'In 2015, researchers in Australia followed 132 adults through a treatment community for alcohol and drugs. They asked how each person saw themselves, and kept asking. Over the first month, most came to see themselves less as users and more as people in recovery. The bigger that shift, **the less often they drank later**, and the more satisfied with life they were. The new picture of themselves did not wait for the results. It came early, in the first weeks, and the better results came with it.',
+        fact: { s: 'Study · 132 adults · Dingle, Stark, Cruwys & Best, 2015', i: [2] },
+      },
+      {
+        h: 'And one bad stroke does not undo the hundred before it.',
+        p: 'An engraver who slips does not throw the die away. **He cuts the next stroke**, the same way as before. A slip is one stroke. The face is still there.',
+        dx: 'Every engraver slipped sometimes. The tool jumped, a line went wrong. He did not throw the die away and start over. **He cut the next stroke**, the same way as before, and the next, until the slip was one small line among hundreds. A slip in the habit is the same. It is one stroke. The face you have been cutting is still there, and the next stroke goes on it.',
+        art: ['scene', { k: 'l37-slip' }],
+        back: 'l3',
+      },
+      {
+        long: 1,
+        h: 'The old name will still talk for a while.',
+        p: '“You are still the same person who cannot stop.” That is an old mark speaking. **You answer to the one you are cutting now.**',
+        dx: 'For a while, the old name will still talk. On a hard day it says, “You are still the same person who cannot stop.” It sounds like the truth because it is old. But it is an old mark speaking, cut by old strokes. You do not have to win an argument with it. **You answer to the one you are cutting now**, and you give it one more stroke.',
+        art: ['scene', { k: 'l37-names' }],
+      },
+    ],
+    mine: { h: 'These are strokes you have already cut.', k: 'acted' },
+    today: {
+      h: 'Cut one stroke today, on purpose.',
+      l: ['Write who you are becoming, in one line', 'Do one small thing that person would do', 'After a slip, cut the same stroke again'],
+    },
+    you: {
+      h: 'Who are you becoming, in a few words?',
+      o: [
+        ['Someone who is free of this', 'Then every choice today is a stroke in that face.'],
+        ['Someone the people I love can count on', 'That is a mark worth cutting. It shows in everything.'],
+        ['Someone who is honest with themselves', 'Honesty is a stroke you can cut many times a day.'],
+        ['I do not know yet', 'Fair. Watch the next good thing you do, and ask what it says about you.'],
+      ],
+    },
+    scope:
+      'Where a word comes from does not decide what it means today, and the treatment study was about alcohol and drugs, not porn, and shows what went together. They point one hopeful way: a new way of seeing yourself is built by small acts, it can start early, and a slip does not undo it.',
+    src: [S.character, S.aristotle, S.dingle],
+  },
+
+  l38: {
+    id: 'l38',
+    form: 'study',
+    title: 'Say “I do not”',
+    ic: 'flag',
+    ask: 'What do I say to myself when the urge asks for “just once”?',
+    key: '“I cannot” is a rule, and rules get argued with. “I do not” is who you are.',
+    np: 'My “I do not” sentence',
+    tell: [
+      {
+        h: 'In 2012, two researchers wondered whether two small words could change what people do.',
+        p: 'Vanessa Patrick and Henrik Hagtvedt studied how people say no to themselves. Most of us use one of two sentences: **“I cannot” or “I do not.”**',
+        dx: 'Vanessa Patrick and Henrik Hagtvedt study why people keep some goals and drop others. In 2012 they looked at something so small that most people never notice it: the words we use to say no to ourselves. Faced with a temptation, most people reach for one of two sentences. **“I cannot” or “I do not.”** I cannot have that. I do not have that. They sound almost the same. The researchers wanted to know whether they work the same.',
+        art: ['scene', { k: 'l38-words' }],
+      },
+      {
+        h: 'They gave students a temptation, and a sentence to say back.',
+        p: 'Half practiced “I cannot,” as in “I cannot eat that.” Half practiced “I do not.” Then, on the way out, each was **offered a thank-you snack**: a chocolate bar or a granola bar.',
+        dx: 'They brought 120 students into a study that looked like it was about something else. Each student pictured a temptation and practiced saying no to it. Half used “I cannot,” as in “I cannot eat that.” Half used “I do not,” as in “I do not eat that.” Then the study seemed to end. On the way out, each student was **offered a thank-you snack**, and had to pick: a chocolate bar or a granola bar. Nobody was watching which one they took, or so they thought.',
+        art: ['scene', { k: 'l38-snacks' }],
+      },
+      {
+        k: 'ask',
+        h: 'When an urge argues with you, what words do you use to say no?',
+        o: [
+          ['“I cannot.”', 'That one leans on a rule. Notice whose rule it feels like.'],
+          ['“I should not.”', 'That one has a judge in it, and judges get argued with.'],
+          ['“Not right now.”', 'That leaves later open, and the urge will ask again.'],
+          ['I do not say anything', 'Silence beats bargaining. A short sentence can do more.'],
+        ],
+      },
+      {
+        h: 'The “I do not” group picked the granola bar far more often.',
+        p: 'About 64 in 100 of them, against 39 in 100 for “I cannot.” **Two small words changed what they did**, after the study was over.',
+        dx: 'The difference was large. About 64 in 100 of the students who had practiced “I do not” picked the granola bar. Of the ones who had practiced “I cannot,” about 39 in 100 did. **Two small words changed what they did**, after the study seemed to be over, with nobody asking them to be good. The sentence they had practiced went out the door with them.',
+        art: ['people', { n: 64, was: 39, s: 'picked the granola bar' }],
+        fact: { s: 'Study · Patrick & Hagtvedt, 2012', i: [0] },
+      },
+      {
+        h: 'Then they tried it for ten days, with people working on a real goal.',
+        p: 'Thirty women each got one way to say no. Of those told “I do not,” 8 in 10 kept at their goal all ten days. Of those told “I cannot,” **only 1 in 10 did**.',
+        dx: 'A lab is one thing. So the researchers tried it in real life. Thirty women who had signed up for a health and wellness program each got one way to handle temptation for ten days: “I do not,” “I cannot,” or a plain no. At the end, 8 in 10 of the “I do not” group were still keeping at their goal. Of the plain no group, 3 in 10. Of the “I cannot” group, **only 1 in 10 did**. It was a small study, and it pointed the same way as the lab.',
+        art: ['scene', { k: 'l38-ten-days' }],
+        fact: { s: 'Field study · 30 women · Patrick & Hagtvedt, 2012', i: [0] },
+      },
+      {
+        h: 'Why would two words matter that much?',
+        p: '“I cannot” names a rule someone put on you, and a rule feels like being kept from something. **Rules get argued with.** “I do not” names who you are.',
+        dx: 'The researchers asked people how each sentence felt. “I cannot” names a rule, and a rule has someone behind it who put it on you. It feels like being kept from something you want. And **rules get argued with**: you can plead with a rule, resent it, look for the gap in it, or slip past it when nobody is looking. “I do not” has no one behind it. It names who you are. The people who said it described feeling in charge, and determined, not deprived.',
+        art: ['scene', { k: 'l38-rule' }],
+      },
+      {
+        k: 'flip',
+        think: 'To say no, I need a firm rule I am not allowed to break.',
+        see: 'A rule leaves a judge in the room for the urge to bargain with. A fact about you gives it nobody to talk to.',
+      },
+      {
+        h: '“I do not” is a sentence about the person you are becoming.',
+        p: 'It does not need a judge in the room. **It is a fact you are making true**, one urge at a time, and every urge you outlast makes it more true.',
+        dx: '“I do not” is a sentence about the person you are becoming. It does not need anyone to enforce it, and it does not need a judge in the room. **It is a fact you are making true**, one urge at a time. The first few times you say it, it may feel a little ahead of you. That is fine. Every urge you outlast catches the fact up to the sentence, until it is plainly true.',
+        art: ['scene', { k: 'l38-door' }],
+        back: 'l37',
+      },
+      {
+        long: 1,
+        h: 'A slip does not make the sentence a lie.',
+        p: '“I do not” names the way you are facing, not a record you keep clean. After a hard day, **you say it again**, and it is just as true of who you are choosing to be.',
+        dx: 'A slip can make the sentence feel like a lie. It is not. “I do not” names the way you are facing, not a record you have to keep clean. People who are honest still sometimes say something false, and they are still honest people, because that is the way they face. After a hard day, **you say it again**, and it is just as true of who you are choosing to be.',
+        art: ['scene', { k: 'l38-again' }],
+      },
+    ],
+    mine: { h: 'Each urge you outlast makes the fact more true.', k: 'rode' },
+    today: {
+      h: 'Write your “I do not,” and use it at the first signal.',
+      l: ['Keep it short: “I do not watch porn.”', 'Add who you are: “I keep my word to myself.”', 'Say it out loud at the first signal'],
+    },
+    you: {
+      h: 'What is your “I do not” sentence?',
+      o: [
+        ['“I do not watch porn.”', 'Plain and short. That is the best kind.'],
+        ['“I do not do that anymore.”', '“Anymore” says who you were and who you are now. Both are true.'],
+        ['“I do not trade my days for that.”', 'That one names what you protect. It is hard to argue with.'],
+        ['I do not know yet', 'Fair. Try “I do not” out loud once today, and hear how it sounds.'],
+      ],
+    },
+    scope:
+      'The studies were about snacks and health goals, with small groups, and the field study had 30 women. They show a pattern in how people keep their goals, not a cure. The words cost nothing to try, and they put the choice in your own voice.',
+    src: [S.patrick],
+  },
+
+  l39: {
+    id: 'l39',
+    form: 'meaning',
+    title: 'A year from now',
+    ic: 'sunrise',
+    ask: 'Why give up something that feels good now?',
+    key: 'The easy thing now, or the good thing later. A year from now, someone lives with which one you chose.',
+    np: 'One seed I will plant today for a year from now',
+    tell: [
+      {
+        h: 'Under every farm there is a hard, old choice.',
+        p: 'It is late winter, and the family is hungry. In the corner sits a sack of seed grain. They could eat it now. The families who **planted it in spring** are the ones who ate the next winter.',
+        dx: 'Under every farm in history there is a hard, old choice. Picture it. It is late winter, the stores are low, and the family is hungry. In the corner sits a sack of seed grain, saved from last harvest. It is food. They could eat it now, and the hunger would stop for a week. The families who could not wait are the ones whose fields stayed empty. The families who **planted it in spring**, hungry, are the ones who ate the next winter, and the one after that.',
+        art: ['scene', { k: 'l39-seed' }],
+      },
+      {
+        h: 'Giving up something now for something better later may be the oldest wisdom people have.',
+        p: 'Every coin saved, every field planted, every year of study is the same trade. **The easy thing now, or the good thing later.** The habit is that same choice, made small.',
+        dx: 'Giving up something now for something better later may be the oldest wisdom people have. It is in every coin saved, every field planted, every year of study, every promise kept when breaking it would be easier. It is the same trade each time. **The easy thing now, or the good thing later.** People did not get from caves to cities by taking the easy thing. And the habit is that same choice, made small enough to fit in a few minutes.',
+        art: ['scene', { k: 'l39-trade' }],
+      },
+      {
+        h: 'The hard part: the easy thing and the good thing are rarely the same thing.',
+        p: 'What feels good now and what you will be glad of later **almost never line up**. A life gets its shape from which one a person picks, again and again.',
+        dx: 'This is the hard part, and it is worth saying plainly. The easy thing and the good thing are rarely the same thing. What feels good now and what you will be glad of later **almost never line up**. If they did, nobody would need courage. A life gets its shape from which one a person picks, not once, but again and again, on ordinary days when nobody is watching.',
+        art: ['scene', { k: 'l39-paths' }],
+      },
+      {
+        k: 'ask',
+        h: 'Think of something you are glad you did, years later. Was it easy at the time?',
+        o: [
+          ['No, it was hard', 'Most of the things people are glad of were. That is not an accident.'],
+          ['It was easy, and worth it', 'Those exist, and they are rare. Keep them too.'],
+          ['I cannot think of one yet', 'Then this year can make one. That is what this lesson is about.'],
+        ],
+      },
+      {
+        h: 'Every time you take the easy thing, you eat a little of the seed.',
+        p: 'It feels like nothing in the moment. One handful. But **the field you could have had is made of those handfuls**, and so is the one you will have.',
+        dx: 'Every time you take the easy thing, you eat a little of the seed. It never feels like much. One handful, on one hard evening. Nobody starves from one handful. But the field is made of handfuls. **The field you could have had is made of those handfuls**, and so is the one you will have. That is what the habit costs. Not one evening, but what that evening could have grown into.',
+        art: ['scene', { k: 'l39-handful' }],
+      },
+      {
+        long: 1,
+        h: 'Part of the trouble is that your mind files future you with strangers.',
+        p: 'Students asked to drink a foul mix of ketchup and soy sauce agreed to a little for themselves today, and **signed their future selves up for much more**, about as much as for a stranger.',
+        dx: 'Part of the trouble is in how the mind sees time. In 2008, researchers asked students how much of a disgusting drink, ketchup mixed with soy sauce, they would drink for science. For themselves, that day, they agreed to a little. For themselves later in the term, they **signed their future selves up for much more**, about as much as they would sign up a stranger. The mind treats future you a lot like someone else, someone whose problems are not quite yours.',
+        art: ['scene', { k: 'l39-cup' }],
+        fact: { s: 'Experiments · Pronin, Olivola & Kennedy, 2008', i: [0] },
+      },
+      {
+        long: 1,
+        h: 'When people met their own older face, they chose differently.',
+        p: 'Shown a picture of themselves made to look decades older, people **set more money aside for later**. Once future them had a face, they got a say.',
+        dx: 'Other researchers tried to fix that. They showed people pictures of their own faces, made by computer to look decades older, some of them in virtual reality, so they could look their older self in the eye. Afterward, those people **set more money aside for later** in a savings task than people who saw their face as it was. Once future them had a face, they got a say.',
+        art: ['scene', { k: 'l39-face' }],
+        fact: { s: 'Experiments · Hershfield and colleagues, 2011', i: [1] },
+      },
+      {
+        h: 'A year from now, someone wakes up with today.',
+        p: 'They are not a stranger. **They are someone you are responsible for**, the way you would be for a friend you care about. What you choose today is the house they live in.',
+        dx: 'A year from now, someone will wake up with today. They will have your name, your face and your memory of this week. They are not a stranger, and they are not a problem for later. **They are someone you are responsible for**, the way you would be for a friend you care about, or a child in your care. You would not hand that person something that harms them. What you choose today is the house they live in.',
+        art: ['scene', { k: 'l39-year' }],
+      },
+      {
+        long: 1,
+        h: 'And something worth carrying holds you up.',
+        p: 'People with nothing to carry often feel lost. A real thing to carry, a person, a craft, a promise to yourself, **gives the days a shape** the habit never could.',
+        dx: 'There is one more side to this. The good thing later is often heavier than the easy thing now. It asks more of you. But people with nothing to carry often feel lost and restless, and that restlessness is fuel for the habit. A real thing to carry, a person who counts on you, a craft you are getting better at, a promise you keep to yourself, **gives the days a shape** the habit never could. The weight is part of what holds you up.',
+        art: ['scene', { k: 'l39-carry' }],
+      },
+    ],
+    mine: { h: 'Every day that holds is one you hand to the person you will be.', k: 'clean30' },
+    today: {
+      h: 'Plant one seed today.',
+      l: ['Pick one thing you will be glad of later', 'Do the first ten minutes of it today', 'Write what it is for, in a few words'],
+    },
+    you: {
+      h: 'A year from now, what do you want to be glad you started today?',
+      o: [
+        ['Being free of this', 'Then today is one of the days that builds it.'],
+        ['Something I keep putting off', 'Then ten minutes of it today is a seed in the ground.'],
+        ['Being someone people can count on', 'That is planted in small kept promises, starting now.'],
+        ['I do not know yet', 'Fair. Picture yourself a year from now, and ask what they wish you had started.'],
+      ],
+    },
+    scope:
+      'The seed grain is a picture of an old human trade, not a study. The future-self experiments were with students and savers, not with people quitting porn, and they show how people tend to treat the person they will be. The trade is the same in every habit: the easy thing now, or the good thing later.',
+    src: [S.pronin, S.hershfield],
+  },
+
+  l40: {
+    id: 'l40',
+    form: 'study',
+    title: 'Your log is your evidence',
+    ic: 'check',
+    ask: 'How do I start to believe I am someone who is free of this?',
+    key: 'Memory keeps the worst moment and the last. Your log keeps every day. On a hard morning, trust the log.',
+    np: 'What my log says about who I am becoming',
+    tell: [
+      {
+        h: 'In 1993, volunteers came to a lab to put one hand in cold water.',
+        p: 'Painfully cold: 14 degrees Celsius, about as cold as a mountain stream, cold enough to ache within seconds. They held it there for **a full minute**.',
+        dx: 'In 1993, a team led by Daniel Kahneman, a psychologist who later won a Nobel Prize, brought volunteers into a lab. Each one put a hand into a tub of water at 14 degrees Celsius, about as cold as a mountain stream. That is cold enough to ache within seconds, and to hurt more the longer it lasts. They held it there for **a full minute**, while the other hand moved a dial to show how much it hurt, moment by moment.',
+        art: ['scene', { k: 'l40-cold' }],
+      },
+      {
+        h: 'Another time, they did it for a minute and a half.',
+        p: 'The first minute was exactly the same. Then, for 30 more seconds, the water was warmed by about one degree. Still cold, still painful, **only a little less**.',
+        dx: 'Another time, the same volunteers did it again, with one change. The first minute was exactly the same, the same cold, the same ache. Then, without a word, the water was warmed by about one degree for 30 more seconds. Still cold, still painful, **only a little less**. By any count, this trial had more pain in it than the first one: the same minute, plus half a minute more.',
+        art: ['scene', { k: 'l40-longer' }],
+      },
+      {
+        k: 'ask',
+        h: 'Then they were asked: which one would you rather do again? Which would you pick?',
+        o: [
+          ['The short one, it hurt for less time', 'That is the sensible answer. Look at what most people chose.'],
+          ['The long one, it ended easier', 'Then your memory works like most people’s. Look at the number.'],
+          ['Neither one', 'Fair. They had to pick one. Look at what they chose.'],
+        ],
+      },
+      {
+        h: 'Most of them chose the longer one.',
+        p: 'More pain, by any measure. But **memory kept the worst moment and the ending**, and dropped how long it lasted. The gentler ending made the whole thing feel smaller.',
+        dx: 'About 69 in 100 of them chose the longer one, the one with more pain in it. Their dials had shown, moment by moment, how much each one hurt. But that is not what they remembered. **Memory kept the worst moment and the ending**, and dropped how long it lasted. The slightly gentler ending made the whole thing feel smaller in memory, even though it was bigger in life.',
+        art: ['people', { n: 69, s: 'chose the longer one' }],
+        fact: { s: 'Study · Kahneman and colleagues, 1993', i: [0] },
+      },
+      {
+        long: 1,
+        h: 'Doctors later found the same thing in patients.',
+        p: 'People after a painful medical test judged it by its worst moment and its last few minutes. When the end was made a little gentler, they **remembered the whole test as easier**.',
+        dx: 'Doctors later tested the same idea with patients having a painful medical exam. Half had the exam as usual. For the other half, the end was made a little gentler, with a few extra minutes that hurt less. Those patients **remembered the whole test as easier**, and more of them came back for the next one, even though their exam had lasted longer. Memory had judged it by its worst moment and its last few minutes.',
+        art: ['scene', { k: 'l40-doctor' }],
+        fact: { s: 'Trial · Redelmeier, Katz & Kahneman, 2003', i: [1] },
+      },
+      {
+        h: 'Your memory scores your weeks the same way.',
+        p: 'After a slip, memory keeps the worst moment and the last one. **The quiet days fall away**: the evenings you got through, the urges you rode out, the mornings you woke up clear.',
+        dx: 'Your memory scores your weeks the same way it scored the cold water. After a slip, it keeps the worst moment, and it keeps the last one, which is often the same moment. **The quiet days fall away**: the evenings you got through without a fight, the urges you rode out, the mornings you woke up clear. They were real, and they were most of the week. They left almost no mark, because nothing in them was sharp.',
+        art: ['scene', { k: 'l40-week' }],
+      },
+      {
+        k: 'flip',
+        think: 'The last thing I did shows who I really am.',
+        see: 'Memory keeps the sharpest moment and the ending. It is a poor judge of a month.',
+      },
+      {
+        h: 'A log does not forget the quiet days.',
+        p: 'It counts every one, the same size as the hard one. It is a fairer witness than a hard morning. **Trust the log, not your memory.**',
+        dx: 'A log does not work like memory. It does not keep the sharp moments and drop the plain ones. It counts every day, and each one takes the same space as the hard one. The evening you got through is a line, just like the slip is a line. That makes it a fairer witness than a hard morning will ever be. **Trust the log, not your memory**, especially on the mornings when memory is loudest.',
+        art: ['scene', { k: 'l40-log' }],
+      },
+      {
+        long: 1,
+        n: '138',
+        h: 'experiments found that tracking progress helps people reach a goal.',
+        p: 'It helped more when **the progress was written down** or shared. A record sees what memory skips.',
+        dx: 'A large review in 2016 pooled 138 experiments, most of them on health goals. In each, some people were asked to track their progress and some were not. Tracking helped people reach their goals, and it helped more when **the progress was written down** or shared with someone. A record sees what memory skips, and seeing it changes what people do next.',
+        fact: { s: 'Meta-analysis · 138 experiments · Harkin and colleagues, 2016', i: [2] },
+      },
+      {
+        long: 1,
+        h: 'The person you are becoming leaves footprints there.',
+        p: 'Each honest entry is evidence. Read a few weeks of it back, and **you meet someone you might not recognize** from memory alone.',
+        dx: 'Over time, the log becomes something more than a count. The person you are becoming leaves footprints there. Each honest entry is evidence, the urge you rode out, the comeback after a hard day. Read a few weeks of it back, and **you meet someone you might not recognize** from memory alone. That person is real. The log is how you get to know them.',
+        art: ['scene', { k: 'l40-steps' }],
+        back: 'l37',
+      },
+    ],
+    mine: { h: 'Here is what your log keeps that memory drops.', k: 'rode' },
+    today: {
+      h: 'On a hard morning, read the log, not your memory.',
+      l: ['Log the hard day honestly, as one day', 'Read back over the last two weeks', 'Say it: “One day, not the month.”'],
+    },
+    you: {
+      h: 'When you look back on a hard week, what do you remember first?',
+      o: [
+        ['The worst moment', 'Most minds do. One moment ends up standing in for seven days.'],
+        ['How it ended', 'Endings shout. Now you know why they count for too much.'],
+        ['The urges I rode out', 'That is rare and worth keeping. Many people forget those first.'],
+        ['I do not know yet', 'Try it with last week. Notice what comes up first.'],
+      ],
+    },
+    scope:
+      'The cold-water and patient studies were about remembered pain, not habits, and they show how memory tends to work, not how it always works. The tracking review pooled 138 experiments, mostly on health goals. Together they show why an honest log is a fairer witness than a hard morning.',
+    src: [S.kahneman, S.redelmeier, S.harkin],
   },
 };
 

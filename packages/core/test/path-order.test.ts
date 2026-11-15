@@ -408,7 +408,9 @@ describe('the God lessons on the path (November 2, 2026)', () => {
     const close = (L: core.Lesson) => L.cards.find((c) => c.e === 'close')!.h;
     expect(core.lessonVoiced(g7, 'lds')).toBe(g7);
     expect(close(core.lessonVoiced(g7, 'plain'))).toMatch(/^God, /);
-    expect(core.lessonVoiced(g7, 'christian').cards.find((c) => c.k === 'flip')!.see).toMatch(/new every morning/);
+    /* a God lesson told as a story keeps each voice's own words: the Latter-day Saint talk is not in the Bible-only voice */
+    expect(g7.cards.some((c) => /Uchtdorf/.test(c.h))).toBe(true);
+    expect(core.lessonVoiced(g7, 'christian').cards.some((c) => /Uchtdorf/.test(c.h))).toBe(false);
     expect(core.lessonVoiced(g7, 'plain')).toBe(core.lessonVoiced(g7, 'plain'));
     const V = core.lessonVoiced(g7, 'plain');
     expect(core.lessonBeats(V)!.cards.length).toBe(V.cards.length);

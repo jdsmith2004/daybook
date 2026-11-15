@@ -18,6 +18,7 @@ import type { Art, Block, Card, Lesson } from './lessons';
 import type { Beat, LessonBeats } from './lesson-beats';
 import type { MineKind } from './lesson-turns';
 import type { OtherHabit } from './lesson-habit';
+import type { FaithVoice } from './faith';
 import { STORIES_A } from './lesson-stories-a';
 import { STORIES_B } from './lesson-stories-b';
 import { STORIES_C } from './lesson-stories-c';
@@ -80,10 +81,19 @@ export interface Story {
   /** for a lesson written for porn that another habit reads too (lesson-habit.ts PORN_ONLY and HABIT_OPEN, which stays the gate): that
       habit's own parts, put over the story before its words are said in the habit's terms (lesson-beats.ts lessonAs). 'say' means the
       words alone change. */
+  /** a God lesson's closing line: a short prayer to say, on its own card after the last question (as lesson-turns.ts close) */
+  close?: string;
+  /** a God lesson speaks in the Latter-day Saint voice; another Christian faith and another faith replace whole parts (faith.ts,
+      as a turn's vo in lesson-turns.ts). storyIn puts them over the story before it becomes a lesson, so each faith keeps its own
+      wording, and a habit's parts (hab) go over that voice. */
+  vo?: Partial<Record<Exclude<FaithVoice, 'lds'>, Partial<Omit<Story, 'id' | 'vo' | 'hab'>>>>;
   hab?: Partial<Record<OtherHabit, 'say' | Partial<Pick<Story, 'tell' | 'today' | 'you' | 'key' | 'ask' | 'np' | 'mine' | 'scope' | 'src' | 'title' | 'tag'>>>>;
 }
 
 const ICON = (ic: string): Art => ['icon', { ic }];
+
+/** a story in one faith's voice: that voice's parts over the Latter-day Saint story (a turn's turnIn, lesson-turns.ts) */
+export const storyIn = (S: Story, voice: FaithVoice | null): Story => (voice && voice !== 'lds' && S.vo && S.vo[voice] ? { ...S, ...S.vo[voice] } : S);
 
 /** a story as a lesson's cards, and the words each card shows */
 export function storyLesson(S: Story, was: Lesson): { L: Lesson; beats: LessonBeats } {
@@ -115,6 +125,7 @@ export function storyLesson(S: Story, was: Lesson): { L: Lesson; beats: LessonBe
   if (S.mine) add({ k: 'text', q: 1, e: 'mine', el: 'Your own log', h: S.mine.h, b: [['mine', S.mine.k]] as Block[] }, { h: S.mine.h });
   add({ k: 'text', q: 1, e: 'move', el: 'Today', art: ICON(S.ic), h: S.today.h }, { h: S.today.h, l: S.today.l });
   add({ k: 'choose', q: 1, e: 'check', el: 'Only you', h: S.you.h, c: S.you.o }, { h: S.you.h, c: S.you.o.map((x) => x[1]) });
+  if (S.close) add({ k: 'text', q: 1, e: 'close', el: 'A prayer to say', art: ICON(S.ic), h: S.close }, { h: S.close });
   const L: Lesson = {
     ...was,
     v: 3,

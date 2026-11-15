@@ -7,7 +7,7 @@ import { faithVoice, type FaithVoice } from './faith';
 import { GOD, TURNS, turnIn, turnLesson, type Turn } from './lesson-turns';
 import { habitOf, habitSay, type Habit } from './habit';
 import { HABIT_TURNS, habitOpen, habitPart, PORN_ONLY } from './lesson-habit';
-import { STORIES, storyLesson } from './lesson-stories';
+import { STORIES, storyIn, storyLesson } from './lesson-stories';
 
 export interface Beat {
   /** the big line. On a number card it finishes the sentence the number starts ("7" + "days off porn, and ...") */
@@ -53,11 +53,13 @@ const bookOf = (L: Lesson): LessonBeats | null => VOICE_BEATS.get(L) || (L.v ===
 /** a lesson as this person reads it: a God lesson in the voice of their faith (faith.ts faithVoice), any other as it is */
 export function lessonVoiced(L: Lesson, voice: FaithVoice | null): Lesson {
   const T = GOD[L.id];
-  if (!T || !voice || voice === 'lds' || !T.vo || !T.vo[voice]) return L;
+  /* a God lesson told as a story (lesson-stories.ts) carries its voices itself */
+  const S = T && STORIES[L.id];
+  if (!T || !voice || voice === 'lds' || (S ? !S.vo || !S.vo[voice] : !T.vo || !T.vo[voice])) return L;
   const k = L.id + ':' + voice;
   let v = VOICED.get(k);
   if (!v) {
-    v = turnLesson(turnIn(T, voice), L);
+    v = S ? storyLesson(storyIn(S, voice), L) : turnLesson(turnIn(T, voice), L);
     VOICED.set(k, v);
     VOICE_BEATS.set(v.L, v.beats);
   }
@@ -80,10 +82,10 @@ export function lessonAs(L: Lesson, voice: FaithVoice | null, h: Habit): Lesson 
   const k = L.id + ':' + (voice || '') + ':' + h;
   let out = SAID.get(k);
   /* a lesson told as a story (lesson-stories.ts): the habit's own parts over the story, then the story in the habit's words */
-  const S0 = STORIES[L.id];
+  const S0 = STORIES[L.id] && storyIn(STORIES[L.id], GOD[L.id] ? voice : null);
   if (!out && S0) {
     const part = S0.hab && S0.hab[h as Exclude<Habit, 'porn'>];
-    const { hab: _hab, ...S } = part && part !== 'say' ? { ...S0, ...part } : S0;
+    const { hab: _hab, vo: _vo, ...S } = part && part !== 'say' ? { ...S0, ...part } : S0;
     /* a card that rests on a porn study (porn: 1) is left out, then the rest is said in the habit's words */
     const v = storyLesson(sayAll({ ...S, tell: S.tell.filter((t) => !t.porn) }, h), L);
     VOICE_BEATS.set(v.L, v.beats);

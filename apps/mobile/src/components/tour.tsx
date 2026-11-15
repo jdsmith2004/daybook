@@ -209,7 +209,9 @@ export function FirstTour({
   holeRef.current = hole;
   const fade = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;
-  const say = useRef(new Animated.Value(1)).current;
+  /* the words wait, unseen, until the first spotlight has landed: shown at once and then started again as the part was lit, they
+     flickered in twice as setup handed over to Today (the owner, November 14, 2026: "it like glitches right before it gets to it") */
+  const say = useRef(new Animated.Value(0)).current;
 
   /* the panel: just over the tab bar */
   /* off iOS, SOS rises out of the bar: a quiet Later under the main button keeps clear of it, so a thumb meant for Later never opens SOS */
@@ -237,9 +239,15 @@ export function FirstTour({
   }, [bye]);
 
   useEffect(() => {
-    Animated.timing(fade, { toValue: 1, duration: still ? 0 : 260, useNativeDriver: false }).start();
     rectOf('sos', W, H, inset.bottom).then(setSosAt);
-  }, [fade, still, W, H, inset.bottom]);
+  }, [W, H, inset.bottom]);
+  /* the dim comes in once, with its hole already on the first part and the words rising with it: one move from Today into the tour,
+     never a dark screen with nothing lit and then a jump */
+  const isLit = !!lit;
+  useEffect(() => {
+    if (isLit) Animated.timing(fade, { toValue: 1, duration: still ? 0 : 260, useNativeDriver: false }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLit]);
 
   /* each step: find its parts, move the page so they sit clear of the words, then light them */
   useEffect(() => {
@@ -384,7 +392,8 @@ export function FirstTour({
     }
     /* following the part as the page moves: the words stay as they are, and nothing is read again */
     if (follow) return () => cancelAnimationFrame(raf);
-    if (!still) {
+    if (still) say.setValue(1);
+    else {
       say.setValue(0);
       Animated.spring(say, { toValue: 1, friction: 6, tension: 90, useNativeDriver: NATIVE }).start();
     }
@@ -514,7 +523,8 @@ export function FirstTour({
             style={[
               s.talk,
               {
-                opacity: say,
+                /* the spring overshoots for the rise; the words only fade in, with no dip as it settles */
+                opacity: say.interpolate({ inputRange: [0, 0.7, 1], outputRange: [0, 1, 1], extrapolate: 'clamp' }),
                 transform: [{ translateY: say.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }],
               },
             ]}>

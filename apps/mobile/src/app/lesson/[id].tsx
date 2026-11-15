@@ -43,6 +43,7 @@ import {
   lessonOpen,
   nextLessonOk,
   lessonPractice,
+  practiceOne,
   lessonPracticed,
   lessonReach,
   lessonLen,
@@ -733,13 +734,14 @@ export default function LessonScreen() {
   } else if (stg === 'practice') {
     const a = lessonPractice(L, st)!;
     /* one invitation per lesson, never two (the owner, November 15, 2026: "it should just be like one invitation per page, not or per
-       lesson, not two. Never two like that"): the line to write when the lesson has one (they liked the prayer to bring as you are
-       best), otherwise its first line or place to go */
-    const items = a.write ? [] : (a.items || []).slice(0, 1);
-    const goes = a.write || items.length ? [] : (a.go || []).slice(0, 1);
+       lesson, not two. Never two like that"), chosen by hand for each lesson in core practice.ts ONE */
+    const o = practiceOne(L, st);
+    const items = o && 'item' in o ? [o.item] : [];
+    const goes = o && 'go' in o ? [o.go] : [];
+    const wr = o && 'write' in o ? o.write : null;
     const note = wrote ?? ((st.learn.notes && st.learn.notes[L.id]) || '');
     const ed = editing != null ? items[editing] : null;
-    const writing = !!a.write;
+    const writing = !!wr;
     const later = false;
     prog = bar;
     body = ed ? (
@@ -748,9 +750,9 @@ export default function LessonScreen() {
     ) : (
       <>
         {/* no words above the flame (the owner, November 13, 2026): the lines to add say it themselves */}
-        {a.write && !later ? (
-          <WriteBox label={L.np} value={note} examples={a.write} t={t} onChange={write} />
-        ) : !a.write && !items.length && !goes.length ? (
+        {wr && !later ? (
+          <WriteBox label={L.np} value={note} examples={wr} t={t} onChange={write} />
+        ) : !wr && !items.length && !goes.length ? (
           <NoteField L={L} note={note} />
         ) : null}
         {writing ? null : <Blocks bs={a.b} L={L} t={t} st={st} />}

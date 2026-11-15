@@ -40,7 +40,7 @@ export function sundayTile(st: Settings, reviews: Reviews, tk: DayKey): StopTile
     right: sd.late ? 'Still open' : 'Today',
     eyebrow: sd.late ? 'Last week · still open' : first ? 'Sunday · a few minutes' : 'Sunday',
     head: sd.late ? 'Look back on last week' : first ? UNLOCK_WORDS.sunday.h : 'Your Sunday review',
-    body: 'Your week, one thing at a time, and one small goal for the next.',
+    body: 'What your week says, then one goal to grow on next week.',
     chips: [],
     btn: 'Start',
     go: 'review',

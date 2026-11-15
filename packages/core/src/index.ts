@@ -77,6 +77,7 @@ export * from './sunday';
 export * from './when';
 export * from './sunday-story';
 export * from './sunday-read';
+export * from './sunday-goal';
 export * from './calendar';
 export * from './hero';
 export * from './week';

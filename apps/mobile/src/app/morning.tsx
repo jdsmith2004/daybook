@@ -324,7 +324,14 @@ export default function Morning() {
           {told ? (
             <Appear by={10} duration={280}>
               <View style={s.told}>
-                {start.logged ? null : <Choice label={n === 'free' ? W.free : W.slip} on onPress={() => setN(null)} />}
+                {/* both answers stay in sight, the one given checked; a tap on the other changes it (the owner, November 15, 2026:
+                    "how come it only give me a free of it option") */}
+                {start.logged ? null : (
+                  <View style={s.list} accessibilityRole="radiogroup" accessibilityLabel={W.night}>
+                    <Choice label={W.free} on={n === 'free'} onPress={() => n !== 'free' && answer('free')} />
+                    <Choice label={W.slip} on={n === 'slip'} onPress={() => n !== 'slip' && answer('slip')} />
+                  </View>
+                )}
                 <Text style={s.reply} accessibilityLiveRegion="polite">
                   {morningReply(n!, start.logged, n === 'free' && heldByMorning(snap.days, tk, Date.now()) > 0)}
                 </Text>
@@ -383,7 +390,7 @@ export default function Morning() {
   );
 }
 
-/** one answer: a wide row, white when picked, with a check. A tap on the picked one opens the choice again. */
+/** one answer: a wide row, white when picked, with a check */
 function Choice({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   return (
     <Pressable

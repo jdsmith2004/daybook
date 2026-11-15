@@ -22,6 +22,7 @@ export default function Celebrations() {
   const [cur, setCur] = useState<CelItem[] | null>(null);
   const [n, setN] = useState(0);
   const [lesson, setLesson] = useState(0);
+  const [week, setWeek] = useState(0);
   const st = snap.settings;
   if (!ON || !st) return <Redirect href="/" />;
   const g = gameCompute(snap.days, st, snap.reviews, tk);
@@ -39,6 +40,11 @@ export default function Celebrations() {
   };
   const rows: { name: string; what: string; go: () => void }[] = [
     { name: 'Lesson finished', what: 'The band, the flame gliding home, the points into the level line.', go: () => setLesson((x) => x + 1) },
+    {
+      name: 'Sunday review saved',
+      what: 'Dawn: the flame rises from below into a warm sky, the goal’s nights come in one by one.',
+      go: () => setWeek((x) => x + 1),
+    },
     { name: 'Level up', what: 'Rays and a few stars. No confetti.', go: () => play([{ type: 'level', level: L, from: 0, evolve: false }]) },
     {
       name: 'New flame form',
@@ -89,6 +95,29 @@ export default function Celebrations() {
             next={null}
             onNext={() => setLesson(0)}
             onDone={() => setLesson(0)}
+          />
+        </View>
+      ) : null}
+      {week ? (
+        <View style={StyleSheet.absoluteFill}>
+          <LessonFinish
+            key={'w' + week}
+            lessonId=""
+            title="A lesson every day"
+            n={1}
+            gain={20}
+            again={false}
+            stats={{ cards: 0, combo: 0, secs: 0 }}
+            keep="When I first open Daybook each day, I will read the day’s lesson."
+            next={null}
+            onNext={() => setWeek(0)}
+            onDone={() => setWeek(0)}
+            head="Your week is set"
+            line={{ label: '1 Sunday', right: 'a month of them', from: 0, to: 0.25 }}
+            button="Done"
+            feedback={false}
+            look="dawn"
+            marks={7}
           />
         </View>
       ) : null}

@@ -269,7 +269,10 @@ export function standRow(days: Days, st: Settings, reviews: Reviews, tk: DayKey,
   const goal =
     g && g.g.k && g.g.n && g.done != null
       ? (g.done > g.g.n ? 'Goal kept: ' + g.done + ' ' + SUN_GOALS[g.g.k].unit : g.done + ' of ' + g.g.n + ' ' + SUN_GOALS[g.g.k].unit) + ' this week'
-      : '';
+      : /* a goal in the person's own words, which the log cannot count, is shown as it is (the Sunday review says it waits here) */
+        g && !g.g.k
+        ? 'This week: ' + g.g.t
+        : '';
   const note = goal;
   const row = (big: string, ...line: (string | null | undefined)[]): StandRow => {
     const l = [...line.filter(Boolean), f].join(' · ');

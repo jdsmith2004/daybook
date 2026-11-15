@@ -76,6 +76,32 @@ const S = {
     'Harkin and colleagues (2016): does monitoring goal progress promote goal attainment? A meta-analysis, Psychological Bulletin',
     'https://doi.org/10.1037/bul0000025',
   ],
+  kavanagh: [
+    'Kavanagh, Andrade & May (2005): imaginary relish and exquisite torture, the elaborated intrusion theory of desire, Psychological Review',
+    'https://doi.org/10.1037/0033-295X.112.2.446',
+  ],
+  skorka: [
+    'Skorka-Brown, Andrade, Whalley & May (2015): playing Tetris decreases drug and other cravings in real world settings, Addictive Behaviors',
+    'https://doi.org/10.1016/j.addbeh.2015.07.020',
+  ],
+  iyadurai: [
+    'Iyadurai and colleagues (2018): preventing intrusive memories after trauma with a brief intervention involving Tetris, Molecular Psychiatry',
+    'https://doi.org/10.1038/mp.2017.23',
+  ],
+  kemps12: ['Kemps, Tiggemann & Bettany (2012): non-food odorants reduce chocolate cravings, Appetite', 'https://pubmed.ncbi.nlm.nih.gov/22407134/'],
+  kemps07: [
+    'Kemps & Tiggemann (2007): modality-specific imagery reduces cravings for food, Journal of Experimental Psychology: Applied',
+    'https://doi.org/10.1037/1076-898x.13.2.95',
+  ],
+  collodi: ['Collodi (1883): The Adventures of Pinocchio, chapters 30 to 36 (public domain)', 'https://www.gutenberg.org/ebooks/500'],
+  kober10: [
+    'Kober, Mende-Siedlecki, Kross, Weber, Mischel, Hart & Ochsner (2010): prefrontal-striatal pathway underlies cognitive regulation of craving, Proceedings of the National Academy of Sciences',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC2930456/',
+  ],
+  lopez22: [
+    'Lopez, Ochsner & Kober (2022): brief training in regulation of craving reduces cigarette smoking, Journal of Substance Abuse Treatment',
+    'https://doi.org/10.1016/j.jsat.2022.108749',
+  ],
 } satisfies Record<string, Src>;
 
 export const STORIES_E: Record<string, Story> = {
@@ -845,6 +871,282 @@ export const STORIES_E: Record<string, Story> = {
     scope:
       'The cold-water and patient studies were about remembered pain, not habits, and they show how memory tends to work, not how it always works. The tracking review pooled 138 experiments, mostly on health goals. Together they show why an honest log is a fairer witness than a hard morning.',
     src: [S.kahneman, S.redelmeier, S.harkin],
+  },
+
+  l42: {
+    id: 'l42',
+    form: 'study',
+    title: 'Crowd out the picture',
+    ic: 'sparkle',
+    ask: 'Why would a small puzzle help when an urge is strong?',
+    key: 'An urge grows by painting a picture. The mind has one small screen, so give it a puzzle.',
+    np: 'What my eyes and hands can do when an urge starts',
+    tell: [
+      {
+        h: 'Craving researchers in England noticed how a craving grows.',
+        p: 'It starts as a passing thought. Then it **turns into a picture**: the taste, the smell, the feel of it, filling in. The sharper the picture gets, the stronger the pull.',
+        dx: 'A group of psychologists in Plymouth, England, spent years asking people to describe their cravings, for food, for cigarettes, for drink. The same pattern kept coming up. A craving starts as a passing thought, almost nothing. Then it **turns into a picture**: the taste, the smell, the feel of it, filling in detail by detail. People were not only wanting. They were watching something in their heads. And the sharper the picture got, the stronger the pull.',
+        art: ['scene', { k: 'l42-picture' }],
+        fact: { s: 'Theory · Kavanagh, Andrade & May, 2005', i: [0] },
+      },
+      {
+        h: 'And the mind has only one small screen for pictures.',
+        p: 'Try to picture a red apple and, **at the same time**, the face of a friend, both sharp. One always slips. The screen holds one picture well, and not two.',
+        dx: 'That gave them an idea, because the mind has only one small screen for pictures. You can test it now. Picture a red apple, shiny, with a leaf on the stem. Now, **at the same time**, picture the face of a good friend, just as sharp. One of them always slips, or both go blurry. The screen holds one picture well, and not two. Whatever fills it leaves less room for anything else.',
+        art: ['scene', { k: 'l42-screen' }],
+      },
+      {
+        h: 'So they wondered what would happen if the screen had something else to show.',
+        p: 'Not a thought in words, which leaves the screen free. A job for the eyes: **a puzzle of falling blocks** that has to be watched, turned and fitted, the game called Tetris.',
+        dx: 'So the researchers wondered what would happen if they gave the screen something else to show. Not a thought in words, like counting or reciting, because words use a different part of the mind and leave the picture screen free. They wanted a job for the eyes: **a puzzle of falling blocks** that has to be watched, turned and fitted before it lands. The game called Tetris was perfect. It is plain, it has nothing in it to start a new craving, and it fills the screen.',
+        art: ['scene', { k: 'l42-blocks' }],
+      },
+      {
+        h: 'In 2015, they texted 31 young adults seven times a day, for a week.',
+        p: 'Each time, people rated any craving they had: food, coffee, cigarettes, drink, and sexual urges among them. Then half of them **played the block game for three minutes**.',
+        dx: 'In 2015, they took the idea out of the lab and into ordinary days. For a week, 31 young adults got a text message seven times a day. Each time, they rated any craving they had right then: for food, coffee, cigarettes, drink, and sexual urges among them. Then half of them **played the block game for three minutes** on their phones, and rated the craving again. The other half rated it again without playing.',
+        art: ['scene', { k: 'l42-texts' }],
+      },
+      {
+        k: 'ask',
+        h: 'When an urge turns into a picture, what usually happens next?',
+        o: [
+          ['It gets sharper the longer I wait', 'Waiting with nothing to do leaves it the whole screen.'],
+          ['I push it away, and it stays', 'Pushing keeps your eyes on it. A job for the eyes works better.'],
+          ['Something grabs me, and it fades', 'Then you have seen this work by accident. The study did it on purpose.'],
+          ['I have never noticed', 'Watch the next one. Notice the moment it turns into a picture.'],
+        ],
+      },
+      {
+        h: 'After every game, the players’ cravings dropped.',
+        p: 'By about 14 points out of 100, **for every kind of craving** they had. And the drop did not wear off as the week went on. Each game was a small win.',
+        dx: 'After every game, the players’ cravings dropped, by about 14 points on a scale of 100. It happened **for every kind of craving** they had, not only one. And it did not wear off as the week went on, the way a trick might. The seventh day worked as well as the first. Each game was a small win, three minutes long, and it was there every time they reached for it.',
+        art: ['scene', { k: 'l42-drop' }],
+        fact: { s: 'Field study · 31 people · Skorka-Brown and colleagues, 2015', i: [1] },
+      },
+      {
+        long: 1,
+        h: 'In an emergency room in Oxford, the same game did something else.',
+        p: 'People who had just been in a road accident played it for 20 minutes. Over the next week, they had **fewer flashbacks** of the crash than people who did not.',
+        dx: 'Another team tried the same game in an emergency room in Oxford. People who had just been in a road accident, still waiting in the hospital, either played it for 20 minutes or wrote down what they had done that day. Over the next week, the players had **fewer flashbacks** of the crash, the pictures that push in uninvited. It was a small first trial. It shows how much of the mind’s screen a plain puzzle can take.',
+        art: ['scene', { k: 'l42-er' }],
+        fact: { s: 'Trial · 71 patients · Iyadurai and colleagues, 2018', i: [2] },
+      },
+      {
+        h: 'Pushing a picture away keeps you looking at it. Filling the screen does not.',
+        p: 'A puzzle is not a fight with the picture. **It takes the room the picture needs**, and the pull loses its color.',
+        dx: 'This is why the puzzle works when pushing does not. Pushing a picture away keeps your eyes on it, the way the white bear came back to everyone told not to think of it. Filling the screen is different. A puzzle is not a fight with the picture at all. **It takes the room the picture needs**, and a picture with no room cannot stay sharp. The pull loses its color, and an urge without its picture is much easier to ride out.',
+        art: ['scene', { k: 'l42-full' }],
+        back: 'l2',
+      },
+      {
+        long: 1,
+        h: 'It has to be a puzzle with nothing in it to start a new picture.',
+        p: 'A feed of videos fills the screen too, and it is full of **cues for new pictures**. Shapes, numbers, a word game: plain things for the eyes and hands.',
+        dx: 'One warning. Not everything that fills the screen helps. A feed of videos fills it too, and it is full of **cues for new pictures**, one swipe from the habit. The puzzle works because it is plain: shapes, numbers, a word game, something to draw. It gives the eyes and hands a job and nothing to dream about. That is why Daybook keeps one in SOS, Fit the shapes, one tap away.',
+        art: ['scene', { k: 'l42-plain' }],
+      },
+    ],
+    mine: { h: 'Here is when to have the puzzle ready.', k: 'hour' },
+    today: {
+      h: 'When the picture starts, give your eyes a job.',
+      l: ['Open Fit the shapes in SOS', 'Play one minute, eyes on the board', 'Then stand up and do the next thing'],
+    },
+    you: {
+      h: 'What could your eyes and hands do the next time a picture starts?',
+      o: [
+        ['Fit the shapes in SOS', 'That is the closest thing to the study. Keep it one tap away.'],
+        ['A word or number puzzle', 'Plain, with nothing in it to start a new picture. That works.'],
+        ['Something with my hands, like drawing', 'Hands and eyes together take up a lot of the screen.'],
+        ['I do not know yet', 'Fair. Try Fit the shapes once, at the next urge, and see.'],
+      ],
+    },
+    scope:
+      'The block game studies were with young adults and their everyday cravings, and with crash patients, not with porn, and one author calls it a tool, not a treatment. The pattern carries over well: the mind’s screen is small, and a puzzle for the eyes takes the space a picture needs.',
+    src: [S.kavanagh, S.skorka, S.iyadurai],
+  },
+
+  l43: {
+    id: 'l43',
+    form: 'works',
+    title: 'Come back to the room',
+    ic: 'compass',
+    ask: 'When an urge pulls me into my head, how do I get back out?',
+    key: 'You do not need a better thought. Come back through what you can see, feel and smell.',
+    np: 'The things around me that bring me back',
+    tell: [
+      {
+        h: 'In SOS, one tool asks you to name five things you can see.',
+        p: 'Then four you can feel, three you can hear, two you can smell, one you can taste. It looks too plain to stand up to a strong urge. **This is why it works.**',
+        dx: 'In SOS, there is a tool called 5-4-3-2-1. It asks you to name five things you can see. Then four you can feel, three you can hear, two you can smell, and one you can taste. It looks almost too plain to stand up to a strong urge, like a trick for children. Many people skip it for that reason. **This is why it works**, and why it is in SOS at all.',
+        art: ['scene', { k: 'l43-count' }],
+      },
+      {
+        h: 'An urge pulls you out of the room and into a scene in your head.',
+        p: 'Your body is on the couch. Your mind is somewhere else, in a picture it is painting. **The urge lives in that picture**, not in the room around you.',
+        dx: 'Think of where you are during a strong urge. Your body is on the couch, or at a desk, or in a car. Your mind is somewhere else, in a scene it is painting, filling in what it wants. You can be sitting in a room and hardly see it. **The urge lives in that picture**, not in the room around you. The lamp, the floor and the window are still there. You have stopped noticing them.',
+        art: ['scene', { k: 'l43-away' }],
+      },
+      {
+        h: 'And the picture borrows your senses.',
+        p: 'A pictured taste uses the mind’s sense of taste. A pictured scene uses the mind’s eyes. In experiments, **giving the eyes or the nose real work** turned cravings down.',
+        dx: 'This is the key. The picture is built out of your senses. A pictured taste uses the mind’s sense of taste. A pictured scene uses the mind’s eyes. In a set of experiments in Australia, people craving a food were given small tasks for different senses. **Giving the eyes or the nose real work**, picturing a rainbow or imagining a smell, turned cravings down more than a task for the ears. The senses the craving was using were busy.',
+        art: ['scene', { k: 'l43-senses' }],
+        fact: { s: 'Experiments · Kemps & Tiggemann, 2007', i: [1] },
+      },
+      {
+        h: 'In 2012, the same researchers made young women crave chocolate.',
+        p: 'They showed them photos of it until they wanted some. Then each one smelled jasmine, green apple, or plain water. **Jasmine cut the craving the most.**',
+        dx: 'In 2012, the same researchers went further. They showed 67 young women photos of chocolate, one after another, until they wanted some. Then each one smelled a small bottle: jasmine, green apple, or plain water. **Jasmine cut the craving the most.** The smell had nothing to do with chocolate. It did not answer the craving at all. It gave the senses something real, here and now, and the craving lost ground.',
+        art: ['scene', { k: 'l43-jasmine' }],
+        fact: { s: 'Study · 67 women · Kemps, Tiggemann & Bettany, 2012', i: [0] },
+      },
+      {
+        k: 'ask',
+        h: 'When an urge pulls you into your head, what do you usually try?',
+        o: [
+          ['Think about something else', 'Another thought still lives in your head. The room is outside it.'],
+          ['Tell myself firmly to stop', 'A firm stop still keeps your attention on the urge.'],
+          ['Reach for my phone', 'The phone pulls you into another screen, one tap from the habit.'],
+          ['I do not know yet', 'Notice next time where your attention goes first.'],
+        ],
+      },
+      {
+        h: 'A new thought is still inside your head. The room is not.',
+        p: 'Distraction looks away from the picture. Coming back **arrives somewhere**: the floor under your feet, the air on your skin, the lamp across from you.',
+        dx: 'This is the difference between distraction and coming back. Distraction looks away from the picture and hunts for something else to think about, and a new thought still lives in your head, right next to the urge. Coming back **arrives somewhere**. The floor under your feet is not in your head. Neither is the air on your skin, the hum of the fridge, or the lamp across from you. They are real, and they are always here.',
+        art: ['scene', { k: 'l43-floor' }],
+      },
+      {
+        h: 'So each thing you name takes a little of the screen back.',
+        p: 'Five things to see is five jobs for the eyes. Four to feel is four for the skin. **Each one is a piece of the room** the picture cannot have.',
+        dx: 'Now the tool makes sense. Five things to see is five jobs for the eyes, the same eyes the picture was borrowing. Four to feel is four for the skin. Three to hear, two to smell, one to taste. **Each one is a piece of the room** the picture cannot have. By the end, your senses are full of where you are, and there is far less of them left for where the urge wanted you to be.',
+        art: ['scene', { k: 'l43-five' }],
+      },
+      {
+        long: 1,
+        h: 'If the picture comes back, come back again.',
+        p: 'Minds wander back. That is not the tool failing. **Coming back again is the skill**, and it gets quicker every time you do it.',
+        dx: 'The picture will often come back, especially the first few times. Minds wander back to what pulls them. That is not the tool failing, and it is not you failing. **Coming back again is the skill**: notice you have drifted, and name one more thing you can see. It gets quicker every time. The room is always there, so you can always come back to it.',
+        art: ['scene', { k: 'l43-again' }],
+        back: 'l42',
+      },
+    ],
+    today: {
+      h: 'Count your way back into the room.',
+      l: ['5 things you can see, 4 you can feel', '3 you can hear, 2 smell, 1 taste', 'If the picture returns, come back again'],
+    },
+    you: {
+      h: 'What in your own room could bring you back fastest?',
+      o: [
+        ['Something to touch, like cold water', 'Cold water on the hands is one of the quickest ways back.'],
+        ['A smell I like', 'Keep it near. The jasmine worked for this exact reason.'],
+        ['Looking out a window', 'Far-off things give the eyes real work, and that brings you back.'],
+        ['I do not know yet', 'Fair. Try the five things once, and notice which sense brings you back first.'],
+      ],
+    },
+    scope:
+      'The smell study and the senses experiments were about food cravings in young women, not porn. What carries over is the direction: something real for the senses turns a craving down, and the room around you is always there to use.',
+    src: [S.kemps12, S.kemps07],
+  },
+
+  l44: {
+    id: 'l44',
+    form: 'meaning',
+    title: 'Play it forward',
+    ic: 'compass',
+    ask: 'What can I think about during an urge that makes it weaker?',
+    key: '“It does not matter” only sounds true in the dark. Play the hour after forward, both ways, and pick.',
+    np: 'How I feel an hour after, both ways',
+    tell: [
+      {
+        h: 'In the old book of Pinocchio, the boy who talks him onto the coach is called Candlewick.',
+        p: 'He is the tallest, thinnest boy in the class, and the laziest, and Pinocchio loves him. **He has one answer for every worry**: none of it matters.',
+        dx: 'In Collodi’s old book of Pinocchio, the boy who talks him onto the coach to the Land of Toys is called Candlewick, because he is long and thin like the wick of a candle. He is the laziest boy in the class, and the most fun, and Pinocchio loves him more than anyone at school. Candlewick is never worried about anything. **He has one answer for every worry**: none of it matters. School does not matter. Home does not matter. Tomorrow does not matter.',
+        art: ['scene', { k: 'l44-wick' }],
+        fact: { s: 'Story · Collodi, The Adventures of Pinocchio, 1883', i: [0] },
+      },
+      {
+        h: 'At the coach, Pinocchio stops.',
+        p: 'He thinks of his father, and of the fairy waiting for him at home. He almost turns back. Candlewick shrugs. **One day of fun**, he says, will not change anything.',
+        dx: 'The night the coach comes, Pinocchio stops at the side of the road. He had promised the fairy he would come home and become a real boy the next day. He thinks of her waiting, and of his father. He almost turns back. Candlewick only shrugs. Go home if you like, he says. Nobody is making you come. It is **one day of fun**, and one day will not change anything. Pinocchio climbs on.',
+        art: ['scene', { k: 'l44-coach' }],
+      },
+      {
+        h: 'That sentence is the urge’s favorite.',
+        p: '“Just once.” “It does not matter.” “Nobody will know.” Each one shrinks the world down to **the next few minutes**, where nothing seems to cost anything.',
+        dx: 'Candlewick’s sentence is the urge’s favorite, in all its forms. “Just once.” “It does not matter.” “Nobody will know.” “You can start again tomorrow.” Listen to what each one does. It shrinks the world down to **the next few minutes**, where nothing seems to cost anything. In that small world, it is even true. Nothing in the next few minutes costs much. The cost lives outside the frame.',
+        art: ['scene', { k: 'l44-small' }],
+      },
+      {
+        k: 'ask',
+        h: 'When the urge is loud, what does it tell you?',
+        o: [
+          ['“Just once.”', 'That is Candlewick at the coach. Look at where the coach went.'],
+          ['“It does not matter.”', 'That is his favorite. The next cards are about whether it is true.'],
+          ['“You deserve this.”', 'That one sounds kind. Look at what it leaves out.'],
+          ['Nothing. I am on autopilot', 'Then the sentence is under the surface. It is often there all the same.'],
+        ],
+      },
+      {
+        h: 'Months later, Pinocchio finds Candlewick again.',
+        p: 'He is a donkey in a farmer’s stable, worked until he cannot stand. The friend who said nothing mattered **lost the most of anyone**.',
+        dx: 'The story does not leave Candlewick in the Land of Toys. Both boys turn into donkeys there, and are sold. Many months later, after Pinocchio has escaped and is working to care for his father, he walks into a farmer’s stable and finds a donkey lying on the straw, worn out from turning a wheel. It is Candlewick. He dies there, in Pinocchio’s arms. The friend who said nothing mattered **lost the most of anyone** in the story.',
+        art: ['scene', { k: 'l44-stable' }],
+      },
+      {
+        h: 'It always mattered. The urge only keeps the hour after in the dark.',
+        p: 'In the moment, the next ten minutes fill the whole screen. The hour after, and tomorrow, **are kept out of view**. That is how “it does not matter” sounds true.',
+        dx: 'It always mattered. Candlewick was not wrong because he was bad. He was wrong because he only ever looked at the next few minutes. The urge does the same thing to you. In the moment, the next ten minutes fill the whole screen, bright and close. The hour after, and tomorrow morning, **are kept out of view**. You know they are coming. You just cannot see them. That is how “it does not matter” sounds true.',
+        art: ['scene', { k: 'l44-dark' }],
+      },
+      {
+        h: 'Smokers who thought about later wanted the cigarette less.',
+        p: 'In a brain scanner, they saw pictures of cigarettes. When they thought about **what would come later**, their craving fell by about a third, with the same pictures in front of them.',
+        dx: 'In 2010, researchers in New York put 21 smokers in a brain scanner and showed them pictures of cigarettes and rich food. Sometimes they were asked to think about how it would feel right now. Sometimes they were asked to think about **what would come later**, the long run, the cost. Thinking of later cut their craving by about a third, with the same pictures in front of them. The planning parts at the front of the brain grew busier, and the reward center grew quieter.',
+        art: ['scene', { k: 'l44-later' }],
+        fact: { s: 'Study · 21 smokers · Kober and colleagues, 2010', i: [1] },
+      },
+      {
+        long: 1,
+        n: '93',
+        h: 'smokers practiced looking past the moment, in one short session.',
+        p: 'In the weeks after, they **smoked 22 to 49 in 100 fewer cigarettes** a day. Smokers who did not practice stayed about the same. The view past the moment can be trained.',
+        dx: 'Later, the same group ran two trials with 93 smokers. In one short session, they practiced thinking of what comes later while looking at pictures of cigarettes. That was all. In the weeks after, they **smoked 22 to 49 in 100 fewer cigarettes** a day. The smokers who did not practice stayed about the same. Looking past the moment is not a gift some people have. It is a skill, and it grows with practice.',
+        fact: { s: 'Trials · 93 smokers · Lopez, Ochsner & Kober, 2022', i: [2] },
+      },
+      {
+        h: 'So when the urge says it does not matter, play it forward.',
+        p: 'Both ways. The hour after giving in, in your own words. The hour after riding it out. **Look at both, and pick one.** That is the look Candlewick never took.',
+        dx: 'So when the urge says it does not matter, do what Candlewick never did. Play it forward, both ways. First, the hour after giving in, in your own words: maybe tired, flat, hiding something. Then the hour after riding it out: maybe calm, clear, glad. Do not argue with the urge. Only turn the lights on in the hour after. **Look at both, and pick one.** That is the look Candlewick never took, and it is yours to take every time.',
+        art: ['scene', { k: 'l44-both' }],
+      },
+      {
+        long: 1,
+        h: 'Pinocchio’s own story ends the other way.',
+        p: 'He spends months caring for his father, turning a heavy wheel every day for a glass of milk. **The days that mattered added up**, and he became real.',
+        dx: 'Pinocchio’s own story ends the other way. After the stable, he keeps working. For months he turns a heavy wheel every day for a glass of milk for his sick father, and studies at night. None of those days feels like much on its own. But **the days that mattered added up**, and one morning he wakes up a real boy. Candlewick’s days did not matter, he said. Pinocchio’s did, and that is what set the two boys apart.',
+        art: ['scene', { k: 'wheel' }],
+        back: 'l41',
+      },
+    ],
+    mine: { h: 'Every urge you ride out gives you an hour after to see.', k: 'rode' },
+    today: {
+      h: 'At the next urge, play the hour forward, both ways.',
+      l: ['The hour after giving in: name it', 'The hour after riding it out: name it', 'Look at both, and pick one'],
+    },
+    you: {
+      h: 'What is your Candlewick sentence, the one that says it does not matter?',
+      o: [
+        ['“Just once.”', 'Play “just once” forward an hour. It usually looks different there.'],
+        ['“Nobody will know.”', 'You will know, in the hour after. That is the person who matters most here.'],
+        ['“I already blew it today.”', 'That is the milkshake sentence. One moment does not make the day.'],
+        ['I do not know yet', 'Fair. Listen for it at the next urge. It is usually short.'],
+      ],
+    },
+    scope:
+      'Pinocchio is a story, not a study, and the brain-scan study and the practice trials were with smokers, not people quitting porn. What carries over is the skill: looking past the moment turned craving down, and it grew stronger with practice.',
+    src: [S.collodi, S.kober10, S.lopez22],
   },
 };
 

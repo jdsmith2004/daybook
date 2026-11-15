@@ -70,7 +70,7 @@ function LondonAsk({ k }: { k: Ink }) {
       <Person x={240} y={160} fill={k.ink} face={k.bg} />
       <Cloud x={208} y={38} w={64} h={34} fill={k.soft} />
       <Path d="M220 62 l7 -12 l6 13 l7 -15 l6 15 l7 -12 l6 11 l6 -9" fill="none" stroke={RED} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-      <Say x={150} y={188} s="Do you have them too?" fill={k.ink} />
+      <Say x={150} y={188} s="An uncomfortable question" fill={k.ink} />
     </Frame>
   );
 }

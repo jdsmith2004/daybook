@@ -58,3 +58,6 @@ npm-debug.log*
 # Claude in Chrome outreach log: names people, so never in git
 .outreach/
 journey-shots/
+
+# Listen recordings made by npm run voice: they live on the website, never in git (core voice.ts)
+apps/mobile/public/voice/

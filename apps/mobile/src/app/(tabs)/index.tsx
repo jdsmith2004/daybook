@@ -10,6 +10,7 @@
    first time it is earned, and its celebration opens. */
 import {
   accountAsk,
+  accountNudge,
   awayDue,
   awayStart,
   dayFeelDue,
@@ -55,6 +56,7 @@ import { AppState, Platform, StyleSheet, View, type ScrollViewInstance } from 'r
 import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
+import { AccountNudge, AccountTop } from '@/components/account-top';
 import { SettingsButton } from '@/components/settings-button';
 import { FeedbackTop } from '@/components/feedback-top';
 import { TIP_URL, TipCard } from '@/components/support';
@@ -376,6 +378,8 @@ export default function Today() {
   });
   /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */
   const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
+  /* the button beside Ideas glows with a line every few days after a good moment, never on a day the card already asks (core accountNudge) */
+  const nudgeNow = ask ? null : accountNudge(snap.days, st, tk, !!account, quiet);
   const tip = !quiet && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: careLastAt(sos.mem) });
   /* one quiet line under the next step: the week's goal from Sunday (today's entries are in Today so far, under it) */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name, nights)?.note;
@@ -401,6 +405,7 @@ export default function Today() {
     <>
       <WaitingPlan snap={snap} tk={tk} now={now} />
       <LogLink walk={!walkWaits} />
+      {nudgeNow ? <AccountNudge nudge={nudgeNow} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false, st)} /> : null}
       <NotifyBanner />
       <PullTroubleStrip />
       {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
@@ -451,7 +456,12 @@ export default function Today() {
               flame={size.flame}
               trim={trim}
               title={title}
-              lead={<FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />}
+              lead={
+                <View style={s.leads} pointerEvents="box-none">
+                  <FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />
+                  {account ? null : <AccountTop nudge={night ? null : nudgeNow} />}
+                </View>
+              }
               action={<SettingsButton on={{ glass: ink.glass, ink: ink.ink }} />}
             />
           </View>
@@ -539,6 +549,7 @@ const AWAY_LONG = 30 * 60 * 1000;
 const TOUR_ROOM = 380;
 
 const s = StyleSheet.create({
+  leads: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   line: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, paddingHorizontal: 16 },
   done: { gap: 2, paddingHorizontal: 4 },
   doneH: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },

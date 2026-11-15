@@ -102,3 +102,32 @@ it('a new person who keeps it on the phone at the end of setup is not asked agai
   expect(core.accountAsk({}, st, tk, 6, false)).toBeNull();
   expect(core.accountAsk({}, st, core.addDays(tk, core.ACCT_WAIT), 6, false)).toBe('week');
 });
+
+it('the nudge beside Ideas: only after a good moment, from day 2, every few days, never near a slip or in quiet hours', () => {
+  const st = st0(core.addDays(tk, -5));
+  const lesson = { [tk]: { d: tk, events: [], checkin: null, p: { ls: ['l1'] }, u: 0 } } as unknown as core.Days;
+  const rode = core.addEvent({}, tk, 'rode', '21:00').days;
+  /* a plain day with nothing done does not nudge */
+  expect(core.accountNudge({}, st, tk, false, false)).toBeNull();
+  expect(core.accountNudge(lesson, st, tk, false, false)).toBe('lesson');
+  expect(core.accountNudge(rode, st, tk, false, false)).toBe('rode');
+  /* a week mark, with nothing else done */
+  expect(core.accountNudge({}, st0(core.addDays(tk, -14)), tk, false, false)).toBe('week');
+  expect(core.accountNudge({}, st0(core.addDays(tk, -15)), tk, false, false)).toBeNull();
+  /* never with an account, in the quiet hours, or in the first days */
+  expect(core.accountNudge(lesson, st, tk, true, false)).toBeNull();
+  expect(core.accountNudge(lesson, st, tk, false, true)).toBeNull();
+  expect(core.accountNudge(lesson, st0(core.addDays(tk, -1)), tk, false, false)).toBeNull();
+  expect(core.accountNudge(lesson, st0(core.addDays(tk, -core.ACCT_NUDGE_FROM)), tk, false, false)).toBe('lesson');
+  /* never on a day with a slip or the day after */
+  const slip = core.addEvent(lesson, core.addDays(tk, -1), 'slipped', '21:00').days;
+  expect(core.accountNudge(slip, st, tk, false, false)).toBeNull();
+  /* once closed, it waits ACCT_NUDGE_GAP days */
+  const seen = core.accountNudged(st, core.addDays(tk, -2)).st!;
+  expect(core.accountNudge(lesson, seen, tk, false, false)).toBeNull();
+  const old = core.accountNudged(st, core.addDays(tk, -core.ACCT_NUDGE_GAP)).st!;
+  expect(core.accountNudge(lesson, old, tk, false, false)).toBe('lesson');
+  /* the line sells what a free account opens (sync needs a tip), with no contractions */
+  expect(core.nudgeWords('rode', 30)).toBe('You rode that out. A free account opens the other 30 lessons.');
+  expect(core.nudgeWords('lesson', 0)).not.toMatch(/n't|'s |'re /);
+});

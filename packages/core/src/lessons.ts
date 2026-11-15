@@ -55,6 +55,8 @@ export interface Card {
   /** flip: a turn (lesson-turns.ts), h on the front and see on the back */
   k: 'text' | 'choose' | 'guess' | 'try' | 'flip';
   q?: 1;
+  /** in Deep only, the 10-minute lesson (lessonCards) */
+  dp?: 1;
   e?: string;
   el?: string;
   art?: Art;
@@ -647,12 +649,18 @@ export const lessonHasQuick = (L: Lesson) => !!(L.cards && L.cards.some((c) => c
 /** the length shown in lists */
 export const lmin = (L: Lesson) => (lessonHasQuick(L) ? '1–5 min' : (L.mins || 3) + ' min');
 export const lessonCore = (L: Lesson) => L.cards.filter((c) => c.k !== 'try');
-export const lessonCards = (L: Lesson, len: 'q' | 'f' | null) => {
+/** how long a lesson runs: Short plays the cards marked q, Long every card but the deep ones, and Deep every card (the owner, November
+    14, 2026: a 10-minute lesson, "only ... if they go into the settings and enable" it) */
+export type LessonLen = 'q' | 'f' | 'd';
+/** Deep is offered in Settings once every lesson on the path has its deep cards (docs/plan.md); until then a saved Deep plays Long */
+export const DEEP_READY = false;
+export const lessonCards = (L: Lesson, len: LessonLen | null) => {
   const all = lessonCore(L);
-  return len === 'q' && lessonHasQuick(L) ? all.filter((c) => c.q === 1) : all;
+  if (len === 'q' && lessonHasQuick(L)) return all.filter((c) => c.q === 1);
+  return len === 'd' ? all : all.filter((c) => !c.dp);
 };
 export type SeqItem = { t: 'card'; c: Card; ci: number } | { t: 'done' };
-export function lessonSeq(L: Lesson, len: 'q' | 'f' | null): SeqItem[] {
+export function lessonSeq(L: Lesson, len: LessonLen | null): SeqItem[] {
   const out: SeqItem[] = [];
   lessonCards(L, len).forEach((c) => out.push({ t: 'card', c, ci: L.cards.indexOf(c) }));
   out.push({ t: 'done' });

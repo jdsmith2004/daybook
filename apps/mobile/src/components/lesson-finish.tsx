@@ -19,6 +19,7 @@
    In the hours after a slip (core ptsQuiet) the points and the level line are not shown, as everywhere else: the lesson itself
    is the win. A lesson read again earns no points, so nothing glides. */
 import { gameCompute, lessonCount, lessonWalk, levelOf, LOOKS, ptsQuiet, stepProgress, type Look } from '@daybook/core';
+import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View, type ViewInstance } from 'react-native';
@@ -41,6 +42,7 @@ import { SHORT } from '@/components/fit';
 import { Bubble } from '@/components/lesson-flame';
 import { Text } from '@/components/text';
 import { buzz } from '@/lib/feel';
+import { pulseOffered } from '@/lib/pulse';
 import { useReducedMotion } from '@/lib/motion';
 import { play } from '@/lib/sound';
 import { useStore } from '@/lib/store';
@@ -506,6 +508,16 @@ export function LessonFinish({ lessonId, title, n, gain, again, keep, onDone }: 
               </View>
             )}
           </Pressable>
+          {/* a quiet way to tell the owner what this lesson did (the owner, November 14, 2026): the feedback sheet, about this lesson; hidden, like Ideas, in a build with no place to send to */}
+          {pulseOffered ? (
+            <Pressable
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={() => router.push({ pathname: '/feedback', params: { n: String(n), title } })}
+              style={s.quiet}>
+              {({ pressed }) => <Text style={[s.quietText, pressed && { opacity: 0.6 }]}>Feedback on this lesson</Text>}
+            </Pressable>
+          ) : null}
         </Reanimated.View>
       </View>
 
@@ -655,6 +667,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  quiet: { alignSelf: 'center', paddingTop: 14, paddingHorizontal: 12 },
+  quietText: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted },
   btnDown: { borderBottomWidth: 0, marginTop: 5 },
   btnText: { fontFamily: font.display, fontSize: 20, color: '#3A2A00' },
 });

@@ -302,10 +302,14 @@ function normLearn(l){
   if(w&&Array.isArray(w.a)){const a=[0,1,2].map(i=>String(w.a[i]==null?'':w.a[i]).slice(0,1500));if(a.some(x=>x.trim()))wr['c'+n]={a,u:Number(w.u)||0}}
  }
  /* back: welcome backs passed on the path (lessons.ts lessonReach), kept only when there is one */
- const out={notes,faith:(fm==='mix'&&!fs)?'after':fm,faithSet:fs,len:(o.len==='q'||o.len==='f')?o.len:'',prac,picks,wr};
+ const out={notes,faith:(fm==='mix'&&!fs)?'after':fm,faithSet:fs,len:(o.len==='q'||o.len==='f'||o.len==='d')?o.len:'',prac,picks,wr};
  if(Object.keys(back).length)out.back=back;
  /* did, later, asked: the steps' deeds (steps.ts), each kept only when there is one */
  Object.assign(out,normDeeds(o));
+ /* deep: Deep lessons turned on in Settings; lens: how often each length was picked (setup.ts lessonLen), each kept only when there is one */
+ if(o.deep===true)out.deep=true;
+ const lens={};['q','f','d'].forEach(k=>{const n=Math.floor(Number(o.lens&&o.lens[k]));if(n>0)lens[k]=Math.min(n,99999)});
+ if(Object.keys(lens).length)out.lens=lens;
  return out;
 }
 /* a journal tag, as Obsidian takes one: lower case, no spaces, letters, numbers, - _ and /, and never only numbers (journal-notes.ts) */

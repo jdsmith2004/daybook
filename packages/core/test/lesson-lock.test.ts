@@ -45,10 +45,12 @@ describe('the lessons are locked', () => {
     ).toEqual([]);
   });
 
-  it('Long plays every card of every lesson: no design hides one', () => {
+  it('Deep plays every card of every lesson, and Long every card but the deep ones: no design hides one', () => {
     core.LESSONS.forEach((L) => {
+      const deep = core.lessonSeq(L, 'd').filter((x) => x.t === 'card').length;
+      expect(deep, L.id).toBe(core.lessonCore(L).length);
       const long = core.lessonSeq(L, 'f').filter((x) => x.t === 'card').length;
-      expect(long, L.id).toBe(core.lessonCore(L).length);
+      expect(long, L.id).toBe(core.lessonCore(L).filter((c) => !c.dp).length);
     });
   });
 });

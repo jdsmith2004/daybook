@@ -17,6 +17,11 @@ import { Bear, BEAR_LINE, Cloud, Frame, type Ink, Person, Say, useInk, W } from 
 import { SCENES_B } from './story-scenes-b';
 import { SCENES_C } from './story-scenes-c';
 import { SCENES_D } from './story-scenes-d';
+import { SCENES_E } from './story-scenes-e';
+import { SCENES_F } from './story-scenes-f';
+import { SCENES_G } from './story-scenes-g';
+import { SCENES_H } from './story-scenes-h';
+import { SCENES_I } from './story-scenes-i';
 
 /* ---------- lesson 2: the white bear ---------- */
 function BearBook({ k }: { k: Ink }) {
@@ -435,6 +440,11 @@ const SCENES: Record<string, ComponentType<{ k: Ink }>> = {
   ...SCENES_B,
   ...SCENES_C,
   ...SCENES_D,
+  ...SCENES_E,
+  ...SCENES_F,
+  ...SCENES_G,
+  ...SCENES_H,
+  ...SCENES_I,
 };
 /** the scene names a story may use (core lesson-stories.ts checks its own against this list in a test) */
 export const SCENE_KEYS = Object.keys(SCENES);

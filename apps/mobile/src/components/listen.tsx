@@ -1,22 +1,24 @@
-/* Listen: a story card read aloud by the phone's own voice, on the device, with each word lit as it is said (the owner, November 14,
-   2026: "can you add an option to listen with the local on device model and then trace the text as it reads? only for ios 27").
-   The voice is the system's speech synthesizer (expo-speech, AVSpeechSynthesizer on iOS): nothing leaves the phone, and the best
-   English voice installed is used (an enhanced or premium one when the person has downloaded it). Listen is offered on iOS 27 and
-   later, and in the demo build on the web so the owner can try it there. Once on, it stays on for the lesson: each card is read as it
-   comes in, until the person turns it off or leaves. */
-import { lfmt, type Settings } from '@daybook/core';
+/* Listen: a story card read aloud, with each word lit as it is said (the owner, November 14, 2026: "can you add an option to listen
+   ... and then trace the text as it reads?"). The voice is a real recording made ahead of time with Kokoro (core voice.ts; the owner,
+   November 14, 2026: "the AI voice is terrible ... Kokoro or something like that?"), fetched from the website the first time a card is
+   heard and kept on the phone after (lib/voice-clip.ts). A card with no recording yet, or no network for one not heard before, is read
+   by the phone's own voice instead (expo-speech), the best English voice installed. Once on, it stays on for the lesson: each card is
+   read as it comes in, until the person turns it off or leaves. */
+import { lfmt, voiceAt, voiceKey, voiceSaid, VOICES, type Settings } from '@daybook/core';
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import * as Speech from 'expo-speech';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, type StyleProp, type TextStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
+import { getListen, RATES, setListen, useListen } from '@/lib/listen-prefs';
+import { getClip } from '@/lib/voice-clip';
 import { font } from '@/lib/theme';
 
-const IOS_MAJOR = Platform.OS === 'ios' ? Number(String(Platform.Version).split('.')[0]) || 0 : 0;
-/** Listen is offered on iOS 27 and later, and on the web in the demo build (EXPO_PUBLIC_SHOTS=1) for trying it */
-export const LISTEN_OK = IOS_MAJOR >= 27 || (Platform.OS === 'web' && process.env.EXPO_PUBLIC_SHOTS === '1');
+/** Listen is offered everywhere now: the recordings play on iOS, Android and the web, and the phone's own voice covers the rest */
+export const LISTEN_OK = true;
 
 /* the best English voice on the device: a premium or enhanced one first, then the person's own region */
 let voiceId: string | null | undefined;
@@ -33,6 +35,26 @@ async function bestVoice(): Promise<string | null> {
   return voiceId;
 }
 
+/* one player for every card: on the web a browser lets a sound play without a fresh tap only on an element it has already seen a tap
+   play, so the next card reuses it */
+let player: AudioPlayer | null = null;
+function thePlayer(uri: string): AudioPlayer {
+  if (!player) player = createAudioPlayer({ uri }, { updateInterval: 100 });
+  else player.replace({ uri });
+  return player;
+}
+function hush() {
+  try {
+    player?.pause();
+  } catch {
+    /* nothing playing */
+  }
+  void Speech.stop();
+}
+/* while Listen plays, it plays with the silent switch on, like the scripture reader; after, the sound guide's own way again */
+const loud = () => setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'doNotMix' }).catch(() => undefined);
+const quiet = () => setAudioModeAsync({ playsInSilentMode: false, interruptionMode: 'mixWithOthers' }).catch(() => undefined);
+
 /** a word of the card, where it starts in what is said, and whether it is bold */
 interface Word {
   t: string;
@@ -47,22 +69,72 @@ function words(text: string, from: number, b: boolean, out: Word[]) {
   while ((m = re.exec(text))) out.push({ t: m[0], at: from + m.index, b });
 }
 
-/** the Listen button: a quiet pill at the bottom left of a story card */
+const rateName = (r: number) => String(r).replace(/^0\./, '.') + '×';
+
+/** Listen, at the bottom left of a story card: one quiet pill to start; once on, play and pause, the speed, and the voice, each one
+    tap, and the speed and the voice are remembered (lib/listen-prefs.ts) */
 export function ListenButton({ on, onPress, ink }: { on: boolean; onPress: () => void; ink: string }) {
+  const lp = useListen();
+  const pill = (pressed: boolean, lit?: boolean) => [s.btn, { borderColor: ink, opacity: pressed ? 0.7 : 1 }, lit && s.btnOn];
+  if (!on)
+    return (
+      <Pressable
+        onPress={() => {
+          buzz('tap');
+          setListen({ paused: false });
+          onPress();
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Listen to this lesson"
+        hitSlop={8}
+        style={({ pressed }) => pill(pressed)}>
+        <Icon name="play" size={16} color={ink} />
+        <Text style={[s.btnT, { color: ink }]}>Listen</Text>
+      </Pressable>
+    );
+  const vi = Math.max(
+    0,
+    VOICES.findIndex((v) => v.id === lp.voice),
+  );
+  const ri = Math.max(0, (RATES as readonly number[]).indexOf(lp.rate));
   return (
-    <Pressable
-      onPress={() => {
-        buzz('tap');
-        onPress();
-      }}
-      accessibilityRole="button"
-      accessibilityState={{ selected: on }}
-      accessibilityLabel={on ? 'Stop listening' : 'Listen to this lesson'}
-      hitSlop={8}
-      style={({ pressed }) => [s.btn, { borderColor: ink, opacity: pressed ? 0.7 : 1 }, on && { backgroundColor: 'rgba(255,210,90,0.22)' }]}>
-      <Icon name={on ? 'pause' : 'play'} size={16} color={ink} />
-      <Text style={[s.btnT, { color: ink }]}>{on ? 'Listening' : 'Listen'}</Text>
-    </Pressable>
+    <View style={s.row}>
+      <Pressable
+        onPress={() => {
+          buzz('tap');
+          if (lp.done) setListen({ done: false, paused: false, again: lp.again + 1 });
+          else setListen({ paused: !lp.paused });
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={lp.done ? 'Play again' : lp.paused ? 'Play' : 'Pause'}
+        hitSlop={6}
+        style={({ pressed }) => [pill(pressed, !lp.paused && !lp.done), s.round]}>
+        <Icon name={lp.paused || lp.done ? 'play' : 'pause'} size={18} color={ink} />
+      </Pressable>
+      <Pressable
+        onPress={() => {
+          buzz('tap');
+          setListen({ rate: RATES[(ri + 1) % RATES.length] });
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={'Speed ' + lp.rate + ' times. Tap to change.'}
+        hitSlop={6}
+        style={({ pressed }) => [pill(pressed), s.chip]}>
+        <Text style={[s.btnT, { color: ink }]}>{rateName(lp.rate)}</Text>
+      </Pressable>
+      <Pressable
+        onPress={() => {
+          buzz('tap');
+          setListen({ voice: VOICES[(vi + 1) % VOICES.length].id });
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={'Voice: ' + VOICES[vi].name + '. Tap to switch.'}
+        hitSlop={6}
+        style={({ pressed }) => [pill(pressed), s.chip]}>
+        <Icon name="mic" size={15} color={ink} />
+        <Text style={[s.btnT, { color: ink }]}>{VOICES[vi].name}</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -92,51 +164,119 @@ export function SpokenCard({
       words(x.t, at, x.b, bw);
       at += x.t.length;
     });
-    const said =
-      h +
-      ' ' +
-      (body
-        ? lfmt(body, st)
-            .map((x) => x.t)
-            .join('')
-        : '');
-    return { said, hw, bw };
+    return { said: voiceSaid(h, body, st), hw, bw };
   }, [h, body, st]);
   const [now, setNow] = useState(-1);
-  const live = useRef(0);
+  const nowRef = useRef(-1);
+  nowRef.current = now;
+  const { voice, rate, paused, again } = useListen();
+  /* what is playing this card: a recording, or the phone's own voice */
+  const live = useRef<{ p: AudioPlayer | null; speak: (() => void) | null }>({ p: null, speak: null });
+  const settings = useRef({ rate, paused });
+  settings.current = { rate, paused };
   useEffect(() => {
     if (!on) {
       setNow(-1);
       return;
     }
-    const me = ++live.current;
     let alive = true;
-    void (async () => {
-      await Speech.stop();
-      const voice = await bestVoice();
-      if (!alive || me !== live.current) return;
-      Speech.speak(said, {
-        voice: voice || undefined,
-        language: voice ? undefined : 'en-US',
-        rate: 1,
-        useApplicationAudioSession: false,
-        onBoundary: (ev: unknown) => {
-          const i = (ev as { charIndex?: number }).charIndex;
-          if (alive && typeof i === 'number') setNow(i);
-        },
-        onDone: () => {
-          if (alive) setNow(said.length);
-        },
-        onStopped: () => {
-          if (alive) setNow(-1);
-        },
+    let tick: ReturnType<typeof setInterval> | null = null;
+    const me: { p: AudioPlayer | null; speak: (() => void) | null } = { p: null, speak: null };
+    live.current = me;
+    const still = () => alive && live.current === me;
+    /* switched voice partway through: the new voice picks up at the word the old one was on */
+    const from = nowRef.current > 0 && nowRef.current < said.length ? nowRef.current : -1;
+    /* the phone's own voice, when there is no recording to be had */
+    me.speak = () => {
+      void Speech.stop();
+      if (settings.current.paused) return;
+      void bestVoice().then((v) => {
+        if (!still()) return;
+        Speech.speak(said, {
+          voice: v || undefined,
+          language: v ? undefined : 'en-US',
+          rate: settings.current.rate,
+          useApplicationAudioSession: false,
+          onBoundary: (ev: unknown) => {
+            const i = (ev as { charIndex?: number }).charIndex;
+            if (still() && typeof i === 'number') setNow(i);
+          },
+          onDone: () => {
+            if (!still()) return;
+            setNow(said.length);
+            setListen({ done: true });
+          },
+        });
       });
+    };
+    setListen({ done: false });
+    void (async () => {
+      hush();
+      const clip = await getClip(voiceKey(said, voice));
+      if (!still()) return;
+      if (!clip) return me.speak?.();
+      me.speak = null;
+      await loud();
+      if (!still()) return;
+      const p = thePlayer(clip.uri);
+      me.p = p;
+      p.setPlaybackRate(settings.current.rate, 'high');
+      if (from > 0) {
+        let ms = 0;
+        for (let i = 0; i + 1 < clip.timing.w.length && clip.timing.w[i] <= from; i += 2) ms = clip.timing.w[i + 1];
+        await p.seekTo(Math.max(0, ms / 1000 - 0.15)).catch(() => undefined);
+        if (!still()) return;
+      }
+      if (!settings.current.paused) p.play();
+      const began = Date.now();
+      tick = setInterval(() => {
+        if (!still()) return;
+        const ms = p.currentTime * 1000;
+        if (ms >= clip.timing.ms - 40) {
+          setNow(said.length);
+          if (!getListen().done) setListen({ done: true });
+          return;
+        }
+        /* asked to play and nothing came (the file would not load): the phone's own voice reads it instead */
+        if (ms === 0 && !p.playing && !settings.current.paused && Date.now() - began > 5000) {
+          if (tick) clearInterval(tick);
+          me.p = null;
+          me.speak = null;
+          void Speech.stop();
+          void bestVoice().then(() => {
+            if (!still()) return;
+            Speech.speak(said, { rate: settings.current.rate, language: 'en-US', useApplicationAudioSession: false });
+          });
+          return;
+        }
+        if (ms > 0) setNow(voiceAt(clip.timing, ms));
+      }, 60);
     })();
     return () => {
       alive = false;
-      void Speech.stop();
+      if (tick) clearInterval(tick);
+      hush();
     };
-  }, [on, said]);
+  }, [on, said, voice]);
+  /* pause and play, the speed, and Play again, without loading the card again */
+  const wasAgain = useRef(again);
+  useEffect(() => {
+    if (!on) return;
+    const restart = wasAgain.current !== again;
+    wasAgain.current = again;
+    const { p, speak } = live.current;
+    if (p) {
+      p.setPlaybackRate(rate, 'high');
+      if (paused) p.pause();
+      else if (restart) void p.seekTo(0).then(() => p.play());
+      /* a card read to the end stays done: a new speed does not start it over */ else if (!getListen().done) p.play();
+    } else if (speak) {
+      if (paused) void Speech.stop();
+      else if (restart || !getListen().done) speak();
+    }
+  }, [on, paused, rate, again]);
+  /* leaving the lesson, or turning Listen off: the sound guide's own way again */
+  useEffect(() => (on ? () => void quiet() : undefined), [on]);
   /* the word whose span holds the place being said */
   const lit = (w: Word, next?: Word) => now >= w.at && now < (next ? next.at : w.at + w.t.length);
   /* the light sits on the word alone, not on the space after it */
@@ -181,6 +321,10 @@ const s = StyleSheet.create({
     borderWidth: 1.5,
   },
   btnT: { fontFamily: font.bodySemi, fontSize: 15 },
+  btnOn: { backgroundColor: 'rgba(255,210,90,0.22)' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  round: { width: 44, minHeight: 44, paddingHorizontal: 0, justifyContent: 'center' },
+  chip: { minHeight: 44, paddingHorizontal: 12 },
   b: { fontFamily: font.bodyBold },
   /* the word being said: a warm light behind it, like a finger under the line */
   lit: { backgroundColor: 'rgba(255,210,90,0.45)', borderRadius: 4 },

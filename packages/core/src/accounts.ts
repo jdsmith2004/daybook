@@ -5,6 +5,7 @@
 
    Daybook asks after the first week only, and never in a hard moment (not on a day with a slip, or the day after). "Not now" waits ACCT_WAIT days. Checked by test/accounts.test.ts. */
 import { changeSettings, type Change } from './actions';
+import { litToday } from './ignite';
 import { diffDays, isKey } from './legacy/core.js';
 import { LEARN_FREE, slipNear } from './lessons';
 import { SUPPORT_MIN } from './supporter';
@@ -25,6 +26,8 @@ export function accountAsk(days: Days, st: Settings, tk: DayKey, _level: number,
   const no = isKey(st.acctNo) ? (st.acctNo as DayKey) : null;
   if (no && diffDays(tk, no) < ACCT_WAIT) return null;
   if (slipNear(days, tk)) return null;
+  /* the day the flame was lit in full is that moment's: the card waits a day (core ignite.ts litToday) */
+  if (litToday(days, st, tk)) return null;
   return diffDays(tk, st.start) >= ACCT_DAYS ? 'week' : null;
 }
 
@@ -68,6 +71,8 @@ export function accountNudge(days: Days, st: Settings, tk: DayKey, account: bool
   const last = isKey(st.acctNudge) ? (st.acctNudge as DayKey) : null;
   if (last && diffDays(tk, last) < ACCT_NUDGE_GAP) return null;
   if (slipNear(days, tk)) return null;
+  /* never on the day the flame was lit in full: the lighting goes first (core ignite.ts litToday) */
+  if (litToday(days, st, tk)) return null;
   const d = days[tk];
   if (d?.p?.ls?.length) return 'lesson';
   if (d?.events?.some((e) => e.outcome === 'rode')) return 'rode';

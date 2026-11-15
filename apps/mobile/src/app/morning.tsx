@@ -14,6 +14,7 @@
    and nothing breaks by the letter. The X skips it for today, which costs nothing. */
 import {
   answerNight,
+  careLastAt,
   answerNightBefore,
   nightBeforeAsk,
   nightBeforeDue,
@@ -57,6 +58,7 @@ import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { nightWaitsOn, pullTroubleLine } from '@/lib/morning';
 import { close } from '@/lib/nav';
+import { useSos } from '@/lib/sos';
 import { useStore } from '@/lib/store';
 import { useAccount } from '@/lib/sync';
 import { font, nightInk, useTheme } from '@/lib/theme';
@@ -81,6 +83,7 @@ const hello = (now: number) => {
 export default function Morning() {
   const { then } = useLocalSearchParams<{ then?: string }>();
   const { snap, tk, update, say, now } = useStore();
+  const sos = useSos();
   const account = useAccount();
   const c = useTheme();
   const win = useWindowDimensions();
@@ -131,7 +134,8 @@ export default function Morning() {
     const after = answerNight(snap.days, st, tk, v, t);
     /* the count before and after, read now: the store's snapshot holds the answer once update has run */
     const c = igniteCount(after, st, tk, now, snap.days);
-    const why = igniteWhy(after, st, tk);
+    /* never in the quiet hours after an SOS, a care tool or a slip: then the quick step in place (core igniteWhy near) */
+    const why = igniteWhy(after, st, tk, { now: t, sos: careLastAt(sos.mem) });
     update(
       (s0) => {
         if (!s0.settings) return s0;

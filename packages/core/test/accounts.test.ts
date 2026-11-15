@@ -87,7 +87,7 @@ it('without an account, Next up says the next lesson waits for one, and gives a 
     const hard = core.addEvent(rk, k, 'slipped', '21:00').days;
     const r = core.lessonStop(hard, st, tk, false);
     expect(r.kind).toBe('review');
-    expect(core.lessonOpen(r.L, done, false)).toBe(true);
+    expect(core.lessonOpen(r.L, core.lessonsDone(hard), false)).toBe(true);
     for (let h = 0; h < 24; h++) {
       const o = core.nextUp(hard, st, tk, new Date(2026, 9, 15, h, 30).getTime(), false);
       if (o.act === 'lesson') expect(o.t).toMatch(/^Read again: /);

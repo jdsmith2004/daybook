@@ -19,9 +19,9 @@ import UIKit
 private let schedKey = "pull.sched"
 /// the minutes of use in the night for the two notes and the ignored mark (core PULL_HARD_AT)
 private let hardAt = [10, 20, 30]
-/// pull.open's length: more than Apple's shortest schedule (core PULL_MIN_SCHEDULE, 15 minutes), started now, never backdated
-/// (the same as Pull.openSpan)
-private let openSchedule: TimeInterval = 20 * 60
+/// a list missing from the bridge is forgotten (its apps let go) only once its pick is older than this: a new list is picked a
+/// moment before the app writes it into the bridge
+private let forgetAfter: Double = 10 * 60_000
 
 public final class DaybookPullModule: Module {
   private var picking: Promise?
@@ -68,11 +68,13 @@ public final class DaybookPullModule: Module {
     /// what is not working, for core pullTrouble: schedules Apple would not start, picked apps that cannot be read back, and how
     /// many single apps are picked (Apple holds at most 50)
     Function("health") { () -> [String: Any] in
-      let sel = Pull.selection()
+      Pull.readFail()
+      /* Apple's limit is per shield, and each list has its own: the fullest list */
+      let apps = Pull.ids.map { Pull.selection($0)?.applicationTokens.count ?? 0 }.max() ?? 0
       return [
         "failed": (self.defaults?.stringArray(forKey: Pull.failedKey)) ?? [],
         "decodeFail": (self.defaults?.double(forKey: Pull.decodeFailKey) ?? 0) > 0,
-        "apps": sel?.applicationTokens.count ?? 0,
+        "apps": apps,
       ]
     }
 
@@ -87,16 +89,18 @@ public final class DaybookPullModule: Module {
       Pull.confirmNight(allowed: true)
     }
 
-    /// Apple's app list, starting from what was chosen; how many apps, kinds and sites are chosen, or null when it was closed.
-    /// `laterAt` (core pullLooseAt) is when a looser pick starts: a pick that leaves out an app keeps it in until then (loosen
-    /// slowly), while one that only adds works now. Null: it all works now.
-    AsyncFunction("pick") { (laterAt: Double?, promise: Promise) in
-      guard self.picking == nil, let top = self.topController() else {
+    /// Apple's app list for one list, starting from what it has; how many apps, kinds and sites are chosen, or null when it was
+    /// closed. `laterAt` (core pullLooseAt) is when a looser pick starts: a pick that leaves out an app keeps it in until then
+    /// (loosen slowly), while one that only adds works now. Null: it all works now. `fresh`: a new list, starting empty (anything
+    /// an old list left under this id is let go first, once something is picked).
+    AsyncFunction("pick") { (list: String, laterAt: Double?, fresh: Bool, promise: Promise) in
+      guard Pull.ids.contains(list), self.picking == nil, let top = self.topController() else {
         promise.resolve(nil)
         return
       }
       self.picking = promise
-      let start = Pull.decode(Pull.selectionNextKey) ?? Pull.selection() ?? FamilyActivitySelection()
+      let start =
+        fresh ? FamilyActivitySelection() : (Pull.decode(Pull.selNextKey(list)) ?? Pull.selection(list) ?? FamilyActivitySelection())
       var host: UIViewController?
       let view = PickerSheet(start: start) { picked in
         host?.dismiss(animated: true)
@@ -108,7 +112,8 @@ public final class DaybookPullModule: Module {
         }
         let n = Pull.count(s)
         Self.queue.async {
-          self.choose(s, laterAt: laterAt)
+          if fresh { self.forget(list) }
+          self.choose(s, list: list, laterAt: fresh ? nil : laterAt)
           /* what is watched changed: the schedules are set again now from the last bridge, and the wait covers the new apps */
           self.defaults?.removeObject(forKey: schedKey)
           self.rewrite()
@@ -121,15 +126,16 @@ public final class DaybookPullModule: Module {
       top.present(h, animated: true)
     }.runOnQueue(.main)
 
-    /// how many are chosen now (a smaller pick waiting for the morning counts as chosen)
-    AsyncFunction("picked") { () -> Int in
-      (Pull.decode(Pull.selectionNextKey) ?? Pull.selection()).map(Pull.count) ?? 0
+    /// how many a list has chosen now (a smaller pick waiting for the morning counts as chosen)
+    AsyncFunction("picked") { (list: String) -> Int in
+      guard Pull.ids.contains(list) else { return 0 }
+      return (Pull.decode(Pull.selNextKey(list)) ?? Pull.selection(list)).map(Pull.count) ?? 0
     }
 
-    /// ms when a smaller pick starts, or null when none waits
-    Function("pickWaits") { () -> Double? in
-      guard Pull.decode(Pull.selectionNextKey) != nil else { return nil }
-      let at = self.defaults?.double(forKey: Pull.selectionAtKey) ?? 0
+    /// ms when a list's smaller pick starts, or null when none waits
+    Function("pickWaits") { (list: String) -> Double? in
+      guard Pull.ids.contains(list), Pull.decode(Pull.selNextKey(list)) != nil else { return nil }
+      let at = self.defaults?.double(forKey: Pull.selAtKey(list)) ?? 0
       return at > 0 ? at : nil
     }
 
@@ -149,43 +155,62 @@ public final class DaybookPullModule: Module {
     /// Lift every wait now: nothing is held until `until` ms (core pullLiftUntil: tonight's start by day, 6 AM at night)
     AsyncFunction("lift") { (until: Double) in
       self.defaults?.set(until, forKey: Pull.liftKey)
-      DeviceActivityCenter().stopMonitoring([DeviceActivityName("pull.open"), DeviceActivityName("pull.relock")])
+      DeviceActivityCenter().stopMonitoring(
+        ["pull.open", "pull.relock"].map { DeviceActivityName($0) } + Pull.ids.map { DeviceActivityName("pull.open." + $0) })
       Pull.guardNow()
       /* its own tick at the end, so the waits come back on time even if tonight's start was changed after it */
       Pull.tick("pull.unlift", at: Date(timeIntervalSince1970: until / 1000).addingTimeInterval(60))
     }.runOnQueue(Self.queue)
 
-    /// After the short wait: the apps open for this many minutes of use (inside Apple's shortest schedule), then the wait is back.
-    /// In the night, `through`: tonight goes in the week as a night the person went through (the stake was said first).
-    AsyncFunction("openFor") { (minutes: Int, through: Bool) in
-      guard let s = Pull.selection() else { return }
+    /// After a list's wait: that list opens for this many minutes of use (5, 10 or 30, chosen by the person), then its wait is
+    /// back; any list sharing an app with it opens too, or that app would stay behind the other's shield. `list` nil (a night note
+    /// or a shield that could not tell): every list opens. In the night, `through`: tonight goes in the week as a night the person
+    /// went through (the stake was said first).
+    AsyncFunction("openFor") { (list: String?, minutes: Int, through: Bool) in
+      let picked = Pull.ids.compactMap { id in Pull.selection(id).map { (id: id, s: $0) } }
+      var open = picked
+      if let l = list {
+        guard let mine = picked.first(where: { $0.id == l }) else { return }
+        open = picked.filter { $0.id == l || Pull.overlaps($0.s, mine.s) }
+      }
+      if open.isEmpty { return }
       if through { Pull.markNight(2) }
+      let mins = Double(max(1, minutes))
+      let span = Pull.openSpan(mins)
       /* stamped before the old one stops: its end then reads as a restart, not as time up (the monitor) */
-      self.defaults?.set(self.nowMs, forKey: Pull.openAtKey)
-      self.defaults?.set(Double(max(1, minutes)), forKey: Pull.openMinsKey)
-      self.defaults?.set(self.nowMs + Pull.openSpan, forKey: Pull.openKey)
+      for o in open {
+        self.defaults?.set(self.nowMs, forKey: Pull.openAtKey(o.id))
+        self.defaults?.set(mins, forKey: Pull.openMinsKey(o.id))
+        self.defaults?.set(self.nowMs + span, forKey: Pull.openUntilKey(o.id))
+      }
       Pull.guardNow()
       let center = DeviceActivityCenter()
-      center.stopMonitoring([DeviceActivityName("pull.open")])
       let cal = Calendar.current
       let from = Date()
       let parts: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute, .second]
+      /* longer than the minutes of use and than Apple's shortest schedule (core PULL_MIN_SCHEDULE), started now, never backdated */
       let schedule = DeviceActivitySchedule(
         intervalStart: cal.dateComponents(parts, from: from),
-        intervalEnd: cal.dateComponents(parts, from: from.addingTimeInterval(openSchedule)),
+        intervalEnd: cal.dateComponents(parts, from: from.addingTimeInterval(span / 1000)),
         repeats: false
       )
-      let event = DeviceActivityEvent(
-        applications: s.applicationTokens, categories: s.categoryTokens, webDomains: s.webDomainTokens,
-        threshold: DateComponents(minute: max(1, minutes)))
-      do {
-        try center.startMonitoring(DeviceActivityName("pull.open"), during: schedule, events: [DeviceActivityEvent.Name("open"): event])
-        self.stamp("pull.open")
-      } catch {
-        /* Apple would not watch the minutes: the wait comes back at once rather than never */
-        self.defaults?.set(0.0, forKey: Pull.openKey)
-        Pull.guardNow()
+      var failed = false
+      for o in open {
+        let name = "pull.open." + o.id
+        center.stopMonitoring([DeviceActivityName(name)])
+        let event = DeviceActivityEvent(
+          applications: o.s.applicationTokens, categories: o.s.categoryTokens, webDomains: o.s.webDomainTokens,
+          threshold: DateComponents(minute: Int(mins)))
+        do {
+          try center.startMonitoring(DeviceActivityName(name), during: schedule, events: [DeviceActivityEvent.Name("open"): event])
+          self.stamp(name)
+        } catch {
+          /* Apple would not watch the minutes: this list's wait comes back at once rather than never */
+          self.defaults?.set(0.0, forKey: Pull.openUntilKey(o.id))
+          failed = true
+        }
       }
+      if failed { Pull.guardNow() }
     }.runOnQueue(Self.queue)
 
     /// After the long wait: adult sites open for this many minutes, then pull.relock puts the filter back (and the app re-checks
@@ -236,39 +261,50 @@ public final class DaybookPullModule: Module {
     }
 
     /// when a shield's button asked for Daybook in the last two minutes (its wait screen opens, the wait counted from that tap),
-    /// and whether it was over a site in the night (the long wait); taken once. Null when none.
+    /// whether it was over an adult site (the long wait), and which list asked ("" when it cannot be told); taken once. Null when
+    /// none.
     Function("takeWant") { () -> [String: Any]? in
       let v = self.defaults?.double(forKey: Pull.wantKey) ?? 0
       let long = self.defaults?.bool(forKey: Pull.wantLongKey) ?? false
-      self.defaults?.removeObject(forKey: Pull.wantKey)
-      self.defaults?.removeObject(forKey: Pull.wantLongKey)
+      let list = self.defaults?.string(forKey: Pull.wantListKey) ?? ""
+      for k in [Pull.wantKey, Pull.wantLongKey, Pull.wantListKey] { self.defaults?.removeObject(forKey: k) }
       guard v > 0 && self.nowMs - v < 120_000 && v <= self.nowMs else { return nil }
-      return ["at": v, "long": long]
+      return ["at": v, "long": long, "list": list]
     }
   }
 
   // MARK: the pick
 
-  /// keeps a pick. One that leaves an app out, outside the morning, keeps both lists in until `laterAt` (the new one waits).
-  private func choose(_ s: FamilyActivitySelection, laterAt: Double?) {
-    let old = Pull.selection()
+  /// keeps a list's pick. One that leaves an app out, outside the morning, keeps both picks in until `laterAt` (the new one waits).
+  private func choose(_ s: FamilyActivitySelection, list: String, laterAt: Double?) {
+    defaults?.set(nowMs, forKey: Pull.pickedAtKey(list))
+    let old = Pull.selection(list)
     let keeps =
       old.map {
         s.applicationTokens.isSuperset(of: $0.applicationTokens) && s.categoryTokens.isSuperset(of: $0.categoryTokens)
           && s.webDomainTokens.isSuperset(of: $0.webDomainTokens)
       } ?? true
     guard let at = laterAt, !keeps, var both = old else {
-      if let d = try? JSONEncoder().encode(s) { defaults?.set(d, forKey: Pull.selectionKey) }
-      defaults?.removeObject(forKey: Pull.selectionNextKey)
-      defaults?.removeObject(forKey: Pull.selectionAtKey)
+      if let d = try? JSONEncoder().encode(s) { defaults?.set(d, forKey: Pull.selKey(list)) }
+      defaults?.removeObject(forKey: Pull.selNextKey(list))
+      defaults?.removeObject(forKey: Pull.selAtKey(list))
       return
     }
     both.applicationTokens.formUnion(s.applicationTokens)
     both.categoryTokens.formUnion(s.categoryTokens)
     both.webDomainTokens.formUnion(s.webDomainTokens)
-    if let d = try? JSONEncoder().encode(both) { defaults?.set(d, forKey: Pull.selectionKey) }
-    if let d = try? JSONEncoder().encode(s) { defaults?.set(d, forKey: Pull.selectionNextKey) }
-    defaults?.set(at, forKey: Pull.selectionAtKey)
+    if let d = try? JSONEncoder().encode(both) { defaults?.set(d, forKey: Pull.selKey(list)) }
+    if let d = try? JSONEncoder().encode(s) { defaults?.set(d, forKey: Pull.selNextKey(list)) }
+    defaults?.set(at, forKey: Pull.selAtKey(list))
+  }
+
+  /// lets a list go: its apps, its minutes open, its shield and its open schedule
+  private func forget(_ list: String) {
+    for k in [Pull.selKey(list), Pull.selNextKey(list), Pull.selAtKey(list), Pull.pickedAtKey(list), Pull.openUntilKey(list), Pull.openAtKey(list), Pull.openMinsKey(list)] {
+      defaults?.removeObject(forKey: k)
+    }
+    if let st = Pull.stores[list] { Pull.clearShield(st) }
+    DeviceActivityCenter().stopMonitoring([DeviceActivityName("pull.open." + list)])
   }
 
   // MARK: Apple's schedules
@@ -281,12 +317,12 @@ public final class DaybookPullModule: Module {
   private func schedule(_ b: [String: Any], prefs p: [String: Any]) {
     /* the picked apps, for the minutes of use. Without them (unreadable after an update) the night still runs: the adult filter
        needs no apps, only the night's starts and ends */
-    let s = Pull.selection() ?? FamilyActivitySelection()
+    let s = Pull.union()
     let apps = Pull.count(s) > 0
     let long = apps ? ((p["long"] as? Int) ?? 0) : 0
     let hard = (p["hard"] as? Bool) != false
-    /* a hash that stays the same from launch to launch (String's own does not) */
-    let sel = defaults?.data(forKey: Pull.selectionKey).map { $0.reduce(5381) { ($0 &* 33) &+ Int($1) } } ?? 0
+    /* a hash of every list's pick that stays the same from launch to launch (String's own does not) */
+    let sel = Pull.ids.reduce(5381) { h, id in (defaults?.data(forKey: Pull.selKey(id)) ?? Data()).reduce(h &* 31) { ($0 &* 33) &+ Int($1) } }
     let ev = { (m: DateComponents) in
       DeviceActivityEvent(applications: s.applicationTokens, categories: s.categoryTokens, webDomains: s.webDomainTokens, threshold: m)
     }
@@ -359,12 +395,22 @@ public final class DaybookPullModule: Module {
       stopAll(forget: false)
       return
     }
-    /* a smaller pick whose morning has come */
-    if Pull.decode(Pull.selectionNextKey) != nil, (defaults?.double(forKey: Pull.selectionAtKey) ?? 0) <= nowMs {
-      if let d = defaults?.data(forKey: Pull.selectionNextKey) { defaults?.set(d, forKey: Pull.selectionKey) }
-      defaults?.removeObject(forKey: Pull.selectionNextKey)
-      defaults?.removeObject(forKey: Pull.selectionAtKey)
-      defaults?.removeObject(forKey: schedKey)
+    let keep = Set(Pull.lists(p).map { $0.id })
+    for id in Pull.ids {
+      /* a smaller pick whose morning has come */
+      if Pull.decode(Pull.selNextKey(id)) != nil, (defaults?.double(forKey: Pull.selAtKey(id)) ?? 0) <= nowMs {
+        if let d = defaults?.data(forKey: Pull.selNextKey(id)) { defaults?.set(d, forKey: Pull.selKey(id)) }
+        defaults?.removeObject(forKey: Pull.selNextKey(id))
+        defaults?.removeObject(forKey: Pull.selAtKey(id))
+        defaults?.removeObject(forKey: schedKey)
+      }
+      /* a list removed (and its morning come, if it had to wait for one): its apps are let go */
+      if !keep.contains(id), defaults?.data(forKey: Pull.selKey(id)) != nil,
+        nowMs - (defaults?.double(forKey: Pull.pickedAtKey(id)) ?? 0) > forgetAfter
+      {
+        forget(id)
+        defaults?.removeObject(forKey: schedKey)
+      }
     }
     Pull.guardNow(b)
     schedule(b, prefs: p)
@@ -373,9 +419,12 @@ public final class DaybookPullModule: Module {
   private func stopAll(forget: Bool) {
     DeviceActivityCenter().stopMonitoring()
     Pull.store.clearAllSettings()
+    for st in Pull.stores.values { st.clearAllSettings() }
     for k in [schedKey, Pull.startedKey, Pull.liftKey, Pull.openKey, Pull.webKey, Pull.failedKey, "pull.rest"] { defaults?.removeObject(forKey: k) }
+    for id in Pull.ids { for k in [Pull.openUntilKey(id), Pull.openAtKey(id), Pull.openMinsKey(id)] { defaults?.removeObject(forKey: k) } }
     if forget {
       for k in [Pull.selectionKey, Pull.selectionNextKey, Pull.selectionAtKey, Pull.ignoredKey] { defaults?.removeObject(forKey: k) }
+      for id in Pull.ids { for k in [Pull.selKey(id), Pull.selNextKey(id), Pull.selAtKey(id), Pull.pickedAtKey(id)] { defaults?.removeObject(forKey: k) } }
     }
   }
 

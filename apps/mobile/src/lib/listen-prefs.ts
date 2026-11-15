@@ -6,7 +6,7 @@ import { VOICES, type VoiceId } from '@daybook/core';
 import { useSyncExternalStore } from 'react';
 
 /** the speeds Listen steps through, slowest first */
-export const RATES = [0.8, 1, 1.2, 1.4] as const;
+export const RATES = [0.75, 1, 1.25, 1.5, 1.75, 2] as const;
 
 export interface ListenPrefs {
   voice: VoiceId;
@@ -30,7 +30,8 @@ AsyncStorage.getItem(KEY)
     prefs = {
       ...prefs,
       voice: VOICES.some((x) => x.id === o.voice) ? (o.voice as VoiceId) : prefs.voice,
-      rate: (RATES as readonly number[]).includes(Number(o.rate)) ? Number(o.rate) : prefs.rate,
+      /* a speed kept from before the list changed goes to the nearest one on it */
+      rate: Number(o.rate) > 0 ? RATES.reduce((a, b) => (Math.abs(b - Number(o.rate)) < Math.abs(a - Number(o.rate)) ? b : a)) : prefs.rate,
     };
     emit();
   })

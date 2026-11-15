@@ -19,7 +19,6 @@ import {
   pullPlanLine,
   pullQuietUntil,
   pullShield,
-  nightWaitOn,
   pullChange,
   pullEarly,
   pullGuard,
@@ -32,7 +31,8 @@ import {
   pullSettle,
   pullShown,
   PULL_NIGHT_END,
-  PULL_WEB_OPEN,
+  pullListNew,
+  pullListName,
   pullSetupSay,
   pullMark,
   pullParts,
@@ -53,32 +53,70 @@ const slip = (days: Days, k: string, time: string) => addEvent(days, k, 'slipped
 describe('the choices', () => {
   it('reads anything safely', () => {
     expect(normPull(null)).toEqual(PULL_DEFAULTS);
-    expect(normPull({ on: true, long: 7, wait: 30, open: 4, lift: 9, asked: 'x', early: { k: 'x', at: '21:00' } })).toEqual({
-      ...PULL_DEFAULTS,
-      on: true,
-      wait: 30,
-    });
-    expect(PULL_DEFAULTS).toMatchObject({ feeds: true, adult: true, lift: 15, wait: 10 });
+    expect(normPull({ on: true, long: 7, opened: 4, lift: 9, asked: 'x', early: { k: 'x', at: '21:00' } })).toEqual({ ...PULL_DEFAULTS, on: true });
+    expect(PULL_DEFAULTS).toMatchObject({ adult: true, lift: 15, opened: 10, lists: [{ id: 'a', name: 'Apps', wait: 10 }] });
+    /* lists: known ids once each, known names and waits */
+    expect(
+      normPull({
+        lists: [
+          { id: 'b', name: 'Games', wait: 30 },
+          { id: 'b', name: 'Social', wait: 5 },
+          { id: 'z', name: 'Games', wait: 5 },
+          { id: 'c', name: 'my secret', wait: 7 },
+        ],
+      }).lists,
+    ).toEqual([
+      { id: 'b', name: 'Games', wait: 30 },
+      { id: 'c', name: 'Social', wait: 10 },
+    ]);
+    expect(normPull({ lists: [] }).lists).toEqual(PULL_DEFAULTS.lists);
   });
-  it('reads the old pause as the all-day wait, so nothing new is sprung on someone who chose notes only', () => {
-    expect(normPull({ on: true, pause: true }).feeds).toBe(true);
-    expect(normPull({ on: true, pause: false }).feeds).toBe(false);
-    expect(normPull({ on: true, pause: false, feeds: true }).feeds).toBe(true);
+  it('the one pick from before the lists is list one, with its wait; the wait off is No wait', () => {
+    expect(normPull({ on: true, feeds: true, wait: 30, open: 3 }).lists).toEqual([{ id: 'a', name: 'Apps', wait: 30 }]);
+    expect(normPull({ on: true, feeds: false, wait: 30 }).lists).toEqual([{ id: 'a', name: 'Apps', wait: 0 }]);
+    expect(normPull({ on: true, pause: true }).lists[0].wait).toBe(10);
+    expect(normPull({ on: true, pause: false }).lists[0].wait).toBe(0);
+    expect(normPull({ on: true, pause: false, feeds: true }).lists[0].wait).toBe(10);
   });
   it('keeps a looser choice waiting for the morning, and nothing it does not know', () => {
     const p = normPull({ on: true, later: { p: { lift: 5, wait: 7, adult: false, on: false }, at: 99 } });
     expect(p.later).toEqual({ p: { lift: 5, adult: false }, at: 99 });
     expect(normPull({ later: { p: { wait: 7 }, at: 99 } }).later).toBeUndefined();
+    expect(normPull({ later: { p: { lists: [{ id: 'a', wait: 5 }] }, at: 99 } }).later).toEqual({
+      p: { lists: [{ id: 'a', name: 'Social', wait: 5 }] },
+      at: 99,
+    });
+  });
+  it('a new list takes the next free id and name, up to three', () => {
+    const one = normPull({ on: true });
+    expect(pullListNew(one)).toEqual({ id: 'b', name: 'Social', wait: 10 });
+    const three = normPull({ on: true, lists: [{ id: 'a' }, { id: 'b', name: 'Social' }, { id: 'c', name: 'Games' }] });
+    expect(pullListNew(three)).toBeNull();
+    expect(pullListName(three.lists)).toBe('Videos');
+    /* a list removed at night keeps its id until the morning: a new one never reuses it */
+    const gone = pullChange(three, { lists: three.lists.filter((l) => l.id !== 'c') }, at('2026-10-12T23:00')).prefs;
+    expect(pullListNew(gone)).toBeNull();
   });
 });
 
 describe('the line in Settings', () => {
   it('says what it does now, plainly', () => {
     expect(pullLine(PULL_DEFAULTS)).toBe('Off · a short wait before the apps that pull you in');
-    expect(pullLine({ ...PULL_DEFAULTS, on: true })).toBe('A 10-second wait · adult sites wait at night');
-    expect(pullLine({ ...PULL_DEFAULTS, on: true, wait: 60 }, false)).toBe('A one-minute wait');
-    expect(pullLine({ ...PULL_DEFAULTS, on: true, feeds: false, adult: false })).toBe('A note after 2 hours');
-    expect(pullLine({ ...PULL_DEFAULTS, on: true, feeds: false, adult: false, long: 0, hard: false })).toBe('On · every wait off');
+    const off = [{ id: 'a' as const, name: 'Apps', wait: 0 as const }];
+    expect(pullLine({ ...PULL_DEFAULTS, on: true })).toBe('A 10-second wait · adult sites wait all day');
+    expect(pullLine({ ...PULL_DEFAULTS, on: true, lists: [{ id: 'a', name: 'Apps', wait: 60 }] }, false)).toBe('A one-minute wait');
+    expect(
+      pullLine({
+        ...PULL_DEFAULTS,
+        on: true,
+        lists: [
+          { id: 'a', name: 'Apps', wait: 5 },
+          { id: 'b', name: 'Games', wait: 30 },
+        ],
+      }),
+    ).toBe('2 lists wait · adult sites wait all day');
+    expect(pullLine({ ...PULL_DEFAULTS, on: true, lists: off, adult: false })).toBe('A note after 2 hours');
+    expect(pullLine({ ...PULL_DEFAULTS, on: true, lists: off, adult: false, long: 0, hard: false })).toBe('On · every wait off');
   });
 });
 
@@ -134,39 +172,52 @@ describe('the night', () => {
     expect(pullLiftUntil(at('2026-10-13T02:00'), '22:30')).toBe(at('2026-10-13T06:00'));
     expect(pullLiftUntil(at('2026-10-12T15:00'), '00:30')).toBe(at('2026-10-13T00:30'));
   });
-  it('tells the morning page whether the night waits', () => {
-    expect(nightWaitOn(on)).toBe(true);
-    expect(nightWaitOn({ ...on, adult: false })).toBe(false);
-    expect(nightWaitOn(PULL_DEFAULTS)).toBe(false);
-  });
 });
 
 describe('loosen slowly, tighten at once', () => {
   const on = normPull({ on: true });
   const night = at('2026-10-12T23:10');
+  const L = (wait: 0 | 5 | 10 | 30 | 60, id: 'a' | 'b' | 'c' = 'a', name = 'Apps') => ({ id, name, wait });
   it('a stricter choice works now, any time', () => {
-    const r = pullChange({ ...on, lift: 5, wait: 10 }, { lift: 30, wait: 60, open: 3 }, night);
+    const r = pullChange({ ...on, lift: 5 }, { lift: 30, lists: [L(60)] }, night);
     expect(r.held).toBeNull();
-    expect(r.prefs).toMatchObject({ lift: 30, wait: 60, open: 3 });
+    expect(r.prefs).toMatchObject({ lift: 30, lists: [L(60)] });
     expect(r.prefs.later).toBeUndefined();
   });
   it('a looser one at night waits for 6 AM, and says when', () => {
-    const r = pullChange(on, { adult: false, lift: 5, open: 10 }, night);
+    const r = pullChange(on, { adult: false, lift: 5, lists: [L(5)] }, night);
     expect(r.held).toBe(at('2026-10-13T06:00'));
-    expect(r.prefs).toMatchObject({ adult: true, lift: 15, open: 5 });
-    expect(r.prefs.later).toEqual({ p: { adult: false, lift: 5, open: 10 }, at: at('2026-10-13T06:00') });
-    expect(pullShown(r.prefs)).toMatchObject({ adult: false, lift: 5, open: 10 });
+    expect(r.prefs).toMatchObject({ adult: true, lift: 15, lists: [L(10)] });
+    expect(r.prefs.later).toEqual({ p: { adult: false, lift: 5, lists: [L(5)] }, at: at('2026-10-13T06:00') });
+    expect(pullShown(r.prefs)).toMatchObject({ adult: false, lift: 5, lists: [L(5)] });
     expect(pullSettle(r.prefs, at('2026-10-13T05:59'))).toBe(r.prefs);
-    expect(pullSettle(r.prefs, at('2026-10-13T06:00'))).toMatchObject({ adult: false, lift: 5, open: 10 });
+    expect(pullSettle(r.prefs, at('2026-10-13T06:00'))).toMatchObject({ adult: false, lift: 5, lists: [L(5)] });
     expect(pullSettle(r.prefs, at('2026-10-13T06:00')).later).toBeUndefined();
   });
   it('in the afternoon it waits too: tonight keeps what the morning set', () => {
-    expect(pullChange(on, { feeds: false }, at('2026-10-12T15:00')).held).toBe(at('2026-10-13T06:00'));
+    expect(pullChange(on, { lists: [L(0)] }, at('2026-10-12T15:00')).held).toBe(at('2026-10-13T06:00'));
   });
   it('in the morning it works now', () => {
-    const r = pullChange(on, { feeds: false, wait: 10 }, at('2026-10-12T08:00'));
+    const r = pullChange(on, { lists: [L(0)] }, at('2026-10-12T08:00'));
     expect(r.held).toBeNull();
-    expect(r.prefs.feeds).toBe(false);
+    expect(r.prefs.lists).toEqual([L(0)]);
+  });
+  it('lists one by one: a new list, a longer wait and a new name work now; a removed list or a shorter wait waits', () => {
+    const two = pullChange(on, { lists: [L(10), L(30, 'b', 'Games')] }, night);
+    expect(two.held).toBeNull();
+    expect(two.prefs.lists).toEqual([L(10), L(30, 'b', 'Games')]);
+    /* list a renamed and shorter, list b gone: a keeps its 10 seconds under the new name, b keeps waiting, until 6 AM */
+    const r = pullChange(two.prefs, { lists: [L(5, 'a', 'Social')] }, night);
+    expect(r.held).toBe(at('2026-10-13T06:00'));
+    expect(r.prefs.lists).toEqual([L(10, 'a', 'Social'), L(30, 'b', 'Games')]);
+    expect(pullShown(r.prefs).lists).toEqual([L(5, 'a', 'Social')]);
+    expect(pullSettle(r.prefs, at('2026-10-13T06:00')).lists).toEqual([L(5, 'a', 'Social')]);
+    /* a list with No wait goes at once: nothing of it was waiting */
+    const open = pullChange({ ...on, lists: [L(10), L(0, 'b')] }, { lists: [L(10)] }, night);
+    expect(open.held).toBeNull();
+    expect(open.prefs.lists).toEqual([L(10)]);
+    /* asking for what holds now takes a waiting list change back */
+    expect(pullChange(r.prefs, { lists: [L(10, 'a', 'Social'), L(30, 'b', 'Games')] }, night).prefs.later).toBeUndefined();
   });
   it('choosing what holds now takes a waiting one back', () => {
     const r = pullChange(on, { lift: 5 }, night);
@@ -189,26 +240,34 @@ describe('loosen slowly, tighten at once', () => {
 
 describe('what is held right now', () => {
   const on = normPull({ on: true });
-  const none = { lift: 0, open: 0, web: 0 };
-  const g = (now: number, o: Partial<typeof none> = {}, p = on, adult = true) => pullGuard(p, { adult, from: '22:30', holds: { ...none, ...o }, now });
-  it('the apps wait all day; adult sites only at night', () => {
-    expect(g(at('2026-10-12T12:00'))).toEqual({ apps: true, web: false });
-    expect(g(at('2026-10-12T23:00'))).toEqual({ apps: true, web: true });
+  type H = { lift: number; open: Partial<Record<'a' | 'b' | 'c', number>>; web: number };
+  const none: H = { lift: 0, open: {}, web: 0 };
+  const g = (now: number, o: Partial<H> = {}, p = on, adult = true) => pullGuard(p, { adult, from: '22:30', holds: { ...none, ...o }, now });
+  const two = {
+    ...on,
+    lists: [
+      { id: 'a' as const, name: 'Apps', wait: 10 as const },
+      { id: 'b' as const, name: 'Games', wait: 30 as const },
+    ],
+  };
+  it('the apps and adult sites wait all day', () => {
+    expect(g(at('2026-10-12T12:00'))).toEqual({ apps: { a: true }, web: true });
+    expect(g(at('2026-10-12T23:00'))).toEqual({ apps: { a: true }, web: true });
   });
-  it('the minutes opened after each wait, and Lift every wait now', () => {
+  it('the minutes opened after each wait open only that list, and Lift every wait now', () => {
     const t = at('2026-10-12T23:00');
-    expect(g(t, { open: t + 60_000 })).toEqual({ apps: false, web: true });
-    expect(g(t, { web: t + 60_000 })).toEqual({ apps: true, web: false });
-    expect(g(t, { lift: t + 600_000 })).toEqual({ apps: false, web: false });
-    expect(g(t + 600_000, { lift: t + 600_000 })).toEqual({ apps: true, web: true });
+    expect(g(t, { open: { a: t + 60_000 } }, two)).toEqual({ apps: { a: false, b: true }, web: true });
+    expect(g(t, { web: t + 60_000 })).toEqual({ apps: { a: true }, web: false });
+    expect(g(t, { lift: t + 600_000 }, two)).toEqual({ apps: { a: false, b: false }, web: false });
+    expect(g(t + 600_000, { lift: t + 600_000 })).toEqual({ apps: { a: true }, web: true });
     /* a callback a few seconds early still ends it */
-    expect(g(t + 590_000, { lift: t + 600_000 }).apps).toBe(true);
+    expect(g(t + 590_000, { lift: t + 600_000 }).apps.a).toBe(true);
   });
-  it('nothing for a habit other than porn, or with the choices off', () => {
+  it('nothing for a habit other than porn, a list with No wait, or with the choices off', () => {
     const t = at('2026-10-12T23:00');
     expect(g(t, {}, on, false).web).toBe(false);
-    expect(g(t, {}, { ...on, feeds: false, adult: false })).toEqual({ apps: false, web: false });
-    expect(g(t, {}, PULL_DEFAULTS)).toEqual({ apps: false, web: false });
+    expect(g(t, {}, { ...on, lists: [{ id: 'a', name: 'Apps', wait: 0 }], adult: false })).toEqual({ apps: { a: false }, web: false });
+    expect(g(t, {}, PULL_DEFAULTS)).toEqual({ apps: { a: false }, web: false });
   });
   it('reads a night as held only once the morning came with the waits still on', () => {
     const rec = { '2026-10-11': 1, '2026-10-12': 3, '2026-10-13': 2 };
@@ -225,18 +284,6 @@ describe('what is held right now', () => {
     expect(pullMark(2, 1)).toBe(2);
     expect(pullMark(3, 2)).toBe(2);
     expect(pullMark(3, 1)).toBe(3);
-  });
-  it('a callback at the night’s start or end a few seconds early still finds the night it was set for', () => {
-    const b = (now: number, boundary: boolean) => pullGuard(on, { adult: true, from: '22:30', holds: none, now, boundary }).web;
-    const start = at('2026-10-12T22:29:58');
-    expect(b(start, false)).toBe(false);
-    expect(b(start, true)).toBe(true);
-    const end = at('2026-10-13T05:59:58');
-    expect(b(end, false)).toBe(true);
-    expect(b(end, true)).toBe(false);
-    /* the evening part's end at 23:59 and the after-midnight part's start stay in the night */
-    expect(b(at('2026-10-12T23:58:59'), true)).toBe(true);
-    expect(b(at('2026-10-12T23:59:59'), true)).toBe(true);
   });
 });
 
@@ -361,9 +408,7 @@ describe('the words', () => {
   const t = { r: 'For my future family', rAt: at('2026-10-12T07:40'), today: true };
   const all = () => {
     const n = pullNudges({ lessonUrl: '/lesson/l4', long: 2 });
-    const p = (['day', 'night', 'long'] as const).flatMap((mode) =>
-      [true, false].map((quiet) => pullPauseWords({ mode, quiet, open: 3, plan: null, tonight: t })),
-    );
+    const p = (['day', 'night', 'long'] as const).flatMap((mode) => [true, false].map((quiet) => pullPauseWords({ mode, quiet, plan: null, tonight: t })));
     const s = [true, false].flatMap((night) => [true, false].map((quiet) => pullShield({ night, wait: 10, plan: null, tonight: t, quiet })));
     return [
       ...Object.values(n).flatMap((x) => [x.t, x.b, x.bDowns ?? '']),
@@ -385,40 +430,52 @@ describe('the words', () => {
     expect(n.hard1.b).toMatch(/dimming your fire/);
     expect(n.long.b).toMatch(/dimming your fire/);
     expect(n.quiet.b).not.toMatch(/dimming|choice/);
-    expect(pullPauseWords({ mode: 'night', quiet: true, open: 3, plan: null }).line).not.toMatch(/fire|choice/);
+    expect(pullPauseWords({ mode: 'night', quiet: true, plan: null }).line).not.toMatch(/fire|choice/);
     expect(pullShield({ night: true, wait: 10, plan: null, tonight: t, quiet: true }).sub).not.toMatch(/fire/);
   });
   it('the long wait says the stake before the choice, and never in the quiet after a slip', () => {
-    expect(pullPauseWords({ mode: 'long', quiet: false, open: 3, plan: null, tonight: t }).stake).toBe(
+    expect(pullPauseWords({ mode: 'long', night: true, quiet: false, plan: null, tonight: t }).stake).toBe(
       'Open them, and tonight goes in the week as a night you went through.',
     );
-    expect(pullPauseWords({ mode: 'long', quiet: true, open: 3, plan: null, tonight: t }).stake).toBeNull();
+    expect(pullPauseWords({ mode: 'long', night: true, quiet: true, plan: null, tonight: t }).stake).toBeNull();
     /* Open on the night's short wait counts as gone through too (WP2), so it says so before the choice; never by day */
-    expect(pullPauseWords({ mode: 'night', quiet: false, open: 3, plan: null, tonight: t }).stake).toBe(
+    expect(pullPauseWords({ mode: 'night', quiet: false, plan: null, tonight: t }).stake).toBe(
       'Open it, and tonight goes in the week as a night you went through.',
     );
-    expect(pullPauseWords({ mode: 'night', quiet: true, open: 3, plan: null, tonight: t }).stake).toBeNull();
+    expect(pullPauseWords({ mode: 'night', quiet: true, plan: null, tonight: t }).stake).toBeNull();
     /* sleep care's line for the person lying awake: at night only */
-    expect(pullPauseWords({ mode: 'night', quiet: true, open: 3, plan: null, tonight: t }).awake).toBe(
+    expect(pullPauseWords({ mode: 'night', quiet: true, plan: null, tonight: t }).awake).toBe(
       'Awake after 20 minutes? Get up, leave the phone, come back sleepy.',
     );
-    expect(pullPauseWords({ mode: 'day', quiet: false, open: 3, plan: null }).awake).toBeNull();
-    expect(pullPauseWords({ mode: 'long', quiet: false, open: 3, plan: null, tonight: t }).open).toBe('Open them for ' + PULL_WEB_OPEN + ' minutes');
+    expect(pullPauseWords({ mode: 'day', quiet: false, plan: null }).awake).toBeNull();
+    expect(pullPauseWords({ mode: 'long', night: true, quiet: false, plan: null, tonight: t }).open).toBe('Open them for');
+    /* adult sites wait all day: by day the long wait has no night words and no stake */
+    expect(pullPauseWords({ mode: 'long', night: false, quiet: false, plan: null, tonight: t })).toMatchObject({
+      title: 'A long wait first',
+      open: 'Open them for',
+      stake: null,
+      awake: null,
+    });
+    expect(pullShield({ night: false, wait: 10, plan: null, tonight: null, quiet: false, long: 15 })).toMatchObject({
+      title: 'A long wait first',
+      primary: 'Wait 15 minutes',
+    });
+    expect(pullShield({ night: false, wait: 10, plan: null, tonight: null, quiet: false, long: 1 }).primary).toBe('Wait 1 minute');
   });
   it('shows the morning at night: the reason, quoted with when it was chosen', () => {
-    const w = pullPauseWords({ mode: 'night', quiet: false, open: 3, plan: null, tonight: t });
+    const w = pullPauseWords({ mode: 'night', quiet: false, plan: null, tonight: t });
     expect(w.title).toBe('You set this up this morning.');
     expect(w.line).toBe('You, at 7:40 AM: “For my future family”');
     expect(w.down).toBe('Put it down and go to bed');
-    expect(pullPauseWords({ mode: 'night', quiet: false, open: 3, plan: null, tonight: { ...t, today: false } }).title).toBe('You set this up for tonight.');
-    expect(pullPauseWords({ mode: 'night', quiet: false, open: 3, plan: null, tonight: null }).line).toMatch(/Put the phone down/);
+    expect(pullPauseWords({ mode: 'night', quiet: false, plan: null, tonight: { ...t, today: false } }).title).toBe('You set this up for tonight.');
+    expect(pullPauseWords({ mode: 'night', quiet: false, plan: null, tonight: null }).line).toMatch(/Put the phone down/);
     const sh = pullShield({ night: true, wait: 30, plan: null, tonight: t, quiet: false });
     expect(sh).toMatchObject({ title: 'You set this up this morning', primary: 'Wait 30 seconds', secondary: 'Close' });
     expect(sh.sub).toMatch(/^“For my future family” /);
   });
   it('by day, a short wait in plain words', () => {
-    const w = pullPauseWords({ mode: 'day', quiet: false, open: 5, plan: null });
-    expect(w).toMatchObject({ title: 'A short wait first', down: 'Put it down', open: 'Open it for 5 minutes', stake: null });
+    const w = pullPauseWords({ mode: 'day', quiet: false, plan: null });
+    expect(w).toMatchObject({ title: 'A short wait first', down: 'Put it down', open: 'Open it for', stake: null });
     expect(pullShield({ night: false, wait: 60, plan: null, tonight: t, quiet: false })).toMatchObject({
       title: 'A short wait first',
       primary: 'Wait 1 minute',
@@ -433,8 +490,8 @@ describe('the words', () => {
     expect(pullDownsFill(pullShield({ night: false, wait: 10, plan: null, tonight: null, quiet: false }).subDowns, 1)).toBe(
       'You have put it down once. Close it, and that makes 2.',
     );
-    expect(pullPauseWords({ mode: 'night', quiet: false, open: 3, plan: null, downs: 7 }).thanks).toBe('That makes 7. One more win in your log.');
-    expect(pullPauseWords({ mode: 'night', quiet: true, open: 3, plan: null, downs: 7 }).thanks).not.toMatch(/7/);
+    expect(pullPauseWords({ mode: 'night', quiet: false, plan: null, downs: 7 }).thanks).toBe('That makes 7. One more win in your log.');
+    expect(pullPauseWords({ mode: 'night', quiet: true, plan: null, downs: 7 }).thanks).not.toMatch(/7/);
   });
   it('counts a put-down at most once in ten minutes', () => {
     const t0 = at('2026-10-12T22:00');
@@ -444,7 +501,7 @@ describe('the words', () => {
   });
   it('setup says what waits, and when', () => {
     expect(pullSetupSay({ porn: true, at: '22:30' })).toBe(
-      'It usually starts with scrolling. Each feed will wait ten seconds before it opens, and from 10:30 PM adult sites wait 15 minutes. You can lift it whenever you want.',
+      'It usually starts with scrolling. Each feed will wait ten seconds before it opens, and adult sites wait 15 minutes, all day. You can lift it whenever you want.',
     );
     expect(pullSetupSay({ porn: false, at: '22:30' })).not.toMatch(/adult/);
   });
@@ -456,8 +513,8 @@ describe('the words', () => {
     expect(pullPlanLine(s)).toBe('Your plan: “Put the phone down and stand up.”');
     expect(pullShield({ night: true, wait: 10, plan: pullPlanLine(s), tonight: null, quiet: false }).sub).not.toMatch(/Your plan/);
     expect(pullShield({ night: false, wait: 10, plan: pullPlanLine(s), tonight: null, quiet: false }).sub).not.toMatch(/Your plan/);
-    expect(pullPauseWords({ mode: 'night', quiet: false, open: 3, plan: pullPlanLine(s) }).say).toMatch(/Your plan: “Put the phone down/);
-    expect(pullPauseWords({ mode: 'day', quiet: false, open: 3, plan: pullPlanLine(s) }).say).not.toMatch(/Your plan/);
+    expect(pullPauseWords({ mode: 'night', quiet: false, plan: pullPlanLine(s) }).say).toMatch(/Your plan: “Put the phone down/);
+    expect(pullPauseWords({ mode: 'day', quiet: false, plan: pullPlanLine(s) }).say).not.toMatch(/Your plan/);
     expect(pullPlanLine({ ...st, plan: [{ when: 'I am bored or idle', then: 'Walk.' }] } as Settings)).toBeNull();
   });
 });

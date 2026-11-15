@@ -167,5 +167,12 @@ export function morningReply(n: 'free' | 'slip', alreadyLogged: boolean, planHel
   return planHeld ? 'A free night, and your plan held. That one is yours for good.' : 'A free night. That one is yours for good.';
 }
 
+/** the line over tonight when last night was already told, so the morning does not ask it again and goes straight to tonight (the
+    owner, November 15, 2026: "If they slipped the previous night, then don't ask them again ... last night was tough, but like, I
+    think we can do it today"). After a slip: hope and the next choice, never the slip again. */
+export function morningKnownLine(n: 'free' | 'slip'): string {
+  return n === 'slip' ? 'Last night was hard. Today is a new day, and tonight is yours.' : 'A free night. Keep it going tonight.';
+}
+
 /** the log day before tk, for callers that only have tk */
 export const nightBefore = (tk: DayKey): DayKey => addDays(tk, -1);

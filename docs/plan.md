@@ -1451,6 +1451,35 @@ the haptics from `hero.tsx`. Never dimmed in the quiet after a slip. Only the gl
 but blocking needs an Accessibility service, which Google Play restricts; so nudges only, when Android has people. The web cannot
 see other apps: the section is hidden there.
 
+### Lists, waits you choose, adult sites all day (the owner, November 15, 2026; built the same day, on main)
+
+The owner: "all day for adult sites ... maybe like they have to wait a while for like adult sites, but for Instagram or something,
+it's like 5 or 10 seconds. Maybe we even let them decide how many seconds ... and then how long they get access after that. Like 5
+minutes, 10 minutes, 30 minutes. It's up to them. And we don't really have to limit the amount of sessions." Decided with the owner:
+pick the open time each time, up to 3 lists plus adult sites, apps 5 to 60 seconds and sites 1 to 30 minutes.
+
+- **Adult sites** (when the habit is porn): their own row, all day, not only at night. Wait 1, 5, 15 (default) or 30 minutes.
+- **Lists:** up to 3, each with its own apps from Apple's list and its own wait: 5, 10 (default), 30 or 60 seconds, or No wait
+  (the list is open). It starts with one list; "Add a list" makes another (Social, Games, Videos, or a plain name). No cap on how
+  many times a day.
+- **After the wait,** the wait screen asks how long: 5, 10 or 30 minutes, three big answers low, the person's last choice first.
+  Only that list opens; the others stay waiting. Put it down stays a quiet link under it.
+- **Kept:** loosen slowly, tighten at once (a shorter wait, No wait or fewer apps waits for 6 AM); Lift every wait now and Turn
+  Screen Time off stay instant; the night's notes at 10 and 20 minutes; the long-use note; the quiet after a slip.
+- **Native (high effort):** a ManagedSettingsStore per list (`daybook.pull.<id>`) and one for the web filter, so opening one list
+  leaves the others shut; a selection per list in the App Group; the shield action finds the list from the token and tells the app
+  which list asked; openFor takes the list and its minutes (`pull.open.<id>`). The old single pick becomes list one with its old
+  wait, so nobody's setup is lost. The shield says the list's own wait ("A 10-second wait first").
+- **Effort:** core rules and words, Settings and the wait screen are medium; the native part is high. They lock together, so the
+  whole build ran at high.
+- **Built:** core `pull.ts` (`lists`, `pullListNew`, `pullChange` per list, `pullGuard` per list, adult sites all day,
+  `shieldWebDay`, `waits`), `targets/_shared/PullShared.swift` (a store and a pick per list, `migrate`, `listOf`), the monitor's
+  `pull.open.<list>`, the shield and its button by list, the module's `pick(list, laterAt, fresh)`, `openFor(list, minutes,
+through)` and the forgetting of a removed list, Settings (Your lists, `app/settings/list.tsx`), and the wait screen's three
+  answers. Checked on the web with the stand-in; the extensions typecheck against the iOS SDK. Left for the phone: the device
+  checks in the shared notes' `screentime-nightpack-handover.md`. Known edge: an app in one list and its whole kind (Social) in
+  another stays behind the second list's shield when only the first opens; Daybook cannot tell an app's kind.
+
 ### To a real iPhone (November 11, 2026, branch `claude/screen-time-device`)
 
 - **Apple granted Family Controls (Distribution).** Turned on in the portal for `com.jdsmith2004.daybook`; the three extension

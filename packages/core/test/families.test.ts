@@ -165,12 +165,12 @@ describe('families', () => {
       ['l33', '2026-10-02'],
       ['l1', '2026-10-02'],
     ]);
-    /* l2 and l33 were finished before the path reached them: Up next is l2, as a welcome back, and l33 waits */
-    expect(tl.next?.id).toBe('l2');
-    expect(tl.coming[0]).toMatchObject({ u: 0, n: 4, done: 1 });
-    expect(tl.coming[0].left.map((L) => L.id)).toEqual(['l3', 'l22']);
-    expect(tl.coming[1]).toMatchObject({ u: 1, done: 0 });
-    expect(tl.coming.flatMap((x) => x.left).length + 1 + 1).toBe(core.lessonPath().length);
+    /* l2 and l33 were finished out of order: they sit behind, in the order finished, and Up next is l3, the planned next one
+       (the owner, November 15, 2026). The first step's room holds the three walked lessons and Up next, so it has none left. */
+    expect(tl.next?.id).toBe('l3');
+    expect(tl.coming[0]).toMatchObject({ u: 1, n: 4, done: 0 });
+    expect(tl.coming[0].left.map((L) => L.id)).toEqual(['l22', 'l34', 'l20', 'l46']);
+    expect(tl.coming.flatMap((x) => x.left).length + 3 + 1).toBe(core.lessonPath().length);
   });
 
   it('a lesson starts on its first card: the review question is gone (the owner, November 1, 2026); Deep plays every card', () => {

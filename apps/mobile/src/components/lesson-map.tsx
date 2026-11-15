@@ -13,7 +13,6 @@
 import {
   PATH_STEPS,
   deedDone,
-  lessonStep,
   lmin,
   lessonNo,
   MAP_W,
@@ -516,8 +515,9 @@ export function StoneCard({
 }) {
   const c = useTheme();
   const dark = c.scheme === 'dark';
-  const stg = useStore().snap.settings;
-  const no = lessonNo(L, stg);
+  const { snap } = useStore();
+  const stg = snap.settings;
+  const no = lessonNo(L, stg, snap.days);
   const q = quietOf(t, dark);
   /* a quiet stone's card is quiet too: its soft face, with dark words */
   const bg = ahead ? (dark ? mix(q.face, '#000000', 0.18) : mix(q.face, '#FFFFFF', 0.35)) : t.ic;
@@ -556,7 +556,13 @@ export function StoneCard({
         style={({ pressed }) => [s_.go, { backgroundColor: c.surface, shadowColor: deep, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
         <Icon name={ahead ? 'next' : locked ? 'shield' : when ? 'book' : 'play'} size={18} color={btn} />
         <Text style={[s_.goT, { color: btn }]}>
-          {ahead ? `Up next: lesson ${lessonNo(ahead, stg)}` : locked ? 'Create an account or sign in' : when ? 'Read it again' : `Start lesson ${no}`}
+          {ahead
+            ? `Up next: lesson ${lessonNo(ahead, stg, snap.days)}`
+            : locked
+              ? 'Create an account or sign in'
+              : when
+                ? 'Read it again'
+                : `Start lesson ${no}`}
         </Text>
       </Pressable>
     </View>
@@ -834,7 +840,9 @@ export function LessonMapView({
           ? open(s.L)
             ? 'Up next'
             : 'Up next, opens with a free account'
-          : 'Opens after lesson ' + (no - 1);
+          : s.free
+            ? 'Open to read'
+            : 'Opens after lesson ' + (no - 1);
     return `Lesson ${no}: ${s.L.title}. ${st}.`;
   };
   return (
@@ -912,10 +920,10 @@ export function LessonMapView({
           x={X(pick.x)}
           top={cardTop}
           onHeight={(h) => onCard?.(cardTop + h)}
-          t={toneOf(c, toneName(lessonStep(pick.L)))}
+          t={toneOf(c, toneName(pick.u))}
           when={pick.state === 'done' ? (today.has(pick.L.id) ? 'today' : dates[pick.L.id] || '') : null}
           locked={!open(pick.L)}
-          ahead={pick.state === 'todo' ? nx && nx.L : null}
+          ahead={pick.state === 'todo' && !pick.free ? nx && nx.L : null}
           waiting={waiting}
           onStart={() => onStart(pick.L.id)}
           onNext={() => nx && onStart(nx.L.id)}

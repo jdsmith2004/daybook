@@ -180,10 +180,10 @@ export function riskDay(days: Days, st: Settings, k: DayKey, now: number): RiskD
 export function riskLesson(days: Days, st: Settings, tk: DayKey, account = true): { L: Lesson; n: number; again: boolean } | null {
   const ls = lessonStop(days, st, tk, account);
   if (ls.kind === 'read') return null;
-  if (ls.kind === 'next' && !ls.locked) return { L: ls.L, n: lessonNo(ls.L, st), again: false };
+  if (ls.kind === 'next' && !ls.locked) return { L: ls.L, n: lessonNo(ls.L, st, days), again: false };
   /* the hard hours are no time for a sign-up: a re-read of a finished lesson instead */
   const R = ls.kind === 'review' ? ls.L : lessonReread(lessonWalk(days, st), tk, st, account);
-  return { L: R, n: lessonNo(R, st), again: true };
+  return { L: R, n: lessonNo(R, st, days), again: true };
 }
 
 /** hard hours held on today or yesterday that are not recorded yet (the latest first). From truthFrom on (truth.ts), only once

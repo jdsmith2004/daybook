@@ -33,23 +33,25 @@ describe('the lesson map', () => {
     expect(m.height).toBeGreaterThan(m.end.y);
   });
   it('marks the first lesson not done as next, and nothing finished shows past it', () => {
-    /* lesson 6 was read before this rule (from a help page): it waits, like every stone after Up next */
+    /* lesson 6 was read out of order (from a help page): it is walked, behind Up next, and Up next is the planned lesson 3 */
     const done = new Set([path[0].id, path[1].id, path[5].id]);
     const m = core.lessonMap(done);
     expect(m.next?.L.id).toBe(path[2].id);
     const all = m.lands.flatMap((l) => l.stones);
     expect(all.filter((s) => s.state === 'next')).toHaveLength(1);
-    expect(all.filter((s) => s.state === 'done').map((s) => s.L.id)).toEqual([path[0].id, path[1].id]);
-    expect(m.walked).toBe(2);
+    expect(all.filter((s) => s.state === 'done').map((s) => s.L.id)).toEqual([path[0].id, path[1].id, path[5].id]);
+    expect(m.walked).toBe(3);
+    expect(m.next?.n).toBe(4);
   });
   it('the road walked lights up from the start to Up next, in one stretch', () => {
     const N = path.length;
     expect(core.lessonMap(doneUpTo(5)).gold).toEqual([[0, 5]]);
     expect(core.lessonMap(doneUpTo(5)).plain).toEqual([[5, N]]);
+    /* finished out of order: all five are behind Up next, as one walked stretch */
     const m = core.lessonMap(new Set([path[0].id, path[1].id, path[5].id, path[6].id, path[29].id]));
     expect(m.next?.L.id).toBe(path[2].id);
-    expect(m.gold).toEqual([[0, 2]]);
-    expect(m.plain).toEqual([[2, N]]);
+    expect(m.gold).toEqual([[0, 5]]);
+    expect(m.plain).toEqual([[5, N]]);
     expect(core.lessonMap(new Set()).gold).toEqual([]);
   });
   it('the lands still ahead are marked, so their pictures are drawn quiet', () => {

@@ -113,6 +113,22 @@ export default function Checkin() {
     };
   }, [k]);
 
+  /* the demo build (EXPO_PUBLIC_SHOTS=1) can open straight on the finish (?end=1), for the celebrations page. Above every early
+     return: a hook after one crashed Good night (the going-to-bed page renders fewer hooks) */
+  useEffect(() => {
+    if (process.env.EXPO_PUBLIC_SHOTS !== '1' || endQ !== '1' || !st) return;
+    const f = { ...form, md: 7, u: 3, s: 4 };
+    let text = '';
+    update((s0) => {
+      const days = saveCheckin(s0.days, k, f);
+      text = checkinSaveText(days, s0.settings!, k, tk);
+      return { ...s0, days };
+    });
+    setForm(f);
+    setMsg(text);
+    setStep('end');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   if (!st) return <Redirect href="/" />;
   /* it ends in Goodnight once that is open (core goodnightOpens). A check-in before then, or for a day before today, ends with Save. */
   const bedtime = tonight && !goodnightOpens(st, clockOf(now));
@@ -171,21 +187,6 @@ export default function Checkin() {
     setDir(1);
     setStep('end');
   };
-  /* the demo build (EXPO_PUBLIC_SHOTS=1) can open straight on the finish (?end=1), for the celebrations page */
-  useEffect(() => {
-    if (process.env.EXPO_PUBLIC_SHOTS !== '1' || endQ !== '1') return;
-    const f = { ...form, md: 7, u: 3, s: 4 };
-    let text = '';
-    update((s0) => {
-      const days = saveCheckin(s0.days, k, f);
-      text = checkinSaveText(days, s0.settings!, k, tk);
-      return { ...s0, days };
-    });
-    setForm(f);
-    setMsg(text);
-    setStep('end');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   /* Goodnight: the check-in (when anything is answered) and the phone away, in one tap */
   const sayGoodnight = () => {
     const b = goodnight(any ? form : null);

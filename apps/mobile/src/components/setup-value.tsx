@@ -1,13 +1,12 @@
 /* The setup pages that show what Daybook gives, between the questions (the owner, November 14, 2026: setup "needs a couple screens
    just demonstrating the extreme beneifi and need of daybook it is all business (setup) and no pleasure"). Each is a picture first:
    a year of marks at the person's own pace (core obYear), the flame growing stop by stop (obGrow, the page's flame itself changes
-   form), and a slip taking nothing away here (obWhyLines). Words come from core setup.ts. */
-import { obGrow, obWhyLines, obYearMarks, type SetupAnswers } from '@daybook/core';
-import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+   form), and a slip the person taps, which takes nothing away here (SlipDemo). Words come from core setup.ts. */
+import { obGrow, obYearMarks, type SetupAnswers } from '@daybook/core';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 
-import { SHORT } from '@/components/fit';
 import { Slider } from '@/components/slider';
 import { useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
@@ -96,54 +95,55 @@ export function useGrowWalk(n: number, on: boolean) {
   return { at, last, pick: (i: number) => setAt(Math.max(0, Math.min(n - 1, i))), step: () => setAt((x) => Math.min(n - 1, x + 1)) };
 }
 
-/** eight weeks with two slips: a streak counter falls to zero at each, the free days on the record here keep climbing */
-export function WhyChart() {
+/** "A hard night will not take it from you": the person taps a slip and sees it. A streak counter three weeks in falls to zero;
+    the free days kept here do not move, and neither do the longest run, the points or the level. Every number is the sample's, said
+    as one, and every rule is the app's own (a slip never takes the free days, the best run, points or level). Replaces the chart
+    the owner found "mid" (November 14, 2026). */
+export const SLIP_DEMO_DAYS = 21;
+export function SlipDemo({ slipped }: { slipped: boolean }) {
   const c = useTheme();
-  const [w, setW] = useState(0);
-  const { streak, record } = useMemo(obWhyLines, []);
-  const h = SHORT ? 140 : 170;
-  const max = record[record.length - 1];
-  const top = 10;
-  const right = 4;
-  const pt = (v: number, d: number) => [(d / (record.length - 1)) * (w - right), top + (h - top - 6) * (1 - v / max)] as const;
-  const path = (vals: number[]) => vals.map((v, d) => (d ? 'L' : 'M') + pt(v, d).join(' ')).join(' ');
-  const slips = streak.map((v, d) => (d > 0 && v === 0 ? d : -1)).filter((d) => d >= 0);
-  const end = pt(record[record.length - 1], record.length - 1);
+  const still = useReducedMotion();
+  const n = useRef(new Animated.Value(SLIP_DEMO_DAYS)).current;
+  const [shown, setShown] = useState(SLIP_DEMO_DAYS);
+  useEffect(() => {
+    const id = n.addListener(({ value }) => setShown(Math.round(value)));
+    return () => n.removeListener(id);
+  }, [n]);
+  useEffect(() => {
+    if (!slipped) return n.setValue(SLIP_DEMO_DAYS);
+    if (still) return n.setValue(0);
+    const t = Animated.timing(n, { toValue: 0, duration: 1100, easing: Easing.in(Easing.cubic), useNativeDriver: false });
+    t.start();
+    return () => t.stop();
+  }, [slipped, still, n]);
   return (
     <View
-      style={{ alignSelf: 'stretch' }}
-      onLayout={(e) => setW(e.nativeEvent.layout.width)}
+      style={s.demo}
       accessible
-      accessibilityLabel="Eight weeks with two slips. A streak counter falls to zero at each slip. Your free days here keep climbing.">
-      {w > 0 ? (
-        <View>
-          <Svg width={w} height={h}>
-            <Path d={'M0 ' + (h - 6) + ' L' + (w - right) + ' ' + (h - 6)} stroke={c.line} strokeWidth={2} />
-            <Path d={path(streak)} stroke={c.muted} strokeWidth={3} fill="none" strokeLinejoin="round" opacity={0.7} />
-            <Path d={path(record)} stroke={c.accent} strokeWidth={5} fill="none" strokeLinejoin="round" strokeLinecap="round" />
-            {slips.map((d) => (
-              <Circle key={d} cx={pt(0, d)[0]} cy={h - 6} r={6} fill={c.slip} />
-            ))}
-            <Circle cx={end[0] - 2} cy={end[1]} r={7} fill={c.accent} />
-          </Svg>
-          {/* the record's label over the empty top left; the streak is named in the key under the chart, where no line runs through it */}
-          <Text style={[s.lab, { color: c.accentText, top: 0, left: 0 }]}>Your free days here</Text>
-        </View>
-      ) : null}
-      <View style={s.slipKey}>
-        <View style={[s.streakKey, { backgroundColor: c.muted }]} />
-        <Text style={[s.month, { color: c.muted }]}>A streak</Text>
-        <View style={[s.slipDot, { backgroundColor: c.slip, marginLeft: 12 }]} />
-        <Text style={[s.month, { color: c.muted }]}>A slip</Text>
+      accessibilityLabel={
+        slipped
+          ? 'After a slip: a streak counter is back to zero. Here, 21 free days are still kept.'
+          : 'Three weeks in: a streak counter shows 21 days in a row. Here, 21 free days.'
+      }>
+      <View style={[s.side, { backgroundColor: 'rgba(255,255,255,0.07)' }]}>
+        <Text style={[s.sideH, { color: c.muted }]}>A streak counter</Text>
+        <Text style={[s.big, { color: slipped ? c.slip : c.ink }]}>{shown}</Text>
+        <Text style={[s.sideS, { color: c.muted }]}>{slipped ? 'back to zero' : 'days in a row'}</Text>
+      </View>
+      <View style={[s.side, { backgroundColor: 'rgba(255,255,255,0.16)' }]}>
+        <Text style={[s.sideH, { color: c.accentText }]}>Here</Text>
+        <Text style={[s.big, { color: c.ink }]}>{SLIP_DEMO_DAYS}</Text>
+        <Text style={[s.sideS, { color: c.ink }]}>{slipped ? 'free days, still yours' : 'free days'}</Text>
       </View>
     </View>
   );
 }
 
 const s = StyleSheet.create({
+  demo: { flexDirection: 'row', gap: 10, alignSelf: 'stretch' },
+  side: { flex: 1, borderRadius: 20, paddingVertical: 14, paddingHorizontal: 14, alignItems: 'center' },
+  sideH: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
+  big: { fontFamily: font.display, fontSize: 48, lineHeight: 56 },
+  sideS: { fontFamily: font.body, fontSize: 15, lineHeight: 20, textAlign: 'center' },
   month: { fontFamily: font.body, fontSize: 13, lineHeight: 18 },
-  lab: { position: 'absolute', fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
-  slipKey: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-  slipDot: { width: 10, height: 10, borderRadius: 5 },
-  streakKey: { width: 16, height: 3, borderRadius: 2, opacity: 0.7 },
 });

@@ -115,7 +115,7 @@ import {
 import { useNotifyEnv } from '@/lib/notify-env';
 import { allowReminders, exactAlarmsAsk, exactAlarmsOk, remindersOffered } from '@/lib/reminders';
 import { NightPackBody } from '@/components/night-pack';
-import { packOffered, usePack } from '@/lib/night-pack';
+import { packOffered, packShown, usePack } from '@/lib/night-pack';
 import {
   getPullTrouble,
   PULL_DENIED,
@@ -637,13 +637,13 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
       ? {
           icon: 'phone',
           title: PULL_NAME,
-          value: pullBad ? 'Not working' : pull.on ? 'On' : 'Off',
+          value: pullBad ? 'Not working' : pull.on ? 'On' : 'Beta',
           body: <PullBody pull={pull} days={snap.days} st={st} now={now} say={say} />,
         }
       : null,
 
     /* the night pack (WP21, core night-pack.ts): its own part, since Screen Time is not in every build and the pack is */
-    nightpack: packOffered ? { icon: 'moon', title: 'The night pack', value: packLitCount(pack) + ' of 4', body: <NightPackBody /> } : null,
+    nightpack: packShown ? { icon: 'moon', title: 'The night pack', value: packLitCount(pack) + ' of 4', body: <NightPackBody /> } : null,
 
     answers: {
       icon: 'pencil',
@@ -911,11 +911,12 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
   if (!pull.on)
     return (
       <SetGroup
+        head="Beta"
         foot={
           (pull.lost ? 'Screen Time access was turned off in the phone’s Settings, so nothing waits now. ' : '') +
           'Pick the apps that pull you in. Each one waits a few seconds before it opens, and at night adult sites wait longer. Apple keeps the list, and nothing about your apps leaves this phone.'
         }>
-        <SetRow label={pull.lost ? 'Turn it back on' : 'Choose the apps'} act="accent" onPress={start} />
+        <SetSwitch label="Screen Time (beta)" on={false} onChange={(on) => on && void start()} />
       </SetGroup>
     );
   const fix = async () => {
@@ -956,6 +957,11 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
           />
         </SetGroup>
       ) : null}
+      {/* the beta switch (the owner, November 15, 2026: "just add them as like a beta toggle in settings"): off is the same as
+          Turn Screen Time off below, instant, and tonight it counts as a night gone through */}
+      <SetGroup head="Beta" foot="Screen Time is new. Tell us in Feedback if something does not work.">
+        <SetSwitch label="Screen Time (beta)" on onChange={(on) => (on ? undefined : void pullStop(night && !quiet))} />
+      </SetGroup>
       <SetGroup foot="Apple keeps the list, and nothing about your apps leaves this phone.">
         <SetRow
           label="Change the apps"
@@ -1018,7 +1024,7 @@ function PullBody({ pull, days, st, now, say }: { pull: PullPrefs; days: Days; s
           (night && !quiet ? 'Tonight, lifting every wait or turning this off counts as a night you went through. ' : '') +
           'You can also turn this off in the phone’s Settings, under Screen Time.'
         }>
-        {packOffered ? <SetRow label="The night pack, for the whole phone" onPress={() => router.push('/settings/nightpack')} /> : null}
+        {packOffered ? <SetRow label="The night pack, for the whole phone" onPress={() => router.push('/nightpack')} /> : null}
         <SetRow
           label="Lift every wait now"
           act="accent"

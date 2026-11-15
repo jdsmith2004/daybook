@@ -1476,6 +1476,10 @@ see other apps: the section is hidden there.
 - **The owner's test:** `docs/screen-time/test-on-iphone.md`. **App Review notes and the recording:** `docs/screen-time/review-notes.md`.
 - **Ship:** after the owner says yes on the phone, merge to main, make `production-pull` the App Store workflow's default (or
   tick Screen Time), and submit the next version with the review notes. Not before Apple answers on 1.3.3.
+- **A beta switch, in every build (the owner, November 15, 2026: "just add them as like a beta toggle in settings").** The App
+  Store workflow's Screen Time box is ticked by default, so every store build is `production-pull`. Settings, Screen Time shows a
+  Beta switch: on runs Apple's ask and the app list, off is Turn Screen Time off. The first such build may stop before it is queued
+  if EAS cannot make the three extension profiles without a sign-in (see the entitlement steps below).
 
 ### The entitlement: what the owner does (Account Holder, signed in to developer.apple.com)
 

@@ -61,44 +61,79 @@ export function packLitCount(s: PackState): number {
   return PACK_KINDS.filter((k) => packLit(s, k)).length;
 }
 
-/** each automation's name, what it does, and how to make it, in the person's own night time */
-export function packWords(k: PackKind, at: string): { title: string; line: string; steps: string[] } {
-  const run = 'Pick Run Immediately and turn off Notify When Run.';
+/** one page of the walk: the app it happens in, what to do in big words, and the taps in order (the picture: the rows the
+    person will see, top to bottom) */
+export interface PackStep {
+  app: 'Settings' | 'Shortcuts';
+  say: string;
+  taps: string[];
+}
+
+/** the next automation to set up after `from` (or the first one), skipping those already lit; null when every one is lit */
+export function packNext(s: PackState, from?: PackKind): PackKind | null {
+  const start = from ? PACK_KINDS.indexOf(from) + 1 : 0;
+  return PACK_KINDS.slice(start).find((k) => !packLit(s, k)) ?? null;
+}
+
+/** the automations still to set up, in order */
+export function packLeft(s: PackState): PackKind[] {
+  return PACK_KINDS.filter((k) => !packLit(s, k));
+}
+
+/** each automation's name, what it does, and its walk (one step a page), in the person's own night time. Apple lets only the
+    person make an automation, so every step is theirs; Daybook opens the right app for each one. */
+export function packWords(k: PackKind, at: string): { title: string; line: string; walk: PackStep[] } {
+  const auto = (when: string[]): PackStep => ({
+    app: 'Shortcuts',
+    say: 'In Shortcuts, start a new automation.',
+    taps: ['Automation', 'The + at the top', ...when, 'Run Immediately', 'Notify When Run: off'],
+  });
+  const add = (action: string, extra: string[] = []): PackStep => ({
+    app: 'Shortcuts',
+    say: 'Add the action ' + action + ', then tap Done.',
+    taps: ['Add Action', action, ...extra, 'Done'],
+  });
   if (k === 'grey')
     return {
       title: 'The screen goes grey',
       line: 'At ' + at + ' every colour leaves the phone, and it comes back at 6 AM. A grey feed is a dull one.',
-      steps: [
-        'In Settings, open Accessibility, then Display & Text Size, then Color Filters. Pick Grayscale, then turn Color Filters off again.',
-        'In Shortcuts, open Automation and tap +. Pick Time of Day, set ' + at + ', Daily. ' + run,
-        'Add the action Set Color Filters, and set it to On.',
-        'Make one more at 6:00 AM with Set Color Filters set to Off.',
+      walk: [
+        {
+          app: 'Settings',
+          say: 'In Settings, choose grey as the colour filter.',
+          taps: ['Accessibility', 'Display & Text Size', 'Color Filters', 'Grayscale'],
+        },
+        { app: 'Settings', say: 'Now turn Color Filters off again. The automation turns it on at night.', taps: ['Color Filters: off'] },
+        { ...auto(['Time of Day', at + ', Daily']), say: 'In Shortcuts, start a new automation for ' + at + '.' },
+        add('Set Color Filters', ['Set it to On']),
+        { ...auto(['Time of Day', '6:00 AM, Daily']), say: 'One more, so colour comes back at 6 AM.' },
+        add('Set Color Filters', ['Set it to Off']),
       ],
     };
   if (k === 'wait')
     return {
       title: 'Feeds wait first',
       line: 'From ' + at + ', opening one of them opens Daybook first, with a short wait. By day nothing changes.',
-      steps: [
-        'In Shortcuts, open Automation and tap +. Pick App, choose the apps that pull you in, and keep Is Opened. ' + run,
-        'Add the action Wait first at night, from Daybook, and leave Open When Run on.',
+      walk: [
+        { ...auto(['App', 'The apps that pull you in', 'Is Opened']), say: 'In Shortcuts, start a new automation for the apps that pull you in.' },
+        add('Wait first at night', ['Open When Run: on']),
       ],
     };
   if (k === 'bed')
     return {
       title: 'Plugging in says good night',
       line: 'Put the phone on the charger late in the evening, and Good night opens. Once a night.',
-      steps: [
-        'In Shortcuts, open Automation and tap +. Pick Charger, and keep Is Connected. ' + run,
-        'Add the action Good night, if it is late, from Daybook, and leave Open When Run on.',
+      walk: [
+        { ...auto(['Charger', 'Is Connected']), say: 'In Shortcuts, start a new automation for the charger.' },
+        add('Good night, if it is late', ['Open When Run: on']),
       ],
     };
   return {
     title: 'The alarm opens the morning',
     line: 'Stop your alarm, and the morning is the first thing you see.',
-    steps: [
-      'In Shortcuts, open Automation and tap +. Pick Alarm, then Is Stopped, and Any Alarm. ' + run,
-      'Add the action Open the morning, from Daybook, and leave Open When Run on.',
+    walk: [
+      { ...auto(['Alarm', 'Is Stopped', 'Any Alarm']), say: 'In Shortcuts, start a new automation for your alarm.' },
+      add('Open the morning', ['Open When Run: on']),
     ],
   };
 }

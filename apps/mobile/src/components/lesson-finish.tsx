@@ -232,7 +232,9 @@ export function LessonFinish({
     });
   };
 
-  const big = Math.min(win.width - 120, win.height * (SHORT ? 0.22 : 0.27), 240);
+  /* a checkpoint offered takes a row above Continue; on a short phone the flame gives it room, so the bubble stays on screen */
+  const offering = !!offer && !m.quiet;
+  const big = Math.min(win.width - 120, win.height * (SHORT ? (offering ? 0.16 : 0.22) : 0.27), 240);
   /* how big the flame is in the opener, and where: a little above the middle, the words under it */
   const K = Math.min(1.6, (win.width * 0.9) / big);
   const B = Math.round(big * K);
@@ -556,7 +558,7 @@ export function LessonFinish({
         <Reanimated.View style={btnIn} pointerEvents={beat === 2 ? 'auto' : 'none'}>
           {/* the checkpoint, when this lesson completed its pair and the hours after a slip are past: an invitation, never a step.
               Continue stays the gold button, so passing on it is the easy way. */}
-          {offer && !m.quiet ? (
+          {offer && offering ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={offer.title + '. ' + offer.sub}

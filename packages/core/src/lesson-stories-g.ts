@@ -91,6 +91,35 @@ const S = {
     'Elliot, Sheldon & Church (1997): avoidance personal goals and subjective well-being, Personality and Social Psychology Bulletin',
     'https://doi.org/10.1177/0146167297239001',
   ],
+  gen27: ['Genesis 27, 32 and 33, Jacob and Esau (King James Version)', 'https://www.churchofjesuschrist.org/study/scriptures/ot/gen/33?lang=eng'],
+  matt523: ['Matthew 5:23-24 (King James Version)', 'https://www.churchofjesuschrist.org/study/scriptures/nt/matt/5?lang=eng'],
+  mosiah27: ['Mosiah 27:32-35 (Book of Mormon)', 'https://www.churchofjesuschrist.org/study/scriptures/bofm/mosiah/27?lang=eng'],
+  fehr: [
+    'Fehr, Gelfand & Nag (2010): the road to forgiveness, a meta-analytic synthesis of its situational and dispositional correlates, Psychological Bulletin',
+    'https://doi.org/10.1037/a0019993',
+  ],
+  kachalia: [
+    'Kachalia and colleagues (2010): liability claims and costs before and after implementation of a medical error disclosure program, Annals of Internal Medicine',
+    'https://pubmed.ncbi.nlm.nih.gov/20713789/',
+  ],
+  kings5: ['2 Kings 5:1-14, Naaman (King James Version)', 'https://www.churchofjesuschrist.org/study/scriptures/ot/2-kgs/5?lang=eng'],
+  alma37: ['Alma 37:6-7 and 37:38-46 (Book of Mormon)', 'https://www.churchofjesuschrist.org/study/scriptures/bofm/alma/37?lang=eng'],
+  dan6: ['Daniel 6:10 (King James Version)', 'https://www.churchofjesuschrist.org/study/scriptures/ot/dan/6?lang=eng'],
+  distefano: [
+    'Di Stefano, Gino, Pisano & Staats: learning by thinking, how reflection aids performance, Harvard Business School working paper (summary by HBS Working Knowledge)',
+    'https://www.library.hbs.edu/working-knowledge/reflecting-on-work-improves-job-performance',
+  ],
+  mark5: ['Mark 5:1-20, the man among the tombs (King James Version)', 'https://www.churchofjesuschrist.org/study/scriptures/nt/mark/5?lang=eng'],
+  cor1: ['2 Corinthians 1:3-4 (King James Version)', 'https://www.churchofjesuschrist.org/study/scriptures/nt/2-cor/1?lang=eng'],
+  mosiah18: ['Mosiah 18:8-9 (Book of Mormon)', 'https://www.churchofjesuschrist.org/study/scriptures/bofm/mosiah/18?lang=eng'],
+  hodges: [
+    'Hodges, Kiel, Kramer, Veach & Villanueva (2010): giving birth to empathy, the effects of similar experience on empathic accuracy, empathic concern, and perceived empathy, Personality and Social Psychology Bulletin',
+    'https://pubmed.ncbi.nlm.nih.gov/19875825/',
+  ],
+  pagano: [
+    'Pagano, Friend, Tonigan & Stout (2004): helping other alcoholics in Alcoholics Anonymous and drinking outcomes, Journal of Studies on Alcohol',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC3008319/',
+  ],
 } satisfies Record<string, Src>;
 
 /* ---------- g1, Where are you? (step 1, Tell the truth) ---------- */
@@ -1167,6 +1196,367 @@ const G9P_END: StoryPart = {
   dx: 'Look at the hour when the pull is strongest for you. Most likely, it is an empty one: nothing planned, nobody near, nothing in its place. That is the light truck on the snowy road. Name what you are hungry for: company, rest, meaning, a break. Ask God what would feed it today. Then **pick up one thing worth carrying** in that hour, a call, a task, a walk, a prayer, a page, and let its weight give you grip.',
 };
 
+/* ---------- g10, First, make peace (step 10, Make it right) ---------- */
+
+const G10_STOLE: StoryPart = {
+  h: 'Jacob took his brother’s blessing by a trick, and ran.',
+  p: 'He dressed as Esau to fool their blind father, and the blessing meant for Esau became his. Esau said he would kill him. So **Jacob fled**, and stayed away for twenty years.',
+  art: ['scene', { k: 'g10-trick' }],
+  fact: { s: 'Scripture · Genesis 27, 31-33', i: [0] },
+  dx: 'Isaac was old and nearly blind, and he meant to give his firstborn son, Esau, the blessing of the family. Jacob, the younger twin, wrapped goatskin on his arms so he would feel hairy like his brother, put on Esau’s clothes, and took the blessing for himself. When Esau came in and learned what had happened, he wept, and then he hated his brother. When our father dies, he said, I will kill Jacob. So **Jacob fled** to a far country. He stayed away for twenty years, married, grew rich, and never fixed what he had done.',
+};
+const G10_COMING: StoryPart = {
+  h: 'Then God told him to go home, and Esau came to meet him with four hundred men.',
+  p: 'Jacob had to pass through his brother’s land to get home. When he heard Esau was coming with an army, he was **greatly afraid and distressed**.',
+  art: ['scene', { k: 'g10-four' }],
+  dx: 'After twenty years, God told Jacob to return to the land of his fathers. Going home meant facing the brother he had wronged. He sent messengers ahead to Esau, and they came back with news: your brother is coming to meet you, and four hundred men with him. Jacob was **greatly afraid and distressed**, the story says. He split his family into two camps, so that if Esau attacked one, the other might escape. He had every reason to think his brother still wanted him dead.',
+};
+const G10_ASK: StoryPart = {
+  k: 'ask',
+  h: 'When you think of making it right with someone you hurt, what do you fear most?',
+  o: [
+    ['That they will be angry', 'Jacob feared that too, with four hundred reasons. Watch what happened.'],
+    ['That it will make things worse', 'That can happen, and some repairs are best left. Read on.'],
+    ['That they will see me differently', 'Many people fear that most. Look at what Esau saw.'],
+    ['I have not let myself think about it', 'That is honest. This lesson is a safe place to start.'],
+  ],
+};
+const G10_GIFTS: StoryPart = {
+  long: 1,
+  h: 'Jacob prayed, and sent gifts ahead of him, drove after drove.',
+  p: 'I am **not worthy of the least of all the mercies**, he prayed. Then he sent his brother hundreds of goats, sheep, camels, cattle and donkeys, with space between each drove.',
+  art: ['scene', { k: 'g10-droves' }],
+  dx: 'That night Jacob prayed, and it is one of the most honest prayers in the book. I am **not worthy of the least of all the mercies**, he said, and of all the truth, which thou hast shewed unto thy servant. Deliver me from the hand of my brother, for I fear him. Then he chose a gift: two hundred she goats and twenty he goats, two hundred ewes and twenty rams, thirty camels with their colts, forty cows and ten bulls, twenty donkeys and ten foals. He sent them ahead in droves, with a space between each one, so that his brother would meet gift after gift before he met Jacob. He was trying to give back something of what he had taken.',
+};
+const G10_BOW: StoryPart = {
+  h: 'In the morning, Jacob walked out ahead of his family to meet his brother.',
+  p: 'He did not send someone else or hide in the second camp. He went first, and **bowed to the ground seven times** as he came near.',
+  art: ['scene', { k: 'g10-bow' }],
+  dx: 'Jacob looked up and saw Esau coming, and the four hundred men with him. He arranged his family behind him. Then he did the hardest thing in the story. He did not stay at the back, safe, and let the gifts do the talking. He passed over before them all, and walked toward his brother alone, and **bowed to the ground seven times**, until he came near. Twenty years of running ended in a walk across open ground, toward the one person he had most avoided.',
+};
+const G10_RAN: StoryPart = {
+  h: 'And Esau ran to meet him.',
+  p: 'He **embraced him, and fell on his neck, and kissed him**, the story says, **and they wept**. The army never moved.',
+  art: ['scene', { k: 'g10-embrace' }],
+  dx: 'And Esau ran to meet him, and **embraced him, and fell on his neck, and kissed him: and they wept**. Of everything Jacob had feared, none of it came. Esau did not even want the gifts at first. I have enough, my brother, he said, keep what you have. Not every repair goes like this. Some people are not ready, and some never will be. But Jacob would never have known, and never have had his brother back, if he had stayed on the far side of the river.',
+};
+const G10_FACE: StoryPart = {
+  h: 'Jacob said that seeing his brother’s face was like seeing the face of God.',
+  p: '**As though I had seen the face of God**, he said. Then: take, I pray thee, my blessing. It is the same word as the blessing he had stolen. He was giving it back.',
+  art: ['scene', { k: 'g10-face' }],
+  dx: 'Esau said he did not need the gifts. Jacob pressed him: no, I pray thee, receive my present, for I have seen thy face, **as though I had seen the face of God**, and thou wast pleased with me. Then he said, take, I pray thee, my blessing that is brought to thee. In Hebrew it is the same word, berakah, as the blessing Jacob had stolen twenty years before. Whatever else the gifts were, they were the stolen blessing, given back. And in his brother’s welcome, Jacob said, he had met God.',
+};
+const G10_ALTAR: StoryPart = {
+  long: 1,
+  h: 'Jesus told a man at the altar to go and make peace first.',
+  p: 'If you remember someone has something against you, **leave there thy gift before the altar**, and go. First be reconciled, then come and offer the gift.',
+  art: ['scene', { k: 'g10-altar' }],
+  fact: { s: 'Scripture · Matthew 5:23-24', i: [1] },
+  dx: 'In the Sermon on the Mount, Jesus pictured a man bringing his gift to the altar, about to worship. There he remembers that someone has something against him. Jesus says: **leave there thy gift before the altar**, and go thy way. First be reconciled to thy brother, and then come and offer thy gift. The gift is still wanted. Worship is still the point. But the peace comes first, because what stands between you and the person you hurt stands between you and God too.',
+};
+const G10_ALMA: StoryPart = {
+  long: 1,
+  h: 'Once their hearts changed, Alma and the sons of Mosiah set out to repair the harm.',
+  p: 'They had worked to tear the Church down. Afterward they went through the land **zealously striving to repair all the injuries** they had done.',
+  art: ['scene', { k: 'g10-road' }],
+  fact: { s: 'Scripture · Mosiah 27:32-35', i: [2] },
+  dx: 'In the Book of Mormon, Alma the younger and the four sons of King Mosiah had gone about secretly trying to destroy the Church, leading people away. After an angel stopped them and their hearts were changed, they did not only pray and move on. They traveled through all the land, **zealously striving to repair all the injuries** which they had done to the Church, confessing their sins and telling what they had seen. Their repentance had a road in it, and the road went to the people they had hurt.',
+};
+const G10_FEHR: StoryPart = {
+  long: 1,
+  n: '175',
+  h: 'studies of how people forgive found a sincere apology among the strongest roads to it.',
+  p: 'Across more than 26,000 people, **an apology went with being forgiven** more than almost anything else researchers measured.',
+  art: ['scene', { k: 'g10-sorry' }],
+  fact: { s: 'Meta-analysis · 175 studies · Fehr, Gelfand & Nag, 2010', i: [3] },
+  dx: 'Three researchers gathered 175 studies, with more than 26,000 people, on what goes with forgiving someone who hurt you. They looked at twenty-two things, from how bad the harm was to how close the two people were. Among the strongest was a plain one: **an apology went with being forgiven**, more than almost anything else they measured. The studies show what goes together, not a promise, and some hurts take a long time. But a sincere sorry, asking nothing back, is one of the best things you can bring.',
+};
+const G10_END: StoryPart = {
+  h: 'So walk out ahead, and make one thing right.',
+  p: 'Not every repair is met with open arms. **Your part is to go**, with care: one person, one true sorry, nothing asked back. Leave out any repair that would hurt them.',
+  art: ['scene', { k: 'g10-walk' }],
+  dx: 'A habit like this leaves small harms behind it: a lie to cover it, time taken from someone, a promise broken. Telling God you are sorry is the first half. The other half is walking across the open ground. You do not have to fix everything, and you do not owe anyone every detail. Pick one person and one true thing. Say sorry plainly, and ask for nothing. Leave out any repair that would only hurt them, and with a spouse, go slowly, with a counselor or a faith leader to help. **Your part is to go.** How they meet you is theirs. Jacob found God in his brother’s face. You may find Him on that road too.',
+};
+
+/* the plain voice: the hospitals that started saying sorry */
+const G10P_SILENT: StoryPart = {
+  h: 'For years, hospitals told doctors: when you make a mistake, say nothing.',
+  p: 'An apology could be used in court. So patients who were hurt often got **silence, and then a lawsuit**, and both sides came out angrier.',
+  art: ['scene', { k: 'g10-hospital' }],
+  dx: 'Doctors are human, and sometimes they make mistakes that hurt patients. For a long time, the advice from lawyers and insurers was simple: admit nothing, apologize for nothing, because anything you say can be used against you. So families who had been hurt met a wall. They often did not learn what had happened. They got **silence, and then a lawsuit**, years of it, and both sides came out angrier than they went in.',
+};
+const G10P_TRIED: StoryPart = {
+  h: 'In 2001, the University of Michigan’s hospitals tried the opposite.',
+  p: 'Led by a former trial lawyer, Richard Boothman, they began to **tell patients what happened**, say sorry when they were wrong, and offer fair payment, before anyone sued.',
+  art: ['scene', { k: 'g10-talk' }],
+  fact: { s: 'Study · Kachalia and colleagues, 2010', i: [0] },
+  dx: 'At the University of Michigan’s hospitals, a team led by Richard Boothman, who had spent years defending doctors in court, tried something many people thought was reckless. When something went wrong, they would look into it quickly and **tell patients what happened**. If the hospital was at fault, they would say so, apologize, and offer fair payment. If it was not, they would explain why, and stand by their doctors. Many feared that saying sorry would invite a flood of new claims.',
+};
+const G10P_GUESS: StoryPart = {
+  k: 'guess',
+  h: 'After the hospitals started saying sorry, what happened to the lawsuits?',
+  o: [
+    ['They went up, as people feared', 'That was the fear. It went the other way.'],
+    ['They went down', 'Yes. The next card shows by how much.'],
+    ['They stayed about the same', 'A fair guess. The change was bigger than that.'],
+  ],
+  a: 1,
+};
+const G10P_FELL: StoryPart = {
+  h: 'Lawsuits fell by more than half.',
+  p: 'From about **39 a year to about 17**. Claims were settled faster, and the cost of each lawsuit nearly halved. Saying sorry did not open a flood. It closed one.',
+  art: ['scene', { k: 'g10-fall' }],
+  fact: { s: 'Study · Kachalia and colleagues, 2010', i: [0] },
+  dx: 'Researchers later compared the years before and after the change. Lawsuits fell **from about 39 a year to about 17**. Claims were resolved in about a year instead of well over one, and the average cost of a lawsuit nearly halved. The researchers were careful: claims were falling across the state too, and a study like this cannot prove the apologies caused it. But the fear, that honesty would bring ruin, did not come true. When people were told the truth and heard a real sorry, most of them did not want a fight.',
+};
+const G10P_GOD: StoryPart = {
+  h: 'Making peace with a person is part of making peace with God.',
+  p: 'For many believers, what stands between you and someone you hurt **stands between you and God too**. Telling God you are sorry is one half. The other half is the person.',
+  art: ['scene', { k: 'g10-face' }],
+  dx: 'The hospitals learned that silence kept the hurt alive, and a plain sorry let it close. Many faiths teach the same about God: what stands between you and a person you hurt **stands between you and God too**. Praying about it is the first half. The second half is walking toward the person, with care, and saying the true thing. It is not a punishment. It is how coming back gets finished.',
+};
+const G10P_END: StoryPart = {
+  ...G10_END,
+  dx: 'A habit like this leaves small harms behind it: a lie to cover it, time taken from someone, a promise broken. Telling God you are sorry is the first half. The other half is the person. You do not have to fix everything, and you do not owe anyone every detail. Pick one person and one true thing. Say sorry plainly, and ask for nothing. Leave out any repair that would only hurt them, and with a spouse, go slowly, with a counselor or a faith leader to help. **Your part is to go.** How they meet you is theirs, and many people, like those patients, are relieved to hear the truth.',
+};
+
+/* ---------- g11, Small and simple (step 11, Keep a daily practice) ---------- */
+
+const G11_NAAMAN: StoryPart = {
+  h: 'Naaman was a great general, honored by his king, and he had leprosy.',
+  p: 'A young servant girl in his house, taken captive from Israel, said there was a prophet who could heal him. So **Naaman set out with horses and chariots** and gifts of silver and gold.',
+  art: ['scene', { k: 'g11-general' }],
+  fact: { s: 'Scripture · 2 Kings 5:1-14', i: [0] },
+  dx: 'Naaman was captain of the army of the king of Syria, a great man, honored, a mighty man of valor, the Bible says, and then four more words: but he was a leper. In his house was a young girl taken captive from Israel, who waited on his wife. She said: I wish my master were with the prophet in Samaria, for he would heal him. So **Naaman set out with horses and chariots**, ten talents of silver, six thousand pieces of gold and ten changes of clothes. He was ready for something great.',
+};
+const G11_WASH: StoryPart = {
+  h: 'Elisha did not even come out. He sent a message: wash in the Jordan seven times.',
+  p: 'Naaman stood at the door with his chariots, and a messenger came out with **one small instruction**. Go and wash in the river, seven times.',
+  art: ['scene', { k: 'g11-door' }],
+  dx: 'Naaman came with his horses and chariots and stood at the door of Elisha’s house. The prophet did not come out. He sent a messenger with **one small instruction**: go and wash in Jordan seven times, and thy flesh shall come again to thee. That was all. No ceremony, no prophet, no great sign. Just a muddy river, and the same small thing, seven times.',
+};
+const G11_WROTH: StoryPart = {
+  h: 'Naaman was furious. He had expected something great.',
+  p: 'Behold, he said, **I thought, He will surely come out to me**, and stand, and call on his God, and wave his hand over the place. He turned and went away in a rage.',
+  art: ['scene', { k: 'g11-rage' }],
+  dx: 'Naaman was wroth, the story says, and went away. Behold, **I thought, He will surely come out to me**, and stand, and call on the name of the Lord his God, and strike his hand over the place, and heal me. He had pictured the moment: the prophet, the prayer, the wave of the hand, the cure. Instead he got a river. Are not the rivers of Damascus better than all the waters of Israel? he said. He turned and went away in a rage. The cure was too small to believe.',
+};
+const G11_ASK: StoryPart = {
+  k: 'ask',
+  h: 'If you were told the way out was small and daily, would it feel like enough?',
+  o: [
+    ['No, I want one big moment that settles it', 'Naaman wanted that too. Listen to his servants.'],
+    ['Yes, but I keep skipping small things', 'Then the next cards are for you.'],
+    ['I would wonder what I was doing wrong', 'Many people do. Small is not a sign you are missing something.'],
+    ['I am not sure', 'That is honest. Watch what happened at the river.'],
+  ],
+};
+const G11_SERVANTS: StoryPart = {
+  h: 'His servants came to him with a question.',
+  p: 'If the prophet had asked you **to do some great thing**, would you not have done it? How much more, when he only says: wash.',
+  art: ['scene', { k: 'g11-servants' }],
+  dx: 'His servants came near and spoke to him, gently, calling him father. My father, they said, if the prophet had bid thee **to do some great thing**, wouldest thou not have done it? How much rather then, when he saith to thee, wash? It was a wise question. Naaman would have climbed a mountain or fought a battle. What he could not face was something so small it seemed beneath him. Many people are the same with change: ready for a great effort, too proud for a small daily one.',
+};
+const G11_SEVEN: StoryPart = {
+  h: 'So he went down and dipped himself seven times in the Jordan.',
+  p: 'Once, and nothing. Twice, and nothing. Seven times, as he had been told, and his skin **came again like the skin of a little child**.',
+  art: ['scene', { k: 'g11-river' }],
+  dx: 'Then went he down, and dipped himself seven times in Jordan, according to the saying of the man of God. Think of it the way he lived it. The first dip, nothing. The second, nothing. Somewhere around the fourth, he must have felt foolish, standing in a muddy river while his soldiers watched. He kept going. And on the seventh, his flesh **came again like the skin of a little child**. The healing did not come from any one dip. It came from doing the small thing all seven times.',
+};
+const G11_ALMA: StoryPart = {
+  long: 1,
+  h: 'Alma taught his son that small and simple things bring great things.',
+  p: '**By small and simple things are great things brought to pass.** And he told of the compass Lehi’s family followed: it worked by daily faith, and when they grew careless, it stopped guiding them.',
+  art: ['scene', { k: 'g11-compass' }],
+  fact: { s: 'Scripture · Alma 37:6-7, 38-46', i: [1] },
+  dx: 'Alma, handing the sacred records to his son Helaman, said some would think it foolish to care so much about small things. But **by small and simple things are great things brought to pass**, he said, and by very small means the Lord does great things. Then he told of the Liahona, the brass ball with two spindles that guided Lehi’s family through the wilderness. It worked for them according to their faith in God, day by day. When they were slothful, and forgot to exercise their faith and diligence, its marvelous works ceased, and they did not move forward. A small thing, kept daily, was what kept them on the way.',
+};
+const G11_DANIEL: StoryPart = {
+  long: 1,
+  h: 'Daniel prayed three times a day, “as he did aforetime.”',
+  p: 'When the king made prayer a crime, Daniel went home, opened his window and knelt, **as he did aforetime**. He did not need a new plan for the crisis. The small habit was already there.',
+  art: ['scene', { k: 'g11-window' }],
+  fact: { s: 'Scripture · Daniel 6:10', i: [2] },
+  dx: 'When the king signed a law that anyone who prayed to any god but the king for thirty days would be thrown to the lions, Daniel went home. His windows were open toward Jerusalem, and he knelt three times a day, and prayed, and gave thanks before his God, **as he did aforetime**. He did not rise to the crisis with something new and dramatic. He kept doing the small thing he had always done. When the hard day came, the habit carried him.',
+};
+const G11_REFLECT: StoryPart = {
+  long: 1,
+  n: '15',
+  h: 'minutes of looking back each day, and trainees scored about 23% higher.',
+  p: 'New workers at a call center in India spent **the last 15 minutes of each day** writing what they had learned. Those who kept working instead did worse on the final test.',
+  art: ['scene', { k: 'g11-notes' }],
+  fact: { s: 'Field experiment · Di Stefano, Gino, Pisano & Staats', i: [3] },
+  dx: 'At a large call center in Bangalore, new workers were being trained for weeks. Researchers split them into groups. One group spent **the last 15 minutes of each day** writing about what they had learned that day. Another group spent those same 15 minutes working. On the final test, the group that stopped to look back scored about 23% higher. Fifteen small minutes, each day, made the rest of the day count for more.',
+};
+const G11_END: StoryPart = {
+  h: 'So do not wait for the one big night. Wash seven times.',
+  p: 'A short honest prayer at the start of the day, and a few honest lines at the end. **Small, daily, and picked up again** when you miss one.',
+  art: ['scene', { k: 'g11-days' }],
+  dx: 'Many people wait for the one great spiritual moment that ends the habit for good: a long fast, a night of prayer, a moment that settles it. Those moments are real, and they fade by the next ordinary day. What carries a person is the small thing done again and again. A short honest prayer when the day starts. A few honest lines when it ends, about what held and what did not. **Small, daily, and picked up again** when you miss one, with no count to protect. Naaman almost went home because the cure was too small. Do not let that be the reason.',
+};
+
+/* the plain voice: fifteen minutes at the end of each day */
+const G11P_CENTER: StoryPart = {
+  h: 'At a call center in Bangalore, new workers spent weeks in training.',
+  p: 'Researchers split them into groups. One group got **fifteen minutes less work** each day, and spent them doing something else.',
+  art: ['scene', { k: 'g11-center' }],
+  fact: { s: 'Field experiment · Di Stefano, Gino, Pisano & Staats', i: [0] },
+  dx: 'Wipro, a large company in Bangalore, trained its new technical support workers for weeks before they took real calls. A team of researchers asked a question that sounds simple: what makes experience turn into learning? So they split the trainees into groups. Most kept working through the whole training day. One group got **fifteen minutes less work** each day. In those minutes, they did something that looked, to a busy manager, like doing nothing.',
+};
+const G11P_WROTE: StoryPart = {
+  h: 'In those fifteen minutes, they wrote down what they had learned that day.',
+  p: 'Just a few honest lines, **at the end of each day**: what went well, what was hard, what they would do differently. The others kept working.',
+  art: ['scene', { k: 'g11-notes' }],
+  dx: 'At the end of each training day, the reflection group stopped and wrote. A few honest lines **at the end of each day**: the key lessons, what had gone well, what had been hard, what they would do differently tomorrow. Nothing dramatic, no long retreat. The other trainees spent those same fifteen minutes doing more training. By every ordinary measure, the reflecting group was getting less practice.',
+};
+const G11P_GUESS: StoryPart = {
+  k: 'guess',
+  h: 'On the final test, which group did better?',
+  o: [
+    ['The ones who worked fifteen more minutes', 'More practice seems like it should win. It did not.'],
+    ['The ones who stopped to write', 'Yes. The next card shows by how much.'],
+    ['Neither, it made no difference', 'A fair guess for fifteen minutes. It did make one.'],
+  ],
+  a: 1,
+};
+const G11P_HIGHER: StoryPart = {
+  h: 'The ones who stopped to look back scored about 23% higher.',
+  p: 'Less practice, and more learning. **Fifteen small minutes a day** made the rest of the day count for more.',
+  art: ['scene', { k: 'g11-days' }],
+  fact: { s: 'Field experiment · Di Stefano, Gino, Pisano & Staats', i: [0] },
+  dx: 'On the final test at the end of training, the group that had stopped each day to write scored about 23% higher than the group that had kept working. **Fifteen small minutes a day**, a short honest look back, turned the day’s experience into something the trainees kept.',
+};
+const G11P_SHARE: StoryPart = {
+  long: 1,
+  h: 'A third group wrote, and then explained their notes to a fellow trainee.',
+  p: 'They did about as well as the writers, not much better. **The writing itself did most of the work**: a few honest minutes, alone with the day.',
+  art: ['scene', { k: 'g11-center' }],
+  fact: { s: 'Field experiment · Di Stefano, Gino, Pisano & Staats', i: [0] },
+  dx: 'The researchers ran one more group. These trainees wrote their reflections, then spent five more minutes explaining their notes to another trainee. They scored about 25% higher than the group that kept working, close to the writers, and not reliably better. Talking it over did not add much. **The writing itself did most of the work**: a few honest minutes, alone with the day, asking what it had taught. That is a practice anyone can keep, in any faith, with a pen or in a prayer.',
+};
+const G11P_GOD: StoryPart = {
+  h: 'Big moments fade. Small daily things build.',
+  p: 'Many faiths are built on daily prayer, at set times, for this reason. **A few honest minutes, every day,** carry you further than one great night.',
+  art: ['scene', { k: 'g11-window' }],
+  dx: 'Many people wait for one great spiritual moment that ends the habit for good. Those moments come, and they fade by the next ordinary day. Many faiths are built instead on small daily prayer, at the same times, morning and evening, year after year. The trainees found the same shape in their work. **A few honest minutes, every day,** a short prayer at the start and an honest look back at the end, carry you further than one great night.',
+};
+const G11P_END: StoryPart = {
+  ...G11_END,
+  h: 'So do not wait for the one big night. Keep the small minutes.',
+  dx: 'A short honest prayer when the day starts. A few honest lines when it ends, about what held and what did not, the way those trainees wrote. **Small, daily, and picked up again** when you miss one, with no count to protect. Missing a day does not undo the others. Pick it up the next day, and keep going. The great change most people hope for is built out of small minutes like these.',
+};
+
+/* ---------- g12, Comfort you can give (step 12, Give it away) ---------- */
+
+const G12_TOMBS: StoryPart = {
+  h: 'Across the lake, a man lived among the tombs.',
+  p: 'No one could hold him, not even with chains. Night and day he **cried out in the hills**, alone. The town had given up on him.',
+  art: ['scene', { k: 'g12-tombs' }],
+  fact: { s: 'Scripture · Mark 5:1-20', i: [0] },
+  dx: 'When Jesus crossed the Sea of Galilee to the country of the Gadarenes, a man came running from the tombs to meet Him. He lived there, among the graves cut into the hillside. The people had tried to bind him with chains, again and again, and he had broken every one. No one could tame him. Always, night and day, he was in the mountains and in the tombs, **crying out**, alone. Everyone in that region knew him. He was the one they had given up on.',
+};
+const G12_HEALED: StoryPart = {
+  h: 'Jesus healed him, and the town came out to see.',
+  p: 'They found him **sitting, and clothed, and in his right mind**. The man they had chained was calm, sitting at Jesus’ feet.',
+  art: ['scene', { k: 'g12-sitting' }],
+  dx: 'Jesus spoke to what tormented him and set him free. The men who kept pigs nearby ran into the town and told everyone, and people came out to see. They found the man **sitting, and clothed, and in his right mind**. The one they had chained, who had cried in the hills for years, was sitting quietly. It frightened them more than he ever had. They asked Jesus to leave.',
+};
+const G12_BEGGED: StoryPart = {
+  h: 'As Jesus got into the boat, the man begged to come with Him.',
+  p: 'Of course he did. Everyone there knew who he had been. **Take me with you**, away from all of it, somewhere I can start over.',
+  art: ['scene', { k: 'g12-boat' }],
+  dx: 'As Jesus stepped into the boat to leave, the man who had been healed prayed Him that he might be with Him. Of course he did. The town knew everything he had been. They had seen him at his worst. **Take me with you**, he was saying, away from these hills, somewhere no one knows my story. It is what most of us want after something like this: to bury that part of our lives and start over somewhere free of it.',
+};
+const G12_ASK: StoryPart = {
+  k: 'ask',
+  h: 'If this part of your life were healed, what would you want to do with it?',
+  o: [
+    ['Bury it, and never speak of it', 'That is what the man wanted too. Look at Jesus’ answer.'],
+    ['Help someone, if I could do it safely', 'Hold on to that. You can help without telling everything.'],
+    ['I do not think it could help anyone', 'That is how shame sees it. The next card sees it differently.'],
+    ['I do not know yet', 'That is honest. See how it looks by the end.'],
+  ],
+};
+const G12_HOME: StoryPart = {
+  h: 'Jesus told him no. Go home, and tell them.',
+  p: '**Go home to thy friends**, He said, and tell them how great things the Lord hath done for thee, and hath had compassion on thee.',
+  art: ['scene', { k: 'g12-home' }],
+  dx: 'Jesus suffered him not, Mark says. He did not let him come. Instead He said: **go home to thy friends**, and tell them how great things the Lord hath done for thee, and hath had compassion on thee. Not go far away, where nobody knows. Go home, to the very people who knew the worst of you. The thing he wanted to leave behind was the one thing only he could carry to them: the story of a man no one could help, who was helped.',
+};
+const G12_DECAPOLIS: StoryPart = {
+  h: 'He went, and told it through ten cities.',
+  p: 'He told it all over the Decapolis, the ten towns of that region. **And all men did marvel.** The man the hills had heard crying became the one they heard hope from.',
+  art: ['scene', { k: 'g12-towns' }],
+  dx: 'And he departed, and began to publish in Decapolis how great things Jesus had done for him, Mark says, and all men did marvel. The Decapolis was ten towns on that side of the lake. The man who had been a warning to all of them became a messenger to all of them. Nobody could have told that story the way he could, because nobody else had lived it. **And all men did marvel.** When Jesus came back to that region later, crowds were waiting for Him.',
+};
+const G12_COMFORT: StoryPart = {
+  long: 1,
+  h: 'Paul wrote that God comforts us so we can comfort others with the same comfort.',
+  p: 'He **comforteth us in all our tribulation, that we may be able to comfort them** which are in any trouble, with the comfort we ourselves were given.',
+  art: ['scene', { k: 'g12-pass' }],
+  fact: { s: 'Scripture · 2 Corinthians 1:3-4', i: [1] },
+  dx: 'Paul called God the Father of mercies and the God of all comfort, who **comforteth us in all our tribulation, that we may be able to comfort them** which are in any trouble, by the comfort wherewith we ourselves are comforted of God. The comfort is not meant to stop with you. What you were given in the hardest part of your life is exactly what someone in their hardest part needs, and you are the one who can recognize them.',
+};
+const G12_MOSIAH: StoryPart = {
+  long: 1,
+  h: 'At the waters of Mormon, people promised to comfort those who need comfort.',
+  p: 'Those who came to be baptized were willing to **bear one another’s burdens**, to mourn with those that mourn, and to comfort those that stand in need of comfort.',
+  art: ['scene', { k: 'g12-waters' }],
+  fact: { s: 'Scripture · Mosiah 18:8-9', i: [2] },
+  dx: 'At the waters of Mormon, Alma taught the people who wanted to follow the Lord what that would mean. They would be willing to **bear one another’s burdens**, that they may be light. Willing to mourn with those that mourn, and to comfort those that stand in need of comfort. It is part of the covenant made at baptism. And the hard years you have lived through are what make you able to keep it, because you know what it is to need comfort.',
+};
+const G12_HODGES: StoryPart = {
+  long: 1,
+  h: 'People feel more understood by someone they know has been there.',
+  p: 'New mothers felt more understood when they knew the other woman **had been through it too**. Some comfort can only come from someone who has lived it.',
+  art: ['scene', { k: 'g12-two' }],
+  fact: { s: 'Study · 60 women · Hodges and colleagues, 2010', i: [3] },
+  dx: 'Researchers had women watch videos of new mothers talking about their first weeks with a baby. Some of the watchers had never been pregnant, some were expecting their first child, and some had just had their first. The women who had been through it felt more concern for the new mothers. And the mothers felt more understood when they knew the other woman **had been through it too**. Knowing someone has lived it is part of what makes their comfort land.',
+};
+const G12_END: StoryPart = {
+  h: 'So the part of your life you most want to bury may be the part you give.',
+  p: 'You do not have to tell everything, or wait until you are fully free. **One true thing that helped you**, said to one person who is struggling, is comfort passed on.',
+  art: ['scene', { k: 'g12-pass' }],
+  dx: 'Shame says to bury this part of your life for good, to leave and start over where nobody knows. The man in the tombs wanted that too, and Jesus sent him home with a story. You do not have to tell your whole history, and you do not have to wait until you are finished. Think of one person carrying something heavy. **One true thing that helped you**, a sentence, a hand, I know how hard this is, is comfort passed on. What you went through is what you give.',
+};
+
+/* the plain voice: what helping did for the helpers */
+const G12P_MATCH: StoryPart = {
+  h: 'In the 1990s, a large study followed more than 1,500 people treated for drinking.',
+  p: 'Years later, researchers went back to the records with one question: did the people **who helped others** do better themselves?',
+  art: ['scene', { k: 'g12-group' }],
+  fact: { s: 'Study · Pagano and colleagues, 2004', i: [0] },
+  dx: 'Project MATCH was one of the largest studies of treatment for drinking ever run, following people for years after treatment. Many of them also went to Alcoholics Anonymous, where helping other people is part of the program: sponsoring a newcomer, sharing what worked. Later, Maria Pagano and her colleagues went back through the records with a question nobody had asked closely. Did the people **who helped others** do better themselves?',
+};
+const G12P_GUESS: StoryPart = {
+  k: 'guess',
+  h: 'In the year after treatment, did helping others make a difference to the helpers?',
+  o: [
+    ['No, helping others is a distraction', 'It can seem that way. The numbers said otherwise.'],
+    ['Yes, the helpers stayed sober more often', 'Yes. The next card shows how much more.'],
+  ],
+  a: 1,
+};
+const G12P_FOUND: StoryPart = {
+  n: '40',
+  h: 'in 100 of the helpers did not drink at all that year. Of the others, 22.',
+  p: 'Helping someone else **went with nearly twice the chance** of staying free. What they had been through became what they gave, and it held them up too.',
+  art: ['scene', { k: 'g12-hands' }],
+  fact: { s: 'Study · Pagano and colleagues, 2004', i: [0] },
+  dx: 'Among the people who were helping others, 40 in 100 did not drink at all in the year after treatment. Among those who were not helping, 22 in 100. Helping **went with nearly twice the chance** of staying free. The helpers were a small group, a little older on average, and a study like this shows what goes together, not proof of what causes what. The study was about drinking, not every habit. But the pattern holds a hope worth keeping: giving away what you learned may be part of how you keep it.',
+};
+const G12P_HODGES: StoryPart = { ...G12_HODGES, fact: { s: 'Study · 60 women · Hodges and colleagues, 2010', i: [1] } };
+const G12P_GOD: StoryPart = {
+  h: 'Comfort received is meant to be passed on.',
+  p: 'For many believers, God comforts a person so they can **comfort someone else** with the same comfort. What you would hide is also what lets you understand.',
+  art: ['scene', { k: 'g12-pass' }],
+  dx: 'The helpers in that study were not experts. They had simply been through it, and they passed on what helped. Many faiths teach the same: God comforts a person in their trouble so they can **comfort someone else** in theirs. Shame says to bury this part of your life. But you know the pull, the shame and the way back. Someone near you needs exactly that.',
+};
+const G12P_END: StoryPart = {
+  ...G12_END,
+  dx: 'Shame says to bury this part of your life for good. But the people in that study who passed on what they had learned were held up by it themselves. You do not have to tell your whole history, and you do not have to wait until you are finished. Think of one person carrying something heavy. **One true thing that helped you**, a sentence, a hand, I know how hard this is, is comfort passed on. What you went through is what you give.',
+};
+
 export const STORIES_G: Record<string, Story> = {
   g1: {
     id: 'g1',
@@ -1658,6 +2048,196 @@ export const STORIES_G: Record<string, Story> = {
         scope:
           'Bednar, a church leader, told the truck story about a friend in a talk in 2014. The goals study followed students, not people quitting a habit, and it shows that goals only about stopping wear people down. Many faiths teach that a hunger for more points toward God, and Daybook does not speak for any one of them.',
         src: [S.bednar14, S.elliot],
+      },
+    },
+  },
+  g10: {
+    id: 'g10',
+    form: 'tale',
+    title: 'First, make peace',
+    tag: 'After twenty years, Jacob walked toward the brother he had wronged.',
+    ic: 'chat',
+    ask: 'If God has forgiven me, do I still need to make it right with people?',
+    key: 'Making peace with someone you hurt is part of coming to God. Walk out ahead, with care.',
+    np: 'One person I could make one thing right with',
+    tell: [G10_STOLE, G10_COMING, G10_ASK, G10_GIFTS, G10_BOW, G10_RAN, G10_FACE, G10_ALTAR, G10_ALMA, G10_FEHR, G10_END],
+    mine: { h: 'Each day that holds is part of the repair.', k: 'clean30' },
+    today: {
+      h: 'Make one repair this week, with care.',
+      l: ['Pick one person and one true thing', 'Say sorry plainly, and ask for nothing', 'Skip any repair that would hurt them'],
+    },
+    you: {
+      h: 'Who is the person you would most like to walk toward, someday?',
+      o: [
+        ['Someone I lied to, to cover it', 'Then one true sorry about the lie may be the first step.'],
+        ['Someone I was not there for', 'Then showing up, in small ways, is part of the repair.'],
+        ['Someone I am not ready to face', 'That is honest. You can pray about the walk before you take it.'],
+        ['I am not sure yet', 'Then ask God to show you one name, and wait for it.'],
+      ],
+    },
+    close: 'Father, show me one person I can make peace with, and give me courage.',
+    scope:
+      'Jacob and Esau are in Genesis, and the gift left at the altar is in Matthew. Mosiah 27 is in the Book of Mormon. The forgiveness review pooled 175 studies between people in many settings, not this habit, and found a sincere apology among the strongest things that go with being forgiven. Together they show repair as part of coming back to God.',
+    src: [S.gen27, S.matt523, S.mosiah27, S.fehr],
+    vo: {
+      christian: {
+        tell: [
+          G10_STOLE,
+          G10_COMING,
+          G10_ASK,
+          G10_GIFTS,
+          G10_BOW,
+          G10_RAN,
+          G10_FACE,
+          G10_ALTAR,
+          { ...G10_FEHR, fact: { s: 'Meta-analysis · 175 studies · Fehr, Gelfand & Nag, 2010', i: [2] } },
+          G10_END,
+        ],
+        scope:
+          'Jacob and Esau are in Genesis, and the gift left at the altar is in Matthew. The forgiveness review pooled 175 studies between people in many settings, not this habit, and found a sincere apology among the strongest things that go with being forgiven. Together they show repair as part of coming back to God.',
+        src: [S.gen27, S.matt523, S.fehr],
+      },
+      plain: {
+        form: 'works',
+        tag: 'The hospitals that started saying sorry.',
+        tell: [
+          G10P_SILENT,
+          G10P_TRIED,
+          G10P_GUESS,
+          G10P_FELL,
+          { ...G10_FEHR, fact: { s: 'Meta-analysis · 175 studies · Fehr, Gelfand & Nag, 2010', i: [1] } },
+          G10P_GOD,
+          G10P_END,
+        ],
+        key: 'Making peace with someone you hurt is part of coming to God. Go, with care.',
+        close: 'God, show me one person I can make peace with, and give me courage.',
+        scope:
+          'The hospital study looked at one health system before and after it began telling patients the truth, and it cannot prove the apologies caused the change. The forgiveness review pooled 175 studies between people, not this habit. Many faiths teach that making peace with people is part of coming to God, and Daybook does not speak for any one of them.',
+        src: [S.kachalia, S.fehr],
+      },
+    },
+  },
+
+  g11: {
+    id: 'g11',
+    form: 'tale',
+    title: 'Small and simple',
+    tag: 'Naaman wanted something great. He was told to wash, seven times.',
+    ic: 'sun',
+    ask: 'Do I need a big spiritual moment to change?',
+    key: 'Change comes by small things done daily. Wash seven times.',
+    np: 'The few minutes I will keep at the start and end of each day',
+    tell: [G11_NAAMAN, G11_WASH, G11_WROTH, G11_ASK, G11_SERVANTS, G11_SEVEN, G11_ALMA, G11_DANIEL, G11_REFLECT, G11_END],
+    mine: { h: 'The small things you have done already add up.', k: 'acted' },
+    today: {
+      h: 'Keep it small, every day, with no count to protect.',
+      l: ['At the start of the day: one honest prayer', 'At the end: a few lines on what held', 'Miss one? Pick it up the next day'],
+    },
+    you: {
+      h: 'What is your great thing: the big change you keep waiting for?',
+      o: [
+        ['One night of prayer that settles it', 'Those nights are real. Seven small washes carry further.'],
+        ['A clean break, a fresh start date', 'Fresh starts help. Small daily things are what keep them.'],
+        ['Feeling different, finally', 'That often comes after the small things, not before.'],
+        ['I am not waiting for one', 'Then the small daily things are already yours. Keep them.'],
+      ],
+    },
+    close: 'Father, I will come to you again tomorrow, in small and simple ways.',
+    scope:
+      'Naaman is in 2 Kings and Daniel in the book of Daniel. Alma 37 is in the Book of Mormon. The reflection study followed new workers in training, not people quitting a habit, and it shows that a short look back each day helped people learn more from the day. Together they point one sure way: great things are built from small, daily ones.',
+    src: [S.kings5, S.alma37, S.dan6, S.distefano],
+    vo: {
+      christian: {
+        tell: [
+          G11_NAAMAN,
+          G11_WASH,
+          G11_WROTH,
+          G11_ASK,
+          G11_SERVANTS,
+          G11_SEVEN,
+          { ...G11_DANIEL, fact: { s: 'Scripture · Daniel 6:10', i: [1] } },
+          { ...G11_REFLECT, fact: { s: 'Field experiment · Di Stefano, Gino, Pisano & Staats', i: [2] } },
+          G11_END,
+        ],
+        scope:
+          'Naaman is in 2 Kings and Daniel in the book of Daniel. The reflection study followed new workers in training, not people quitting a habit, and it shows that a short look back each day helped people learn more from the day. Together they point one sure way: great things are built from small, daily ones.',
+        src: [S.kings5, S.dan6, S.distefano],
+      },
+      plain: {
+        form: 'study',
+        tag: 'Some trainees stopped working fifteen minutes early each day.',
+        key: 'Change comes by small things done daily. Keep the small minutes.',
+        tell: [G11P_CENTER, G11P_WROTE, G11P_GUESS, G11P_HIGHER, G11P_SHARE, G11P_GOD, G11P_END],
+        you: {
+          h: 'What is the big change you keep waiting for?',
+          o: [
+            ['One great moment that settles it', 'Those moments are real. Small daily minutes carry further.'],
+            ['A fresh start date', 'Fresh starts help. Small daily things are what keep them.'],
+            ['Feeling different, finally', 'That often comes after the small things, not before.'],
+            ['I am not waiting for one', 'Then the small daily things are already yours. Keep them.'],
+          ],
+        },
+        close: 'God, I will come to you again tomorrow, in a small way.',
+        scope:
+          'The reflection study followed new workers in training, not people quitting a habit, and it shows that a short look back each day helped people learn more from the day. Many faiths are built on small daily prayer, and Daybook does not speak for any one of them.',
+        src: [S.distefano],
+      },
+    },
+  },
+
+  g12: {
+    id: 'g12',
+    form: 'tale',
+    title: 'Comfort you can give',
+    tag: 'He begged to leave with Jesus. He was sent home with a story.',
+    ic: 'life',
+    ask: 'Can anything good come out of what I have been through?',
+    key: 'The comfort God gave you is the comfort someone else needs. What you went through becomes what you give.',
+    np: 'One person I could comfort, and one true thing I could tell them',
+    tell: [G12_TOMBS, G12_HEALED, G12_BEGGED, G12_ASK, G12_HOME, G12_DECAPOLIS, G12_COMFORT, G12_MOSIAH, G12_HODGES, G12_END],
+    mine: { h: 'Every comeback is comfort you can pass on.', k: 'back' },
+    today: {
+      h: 'Give one person the comfort you were given.',
+      l: ['Think of one person carrying something heavy', 'Tell them one true thing that helped you', 'You do not have to tell your whole story'],
+    },
+    you: {
+      h: 'Who near you might need what you have learned?',
+      o: [
+        ['A friend who seems worn down', 'Then one true sentence from you may land like nothing else.'],
+        ['Someone in my family', 'Then start small. A kind word counts.'],
+        ['Someone I do not know yet', 'Then watch for them. You will know the look.'],
+        ['No one I can think of', 'That is fine. The day you need it, you will know.'],
+      ],
+    },
+    close: 'Father, thank you for the comfort you gave me. Help me pass it on.',
+    scope:
+      'The man among the tombs is in Mark, and Paul wrote of passing on comfort in Second Corinthians. Mosiah 18 is in the Book of Mormon. The empathy study was small and about new mothers, not this habit, and it shows how much it means to know someone has been there. Together they teach that comfort received is meant to be passed on.',
+    src: [S.mark5, S.cor1, S.mosiah18, S.hodges],
+    vo: {
+      christian: {
+        tell: [
+          G12_TOMBS,
+          G12_HEALED,
+          G12_BEGGED,
+          G12_ASK,
+          G12_HOME,
+          G12_DECAPOLIS,
+          G12_COMFORT,
+          { ...G12_HODGES, fact: { s: 'Study · 60 women · Hodges and colleagues, 2010', i: [2] } },
+          G12_END,
+        ],
+        scope:
+          'The man among the tombs is in Mark, and Paul wrote of passing on comfort in Second Corinthians. The empathy study was small and about new mothers, not this habit, and it shows how much it means to know someone has been there. Together they teach that comfort received is meant to be passed on.',
+        src: [S.mark5, S.cor1, S.hodges],
+      },
+      plain: {
+        form: 'study',
+        tag: 'Researchers asked whether helping others helped the helpers.',
+        tell: [G12P_MATCH, G12P_GUESS, G12P_FOUND, G12P_HODGES, G12P_GOD, G12P_END],
+        close: 'God, thank you for the comfort you gave me. Help me pass it on.',
+        scope:
+          'The helping study followed people treated for drinking, and it shows what went together, not proof of cause. The empathy study was small and about new mothers. Many faiths teach that comfort received is meant to be passed on, and Daybook does not speak for any one of them.',
+        src: [S.pagano, S.hodges],
       },
     },
   },

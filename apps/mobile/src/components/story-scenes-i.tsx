@@ -8,6 +8,9 @@ import { SCENES_I3 } from './story-scenes-i3';
 import { SCENES_I4 } from './story-scenes-i4';
 import { SCENES_I5 } from './story-scenes-i5';
 import { SCENES_I6 } from './story-scenes-i6';
+import { SCENES_I7 } from './story-scenes-i7';
+import { SCENES_I8 } from './story-scenes-i8';
+import { SCENES_I9 } from './story-scenes-i9';
 
 export const SCENES_I: Record<string, ComponentType<{ k: Ink }>> = {
   ...SCENES_I1,
@@ -16,4 +19,7 @@ export const SCENES_I: Record<string, ComponentType<{ k: Ink }>> = {
   ...SCENES_I4,
   ...SCENES_I5,
   ...SCENES_I6,
+  ...SCENES_I7,
+  ...SCENES_I8,
+  ...SCENES_I9,
 };

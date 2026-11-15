@@ -2,8 +2,8 @@
    who lived among the tombs at dusk, the same man healed and sitting at Jesus' feet while the town arrives, the boat and his asking, Jesus sending him home, the
    ten towns he told it in, then the same truth in our own day: a light handed from one person to another, people at the waters of Mormon, two new mothers, a circle
    of chairs, and two hands clasped.
-   Jesus always wears a white robe with a red sash. The man from the tombs has the same face and the same dark hair and short beard in every scene: first thin, in a
-   ragged gray-brown robe tied with a rope, and after he is healed a whole plain cream robe with a tan sash. Every figure carries a dark outline so it reads on a dark
+   Jesus always wears a white robe with a red sash. The man from the tombs has the same face, short dark curly hair and short beard in every scene: first thin, in a
+   ragged gray-brown robe tied with a rope, and after he is healed a whole warm olive-green robe with a tan sash (short dark curly hair and a short dark beard throughout). Every figure carries a dark outline so it reads on a dark
    card and a cream one. */
 import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
 import { Easing } from 'react-native';
@@ -31,14 +31,14 @@ const WHITE = '#F8F4EA';
 const RED = '#C23A3A';
 const WATER = '#7FB4D0';
 const WATER_L = '#B9DDEB';
-const FOLK = ['#7A4FA0', '#5C7C8A', '#8A5A2B', '#C27A8A', '#7A8A4A', '#4F6FBF', '#A06A3A', '#6A5A8A'];
+const FOLK = ['#7A4FA0', '#5C7C8A', '#8A5A2B', '#C27A8A', '#9A4A6A', '#4F6FBF', '#A06A3A', '#6A5A8A'];
 const FOLK_HAIR = ['#3A2A20', '#2A1E18', '#6A4A30', '#8A8A8E', '#4A3426'];
 
 /* the man from the tombs: one face, one head of dark hair and a short beard, whatever he wears */
-const MAN_HAIR = '#4A3426';
+const MAN_HAIR = '#2A1A12';
 const RAG = '#8F7F6C';
 const RAG_D = '#6A5C4C';
-const MAN_ROBE = '#F0E2BE';
+const MAN_ROBE = '#7C8A3E';
 const MAN_SASH = '#C9A66B';
 
 /* a value that runs 0 to 1 once and stays at 1 for people who asked for less motion */
@@ -121,6 +121,7 @@ function Head({
   hair,
   beard = false,
   longHair = false,
+  curly = false,
   band,
   glance = 0,
 }: {
@@ -128,6 +129,7 @@ function Head({
   hair: string;
   beard?: boolean;
   longHair?: boolean;
+  curly?: boolean;
   band?: string;
   glance?: number;
 }) {
@@ -144,6 +146,15 @@ function Head({
       ) : (
         <Path d="M-8.6 -50 Q-8.4 -59 0 -59 Q8.6 -58.6 8.6 -50 Q4 -54 0 -53.5 Q-5 -54 -8.6 -50 Z" fill={hair} />
       )}
+      {curly ? (
+        <G fill={hair} stroke={BEAR_LINE} strokeWidth={sw * 0.5}>
+          <Circle cx={-6.6} cy={-54} r={3.4} />
+          <Circle cx={-2.6} cy={-57.6} r={3.6} />
+          <Circle cx={2.2} cy={-58} r={3.6} />
+          <Circle cx={6.4} cy={-55} r={3.4} />
+          <Circle cx={-8} cy={-49.5} r={2.6} />
+        </G>
+      ) : null}
       {band ? <Path d="M-8.3 -53 Q0 -57.5 8.3 -53" stroke={band} strokeWidth={2.6} fill="none" strokeLinecap="round" /> : null}
       {beard ? <Path d="M-6.4 -46 Q0 -36 6.4 -46 Q4.6 -42 0 -40.6 Q-4.6 -42 -6.4 -46 Z" fill={hair} stroke={BEAR_LINE} strokeWidth={sw * 0.6} /> : null}
       <Circle cx={4} cy={-48 + glance} r={1.5} fill={BEAR_LINE} />
@@ -164,6 +175,7 @@ function Robed({
   hair = HAIR,
   beard = false,
   longHair = false,
+  curly = false,
   band,
   arms = ARMS_DOWN,
   tilt = 0,
@@ -182,6 +194,7 @@ function Robed({
   hair?: string;
   beard?: boolean;
   longHair?: boolean;
+  curly?: boolean;
   band?: string;
   arms?: Arm[];
   tilt?: number;
@@ -213,7 +226,7 @@ function Robed({
       ))}
       {children}
       <G transform={`rotate(${tilt} 0 -42)`}>
-        <Head sw={sw} hair={hair} beard={beard} longHair={longHair} band={band} glance={glance} />
+        <Head sw={sw} hair={hair} beard={beard} longHair={longHair} curly={curly} band={band} glance={glance} />
       </G>
     </G>
   );
@@ -230,6 +243,7 @@ function Seated({
   hair = HAIR,
   beard = false,
   longHair = false,
+  curly = false,
   arms = [[8, 14, -12]],
   tilt = 0,
   thin = 1,
@@ -245,6 +259,7 @@ function Seated({
   hair?: string;
   beard?: boolean;
   longHair?: boolean;
+  curly?: boolean;
   arms?: Arm[];
   tilt?: number;
   thin?: number;
@@ -273,7 +288,7 @@ function Seated({
       ))}
       {children}
       <G transform={`translate(0 -3) rotate(${tilt} 0 -42)`}>
-        <Head sw={sw} hair={hair} beard={beard} longHair={longHair} />
+        <Head sw={sw} hair={hair} beard={beard} longHair={longHair} curly={curly} />
       </G>
     </G>
   );
@@ -299,7 +314,7 @@ function Jesus({
   return <Robed x={x} y={y} s={s} flip={flip} rot={rot} tilt={tilt} arms={arms} robe={WHITE} sash={RED} hair="#6B4A2E" beard longHair />;
 }
 
-/* the man from the tombs: ragged and thin at first (a rope for a belt, a few patches), later a whole cream robe */
+/* the man from the tombs: ragged and thin at first (a rope for a belt, a few patches), later a whole olive-green robe */
 function Man({
   x,
   y,
@@ -332,7 +347,7 @@ function Man({
       sash={healed ? MAN_SASH : RAG_D}
       hair={MAN_HAIR}
       beard
-      longHair
+      curly
       body={healed ? BODY : BODY_RAG}
       thin={healed ? 1 : 0.86}>
       {healed ? null : (
@@ -373,7 +388,7 @@ function SeatedMan({
       sash={healed ? MAN_SASH : RAG_D}
       hair={MAN_HAIR}
       beard
-      longHair
+      curly
       thin={healed ? 1 : 0.86}
       ragged={!healed}>
       {healed ? null : (
@@ -539,7 +554,7 @@ function Sitting({ k }: { k: Ink }) {
   const run = useRun(300, 1800);
   const arrive = (1 - run) * 14;
   return (
-    <Frame label="In daylight on the hillside, the man from the tombs, now in a whole cream robe, sits calmly at the feet of Jesus, who stands in white with a red sash and rests a hand toward him. Townspeople arrive at the right edge, their hands raised in surprise">
+    <Frame label="In daylight on the hillside, the man from the tombs, now in a whole olive-green robe with short dark curly hair, sits calmly on the ground a little way in front of Jesus, who stands behind him in white with a red sash and rests a hand toward him. Townspeople arrive at the right edge, their hands raised in surprise">
       <Sky />
       <Sun x={44} y={36} />
       <Path d="M10 110 Q60 94 112 105 Q170 88 230 103 Q262 98 290 106 L290 140 L10 140 Z" fill="#B3AB78" />
@@ -555,8 +570,8 @@ function Sitting({ k }: { k: Ink }) {
       <Folk x={236 + arrive} y={160} s={0.95} i={1} flip arms={AMAZED} />
       <Folk x={264 + arrive} y={162} s={0.95} i={4} flip arms={ONE_UP} />
       <SeatedMan
-        x={112}
-        y={156}
+        x={116}
+        y={162}
         s={1.2}
         tilt={-16}
         arms={[
@@ -565,9 +580,9 @@ function Sitting({ k }: { k: Ink }) {
         ]}
       />
       <Jesus
-        x={184}
-        y={152}
-        s={1.3}
+        x={194}
+        y={142}
+        s={1.15}
         flip
         tilt={6}
         arms={[
@@ -585,7 +600,7 @@ function Boat({ k }: { k: Ink }) {
   const run = useRun(300, 2000);
   const bob = Math.sin(run * Math.PI * 2) * 1.4;
   return (
-    <Frame label="At the lake shore, Jesus in white with a red sash steps into a boat. The man in the cream robe stands on the sand with both arms reaching toward Him, asking to come along">
+    <Frame label="At the lake shore, Jesus in white with a red sash steps into a boat. The man in the olive-green robe stands on the sand with both arms reaching toward Him, asking to come along">
       <Sky />
       <Sun x={44} y={36} />
       <Path d="M10 108 Q60 92 112 103 Q170 86 230 101 Q262 96 290 104 L290 130 L10 130 Z" fill="#B3AB78" />
@@ -661,7 +676,7 @@ function Home({ k }: { k: Ink }) {
     [273, 80, 1.3],
   ];
   return (
-    <Frame label="Jesus in white with a red sash points the way home. The man in the cream robe turns to go along a path that climbs toward a town of small houses on the hills ahead, his face lifted, hopeful, in warm morning light">
+    <Frame label="Jesus in white with a red sash points the way home. The man in the olive-green robe turns to go along a path that climbs toward a town of small houses on the hills ahead, his face lifted, hopeful, in warm morning light">
       <Sky />
       <Circle cx={196} cy={40} r={22} fill={GOLD} opacity={0.35} />
       <Circle cx={196} cy={40} r={13} fill={GOLD} />
@@ -736,7 +751,7 @@ function Towns({ k }: { k: Ink }) {
   const nearTowns = [2, 3, 4, 5];
   const up = (1 - run) * 6;
   return (
-    <Frame label="In a town square, the man in the cream robe stands on a low stone step telling his story with open hands, and small crowds on both sides listen amazed. On the hills all around, ten small towns are dotted along the ridges">
+    <Frame label="In a town square, the man in the olive-green robe stands on a low stone step telling his story with open hands, and small crowds on both sides listen amazed. On the hills all around, ten small towns are dotted along the ridges">
       <Sky />
       <Sun x={150} y={30} />
       <Path d={`${smooth(back)} L290 132 L10 132 Z`} fill="#A9B574" />

@@ -629,28 +629,53 @@ export function obYearMarks(n: number): boolean[] {
   for (const d of order.slice(0, Math.max(0, Math.min(365, n)))) out[d] = true;
   return out;
 }
-/** what Day 90 looks like, said back from "who are you doing this for" (the first pick) */
-const OB_FOR_GAIN: Record<string, string> = {
-  love: 'Day 90: more present with the people you love.',
-  partner: 'Day 90: ready for a real, honest relationship.',
-  faith: 'Day 90: living by your faith, day after day.',
-  focus: 'Day 90: your time and focus, yours again.',
-  health: 'Day 90: clear mornings and steady energy.',
-  me: 'Day 90: someone you are proud to be.',
-};
-/** the flame as it grows at a steady pace (about 45 points a day, levels.ts): tonight, a week, a month, day 90. The level each
-    stop shows is the one that pace reaches, so the picture is the ladder itself, not a promise. The early stops say what the
-    person will have; the last one says it in their own reason, quietly (no big goals pushed early, CLAUDE.md). */
-export function obGrow(a: SetupAnswers): { at: string; level: number; line: string }[] {
-  const pick = (Array.isArray(a.for) ? (a.for as string[]) : []).find((id) => OB_FOR_GAIN[id]);
-  const lv = (d: number) => levelOf(d * 45).n;
-  return [
-    { at: 'Tonight', level: 1, line: 'Tonight: your plan is ready before the hard hour.' },
-    { at: 'Week 1', level: lv(7), line: 'Week 1: you see your pattern, when it pulls and what gets you through.' },
-    { at: 'Month 1', level: lv(30), line: 'Month 1: urges still come, and you know the way through them.' },
-    { at: 'Day 90', level: lv(90), line: pick ? OB_FOR_GAIN[pick] : 'Day 90: free of it, and it feels like you.' },
-  ];
+/** the grow page: how the habit is unlearned, stop by stop (the owner, November 15, 2026: "this app rewires your brain and the way
+    you think about your addiction and pornography and we need to hype that up", and not to start on tonight). Each stop is something
+    Daybook truly does, said with confidence and no made-up numbers: the person sees the pattern (the log), rides urges out until the
+    brain learns they pass (SOS), sees porn for what it is (a lesson a day), and the new way becomes the worn one. Day 90 is who the
+    person is, never a promise about their life (the owner turned down "more present with the people you love"). The flame takes the
+    form a steady pace reaches (about 45 points a day, levels.ts), so the picture is the ladder itself. `how` is the part of Daybook
+    that does it, with its icon. */
+export interface ObGrowStop {
+  at: string;
+  level: number;
+  line: string;
+  how: [icon: string, words: string];
 }
+export function obGrow(a: SetupAnswers = {}): ObGrowStop[] {
+  const lv = (d: number) => levelOf(d * 45).n;
+  const h = normHabit(a.habit) || 'porn';
+  const stops: ObGrowStop[] = [
+    {
+      at: 'Week 1',
+      level: lv(7),
+      line: 'Week 1: you see your pattern. An urge stops being an order and becomes a wave you can read.',
+      how: ['flame', 'Your honest mornings'],
+    },
+    {
+      at: 'Month 1',
+      level: lv(30),
+      line: 'Month 1: every urge you ride out teaches your brain that it passes. The old pull gets quieter.',
+      how: ['life', 'SOS, every time it pulls'],
+    },
+    {
+      at: 'Month 2',
+      level: lv(60),
+      line: 'Month 2: porn stops looking like relief. You see what it promised, and what it took.',
+      how: ['book', 'A lesson a day'],
+    },
+    {
+      at: 'Day 90',
+      level: lv(90),
+      line: 'Day 90: the new path is the worn one now. You are not someone fighting porn. You are someone free of it.',
+      how: ['flame', 'One honest day at a time'],
+    },
+  ];
+  return stops.map((x) => ({ ...x, line: habitSay(x.line, h) }));
+}
+/** Next on the grow page: the next stop, or -1 to leave the page, only from the last stop (the owner, November 14 and 15, 2026:
+    "they press next and it skips EVERYTHING") */
+export const obGrowNext = (at: number, n: number): number => (at >= n - 1 ? -1 : Math.max(0, at) + 1);
 /** the two lines of the "why it works" picture over eight weeks with two slips: a streak that drops to zero at each, and the free
     days on the record here, which only ever go up (strict mode's count does drop, but the record, points and level never do) */
 export function obWhyLines(): { streak: number[]; record: number[] } {

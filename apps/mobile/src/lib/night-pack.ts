@@ -10,11 +10,14 @@ import { AppState } from 'react-native';
 import { NightPack } from '../../modules/night-pack';
 import { useStore } from './store';
 
-/** whether this phone offers the pack: an iPhone on iOS 26 or later with this build */
-export const packOffered = !!NightPack?.ok;
-/** Settings shows the pack's page: on a phone that offers it, and in the web demo build (EXPO_PUBLIC_SHOTS=1), only to look at
-    the walk (nothing runs there) */
-export const packShown = packOffered || process.env.EXPO_PUBLIC_SHOTS === '1';
+/** whether this phone offers the pack: off for everyone (the owner, November 15, 2026: "this is a lot of work ... if we can give
+    them a button where they can press add shortcut ... then we can do it ... Otherwise, we're just not going to do it"). Apple has
+    no way for an app to add an automation for the person, so it cannot be one tap. The walk (app/nightpack.tsx), the rules and the
+    native actions stay, so it can come back if Apple ever allows it: set this back to `!!NightPack?.ok`. Screen Time (beta) does the
+    night wait in one switch, and Settings, Reminders sets the phone alarms. */
+export const packOffered = false && !!NightPack?.ok;
+/** Settings shows the pack's page only where it is offered */
+export const packShown = packOffered;
 
 const KEY = 'daybook.nightPack';
 let said: PackState['said'] = {};

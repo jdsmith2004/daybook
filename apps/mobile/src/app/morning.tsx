@@ -3,9 +3,12 @@
 
    - "How was last night?" A tap on Free of it or It happened is the answer and is kept at once (core answerNight): no Next. Before
      that, one quiet row, "And this morning?" Low, Okay, Good, kept with the answer.
-   - Then the flame steps up, the reply line says what was kept ("A free night. That one is yours for good." / "Logged. Telling it
-     is your part, and it is done."), and tonight shows already filled from yesterday: the time and the reason, each one tap to change.
-     Set tonight, and today's lesson opens (or Today).
+   - Then the flame steps up and the reply line says what was kept ("A free night. That one is yours for good." / "Logged. Telling
+     it is your part, and it is done."). Set up tonight goes on.
+   - Tonight is chosen fresh each morning (the owner, November 15, 2026: "it has to be something that I specifically choose that
+     day"): first when it starts, on the setup's wheels, starting on last night's time, with Next; then "What is tonight for?", every
+     reason the person has and every one they wrote (core saved-answers.ts), as many as are true, with Write my own. Nothing is
+     picked to start. Set tonight keeps them all (core setTonight rs), and today's lesson opens (or Today).
    - After It happened, one quiet link, "Look back on last night", opens Rekindle; never pushed, and never for a Rekindle already done.
    - When last night's slip was already logged that night, it does not ask again: it opens on "Last night is logged." and tonight.
 
@@ -29,10 +32,11 @@ import {
   MORNING_FEEL,
   MORNING_WORDS as W,
   morningOf,
+  morningPicksStart,
   morningReasons,
   morningReply,
+  morningWhenSet,
   heldByMorning,
-  NIGHT_TIMES,
   nightAtStart,
   nightSlips,
   setMorningFeel,
@@ -41,20 +45,24 @@ import {
   tonightLine,
   fmtClock,
   addDays,
+  ownChoices,
   type Clock,
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { Appear } from '@/components/appear';
+import { AnswerChip, ChipWrap } from '@/components/answer';
 import { Link } from '@/components/choices';
+import { OwnChip, OwnField } from '@/components/own';
+import { ClockWheels } from '@/components/when';
 import { FlameMedallion } from '@/components/flame-medallion';
 import { StepUp } from '@/components/ignite';
 import { Dock, Middle, SceneFrame, Stage } from '@/components/scene';
-import { Slider, SliderValue } from '@/components/slider';
 import { Button, Icon, T } from '@/components/ui';
+import { endLiveNight } from '@/lib/flame-widget';
 import { buzz } from '@/lib/feel';
 import { nightWaitsOn, pullTroubleLine } from '@/lib/morning';
 import { close } from '@/lib/nav';
@@ -99,6 +107,7 @@ export default function Morning() {
       logged,
       f: ms?.f ?? null,
       reasons: st ? morningReasons(snap.days, st, tk) : [],
+      picks: morningPicksStart(snap.days, tk),
       nt: st ? nightAtStart(st) : '22:30',
       /* the night before last, when nobody told Daybook about it (WP1, core nightBeforeDue): one quiet row to catch it up */
       before: st ? nightBeforeDue(snap.days, st, tk) : null,
@@ -108,12 +117,15 @@ export default function Morning() {
   const [n, setN] = useState<'free' | 'slip' | null>(start.n);
   const [f, setF] = useState<1 | 2 | 3 | null>(start.f);
   const [n2, setN2] = useState<'free' | 'slip' | null>(start.n2);
-  const [r, setR] = useState<string>(start.reasons[0] || '');
+  /* tonight is chosen fresh each morning (the owner, November 15, 2026: "it has to be something that I specifically choose that
+     day"): first the time, starting on last night's, then what tonight is for, as many as are true, nothing picked to start */
+  const [rs, setRs] = useState<string[]>(start.picks);
   const [nt, setNt] = useState<Clock>(start.nt);
-  /* tonight's reason opens in place; the time has its own page, under the night sky */
-  const [pickR, setPickR] = useState(false);
-  const [when, setWhen] = useState(false);
+  const [part, setPart] = useState<'night' | 'when' | 'why'>('night');
+  const [writing, setWriting] = useState(false);
   const leaving = useRef(false);
+  /* the morning is here: the night's Live Activity goes (opened from it, or from Today), and again once last night is told */
+  useEffect(() => endLiveNight(tk), [tk]);
 
   const skip = () => {
     if (leaving.current) return;
@@ -146,6 +158,7 @@ export default function Morning() {
       { noWin: true },
     );
     setN(v);
+    endLiveNight(tk);
     if (v !== 'free' || n === 'free') {
       buzz('save');
       return;
@@ -169,7 +182,7 @@ export default function Morning() {
     buzz('save');
   };
   const set = () => {
-    if (!st || leaving.current || !n) return;
+    if (!st || leaving.current || !n || !rs.length) return;
     leaving.current = true;
     const t = Date.now();
     update(
@@ -177,7 +190,7 @@ export default function Morning() {
         if (!s0.settings) return s0;
         /* a night logged that night is told here too, so the record holds the morning (no second slip is added) */
         const days = morningOf(s0.days[tk])?.n ? s0.days : answerNight(s0.days, s0.settings, tk, n, t);
-        const out = setTonight(days, s0.settings, tk, { r, nt }, t);
+        const out = setTonight(days, s0.settings, tk, { rs, nt }, t);
         return { ...s0, days: out.days, settings: out.st };
       },
       { noWin: true },
@@ -202,29 +215,93 @@ export default function Morning() {
   /* Screen Time not working: said under tonight, with a tap to More's Screen Time page (WP2, core pullTrouble) */
   const trouble = pullTroubleLine();
 
-  if (when) {
-    const i = Math.max(0, NIGHT_TIMES.indexOf(nt));
+  /* ---------- the time tonight starts: the setup's wheels, on last night's time; Next goes on ---------- */
+  if (part === 'when') {
+    const [h, m] = nt.split(':').map(Number);
     return (
-      <SceneFrame title={W.setup} sky="night" onBack={() => setWhen(false)} onClose={() => setWhen(false)}>
+      <SceneFrame title={W.setup} sky="night" backdrop={dawn} onBack={() => setPart('night')} onClose={skip}>
         <Stage key="when" dir={1}>
           <T v="title" style={s.h} accessibilityRole="header">
             {W.when}
           </T>
+          <Text style={s.sub}>{morningWhenSet(fmtClock(start.nt))}</Text>
           <Middle>
-            <SliderValue big value={i} show={(v) => fmtClock(NIGHT_TIMES[v]).replace(/ [AP]M$/, '')} caption={fmtClock(nt).slice(-2)} hint="" />
+            <View style={s.c} accessible accessibilityLabel={tonightLine({ waits, habit: habitOf(st) }) + ' ' + fmtClock(nt)}>
+              <Text style={s.timeL}>{tonightLine({ waits, habit: habitOf(st) })}</Text>
+              <Text style={s.time}>{fmtClock(nt)}</Text>
+            </View>
           </Middle>
           <Dock>
-            <Slider
-              label={W.when}
-              value={i}
-              min={0}
-              max={NIGHT_TIMES.length - 1}
-              show={(v) => fmtClock(NIGHT_TIMES[v])}
-              readout={false}
-              onChange={(v) => setNt(NIGHT_TIMES[v])}
+            <View style={s.wheels}>
+              <ClockWheels h={h} m={m} step={5} onChange={(nh, nm) => setNt((String(nh).padStart(2, '0') + ':' + String(nm).padStart(2, '0')) as Clock)} />
+            </View>
+            {told && trouble ? (
+              <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/settings/[part]', params: { part: 'pull' } })} hitSlop={6}>
+                <Text style={s.trouble}>{trouble}</Text>
+              </Pressable>
+            ) : null}
+            <Button
+              label={W.whenDone}
+              kind="warm"
+              onPress={() => {
+                buzz('tap');
+                setPart('why');
+              }}
             />
-            <Button label={W.whenDone} kind="warm" onPress={() => setWhen(false)} />
           </Dock>
+        </Stage>
+      </SceneFrame>
+    );
+  }
+
+  /* ---------- what tonight is for: every reason the person has and every one they wrote, as many as are true ---------- */
+  if (part === 'why') {
+    const choices = ownChoices(st, 'reason', start.reasons, rs);
+    const flip = (t: string) => setRs((l) => (l.includes(t) ? l.filter((x) => x !== t) : [...l, t]));
+    return (
+      <SceneFrame
+        title={W.setup}
+        sky="night"
+        backdrop={dawn}
+        onBack={() => (writing ? setWriting(false) : setPart('when'))}
+        onClose={writing ? () => setWriting(false) : skip}>
+        <Stage key={writing ? 'write' : 'why'} dir={1}>
+          <T v="title" style={s.h} accessibilityRole="header">
+            {W.why}
+          </T>
+          {writing ? (
+            <OwnField
+              kind="reason"
+              builtIn={start.reasons}
+              placeholder="Like: my daughter"
+              max={120}
+              onSave={(t) => {
+                setRs((l) => (l.includes(t) ? l : [...l, t]));
+                setWriting(false);
+              }}
+              onCancel={() => setWriting(false)}
+            />
+          ) : (
+            <>
+              <Text style={s.sub}>{W.whyMany}</Text>
+              <Middle>
+                <View style={s.c}>
+                  <FlameMedallion level={level} size={Math.min(win.width - 160, win.height * 0.2, 180)} pulse={rs.length} />
+                </View>
+              </Middle>
+              <Dock>
+                <View accessibilityRole="list" accessibilityLabel={W.why}>
+                  <ChipWrap last={1}>
+                    {choices.map((t) => (
+                      <AnswerChip key={t} label={t} on={rs.includes(t)} onPress={() => flip(t)} />
+                    ))}
+                    <OwnChip color={INK} onPress={() => setWriting(true)} />
+                  </ChipWrap>
+                </View>
+                <Button label={W.set} kind="warm" onPress={set} disabled={!rs.length} />
+              </Dock>
+            </>
+          )}
         </Stage>
       </SceneFrame>
     );
@@ -247,62 +324,17 @@ export default function Morning() {
           {told ? (
             <Appear by={10} duration={280}>
               <View style={s.told}>
-                {start.logged ? null : <Choice label={n === 'free' ? W.free : W.slip} on onPress={() => setN(null)} />}
+                {/* both answers stay in sight, the one given checked; a tap on the other changes it (the owner, November 15, 2026:
+                    "how come it only give me a free of it option") */}
+                {start.logged ? null : (
+                  <View style={s.list} accessibilityRole="radiogroup" accessibilityLabel={W.night}>
+                    <Choice label={W.free} on={n === 'free'} onPress={() => n !== 'free' && answer('free')} />
+                    <Choice label={W.slip} on={n === 'slip'} onPress={() => n !== 'slip' && answer('slip')} />
+                  </View>
+                )}
                 <Text style={s.reply} accessibilityLiveRegion="polite">
                   {morningReply(n!, start.logged, n === 'free' && heldByMorning(snap.days, tk, Date.now()) > 0)}
                 </Text>
-                <View style={s.card}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={tonightLine({ waits, habit: habitOf(st) }) + ' ' + fmtClock(nt) + '. Change'}
-                    onPress={() => {
-                      buzz('tap');
-                      setWhen(true);
-                    }}
-                    style={({ pressed }) => [s.row, pressed && s.pressed]}>
-                    <View style={s.rowWords}>
-                      <Text style={s.rowL}>Tonight</Text>
-                      <Text style={s.rowV}>{tonightLine({ waits, habit: habitOf(st) }) + ' ' + fmtClock(nt)}</Text>
-                    </View>
-                    <Icon name="next" size={16} color={nightInk.ink} />
-                  </Pressable>
-                  <View style={s.rule} />
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{ expanded: pickR }}
-                    accessibilityLabel={'For ' + r + '. Change'}
-                    onPress={() => {
-                      buzz('tap');
-                      setPickR((x) => !x);
-                    }}
-                    style={({ pressed }) => [s.row, pressed && s.pressed]}>
-                    <View style={s.rowWords}>
-                      <Text style={s.rowL}>For</Text>
-                      <Text style={s.rowV}>{r}</Text>
-                    </View>
-                    <Icon name={pickR ? 'up' : 'next'} size={16} color={nightInk.ink} />
-                  </Pressable>
-                  {pickR ? (
-                    <View style={s.picks} accessibilityRole="radiogroup" accessibilityLabel={W.why}>
-                      {start.reasons
-                        .filter((t) => t !== r)
-                        .map((t) => (
-                          <Pressable
-                            key={t}
-                            accessibilityRole="radio"
-                            accessibilityState={{ checked: false }}
-                            onPress={() => {
-                              buzz('tap');
-                              setR(t);
-                              setPickR(false);
-                            }}
-                            style={({ pressed }) => [s.pick, pressed && s.pressed]}>
-                            <Text style={s.rowV}>{t}</Text>
-                          </Pressable>
-                        ))}
-                    </View>
-                  ) : null}
-                </View>
               </View>
             </Appear>
           ) : (
@@ -333,12 +365,16 @@ export default function Morning() {
               ) : null}
             </>
           )}
-          {told && trouble ? (
-            <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/settings/[part]', params: { part: 'pull' } })} hitSlop={6}>
-              <Text style={s.trouble}>{trouble}</Text>
-            </Pressable>
+          {told ? (
+            <Button
+              label={W.setup}
+              kind="warm"
+              onPress={() => {
+                buzz('tap');
+                setPart('when');
+              }}
+            />
           ) : null}
-          {told ? <Button label={W.set} kind="warm" onPress={set} disabled={!r} /> : null}
           {rk ? (
             <View style={s.c}>
               <Link
@@ -354,7 +390,7 @@ export default function Morning() {
   );
 }
 
-/** one answer: a wide row, white when picked, with a check. A tap on the picked one opens the choice again. */
+/** one answer: a wide row, white when picked, with a check */
 function Choice({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   return (
     <Pressable
@@ -405,14 +441,9 @@ const s = StyleSheet.create({
   pillT: { fontFamily: font.bodySemi, fontSize: 15, color: INK, opacity: 0.86 },
   told: { gap: 14 },
   reply: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 24, color: INK },
-  card: { borderRadius: 20, backgroundColor: 'rgba(43,31,87,0.42)', paddingHorizontal: 18 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 64, paddingVertical: 10 },
-  rowWords: { flex: 1, gap: 2 },
-  rowL: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, color: nightInk.ink, opacity: 0.78 },
-  rowV: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20, color: nightInk.ink },
-  rule: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.3)' },
-  picks: { gap: 4, paddingBottom: 10 },
-  pick: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.12)' },
-  pressed: { opacity: 0.8 },
+  sub: { alignSelf: 'stretch', fontFamily: font.bodyMedium, fontSize: 17, lineHeight: 24, color: nightInk.ink, opacity: 0.86, marginTop: 6 },
+  timeL: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22, color: nightInk.ink, opacity: 0.86 },
+  time: { fontFamily: font.display, fontSize: 56, lineHeight: 64, color: nightInk.ink },
+  wheels: { alignSelf: 'stretch' },
   trouble: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, textAlign: 'center', paddingHorizontal: 8, color: INK },
 });

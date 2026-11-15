@@ -210,7 +210,7 @@ export const UNLOCK_WORDS: Record<UnlockId, UnlockWords> = {
     h: 'Your first Sunday review',
     title: 'Your first Sunday review',
     line: 'A few minutes, once a week.',
-    say: 'Your week, one thing at a time: what helped, what got you, and one small goal for the next. This is where you start to see your pattern.',
+    say: 'Your week in your own graphs: when it came, what set it off, what helped. Then one goal for the next week, and what it will change. This is where you start to see your pattern.',
     btn: 'Start my review',
   },
   routine: {

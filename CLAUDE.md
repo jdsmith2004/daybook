@@ -77,6 +77,14 @@ need, without letting the screen turn into a list of features.
   moments of earned value (a level, a milestone, the first week), make the middle tip the obvious choice, keep paying to
   one tap, and make the free side feel generous, since generous treatment is what brings tips and good ratings. When
   building any feature, ask whether it helps the person and whether it helps Daybook earn or grow, and say so in plans.
+- **The app asks for a rating until the person says they enjoy it, and this is never dropped (the owner, November 15,
+  2026: "make a note that's extremely important it keeps asking them until they say they're enjoying the app that cannot be
+  dropped").** "Do you like Daybook so far?" comes back at good moments (a level, a milestone, the first week, an urge ridden
+  out), never in the hours after a slip or an SOS, until the person answers that they enjoy it; that yes opens Apple's own
+  rating sheet (`askStoreReview`, `apps/mobile/src/lib/review.ts`, which Apple itself limits to a few showings a year), and a
+  no opens feedback and the question returns at a later good moment. It was lost once by accident, in the setup rebuild of
+  November 12, 2026 (f01a0b6c), so any redesign of setup, Today or a celebration checks that the ask still has a live caller,
+  and a test fails when nothing calls it.
 - **The store listing never names porn (Apple rejected 1.3.3 under Guideline 1.1 for it, November 11, 2026).** No App
   Store or Play text (name, subtitle, description, promo text, What's New, keywords) and no store screenshot uses "porn",
   "pornography", "pornfree", "NoFap", "sex" or any other explicit word. Speak of quitting a habit, urges, slips, self-control

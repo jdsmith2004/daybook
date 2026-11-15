@@ -1,0 +1,146 @@
+# Records the lesson cards for Listen with Kokoro, and puts them on the website under /voice/ (packages/core voice.ts).
+#
+# Only cards the site does not have yet are recorded: a card is named by a hash of its voice and its words, so a lesson whose words
+# change gets new recordings and nothing else is done again. Safe to run at any time.
+#
+# Safe by design, as the Deploy workflow is:
+# - The jobs that record run Python packages and never get an AWS token. The one job that talks to AWS runs no package installer: it
+#   only uploads the files the recording jobs made, to the web bucket, under voice/.
+# - AWS trusts only workflows running on main (OpenID Connect, no stored keys), and the account is checked before anything is sent.
+#
+# When it runs: when the lessons change on main, every night (to finish a long first recording), and from Actions > Voice > Run workflow.
+# It costs only GitHub Actions minutes; the files are a few cents a year to keep and serve.
+name: Voice
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/core/src/lesson*'
+      - 'packages/core/src/voice.ts'
+      - 'packages/core/src/habit.ts'
+      - 'packages/core/src/faith.ts'
+      - 'scripts/voice*'
+      - '.github/workflows/voice.yml'
+  schedule:
+    - cron: '23 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: voice
+  cancel-in-progress: false
+
+jobs:
+  record:
+    name: Record (${{ matrix.voice }})
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 140
+    strategy:
+      fail-fast: false
+      matrix:
+        voice: [af_heart, am_michael]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      # core needs no packages: the cards come straight from its TypeScript
+      - id: list
+        name: Which cards the site does not have yet
+        env:
+          VOICE: ${{ matrix.voice }}
+        run: |
+          node --no-warnings --import ./scripts/ts-resolve.mjs scripts/voice.ts --voice "$VOICE" --missing-from site --list lines.json
+          echo "n=$(node -p "require('./lines.json').length")" >> "$GITHUB_OUTPUT"
+      - name: Set up Kokoro
+        if: steps.list.outputs.n != '0'
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng ffmpeg > /dev/null
+          # Kokoro needs Python 3.10 to 3.12, older than the runner's own: uv brings that Python with it
+          pipx install uv==0.12.3 > /dev/null
+          uv venv -q --python 3.12 "$RUNNER_TEMP/kokoro"
+          py="$RUNNER_TEMP/kokoro/bin/python"
+          uv pip install -q --python "$py" --index-url https://download.pytorch.org/whl/cpu torch==2.15.0
+          uv pip install -q --python "$py" kokoro==0.9.4 misaki[en]==0.9.4 soundfile==0.14.0 \
+            "en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl"
+      # a long first recording stops starting new cards after 110 minutes; the next run records the rest
+      - name: Record
+        if: steps.list.outputs.n != '0'
+        env:
+          VOICE: ${{ matrix.voice }}
+          VOICE_PY: ${{ runner.temp }}/kokoro/bin/python
+        run: node --no-warnings --import ./scripts/ts-resolve.mjs scripts/voice.ts --voice "$VOICE" --missing-from site --minutes 110 --out voice
+      - if: steps.list.outputs.n != '0'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: voice-${{ matrix.voice }}
+          path: voice
+          retention-days: 3
+          if-no-files-found: ignore
+
+  publish:
+    name: Put them on the website
+    needs: record
+    if: always() && github.ref == 'refs/heads/main' && vars.AWS_REGION != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      TF_IN_AUTOMATION: '1'
+      ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: voice-*
+          merge-multiple: true
+          path: voice
+      - id: have
+        run: |
+          n=$(ls voice/*.json 2>/dev/null | wc -l)
+          echo "Recorded this run: $n" >> "$GITHUB_STEP_SUMMARY"
+          echo "n=$n" >> "$GITHUB_OUTPUT"
+      - if: steps.have.outputs.n != '0'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          allowed-account-ids: ${{ secrets.AWS_ACCOUNT_ID }}
+          mask-aws-account-id: true
+      - if: steps.have.outputs.n != '0'
+        name: Signed in to the Daybook account, and only that one
+        run: |
+          got=$(aws sts get-caller-identity --query Account --output text)
+          [ "$got" = "$ACCOUNT" ] || { echo "::error::Signed in to the wrong AWS account. Stopping."; exit 1; }
+      - if: steps.have.outputs.n != '0'
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+      # the web bucket's name, read from the state the Deploy workflow keeps (nothing is changed)
+      - if: steps.have.outputs.n != '0'
+        id: bucket
+        working-directory: infra/app
+        env:
+          BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+        run: |
+          terraform init -input=false -backend-config="bucket=$BUCKET" -backend-config="region=$AWS_REGION" > /dev/null
+          echo "web=$(terraform output -raw web_bucket)" >> "$GITHUB_OUTPUT"
+      # the sound first, then its timing: the app counts a card as recorded only once the timing is there. Names never change, so
+      # browsers and phones may keep them for good
+      - if: steps.have.outputs.n != '0'
+        working-directory: voice
+        env:
+          WEB: ${{ steps.bucket.outputs.web }}
+        run: |
+          aws s3 sync . "s3://$WEB/voice/" --exclude "*" --include "*.m4a" --content-type audio/mp4 --cache-control "public,max-age=31536000,immutable" --only-show-errors
+          aws s3 sync . "s3://$WEB/voice/" --exclude "*" --include "*.json" --content-type application/json --cache-control "public,max-age=31536000,immutable" --only-show-errors

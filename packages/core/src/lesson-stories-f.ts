@@ -4,6 +4,7 @@
    lessons of one habit, l50 to l53. No lesson here asks a person to guess a fact they cannot know, and none puts a clock time on
    everyone. l47 and l48 are frank and kind, and never explicit. */
 import type { Story, StoryPart } from './lesson-stories';
+import { SRC_NIGHT as N } from './lessons-night';
 
 type Src = [string, string];
 const S = {
@@ -70,6 +71,7 @@ const L46_TELL: StoryPart[] = [
     art: ['scene', { k: 'l46-leaving' }],
   },
   {
+    long: 1,
     h: 'A month later, in the desert, they began to miss Egypt.',
     p: 'There was little to eat and nothing to do but walk. They said: in Egypt we sat by pots of meat and **ate bread until we were full**.',
     dx: 'About a month after they left, they were deep in the desert. The excitement of the night they walked out was gone. There was sand, heat, little food and a long way to go, and nothing yet looked like the freedom they had been promised. So they gathered and complained. In Egypt, they said, we sat by the pots of meat and **ate bread until we were full**. They said they would rather have stayed.',
@@ -141,6 +143,139 @@ const L46_TELL: StoryPart[] = [
 ];
 const L46_AT = 8;
 const L46_AS = (c: StoryPart): StoryPart[] => [...L46_TELL.slice(0, L46_AT), c, ...L46_TELL.slice(L46_AT + 1)];
+/* for drinking, the doctor card comes second, right after the story opens, so a heavy drinker reads it before anything else */
+const L46_SECOND = (c: StoryPart): StoryPart[] => [L46_TELL[0], c, ...L46_TELL.slice(1, L46_AT), ...L46_TELL.slice(L46_AT + 1)];
+
+/* the sources lessons 54 to 58 add (the night lessons' own are in lessons-night.ts SRC_NIGHT) */
+const S2 = {
+  read98: [
+    'Read & van Leeuwen (1998): predicting hunger, the effects of appetite and delay on choice, Organizational Behavior and Human Decision Processes',
+    'https://doi.org/10.1006/obhd.1998.2803',
+  ],
+  read99: [
+    'Read, Loewenstein & Kalyanaraman (1999): mixing virtue and vice, combining the immediacy effect and the diversification heuristic, Journal of Behavioral Decision Making',
+    'https://www.andrew.cmu.edu/user/gl20/GeorgeLoewenstein/Papers_files/pdf/mixingvirtue.pdf',
+  ],
+  achor: [
+    'Achor (2010): The Happiness Advantage, the 20-second rule (Crown)',
+    'https://www.penguinrandomhouse.com/books/204726/the-happiness-advantage-by-shawn-achor/',
+  ],
+  rozin11: [
+    'Rozin, Scott, Dingley, Urbanek, Jiang & Kaltenbach (2011): nudge to nobesity I, minor changes in accessibility decrease food intake, Judgment and Decision Making',
+    'http://journal.sjdm.org/11/11213/jdm11213.html',
+  ],
+  ul687: ['UL 687: burglary-resistant safes, the TL-15 and TL-30 ratings (overview)', 'https://en.wikipedia.org/wiki/Safe#Burglary_resistance'],
+  drbob: [
+    'Alcoholics Anonymous: Dr. Bob’s last major talk, 1948 (pamphlet P-53), on meeting Bill W. in Akron in May 1935',
+    'https://aa.org/sites/default/files/literature/P-53_1124.pdf',
+  ],
+} satisfies Record<string, Src>;
+
+/* l58 is read by every habit (lessons-night.ts NIGHT_OPEN). For drinking, the card on care names the medicines that help and says a
+   doctor should help with the first days, since stopping heavy drinking all at once can be dangerous. */
+const L58_TELL: StoryPart[] = [
+  {
+    h: 'People ask a hard question, usually quietly: is it weak to need help?',
+    p: 'It comes up most in the heaviest weeks, when low mood, poor sleep, worry or loneliness sit under the urge. It deserves **a straight answer**.',
+    dx: 'There is a question many people carry and rarely say out loud: is it weak to need help? It tends to show up in the heaviest weeks, the ones where the urge is not the whole problem. Low mood that hangs on. Nights without real sleep. Worry that will not settle. Feeling alone in a full room. On those weeks, working on the habit alone can feel like bailing out a boat with a hole in it. The question deserves **a straight answer**, so this lesson takes it apart.',
+    art: ['scene', { k: 'l58-heavy' }],
+  },
+  {
+    h: 'Start with what the habit has been doing on those weeks.',
+    p: 'It gives a few minutes away from the heavy feeling. Then the feeling is waiting afterward, often a little heavier. **The habit has been carrying something.**',
+    dx: 'Look first at what the habit does on a heavy week. It gives a few minutes away from the feeling: the low, the worry, the empty evening. For those minutes it works. Then the feeling is waiting afterward, often a little heavier, with shame added on top. So the next heavy moment reaches for the same door. That is not weakness. **The habit has been carrying something**, a need using the only door it knows.',
+    art: ['loop', { n: ['A heavy feeling', 'The habit', 'Short relief', 'The feeling returns'], c: 'Relief that brings it back' }],
+  },
+  {
+    h: 'So you are already getting help with that feeling.',
+    p: 'Every time the habit runs, it is helping you with it, badly. **The question was never whether to get help. It is whether the help is any good.**',
+    dx: 'Here is the turn. If the habit carries a heavy feeling, then you have been getting help with that feeling for a long time. Every time the habit runs, it is helping, in its way: a few minutes off, at a high price, with the feeling handed back later. So the question was never whether a strong person needs help. Everyone who carries something heavy is already leaning on something. **The question is whether the help is any good**, and whether it leaves you better or worse than before.',
+    art: ['scene', { k: 'l58-two-doors' }],
+  },
+  {
+    k: 'ask',
+    h: 'On your hardest weeks, what else is going on?',
+    o: [
+      ['Low mood that hangs on', 'That deserves care of its own. It often lifts with the right help.'],
+      ['Bad sleep', 'Sleep can be treated, and better sleep makes every part of this easier.'],
+      ['Worry, or feeling alone', 'Both are common, and both get better with help. You do not have to carry them alone.'],
+      ['Nothing I can name yet', 'That is fair. Watch your next hard week, and notice what came before it.'],
+    ],
+  },
+  {
+    n: '3,755',
+    h: 'students who slept badly were given an online program to sleep better.',
+    p: 'Their sleep got much better, and their low mood and worry eased too, and stayed lower months later. **Helping one heavy thing helped the others.**',
+    dx: 'In one of the largest trials of its kind, 3,755 students with insomnia at 26 universities in the United Kingdom were split into two groups. Half got an online program that teaches the skills of sleeping well, and half went on as usual. The program group slept much better. And something else moved with the sleep: their low mood and their worry eased too, and were still lower months later. **Helping one heavy thing helped the others.** Sleep is not a side issue. It holds up much of the rest.',
+    fact: { s: 'Randomized trial · 3,755 students · Freeman and colleagues, 2017', i: [0] },
+  },
+  {
+    h: 'Low mood and worry respond to care for a great many people.',
+    p: 'Talking therapy, exercise and, when needed, medicine help many feel well again, and when one kind of help does not fit, another often does. **Asking is the hardest part.**',
+    dx: 'Guidelines written for doctors, like the one from NICE in the United Kingdom, set out what helps depression: talking therapies, exercise in a group, and medicines when they are needed. Worry and poor sleep have their own well-tested help. A doctor or a counselor can help you work out which fits you, and many people feel well again. You do not have to know which help fits you. Working that out is their job. **Asking is the hardest part**, and it is a short conversation: this is how I have been sleeping, and this is how I have been feeling.',
+    art: ['scene', { k: 'l58-ask' }],
+    fact: { s: 'Guideline · NICE, 2022', i: [1] },
+  },
+  {
+    long: 1,
+    h: 'Strength has an odd shape here.',
+    p: 'Carrying something heavy alone for years can look strong. Often the habit is doing the carrying. **Seeing what is under it, and asking, takes more nerve.**',
+    dx: 'From the outside, carrying something heavy alone for years can look like strength. Nobody knows, nothing changes, and you keep going. But look at who is doing the carrying. Often it is the habit, every hard week. **Seeing what is under it, and asking for help with it, takes more nerve** than keeping quiet. It means saying out loud the thing you have been managing in private, to someone who might help.',
+  },
+  {
+    h: 'When the heavy thing gets care, the habit has less to do.',
+    p: 'The pull loses some of its reason. It does not vanish overnight, but the same need has **a better door**. And if you ever think about not being here, reach out today: the number at the end of this lesson, or someone near you.',
+    dx: 'When low mood, sleep, worry or loneliness get real care, something shifts in the habit too. It has less to carry, so the pull loses some of its reason. That does not make the habit vanish overnight, and you still do the work. But the same need now has **a better door**, one that leaves you lighter afterward instead of heavier. And separately from all of this: if you ever think about not being here, do not wait for the right week. Reach out today, to the number at the end of this lesson or to someone near you.',
+    art: ['scene', { k: 'l58-better-door' }],
+  },
+  {
+    long: 1,
+    h: 'When is it time to ask?',
+    p: 'When low mood or worry has hung on for two weeks or more, when sleep has been poor for weeks, or when you feel stuck in the same loop whatever you try. **You do not need to wait for it to get worse.**',
+    dx: 'A good time to ask is when low mood or worry has hung on for two weeks or more. Or when sleep has been poor for weeks, not just a bad night now and then. Or when you feel stuck in the same loop, whatever you try. You do not have to be sure what it is, or have the right words. **You do not need to wait for it to get worse**: help works better early, and a doctor would much rather see you now than later.',
+  },
+];
+const L58_AT = 5;
+
+/* the sources lessons 50 to 53 add (the lessons of one habit, lesson-habit.ts HABIT_TURNS, told as stories) */
+const S3 = {
+  gilovich: [
+    'Gilovich, Medvec & Savitsky (2000): the spotlight effect in social judgment, Journal of Personality and Social Psychology',
+    'https://doi.org/10.1037/0022-3514.78.2.211',
+  ],
+  prentice: [
+    'Prentice & Miller (1993): pluralistic ignorance and alcohol use on campus, Journal of Personality and Social Psychology',
+    'https://doi.org/10.1037/0022-3514.64.2.243',
+  ],
+  devisser: [
+    'de Visser, Robinson & Bond (2016): voluntary temporary abstinence from alcohol during “Dry January” and subsequent alcohol use, Health Psychology',
+    'https://doi.org/10.1037/hea0000297',
+  ],
+  gottman: [
+    'Smith (2014): Masters of love, on John Gottman’s research with newlywed couples, The Atlantic',
+    'https://www.theatlantic.com/health/archive/2014/06/happily-ever-after/372573/',
+  ],
+  fehr: ['Fehr, Gelfand & Nag (2010): the road to forgiveness, a meta-analysis, Psychological Bulletin', 'https://doi.org/10.1037/a0019993'],
+  powers: [
+    'Powers, Vedel & Emmelkamp (2008): behavioral couples therapy for alcohol and drug use disorders, a meta-analysis, Clinical Psychology Review',
+    'https://doi.org/10.1016/j.cpr.2008.02.002',
+  ],
+  fallacy: ['The gambler’s fallacy, and the Monte Carlo story of 1913 (overview)', 'https://en.wikipedia.org/wiki/Gambler%27s_fallacy'],
+  clark09: [
+    'Clark, Lawrence, Astley-Jones & Gray (2009): gambling near-misses enhance motivation to gamble and recruit win-related brain circuitry, Neuron',
+    'https://doi.org/10.1016/j.neuron.2008.12.031',
+  ],
+  kassinove: [
+    'Kassinove & Schare (2001): effects of the near miss and the big win at persistence at slot machine gambling, Psychology of Addictive Behaviors',
+    'https://doi.org/10.1037/0893-164X.15.2.155',
+  ],
+  zhang: ['Zhang & Clark (2020): loss-chasing in gambling behaviour, Current Opinion in Behavioral Sciences', 'https://doi.org/10.1016/j.cobeha.2019.10.006'],
+  dsm: ['American Psychiatric Association: DSM-5, gambling disorder', 'https://www.psychiatry.org/psychiatrists/practice/dsm'],
+  words: [
+    'Etymology: secret, from Latin secernere, to set apart; debt, from debitum, a thing owed; confess, from confiteri, to acknowledge',
+    'https://www.etymonline.com/word/secret',
+  ],
+} satisfies Record<string, Src>;
 
 export const STORIES_F: Record<string, Story> = {
   l45: {
@@ -212,8 +347,8 @@ export const STORIES_F: Record<string, Story> = {
       {
         long: 1,
         h: 'The gap runs the other way too.',
-        p: 'In another study, young men answered the same questions about their choices while calm and while aroused. Their answers moved far more than they had predicted. **Each state could not see across to the other.**',
-        dx: 'In another study, Dan Ariely and George Loewenstein asked young men the same set of questions about choices they might make, once while calm and once while aroused. Aroused, their answers moved much further than they themselves had predicted. Calm, they had no idea how differently they would answer. **Each state could not see across to the other.** So it is not that urge you forgets your reasons. Urge you can still say them. They just stop weighing anything.',
+        p: 'In another study, young men answered the same questions about their choices while calm and while aroused. Aroused, their answers moved far more than their calm answers would suggest. **Each state could not see across to the other.**',
+        dx: 'In another study, Dan Ariely and George Loewenstein asked young men the same set of questions about choices they might make, once while calm and once while aroused. Aroused, their answers moved much further than their calm answers would ever suggest: what looked out of the question from a calm chair looked possible from a hot one. **Each state could not see across to the other.** So the reasons do not only go missing in an urge. Even when urge you can still say them, they stop weighing anything.',
         fact: { s: 'Study · Ariely & Loewenstein, 2006', i: [2] },
       },
       {
@@ -224,9 +359,9 @@ export const STORIES_F: Record<string, Story> = {
       },
       {
         long: 1,
-        h: 'An older story has another ship pass the same island another way.',
-        p: 'On Jason’s ship, the singer Orpheus played his lyre louder and quicker, so the crew heard his song instead. Even so, one sailor leapt into the sea. **A better song helps. The rope held every man.**',
-        dx: 'In the story of Jason and the Argonauts, their ship passes the same island. They have no wax and no ropes. Instead the singer Orpheus picks up his lyre and plays a fast, loud tune of his own, so the crew hears his music over theirs. It mostly works. But one sailor, Butes, still hears the Sirens through it, jumps overboard and swims for the shore. **A better song helps**, and giving your mind something else to do in an urge is a real tool. **The rope held every man.** The two together are stronger than either one.',
+        h: 'Another old story sends a different ship past the same island.',
+        p: 'On Jason’s ship, the singer Orpheus played his lyre louder and quicker, so the crew heard his song instead. Even so, one sailor leapt into the sea. **A better song helps. Odysseus lost no one.**',
+        dx: 'In the story of Jason and the Argonauts, their ship passes the same island. They have no wax and no ropes. Instead the singer Orpheus picks up his lyre and plays a fast, loud tune of his own, so the crew hears his music over theirs. It mostly works. But one sailor, Butes, still hears the Sirens through it, jumps overboard and swims for the shore. **A better song helps**, and giving your mind something else to do in an urge is a real tool. Odysseus, with wax and rope, **lost no one.** The two together are stronger than either one: something better to listen to, and a decision tied in place before the song begins.',
         art: ['scene', { k: 'l45-lyre' }],
         fact: { s: 'Story · Apollonius of Rhodes, the Argonautica, book 4', i: [3] },
         back: 'l42',
@@ -279,7 +414,7 @@ export const STORIES_F: Record<string, Story> = {
     src: [S.exodus, S.taylor, S.fernandez, S.lally],
     hab: {
       alcohol: {
-        tell: L46_AS({
+        tell: L46_SECOND({
           h: 'If you drank every day, or a lot at a time, a doctor should help with the first days.',
           p: 'Stopping heavy drinking all at once can be dangerous. After that, the low often lifts within weeks: in men treated for drinking, high depression scores fell from about 4 in 10 to under 1 in 10 in a month. **Much of the low was the drink wearing off.**',
           dx: 'If you drank every day, or a lot at a time, stopping all at once can be dangerous, and **a doctor should help with the first days**. That is not a sign of weakness. It is how heavy drinking changes the body, and doctors see it every week. After those first days, the low mood often lifts faster than people expect. Researchers followed 191 men in treatment for drinking. In their first week without alcohol, about 4 in 10 scored high on a depression scale. Four weeks later, fewer than 1 in 10 did. Much of the low was the drink wearing off.',
@@ -314,8 +449,8 @@ export const STORIES_F: Record<string, Story> = {
     np: 'What I want my partner to be able to count on from me',
     tell: [
       {
-        h: 'People quitting often ask one question, quietly: would telling my partner only hurt them?',
-        p: 'It sounds like kindness. You carry the weight so they do not have to. The question deserves **an honest answer**, not a quick one.',
+        h: 'Would telling my partner only hurt them?',
+        p: 'It is one of the heaviest questions in quitting, and it sounds like kindness: you carry the weight so they do not have to. It deserves **an honest answer**, not a quick one.',
         dx: 'Of all the questions people ask while quitting, this one is often the heaviest. Would telling my partner only hurt them? It does not sound like an excuse. It sounds like love. You would carry the weight yourself so the person you care about does not have to. Maybe they do not know at all. Maybe they found out, and things have not felt the same since. Either way, the question deserves **an honest answer**, not a quick one, so this lesson takes it apart.',
         art: ['scene', { k: 'l47-weight' }],
       },
@@ -337,7 +472,7 @@ export const STORIES_F: Record<string, Story> = {
         h: 'When you think about telling your partner, what stops you most?',
         o: [
           ['I do not want to hurt them', 'That care is real. The next cards ask whether hiding spares them.'],
-          ['I am afraid they will leave', 'That fear is common. Look at what people said years later.'],
+          ['I am afraid they will leave', 'That fear is common, and nobody can promise how it goes. Look at what people said later.'],
           ['I am ashamed of it', 'Shame wants it hidden. It often gets lighter once it is said.'],
           ['They already know, and it is still hard', 'Then this lesson is about what rebuilds trust from here.'],
         ],
@@ -372,7 +507,7 @@ export const STORIES_F: Record<string, Story> = {
       {
         h: 'Telling is a beginning, not a payment.',
         p: 'Their hurt and their timeline are theirs. They are not your police, and keeping you free is not their job. **If telling might not be safe, talk to a counselor first.**',
-        dx: 'Telling is not a debt you pay once and are done with. It is the start of being someone they can believe. Their hurt and their timeline belong to them. They may want to ask a hundred questions, or none for a while. They are not your police, and keeping you free is not their job, so do not hand them your phone to watch. **If telling might not be safe**, because of anger or harm at home, **talk to a counselor first**, and let them help you plan it.',
+        dx: 'Telling is not a debt you pay once and are done with. It is the start of being someone they can believe. Their hurt and their timeline belong to them. They may want to ask a hundred questions, or none for a while. Tell them what happened and for how long, plainly, without the pictures. Do not make them your guard: if they ask to see something, that is their choice, and saying yes is part of being honest, but keeping you free is still not their job. **If telling might not be safe**, because of anger or harm at home, **talk to a counselor first**, and let them help you plan it.',
         art: ['scene', { k: 'l47-start' }],
       },
       {
@@ -385,7 +520,7 @@ export const STORIES_F: Record<string, Story> = {
     mine: { h: 'Honesty starts small, and you have started.', k: 'acted' },
     today: {
       h: 'Write the first sentence, even if you do not say it yet.',
-      l: ['Say it plainly, with no excuses', 'Let them ask, and answer honestly', 'If it might not be safe, see a counselor first'],
+      l: ['Tell what happened, not the pictures', 'Let them ask, and answer honestly', 'If it might not be safe, see a counselor first'],
     },
     you: {
       h: 'What do you want your partner to be able to count on from you?',
@@ -447,8 +582,8 @@ export const STORIES_F: Record<string, Story> = {
       },
       {
         long: 1,
-        h: 'Later research found the same pattern.',
-        p: 'The psychologist David Barlow found that worry about how you are doing turns attention inward, away from the person, and that this is what dims arousal. **The worry does more than the body.**',
+        h: 'Years later, a psychologist named David Barlow found the same thread.',
+        p: 'In people with sexual problems of many kinds, worry about how you are doing turned attention inward, away from the person, and that is what dimmed arousal. **The worry does more than the body.**',
         dx: 'Years later, the psychologist David Barlow studied people with sexual problems of many kinds and found the same thread. Worry about how you are doing turns attention inward, to yourself and your performance, and away from your partner and the moment. That shift, more than any problem in the body, was what weakened arousal. **The worry does more than the body.** It is the scorecard again, with a new name.',
         fact: { s: 'Model · Barlow, 1986', i: [1] },
       },
@@ -461,9 +596,9 @@ export const STORIES_F: Record<string, Story> = {
         back: 'l43',
       },
       {
-        h: 'After quitting porn, many people find desire goes quiet for a while.',
+        h: 'After quitting porn, many people say desire goes quiet for a while.',
         p: 'It is common, and nobody can say how long it lasts. The pull is to check, to test whether everything still works. **A test is the scorecard, alone**, and it is a common way back in.',
-        dx: 'Many people find that after they quit porn, desire goes quiet for a while. Some feel relief. Many feel fear, that something is broken. It is common, it says nothing final about you, and nobody can honestly tell you how long it lasts. What comes next is the pull to check: to test, alone, whether everything still works. **A test is the scorecard, alone.** It turns your attention onto the gauge, which is the very thing that dims it, and a test with porn is one of the most common ways back into the habit.',
+        dx: 'Many people say that after they quit porn, desire goes quiet for a while. Some feel relief. Many feel fear, that something is broken. It is common, it says nothing final about you, and nobody can honestly tell you how long it lasts. What comes next is the pull to check: to test, alone, whether everything still works. **A test is the scorecard, alone.** It turns your attention onto the gauge, which is the very thing that dims it, and a test with porn is one of the most common ways back into the habit.',
         art: ['scene', { k: 'l48-quiet' }],
       },
       {
@@ -474,7 +609,7 @@ export const STORIES_F: Record<string, Story> = {
       },
     ],
     today: {
-      h: 'Skip the test, and give your body time.',
+      h: 'Take one test off the table this week.',
       l: ['A quiet stretch needs no checking', 'With a partner, put attention on them', 'Ask a doctor if it worries you'],
     },
     you: {
@@ -545,8 +680,8 @@ export const STORIES_F: Record<string, Story> = {
       },
       {
         h: 'Day 60 can bring a thought that does not feel like an urge.',
-        p: '“I could look once, just to see that I am past it.” It feels like confidence, like proof of how far you have come. **It is the cigarette in the hand.**',
-        dx: 'After a good stretch, a thought can show up that does not feel like an urge at all. It feels like confidence. “I could look once, just to see that I am past it.” Or a site that is almost it, or keeping the phone close in the hard hours, because you are strong now. It feels like proof of how far you have come. **It is the cigarette in the hand**: the closeness that pays out a good feeling, chosen by the part of you that feels the strongest.',
+        p: '“Just once, to see that I am past it.” It feels like confidence, like proof of how far you have come. **It is the cigarette in the hand.**',
+        dx: 'After a good stretch, a thought can show up that does not feel like an urge at all. It feels like confidence. “Just once, to see that I am past it.” Or a place or a feed that is almost it, or keeping the phone close in the hard hours, because you are strong now. It feels like proof of how far you have come. **It is the cigarette in the hand**: the closeness that pays out a good feeling, chosen by the part of you that feels the strongest.',
         art: ['scene', { k: 'l49-test' }],
         back: 'l17',
       },
@@ -571,14 +706,798 @@ export const STORIES_F: Record<string, Story> = {
     you: {
       h: 'What is your cigarette in the hand, the small closeness you are most likely to allow?',
       o: [
-        ['Looking once, to check I am past it', 'That is the test. Naming it is most of beating it.'],
-        ['Sites or feeds that are almost it', 'Almost is the desk. It is closer than it looks from a good day.'],
+        ['Just once, to check I am past it', 'That is the test. Naming it is most of beating it.'],
+        ['Places, sites or feeds that are almost it', 'Almost is the desk. It is closer than it looks from a good day.'],
         ['Keeping the phone close in hard hours', 'A small closeness, and a common one. Put it back across the room.'],
         ['I do not know yet', 'Fair. Watch for the thought that feels like confidence.'],
       ],
     },
     scope:
-      'The confidence studies were with smokers, students and people who had quit smoking, not porn, and they were not large. What carries over is a quirk of human judgment: feeling sure of your control makes temptation look safer than it is. Staying clear is a choice you can make every time, and it is what keeps a good stretch going.',
+      'The confidence studies were with smokers, students and people who had quit smoking, not with a habit like this one, and they were not large. What carries over is a quirk of human judgment: feeling sure of your control makes temptation look safer than it is. Staying clear is a choice you can make every time, and it is what keeps a good stretch going.',
     src: [S.nordgren09],
+  },
+
+  l54: {
+    id: 'l54',
+    form: 'works',
+    title: 'The rested self and the worn-out self',
+    ic: 'sunrise',
+    ask: 'Why do my plans fall apart when I am worn out?',
+    key: 'Let the rested you choose, and leave the worn-out you a setup to follow.',
+    np: 'One thing my rested self will set up for my worn-out hours',
+    tell: [
+      {
+        h: 'In 1998, two researchers went from office to office in Amsterdam with a basket of snacks.',
+        p: 'Apples and bananas on one side, chocolate bars and chips on the other. Two hundred workers each picked one, to be **delivered a week later**.',
+        dx: 'Daniel Read and Barbara van Leeuwen visited workplaces around Amsterdam, two hundred workers in all. They carried two kinds of snack: apples and bananas, and chocolate bars, chips and salted nuts. Each worker picked one, and the catch was the timing. The snack would not be handed over now. It would be **delivered a week later**. Some chose right after lunch, full. Some chose late in the afternoon, hungry.',
+        art: ['scene', { k: 'l54-basket' }],
+      },
+      {
+        h: 'A week later, they came back with the basket.',
+        p: 'They held out the snack each person had picked, and said: you can change your mind now, and **take any one you like** to eat right away.',
+        dx: 'A week later, at the agreed hour, the researchers came back with the basket. They held out the snack each worker had chosen the week before. Then they made an offer: you are free to change your mind. **Take any one you like**, and eat it now. Nobody was graded. The question was only whether the person choosing for later and the person choosing for now would pick the same thing.',
+        art: ['scene', { k: 'l54-back' }],
+      },
+      {
+        k: 'ask',
+        h: 'Say you picked fruit last week, and the chocolate is right there now. What do you take?',
+        o: [
+          ['The fruit, I picked it', 'Then you would be in the smaller group. Look at what most people did.'],
+          ['The chocolate, honestly', 'Honest, and very common. Look at the numbers.'],
+          ['Depends how my day went', 'That is the heart of this lesson. Look at what moved the choice.'],
+          ['I would not have picked fruit', 'Fair. Look at what the people who did pick it did next.'],
+        ],
+      },
+      {
+        h: 'Full after lunch, most chose fruit for next week. On the day, most took the treat.',
+        p: 'Among workers who chose just after lunch both times, 74 in 100 picked fruit for the week ahead. On the day, 70 in 100 took the chocolate or chips. **Even full and comfortable, most switched.** Almost nobody switched the other way.',
+        dx: 'Look at the workers who chose both times just after lunch, full and comfortable. For next week, 74 in every 100 picked fruit. On the day itself, offered the basket again, 70 in every 100 took the chocolate, the chips or the nuts. **Most who had picked fruit switched.** Almost nobody went the other way, from chocolate to an apple. The same people, a week apart, wanted different things, and each choice felt right at the time it was made.',
+        art: ['people', { n: 70, was: 26, s: 'took the treat, on the day' }],
+        fact: { s: 'Study · 200 office workers · Read & van Leeuwen, 1998', i: [0] },
+      },
+      {
+        h: 'How hungry they were while choosing mattered too.',
+        p: 'Workers who chose ahead while hungry picked less fruit for next week, though next week was nowhere near. **The state you choose in leaks into the choice.**',
+        dx: 'There was a second finding, quieter and just as useful. Workers who made their choice for next week late in the afternoon, already hungry, picked less fruit than workers who chose just after lunch. Next week was a week away. Their hunger had nothing to do with it. It leaked in anyway. **The state you choose in leaks into the choice**, even a choice about another day. So it is not only choosing ahead that helps. It is choosing ahead while rested.',
+      },
+      {
+        long: 1,
+        h: 'A year later, other researchers saw the same thing with films.',
+        p: 'People picking films for evenings days ahead chose serious ones about two times in three. For the night they were in, a little under half. **Schindler’s List was picked 13 times for a later night, and once for the same night.**',
+        dx: 'In another study, people picked three films to watch on three evenings, from a list of light comedies and serious, demanding ones. When they picked films for evenings days ahead, about two in three were the serious kind. When they picked for the evening they were in, it was a little under half. One film tells the whole story. **Schindler’s List was picked 13 times for a later night, and once for the same night.** Everyone wants to have watched it. Almost nobody wants to watch it tonight.',
+        art: ['scene', { k: 'l54-films' }],
+        fact: { s: 'Study · Read, Loewenstein & Kalyanaraman, 1999', i: [1] },
+      },
+      {
+        h: 'You are two people, and both of them are you.',
+        p: 'One chooses for later, with the long view. The other chooses for now, and now always leans toward relief. When the tank is low, it leans harder. **Neither one is fake.**',
+        dx: 'So in a sense you are two people. One chooses with a full tank: rested, fed, with the long view of what you want your life to be. The other lives in the moment when the tank is low: drained, short of patience, looking for the quickest relief. **Neither one is fake**, and neither is the one true you hiding behind the other. The worn-out one is not bad or weak. It is tired. And if a full stomach could not hold the choice when the basket came back, a worn-out hour holds it even less.',
+        art: ['scene', { k: 'l54-two-selves' }],
+      },
+      {
+        h: 'Worn out does not keep a clock.',
+        p: 'A long shift, a hard talk, a short night, an empty stomach, a slump in the middle of the day. After poor sleep, people act more on impulse. **Your worn-out hours are your own**, and you know them.',
+        dx: 'Worn out is not one time of day. It is a long shift, a hard conversation, a short night, an empty stomach, a slump in the middle of the afternoon, the hour after the children are finally asleep. A review of research on sleep and self-control found the same thing again and again: after short or poor sleep, people act more on impulse and think less about later. **Your worn-out hours are your own**, and your log can show you when they come.',
+        art: ['scene', { k: 'l54-tank' }],
+        fact: { s: 'Review · Pilcher and colleagues, 2015', i: [2] },
+      },
+      {
+        h: 'So let the rested you do the choosing.',
+        p: 'Not with a promise, which the worn-out you has to keep. With a setup: where the phone charges, what is in the room, what the next hour holds. **The worn-out you only has to follow.**',
+        dx: 'Here is how the two can work together. The rested you should not make a promise, because a promise has to be kept by the worn-out you, at the worst moment, against the basket. Instead the rested you makes a setup. Where the phone charges. What is in the house and what is not. What the next hard hour already holds: a walk, a call, a shower, sleep. **The worn-out you only has to follow** what is already there.',
+        art: ['scene', { k: 'l54-setup' }],
+      },
+      {
+        long: 1,
+        h: 'The workers who switched were not weak.',
+        p: 'They were the same people, just as full, a week apart. The only thing that changed was that the snack was in front of them. A setup moves the snack, **like packing tomorrow’s lunch**.',
+        dx: 'Nobody would call those office workers weak for taking the chocolate. They were the same people, just as full, a week apart. The only thing that changed was that the snack was now in front of them, and now always pulls harder than next week. That is what a setup respects. It is how the rested one looks after the tired one, **like packing tomorrow’s lunch** while you have the energy, for someone you care about. It is not distrust of yourself. It is kindness, passed forward to the hour that will need it.',
+      },
+    ],
+    mine: { h: 'Here is when your hours get hard.', k: 'hour' },
+    today: {
+      h: 'Set up one worn-out hour while you are rested.',
+      l: ['Pick the hour that wears you down most', 'Choose one thing to move before it comes', 'Do it now, while you are rested'],
+    },
+    you: {
+      h: 'What could your rested self set up for your worn-out self?',
+      o: [
+        ['Where the phone charges', 'If the pull comes through a screen, this is often the biggest one.'],
+        ['What is in the house', 'What is not there cannot be reached for. That is a strong setup.'],
+        ['Who I message when it starts', 'Then pick the person now, and keep their name at the top.'],
+        ['I do not know yet', 'Fair. Watch your next worn-out hour, and see what it reached for.'],
+      ],
+    },
+    scope:
+      'The snack and film studies were about everyday choices, not a habit like this one, and the sleep review covers self-control in general. Together they point one hopeful way: the rested hours of the day can set up the worn-out ones, and that is a skill anyone can learn.',
+    src: [S2.read98, S2.read99, N.pilcher15],
+  },
+
+  l55: {
+    id: 'l55',
+    form: 'works',
+    title: 'Where the phone sleeps',
+    ic: 'phone',
+    ask: 'What changes if my phone sleeps somewhere else?',
+    key: 'Twenty seconds of trouble changes what hands do. Give the phone a place that is not beside you.',
+    np: 'Where my phone will sleep, and what I will use instead',
+    tell: [
+      {
+        h: 'A writer who studies happiness wanted to practice the guitar every day.',
+        p: 'Shawn Achor drew a chart with 21 boxes, one for each day. He kept the guitar in a closet, about twenty seconds away. **He played for four days, and stopped.**',
+        dx: 'Shawn Achor taught and studied happiness, and he wanted to practice the guitar every day, the way he told his students to build good habits. He drew a chart with 21 boxes, one for each day of three weeks, and planned to check one off every evening. He kept the guitar where guitars usually live, in a closet, out of sight. Getting it out took about twenty seconds. **He played for four days, and stopped.** He wanted to play. He just did not, once the twenty seconds stood in the way.',
+        art: ['scene', { k: 'l55-closet' }],
+      },
+      {
+        h: 'The second time, he changed one thing.',
+        p: 'He bought a two-dollar stand and set the guitar in the middle of the living room. **Three weeks later, all 21 boxes were checked.**',
+        dx: 'He tried again, and this time he did not try to want it more. He changed where the guitar lived. He bought a stand for two dollars and set the guitar in the middle of the living room, where he walked past it all day. Picking it up now took no effort at all. **Three weeks later, all 21 boxes were checked.** Nothing about his willpower had changed. Twenty seconds had.',
+        art: ['scene', { k: 'l55-stand' }],
+        fact: { s: 'Book · Achor, The Happiness Advantage, 2010', i: [0] },
+      },
+      {
+        long: 1,
+        h: 'Then he turned the trick around.',
+        p: 'To watch less television, he took the batteries out of the remote and put them in another room. **A small delay worked against a habit as well as for one.**',
+        dx: 'Then he turned the trick around, on a habit he wanted less of. He took the batteries out of the television remote and put them in another room. Now, to switch on the television, he had to get up and fetch them, and he found he watched less. He called it the twenty-second rule: make what you want to do twenty seconds easier, and what you do not want twenty seconds harder. **A small delay worked against a habit as well as for one.**',
+        art: ['scene', { k: 'l55-remote' }],
+      },
+      {
+        k: 'ask',
+        h: 'In your hardest hours, where is your phone?',
+        o: [
+          ['In my hand, or my pocket', 'Then the reach is zero. Look at what a small reach does.'],
+          ['Next to me, face down', 'Face down is still within reach. Look at the next card.'],
+          ['In the room, charging', 'Closer than it feels. A few steps can be a lot, as you will see.'],
+          ['In another room already', 'Then you have already done this lesson. Look at why it works.'],
+        ],
+      },
+      {
+        h: 'A hospital salad bar tested the same idea with food.',
+        p: 'Researchers in Philadelphia moved one dish about ten inches farther back, a slightly longer reach. **People took about a tenth less of it.** Serving it with tongs instead of a spoon cut it by a sixth.',
+        dx: 'At a salad bar in a hospital cafeteria in Philadelphia, Paul Rozin and his colleagues made changes too small for anyone to notice. They moved one dish from the edge of the bar to the middle row, about ten inches farther back. **People took about a tenth less of it.** On other days they swapped the serving spoon for tongs, which are a little more awkward, and people took about a sixth less. Nobody had been told anything. The reach did it.',
+        art: ['scene', { k: 'l55-salad' }],
+        fact: { s: 'Study · Rozin and colleagues, 2011', i: [1] },
+      },
+      {
+        long: 1,
+        h: 'Nobody decided anything.',
+        p: 'The food was the same, the people were the same, and nobody chose to take less. **A small reach changed what hands did**, without a single fight.',
+        dx: 'Look at what did not happen at that salad bar. Nobody resolved to eat better. Nobody fought an urge or felt proud of resisting. The food was the same, the people were the same, and each one would have said they took what they wanted. And still, **a small reach changed what hands did**, without a single fight. That is the part of a habit that willpower never sees: much of it is decided by what is easy to reach.',
+      },
+      {
+        h: 'What is within reach asks for zero seconds.',
+        p: 'A phone in your hand, or what your habit reaches for on the shelf, is there at the moment you are least able to choose. In another room, it asks for twenty. **Twenty seconds is often enough to notice what you are doing, and choose.**',
+        dx: 'Now think of the phone in your hardest hours. In your hand or beside you, it asks for zero seconds. Everything on it is a thumb away, at the very moment you are least able to choose well. Charging in another room, it asks for twenty: get up, walk, pick it up. That is not a wall, and it is not meant to be. But it is enough to break the automatic reach. **Twenty seconds is often enough to notice what you are doing, and choose**, and an urge noticed is an urge that can be ridden out. The same goes for anything your habit reaches for: a bottle out of the house, an app off the home screen.',
+        art: ['scene', { k: 'l55-hall' }],
+        back: 'l2',
+      },
+      {
+        long: 1,
+        h: 'A phone close by takes rest as well.',
+        p: 'In a survey of 844 adults, using the phone after the lights went out went with later, worse sleep and more tiredness. **A tired day makes every pull louder.**',
+        dx: 'There is a second cost to a phone that sleeps beside you. In a survey of 844 adults in Belgium, people who used their phone after the lights went out fell asleep later, slept worse and felt more tired. Poor sleep then makes the next day harder in its own way, because **a tired day makes every pull louder**. Moving the phone does two jobs at once: it adds the twenty seconds, and it gives back some of the rest that helps you say no.',
+        fact: { s: 'Survey · 844 adults · Exelmans & Van den Bulck, 2016', i: [2] },
+        back: 'l54',
+      },
+      {
+        h: 'So give the phone a place to sleep that is not beside you.',
+        p: 'A charger in the kitchen or by the door, a cheap alarm clock for waking, a drawer in your hard hours. It still rings if someone needs you. **It just cannot sit in your hand.**',
+        dx: 'So give the phone its own place to sleep, somewhere that is not beside you: a charger in the kitchen, or by the front door. Use a cheap alarm clock for waking, which can wake you and cannot open anything else. The phone still rings if someone needs you, and you will hear it. **It just cannot sit in your hand.** Do the same in your hard hours during the day: a shelf, a drawer, a bag across the room. Twenty seconds, wherever you need them.',
+        art: ['scene', { k: 'l55-charger' }],
+      },
+    ],
+    mine: { h: 'Here is what your log says comes first.', k: 'trigger' },
+    today: {
+      h: 'Give the phone its own place to charge today.',
+      l: ['Pick a spot outside the room you rest in', 'Use a cheap alarm clock for waking', 'In your hard hours, leave it there'],
+    },
+    you: {
+      h: 'What keeps your phone close in your hard hours?',
+      o: [
+        ['It is my alarm', 'A cheap alarm clock does that job, and it cannot open anything.'],
+        ['Music or something to wind down', 'A small speaker or an old player can do that, with no feed in it.'],
+        ['I want to be reachable', 'A phone in the next room still rings. You will hear the calls that matter.'],
+        ['I just always have', 'Then it is habit, not need. Twenty seconds can move a habit.'],
+      ],
+    },
+    scope:
+      'The guitar is one person’s story, the salad bar study was about food, and the sleep survey followed adults in one country. They point one hopeful way: a small change in how easy something is to reach changes what people do, with no fight at all, and a phone is one of the easiest things to move.',
+    src: [S2.achor, S2.rozin11, N.exelmans16],
+  },
+
+  l56: {
+    id: 'l56',
+    form: 'works',
+    title: 'A wall with doors',
+    ic: 'shield',
+    ask: 'Is a filter worth it if I can always get around it?',
+    key: 'A safe is rated in minutes. A filter does not have to hold forever, only long enough.',
+    np: 'The doors my filter does not cover yet, and who could hold the code',
+    tell: [
+      {
+        h: 'Bank safes are never sold as unbreakable.',
+        p: 'They are rated in minutes. A safe marked TL-15 held off two trained testers with drills and grinders for fifteen minutes. **The rating is not whether it can be opened. It is how long it takes.**',
+        dx: 'In the United States, safes are tested by Underwriters Laboratories, and the ratings surprise people. No safe is ever rated unbreakable. Instead, two trained technicians attack it with hand tools, drills and grinders, with the clock running only while a tool is touching the safe. A safe marked TL-15 held them off for fifteen minutes. TL-30, for thirty. **The rating is not whether it can be opened. It is how long it takes.** Everyone in the business knows that a determined person with time will get in.',
+        art: ['scene', { k: 'l56-safe' }],
+        fact: { s: 'Standard · UL 687, burglary-resistant safes', i: [0] },
+      },
+      {
+        h: 'The minutes are the whole point.',
+        p: 'A safe does not have to stop a thief forever. It has to hold until the alarm brings someone. **The delay is the protection.**',
+        dx: 'So why would anyone pay for a safe that can be opened? Because the safe is never working alone. It is part of a plan: an alarm, a camera, a guard, a police car on the way. The safe only has to hold until help arrives. Fifteen minutes is enough when help comes in ten. **The delay is the protection.** A safe that bought no time would be worthless, and a safe that bought enough time is as good as a wall.',
+        art: ['scene', { k: 'l56-alarm' }],
+      },
+      {
+        k: 'ask',
+        h: 'When you got around a block before, how did you do it?',
+        o: [
+          ['Another browser or app', 'Then the wall had a door in it. Most doors can be closed once you know them.'],
+          ['Another device', 'A wall on one device sends the urge to the next. Each one needs its own.'],
+          ['I turned it off myself', 'Then the code was in your hands. Someone else can hold it.'],
+          ['I have never tried a block', 'Then you start with a clear map of where the doors are.'],
+        ],
+      },
+      {
+        h: 'A filter is a safe, not a cage.',
+        p: 'Someone determined can get past it, and so can you, in a hard hour. But it is not built to hold forever. **It is built to hold long enough.**',
+        dx: 'Many people set up a filter, find a way around it a week later, and decide filters do not work. That is judging a safe by asking whether it can be opened. A filter is not a cage. Someone determined can get past it, and so can you, in a hard hour, with enough time. But it was never built to hold forever. **It is built to hold long enough**, the way a safe holds until the alarm brings someone.',
+        art: ['scene', { k: 'l56-not-cage' }],
+      },
+      {
+        h: 'Long enough for what? An urge rises, peaks and falls, often within minutes.',
+        p: 'Every minute between the thought and the screen is a minute for the wave to come down, and for **the alarm in you to ring**: the part that remembers why you started.',
+        dx: 'So what is the filter holding out for? Not a guard. The help that arrives is inside you. An urge rises, peaks and falls, often within minutes, if it is not fed. Every minute between the first thought and the screen is a minute for the wave to come down. It is also a minute for **the alarm in you to ring**: the part of you that remembers why you started, who you are doing this for, and what the hour after will feel like.',
+        art: ['wave', {}],
+        back: 'l2',
+      },
+      {
+        h: 'A barrier that was easy to get past still helped.',
+        p: 'People who asked to be barred from casinos gambled less and felt more in control, even though slipping in was often easy. **The bar did not have to be perfect to work.**',
+        dx: 'Some casinos let people ask to be barred from entering, and a review gathered the studies of what happened next. Many people who barred themselves gambled less and felt more in control of their lives, even though slipping past the door was often easy, and some did. **The bar did not have to be perfect to work.** What it did was add a step, a moment, a door to push past, and for many people that was the moment they turned around.',
+        art: ['scene', { k: 'l56-door' }],
+        fact: { s: 'Review · Gainsbury, 2014', i: [1] },
+      },
+      {
+        long: 1,
+        h: 'Changing the setting works better than fighting the moment.',
+        p: 'Researchers who study self-control argue that steps taken early, before the pull, help more than resisting once the pull is strong. **A filter makes the choice before the urge does.**',
+        dx: 'Angela Duckworth and her colleagues looked at the many ways people try to control themselves, sorted by when they step in. From the studies they gathered, they argue that the moves made early, like choosing where you will be and what is in reach, help more than the moves made late, gritting your teeth once the pull is already strong. **A filter makes the choice before the urge does.** It is the rested you, setting up the hour for the worn-out you.',
+        fact: { s: 'Review · Duckworth, Gendler & Gross, 2016', i: [2] },
+        back: 'l54',
+      },
+      {
+        h: 'A wall has doors. Name yours on a calm day.',
+        p: 'A second browser, a private window, an app with its own search, a tablet in a drawer. **Close the doors you know, and hand the key to someone else.** Turning it off should never be one tap.',
+        dx: 'Every filter covers what it knows, and the doors are elsewhere. A second browser. A private window. An app with its own search or a feed that shows anything. A tablet, a laptop, an old phone in a drawer. Name your doors once, on a calm day, and close the ones you can. Then **hand the key to someone else**, so turning it off is never one tap in a hard hour.',
+        art: ['scene', { k: 'l56-doors' }],
+      },
+      {
+        long: 1,
+        h: 'Let someone else hold the code.',
+        p: 'Most phones have built-in limits, like Screen Time on an iPhone, and a friend can set the passcode. You do not have to tell them everything. **“Can you set a code I do not know?” is enough.**',
+        dx: 'Most phones have limits built in, like Screen Time on an iPhone, and a passcode can lock them. Ask a friend, a partner or a family member to set that code, and not to tell you. You do not have to explain everything. **“Can you set a code I do not know?” is enough.** It turns the off switch from one tap into a conversation, and few people want to have that conversation in the worst minute of their day.',
+        fact: { s: 'Apple · Screen Time passcode', i: [3] },
+      },
+    ],
+    today: {
+      h: 'Close the doors you know, and hand over the key.',
+      l: ['Turn on a block on every device', 'Close the side doors: apps and browsers', 'Let someone you trust set the code'],
+    },
+    you: {
+      h: 'Which door does your filter not cover yet?',
+      o: [
+        ['Another browser or app', 'Close it today, while you are calm. One door at a time is enough.'],
+        ['Another device', 'Then the block needs a second home. It takes ten minutes.'],
+        ['I can turn it off myself', 'Then the key is the door. Ask someone to hold the code.'],
+        ['I do not have a filter yet', 'Then start with one device, the one in your hand most.'],
+      ],
+    },
+    scope:
+      'Safe ratings are about burglary, the barring review is about gambling, and the self-control review covers habits of many kinds. The idea carries over cleanly and hopefully: a barrier does not have to be perfect to help. Every minute it adds is a minute for the urge to pass.',
+    src: [S2.ul687, N.gainsbury14, N.duckworth16, N.screentime],
+  },
+
+  l57: {
+    id: 'l57',
+    form: 'life',
+    title: 'Nobody gets free alone',
+    ic: 'chat',
+    ask: 'Should I not be able to do this on my own?',
+    key: 'You do not need a crowd. You need one person at the other end of the line.',
+    np: 'The one person I could call, and the first sentence I would say',
+    tell: [
+      {
+        h: 'In May 1935, a man named Bill Wilson stood alone in a hotel lobby in Akron, Ohio.',
+        p: 'He had come to win a business deal, and it had failed. It was a Saturday in a strange city. **He had been sober for five months**, and he felt it slipping.',
+        dx: 'Bill Wilson was a stockbroker from New York who had nearly drunk himself to death. Five months earlier he had stopped, with the help of a group in New York that met to talk honestly about their lives. Now he was in Akron, Ohio, on a business trip that had just fallen apart. It was a Saturday. He knew nobody in town. He had a little money in his pocket and a long weekend in front of him. **He had been sober for five months**, and alone in the Mayflower Hotel, he could feel it slipping.',
+        art: ['scene', { k: 'l57-lobby' }],
+      },
+      {
+        h: 'At one end of the lobby was the bar. At the other, a board listing the town’s churches, and a telephone.',
+        p: 'He could hear the bar. He paced between the two ends. And a thought came to him: **he did not need a drink. He needed to talk to someone who drank the way he had.**',
+        dx: 'The lobby had a bar at one end. He could hear the voices and the glasses. At the other end hung a board listing the churches in town, and near it, a telephone. He paced from one end to the other. Then a thought came that would change his life and, later, millions of others: **he did not need a drink. He needed to talk to someone who drank the way he had.** Not for that person’s sake. For his own, to stay sober through the weekend.',
+        art: ['scene', { k: 'l57-two-ends' }],
+      },
+      {
+        k: 'ask',
+        h: 'Say you were in that lobby. What would you do?',
+        o: [
+          ['Go to the bar, just for one', 'That is what the lobby was pulling for. Look at what he did.'],
+          ['Go up to my room and wait it out', 'Alone with it is how many hard hours go. Look at what he did instead.'],
+          ['Call someone I know', 'That is close to what he did, with one twist.'],
+          ['I do not know', 'Fair. Neither did he, for a while.'],
+        ],
+      },
+      {
+        h: 'He went to the phone.',
+        p: 'He called a minister from the board, who gave him a list of names. Call after call came to nothing, until **one person said yes**: Henrietta Seiberling, who knew a doctor in town who could not stop drinking.',
+        dx: 'He went to the telephone. He called a minister named Walter Tunks, picked from the board, and asked if he knew anyone in town who drank too much. The minister gave him a list of about ten names. Bill went down it, call after call, and got nowhere. Then **one person said yes**: Henrietta Seiberling, who knew a surgeon in town named Bob Smith, a good man who could not stop drinking and was hiding it badly.',
+        art: ['scene', { k: 'l57-phone' }],
+      },
+      {
+        h: 'The next day, Bill sat down with Dr. Bob Smith.',
+        p: 'Dr. Bob had promised his wife he would stay fifteen minutes, no more. **They talked for about six hours.** Bill did not lecture him. He told him his own story, and what it had cost.',
+        dx: 'The next day, a Sunday, they met at the gatehouse on the Seiberling estate, with Dr. Bob’s wife Anne there too. Dr. Bob was hung over and did not want to come. He told Anne fifteen minutes would be the most he could stand. **They talked for about six hours.** Bill did not preach or tell Dr. Bob what to do. He told his own story: how the drinking went, what it had taken from him, how he had stopped. Dr. Bob said later it was the first time he had talked with someone who knew, from the inside, what he was talking about.',
+        art: ['scene', { k: 'l57-talk' }],
+        fact: { s: 'Talk · Dr. Bob, 1948 (AA pamphlet)', i: [0] },
+      },
+      {
+        h: 'Look at who was helped in that room.',
+        p: 'Bill had not called to rescue Dr. Bob. **He called to save himself.** Talking honestly with someone who had the same trouble was what kept him away from the bar.',
+        dx: 'It is easy to read it as Bill rescuing Dr. Bob. But Bill had picked up that phone for himself. **He called to save himself.** Telling the truth to someone who had the same trouble did something nothing else had done that weekend: it pulled him out of his own head, out of the lobby, and away from the bar. Both men walked out of that gatehouse sober. Each had been the help the other needed.',
+      },
+      {
+        long: 1,
+        h: 'A few weeks later, Dr. Bob had his last drink.',
+        p: 'The date was June 10, 1935. The two men began what became Alcoholics Anonymous, built on what Bill found in that lobby: **people stay free by helping each other stay free.**',
+        dx: 'It was not instant. A few weeks later Dr. Bob went on one more binge, at a medical conference, and when he came home, Bill helped him sober up. His last drink was on June 10, 1935, and that day is still counted as the start of Alcoholics Anonymous. Everything that grew from it, the meetings in towns all over the world, rests on what Bill found pacing that lobby: **people stay free by helping each other stay free.**',
+        art: ['scene', { k: 'l57-meeting' }],
+      },
+      {
+        h: 'Seventy years later, a study of 210 people quitting drinking looked at who was around them.',
+        p: 'Each friend who did not drink went with about a quarter better chance of a year without drinking. **One person was enough to move the numbers.**',
+        dx: 'Researchers in Connecticut followed 210 people quitting drinking and helped some of them change who they spent time with. They found that adding someone who did not drink went with better odds. Each friend in a person’s circle who did not drink went with about a quarter better chance of a whole year without drinking. **One person was enough to move the numbers.** Not a crowd, not a program on its own. One person.',
+        art: ['scene', { k: 'l57-circle' }],
+        fact: { s: 'Study · 210 adults · Litt and colleagues, 2009', i: [1] },
+      },
+      {
+        long: 1,
+        h: 'Being seen is a kind of help, too.',
+        p: 'A review of 138 studies found that keeping track of progress helped people reach their goals, and helped most when **someone else could see it**.',
+        dx: 'A review of 138 studies looked at whether keeping track of progress helps people reach their goals. It does. And it helped most when the progress was reported to someone else, or made public, rather than kept in a private notebook. **Someone else could see it**, and that changed how people kept going on the days they would rather not look. A person who knows is not a judge. They are a light left on.',
+        fact: { s: 'Review · 138 studies · Harkin and colleagues, 2016', i: [2] },
+      },
+      {
+        h: 'Nobody gets free alone, and it is not because you are weak.',
+        p: 'It is because a person who knows your trouble does something no plan can. **They are the phone at the other end of the lobby.**',
+        dx: 'So needing someone is not a sign you are weaker than the people who make it. It is how the people who make it did it, starting with the two men who began the best-known group of all. A person who knows your trouble does something no plan, app or promise can: they pull you out of your own head at the worst moment. **They are the phone at the other end of the lobby.** You need one. Not a crowd, and not your whole story. One person, and one true sentence.',
+        art: ['scene', { k: 'l57-line' }],
+      },
+    ],
+    mine: { h: 'Here is what you have come back from already.', k: 'back' },
+    today: {
+      h: 'Tell one person, in one sentence.',
+      l: ['Pick the one person who feels safe', 'Say one true sentence, not the whole story', 'Ask them to check in once a week'],
+    },
+    you: {
+      h: 'If you picked up the phone in that lobby, who would you call?',
+      o: [
+        ['A friend I trust', 'A friend who knows can check in, and you never have to explain twice.'],
+        ['My partner, or someone at home', 'That can be a big step. It often goes better planned than blurted.'],
+        ['A counselor, a group or a faith leader', 'They hear this often. They will not be shocked.'],
+        ['Nobody yet', 'That is honest. Bill started with a list of strangers. A group can be yours.'],
+      ],
+    },
+    scope:
+      'Bill W. and Dr. Bob are a real moment in history, told from Dr. Bob’s own account. The network study was with people quitting drinking, and the tracking review covers goals of many kinds. They point one hopeful way: change goes further with even one person beside you, and that person can be found.',
+    src: [S2.drbob, N.litt09, N.harkin16],
+  },
+
+  l58: {
+    id: 'l58',
+    form: 'breakdown',
+    title: 'When the habit is carrying something heavier',
+    ic: 'life',
+    ask: 'What if the habit is how I cope with something bigger?',
+    key: 'The habit was already your help with a heavy feeling. Give that feeling better help.',
+    np: 'What the habit might be carrying for me, and one person I could ask about it',
+    tell: L58_TELL,
+    today: {
+      h: 'Give the heavy thing one step of care this week.',
+      l: ['Tell a doctor how your sleep and mood are', 'Look for a counselor, even a low-cost one', 'Tell one person how you have been'],
+    },
+    you: {
+      h: 'What might the habit be carrying for you?',
+      o: [
+        ['Low mood or worry', 'That is common, and there is help for it. It deserves its own care.'],
+        ['Bad sleep', 'Sleep can be treated, and better sleep lifts the rest. Start there.'],
+        ['Feeling alone', 'Then a person, a group or a counselor meets it better than the habit can.'],
+        ['I am not sure yet', 'Fair. The next heavy week, ask what the habit is helping with.'],
+      ],
+    },
+    scope:
+      'The sleep trial was with students, and the guideline is written for doctors in the United Kingdom. Both say the same hopeful thing: low mood, worry and poor sleep respond well to care, and getting that care makes every other change easier.',
+    src: [N.freeman17, N.nice22],
+    hab: {
+      alcohol: {
+        tell: [
+          ...L58_TELL.slice(0, L58_AT),
+          {
+            h: 'For drinking, there are medicines that work, and a doctor should help with the first days.',
+            p: 'Naltrexone and acamprosate can make cravings weaker. If you drink every day or a lot, **stopping all at once can be dangerous**, so ask a doctor first. Low mood and worry under the drinking have their own help too.',
+            dx: 'For drinking, there is help many people never hear about. Medicines such as naltrexone and acamprosate are approved for alcohol problems. They are not habit-forming, and they can make cravings weaker and heavy drinking less likely. Few people who could use one are ever offered it, so it is worth asking. And if you drink every day, or a lot at a time, **stopping all at once can be dangerous**: a doctor should help with the first days. Low mood and worry under the drinking have their own good help too.',
+            art: ['scene', { k: 'l58-ask' }],
+            fact: { s: 'Health body · NIAAA', i: [1] },
+          },
+          ...L58_TELL.slice(L58_AT + 1),
+        ],
+        scope:
+          'The sleep trial was with students, and the medicines are those NIAAA lists for alcohol use disorder. Both say the same hopeful thing: the heavier things under a habit respond well to care, and for drinking, medicine is one more tool a doctor can offer.',
+        src: [N.freeman17, N.niaaa],
+      },
+    },
+  },
+
+  l50: {
+    id: 'l50',
+    form: 'study',
+    title: 'The drink in every hand',
+    ic: 'glass',
+    ask: 'How do I stay free when everyone around me is drinking?',
+    key: 'People notice your glass far less than you fear. Pick your drink and your words before you go.',
+    np: 'What I will order, and the words I will say when someone asks',
+    tell: [
+      {
+        h: 'Around the year 2000, psychologists at Cornell asked students to put on an embarrassing T-shirt.',
+        p: 'It had a big picture of Barry Manilow, a singer their classmates found very uncool. Each student then walked into a room where others were already sitting, **and walked out again.**',
+        dx: 'Thomas Gilovich and his colleagues at Cornell wanted to know how much other people really notice us. They chose a shirt their students had rated as one of the most embarrassing they could think of: a big, smiling picture of Barry Manilow. One student at a time put it on and was sent into a room where other students were already seated, filling in forms. The wearer was a little late, so everyone looked up. A moment later, the wearer was asked to step out again, **and walked out again** into the hall, shirt and all.',
+        art: ['scene', { k: 'l50-shirt' }],
+      },
+      {
+        k: 'ask',
+        h: 'Say that was you, walking in late in that shirt. What would you feel?',
+        o: [
+          ['Everyone is staring at me', 'That is how it feels from inside the shirt. Look at what the room said.'],
+          ['I would laugh it off', 'Then you are ahead of most people. Look at what the room said.'],
+          ['I would want to leave', 'Most people would. Look at how many even noticed.'],
+          ['I would not care', 'Then you already know what the study found. Look at the numbers.'],
+        ],
+      },
+      {
+        h: 'The wearers guessed about half the room had noticed.',
+        p: 'When the researchers asked the room, about a quarter could say what was on the shirt. **People noticed half as much as the wearers feared.** The researchers called it the spotlight effect.',
+        dx: 'Out in the hall, each wearer was asked how many of the people in the room could name the face on the shirt. They guessed about half. Then the researchers asked the people in the room. About a quarter could. **People noticed half as much as the wearers feared.** The researchers called it the spotlight effect: we feel lit up, as if everyone is watching us, because we are watching ourselves so closely. Everyone else is busy feeling lit up too.',
+        art: ['people', { n: 25, s: 'could name the face on the shirt' }],
+        fact: { s: 'Study · Gilovich, Medvec & Savitsky, 2000', i: [0] },
+      },
+      {
+        h: 'A glass in your hand is a far smaller thing than that shirt.',
+        p: 'At a table, most people are watching their own drink, their own words, how they come across. Some will ask. **Most will not remember by the next round.**',
+        dx: 'Now think of the table, the toast, the round being ordered. If a giant face of Barry Manilow drew only a quarter of a room, a soda water in your hand draws far less. Most people at the table are watching their own drink, their own words, how they come across. Someone may ask, once. **Most will not remember by the next round.** The spotlight you feel when you order something else is mostly your own.',
+        art: ['scene', { k: 'l50-table' }],
+      },
+      {
+        h: 'At Princeton, students were asked how comfortable they were with how much people drank on campus.',
+        p: 'Then they were asked how comfortable they thought the average student was. **Most said the average student was more at ease with it than they were.**',
+        dx: 'In the early 1990s, Deborah Prentice and Dale Miller asked Princeton students a pair of questions. First: how comfortable are you with the amount of drinking that goes on here? Then: how comfortable do you think the average student is? The answers did not match. **Most said the average student was more at ease with it than they were.** Asked about their own friends, they said the same. Almost everyone placed themselves a little outside the crowd.',
+        art: ['scene', { k: 'l50-survey' }],
+        fact: { s: 'Study · Prentice & Miller, 1993', i: [1] },
+      },
+      {
+        h: 'Most of them thought they were the odd one out.',
+        p: 'Most felt less at ease than they thought everyone else was, and each believed they were the one out of step. **A room can be full of people going along, for each other.**',
+        dx: 'Put those answers together and something strange appears. If most students were less comfortable than the average student, then the average student they pictured did not exist. Many felt privately uneasy and believed everyone else was fine. Picture that at a table: each person goes along with what they think the room wants, and the room is only the sum of those guesses. **A room can be full of people going along, for each other.** Researchers call it pluralistic ignorance: everyone wrong about everyone, in the same direction.',
+        art: ['scene', { k: 'l50-odd-one' }],
+      },
+      {
+        long: 1,
+        h: 'Over a term, the young men moved toward the norm they had imagined.',
+        p: 'They began to feel the way they thought everyone felt, though few had felt that way to begin with. **A guess about others became their own feeling.**',
+        dx: 'The researchers followed students through a term. The young men, over the months, shifted their own feelings toward the comfort with drinking they believed everyone else had, though few had felt it to begin with. The young women did not shift. **A guess about others became their own feeling.** That is how a table can push without anyone pushing: each person bends a little toward a crowd that is only in their heads.',
+      },
+      {
+        h: 'So at the table, you may not be the only one who would rather not.',
+        p: 'When you say a plain no, you show the room what one person really thinks. **Someone at that table may be glad you said it first.**',
+        dx: 'So the next time you sit down at a table where a round is being ordered, remember what the Princeton students did not know about each other. You may not be the only one there who would rather not drink tonight. When you say a plain no, warmly and without a speech, you show the room what one person really thinks, which is rarer than it should be. **Someone at that table may be glad you said it first.**',
+        art: ['scene', { k: 'l50-no-thanks' }],
+      },
+      {
+        h: 'And saying no gets easier every time you do it.',
+        p: 'Among 857 adults who signed up for a month off drinking, six months later many felt surer turning down a drink and drank less, even some who did not finish. **Saying no is a skill, and it grows with use.**',
+        dx: 'Researchers in England followed 857 adults who signed up to take January off drinking. Six months later, many of them felt surer they could turn down a drink in company, and were drinking less than before. It held even for some who had not made the whole month, though it was stronger for those who had. **Saying no is a skill, and it grows with use.** The first no at a table is the hardest one you will ever say.',
+        fact: { s: 'Study · 857 adults · de Visser, Robinson & Bond, 2016', i: [2] },
+      },
+      {
+        long: 1,
+        h: 'Plan the push before it comes.',
+        p: 'Pick your drink before you go: soda, tea, an alcohol-free drink you like. Pick your words too. **“I am not drinking tonight” is a full answer.** You do not owe anyone a reason.',
+        dx: 'The hardest moment is the one where someone holds out a glass and you have to decide on the spot. So decide at home. Pick your drink before you go: soda, tea, an alcohol-free drink you like, whatever you will enjoy holding. Pick your words too, and say them once out loud so they come easily. **“I am not drinking tonight” is a full answer.** You do not owe anyone a reason, and if someone keeps pushing, that says something about their glass, not yours.',
+        back: 'l9',
+      },
+    ],
+    mine: { h: 'Look at what has set your urges off.', k: 'trigger' },
+    today: {
+      h: 'Pick your drink and your words before you go.',
+      l: ['Choose your drink now: soda, tea, alcohol-free', 'Say it plainly: “I am not drinking.”', 'Hold a glass, and leave early if you need'],
+    },
+    you: {
+      h: 'When you picture saying no at a table, what do you fear most?',
+      o: [
+        ['That they will think I am boring', 'Most of them will hardly notice. The ones who do may be glad.'],
+        ['That they will ask why', 'Then have your words ready. One plain sentence ends the question.'],
+        ['That I will not have fun', 'Watch what the evening is made of besides the glass.'],
+        ['That I will give in when they push', 'Then plan the push at home. A plan made ahead holds better.'],
+      ],
+    },
+    scope:
+      'The shirt study was about being noticed, not about drinking, and the Princeton and month-off studies asked students and volunteers who chose to take part. They point one hopeful way: the pressure at a table is often smaller than it feels, and saying no gets easier every time you do it.',
+    src: [S3.gilovich, S3.prentice, S3.devisser],
+  },
+
+  l51: {
+    id: 'l51',
+    form: 'study',
+    title: 'The people around the glass',
+    ic: 'heart',
+    ask: 'My drinking hurt people. How do I make it right?',
+    key: 'Trust comes back the way it left, in small moments. Turn toward them, sober, again and again.',
+    np: 'One person I want to show up for, and how',
+    tell: [
+      {
+        h: 'In 1990, a psychologist named John Gottman invited newlywed couples to spend a day in his lab in Seattle.',
+        p: 'It was set up like a bed and breakfast, with a kitchen, a sofa and quiet cameras. **The couples did nothing special.** They cooked, read and talked, the way couples do.',
+        dx: 'John Gottman had spent years studying couples in arguments. This time he wanted to see them on an ordinary day. He fitted out a room at the University of Washington like a little bed and breakfast, with a kitchen, a sofa, books and a view, and invited 130 newlywed couples to spend a day there, one couple at a time, with cameras quietly running. **The couples did nothing special.** They made lunch, read the paper, talked about nothing much. That was the point.',
+        art: ['scene', { k: 'l51-lab' }],
+      },
+      {
+        h: 'He was watching for something small.',
+        p: 'One would say, “Look at that bird outside.” A small reach for attention, which he called a bid. The other could turn toward it, or carry on reading. **Most bids were about almost nothing.**',
+        dx: 'What Gottman watched for was tiny. One partner would look up and say, “Look at that bird outside,” or “Listen to this,” or just sigh. He called these bids: small reaches for the other person’s attention. The other partner could turn toward the bid, look up, ask about the bird, laugh. Or they could turn away, keep reading, say nothing. **Most bids were about almost nothing**, and that is what made them easy to miss.',
+        art: ['scene', { k: 'l51-bird' }],
+      },
+      {
+        k: 'ask',
+        h: 'Think of the person your drinking touched most. What were your ordinary moments with them like?',
+        o: [
+          ['I was often not really there', 'That is honest, and it is the place this lesson starts.'],
+          ['There in body, not in attention', 'Many people say that. Look at what those moments turned out to hold.'],
+          ['We still had good moments', 'Then there is something to build on. Look at how it grows.'],
+          ['I am not sure', 'Fair. Ask them sometime. Their answer will tell you a lot.'],
+        ],
+      },
+      {
+        h: 'Six years later, he checked which couples were still together.',
+        p: 'By his count, the couples still married had turned toward each other’s bids about 86 times in 100. The couples who had split, about 33. **Trust was built in the small moments, not the big ones.**',
+        dx: 'Gottman and his team kept in touch with the couples, and six years later they checked who was still together. Then they went back to the tapes from that ordinary day. By their count, the couples still married had turned toward each other’s small bids about 86 times in every 100. The couples who had divorced had done it about 33 times. Not the big fights, not the anniversaries. **Trust was built in the small moments, not the big ones**, the bird, the joke, the look up from the page.',
+        art: ['people', { n: 86, s: 'bids turned toward, couples still together' }],
+        fact: { s: 'Research · Gottman, newlywed couples', i: [0] },
+      },
+      {
+        h: 'Drinking takes the small moments first.',
+        p: 'The missed call, the half-heard story, the evening you were there and not there. **Much of what it cost the people at home was made of moments like these.**',
+        dx: 'Now look at what drinking does to a home. It rarely takes everything at once. It takes the small moments first: the call you did not pick up, the story you half heard, the game you said you would come to, the evening you were in the room and not really there. Each one alone seems like nothing. **Much of what it cost the people at home was made of moments like these**, thousands of small bids that met no one.',
+        art: ['scene', { k: 'l51-missed' }],
+      },
+      {
+        h: 'So a sincere apology opens the door, and small moments walk through it.',
+        p: 'Across 175 studies, a sincere apology was one of the clearest roads to being forgiven. **But trust comes back the way it left: one small moment at a time.**',
+        dx: 'An apology matters. A review that pooled 175 studies of forgiveness found that a sincere apology was among the things that went most with being forgiven. Say it once, plainly, naming what happened without excuses. But an apology is a door, not the room. **Trust comes back the way it left: one small moment at a time.** The call answered. The phone put down when they talk. The ordinary evening, there and sober, again and again.',
+        fact: { s: 'Review · 175 studies · Fehr, Gelfand & Nag, 2010', i: [1] },
+      },
+      {
+        long: 1,
+        h: 'Bringing them in helps the drinking too.',
+        p: 'In 12 trials where a partner joined the treatment, couples did better than with treatment for the drinker alone, especially in the months after. **The people around the glass are part of how it heals.**',
+        dx: 'Researchers gathered 12 trials of a kind of treatment where the partner takes part, learning together how to support the change and how to talk again. Compared with treatment for the drinker alone, couples who did it together ended up with less drinking, fewer problems from it and happier relationships, and the gains showed most in the months after treatment ended. **The people around the glass are part of how it heals**, not only the ones it hurt.',
+        fact: { s: 'Review · 12 trials · Powers, Vedel & Emmelkamp, 2008', i: [2] },
+      },
+      {
+        h: 'Each bid you turn toward is a small repair.',
+        p: 'Look up when they talk. Answer the call. Be there, sober, for the ordinary day. **No one moment looks like much. Over months, it is what they see.**',
+        dx: 'So the repair is not a performance. It is a habit, built the same way the drinking was: by repetition. Look up when they talk to you. Answer the call. Ask about the bird. Be there, sober, for the day when nothing happens. **No one moment looks like much. Over months, it is what they see**, on their own timeline, not yours. And it works on you too: every bid you turn toward is one more piece of evidence that you are someone who shows up.',
+        art: ['scene', { k: 'l51-turn' }],
+      },
+      {
+        h: 'Leave out any repair that would hurt someone.',
+        p: 'Or one that is only for your own relief. If drinking led to danger at home, a counselor can help you do this safely. **Their hurt and their timeline are theirs.**',
+        dx: 'Some repairs do more harm than good: a confession that wounds someone who did not need to know, or an apology that is really a request to feel better. Leave those out. If drinking led to anger or danger at home, do not do this alone: a counselor can help you make things right safely. And let the people you hurt set the pace. **Their hurt and their timeline are theirs**, and your part is to keep showing up while they decide.',
+      },
+    ],
+    mine: { h: 'Look at what you have already done.', k: 'acted' },
+    today: {
+      h: 'Turn toward one small bid today.',
+      l: ['Notice when someone reaches for you', 'Put everything down, and turn toward them', 'Say sorry once, plainly, if it is owed'],
+    },
+    you: {
+      h: 'Who has paid the most for your drinking, besides you?',
+      o: [
+        ['My partner', 'Then the ordinary evenings with them are where the repair lives.'],
+        ['My kids', 'Children notice what you do far more than what you promise.'],
+        ['A friend or family member', 'Then one answered call could start something.'],
+        ['No one, really', 'Then ask one person close to you how it has been for them, and listen to the whole answer.'],
+      ],
+    },
+    scope:
+      'The bids research comes from couples followed in one lab, as Gottman reports it, and the couples and forgiveness reviews pooled many kinds of studies. Together they point one sure way: repair is real, it takes time, and it is made of small moments of showing up.',
+    src: [S3.gottman, S3.fehr, S3.powers],
+  },
+
+  l52: {
+    id: 'l52',
+    form: 'life',
+    title: 'Chasing it back',
+    ic: 'dice',
+    ask: 'Why do I keep betting to win back what I lost?',
+    key: 'The wheel keeps no account of what you lost. Every chase is a new bet, at the same odds.',
+    np: 'What I will do the next time I feel I have to win it back',
+    tell: [
+      {
+        h: 'The story goes that one evening in August 1913, at the casino in Monte Carlo, the roulette ball kept landing on black.',
+        p: 'Ten times in a row. Fifteen. People left the other tables and crowded round. **Surely red was due.**',
+        dx: 'The story has been told for over a century. One evening in August 1913, at the grand casino in Monte Carlo, the little ball at one roulette table landed on black. Then black again. Then again. Ten times in a row. Fifteen. Word went round the room, and players left the other tables and crowded in. Everyone could feel it. A run that long could not go on. **Surely red was due.**',
+        art: ['scene', { k: 'l52-wheel' }],
+      },
+      {
+        h: 'They bet on red, and lost, and bet more to win it back.',
+        p: 'Black came up 26 times in a row, the story says, and fortunes went with it. **The wheel had no idea what it had just done.** Each spin was a fresh one, with the same odds as the first.',
+        dx: 'So they bet on red, and lost. Then they bet more on red, to win back what they had lost, because now red was even more due. Black came up 26 times in a row, the story says, and the story says fortunes went across the table. But one thing every one of them felt, none of them saw. **The wheel had no idea what it had just done.** It is a wooden wheel and a small ball. Each spin was a fresh one, with exactly the same odds as the first.',
+        art: ['scene', { k: 'l52-red' }],
+        fact: { s: 'Story · Monte Carlo, 1913, the gambler’s fallacy', i: [0] },
+      },
+      {
+        k: 'ask',
+        h: 'When you were down, what did you tell yourself you would do with a win?',
+        o: [
+          ['Stop, once I was even', 'Most people say that. Very few stop at even.'],
+          ['Pay off what I owed', 'The wish is real. A bet is the most expensive way to try.'],
+          ['Win big enough to make it worth it', 'Then the goal kept moving. That is how chasing works.'],
+          ['I did not think, I just bet', 'That is honest. The next cards are about that moment.'],
+        ],
+      },
+      {
+        h: 'Researchers call it the gambler’s fallacy.',
+        p: 'It feels like a loss earns you a win, the way a long wait earns a bus. **The game keeps no account of what you lost.** Every bet starts from zero, with the house edge built in.',
+        dx: 'The feeling those players had now has a name: the gambler’s fallacy. A loss feels like it earns you a win, the way a long wait earns you a bus, or a run of rain earns a sunny day. Your mind keeps a ledger: I am owed. But the game keeps no ledger. **The game keeps no account of what you lost.** The cards, the reels and the odds on the screen start from zero every time, with the house edge built in, and they will start from zero on the next bet too.',
+      },
+      {
+        h: 'In 2009, a team in Cambridge watched what a near miss does in the brain.',
+        p: 'Volunteers played a simple slot game. A near miss felt worse than a plain loss. **And yet it made them want to keep playing**, and lit up some of the same reward areas as a win.',
+        dx: 'Luke Clark and his colleagues at the University of Cambridge built a simple slot game and had volunteers play it, some of them inside a brain scanner. Sometimes the reels lined up for a win. Sometimes they missed by miles. And sometimes they stopped just one place off: a near miss. The volunteers said the near misses felt worse than plain losses. **And yet it made them want to keep playing**, and in the scanner, a near miss lit up some of the same reward areas of the brain that a win does. A miss, dressed as almost.',
+        art: ['scene', { k: 'l52-near-miss' }],
+        fact: { s: 'Study · Clark and colleagues, 2009', i: [1] },
+      },
+      {
+        long: 1,
+        h: 'One classic study found how often an almost keeps people playing.',
+        p: 'Players kept going longest when about 3 in 10 spins were near misses, longer than with fewer or more. An early big win made no clear difference. **A near miss is built to feel like nearly there.**',
+        dx: 'In one classic study, researchers let people play a slot machine where they could stop whenever they liked, and changed how often the reels came up as near misses. When about 3 in every 10 spins were near misses, people kept playing longest, longer than with fewer and longer than with more. A big win early on made no clear difference. **A near miss is built to feel like nearly there.** The game is telling you that you were close. You were exactly as far away as every other loss.',
+        fact: { s: 'Study · Kassinove & Schare, 2001', i: [2] },
+      },
+      {
+        h: 'After a loss, people bet more, and faster.',
+        p: 'A review of research on chasing found losses push stakes up and speed betting up, more so in people with gambling problems. **The pull to get even is a known pattern, not a sign a win is coming.**',
+        dx: 'Researchers who gathered the studies on loss chasing found the same pattern in the lab and in real betting records. After a loss, people tend to bet more, bet faster and take bigger risks, and this is stronger in people who struggle with gambling. It feels like a hunch, or like being on the edge of a turn. **The pull to get even is a known pattern, not a sign a win is coming.** It is the gambler’s fallacy with your money on it.',
+        fact: { s: 'Review · Zhang & Clark, 2020', i: [3] },
+      },
+      {
+        h: 'So call the money what it is: gone.',
+        p: 'Not owed to you. Not waiting at the next spin. **Every chase is a new bet, at the same odds.** Stopping is the one move that keeps the rest.',
+        dx: 'So say the hardest sentence plainly: that money is gone. It is not owed to you. It is not waiting for you at the next spin or the next match. **Every chase is a new bet, at the same odds**, and chasing is how one bad evening becomes many. Stopping does not get the money back. Nothing does. What stopping does is keep everything you still have, and that is the only win on the table.',
+        art: ['scene', { k: 'l52-walk-away' }],
+      },
+      {
+        long: 1,
+        h: '“I will win it back” is a permission thought.',
+        p: 'It sounds like a plan. It is the habit handing you a reason. **Catch it by name, and it loses much of its pull.**',
+        dx: '“I will win it back” sounds like a plan. It even sounds responsible: you are trying to fix the hole. But look at what it asks you to do, which is bet again, right now, at the same odds that made the hole. It is the habit handing you a reason. **Catch it by name, and it loses much of its pull**: there it is, the chase. Then close the app, leave the room, and tell someone the true number.',
+        back: 'l18',
+      },
+    ],
+    mine: { h: 'Your busiest hours show when the chase is likely.', k: 'hour' },
+    today: {
+      h: 'Call the loss what it is, and stop the chase.',
+      l: ['Say it: “That money is gone.”', 'Close the app, and leave the place', 'Tell one person the true number today'],
+    },
+    you: {
+      h: 'What will you do the next time you feel you have to win it back?',
+      o: [
+        ['Say out loud: that money is gone', 'Out loud is stronger than in your head. The ledger closes.'],
+        ['Close the app and walk away', 'Distance does what willpower cannot. Twenty steps is a lot.'],
+        ['Call someone before I bet again', 'A voice on the line breaks the spell faster than most things.'],
+        ['I do not know yet', 'Fair. Pick one now, while you are not in it.'],
+      ],
+    },
+    scope:
+      'The Monte Carlo story is told and retold more than it is recorded, and the near-miss studies were with volunteers, not people with gambling problems. The chasing review gathered lab and real-world studies. They point one sure way: the pull to win it back is a known pattern, and it can be caught and stopped.',
+    src: [S3.fallacy, S3.clark09, S3.kassinove, S3.zhang],
+  },
+
+  l53: {
+    id: 'l53',
+    form: 'word',
+    title: 'The money and the truth',
+    ic: 'shield',
+    ask: 'Do I have to tell anyone about the money?',
+    key: 'A secret sets you apart. Tell one person the true number, and face it together.',
+    np: 'The one person I will tell the true number to, and when',
+    tell: [
+      {
+        h: 'The word secret comes from a Latin word that means to set apart.',
+        p: 'A secret is not only something hidden. It is something that **sets you apart** from the people closest to you, behind a wall only you can see.',
+        dx: 'Secret comes from the Latin secretus, set apart, from a verb that meant to separate or divide. So a secret is not only something hidden in a drawer. It is something that **sets you apart**. Every day you keep it, you live a little to one side of the people closest to you: at the same table, behind a wall only you can see, doing sums in your head they do not know about.',
+        art: ['scene', { k: 'l53-apart' }],
+      },
+      {
+        h: 'A gambling debt kept secret sets you apart twice.',
+        p: 'From the people you hide it from, and from any help they could give. **It needs more secrets to stay hidden**, and more bets to cover them.',
+        dx: 'A debt from gambling, kept secret, sets you apart twice over. From the people you hide it from, who cannot understand why you are tense or short with them. And from the help they could give, because nobody can help with a number they have never heard. Worse, the secret needs feeding. **It needs more secrets to stay hidden**: a story about the bills, a moved payment, a second account. And it needs more bets, to cover the gap before anyone sees it.',
+        art: ['scene', { k: 'l53-twice' }],
+      },
+      {
+        k: 'ask',
+        h: 'If the people closest to you knew the whole number, what do you think would happen?',
+        o: [
+          ['They would leave', 'That fear is heavy. Many families stay, and telling is where help starts.'],
+          ['They already know', 'Then you have done the hardest part. The next cards are about what comes after.'],
+          ['They already suspect something', 'Then the secret may be costing more than the truth would.'],
+          ['I do not know', 'That is honest. Hold it for the next cards.'],
+        ],
+      },
+      {
+        h: 'Doctors list hiding the gambling as one of the signs of the problem.',
+        p: 'Lying about how much you gamble, and leaning on others to cover the losses. **The secret is not a side effect. It is one of the ways the habit keeps itself safe.**',
+        dx: 'The main manual doctors use to name gambling problems lists lying to hide how much a person gambles as one of its signs, along with relying on others for money to cover the losses. That is worth sitting with. **The secret is not a side effect. It is one of the ways the habit keeps itself safe.** As long as nobody knows the number, nobody can stand between you and the next bet.',
+        fact: { s: 'Manual · DSM-5, gambling disorder', i: [0] },
+      },
+      {
+        h: 'Now a second word. Debt comes from the Latin for a thing owed.',
+        p: 'A debt is a number, and a number has an end. It can be paid down, with a plan and with help. **A secret has no end, because it only grows.**',
+        dx: 'Now look at a second word. Debt comes from the Latin debitum, a thing owed. That is all a debt is: a number, owed to someone. It can be large and frightening, but a number has an end. It can be written down, looked at, planned for and paid down over time, with help, and free debt advisers do exactly this every day. **A secret has no end, because it only grows.** Telling turns the secret back into a debt, and a debt is something people get out of.',
+        art: ['scene', { k: 'l53-ledger' }],
+      },
+      {
+        h: 'And confess comes from a word that means to acknowledge, fully.',
+        p: 'Not to grovel, or to punish yourself. **To say plainly what is true**, to someone who can stand beside you while you face it.',
+        dx: 'And a third word. Confess comes from the Latin confiteri, to acknowledge, to admit fully. It does not mean to grovel, or to punish yourself, or to hand yourself over for a sentence. It means **to say plainly what is true**: here is the whole number, here is how it happened. Said to the right person, it is the moment you stop standing apart and someone can stand beside you while you face it.',
+        art: ['scene', { k: 'l53-tell' }],
+        fact: { s: 'Etymology · secret, debt, confess', i: [1] },
+      },
+      {
+        long: 1,
+        h: 'People who put a wall between themselves and the bet gambled less.',
+        p: 'In studies of self-exclusion, where people ask to be barred from betting, many gambled less and felt more in control. **A wall around the money works better than willpower at the edge of it.**',
+        dx: 'Telling one person also makes something else possible: a wall around the money. A review of self-exclusion, where people ask casinos or betting sites to bar them, found that many who signed up gambled less, felt more in control and had fewer problems afterward. Shared control of a card or an account is built on the same idea. **A wall around the money works better than willpower at the edge of it**, and you cannot build that wall alone in secret.',
+        fact: { s: 'Review · Gainsbury, 2014', i: [2] },
+      },
+      {
+        h: 'So tell one safe person the true number, and share the keys.',
+        p: 'The whole total, not the easy half. Let them hold a card or see the account, and call a free debt adviser. **The day you tell is the day the number stops growing in the dark.**',
+        dx: 'So pick one person and tell them the true number. The whole total, not the easy half, because half the truth keeps half the secret. Let them hold a card, or see the account, or be the second name on it. Call a free debt adviser this week: the gambling helpline in Get help can point you to one, and they hear this every day. **The day you tell is the day the number stops growing in the dark.** It may still be big. It is no longer yours alone.',
+        art: ['scene', { k: 'l53-keys' }],
+      },
+      {
+        h: 'Leave out anyone who would use it to hurt you.',
+        p: 'If telling might not be safe, start with a counselor or the gambling helpline in Get help. **They hear this every day, and they will help you plan.**',
+        dx: 'Not everyone is safe to tell. If someone would use the number to hurt you, or if telling could bring danger at home, start somewhere else: a counselor, a doctor, or the gambling helpline in Get help. **They hear this every day, and they will help you plan** who to tell, how, and what to do about the money first. You still get to stop standing apart. You just start with someone whose job is to stand beside you.',
+      },
+    ],
+    mine: { h: 'Look at what you have already done.', k: 'acted' },
+    today: {
+      h: 'Say the true number out loud, to one person, this week.',
+      l: ['Tell one person the full total', 'Let them hold a card or see the account', 'Call a free debt adviser this week'],
+    },
+    you: {
+      h: 'Who is the one person you could tell the true number to?',
+      o: [
+        ['My partner', 'Then plan the words, and pick a calm moment. The whole number, once.'],
+        ['A family member', 'Family often carries more than we expect. Let them carry some of this.'],
+        ['A friend I trust', 'One friend who knows can check in, and help you hold the keys.'],
+        ['A counselor or helpline first', 'A strong first step. They will help you plan the rest.'],
+      ],
+    },
+    scope:
+      'Where a word comes from does not decide what it means today. Here secret, debt and confess are a way to see the money more clearly. The manual describes what doctors look for, and the self-exclusion review gathered studies of people who chose to bar themselves. Together they point one hopeful way: the truth and a wall around the money help people get free.',
+    src: [S3.dsm, S3.words, N.gainsbury14],
   },
 };

@@ -209,6 +209,17 @@ export default function Setup() {
       setSosOpen(true);
     }, []),
   );
+  /* the free account was made from the last page: when its sheet closes, setup is done and Today's tour follows, rather than landing
+     back on the page before (the account page steps aside once signed in, so the person had to press Next a second time) */
+  const askedAccount = useRef(false);
+  if (pg.k === 'account') askedAccount.current = true;
+  const signedIn = sync.status.k === 'on';
+  useFocusEffect(
+    useCallback(() => {
+      if (askedAccount.current && signedIn && !f.redo && f.saved) done();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [signedIn]),
+  );
   const finish = () => {
     setupKeep.flow = null;
     storeSetup(null);

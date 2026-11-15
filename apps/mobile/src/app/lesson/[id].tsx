@@ -27,7 +27,9 @@ import {
   type Lesson,
   lessonBeats,
   lessonById,
+  lessonAs,
   lessonTo,
+  habitOf,
   lessonVoiced,
   faithVoice,
   lessonDoneOn,
@@ -134,7 +136,14 @@ interface Got {
 const PREVIEW_ON = process.env.EXPO_PUBLIC_SHOTS === '1';
 
 export default function LessonScreen() {
-  const { id, at, pick: picked, len: lenQ, card: cardQ } = useLocalSearchParams<{ id: string; at?: string; pick?: string; len?: string; card?: string }>();
+  const {
+    id,
+    at,
+    pick: picked,
+    len: lenQ,
+    card: cardQ,
+    vo: voQ,
+  } = useLocalSearchParams<{ id: string; at?: string; pick?: string; len?: string; card?: string; vo?: string }>();
   /* the lesson preview (dev only, the demo build: /lesson-preview): any lesson opens at the length asked for, with nothing in the way */
   const preview = PREVIEW_ON && at === 'preview';
   const { snap, tk, update, apply, say } = useStore();
@@ -151,7 +160,9 @@ export default function LessonScreen() {
   const st = snap.settings;
   /* a God lesson speaks in the voice of this person's faith, and a lesson written for porn in the words of their habit (core lessonTo) */
   const found = lessonById(id);
-  const L = found && lessonTo(found, st);
+  /* the preview may read a God lesson in one faith's voice (vo=lds, christian or plain), to look at each one */
+  const voPick = preview && (voQ === 'lds' || voQ === 'christian' || voQ === 'plain') ? voQ : null;
+  const L = found && (voPick ? lessonAs(found, voPick, habitOf(st)) : lessonTo(found, st));
   /* back from a tool or a page the practice step sent the person to: straight to the result, nothing is replayed */
   const [stage, setStage] = useState<Stage>(at === 'practiced' ? 'practiced' : 'cover');
   /* the preview may open on one card (card=N, counted from 1), to look at a single screen */

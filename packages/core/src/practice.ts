@@ -328,7 +328,7 @@ export const PRACTICE: Record<string, PStep> = {
   /* ---------- The God lessons (lesson-turns.ts GOD): said to God, in words every voice shares ---------- */
   g1: {
     h: 'Say where you are.',
-    p: 'Write the one honest sentence you will say tonight, with no cleaning up. Tap an example to start from it.',
+    p: 'Write the one honest sentence you will say to God today, with no cleaning up. Tap an example to start from it.',
     mins: 1,
     write: [
       'I am hiding this, and I am tired of hiding.',
@@ -344,17 +344,17 @@ export const PRACTICE: Record<string, PStep> = {
     mins: 1,
     items: [
       plan('I feel too weak to fight this', 'Tell God plainly, “This is my weakness,” then do one thing on my plan.'),
-      line('words', 'God, here is my weakness. Help me lean on you tonight.'),
+      line('words', 'God, here is my weakness. Help me lean on you today.'),
     ],
     ok: 'Your weak place has somewhere to go.',
   },
   g3: {
-    h: 'Find tonight’s early door.',
-    p: 'The way out is easiest an hour before your hardest time. Add the door you will walk through.',
+    h: 'Find your early door.',
+    p: 'The way out is easiest before the pull is loud. Add the door you will walk through.',
     mins: 1,
     items: [
-      plan('it is an hour before my hardest time', 'Put my phone in the kitchen and go to bed. That is my way out tonight.'),
-      line('words', 'God, show me the way out tonight, and help me walk through it early.'),
+      plan('my hardest hour is coming', 'Walk through the early door: leave the room, put what I reach for out of reach, and pray, “God, this is my way out.”'),
+      line('words', 'God, show me the way out today, and help me walk through it early.'),
     ],
     go: [{ t: 'Set my screens-off time', a: 'tab', v: 'settings', open: 's-sched', ic: 'moon' }],
     ok: 'Your early door is ready.',
@@ -368,11 +368,11 @@ export const PRACTICE: Record<string, PStep> = {
   },
   g5: {
     h: 'Ask to be shown one thing.',
-    p: 'Read one hard night from your log, then write one thing you see and one next step.',
+    p: 'Read one hard day from your log, then write one thing you see and one next step.',
     mins: 3,
     write: [
-      'It starts when I stay up alone after everyone is asleep. Next time I go to bed when they do.',
-      'Most of my hard nights come after a hard day at work. Next time I call someone on the drive home.',
+      'It starts when I am alone and worn out after a long day. Next time I call someone before I sit down.',
+      'Most of my hard days start with a hard morning at work. Next time I call someone on the drive home.',
     ],
     items: [line('words', 'God, show me what I need to see. Then lead me one step on.')],
     ok: 'You looked, and found a step.',
@@ -400,10 +400,10 @@ export const PRACTICE: Record<string, PStep> = {
   },
   g8: {
     h: 'Have your words for the pull.',
-    p: 'Being tempted is not falling. Add the line for the moment the pull comes while you pray.',
+    p: 'Being tempted is not falling. Add the line for the moment the pull is strong.',
     mins: 1,
     items: [
-      plan('a strong pull comes while I pray', 'Say “Tempted is not fallen,” keep praying, and ride it like a wave.'),
+      plan('the pull is strong', 'Say “Tempted is not fallen,” tell God in my own words, and ride it like a wave.'),
       line('words', 'God, this pull is strong. Stay with me through this hour.'),
     ],
     go: [scene('Practice breathing', 'breathe', 'wind')],
@@ -414,7 +414,7 @@ export const PRACTICE: Record<string, PStep> = {
     p: 'Add a line for the hour you feel empty, so the hunger gets real food.',
     mins: 1,
     items: [
-      plan('I feel empty late at night', 'Name the hunger, ask God what would feed it, and do the first good thing.'),
+      plan('I feel empty and the pull starts', 'Name the hunger, ask God what would feed it, and do the first good thing.'),
       line('menu', 'Read slowly until one line speaks to me, then do it'),
     ],
     ok: 'Your empty hour has a feast in it.',
@@ -429,9 +429,12 @@ export const PRACTICE: Record<string, PStep> = {
   },
   g11: {
     h: 'Keep it small and daily.',
-    p: 'A few honest minutes, morning and night. Add them to your wind-down so they have a place.',
+    p: 'A few honest minutes at the start and the end of the day. Add the words you will say, so they have a place.',
     mins: 1,
-    items: [line('wind', 'A short prayer and a few honest lines before bed'), line('words', 'God, I will come to you again tomorrow, in a small way.')],
+    items: [
+      line('words', 'God, I will come to you again tomorrow, in a small way.'),
+      line('wind', 'A short prayer and a few honest lines at the end of the day'),
+    ],
     ok: 'Your small daily practice has a place.',
   },
   g12: {

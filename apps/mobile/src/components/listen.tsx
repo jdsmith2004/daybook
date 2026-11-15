@@ -7,15 +7,43 @@
 import { lfmt, voiceAt, voiceKey, voiceSaid, VOICES, type Settings } from '@daybook/core';
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import * as Speech from 'expo-speech';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Platform, Pressable, StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { Text } from '@/components/text';
-import { Icon, T } from '@/components/ui';
+import { Icon, InkContext, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { getListen, RATES, setListen, useListen } from '@/lib/listen-prefs';
 import { getClip } from '@/lib/voice-clip';
-import { font } from '@/lib/theme';
+import { font, useTheme } from '@/lib/theme';
+
+/* whether a color is light: the filled speed takes dark words on it */
+function light(color: string): boolean {
+  const m = /^#([0-9a-f]{6})$/i.exec(color);
+  const r = /^rgba?\(([^)]+)\)$/.exec(color);
+  const [x, y, z] = m
+    ? [parseInt(m[1], 16) >> 16, (parseInt(m[1], 16) >> 8) & 255, parseInt(m[1], 16) & 255]
+    : r
+      ? r[1].split(',').map(Number)
+      : [255, 255, 255];
+  return 0.299 * x + 0.587 * y + 0.114 * z > 150;
+}
+/* a color with less of it: the words the voice has not reached yet */
+function fade(color: string, a: number): string {
+  const m = /^#([0-9a-f]{6})$/i.exec(color);
+  if (m) {
+    const n = parseInt(m[1], 16);
+    return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
+  }
+  const r = /^rgba?\(([^)]+)\)$/.exec(color);
+  if (r) {
+    const [x, y, z, o = '1'] = r[1].split(',').map((t) => t.trim());
+    return `rgba(${x},${y},${z},${Number(o) * a})`;
+  }
+  return color;
+}
+/* on the web, each word eases up to full ink instead of snapping */
+const GLIDE = (Platform.OS === 'web' ? { transitionProperty: 'color', transitionDuration: '220ms' } : null) as TextStyle | null;
 
 /** Listen is offered everywhere now: the recordings play on iOS, Android and the web, and the phone's own voice covers the rest */
 export const LISTEN_OK = true;
@@ -75,6 +103,18 @@ const rateName = (r: number) => String(r).replace(/^0\./, '.') + '×';
     tap, and the speed and the voice are remembered (lib/listen-prefs.ts) */
 export function ListenButton({ on, onPress, ink }: { on: boolean; onPress: () => void; ink: string }) {
   const lp = useListen();
+  const [speeds, setSpeeds] = useState(false);
+  const grow = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!speeds) return;
+    grow.setValue(0);
+    Animated.spring(grow, { toValue: 1, useNativeDriver: Platform.OS !== 'web', speed: 22, bounciness: 6 }).start();
+  }, [speeds, grow]);
+  useEffect(() => {
+    if (!on) setSpeeds(false);
+  }, [on]);
+  /* the filled speed's words: dark on a light ink, white on a dark one */
+  const onInk = light(ink) ? '#15123A' : '#FFFFFF';
   const pill = (pressed: boolean, lit?: boolean) => [s.btn, { borderColor: ink, opacity: pressed ? 0.7 : 1 }, lit && s.btnOn];
   if (!on)
     return (
@@ -96,7 +136,33 @@ export function ListenButton({ on, onPress, ink }: { on: boolean; onPress: () =>
     0,
     VOICES.findIndex((v) => v.id === lp.voice),
   );
-  const ri = Math.max(0, (RATES as readonly number[]).indexOf(lp.rate));
+  /* the speeds open in place of the controls, one tap each (the owner, November 15, 2026: "let me put the speed higher like up to
+     2.0 maybe i tap it and it gives options ... but make it look really nice still"): a single tray, the one in use filled */
+  if (speeds)
+    return (
+      <Animated.View
+        style={[s.tray, { borderColor: ink, opacity: grow, transform: [{ scale: grow.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) }] }]}>
+        {RATES.map((r) => {
+          const now = r === lp.rate;
+          return (
+            <Pressable
+              key={r}
+              onPress={() => {
+                buzz('tap');
+                setListen({ rate: r });
+                setTimeout(() => setSpeeds(false), 180);
+              }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: now }}
+              accessibilityLabel={'Speed ' + r + ' times'}
+              hitSlop={4}
+              style={({ pressed }) => [s.speed, now && { backgroundColor: ink }, { opacity: pressed ? 0.7 : 1 }]}>
+              <Text style={[s.speedT, { color: now ? onInk : ink }]}>{rateName(r)}</Text>
+            </Pressable>
+          );
+        })}
+      </Animated.View>
+    );
   return (
     <View style={s.row}>
       <Pressable
@@ -114,10 +180,10 @@ export function ListenButton({ on, onPress, ink }: { on: boolean; onPress: () =>
       <Pressable
         onPress={() => {
           buzz('tap');
-          setListen({ rate: RATES[(ri + 1) % RATES.length] });
+          setSpeeds(true);
         }}
         accessibilityRole="button"
-        accessibilityLabel={'Speed ' + lp.rate + ' times. Tap to change.'}
+        accessibilityLabel={'Speed ' + lp.rate + ' times. Tap to choose.'}
         hitSlop={6}
         style={({ pressed }) => [pill(pressed), s.chip]}>
         <Text style={[s.btnT, { color: ink }]}>{rateName(lp.rate)}</Text>
@@ -186,8 +252,10 @@ export function SpokenCard({
     const still = () => alive && live.current === me;
     /* switched voice partway through: the new voice picks up at the word the old one was on */
     const from = nowRef.current > 0 && nowRef.current < said.length ? nowRef.current : -1;
-    /* the phone's own voice, when there is no recording to be had */
-    me.speak = () => {
+    /* the phone's own voice, when there is no recording to be had. It is handed to the play and pause effect only once the recording
+       is known to be missing: handed over while the recording was still loading, a tap or a new card started both voices at once,
+       and the phone's voice talked first (the owner heard the old voice on the November 14 build) */
+    const speakNow = () => {
       void Speech.stop();
       if (settings.current.paused) return;
       void bestVoice().then((v) => {
@@ -214,8 +282,10 @@ export function SpokenCard({
       hush();
       const clip = await getClip(voiceKey(said, voice));
       if (!still()) return;
-      if (!clip) return me.speak?.();
-      me.speak = null;
+      if (!clip) {
+        me.speak = speakNow;
+        return speakNow();
+      }
       await loud();
       if (!still()) return;
       const p = thePlayer(clip.uri);
@@ -277,19 +347,21 @@ export function SpokenCard({
   }, [on, paused, rate, again]);
   /* leaving the lesson, or turning Listen off: the sound guide's own way again */
   useEffect(() => (on ? () => void quiet() : undefined), [on]);
-  /* the word whose span holds the place being said */
-  const lit = (w: Word, next?: Word) => now >= w.at && now < (next ? next.at : w.at + w.t.length);
-  /* the light sits on the word alone, not on the space after it */
+  /* the scripture reader's way, like Apple Music (the owner, November 15, 2026: "it like has a beautiful karaoke view. I'd like to copy
+     the play view from that"): once the voice starts, the words still to come are faint, and each word comes up to full ink as it is
+     said, so the eye rides just behind the voice. Only the color changes, so no line ever moves. */
+  const inkCx = useContext(InkContext);
+  const c = useTheme();
+  const ink = (inkCx && inkCx.ink) || c.ink;
+  const faint = useMemo(() => fade(ink, 0.42), [ink]);
+  /* a word is reached once the place being said is inside it */
+  const reached = (w: Word) => now >= w.at;
   const draw = (ws: Word[]) =>
-    ws.map((w, i) => {
-      const word = w.t.trimEnd();
-      return (
-        <Text key={i} style={w.b ? s.b : undefined}>
-          <Text style={lit(w, ws[i + 1]) ? s.lit : undefined}>{word}</Text>
-          {w.t.slice(word.length)}
-        </Text>
-      );
-    });
+    ws.map((w, i) => (
+      <Text key={i} style={[w.b ? s.b : undefined, now >= 0 && { color: reached(w) ? ink : faint }, GLIDE]}>
+        {w.t}
+      </Text>
+    ));
   if (!on)
     return (
       <>
@@ -326,6 +398,7 @@ const s = StyleSheet.create({
   round: { width: 44, minHeight: 44, paddingHorizontal: 0, justifyContent: 'center' },
   chip: { minHeight: 44, paddingHorizontal: 12 },
   b: { fontFamily: font.bodyBold },
-  /* the word being said: a warm light behind it, like a finger under the line */
-  lit: { backgroundColor: 'rgba(255,210,90,0.45)', borderRadius: 4 },
+  tray: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 2, padding: 3, borderRadius: 999, borderWidth: 1.5 },
+  speed: { minWidth: 44, height: 38, paddingHorizontal: 6, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  speedT: { fontFamily: font.bodySemi, fontSize: 15 },
 });

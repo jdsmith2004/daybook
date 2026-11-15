@@ -87,7 +87,8 @@ export function patChunks(keys: DayKey[]): DayKey[][] {
   for (let end = keys.length; end > 0; end -= size) out.unshift(keys.slice(Math.max(0, end - size), end));
   return out;
 }
-const colLabel = (c: DayKey[], tk: DayKey) => {
+/** a column's label: the weekday for a single day, else the day it starts */
+export const colLabel = (c: DayKey[], tk: DayKey) => {
   if (c.length === 1) return c[0] === tk ? 'Today' : fmtDate(c[0], { weekday: 'short' });
   return fmtDate(c[0], { month: 'short', day: 'numeric' });
 };

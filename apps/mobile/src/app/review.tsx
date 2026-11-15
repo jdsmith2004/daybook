@@ -44,6 +44,7 @@ import {
   type SunPick,
   type SunReview,
   lessonFor,
+  ownChoices,
 } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -487,7 +488,14 @@ export default function Review() {
     );
   } else if (after === 'take') {
     /* ---------- your take ---------- */
-    const ownLines = (list: string[], picks: SunPick[]) => list.filter((t) => !picks.some((p) => p.t === t));
+    /* every answer the person ever wrote of this kind stays a chip (core saved-answers.ts), picked or not */
+    const ownLines = (kind: 'worked' | 'change', list: string[], picks: SunPick[]) =>
+      ownChoices(
+        st,
+        kind,
+        picks.map((p) => p.t),
+        list,
+      ).filter((t) => !picks.some((p) => p.t === t));
     body =
       own === 'w' || own === 'c' ? (
         <>
@@ -495,8 +503,11 @@ export default function Review() {
           <OwnField
             placeholder={own === 'w' ? 'Like: going for a run after work' : 'Like: Sunday evenings'}
             max={SUN_LEN}
+            kind={own === 'w' ? 'worked' : 'change'}
+            builtIn={(own === 'w' ? worked : change).map((p) => p.t)}
             onSave={(t) => {
-              if (own === 'w') setW(toggle(w, t));
+              if (own === 'w') setW(w.indexOf(t) >= 0 ? w : [...w, t]);
+              else if (ch.indexOf(t) < 0) setCh([...ch, t]);
               else setCh(toggle(ch, t));
               setOwn(null);
             }}
@@ -517,8 +528,8 @@ export default function Review() {
               {worked.map((p) => (
                 <Pick key={p.id} p={p} tone="mint" on={w.indexOf(p.t) >= 0} onPress={() => setW(toggle(w, p.t))} />
               ))}
-              {ownLines(w, worked).map((t) => (
-                <AnswerChip key={'o' + t} label={t} tone="mint" on onPress={() => setW(toggle(w, t))} />
+              {ownLines('worked', w, worked).map((t) => (
+                <AnswerChip key={'o' + t} label={t} tone="mint" on={w.indexOf(t) >= 0} onPress={() => setW(toggle(w, t))} />
               ))}
               <OwnChip onPress={() => setOwn('w')} />
             </Part>
@@ -526,8 +537,8 @@ export default function Review() {
               {change.map((p) => (
                 <Pick key={p.id} p={p} tone="coral" on={ch.indexOf(p.t) >= 0} onPress={() => setCh(toggle(ch, p.t))} />
               ))}
-              {ownLines(ch, change).map((t) => (
-                <AnswerChip key={'o' + t} label={t} tone="coral" on onPress={() => setCh(toggle(ch, t))} />
+              {ownLines('change', ch, change).map((t) => (
+                <AnswerChip key={'o' + t} label={t} tone="coral" on={ch.indexOf(t) >= 0} onPress={() => setCh(toggle(ch, t))} />
               ))}
               <OwnChip onPress={() => setOwn('c')} />
             </Part>
@@ -548,7 +559,14 @@ export default function Review() {
       own === 'g' ? (
         <>
           {eyebrow('One small goal')}
-          <OwnField placeholder="Like: a walk after dinner" max={80} onSave={(t) => (setGoal({ t }), setOwn(null))} onCancel={() => setOwn(null)} />
+          <OwnField
+            placeholder="Like: a walk after dinner"
+            max={80}
+            kind="goal"
+            builtIn={goals.map((g) => g.t)}
+            onSave={(t) => (setGoal({ t }), setOwn(null))}
+            onCancel={() => setOwn(null)}
+          />
         </>
       ) : (
         <>
@@ -579,9 +597,18 @@ export default function Review() {
                   />
                 );
               })}
-              {goal && !goals.some((g) => (goal.k ? goal.k === g.k : goal.t === g.t)) ? (
-                <AnswerChip label={goal.t} tone="sun" on onPress={() => setGoal(null)} />
-              ) : null}
+              {/* the goals the person wrote stay chips (core saved-answers.ts), and so does one picked before they were kept */}
+              {ownChoices(
+                st,
+                'goal',
+                goals.map((g) => g.t),
+                goal && !goal.k ? [goal.t] : [],
+              )
+                .filter((t) => !goals.some((g) => g.t === t))
+                .map((t) => {
+                  const on = !!goal && !goal.k && goal.t === t;
+                  return <AnswerChip key={'o' + t} label={t} tone="sun" on={on} onPress={() => setGoal(on ? null : { t })} />;
+                })}
               <OwnChip onPress={() => setOwn('g')} />
             </ChipWrap>
             {goal && goal.k && goalKind ? (
@@ -741,8 +768,9 @@ export default function Review() {
     /* ---------- an if-then plan ---------- */
     const whens = storyIfWhen(snap.days, st, tk);
     const thens = storyIfThen(S.w, st);
-    if (itW && whens.indexOf(itW) < 0) whens.push(itW);
-    if (itT && thens.indexOf(itT) < 0) thens.push(itT);
+    /* the when's and then's the person wrote stay chips (core saved-answers.ts), and so does one picked before they were kept */
+    const whenOpts = ownChoices(st, 'when', whens, itW ? [itW] : []);
+    const thenOpts = ownChoices(st, 'then', thens, itT ? [itT] : []);
     body =
       own === 'iw' || own === 'it' ? (
         <>
@@ -750,10 +778,12 @@ export default function Review() {
           <OwnField
             placeholder={own === 'iw' ? 'Like: I get home from work tired' : 'Like: make tea and call my brother'}
             max={80}
-            onSave={(t) => {
-              const v = t.replace(/[.!]+$/, '');
-              if (own === 'iw') setItW(v.replace(/^when\s+/i, ''));
-              else setItT(v.replace(/^i will\s+/i, ''));
+            kind={own === 'iw' ? 'when' : 'then'}
+            builtIn={own === 'iw' ? whens : thens}
+            shape={(t) => t.replace(/[.!]+$/, '').replace(own === 'iw' ? /^when\s+/i : /^i will\s+/i, '')}
+            onSave={(v) => {
+              if (own === 'iw') setItW(v);
+              else setItT(v);
               setOwn(null);
             }}
             onCancel={() => setOwn(null)}
@@ -782,13 +812,13 @@ export default function Review() {
           )}
           <Dock>
             <Part icon="timer" tone="violet" title="When…">
-              {whens.map((x) => (
+              {whenOpts.map((x) => (
                 <AnswerChip key={x} label={x} tone="violet" on={itW === x} onPress={() => setItW(itW === x ? null : x)} />
               ))}
               <OwnChip onPress={() => setOwn('iw')} />
             </Part>
             <Part icon="check" tone="mint" title="I will…">
-              {thens.map((x) => (
+              {thenOpts.map((x) => (
                 <AnswerChip key={x} label={x} tone="mint" on={itT === x} onPress={() => setItT(itT === x ? null : x)} />
               ))}
               <OwnChip onPress={() => setOwn('it')} />

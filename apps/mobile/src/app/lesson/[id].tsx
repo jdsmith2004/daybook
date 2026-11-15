@@ -209,6 +209,8 @@ export default function LessonScreen() {
   const [pulse, setPulse] = useState(0);
   /* Listen (components/listen.tsx): once on, each story card is read aloud as it comes in, until it is turned off */
   const [listen, setListen] = useState(false);
+  /* the practice step's page: the line to write, then what to take with you */
+  const [practicePage, setPracticePage] = useState(0);
   const scroll = useRef<ScrollViewInstance>(null);
   /* the picture on a card gives up height so the card fits a short phone (components/fit) */
   const fit = useFitRoom();
@@ -734,6 +736,11 @@ export default function LessonScreen() {
     const items = a.items || [];
     const note = wrote ?? ((st.learn.notes && st.learn.notes[L.id]) || '');
     const ed = editing != null ? items[editing] : null;
+    /* one invitation per page (the owner, November 15, 2026: "this screen has too much going on we need to b e clear and have one
+       invitation"): the line to write first, then the lines and messages to take with you on the next page */
+    const twoPages = !!a.write && (items.length > 0 || (a.go || []).length > 0);
+    const writing = twoPages && practicePage === 0;
+    const later = twoPages && practicePage === 1;
     prog = bar;
     body = ed ? (
       /* changing a line's words: the box and its button at the top, above the keyboard */
@@ -741,40 +748,47 @@ export default function LessonScreen() {
     ) : (
       <>
         {/* no words above the flame (the owner, November 13, 2026): the lines to add say it themselves */}
-        {a.write ? (
+        {a.write && !later ? (
           <WriteBox label={L.np} value={note} examples={a.write} t={t} onChange={write} />
-        ) : !items.length && !(a.go || []).length ? (
+        ) : !a.write && !items.length && !(a.go || []).length ? (
           <NoteField L={L} note={note} />
         ) : null}
-        <Blocks bs={a.b} L={L} t={t} st={st} />
-        {heavy ? <Help988 /> : null}
-        <FlameSlot size={SHORT ? 200 : 260} min={110} />
-        <Dock>
-          {items.map((it, k) => {
-            const g = got[k];
-            const on = it.k === 'copy' ? (copied[k] ? 'added' : null) : g && itemHas(st, g.it) ? 'added' : itemHas(st, it) ? 'had' : null;
-            const old = it.k === 'be' ? st.becoming : it.k === 'note' ? st.note : '';
-            return (
-              <PLine
-                key={k}
-                it={g && on === 'added' ? g.it : it}
-                t={t}
-                state={on}
-                replaces={old && old.trim() && !itemHas(st, it) ? old.trim() : undefined}
-                onAdd={() => add(k, it)}
-                onUndo={() => undo(k)}
-                onEdit={() => {
-                  setEditing(k);
-                  top();
-                }}
-                onCopy={() => copyLine(k, it.text)}
-              />
-            );
-          })}
-          {(a.go || []).map((g, k) => (
-            <GoRow key={'g' + k} label={g.t} ic={g.ic} went={!!went[k]} onPress={() => open(k, g)} />
-          ))}
-        </Dock>
+        {writing ? null : <Blocks bs={a.b} L={L} t={t} st={st} />}
+        {later ? <FlameSlot size={84} min={76} side style={s.storyFlame} /> : <FlameSlot size={SHORT ? 200 : 260} min={110} />}
+        {writing ? null : (
+          <Dock>
+            {items.map((it, k) => {
+              const g = got[k];
+              const on = it.k === 'copy' ? (copied[k] ? 'added' : null) : g && itemHas(st, g.it) ? 'added' : itemHas(st, it) ? 'had' : null;
+              const old = it.k === 'be' ? st.becoming : it.k === 'note' ? st.note : '';
+              return (
+                <PLine
+                  key={k}
+                  it={g && on === 'added' ? g.it : it}
+                  t={t}
+                  state={on}
+                  replaces={old && old.trim() && !itemHas(st, it) ? old.trim() : undefined}
+                  onAdd={() => add(k, it)}
+                  onUndo={() => undo(k)}
+                  onEdit={() => {
+                    setEditing(k);
+                    top();
+                  }}
+                  onCopy={() => copyLine(k, it.text)}
+                />
+              );
+            })}
+            {(a.go || []).map((g, k) => (
+              <GoRow key={'g' + k} label={g.t} ic={g.ic} went={!!went[k]} onPress={() => open(k, g)} />
+            ))}
+          </Dock>
+        )}
+        {/* the free line stays, quietly, at the foot of the last page */}
+        {heavy && !writing ? (
+          <View style={s.quiet988}>
+            <Help988 />
+          </View>
+        ) : null}
       </>
     );
     const acted = Object.keys(got).length > 0 || Object.keys(went).length > 0 || Object.keys(copied).length > 0 || !!(wrote && wrote.trim());
@@ -784,6 +798,11 @@ export default function LessonScreen() {
           label="Continue"
           noIcon
           onPress={() => {
+            if (writing) {
+              setPracticePage(1);
+              top();
+              return;
+            }
             if (acted) practiced();
             toStage(deedNext ? 'deed' : 'practiced');
           }}
@@ -1442,6 +1461,7 @@ const s = StyleSheet.create({
   guessMid: { alignItems: 'center', justifyContent: 'center', minHeight: 110 },
   art: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   storyP: { fontSize: 20, lineHeight: 28, opacity: 0.92 },
+  quiet988: { opacity: 0.75, marginTop: 8 },
   storyFoot: { flexGrow: 1, justifyContent: 'flex-end' },
   storyFlame: { flexGrow: 1, height: 84 },
   storyRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 12 },

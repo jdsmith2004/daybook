@@ -4,6 +4,7 @@ import { normSettingsLoaded as normSettings } from './settings-norm';
 import { isJnId, normJEntry, type JEntry, type Journal } from './journal-entries';
 import { keepPat, keepSup } from './supporter';
 import { normSun } from './sunday';
+import { joinOwn } from './saved-answers';
 import type { Day, DayKey, Days, Review, Reviews, Settings, Snapshot } from './types';
 
 /** a weekly review, cleaned up (legacy normReview, from its STORE section) */
@@ -107,6 +108,9 @@ export function keepEarned(win: Settings, lose: Settings): Settings {
   if (Object.keys(later).length) out.learn.later = later;
   const asked = { ...(lose.learn.asked || {}), ...(out.learn.asked || {}) };
   if (Object.keys(asked).length) out.learn.asked = asked;
+  /* a written answer (saved-answers.ts) is never lost to the other copy: both sides' are kept */
+  const own = joinOwn(out.own, lose.own);
+  if (own) out.own = own;
   return keepPat(keepSup(out, lose.sup), lose.pat);
 }
 

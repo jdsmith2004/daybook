@@ -49,8 +49,9 @@ export default function AppTabs() {
               router.push('/sos');
             },
           }}>
-          {/* the word in the app's own letters and SOS's warm color, drawn as it is (assets/images/sos-mark.png) */}
-          <NativeTabs.Trigger.Icon src={require('../../assets/images/sos-mark.png')} renderingMode="original" />
+          {/* the word in the app's own letters and SOS's warm color, drawn as it is (assets/images/sos-mark.png). It comes from the app's
+              asset catalog (plugins/sos-mark), not from JavaScript: loaded late, iOS 27 left the circle empty */}
+          <NativeTabs.Trigger.Icon xcasset="SosMark" />
           <NativeTabs.Trigger.Label>SOS</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
       </NativeTabs>

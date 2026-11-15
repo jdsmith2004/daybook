@@ -12,12 +12,21 @@ import type { Days, Reviews } from '../src/types';
 const st = normSettings({ start: '2026-10-07', day1: '2026-10-14', wk1: '2026-10-15' });
 const at = (d: number, h: number, m = 0) => new Date(2026, 9, d, h, m).getTime();
 const kinds = (days: Days, tk: string, now: number, s = st, dev = {}) => moments(days, s, {}, tk, now, dev).map((m) => m.k);
+/* the morning told and tonight set, so the morning is not the next step */
+const told = (k: string): Days =>
+  withDay(
+    {},
+    k,
+    changeDay(undefined, k, (x) => void (x.p = { ...blankP(), ms: { at: at(1, 6), set: at(1, 6) } }), 1),
+  );
 const slip = (days: Days, k: string, time = '23:00') => addEvent(days, k, 'slipped', time, {}, 1).days;
 
 describe('a calm day', () => {
   it('the card is the day’s next stop, with no line under it (Your day names the rest)', () => {
-    const p = pickMoment({}, st, {}, '2026-10-20', at(20, 7));
-    /* the morning has no stop of its own any more: the day opens on its lesson */
+    /* in the morning hours, the morning not told yet is the next step (next-step.ts) */
+    expect(pickMoment({}, st, {}, '2026-10-20', at(20, 7)).card).toMatchObject({ k: 'calm', go: 'morning' });
+    /* once it is set (or closed), the lesson */
+    const p = pickMoment(told('2026-10-20'), st, {}, '2026-10-20', at(20, 7));
     expect(p.card).toMatchObject({ k: 'calm', h: LESSONS[0].title, btn: 'Start', go: 'lesson', v: LESSONS[0].id });
     expect(p.more).toBeNull();
     expect(p).not.toHaveProperty('then');
@@ -33,6 +42,7 @@ describe('a calm day', () => {
         (x) =>
           void (x.p = {
             ...blankP(),
+            ms: { at: at(1, 6), set: at(1, 6) },
             ls: lessonPath()
               .slice(0, LEARN_FREE)
               .map((L) => L.id),
@@ -40,8 +50,9 @@ describe('a calm day', () => {
         1,
       ),
     );
-    const signedIn = pickMoment(d, s0, {}, '2026-10-20', at(20, 10), { account: true }).card;
-    const local = pickMoment(d, s0, {}, '2026-10-20', at(20, 10), { account: false }).card;
+    const d2 = { ...d, ...told('2026-10-20') };
+    const signedIn = pickMoment(d2, s0, {}, '2026-10-20', at(20, 10), { account: true }).card;
+    const local = pickMoment(d2, s0, {}, '2026-10-20', at(20, 10), { account: false }).card;
     expect(signedIn).toMatchObject({ k: 'calm', go: 'lesson', v: lessonPath()[LEARN_FREE].id, h: lessonPath()[LEARN_FREE].title, btn: 'Start' });
     /* it says the next lesson waits for a free account (WP11), and its button opens the sign-up */
     expect(local).toMatchObject({ k: 'calm', go: 'lesson', v: lessonPath()[LEARN_FREE].id, btn: 'Create an account or sign in' });
@@ -125,17 +136,29 @@ describe('the order', () => {
   });
   it('the Sunday review on Sunday, and still on Monday while it is open', () => {
     /* the first one is a part unlocked: its card opens its own page first (unlock.ts) */
-    expect(pickMoment({}, st, {}, '2026-10-18', at(18, 10)).card).toMatchObject({ k: 'sunday', h: 'Your first Sunday review', go: 'unlock', v: '2026-10-18' });
+    /* it is a step on the line (next-step.ts), so it is the calm day's card, never a second card above the line */
+    expect(pickMoment(told('2026-10-18'), st, {}, '2026-10-18', at(18, 10)).card).toMatchObject({
+      k: 'calm',
+      h: 'Your first Sunday review',
+      go: 'unlock',
+      v: '2026-10-18',
+    });
     const done = { '2026-10-11': { sun: {} } } as unknown as Reviews;
-    expect(pickMoment({}, st, done, '2026-10-18', at(18, 10)).card).toMatchObject({ k: 'sunday', h: 'Your Sunday review', v: '2026-10-18' });
-    expect(pickMoment({}, st, {}, '2026-10-19', at(19, 10)).card).toMatchObject({ k: 'sunday', h: 'Last week’s review is still open' });
-    expect(kinds({}, '2026-10-20', at(20, 10))).not.toContain('sunday');
+    expect(pickMoment(told('2026-10-18'), st, done, '2026-10-18', at(18, 10)).card).toMatchObject({
+      k: 'calm',
+      h: 'Your Sunday review',
+      go: 'review',
+      v: '2026-10-18',
+    });
+    expect(pickMoment(told('2026-10-19'), st, {}, '2026-10-19', at(19, 10)).card).toMatchObject({ k: 'calm', h: 'Look back on last week', go: 'review' });
+    expect(pickMoment(told('2026-10-20'), st, {}, '2026-10-20', at(20, 10)).card).toMatchObject({ k: 'calm', go: 'lesson' });
+    expect(kinds({}, '2026-10-18', at(18, 10))).not.toContain('sunday');
   });
   it('two at once: the second waits as "and one more"', () => {
     const p = pickMoment({}, st, {}, '2026-10-18', at(18, 8), { pause: true });
     expect(p.card.k).toBe('pause');
-    expect(p.more?.k).toBe('sunday');
-    expect(p.more?.one).toBe('your Sunday review');
+    /* the day's next step is never "and one more": the line under the card names it */
+    expect(p.more).toBeNull();
   });
   it('days away not known: the fill-in, once Welcome back was closed', () => {
     expect(pickMoment({}, st, {}, '2026-10-20', at(20, 10), { back: 5 }).card).toMatchObject({ k: 'away', h: '5 days not known yet', go: 'back' });

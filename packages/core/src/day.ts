@@ -260,7 +260,7 @@ export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): 
 /* ---------- the stops of Your day, as tiles ---------- */
 /* Each stop has the color of its full-screen moment (sky). The open one (cur) shows as a tile with a few words and its
    button; the others are one line each, a done one saying what was done. Every stop opens with one tap, at any time. */
-export type StopGo = 'lesson' | 'checkin' | 'wind' | 'reach' | 'journal' | 'morning';
+export type StopGo = 'lesson' | 'checkin' | 'wind' | 'reach' | 'journal' | 'morning' | 'review';
 export interface StopTile {
   k: string;
   state: RhythmStop['state'];
@@ -285,6 +285,8 @@ export interface StopTile {
   id?: string;
   /** the lesson waits behind a free account: opening it shows the sign-up */
   locked?: boolean;
+  /** the first Sunday review: its own page says what it is first (unlock.ts) */
+  intro?: boolean;
 }
 const NAME: Record<string, string> = { lesson: 'Lesson', evening: 'Evening', night: 'Good night', morning: 'Morning' };
 const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);

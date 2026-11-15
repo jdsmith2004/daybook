@@ -313,7 +313,7 @@ export default function Setup() {
             {/* the owner, November 14, 2026: redoing setup is fine, "it should just like be more obvious what they're doing" */}
             <Head
               h="Change your setup answers."
-              sub="These are your real answers: your goal, counting, reasons and plan follow them. You choose what to keep at the end."
+              sub="These are your real answers: your goal, reasons and lessons follow them. How your days count stays as it is. You choose what to keep at the end."
             />
             <Talk text={voice} want={want} />
             {prev && prev.at ? (
@@ -402,6 +402,7 @@ export default function Setup() {
       body = (
         <Question
           h={pg.h!}
+          head={<Head h={pg.h!} />}
           list={list.map((x) => x[1])}
           best={null}
           retry={false}
@@ -464,17 +465,24 @@ export default function Setup() {
         <>
           <Head h="This is how I grow with you." />
           <Talk text={g.line} want={want} />
-          <GrowStops
-            a={a}
-            at={Math.max(0, growAt)}
-            onAt={(j) => {
-              walk.pick(j);
-              buzz('tap');
-            }}
-          />
+          <GrowStops a={a} at={Math.max(0, growAt)} onAt={walk.pick} />
         </>
       );
-      foot = nextBtn('Next');
+      /* Next walks the stops first, and leaves the page only from the last one */
+      foot = walk.last ? (
+        nextBtn('Next')
+      ) : (
+        <View key="n" style={s.footOne}>
+          <Next
+            label="Next"
+            onPress={() => {
+              buzz('tap');
+              walk.step();
+            }}
+            off={false}
+          />
+        </View>
+      );
       break;
     }
     case 'why': {

@@ -369,7 +369,6 @@ function Shell() {
             'week',
             'back',
             'whats-new',
-            'feedback',
             'future',
             'pause',
             'morning',

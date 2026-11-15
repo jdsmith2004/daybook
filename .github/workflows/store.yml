@@ -8,9 +8,11 @@ on:
   workflow_dispatch:
     inputs:
       screen_time:
-        description: 'Screen Time. Family Controls (Distribution) is on for all four App IDs (November 11, 2026; docs/plan.md).'
+        # On by default (the owner, November 15, 2026: "just add them as like a beta toggle in settings"): every store build
+        # carries Screen Time, and the person turns it on in Settings, Screen Time (beta). Untick only to leave it out.
+        description: 'Screen Time (beta in Settings). Family Controls (Distribution) is on for all four App IDs (November 11, 2026; docs/plan.md).'
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read

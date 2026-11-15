@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { PACK_KINDS, packActs, packLit, packLitCount, packWords } from '../src/night-pack';
+import { PACK_KINDS, packActs, packLeft, packLit, packLitCount, packNext, packWords } from '../src/night-pack';
 
 const at = 22 * 60 + 30;
 describe('packActs', () => {
@@ -43,5 +43,27 @@ describe('lights', () => {
       const w = packWords(k, '10:30 PM');
       expect(JSON.stringify(w)).not.toMatch(/porn|sex|adult|nofap/i);
     }
+  });
+});
+
+describe('the walk', () => {
+  it('goes to the next one not lit yet', () => {
+    const s = { said: { grey: true }, seen: { bed: 1 } };
+    expect(packNext(s)).toBe('wait');
+    expect(packNext(s, 'wait')).toBe('wake');
+    expect(packNext(s, 'wake')).toBe(null);
+    expect(packLeft(s)).toEqual(['wait', 'wake']);
+    expect(packNext({ said: {}, seen: {} })).toBe('grey');
+  });
+  it('one short step a page, each with its taps', () => {
+    for (const k of PACK_KINDS) {
+      const w = packWords(k, '10:30 PM');
+      expect(w.walk.length).toBeGreaterThan(0);
+      for (const st of w.walk) {
+        expect(st.taps.length).toBeGreaterThan(0);
+        expect(st.say.length).toBeLessThan(80);
+      }
+    }
+    expect(JSON.stringify(packWords('grey', '10:30 PM').walk)).toContain('10:30 PM, Daily');
   });
 });

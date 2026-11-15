@@ -12,6 +12,9 @@ import { useStore } from './store';
 
 /** whether this phone offers the pack: an iPhone on iOS 26 or later with this build */
 export const packOffered = !!NightPack?.ok;
+/** Settings shows the pack's page: on a phone that offers it, and in the web demo build (EXPO_PUBLIC_SHOTS=1), only to look at
+    the walk (nothing runs there) */
+export const packShown = packOffered || process.env.EXPO_PUBLIC_SHOTS === '1';
 
 const KEY = 'daybook.nightPack';
 let said: PackState['said'] = {};
@@ -29,7 +32,7 @@ const readSeen = () => {
     emit();
   }
 };
-if (packOffered)
+if (packShown)
   AsyncStorage.getItem(KEY)
     .then((v) => {
       said = v ? (JSON.parse(v) as PackState['said']) : {};

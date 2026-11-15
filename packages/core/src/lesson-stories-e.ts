@@ -111,8 +111,8 @@ export const STORIES_E: Record<string, Story> = {
     title: 'Wanting is not liking',
     ic: 'bolt',
     ask: 'Why is the pull so strong when porn does not even feel that good anymore?',
-    key: 'A strong pull is an ad, not a review. For the review, recall how it felt ten minutes after.',
-    np: 'How it felt ten minutes after, compared with how much I wanted it before',
+    key: 'A strong pull is an ad, not a review. For the review, recall how it felt afterward.',
+    np: 'How it felt afterward, compared with how much I wanted it before',
     tell: [
       {
         h: 'In the 1980s, a young scientist named Kent Berridge set out to prove what everyone already believed.',
@@ -135,7 +135,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'The rats stopped eating.',
         p: 'They would not walk to food or water, even when hungry. Left alone, **they would have starved**, so the scientists fed them by hand.',
-        dx: 'At first, it looked like the theory was right. The rats stopped eating. They would not walk across the cage to food or water, even when they were hungry. Left alone, **they would have starved**, so the scientists fed them by hand. Everything about them said they had lost interest in rewards.',
+        dx: 'The dopamine had been taken away with a chemical that destroys the cells that make it, a standard method in those labs. At first, it looked like the theory was right. The rats stopped eating. They would not walk across the cage to food or water, even when they were hungry. Left alone, **they would have starved**, so the scientists fed them by hand, with a tube, for days. Everything about them said they had lost interest in rewards, and the natural reading was the old one: no dopamine, no pleasure, so nothing was worth going for.',
         art: ['scene', { k: 'l33-bowl' }],
       },
       {
@@ -169,18 +169,18 @@ export const STORIES_E: Record<string, Story> = {
       },
       {
         k: 'ask',
-        h: 'Think of the last time the pull was strong. Ten minutes after, how did it feel?',
+        h: 'Think of the last time the pull was strong. How did you feel afterward?',
         o: [
           ['About as good as it promised', 'Then you have a fair reading. Watch whether it holds next time.'],
           ['Smaller than it promised', 'Many people notice that gap. Now you know where it comes from.'],
           ['Flat, or worse than before', 'Keep that. It is the review the pull never shows you.'],
-          ['I have never noticed', 'Few people do. Next time, notice the ten minutes after.'],
+          ['I rode it out', 'Then you saw the wave fall. That is the other half of this lesson.'],
         ],
       },
       {
         h: 'So how hard it pulls is not how good it will be.',
-        p: 'A strong pull tells you how well the wanting was trained. It is **an ad, not a review**. For the review, look at how you felt ten minutes after.',
-        dx: 'So how hard it pulls is not a measure of how good it will be. A strong pull tells you how well the wanting was trained: how many times, with which cues, in which places. It is **an ad, not a review**. Ads are loud and bright and always promise more than they give. The review comes later, in the ten minutes after, and it is quieter. If you want to know what the habit is worth to you, that is where to look.',
+        p: 'A strong pull tells you how well the wanting was trained. It is **an ad, not a review**. For the review, look at how you felt afterward.',
+        dx: 'So how hard it pulls is not a measure of how good it will be. A strong pull tells you how well the wanting was trained: how many times, with which cues, in which places. It is **an ad, not a review**. Ads are loud and bright and always promise more than they give. The review comes later, afterward, and it is quieter. If you want to know what the habit is worth to you, that is where to look.',
         art: ['scene', { k: 'l33-ad' }],
       },
       {
@@ -195,7 +195,7 @@ export const STORIES_E: Record<string, Story> = {
     mine: { h: 'Each pull you outlast gets less practice.', k: 'rode' },
     today: {
       h: 'When the pull is loud, ask for the review.',
-      l: ['Name it: “This is wanting, not liking.”', 'Recall how it felt ten minutes after', 'Give the pull ten minutes to fall'],
+      l: ['Name it: “This is wanting, not liking.”', 'Recall how it felt afterward', 'Give the pull ten minutes to fall'],
     },
     you: {
       h: 'When the pull is strongest, what does it promise you?',
@@ -203,7 +203,7 @@ export const STORIES_E: Record<string, Story> = {
         ['That this time will feel amazing', 'It promised that last time too. Check the review before you believe the ad.'],
         ['Relief from how I feel', 'Then it is selling relief. Look at how long the relief lasted.'],
         ['Nothing. It just pulls', 'That is the wanting on its own, with little liking behind it. Name it as that.'],
-        ['I do not know yet', 'Fair. Listen to what it says next time, and then check the ten minutes after.'],
+        ['I do not know yet', 'Fair. Listen to what it says next time, and then check how you feel afterward.'],
       ],
     },
     scope:
@@ -229,7 +229,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'Then he added a light.',
         p: 'A small light came on, and a moment later, the juice came. He did it again and again, **always in the same order**: light, then juice.',
-        dx: 'Then he changed one thing. Before each drop of juice, a small light came on. A moment later, the juice came. He did it again and again, **always in the same order**: light, then juice. The monkeys did not need to do anything. They only had to watch, and their brains did the rest.',
+        dx: 'Then he changed one thing. Before each drop of juice, a small light came on. A moment later, about a second, the juice came. He did it again and again, many times in a session and over many sessions, **always in the same order**: light, then juice. The monkeys did not need to do anything to earn it. No lever, no button. They only had to sit and watch, and their brains did the rest, learning the order without being asked to.',
         art: ['scene', { k: 'l34-light' }],
       },
       {
@@ -249,7 +249,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'Your brain has learned what comes before the habit.',
         p: 'A room, a mood, an app, being alone. When that signal shows up, the wanting starts, **before anything is on the screen**. The pull is a reaction to the light.',
-        dx: 'You have your own lights. Your brain has learned what comes before the habit: a certain room, a mood like bored or low, an app you open, being alone with nothing planned. It learned them the way the monkeys learned the light, through the same order again and again. So when that signal shows up, the wanting starts, **before anything is on the screen**. The pull you feel is not a reaction to a picture. It is a reaction to the light.',
+        dx: 'You have your own lights. Your brain has learned what comes before the habit: a certain room, a mood like bored or low, an app you open, being alone with nothing planned. It learned them the way the monkeys learned the light, through the same order again and again. So when that signal shows up, the wanting starts, **before anything is on the screen**. The pull you feel is not a reaction to the thing itself. It is a reaction to the light.',
         art: ['scene', { k: 'l34-signals' }],
       },
       {
@@ -322,7 +322,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'The old popcorn was bad, and people knew it.',
         p: 'It was soft and chewy and tasted stale. Asked afterward, the people who got it said **they did not like it**.',
-        dx: 'A week makes popcorn bad. It goes soft and chewy, and it tastes like cardboard. There was nothing hidden about it. Asked afterward, the people who got the stale buckets said so plainly: **they did not like it**. If people eat what they like, the stale buckets should have come back nearly full.',
+        dx: 'A week makes popcorn bad. It goes soft and chewy, and it tastes like cardboard. There was nothing hidden about it. Asked afterward, the people who got the stale buckets said so plainly: **they did not like it**. The researchers had weighed every bucket before it was handed out, and they weighed it again when it came back. So they would know exactly how much each person ate, not what they said they ate. If people eat what they like, the stale buckets should have come back nearly full.',
         art: ['scene', { k: 'l35-stale' }],
       },
       {
@@ -380,7 +380,7 @@ export const STORIES_E: Record<string, Story> = {
     mine: { h: 'Your autopilot keeps hours. Here is where to watch.', k: 'hour' },
     today: {
       h: 'Give your autopilot an awkward hand.',
-      l: ['Pick where it usually starts', 'Change one thing there: hand, room or app', 'When you notice, say “not this time”'],
+      l: ['Pick where it usually starts', 'Change one thing there: hand, room or app', 'When you notice, say “Wait, I can stop.”'],
     },
     you: {
       h: 'When you catch yourself already halfway there, what do you tell yourself?',
@@ -435,7 +435,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'The old stories all say the same thing.',
         p: '**What you most need is usually guarded by what you most fear.** The place you least want to look is where the gold is.',
-        dx: 'Put all those stories side by side, and they say the same thing in different words. **What you most need is usually guarded by what you most fear.** The place you least want to look is where the gold is. Comfort is safe, and it is small. The cave is frightening, and it is where the life you want is kept. The hero is not the one with no fear. The hero is the one who goes down anyway.',
+        dx: 'Put all those stories side by side, and they say the same thing in different words. **What you most need is usually guarded by what you most fear.** The place you least want to look is where the gold is. Comfort is safe, and it is small. The cave is frightening, and it is where the life you want is kept.',
         art: ['scene', { k: 'l36-guarded' }],
       },
       {
@@ -471,7 +471,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'Every time you go around, the dragon keeps the gold.',
         p: 'And you keep the life you have now. Not a worse one. The same one, **with the gold still under the dragon**.',
-        dx: 'Every time you go around the cave, the dragon keeps the gold. And you keep the life you have now. Not a worse one, and not a ruined one. The same one, **with the gold still under the dragon**, another day. That is the cost of the habit that is easy to miss. It does not only take an hour. It keeps the door to the cave shut.',
+        dx: 'Every time you go around the cave, the dragon keeps the gold. And you keep the life you have now. Not a worse one, and not a ruined one. The same one, **with the gold still under the dragon**, another day. Think of the friend you have not called. Each time the habit gets you through the lonely hour, the call waits one more day, and a call that waits long enough stops being made. The work you keep putting off stays a someday. The talk you are afraid of stays unsaid. That is the cost that is easy to miss. It does not only take an hour. It keeps the door to the cave shut, and the gold stays where it is.',
         art: ['scene', { k: 'l36-keeps' }],
       },
       {
@@ -484,7 +484,7 @@ export const STORIES_E: Record<string, Story> = {
     ],
     mine: { h: 'Your log can show which feeling comes first.', k: 'trigger' },
     today: {
-      h: 'Name the feeling you run from most, and spend five minutes facing it without the phone.',
+      h: 'Spend five minutes in the cave today.',
       l: ['Name the feeling you run from most', 'Sit with it for five minutes, no phone', 'Ask what it guards: a person, a task, rest'],
     },
     you: {
@@ -533,7 +533,7 @@ export const STORIES_E: Record<string, Story> = {
         k: 'ask',
         h: 'What would it take for you to believe you are someone who is free of this?',
         o: [
-          ['A long run with no slips', 'That makes one slip feel like losing who you are. The next cards offer another way.'],
+          ['A long run with no slips', 'Many people wait for that. The next cards offer another way to get there.'],
           ['Someone else seeing it in me', 'Being seen helps a lot. You can start the cutting yourself.'],
           ['Feeling it inside, one day', 'That feeling tends to follow the strokes, not come before them.'],
           ['I do not know yet', 'That is honest. Hold it for the next card.'],
@@ -548,7 +548,7 @@ export const STORIES_E: Record<string, Story> = {
         fact: { s: 'Book · Aristotle, Nicomachean Ethics, book 2', i: [1] },
       },
       {
-        h: 'So who you are becoming is not a prize at the end.',
+        h: 'So who you are becoming is being cut today, not handed out later.',
         p: 'It is being cut right now, in the small things you do today. **Each choice is a stroke.** A message sent, a phone put down, an urge ridden out.',
         dx: 'This turns the usual picture around. Most people treat a new way of seeing themselves like a trophy, handed out after a long run with no slips. But a character is not handed out. It is cut. It is being cut right now, in the small things you do today. **Each choice is a stroke.** A message sent to a friend, a phone put down in another room, an urge ridden out to the end. None of them looks like much alone. Together, they are the face.',
         art: ['scene', { k: 'l37-stroke' }],
@@ -612,7 +612,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'They gave students a temptation, and a sentence to say back.',
         p: 'Half practiced “I cannot,” as in “I cannot eat that.” Half practiced “I do not.” Then, on the way out, each was **offered a thank-you snack**: a chocolate bar or a granola bar.',
-        dx: 'They brought 120 students into a study that looked like it was about something else. Each student pictured a temptation and practiced saying no to it. Half used “I cannot,” as in “I cannot eat that.” Half used “I do not,” as in “I do not eat that.” Then the study seemed to end. On the way out, each student was **offered a thank-you snack**, and had to pick: a chocolate bar or a granola bar. Nobody was watching which one they took, or so they thought.',
+        dx: 'They brought 120 students into a study that looked like it was about something else. Each student pictured a temptation and practiced saying no to it. Half used “I cannot,” as in “I cannot eat that.” Half used “I do not,” as in “I do not eat that.” Then the study seemed to end. On the way out, each student was **offered a thank-you snack**, and had to pick: a chocolate bar or a granola bar.',
         art: ['scene', { k: 'l38-snacks' }],
       },
       {
@@ -652,7 +652,7 @@ export const STORIES_E: Record<string, Story> = {
       },
       {
         h: '“I do not” is a sentence about the person you are becoming.',
-        p: 'It does not need a judge in the room. **It is a fact you are making true**, one urge at a time, and every urge you outlast makes it more true.',
+        p: 'A rule held from outside gets argued with. **It is a fact you are making true**, one urge at a time, and every urge you outlast makes it more true.',
         dx: '“I do not” is a sentence about the person you are becoming. It does not need anyone to enforce it, and it does not need a judge in the room. **It is a fact you are making true**, one urge at a time. The first few times you say it, it may feel a little ahead of you. That is fine. Every urge you outlast catches the fact up to the sentence, until it is plainly true.',
         art: ['scene', { k: 'l38-door' }],
         back: 'l37',
@@ -702,10 +702,11 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'Giving up something now for something better later may be the oldest wisdom people have.',
         p: 'Every coin saved, every field planted, every year of study is the same trade. **The easy thing now, or the good thing later.** The habit is that same choice, made small.',
-        dx: 'Giving up something now for something better later may be the oldest wisdom people have. It is in every coin saved, every field planted, every year of study, every promise kept when breaking it would be easier. It is the same trade each time. **The easy thing now, or the good thing later.** People did not get from caves to cities by taking the easy thing. And the habit is that same choice, made small enough to fit in a few minutes.',
+        dx: 'Giving up something now for something better later may be the oldest wisdom people have. It is in every coin saved, every field planted, every year of study, every promise kept when breaking it would be easier. It is the same trade each time. **The easy thing now, or the good thing later.** People did not get from caves to cities by taking the easy thing. And the habit is that same choice, made small enough to fit in one choice.',
         art: ['scene', { k: 'l39-trade' }],
       },
       {
+        long: 1,
         h: 'The hard part: the easy thing and the good thing are rarely the same thing.',
         p: 'What feels good now and what you will be glad of later **almost never line up**. A life gets its shape from which one a person picks, again and again.',
         dx: 'This is the hard part, and it is worth saying plainly. The easy thing and the good thing are rarely the same thing. What feels good now and what you will be glad of later **almost never line up**. If they did, nobody would need courage. A life gets its shape from which one a person picks, not once, but again and again, on ordinary days when nobody is watching.',
@@ -723,7 +724,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'Every time you take the easy thing, you eat a little of the seed.',
         p: 'It feels like nothing in the moment. One handful. But **the field you could have had is made of those handfuls**, and so is the one you will have.',
-        dx: 'Every time you take the easy thing, you eat a little of the seed. It never feels like much. One handful, on one hard evening. Nobody starves from one handful. But the field is made of handfuls. **The field you could have had is made of those handfuls**, and so is the one you will have. That is what the habit costs. Not one evening, but what that evening could have grown into.',
+        dx: 'Every time you take the easy thing, you eat a little of the seed. It never feels like much. One handful, on one hard day. Nobody starves from one handful. But the field is made of handfuls. **The field you could have had is made of those handfuls**, and so is the one you will have. That is what the habit costs. Not one day, but what that day could have grown into.',
         art: ['scene', { k: 'l39-handful' }],
       },
       {
@@ -798,7 +799,7 @@ export const STORIES_E: Record<string, Story> = {
       },
       {
         k: 'ask',
-        h: 'Then they were asked: which one would you rather do again? Which would you pick?',
+        h: 'If you had done both, which would you choose to do again?',
         o: [
           ['The short one, it hurt for less time', 'That is the sensible answer. Look at what most people chose.'],
           ['The long one, it ended easier', 'Then your memory works like most people’s. Look at the number.'],
@@ -816,14 +817,14 @@ export const STORIES_E: Record<string, Story> = {
         long: 1,
         h: 'Doctors later found the same thing in patients.',
         p: 'People after a painful medical test judged it by its worst moment and its last few minutes. When the end was made a little gentler, they **remembered the whole test as easier**.',
-        dx: 'Doctors later tested the same idea with patients having a painful medical exam. Half had the exam as usual. For the other half, the end was made a little gentler, with a few extra minutes that hurt less. Those patients **remembered the whole test as easier**, and more of them came back for the next one, even though their exam had lasted longer. Memory had judged it by its worst moment and its last few minutes.',
+        dx: 'Doctors later tested the same idea with patients having a painful medical exam. Half had the exam as usual. For the other half, the end was made a little gentler, with a few extra minutes that hurt less. Those patients **remembered the whole test as easier**, and were a little more willing to come back for the next one, even though their exam had lasted longer. Memory had judged it by its worst moment and its last few minutes.',
         art: ['scene', { k: 'l40-doctor' }],
         fact: { s: 'Trial · Redelmeier, Katz & Kahneman, 2003', i: [1] },
       },
       {
         h: 'Your memory scores your weeks the same way.',
-        p: 'After a slip, memory keeps the worst moment and the last one. **The quiet days fall away**: the evenings you got through, the urges you rode out, the mornings you woke up clear.',
-        dx: 'Your memory scores your weeks the same way it scored the cold water. After a slip, it keeps the worst moment, and it keeps the last one, which is often the same moment. **The quiet days fall away**: the evenings you got through without a fight, the urges you rode out, the mornings you woke up clear. They were real, and they were most of the week. They left almost no mark, because nothing in them was sharp.',
+        p: 'After a slip, memory keeps the worst moment and the last one. **The quiet days fall away**: the days you got through, the urges you rode out, the mornings you woke up clear.',
+        dx: 'Your memory scores your weeks the same way it scored the cold water. After a slip, it keeps the worst moment, and it keeps the last one, which is often the same moment. **The quiet days fall away**: the days you got through without a fight, the urges you rode out, the mornings you woke up clear. They were real, and they were most of the week. They left almost no mark, because nothing in them was sharp.',
         art: ['scene', { k: 'l40-week' }],
       },
       {
@@ -834,7 +835,7 @@ export const STORIES_E: Record<string, Story> = {
       {
         h: 'A log does not forget the quiet days.',
         p: 'It counts every one, the same size as the hard one. It is a fairer witness than a hard morning. **Trust the log, not your memory.**',
-        dx: 'A log does not work like memory. It does not keep the sharp moments and drop the plain ones. It counts every day, and each one takes the same space as the hard one. The evening you got through is a line, just like the slip is a line. That makes it a fairer witness than a hard morning will ever be. **Trust the log, not your memory**, especially on the mornings when memory is loudest.',
+        dx: 'A log does not work like memory. It does not keep the sharp moments and drop the plain ones. It counts every day, and each one takes the same space as the hard one. The day you got through is a line, just like the slip is a line. That makes it a fairer witness than a hard morning will ever be. **Trust the log, not your memory**, especially on the mornings when memory is loudest.',
         art: ['scene', { k: 'l40-log' }],
       },
       {

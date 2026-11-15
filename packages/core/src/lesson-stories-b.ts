@@ -46,6 +46,10 @@ const S = {
     'Gollwitzer & Sheeran (2006): implementation intentions and goal achievement, a meta-analysis of effects and processes, Advances in Experimental Social Psychology',
     'https://doi.org/10.1016/S0065-2601(06)38002-1',
   ],
+  brand: [
+    'Gollwitzer & Brandstätter (1997): implementation intentions and effective goal pursuit, Journal of Personality and Social Psychology',
+    'https://doi.org/10.1037/0022-3514.73.1.186',
+  ],
   webb: [
     'Webb & Sheeran (2007): how do implementation intentions promote goal attainment? Journal of Experimental Social Psychology',
     'https://doi.org/10.1016/j.jesp.2006.02.001',
@@ -76,27 +80,27 @@ export const STORIES_B: Record<string, Story> = {
           ['Stronger than usual', 'Many people say so. Look at what the scanner showed.'],
           ['About the same', 'Then watch for it. The change is easy to miss from the inside.'],
           ['Weaker, I was too tired to care', 'For some it comes later, as the tiredness lifts. Look at what the scanner found.'],
-          ['I have never noticed', 'Few people do. That is part of what the study found.'],
+          ['I have never noticed', 'Then watch for it. It is easy to miss from the inside.'],
         ],
       },
       {
         h: 'The tired brains lit up more for the same pictures.',
         p: 'After one lost night, the part of the brain that answers to reward **fired harder**, and the tired group rated plain, ordinary pictures as more pleasant. Nothing about the pictures had changed.',
-        dx: 'The scanner showed the difference at once. In the tired brains, the reward network, the part that lights up for food, money and pleasure, fired harder at the same pictures. And the tired people rated more of the plain pictures as pleasant. They did not feel more cheerful. Their brains were hungrier for anything that promised a lift. **One lost night turned the reward up** on everything they saw, without them noticing.',
+        dx: 'The scanner showed the difference at once. In the tired brains, the reward network, the part that lights up for food, money and pleasure, fired harder at the same pictures. And the tired people rated more of the plain pictures as pleasant. They did not feel more cheerful. Their brains were hungrier for anything that promised a lift. **One lost night turned the reward up** on everything they saw.',
         art: ['scene', { k: 'brain-glow' }],
         fact: { s: 'Study · Gujar, Yoo, Hu & Walker, 2011', i: [0] },
       },
       {
         long: 1,
         h: 'Earlier work from the same lab found the brake gets weaker too.',
-        p: 'After lost sleep, the front of the brain, the part that says wait, had less hold over the alarm and the pull. So the push gets louder at the same moment the brake gets softer.',
+        p: 'After lost sleep, the front of the brain, the part that says wait, had less hold over the alarm. So the push gets louder at the same moment the brake gets softer.',
         dx: 'Years before, the same team had shown tired people upsetting pictures. In the rested, the front of the brain kept the emotional alarm in check, like a hand on a shoulder. After a night without sleep, that link was weaker, and the alarm fired far more strongly. Put the two findings together and you get the worn-down hour: **the pull is louder and the brake is softer at the same moment.** That is not a flaw in your character. It is what a drained brain does to anyone.',
         fact: { s: 'Study · Yoo and colleagues, 2007', i: [1] },
       },
       {
         h: 'Worn down is not only about sleep.',
-        p: 'Lonely, hungry, stressed, angry: each one drains the same tank. A study of men who used porn found loneliness and use fed each other, each one making the other more likely.',
-        dx: 'Sleep is only one way to drain the tank. Loneliness, hunger, stress and anger take from the same store. A study of men who used porn found that loneliness and use went together and seemed to feed each other, each making the other more likely. **The urge on a lonely day is often a need for people, in disguise.** A screen promises to meet it, and leaves the need where it was.',
+        p: 'Lonely, hungry, stressed, angry: each one drains the same tank. A study of people who used porn found loneliness and use go together, and its authors think each feeds the other.',
+        dx: 'Sleep is only one way to drain the tank. Loneliness, hunger, stress and anger take from the same store. A study of people who used porn found that loneliness and use went together, and its authors think each feeds the other. **The urge on a lonely day is often a need for people, in disguise.** A screen promises to meet it, and leaves the need where it was.',
         art: ['scene', { k: 'tank' }],
         fact: { s: 'Study · Butler and colleagues, 2018', i: [2] },
       },
@@ -200,7 +204,7 @@ export const STORIES_B: Record<string, Story> = {
         long: 1,
         h: 'There is a sentence that holds both at once.',
         p: 'It was me, but it is not me. The first half takes the act seriously and owns it. The second half refuses to let one act decide who you are.',
-        dx: 'A leader once put the two halves in one sentence: it was me, but it is not me. The first half refuses to make excuses. It owns the act completely. The second half refuses to let the act become your name. Both are needed. **Owning the act without making it who you are** is what lets a person look at what happened and still believe they can change.',
+        dx: 'One sentence holds the two halves: it was me, but it is not me. The first half refuses to make excuses. It owns the act completely. The second half refuses to let the act become your name. Both are needed. **Owning the act without making it who you are** is what lets a person look at what happened and still believe they can change.',
         art: ['scene', { k: 'me-not-me' }],
       },
       {
@@ -219,7 +223,7 @@ export const STORIES_B: Record<string, Story> = {
       o: [
         ['“I am weak.”', 'Try: “I gave in when I was worn down.” That one has edges.'],
         ['“I am disgusting.”', 'Try: “I did something I do not want to do.” That you can work on.'],
-        ['“I will never change.”', 'Try: “I slipped once this week.” A week is something you can change.'],
+        ['“I will never change.”', 'Try: “I slipped this week, and I know what came before it.” That you can change.'],
         ['I do not talk to myself that way', 'Then keep it that way. It is rarer than it sounds.'],
       ],
     },
@@ -254,7 +258,7 @@ export const STORIES_B: Record<string, Story> = {
         k: 'ask',
         h: 'After you fail at something, what usually gets you trying again?',
         o: [
-          ['Being hard on myself', 'Many people believe that. Look at what the students did.'],
+          ['Being hard on myself', 'Many people believe that. Look at what kindness did.'],
           ['Someone being kind to me', 'Then you already know something this study found.'],
           ['Telling myself I am better than this', 'That one sounds strong. Watch how it did.'],
           ['Nothing, I usually let it go', 'Then the next cards are about what brings people back.'],
@@ -367,7 +371,6 @@ export const STORIES_B: Record<string, Story> = {
         back: 'l2',
       },
       {
-        long: 1,
         h: 'Then he looked at people who had told someone.',
         p: 'People who had confided a secret in one person went back to it less, and felt better able to handle it. Not a crowd. One person.',
         dx: 'Slepian then looked at people who had told one other person. They went back to the secret less often, and they felt better able to cope with it, even though it was still a secret from everyone else. Telling did not have to be public to help. **One person who knows was enough to make the load lighter.**',
@@ -412,7 +415,7 @@ export const STORIES_B: Record<string, Story> = {
     tag: 'A habit is not a verdict on whether you can love.',
     ic: 'heart',
     ask: 'Does this habit mean I cannot be close to anyone?',
-    key: 'Closeness is not only for the unbroken. Two people build it in small turns, and you can take one today.',
+    key: 'You do not have to be finished to be close to someone. Closeness is built in small turns.',
     np: 'One small true thing I could share, and who with',
     tell: [
       {
@@ -429,18 +432,18 @@ export const STORIES_B: Record<string, Story> = {
       },
       {
         k: 'ask',
-        h: 'What do you think makes two people close?',
+        h: 'Think of someone you feel close to. What made it happen?',
         o: [
-          ['Time, lots of it', 'Time helps. This study had 45 minutes.'],
-          ['Having a lot in common', 'Many people think so. Look at what Aron found.'],
-          ['Letting someone see who I am', 'That is close to it. The next card shows how.'],
-          ['I do not know', 'That is honest. The study gives a place to start.'],
+          ['We went through something hard together', 'Hard things shared tend to bind people. Look at what Aron found.'],
+          ['One of us said something true', 'Hold on to that. Look at what Aron found.'],
+          ['Years of being around each other', 'Time helps. This study had 45 minutes.'],
+          ['I do not have someone like that right now', 'Then this study is a good place to start.'],
         ],
       },
       {
         h: 'By the end, many pairs felt as close as old friends.',
-        p: 'Some said they felt closer to their partner than to most people in their lives. Nothing magic was in the questions. What mattered was the turns: one shares, the other shares back, a little deeper each time.',
-        dx: 'By the end, many pairs said they felt as close to this stranger as to people they had known for years. Nothing in the questions was magic. What mattered was the rhythm: one person shares something a little true, the other meets it and shares back, a little deeper. **Closeness grows in turns**, each one a small risk that is met.',
+        p: 'Many rated each other closer than about 3 in 10 students rate the closest person in their whole lives. Nothing magic was in the questions. What mattered was the turns: one shares, the other shares back, a little deeper each time.',
+        dx: 'By the end, many pairs rated this stranger closer than about 3 in 10 students rate the closest person in their whole lives. Nothing in the questions was magic. What mattered was the rhythm: one person shares something a little true, the other meets it and shares back, a little deeper. **Closeness grows in turns**, each one a small risk that is met.',
         art: ['turns', {}],
         fact: { s: 'Study · Aron and colleagues, 1997', i: [0] },
       },
@@ -458,7 +461,6 @@ export const STORIES_B: Record<string, Story> = {
         art: ['scene', { k: 'met' }],
       },
       {
-        long: 1,
         h: 'A habit kept in secret teaches the opposite.',
         p: 'It teaches you to hide, to keep people at a distance, to handle everything alone. Each small turn toward someone teaches you back the other way.',
         dx: 'A habit kept in secret trains the opposite skill. It teaches you to hide, to keep people at arm’s length, to handle the worst moments alone. The longer it runs, the more natural the distance feels. Each small turn toward someone, a true sentence, a question back, trains you the other way. **Closeness is a skill, and it grows with practice.**',
@@ -494,10 +496,11 @@ export const STORIES_B: Record<string, Story> = {
     np: 'My strongest if-then',
     tell: [
       {
-        h: 'Most plans to quit sound like this: I will try harder.',
-        p: 'It is a wish, not a plan. When the hard moment comes, the wish has to win an argument with the urge, and the urge is louder.',
-        dx: 'Most plans to quit sound like promises: I will try harder, I will be stronger this time. They feel good to make. But when the hard moment comes, the promise has to argue with the urge on the spot, while you are tired or upset, and the urge is louder. **A wish has no instructions.** It leaves the hard moment to decide everything.',
-        art: ['scene', { k: 'wish' }],
+        h: 'Before a winter break, students got one small task: write a short report on their Christmas Eve within two days.',
+        p: 'Half also wrote down exactly when and where they would do it. The rest only meant to. **About 3 in 4 of the planners** sent it on time, and about 1 in 3 of the others.',
+        dx: 'Peter Gollwitzer and Veronika Brandstätter wanted to test the smallest kind of plan on a task everyone means to do and many forget. Before the break, they asked students to write about how they spent Christmas Eve and send it within two days. Some also wrote one extra sentence: the exact time and place they would sit down to write it. Nothing else was different. **About three in four of the students with that sentence** got the report in on time. Only about one in three of the others did. One sentence, written ahead, did the remembering for them.',
+        art: ['people', { n: 75, was: 33, s: 'sent it on time' }],
+        fact: { s: 'Study · Gollwitzer & Brandstätter, 1997', i: [2] },
       },
       {
         h: 'A psychologist named Peter Gollwitzer studied a different kind of plan.',
@@ -518,12 +521,12 @@ export const STORIES_B: Record<string, Story> = {
       {
         n: '94',
         h: 'studies, with more than 8,000 people, tested plans written this way.',
-        p: 'Across them, people who wrote if-then plans reached their goals far more often than people who only set the goal. It held for exercise, eating, studying and more.',
-        dx: 'Gollwitzer and Paschal Sheeran gathered the studies that tested plans written this way, 94 of them, with more than 8,000 people. Across goals as different as exercise, eating well, studying and breaking habits, people who wrote if-then plans reached their goals far more often than people who only set the goal. Few tools in the study of behavior have held up so widely.',
+        p: 'Across them, people who wrote if-then plans reached their goals much more often than people who only set the goal. It held for exercise, eating, studying and more.',
+        dx: 'Gollwitzer and Paschal Sheeran gathered the studies that tested plans written this way, 94 of them, with more than 8,000 people. Across goals as different as exercise, eating well, studying and breaking habits, people who wrote if-then plans reached their goals much more often than people who only set the goal. Few tools in the study of behavior have held up so widely.',
         fact: { s: 'Review · Gollwitzer & Sheeran, 2006', i: [0] },
       },
       {
-        h: 'Here is why it works.',
+        h: 'The if does the remembering for you.',
         p: 'A plan made ahead moves the decision out of the hard moment. When the if shows up, the then is already waiting. You are not deciding. You are following.',
         dx: 'The plan works because it moves the decision. You make it once, calm, with a full tank. When the if shows up, your mind recognizes it, and the then is already waiting, almost like a reflex. **You are not deciding in the hard moment. You are following** a decision you already made, when you were at your best.',
         art: ['scene', { k: 'decide-ahead' }],
@@ -559,6 +562,6 @@ export const STORIES_B: Record<string, Story> = {
     },
     scope:
       'The review covered many kinds of goals, not porn, and if-then plans are one of the best tested tools in the study of goals. They help most when the if is a clear moment and the then is small. Yours can be both.',
-    src: [S.gollwitzer, S.webb],
+    src: [S.gollwitzer, S.webb, S.brand],
   },
 };

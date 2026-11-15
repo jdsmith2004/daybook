@@ -2,7 +2,7 @@
    becoming (the sentence from the end of setup, big in the flame's gold, with the newest proof from the log under it: core rodeProof,
    or the first line of who you are in numbers; moved up to sit right under the flame and the next step, "Becoming free", the owner,
    November 11, 2026), then Today so far (each entry logged today, with a shape like a badge: mint for an urge ridden out), and
-   Tonight I stay free for (the reason the night is for, one tap to choose: core tonightOf, pickTonightReason) and Tonight (the hard hours and the
+   Tonight I stay free for (every reason the night is for, several at once, with Write my own: core tonightOf, toggleTonightReason) and Tonight (the hard hours and the
    two lines of the urge plan that fit them, components/tonight-card.tsx). Nothing here is an ask, so it shows on every day and at
    night. What the person has not filled in yet is a blank to tap (components/blank.tsx), never a hidden part and never a nag (the
    owner, November 13, 2026: "maybe like blanks that they need to press to add"). */
@@ -10,7 +10,8 @@ import {
   eventRow,
   identityLines,
   morningReasons,
-  pickTonightReason,
+  ownChoices,
+  toggleTonightReason,
   planBlank,
   planTonight,
   rodeProof,
@@ -24,7 +25,9 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { AnswerChip, ChipWrap } from '@/components/answer';
 import { Blank } from '@/components/blank';
+import { OwnChip, OwnField } from '@/components/own';
 import { Shape } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { TimeBackRow } from '@/components/time-back';
@@ -148,23 +151,29 @@ function TonightFor({ snap, tk }: { snap: Snapshot; tk: DayKey }) {
   const c = useTheme();
   const { update } = useStore();
   const [open, setOpen] = useState(false);
+  const [writing, setWriting] = useState(false);
   const st = snap.settings!;
-  const r = tonightOf(snap.days, st, tk).r;
-  const picks = morningReasons(snap.days, st, tk).filter((x) => x !== r);
-  const pick = (t: string) => {
+  /* every reason tonight is for (several since November 15, 2026), and every reason the person has or wrote, to pick or put down */
+  const rs = tonightOf(snap.days, st, tk).rs;
+  const base = morningReasons(snap.days, st, tk);
+  const choices = ownChoices(st, 'reason', base, rs);
+  const flip = (t: string) => {
     buzz('tap');
-    update((s0) => ({ ...s0, days: pickTonightReason(s0.days, tk, t) }));
-    setOpen(false);
+    update((s0) => (s0.settings ? { ...s0, days: toggleTonightReason(s0.days, s0.settings, tk, t) } : s0));
   };
+  const said = rs.join(' · ');
   return (
     <View style={s.sec}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
-        accessibilityLabel={r ? 'Tonight I stay free for ' + r + '. Change' : 'Tonight I stay free for. Nothing chosen yet. Choose who or what'}
+        accessibilityLabel={
+          rs.length ? 'Tonight I stay free for ' + rs.join(', ') + '. Change' : 'Tonight I stay free for. Nothing chosen yet. Choose who or what'
+        }
         onPress={() => {
           buzz('tap');
           setOpen((x) => !x);
+          setWriting(false);
         }}
         style={({ pressed }) => [s.for, { opacity: pressed ? 0.85 : 1 }]}>
         <View style={s.beTop}>
@@ -172,40 +181,45 @@ function TonightFor({ snap, tk }: { snap: Snapshot; tk: DayKey }) {
             Tonight I stay free for
           </T>
           <View style={s.change}>
-            <Text style={[s.changeT, { color: c.accentText }]}>{open ? 'Done' : r ? 'Change' : 'Choose'}</Text>
+            <Text style={[s.changeT, { color: c.accentText }]}>{open ? 'Done' : rs.length ? 'Change' : 'Choose'}</Text>
             <Icon name={open ? 'up' : 'down'} size={16} color={c.accentText} />
           </View>
         </View>
-        {r ? <Text style={[s.forT, { color: c.ink }]}>{r}</Text> : <Blank color={c.muted} h={28} />}
+        {rs.length ? (
+          <View style={{ gap: 2 }}>
+            {rs.map((t) => (
+              <Text key={t} style={[s.forT, { color: c.ink }]}>
+                {t}
+              </Text>
+            ))}
+          </View>
+        ) : (
+          <Blank color={c.muted} h={28} />
+        )}
       </Pressable>
       {open ? (
-        <View accessibilityRole="radiogroup" accessibilityLabel="Who are you doing tonight for?">
-          {picks.map((t, i) => (
-            <Pressable
-              key={t}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: false }}
-              onPress={() => pick(t)}
-              style={({ pressed }) => [s.pick, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line }, pressed && { opacity: 0.7 }]}>
-              <Text style={[s.pickT, { color: c.ink }]}>{t}</Text>
-            </Pressable>
-          ))}
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              buzz('tap');
-              setOpen(false);
-              router.push('/reasons');
+        writing ? (
+          <OwnField
+            kind="reason"
+            builtIn={base}
+            placeholder="Like: my daughter"
+            max={120}
+            onSave={(t) => {
+              if (!rs.some((x) => x.toLowerCase() === t.toLowerCase())) flip(t);
+              setWriting(false);
             }}
-            style={({ pressed }) => [
-              s.pick,
-              picks.length > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line },
-              pressed && { opacity: 0.7 },
-            ]}>
-            <Icon name="plus" size={18} color={c.accentText} />
-            <Text style={[s.pickT, { color: c.accentText }]}>Write my own</Text>
-          </Pressable>
-        </View>
+            onCancel={() => setWriting(false)}
+          />
+        ) : (
+          <View accessibilityRole="list" accessibilityLabel={'What is tonight for? ' + (said ? 'Picked: ' + said : '')} style={{ paddingTop: 10 }}>
+            <ChipWrap last={1}>
+              {choices.map((t) => (
+                <AnswerChip key={t} label={t} on={rs.some((x) => x.toLowerCase() === t.toLowerCase())} onPress={() => flip(t)} />
+              ))}
+              <OwnChip onPress={() => setWriting(true)} />
+            </ChipWrap>
+          </View>
+        )
       ) : null}
     </View>
   );
@@ -230,7 +244,5 @@ const s = StyleSheet.create({
   blankLine: { flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
   for: { gap: 4 },
   forT: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },
-  pick: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, paddingVertical: 8 },
-  pickT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 22, flex: 1 },
   proof: { fontFamily: font.body, fontSize: 15, lineHeight: 21, marginTop: 4 },
 });

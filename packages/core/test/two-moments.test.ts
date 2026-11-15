@@ -152,7 +152,7 @@ describe('faith, only when it is on', () => {
   const withFaith = (faith: string) => normSettings({ ...st, reasons: ['A', 'B', 'C'], onb: { n: 1, at: 1, a: { faith }, hist: [] } });
   it('is a morning reason when faith plays a part', () => {
     expect(faithOn(withFaith('big'))).toBe(true);
-    expect(morningReasons({}, withFaith('some'), tk)).toEqual(['A', 'My faith', 'B']);
+    expect(morningReasons({}, withFaith('some'), tk)).toEqual(['A', 'My faith', 'B', 'C']);
   });
   it('is nowhere when it does not', () => {
     expect(faithOn(withFaith('no'))).toBe(false);

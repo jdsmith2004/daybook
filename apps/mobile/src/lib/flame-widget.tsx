@@ -15,3 +15,6 @@ export function useFlameWidget(
 ): ReactNode {
   return null;
 }
+
+/** ends the night's Live Activity when the morning is answered; there is none here */
+export function endLiveNight(_tk: string) {}

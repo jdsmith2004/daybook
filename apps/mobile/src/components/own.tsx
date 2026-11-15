@@ -87,8 +87,10 @@ export function OwnField({
 
 /** "Write my own": the choice that opens a box for the person's own answer. A pencil and a dashed edge set it apart from
     the answers beside it, and it stays last in its group (Packed last). */
-export function OwnChip({ onPress, label = 'Write my own' }: { onPress: () => void; label?: string }) {
+export function OwnChip({ onPress, label = 'Write my own', color }: { onPress: () => void; label?: string; color?: string }) {
   const c = useTheme();
+  /* on a sky of its own (the morning's dawn), the page gives the color that reads there */
+  const ink = color || c.accentText;
   return (
     <Pressable
       accessibilityRole="button"
@@ -97,9 +99,9 @@ export function OwnChip({ onPress, label = 'Write my own' }: { onPress: () => vo
         buzz('tap');
         onPress();
       }}
-      style={({ pressed }) => [s.ownChip, { borderColor: c.accent, opacity: pressed ? 0.7 : 1 }]}>
-      <Icon name="pencil" size={16} color={c.accentText} />
-      <Text style={[s.ownChipT, { color: c.accentText }]}>{label}</Text>
+      style={({ pressed }) => [s.ownChip, { borderColor: color || c.accent, opacity: pressed ? 0.7 : 1 }]}>
+      <Icon name="pencil" size={16} color={ink} />
+      <Text style={[s.ownChipT, { color: ink }]}>{label}</Text>
     </Pressable>
   );
 }

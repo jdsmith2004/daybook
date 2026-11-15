@@ -470,15 +470,15 @@ const help = (t: string, v: string, sub = '', ic = 'life'): Go => ({ t, a: 'help
 
 export const NIGHT_PRACTICE: Record<string, PStep> = {
   l54: {
-    h: 'Let the morning decide for tonight.',
-    p: 'Add the line that fits your nights while your head is clear. Tonight only has to follow it.',
+    h: 'Let your rested self set up the worn-out hours.',
+    p: 'Add the line that fits your hardest hours while you still have energy. The worn-out you only has to follow it.',
     mins: 1,
     items: [
-      plan('it is 10 p.m.', 'Put the phone on its charger outside my room, and get ready for bed.'),
-      plan('I am in bed and want my phone', 'Leave it where it is. Read, or lie still until sleep comes.'),
+      plan('I am worn out and the pull starts', 'Put the phone on its charger in another room, and do the one thing I picked ahead: a walk, a call or rest.'),
+      plan('the hour that usually wears me down comes', 'Follow what I set up while I was rested, and leave the big decisions for later.'),
     ],
     go: [{ t: 'Set my screens-off time', a: 'tab', v: 'settings', open: 's-sched', ic: 'moon' }],
-    ok: 'Tonight is set up already.',
+    ok: 'Your worn-out hours are set up already.',
   },
   l55: {
     h: 'Give your phone its own bed.',

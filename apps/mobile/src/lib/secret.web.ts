@@ -5,6 +5,8 @@
 const KEY = 'daybook.auth';
 const TRUST = 'daybook.trust';
 
+/* every tab of this browser reads and renews the same kept sign-in (core renew.ts) */
+export const sharedStorage = true;
 export const trustOffered = true;
 /** whether this browser keeps the sign-in after the tab closes */
 export function getTrust(): boolean {

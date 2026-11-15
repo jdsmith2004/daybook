@@ -22,11 +22,12 @@ import { awayGapAt, dayUntold } from './away';
 import { truthOn } from './truth';
 import { changeSettings } from './actions';
 import { addEvent, changeDay, removeEvent, withDay } from './mutate';
-import { normMorning } from './morning-norm';
+import { MORNING_REASON_MAX, MORNING_REASONS_MAX, normMorning } from './morning-norm';
+import { ownOf } from './saved-answers';
 import { settleByMorning, unsettleByMorning } from './talk-log';
 import type { Clock, Day, DayEvent, DayKey, Days, MorningSet, Play, Settings } from './types';
 
-export { MORNING_REASON_MAX } from './morning-norm';
+export { MORNING_REASON_MAX, MORNING_REASONS_MAX } from './morning-norm';
 
 /** the morning, by the phone's clock: from 4 AM, until 2 PM */
 export const MORNING_FROM = 4;
@@ -187,30 +188,41 @@ export function setMorningFeel(days: Days, tk: DayKey, f: 1 | 2 | 3 | null, now 
   });
 }
 
-/** the person's own reasons to pick from for tonight: their reasons from setup or My plan, then who they are becoming, then the
-    starting ones when they have none; the one picked last time first. At most three, so they sit by the thumb and the flame stays big. */
+/** the reasons to pick from for tonight, all of them (November 15, 2026: "It only gave me 3 options"): the ones picked last time
+    first, then the person's reasons from setup or My plan, "My faith" when faith is on, who they are becoming, and every reason
+    they ever wrote with Write my own (core saved-answers.ts); the starting ones only when they have none of their own. */
 export function morningReasons(days: Days, st: Settings, tk: DayKey): string[] {
   const out: string[] = [];
   const add = (t: string | null | undefined) => {
-    const s = (t || '').trim();
-    if (s && out.length < 3 && !out.some((x) => x.toLowerCase() === s.toLowerCase())) out.push(s);
+    const s = (t || '').replace(/\s+/g, ' ').trim();
+    if (s && !out.some((x) => x.toLowerCase() === s.toLowerCase())) out.push(s);
   };
-  const last = morningOf(days[tk])?.r || lastSet(days, tk, CARRY_DAYS)?.ms.r;
+  const today = morningOf(days[tk])?.rs;
+  const last = today || lastSet(days, tk, CARRY_DAYS)?.ms.rs || [];
   /* faith on (D10 (a)): "My faith" is one of the person's own reasons; with it off, nothing about faith */
   const a = st.onb?.a as { faith?: string } | undefined;
   const faith = a && (a.faith === 'big' || a.faith === 'some') ? ['My faith'] : [];
   const rs = st.reasons || [];
-  const own = [...rs.slice(0, 1), ...faith, ...rs.slice(1), st.becoming || ''].filter((x) => x.trim());
-  if (last && own.some((x) => x.trim().toLowerCase() === last.toLowerCase())) add(last);
+  const own = [...rs.slice(0, 1), ...faith, ...rs.slice(1), st.becoming || '', ...ownOf(st, 'reason')].filter((x) => x.trim());
+  const ownLow = own.map((x) => x.trim().toLowerCase());
+  last.forEach((x) => (ownLow.includes(x.toLowerCase()) || today ? add(x) : undefined));
   own.forEach(add);
-  if (!out.length) ['Becoming someone I am proud of', 'Being fully present with the people I love', 'Clear mornings and steady energy'].forEach(add);
+  if (!out.length) MORNING_STARTERS.forEach(add);
   return out;
 }
 
-/** the reason to start on: last time's, when it is still one of the person's; otherwise the first */
+/** the reasons offered when a person has none of their own yet */
+export const MORNING_STARTERS = ['Becoming someone I am proud of', 'Being fully present with the people I love', 'Clear mornings and steady energy'];
+
+/** the reasons the morning page starts on: what was already picked this morning (on Today before the morning), or nothing, so
+    tonight is chosen fresh (the owner, November 15, 2026: "it has to be something that I specifically choose that day") */
+export function morningPicksStart(days: Days, tk: DayKey): string[] {
+  return morningOf(days[tk])?.rs || [];
+}
+
+/** the first reason offered (kept for older callers) */
 export function morningReasonStart(days: Days, st: Settings, tk: DayKey): string {
-  const list = morningReasons(days, st, tk);
-  return list[0] || '';
+  return morningReasons(days, st, tk)[0] || '';
 }
 
 /** when tonight's wait starts unless the person changes it: the last time chosen, then screens-off, then 10:30 PM */
@@ -221,10 +233,20 @@ export function nightAtStart(st: Settings): Clock {
 }
 
 /** Set tonight: the reason and the time are kept on today, the time becomes tomorrow's starting time, and the day's morning is marked */
-export function setTonight(days: Days, st: Settings, tk: DayKey, o: { r: string; nt: Clock }, now = Date.now()): { days: Days; st: Settings } {
+export function setTonight(
+  days: Days,
+  st: Settings,
+  tk: DayKey,
+  o: { r?: string; rs?: readonly string[]; nt: Clock },
+  now = Date.now(),
+): { days: Days; st: Settings } {
   const nt = isTime(o.nt) ? o.nt : nightAtStart(st);
+  const rs = cleanReasons(o.rs || (o.r ? [o.r] : []));
   const next = withMorning(days, tk, now, (ms, p) => {
-    if (o.r.trim()) ms.r = o.r.trim();
+    if (rs.length) {
+      ms.rs = rs;
+      ms.r = rs[0];
+    }
     ms.nt = nt;
     ms.set = now;
     delete ms.x;
@@ -232,6 +254,19 @@ export function setTonight(days: Days, st: Settings, tk: DayKey, o: { r: string;
   });
   const st2 = st.nightAt === nt ? st : changeSettings(st, (s) => void (s.nightAt = nt), now);
   return { days: next, st: st2 };
+}
+
+/** a list of reasons, cleaned: one line each, no repeats, at most MORNING_REASONS_MAX */
+function cleanReasons(list: readonly string[]): string[] {
+  const out: string[] = [];
+  list.forEach((x) => {
+    const t = String(x || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, MORNING_REASON_MAX);
+    if (t && !out.some((y) => y.toLowerCase() === t.toLowerCase()) && out.length < MORNING_REASONS_MAX) out.push(t);
+  });
+  return out;
 }
 
 /** closed without Set tonight: skipped for today, so it does not open again today. Costs nothing. */
@@ -255,8 +290,10 @@ function lastSet(days: Days, tk: DayKey, back: number): { k: DayKey; ms: Morning
 export interface Tonight {
   /** when the night's wait starts, 'HH:MM' (the log day's night: a time before the rollover hour is past midnight) */
   at: Clock;
-  /** the reason, in the person's own words, or null when none was ever picked */
+  /** the first reason, in the person's own words, or null when none was ever picked */
   r: string | null;
+  /** every reason picked for tonight (r is the first), or [] */
+  rs: string[];
   /** when the reason was chosen (ms), for "You, at 7:40 AM" */
   rAt: number | null;
   /** the log day the reason and time were set on: tk when this morning was set, an earlier day when they carry over */
@@ -270,19 +307,40 @@ export interface Tonight {
 export function tonightOf(days: Days, st: Settings, tk: DayKey): Tonight {
   const s = lastSet(days, tk, CARRY_DAYS);
   const t: Tonight = s
-    ? { at: s.ms.nt || nightAtStart(st), r: s.ms.r || null, rAt: s.ms.set || null, from: s.k, today: s.k === tk }
-    : { at: nightAtStart(st), r: null, rAt: null, from: null, today: false };
-  /* a reason chosen on Today before the morning was set (pickTonightReason) is tonight's */
+    ? { at: s.ms.nt || nightAtStart(st), r: s.ms.r || null, rs: s.ms.rs || [], rAt: s.ms.set || null, from: s.k, today: s.k === tk }
+    : { at: nightAtStart(st), r: null, rs: [], rAt: null, from: null, today: false };
+  /* reasons chosen on Today before the morning was set (setTonightReasons) are tonight's */
   const own = morningOf(days[tk]);
-  return own?.r && !own.set ? { ...t, r: own.r, rAt: own.at, from: tk } : t;
+  return own?.rs && !own.set ? { ...t, r: own.rs[0], rs: own.rs, rAt: own.at, from: tk } : t;
 }
 
 /** tonight's reason, chosen on Today ("Tonight I stay free for", components/today-below.tsx): kept on today without setting the morning, so the
     morning page still opens as it would, already on this reason */
 export function pickTonightReason(days: Days, tk: DayKey, r: string, now = Date.now()): Days {
-  const t = r.trim();
-  if (!t) return days;
-  return withMorning(days, tk, now, (ms) => void (ms.r = t));
+  return setTonightReasons(days, tk, [r], now);
+}
+
+/** tonight's reasons, chosen on Today ("Tonight I stay free for", several at once): kept on today without setting the morning, so the
+    morning page still opens as it would. An empty list keeps nothing (tonight shows the last morning's again). */
+export function setTonightReasons(days: Days, tk: DayKey, list: readonly string[], now = Date.now()): Days {
+  const rs = cleanReasons(list);
+  return withMorning(days, tk, now, (ms) => {
+    if (rs.length) {
+      ms.rs = rs;
+      ms.r = rs[0];
+    } else {
+      delete ms.rs;
+      delete ms.r;
+    }
+  });
+}
+
+/** one reason picked or put down for tonight on Today: starts from tonight's reasons as they show */
+export function toggleTonightReason(days: Days, st: Settings, tk: DayKey, r: string, now = Date.now()): Days {
+  const cur = tonightOf(days, st, tk).rs;
+  const low = r.trim().toLowerCase();
+  const next = cur.some((x) => x.toLowerCase() === low) ? cur.filter((x) => x.toLowerCase() !== low) : [...cur, r];
+  return setTonightReasons(days, tk, next, now);
 }
 
 /** how a night went, as the morning after said: the night of log day k is answered on day k + 1 (or by the catch-up row on day
@@ -375,15 +433,19 @@ export const MORNING_WORDS = {
   /** the eyebrow of the second page after It happened: logged, and the day is still open */
   logged: 'Logged. Today is open.',
   setup: 'Set up tonight',
-  why: 'Who are you doing tonight for?',
+  why: 'What is tonight for?',
+  whyMany: 'Pick as many as are true.',
   when: 'When does tonight start?',
-  whenDone: 'Done',
+  whenDone: 'Next',
   set: 'Set tonight',
   /** the quiet link to Rekindle after It happened */
   look: 'Look back on it',
   /** said once it is set, as the lesson opens */
   done: 'Tonight is set.',
 } as const;
+
+/** under "When does tonight start?": the time it starts on, which is last night's */
+export const morningWhenSet = (t: string): string => 'Last night it was ' + t + '. Keep it, or change it.';
 
 /** the eyebrow on the first page: "Good morning · Wednesday" */
 export const morningHello = (now: number): string => MORNING_WORDS.title + ' · ' + new Date(now).toLocaleDateString('en-US', { weekday: 'long' });

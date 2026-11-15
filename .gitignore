@@ -61,3 +61,7 @@ journey-shots/
 
 # Listen recordings made by npm run voice: they live on the website, never in git (core voice.ts)
 apps/mobile/public/voice/
+
+# the owner's own log, exported by npm run mylog: never in git
+mylog/
+mylog-*.json

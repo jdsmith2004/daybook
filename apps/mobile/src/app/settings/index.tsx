@@ -101,7 +101,7 @@ export default function Settings() {
           <>
             {/* a test feature, kept quiet and low on purpose (the owner, November 14, 2026; app/love.tsx) */}
             <SetGroup>
-              <SetRow icon="heart" tone="coral" label="Real love" onPress={() => router.push('/love')} />
+              <SetRow icon="heart" tone="coral" label="Real love (beta)" onPress={() => router.push('/love')} />
             </SetGroup>
             <HelpFoot />
           </>

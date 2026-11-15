@@ -68,8 +68,12 @@ export interface MorningSet {
   ev2?: string;
   /** "And this morning?": 1 Low, 2 Okay, 3 Good */
   f?: 1 | 2 | 3;
-  /** "Who are you doing tonight for?": the reason picked, in the person's own words, as it was shown */
+  /** "What is tonight for?": the first reason picked, in the person's own words, as it was shown (kept for the readers from
+      before several could be picked; always rs[0] when rs is there) */
   r?: string;
+  /** every reason picked for tonight, in the order picked (November 15, 2026: several can be chosen). A record from before
+      has only r, and is read as [r] (morning-norm.ts). */
+  rs?: string[];
   /** when tonight's wait starts, 'HH:MM' */
   nt?: Clock;
   /** when Set tonight was pressed (ms): this morning was set */

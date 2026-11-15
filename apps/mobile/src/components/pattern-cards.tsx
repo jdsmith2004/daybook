@@ -36,6 +36,13 @@ import {
   type DayFeelStep,
   type DayKey,
   type PatRange,
+  anyHeld,
+  anyLesson,
+  anyNightTold,
+  PAT_FILL,
+  patHeld,
+  patLearn,
+  patNights,
 } from '@daybook/core';
 import { useMemo } from 'react';
 import { View } from 'react-native';
@@ -50,7 +57,10 @@ import {
   FeelField,
   FlameCounts,
   Ghost,
+  HeldEmbers,
   Hillside,
+  LessonDays,
+  NightMoons,
   HoursKey,
   Mosaic,
   Moons,
@@ -72,7 +82,10 @@ const WEEK_ROW = 64;
 
 /* the cards the free side keeps (core PAT_FREE: felt, apart): they show a person changing. The rest explain why, and are what a
    tip or Daybook Pattern opens, on Pattern and in the Sunday review alike (the owner, November 15, 2026: "they need to donate for that") */
-export const FREE_CARDS = ['felt', 'ride', 'apart', 'named'];
+export const FREE_CARDS = ['felt', 'ride', 'apart', 'named', 'nights', 'learn', 'held'];
+/* the order of the deck: what nearly everyone does every day first, the cards that need feelings named last (the owner, November 15,
+   2026: "we don't really have them log emotions ... focus the graphs more on like the metrics we have. Don't delete any graphs") */
+const ORDER = ['apart', 'ride', 'nights', 'learn', 'held', 'when', 'what', 'helps', 'days', 'felt', 'named'];
 
 export function usePatternCards(range: PatRange, end?: DayKey) {
   const { snap, tk: today, now, say } = useStore();
@@ -148,7 +161,9 @@ export function usePatternCards(range: PatRange, end?: DayKey) {
   const cards: DeckCard[] = [];
   /* a card the whole log has nothing for yet: its own shape, empty */
   const empty = (id: string) => <Room>{(w, h) => <Ghost id={id} w={w} h={h} />}</Room>;
-  const ghost = (id: string, title: string) => cards.push({ id, title, ghost: true, chart: empty(id) });
+  /* the shape stays (the owner, November 3, 2026), with one plain line on how to fill it */
+  const fill = (id: string) => <Say>{PAT_FILL[id]}</Say>;
+  const ghost = (id: string, title: string) => cards.push({ id, title, ghost: true, say: fill(id), chart: empty(id) });
   /* the first card, for the question this page is here to answer. It stays after a slip: one slip is a flat step, which is worth seeing then */
   if (allPer.keys.length >= DOING_MIN)
     cards.push({
@@ -397,7 +412,8 @@ export function usePatternCards(range: PatRange, end?: DayKey) {
         </T>
       ),
     });
-  else if (healthAsk) cards.push({ id: 'days', title: 'What is different on hard days?', ghost: true, chart: empty('days'), foot: healthAsk });
+  else if (healthAsk)
+    cards.push({ id: 'days', title: 'What is different on hard days?', ghost: true, say: fill('days'), chart: empty('days'), foot: healthAsk });
   else ghost('days', 'What is different on hard days?');
   if (works.length || ev.chose + ev.went)
     cards.push({
@@ -436,5 +452,49 @@ export function usePatternCards(range: PatRange, end?: DayKey) {
       ) : null,
     });
   else ghost('helps', 'What helps you');
+  /* the work done every day: nights the morning told, lesson days and hard hours held (core pattern-work.ts) */
+  const nights = patNights(snap.days, per, tk);
+  if (anyNightTold(snap.days))
+    cards.push({
+      id: 'nights',
+      bare: !nights.told,
+      title: 'Your nights',
+      head: nights.head,
+      say: <Say>{nights.line}</Say>,
+      chart: <Room>{(w, h) => <NightMoons nights={nights.nights} w={w} h={h} label={nights.head + '. ' + nights.line} />}</Room>,
+      foot: (
+        <T v="small" tone="muted">
+          Each full moon is a night you told as free.
+        </T>
+      ),
+    });
+  else ghost('nights', 'Your nights');
+  const learn = patLearn(snap.days, per, tk);
+  if (anyLesson(snap.days))
+    cards.push({
+      id: 'learn',
+      bare: !learn.n,
+      title: 'Lessons',
+      head: learn.head,
+      say: <Say>{learn.line}</Say>,
+      chart: <Room>{(w, h) => <LessonDays cols={learn.cols} w={w} h={h} label={learn.head + '. ' + learn.line} />}</Room>,
+      numbers: <NumbersTable cap="Days with a lesson" head={['From', 'Days']} rows={learn.cols.map((x) => [fmtD(x.from), String(x.n)]).reverse()} />,
+    });
+  else ghost('learn', 'Lessons');
+  const held = patHeld(snap.days, per);
+  if (anyHeld(snap.days))
+    cards.push({
+      id: 'held',
+      bare: !held.n,
+      title: 'Hard hours held',
+      head: held.head,
+      say: <Say>{held.line}</Say>,
+      chart: <Room>{(w, h) => <HeldEmbers hours={held.hours} w={w} h={h} label={held.head + '. ' + held.line} />}</Room>,
+      numbers: held.n ? (
+        <NumbersTable cap="Hard hours held" head={['Day', 'Started']} rows={held.hours.map((x) => [fmtD(x.k), fmtHour(x.h)]).reverse()} />
+      ) : null,
+    });
+  else ghost('held', 'Hard hours held');
+  cards.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
   return { cards, keys, ins, logged, nums, when, trig: trig.list, works, rideCols };
 }

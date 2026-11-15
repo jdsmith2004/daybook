@@ -1,8 +1,8 @@
 /* The cards on Pattern: one big card at a time, swiped sideways, with the edge of the next one showing and a small ruler under
    them that says where you are. Each is a scene of its own, in its own night sky in either theme, with its picture running out to
    the card's edges. A chart grows when its card first comes in, not while it is out of sight. A card that is locked shows the
-   person's own chart faded, with the ask under it (components/support.tsx). A card with nothing in it yet is a ghost: its title and its own picture
-   drawn empty (Ghost, components/pattern-charts.tsx), with no words, no ask and no numbers, until the log fills it. */
+   person's own chart faded, with the ask under it (components/support.tsx). A card with nothing in it yet is a ghost: its title, one plain line on how to fill it
+   (core PAT_FILL) and its own picture drawn empty (Ghost, components/pattern-charts.tsx), with no ask and no numbers, until the log fills it. */
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react';

@@ -209,8 +209,6 @@ export default function LessonScreen() {
   const [pulse, setPulse] = useState(0);
   /* Listen (components/listen.tsx): once on, each story card is read aloud as it comes in, until it is turned off */
   const [listen, setListen] = useState(false);
-  /* the practice step's page: the line to write, then what to take with you */
-  const [practicePage, setPracticePage] = useState(0);
   const scroll = useRef<ScrollViewInstance>(null);
   /* the picture on a card gives up height so the card fits a short phone (components/fit) */
   const fit = useFitRoom();
@@ -733,14 +731,15 @@ export default function LessonScreen() {
       );
   } else if (stg === 'practice') {
     const a = lessonPractice(L, st)!;
-    const items = a.items || [];
+    /* one invitation per lesson, never two (the owner, November 15, 2026: "it should just be like one invitation per page, not or per
+       lesson, not two. Never two like that"): the line to write when the lesson has one (they liked the prayer to bring as you are
+       best), otherwise its first line or place to go */
+    const items = a.write ? [] : (a.items || []).slice(0, 1);
+    const goes = a.write || items.length ? [] : (a.go || []).slice(0, 1);
     const note = wrote ?? ((st.learn.notes && st.learn.notes[L.id]) || '');
     const ed = editing != null ? items[editing] : null;
-    /* one invitation per page (the owner, November 15, 2026: "this screen has too much going on we need to b e clear and have one
-       invitation"): the line to write first, then the lines and messages to take with you on the next page */
-    const twoPages = !!a.write && (items.length > 0 || (a.go || []).length > 0);
-    const writing = twoPages && practicePage === 0;
-    const later = twoPages && practicePage === 1;
+    const writing = !!a.write;
+    const later = false;
     prog = bar;
     body = ed ? (
       /* changing a line's words: the box and its button at the top, above the keyboard */
@@ -750,7 +749,7 @@ export default function LessonScreen() {
         {/* no words above the flame (the owner, November 13, 2026): the lines to add say it themselves */}
         {a.write && !later ? (
           <WriteBox label={L.np} value={note} examples={a.write} t={t} onChange={write} />
-        ) : !a.write && !items.length && !(a.go || []).length ? (
+        ) : !a.write && !items.length && !goes.length ? (
           <NoteField L={L} note={note} />
         ) : null}
         {writing ? null : <Blocks bs={a.b} L={L} t={t} st={st} />}
@@ -778,13 +777,13 @@ export default function LessonScreen() {
                 />
               );
             })}
-            {(a.go || []).map((g, k) => (
+            {goes.map((g, k) => (
               <GoRow key={'g' + k} label={g.t} ic={g.ic} went={!!went[k]} onPress={() => open(k, g)} />
             ))}
           </Dock>
         )}
         {/* the free line stays, quietly, at the foot of the last page */}
-        {heavy && !writing ? (
+        {heavy ? (
           <View style={s.quiet988}>
             <Help988 />
           </View>
@@ -798,11 +797,6 @@ export default function LessonScreen() {
           label="Continue"
           noIcon
           onPress={() => {
-            if (writing) {
-              setPracticePage(1);
-              top();
-              return;
-            }
             if (acted) practiced();
             toStage(deedNext ? 'deed' : 'practiced');
           }}

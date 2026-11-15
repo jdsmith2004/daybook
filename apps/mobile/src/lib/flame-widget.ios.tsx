@@ -147,6 +147,34 @@ function Painter({ xml, px, onDone }: { xml: string; px: number; onDone: (png: s
 type LiveWant = { key: string; img: string; props: Record<string, string | number> };
 /** one change at a time, so two quick changes never cross */
 let liveQueue: Promise<unknown> = Promise.resolve();
+/** a step of the queue that never holds it for good: a native call that does not answer is let go after LIVE_STEP_MAX, so the
+    next change (the one that ends it, most of all) still runs */
+const LIVE_STEP_MAX = 8000;
+const inTime = <T,>(p: Promise<T>): Promise<T | undefined> => Promise.race([p, new Promise<undefined>((ok) => setTimeout(() => ok(undefined), LIVE_STEP_MAX))]);
+const queueLive = (fn: () => Promise<unknown>) => {
+  liveQueue = liveQueue.then(() => inTime(fn())).catch(() => undefined);
+};
+
+/** the morning is answered (the morning page, or the Lock Screen's Start your morning): the night's Live Activity ends now, so it
+    never stays on the Lock Screen over a morning already done (the owner, November 15, 2026: "It should go away if I do my good
+    morning or I press it"). tk: today's log day, so a night not over yet is kept. The hard hours and the ride are left alone; livePlan starts the right one again if one is due. */
+export function endLiveNight(tk: string) {
+  queueLive(async () => {
+    const note = liveNote();
+    let key = '';
+    try {
+      key = note.exists ? (JSON.parse(note.textSync()) as { key?: string }).key || '' : '';
+    } catch {
+      key = '';
+    }
+    /* with no note, nothing says which one it is: a night one is the only kind that lasts into the morning, so all end */
+    if (key && !key.startsWith('night-')) return;
+    /* tonight's own (opened before the day turns over, as at 2 AM): still the night, so it stays */
+    if (key === 'night-' + tk) return;
+    for (const a of FlameLive.getInstances()) await a.end('immediate');
+    if (note.exists) note.delete();
+  });
+}
 /** makes the Live Activity match what should show: updated when it is the same plan, started fresh for a new one, ended when none.
     stale: when it turns to its second face by itself (Apple's stale date) */
 async function syncLive(want: LiveWant | null, url: string, to: number, stale: number) {
@@ -286,13 +314,15 @@ export function useFlameWidget(
       : null;
   const wantKey = want ? JSON.stringify(want) + '|' + plan!.stale : '';
   useEffect(() => {
-    /* only once the log is read and the pictures are drawn: before that, nothing is known, and ending it then made it flicker away
-       each time the app opened (a tap on it opens the app) */
-    if (!ready || !(drawnAll || !snap.settings)) return;
+    /* only once the log is read. One that should show waits for its pictures too: ending it before them made it flicker away each
+       time the app opened (a tap on it opens the app). One that should not show ends at once, with no wait for the pictures: the
+       night's stayed over a morning already done while a new day's pictures were still being drawn (the owner, November 15, 2026) */
+    if (!ready) return;
+    if (plan && !drawnAll && snap.settings) return;
     const url = plan?.url ?? '/';
     const to = plan?.to ?? 0;
     const stale = plan?.stale ?? 0;
-    liveQueue = liveQueue.then(() => syncLive(want, url, to, stale)).catch(() => undefined);
+    queueLive(() => syncLive(want, url, to, stale));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, wantKey, drawnAll, !snap.settings]);
   /* on a screen yet? asked each time the app comes back, until it is */

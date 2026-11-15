@@ -68,7 +68,7 @@ import { font, toneOf, useTheme, type Sky } from '@/lib/theme';
 import { WORDS } from '@/lib/words';
 
 /* the graphs a week is walked through, in this order (the feelings cards stay on Pattern: the week rarely has them) */
-const ORDER = ['ride', 'nights', 'when', 'what', 'helps', 'held', 'learn', 'days', 'apart'];
+const ORDER = ['ride', 'learn', 'nights', 'when', 'held', 'what', 'helps', 'days', 'apart'];
 const MAX_GRAPHS = 3;
 /* what each graph means for next week, in one line under it */
 const BRIDGE: Record<string, string> = {

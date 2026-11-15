@@ -2,10 +2,10 @@
    file talks to Cognito directly (packages/core/src/cognito.ts), with no browser page. A sign-in gives a refresh token, kept in
    the keychain or keystore (secret.ts), and a short-lived access token, kept only in memory and renewed when it runs out.
    The sync API takes the access token; who the person is comes only from that signed token. */
-import { appleSubOf, cognitoClient, CognitoError, regionOfAuthDomain, type Tokens } from '@daybook/core';
+import { appleSubOf, cognitoClient, CognitoError, RefreshGone, regionOfAuthDomain, renewer, type Tokens } from '@daybook/core';
 
 import { AUTH_DOMAIN, CLIENT_ID } from './config';
-import { clearSecret, readSecret, writeSecret } from './secret';
+import { clearSecret, readSecret, sharedStorage, writeSecret } from './secret';
 
 export const cognito = cognitoClient(regionOfAuthDomain(AUTH_DOMAIN) || 'us-east-2', CLIENT_ID);
 
@@ -56,11 +56,31 @@ export async function keepTokens(t: Tokens): Promise<Session> {
   if (a) session.apple = a;
   if (!session.sub || !session.refresh) throw new CognitoError('Error', 'Signing in did not finish. Try again.');
   await writeSecret(JSON.stringify(session));
+  renew.reset();
+  current = session;
   access = { token: t.access, exp: Math.floor(Date.now() / 1000) + t.expiresIn };
   return session;
 }
 
 let renewing: Promise<string> | null = null;
+
+/* the renewal rules live in core renew.ts (why they are what they are is written there): on a phone the token in memory is
+   always the newest, a token that could not be saved is saved again, and a token Cognito will not take is an ended sign-in */
+const renew = renewer({
+  refresh: (t) => cognito.refresh(t),
+  kept: async () => (await loadSession())?.refresh ?? null,
+  save: async (t) => {
+    if (!current) return;
+    current.refresh = t;
+    await writeSecret(JSON.stringify(current));
+  },
+  shared: sharedStorage,
+});
+/* the session being renewed, so a save writes the whole of it (its email, its Apple id) */
+let current: Session | null = null;
+
+/** saves a renewed sign-in that could not be saved before (the phone was locking); called when the app comes back */
+export const saveSignInLater = () => renew.saveLater().catch(() => undefined);
 
 /** a fresh access token for the API. `force` renews it even if it looks fresh (after the API said it was not).
     Each renewal brings a new refresh token (rotation); it replaces the old one in `s` and in storage. */
@@ -70,20 +90,15 @@ export async function accessToken(s: Session, force = false): Promise<string> {
   /* one renewal at a time: a second one with the same refresh token would waste a rotation */
   if (renewing) return renewing;
   renewing = (async () => {
-    /* another tab of this browser may have renewed it already: use the newest one kept */
-    const kept = await loadSession();
-    if (kept && kept.sub === s.sub && kept.refresh !== s.refresh) s.refresh = kept.refresh;
+    current = s;
     try {
-      const tok = await cognito.refresh(s.refresh);
-      access = { token: tok.access, exp: now + tok.expiresIn };
-      if (tok.refresh && tok.refresh !== s.refresh) {
-        s.refresh = tok.refresh;
-        await writeSecret(JSON.stringify(s)).catch(() => undefined);
-      }
+      const r = await renew.renew(s.refresh);
+      s.refresh = r.refresh;
+      access = { token: r.tokens.access, exp: now + r.tokens.expiresIn };
       return access.token;
     } catch (e) {
-      /* the refresh token was revoked, ran out (a year after signing in), or the account is gone */
-      if (e instanceof CognitoError && e.code === 'NotAuthorizedException') throw new SignInExpired('Sign in again to keep syncing.');
+      /* the refresh token was retired, revoked, ran out (a year after signing in), or the account is gone */
+      if (e instanceof RefreshGone) throw new SignInExpired('Sign in again to keep syncing.');
       throw e;
     }
   })().finally(() => {
@@ -101,6 +116,8 @@ export async function keepApple(s: Session, apple: string): Promise<void> {
 /** signs this device out: takes back the refresh token and forgets it */
 export async function signOut(s: Session | null): Promise<void> {
   access = null;
+  renew.reset();
+  current = null;
   await clearSecret();
   if (s) await cognito.revoke(s.refresh).catch(() => undefined);
 }
@@ -108,6 +125,8 @@ export async function signOut(s: Session | null): Promise<void> {
 /** forgets the sign-in on this device without asking Cognito (after the account itself was deleted) */
 export async function forgetSession(): Promise<void> {
   access = null;
+  renew.reset();
+  current = null;
   await clearSecret();
 }
 

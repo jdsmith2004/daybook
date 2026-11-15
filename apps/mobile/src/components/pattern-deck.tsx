@@ -135,43 +135,9 @@ export function Deck({
           onScroll={onScroll}
           style={[s.scroll, SNAP_ROW]}
           contentContainerStyle={s.row}>
-          {cards.map((d, i) => {
-            const shut = !d.ghost && locked(d.id);
-            const sky = CARD_SKY[d.id] || CARD_SKY.what;
-            return (
-              <PaletteOverride.Provider key={d.id} value={NIGHT}>
-                <View style={[s.card, { width: W, minHeight: H, backgroundColor: sky[1] }, SNAP_CARD]}>
-                  <LinearGradient colors={sky} style={StyleSheet.absoluteFill} />
-                  <View style={s.words}>
-                    <T v="small" tone="muted" accessibilityRole="header">
-                      {d.title}
-                    </T>
-                    {!shut && d.head ? <Text style={[s.head, { color: NIGHT.ink }]}>{d.head}</Text> : null}
-                    {shut ? null : d.say}
-                  </View>
-                  <ChartOn.Provider value={i <= Math.max(seen, index)}>
-                    <View key={from} style={s.chart}>
-                      {shut ? (
-                        <View style={s.chart} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-                          <View style={[s.chart, { opacity: 0.55 }, BLUR]}>{d.chart}</View>
-                          <LinearGradient colors={[sky[1] + '00', sky[1]]} style={s.fade} />
-                        </View>
-                      ) : (
-                        d.chart
-                      )}
-                    </View>
-                  </ChartOn.Provider>
-                  {shut && !quiet ? (
-                    <View style={s.foot}>
-                      <LockAsk />
-                    </View>
-                  ) : !shut && d.foot ? (
-                    <View style={s.foot}>{d.foot}</View>
-                  ) : null}
-                </View>
-              </PaletteOverride.Provider>
-            );
-          })}
+          {cards.map((d, i) => (
+            <PatternCard key={d.id} d={d} W={W} H={H} shut={!d.ghost && locked(d.id)} quiet={quiet} on={i <= Math.max(seen, index)} from={from} />
+          ))}
         </Animated.ScrollView>
       ) : (
         <View style={{ height: H }} />
@@ -221,6 +187,61 @@ const s = StyleSheet.create({
   tick: { width: 2, height: 8, borderRadius: 1 },
   mark: { position: 'absolute', top: 12, width: 4, height: 20, borderRadius: 2 },
 });
+
+/** one card of the deck, as Pattern shows it: the Sunday review shows the same card for its week. W undefined: the width of its place. */
+export function PatternCard({
+  d,
+  W,
+  H,
+  shut = false,
+  quiet = true,
+  on = true,
+  from = '',
+}: {
+  d: DeckCard;
+  W?: number;
+  H: number;
+  shut?: boolean;
+  quiet?: boolean;
+  /** the chart grows once this is true */
+  on?: boolean;
+  from?: string;
+}) {
+  const sky = CARD_SKY[d.id] || CARD_SKY.what;
+  return (
+    <PaletteOverride.Provider value={NIGHT}>
+      <View style={[s.card, { width: W ?? '100%', minHeight: H, backgroundColor: sky[1] }, SNAP_CARD]}>
+        <LinearGradient colors={sky} style={StyleSheet.absoluteFill} />
+        <View style={s.words}>
+          <T v="small" tone="muted" accessibilityRole="header">
+            {d.title}
+          </T>
+          {!shut && d.head ? <Text style={[s.head, { color: NIGHT.ink }]}>{d.head}</Text> : null}
+          {shut ? null : d.say}
+        </View>
+        <ChartOn.Provider value={on}>
+          <View key={from} style={s.chart}>
+            {shut ? (
+              <View style={s.chart} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                <View style={[s.chart, { opacity: 0.55 }, BLUR]}>{d.chart}</View>
+                <LinearGradient colors={[sky[1] + '00', sky[1]]} style={s.fade} />
+              </View>
+            ) : (
+              d.chart
+            )}
+          </View>
+        </ChartOn.Provider>
+        {shut && !quiet ? (
+          <View style={s.foot}>
+            <LockAsk />
+          </View>
+        ) : !shut && d.foot ? (
+          <View style={s.foot}>{d.foot}</View>
+        ) : null}
+      </View>
+    </PaletteOverride.Provider>
+  );
+}
 
 /** the plain line under a card's answer */
 export function Say({ children }: { children: ReactNode }) {

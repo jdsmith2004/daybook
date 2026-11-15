@@ -71,6 +71,7 @@ const L46_TELL: StoryPart[] = [
     art: ['scene', { k: 'l46-leaving' }],
   },
   {
+    long: 1,
     h: 'A month later, in the desert, they began to miss Egypt.',
     p: 'There was little to eat and nothing to do but walk. They said: in Egypt we sat by pots of meat and **ate bread until we were full**.',
     dx: 'About a month after they left, they were deep in the desert. The excitement of the night they walked out was gone. There was sand, heat, little food and a long way to go, and nothing yet looked like the freedom they had been promised. So they gathered and complained. In Egypt, they said, we sat by the pots of meat and **ate bread until we were full**. They said they would rather have stayed.',
@@ -142,6 +143,8 @@ const L46_TELL: StoryPart[] = [
 ];
 const L46_AT = 8;
 const L46_AS = (c: StoryPart): StoryPart[] => [...L46_TELL.slice(0, L46_AT), c, ...L46_TELL.slice(L46_AT + 1)];
+/* for drinking, the doctor card comes second, right after the story opens, so a heavy drinker reads it before anything else */
+const L46_SECOND = (c: StoryPart): StoryPart[] => [L46_TELL[0], c, ...L46_TELL.slice(1, L46_AT), ...L46_TELL.slice(L46_AT + 1)];
 
 /* the sources lessons 54 to 58 add (the night lessons' own are in lessons-night.ts SRC_NIGHT) */
 const S2 = {
@@ -344,8 +347,8 @@ export const STORIES_F: Record<string, Story> = {
       {
         long: 1,
         h: 'The gap runs the other way too.',
-        p: 'In another study, young men answered the same questions about their choices while calm and while aroused. Their answers moved far more than they had predicted. **Each state could not see across to the other.**',
-        dx: 'In another study, Dan Ariely and George Loewenstein asked young men the same set of questions about choices they might make, once while calm and once while aroused. Aroused, their answers moved much further than they themselves had predicted. Calm, they had no idea how differently they would answer. **Each state could not see across to the other.** So it is not that urge you forgets your reasons. Urge you can still say them. They just stop weighing anything.',
+        p: 'In another study, young men answered the same questions about their choices while calm and while aroused. Aroused, their answers moved far more than their calm answers would suggest. **Each state could not see across to the other.**',
+        dx: 'In another study, Dan Ariely and George Loewenstein asked young men the same set of questions about choices they might make, once while calm and once while aroused. Aroused, their answers moved much further than their calm answers would ever suggest: what looked out of the question from a calm chair looked possible from a hot one. **Each state could not see across to the other.** So the reasons do not only go missing in an urge. Even when urge you can still say them, they stop weighing anything.',
         fact: { s: 'Study · Ariely & Loewenstein, 2006', i: [2] },
       },
       {
@@ -356,9 +359,9 @@ export const STORIES_F: Record<string, Story> = {
       },
       {
         long: 1,
-        h: 'An older story has another ship pass the same island another way.',
-        p: 'On Jason’s ship, the singer Orpheus played his lyre louder and quicker, so the crew heard his song instead. Even so, one sailor leapt into the sea. **A better song helps. The rope held every man.**',
-        dx: 'In the story of Jason and the Argonauts, their ship passes the same island. They have no wax and no ropes. Instead the singer Orpheus picks up his lyre and plays a fast, loud tune of his own, so the crew hears his music over theirs. It mostly works. But one sailor, Butes, still hears the Sirens through it, jumps overboard and swims for the shore. **A better song helps**, and giving your mind something else to do in an urge is a real tool. **The rope held every man.** The two together are stronger than either one.',
+        h: 'Another old story sends a different ship past the same island.',
+        p: 'On Jason’s ship, the singer Orpheus played his lyre louder and quicker, so the crew heard his song instead. Even so, one sailor leapt into the sea. **A better song helps. Odysseus lost no one.**',
+        dx: 'In the story of Jason and the Argonauts, their ship passes the same island. They have no wax and no ropes. Instead the singer Orpheus picks up his lyre and plays a fast, loud tune of his own, so the crew hears his music over theirs. It mostly works. But one sailor, Butes, still hears the Sirens through it, jumps overboard and swims for the shore. **A better song helps**, and giving your mind something else to do in an urge is a real tool. Odysseus, with wax and rope, **lost no one.** The two together are stronger than either one: something better to listen to, and a decision tied in place before the song begins.',
         art: ['scene', { k: 'l45-lyre' }],
         fact: { s: 'Story · Apollonius of Rhodes, the Argonautica, book 4', i: [3] },
         back: 'l42',
@@ -411,7 +414,7 @@ export const STORIES_F: Record<string, Story> = {
     src: [S.exodus, S.taylor, S.fernandez, S.lally],
     hab: {
       alcohol: {
-        tell: L46_AS({
+        tell: L46_SECOND({
           h: 'If you drank every day, or a lot at a time, a doctor should help with the first days.',
           p: 'Stopping heavy drinking all at once can be dangerous. After that, the low often lifts within weeks: in men treated for drinking, high depression scores fell from about 4 in 10 to under 1 in 10 in a month. **Much of the low was the drink wearing off.**',
           dx: 'If you drank every day, or a lot at a time, stopping all at once can be dangerous, and **a doctor should help with the first days**. That is not a sign of weakness. It is how heavy drinking changes the body, and doctors see it every week. After those first days, the low mood often lifts faster than people expect. Researchers followed 191 men in treatment for drinking. In their first week without alcohol, about 4 in 10 scored high on a depression scale. Four weeks later, fewer than 1 in 10 did. Much of the low was the drink wearing off.',
@@ -446,8 +449,8 @@ export const STORIES_F: Record<string, Story> = {
     np: 'What I want my partner to be able to count on from me',
     tell: [
       {
-        h: 'People quitting often ask one question, quietly: would telling my partner only hurt them?',
-        p: 'It sounds like kindness. You carry the weight so they do not have to. The question deserves **an honest answer**, not a quick one.',
+        h: 'Would telling my partner only hurt them?',
+        p: 'It is one of the heaviest questions in quitting, and it sounds like kindness: you carry the weight so they do not have to. It deserves **an honest answer**, not a quick one.',
         dx: 'Of all the questions people ask while quitting, this one is often the heaviest. Would telling my partner only hurt them? It does not sound like an excuse. It sounds like love. You would carry the weight yourself so the person you care about does not have to. Maybe they do not know at all. Maybe they found out, and things have not felt the same since. Either way, the question deserves **an honest answer**, not a quick one, so this lesson takes it apart.',
         art: ['scene', { k: 'l47-weight' }],
       },
@@ -469,7 +472,7 @@ export const STORIES_F: Record<string, Story> = {
         h: 'When you think about telling your partner, what stops you most?',
         o: [
           ['I do not want to hurt them', 'That care is real. The next cards ask whether hiding spares them.'],
-          ['I am afraid they will leave', 'That fear is common. Look at what people said years later.'],
+          ['I am afraid they will leave', 'That fear is common, and nobody can promise how it goes. Look at what people said later.'],
           ['I am ashamed of it', 'Shame wants it hidden. It often gets lighter once it is said.'],
           ['They already know, and it is still hard', 'Then this lesson is about what rebuilds trust from here.'],
         ],
@@ -504,7 +507,7 @@ export const STORIES_F: Record<string, Story> = {
       {
         h: 'Telling is a beginning, not a payment.',
         p: 'Their hurt and their timeline are theirs. They are not your police, and keeping you free is not their job. **If telling might not be safe, talk to a counselor first.**',
-        dx: 'Telling is not a debt you pay once and are done with. It is the start of being someone they can believe. Their hurt and their timeline belong to them. They may want to ask a hundred questions, or none for a while. They are not your police, and keeping you free is not their job, so do not hand them your phone to watch. **If telling might not be safe**, because of anger or harm at home, **talk to a counselor first**, and let them help you plan it.',
+        dx: 'Telling is not a debt you pay once and are done with. It is the start of being someone they can believe. Their hurt and their timeline belong to them. They may want to ask a hundred questions, or none for a while. Tell them what happened and for how long, plainly, without the pictures. Do not make them your guard: if they ask to see something, that is their choice, and saying yes is part of being honest, but keeping you free is still not their job. **If telling might not be safe**, because of anger or harm at home, **talk to a counselor first**, and let them help you plan it.',
         art: ['scene', { k: 'l47-start' }],
       },
       {
@@ -517,7 +520,7 @@ export const STORIES_F: Record<string, Story> = {
     mine: { h: 'Honesty starts small, and you have started.', k: 'acted' },
     today: {
       h: 'Write the first sentence, even if you do not say it yet.',
-      l: ['Say it plainly, with no excuses', 'Let them ask, and answer honestly', 'If it might not be safe, see a counselor first'],
+      l: ['Tell what happened, not the pictures', 'Let them ask, and answer honestly', 'If it might not be safe, see a counselor first'],
     },
     you: {
       h: 'What do you want your partner to be able to count on from you?',
@@ -579,8 +582,8 @@ export const STORIES_F: Record<string, Story> = {
       },
       {
         long: 1,
-        h: 'Later research found the same pattern.',
-        p: 'The psychologist David Barlow found that worry about how you are doing turns attention inward, away from the person, and that this is what dims arousal. **The worry does more than the body.**',
+        h: 'Years later, a psychologist named David Barlow found the same thread.',
+        p: 'In people with sexual problems of many kinds, worry about how you are doing turned attention inward, away from the person, and that is what dimmed arousal. **The worry does more than the body.**',
         dx: 'Years later, the psychologist David Barlow studied people with sexual problems of many kinds and found the same thread. Worry about how you are doing turns attention inward, to yourself and your performance, and away from your partner and the moment. That shift, more than any problem in the body, was what weakened arousal. **The worry does more than the body.** It is the scorecard again, with a new name.',
         fact: { s: 'Model · Barlow, 1986', i: [1] },
       },
@@ -593,9 +596,9 @@ export const STORIES_F: Record<string, Story> = {
         back: 'l43',
       },
       {
-        h: 'After quitting porn, many people find desire goes quiet for a while.',
+        h: 'After quitting porn, many people say desire goes quiet for a while.',
         p: 'It is common, and nobody can say how long it lasts. The pull is to check, to test whether everything still works. **A test is the scorecard, alone**, and it is a common way back in.',
-        dx: 'Many people find that after they quit porn, desire goes quiet for a while. Some feel relief. Many feel fear, that something is broken. It is common, it says nothing final about you, and nobody can honestly tell you how long it lasts. What comes next is the pull to check: to test, alone, whether everything still works. **A test is the scorecard, alone.** It turns your attention onto the gauge, which is the very thing that dims it, and a test with porn is one of the most common ways back into the habit.',
+        dx: 'Many people say that after they quit porn, desire goes quiet for a while. Some feel relief. Many feel fear, that something is broken. It is common, it says nothing final about you, and nobody can honestly tell you how long it lasts. What comes next is the pull to check: to test, alone, whether everything still works. **A test is the scorecard, alone.** It turns your attention onto the gauge, which is the very thing that dims it, and a test with porn is one of the most common ways back into the habit.',
         art: ['scene', { k: 'l48-quiet' }],
       },
       {
@@ -606,7 +609,7 @@ export const STORIES_F: Record<string, Story> = {
       },
     ],
     today: {
-      h: 'Skip the test, and give your body time.',
+      h: 'Take one test off the table this week.',
       l: ['A quiet stretch needs no checking', 'With a partner, put attention on them', 'Ask a doctor if it worries you'],
     },
     you: {
@@ -677,8 +680,8 @@ export const STORIES_F: Record<string, Story> = {
       },
       {
         h: 'Day 60 can bring a thought that does not feel like an urge.',
-        p: '“I could look once, just to see that I am past it.” It feels like confidence, like proof of how far you have come. **It is the cigarette in the hand.**',
-        dx: 'After a good stretch, a thought can show up that does not feel like an urge at all. It feels like confidence. “I could look once, just to see that I am past it.” Or a site that is almost it, or keeping the phone close in the hard hours, because you are strong now. It feels like proof of how far you have come. **It is the cigarette in the hand**: the closeness that pays out a good feeling, chosen by the part of you that feels the strongest.',
+        p: '“Just once, to see that I am past it.” It feels like confidence, like proof of how far you have come. **It is the cigarette in the hand.**',
+        dx: 'After a good stretch, a thought can show up that does not feel like an urge at all. It feels like confidence. “Just once, to see that I am past it.” Or a place or a feed that is almost it, or keeping the phone close in the hard hours, because you are strong now. It feels like proof of how far you have come. **It is the cigarette in the hand**: the closeness that pays out a good feeling, chosen by the part of you that feels the strongest.',
         art: ['scene', { k: 'l49-test' }],
         back: 'l17',
       },
@@ -703,14 +706,14 @@ export const STORIES_F: Record<string, Story> = {
     you: {
       h: 'What is your cigarette in the hand, the small closeness you are most likely to allow?',
       o: [
-        ['Looking once, to check I am past it', 'That is the test. Naming it is most of beating it.'],
-        ['Sites or feeds that are almost it', 'Almost is the desk. It is closer than it looks from a good day.'],
+        ['Just once, to check I am past it', 'That is the test. Naming it is most of beating it.'],
+        ['Places, sites or feeds that are almost it', 'Almost is the desk. It is closer than it looks from a good day.'],
         ['Keeping the phone close in hard hours', 'A small closeness, and a common one. Put it back across the room.'],
         ['I do not know yet', 'Fair. Watch for the thought that feels like confidence.'],
       ],
     },
     scope:
-      'The confidence studies were with smokers, students and people who had quit smoking, not porn, and they were not large. What carries over is a quirk of human judgment: feeling sure of your control makes temptation look safer than it is. Staying clear is a choice you can make every time, and it is what keeps a good stretch going.',
+      'The confidence studies were with smokers, students and people who had quit smoking, not with a habit like this one, and they were not large. What carries over is a quirk of human judgment: feeling sure of your control makes temptation look safer than it is. Staying clear is a choice you can make every time, and it is what keeps a good stretch going.',
     src: [S.nordgren09],
   },
 

@@ -284,13 +284,23 @@ export default function Setup() {
         <Next label={label} onPress={() => !busy() && go(1)} off={false} />
       </View>
     );
-  /* a one-tap answer the flame answers: the pick stays, the flame leaps and says its piece, and Next goes on */
+  /* a one-tap answer moves on by itself (the owner, November 14, 2026: "when they press an option to just move forward instead of
+     making them press next"): the pick shows, the flame leaps, and after a short beat the next page comes in. One move per tap: the
+     beat holds every other tap, Back and Next, and a page still sliding in takes no tap (busy). Back returns with the pick shown,
+     and tapping it again moves on again. */
+  const leave = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => void (leave.current && clearTimeout(leave.current)), []);
   const answer = (key: string, v: string, ix: number) => {
-    if (busy()) return;
+    if (busy() || leave.current) return;
     if (a[key] !== v) setPulse((x) => x + 1);
     setA({ [key]: v });
     if (!f.redo) track('setup_pick', { page: pg.id, ix });
     buzz('tap');
+    until.current = Date.now() + PICK_BEAT + 100;
+    leave.current = setTimeout(() => {
+      leave.current = null;
+      go(1);
+    }, PICK_BEAT);
   };
 
   /* each page starts at its top: a long page before it (the goal) can leave the card scrolled, and the next page's heading under the bar */
@@ -417,7 +427,19 @@ export default function Setup() {
           onPick={(j) => answer(key, list[j][0], j)}
         />
       );
-      foot = nextBtn(ans(a[key]) ? 'Next' : 'Skip', !ans(a[key]));
+      /* no Next: a tap moves on. Skip stays while nothing is picked, as a quiet link, since skipping a question is not what Back or the X do */
+      foot = ans(a[key]) ? null : (
+        <View key="s" style={s.footOne}>
+          <Ghost
+            label="Skip this question"
+            onPress={() => {
+              if (busy() || leave.current) return;
+              if (!f.redo) track('setup_skip', { page: pg.id });
+              go(1);
+            }}
+          />
+        </View>
+      );
       break;
     }
     case 'multi': {
@@ -770,7 +792,7 @@ export default function Setup() {
         bodyKey={pg.id}
         dir={dir.current}
         prog={<Prog total={P.length} i={i} all={fin} look={look} label={barLabel} />}
-        onBack={noBack ? undefined : () => go(-1)}
+        onBack={noBack ? undefined : () => !busy() && go(-1)}
         onClose={fin ? finish : exit}
         foot={foot}
         topRight={
@@ -928,6 +950,8 @@ function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
   );
 }
 
+/** how long a one-tap answer shows picked before the next page comes in */
+const PICK_BEAT = 320;
 const hm = (x: string) => ({ h: Number(x.slice(0, 2)), m: Number(x.slice(3, 5)) });
 const clockOf = (h: number, m: number) => String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 /** the widest a page gets, for the week row */

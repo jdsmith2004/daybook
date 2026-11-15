@@ -192,7 +192,8 @@ export function FirstTour({
   const still = useReducedMotion();
   const [i, setI] = useState(0);
   /* the parts lit on this step, where they are */
-  const [lit, setLit] = useState<{ i: number; parts: { k: SpotKey; r: Rect }[] } | null>(null);
+  /* (follow: the same step, its parts found again where the page has moved them: the hole glides there, nothing is said again) */
+  const [lit, setLit] = useState<{ i: number; parts: { k: SpotKey; r: Rect }[]; follow?: boolean } | null>(null);
   const [panelH, setPanelH] = useState(260);
   /* the panel's height as laid out now: a step's words change it, and the page moves by it before the state catches up */
   const panelHRef = useRef(panelH);
@@ -288,9 +289,79 @@ export function FirstTour({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i, W, H]);
 
+  /* while a step is open, the lit part is found again and again: Today can still move under the tour (a card settling as it comes in, the
+     page going back to the top on return, a scroll), and the spotlight follows it rather than staying where the part was a moment ago.
+     A part that has slid out from above the flame's words is brought back into view (the owner, November 14, 2026: "if i scroll when
+     onboarding happens it just misses where i'm at and won't let me scroll to see what it should be looking at"). */
+  const litRef = useRef(lit);
+  litRef.current = lit;
+  const lastPull = useRef(0);
+  useEffect(() => {
+    if (!step || !lit || lit.i !== i) return;
+    const onPage = step.at.every((k) => k !== 'sos' && k !== 'learn');
+    if (!onPage) return;
+    let live = true;
+    const look = async () => {
+      const got = await Promise.all(step.at.map(async (k) => ({ k, r: await rectOf(k, W, H, inset.bottom) })));
+      if (!live) return;
+      const parts = got.filter((x): x is { k: SpotKey; r: Rect } => !!x.r);
+      const was = litRef.current;
+      if (!parts.length || !was || was.i !== i) return;
+      const a = union(parts.map((x) => x.r));
+      const b = union(was.parts.map((x) => x.r));
+      if (Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 && Math.abs(a.w - b.w) < 1.5 && Math.abs(a.h - b.h) < 1.5) return;
+      setLit({ i, parts, follow: true });
+      /* out of sight, or under the words: the page brings it back, at most once in a while so it never fights a person's own scroll */
+      const room = H - barTop - panelHRef.current - 20;
+      const top = inset.top + 56;
+      const dy = a.y + a.h > room ? a.y + a.h - room : a.y < top ? a.y - top : 0;
+      if (dy && Date.now() - lastPull.current > 1500) {
+        lastPull.current = Date.now();
+        scrollBy(dy);
+      }
+    };
+    const timer = setInterval(look, 220);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lit?.i, i, W, H, barTop]);
+
+  /* on the web, a mouse wheel or a trackpad over the dim scrolls Today under it (a phone's finger on the dim still means Next), and the
+     spotlight follows (above) */
+  const root = useRef<ViewInstance>(null);
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const el = root.current as unknown as HTMLElement | null;
+    if (!el || typeof el.addEventListener !== 'function') return;
+    let acc = 0;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const wheel = (e: WheelEvent) => {
+      e.preventDefault();
+      acc += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      if (t) return;
+      t = setTimeout(() => {
+        t = null;
+        const d = acc;
+        acc = 0;
+        /* a person's own scroll: the page is left where they put it for a moment */
+        lastPull.current = Date.now();
+        scrollBy(d);
+      }, 80);
+    };
+    el.addEventListener('wheel', wheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', wheel);
+      if (t) clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /* light the parts: the hole glides to them, and the words come in */
   useEffect(() => {
     if (!lit || lit.i !== i) return;
+    const follow = !!lit.follow;
     const u = union(lit.parts.map((x) => x.r));
     const round = lit.parts.length === 1 && lit.parts[0].k === 'sos';
     const to = { x: u.x - PAD, y: u.y - PAD, w: u.w + PAD * 2, h: u.h + PAD * 2 };
@@ -304,13 +375,15 @@ export function FirstTour({
       const t0 = Date.now();
       const ease = Easing.out(Easing.cubic);
       const tick = () => {
-        const k = ease(Math.min(1, (Date.now() - t0) / 420));
+        const k = ease(Math.min(1, (Date.now() - t0) / (follow ? 220 : 420)));
         const mix = (a: number, b: number) => a + (b - a) * k;
         setHole({ x: mix(from.x, goal.x), y: mix(from.y, goal.y), w: mix(from.w, goal.w), h: mix(from.h, goal.h), r: mix(from.r, goal.r) });
         if (k < 1) raf = requestAnimationFrame(tick);
       };
       raf = requestAnimationFrame(tick);
     }
+    /* following the part as the page moves: the words stay as they are, and nothing is read again */
+    if (follow) return () => cancelAnimationFrame(raf);
     if (!still) {
       say.setValue(0);
       Animated.spring(say, { toValue: 1, friction: 6, tension: 90, useNativeDriver: NATIVE }).start();
@@ -361,7 +434,7 @@ export function FirstTour({
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={() => end()}>
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade }]} accessibilityViewIsModal>
+      <Animated.View ref={root} style={[StyleSheet.absoluteFill, { opacity: fade }]} accessibilityViewIsModal>
         {/* the dim, with its hole; a tap on the dim goes on */}
         <Pressable accessible={false} style={StyleSheet.absoluteFill} onPress={next}>
           <Svg width={W} height={H} style={StyleSheet.absoluteFill} pointerEvents="none">

@@ -150,7 +150,8 @@ function Scene({ onDone }: { onDone: () => void }) {
     const tx = spot.x + fig.x * spot.size;
     const ty = spot.y + fig.y * spot.size;
     const k = spot.size / LAUNCH_W;
-    setSkyH(spot.skyH);
+    /* a whole number: two parts of one color meeting on a half pixel showed as a faint line across the screen */
+    setSkyH(Math.round(spot.skyH));
     const go = (v: typeof cx, to: number, at: number, ms: number, e: typeof EASE | typeof SOFT = EASE) => {
       v.value = withDelay(at, withTiming(to, { duration: ms, easing: e }));
     };

@@ -437,7 +437,7 @@ export function NightPage({
             <T v="title" style={s.c} accessibilityRole="header">
               Your flame is up with you
             </T>
-            <T style={s.c}>{'Goodnight opens at ' + opens + '.'}</T>
+            <T style={s.c}>{'Good night opens at ' + opens + '.'}</T>
           </View>
         ) : (
           <View style={[s.words, s.top]}>

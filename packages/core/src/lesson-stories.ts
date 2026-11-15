@@ -52,11 +52,13 @@ export type StoryPart =
       /** in Deep, this card told in full in place of p: the study or the talk as if read through, with nothing condensed out (the
           owner, November 14, 2026: "it should be more like going through the talk and reading it, just in a improved form") */
       dx?: string;
+      /** rests on a porn study: left out for another habit (lesson-beats.ts lessonAs) */
+      porn?: 1;
     }
-  | { k: 'guess'; h: string; o: Opt[]; a: number; long?: 1; deep?: 1 }
+  | { k: 'guess'; h: string; o: Opt[]; a: number; long?: 1; deep?: 1; porn?: 1 }
   /** a question inside the story with no right answer: what the person would do, or what they have lived */
-  | { k: 'ask'; h: string; o: Opt[]; long?: 1; deep?: 1 }
-  | { k: 'flip'; think: string; see: string; long?: 1; deep?: 1 };
+  | { k: 'ask'; h: string; o: Opt[]; long?: 1; deep?: 1; porn?: 1 }
+  | { k: 'flip'; think: string; see: string; long?: 1; deep?: 1; porn?: 1 };
 
 export interface Story {
   id: string;

@@ -32,6 +32,7 @@ import {
   obPrefill,
   mithrasProfile,
   obPromise,
+  OB_SLIP_AFTER,
   obReply,
   obSave,
   obSay,
@@ -63,7 +64,7 @@ import { Ghost, Next } from '@/components/lx';
 import { Packed } from '@/components/packed';
 import { Middle } from '@/components/scene';
 import { useClock } from '@/components/shapes';
-import { GrowStops, useGrowWalk, WhyChart, YearMarks } from '@/components/setup-value';
+import { GrowStops, SlipDemo, useGrowWalk, YearMarks } from '@/components/setup-value';
 import { TIP_ON } from '@/components/support';
 import { UnlockSheet } from '@/components/unlocked';
 import { useSos } from '@/lib/sos';
@@ -97,6 +98,8 @@ export default function Setup() {
   const fit = useFitRoom();
   /* the flame leaps when it answers a pick, and when it is lit */
   const [pulse, setPulse] = useState(0);
+  /* the why page: the sample slip was tapped */
+  const [slipTried, setSlipTried] = useState(false);
   const { snap, tk, replace, say, current, apply } = useStore();
   const sync = useSync();
   const st = snap.settings;
@@ -313,7 +316,7 @@ export default function Setup() {
             {/* the owner, November 14, 2026: redoing setup is fine, "it should just like be more obvious what they're doing" */}
             <Head
               h="Change your setup answers."
-              sub="These are your real answers: your goal, counting, reasons and plan follow them. You choose what to keep at the end."
+              sub="These are your real answers: your goal, reasons and lessons follow them. How your days count stays as it is. You choose what to keep at the end."
             />
             <Talk text={voice} want={want} />
             {prev && prev.at ? (
@@ -402,6 +405,7 @@ export default function Setup() {
       body = (
         <Question
           h={pg.h!}
+          head={<Head h={pg.h!} />}
           list={list.map((x) => x[1])}
           best={null}
           retry={false}
@@ -464,31 +468,57 @@ export default function Setup() {
         <>
           <Head h="This is how I grow with you." />
           <Talk text={g.line} want={want} />
-          <GrowStops
-            a={a}
-            at={Math.max(0, growAt)}
-            onAt={(j) => {
-              walk.pick(j);
-              buzz('tap');
-            }}
-          />
+          <GrowStops a={a} at={Math.max(0, growAt)} onAt={walk.pick} />
         </>
       );
-      foot = nextBtn('Next');
+      /* Next walks the stops first, and leaves the page only from the last one */
+      foot = walk.last ? (
+        nextBtn('Next')
+      ) : (
+        <View key="n" style={s.footOne}>
+          <Next
+            label="Next"
+            onPress={() => {
+              buzz('tap');
+              walk.step();
+            }}
+            off={false}
+          />
+        </View>
+      );
       break;
     }
     case 'why': {
-      /* why it works: a slip takes nothing away here, and keeping track works (Harkin et al., 2016: 138 studies) */
+      /* why it holds: the person taps a slip and sees what stays (the owner, November 14, 2026: the chart was "mid"). A streak
+         counter falls to zero; here the free days, the best run, the points and the level stay. Keeping track works (Harkin et al.,
+         2016: 138 studies), said once, small. */
       body = (
         <>
-          <Head h="Why this works." />
-          <Middle>
-            <WhyChart />
-          </Middle>
-          <T tone="muted" style={s.p}>
-            In 138 studies, people who kept track of their progress reached their goals more often.
-          </T>
-          <Say text={voice} />
+          <Head h="A hard night will not take it from you." />
+          <Talk text={slipTried ? OB_SLIP_AFTER : voice} want={want * 0.7} />
+          <View style={s.rows}>
+            <SlipDemo slipped={slipTried} />
+            {slipTried ? (
+              <Appear by={10} delay={900}>
+                <T tone="muted" style={[s.p, s.c]}>
+                  Your longest run, points and level stay too. In 138 studies, people who kept track reached their goals more often.
+                </T>
+              </Appear>
+            ) : (
+              <Answer
+                sel={false}
+                right={false}
+                onPress={() => {
+                  buzz('tap');
+                  setSlipTried(true);
+                }}
+                label="Try a slip">
+                <AnswerText right={false} center>
+                  Try a slip
+                </AnswerText>
+              </Answer>
+            )}
+          </View>
         </>
       );
       /* the last page when there is no account to ask for (signed in already, or a build without accounts): Next goes home */

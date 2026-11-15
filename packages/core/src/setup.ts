@@ -157,7 +157,9 @@ export function obReasonOpts(a: SetupAnswers, st: Settings | null, redo: boolean
 }
 /** the reasons picked, with the one written in */
 export function obReasonList(a: SetupAnswers): string[] {
-  const list = (a.rs || []).slice();
+  /* a walk-through starts with the reasons kept (obPrefill): one that a "who for" pick gave is dropped when that pick is taken off */
+  const picked = Array.isArray(a.for) ? (a.for as string[]) : null;
+  const list = (a.rs || []).filter((t) => !picked || !OB_FOR.some((x) => x[3] === t && picked.indexOf(x[0]) < 0));
   obForReasons(a).forEach((t) => {
     if (!list.some((x) => sameReason(x, t))) list.push(t);
   });
@@ -860,11 +862,11 @@ export const obLast = (st: Settings | null, redo: boolean, key: string, list: Ob
     on a one-tap question it answers what was picked. Plain words, no contractions, never shame. */
 const OB_SAY: Record<string, string> = {
   hello: 'Hi. I am your flame. Answer a few quick questions, and tonight is set.',
-  how: 'Hi. I am your flame. You came here, and that is the hardest step.',
+  how: 'Hi. I am your flame. Free, private, and here for you at any hour.',
   sos: 'When an urge hits, tap SOS. Try it now, while it is calm. It takes a few seconds.',
   habit: 'Pick the closest one. I can help with each.',
   freq: 'Rough is fine. Only you see this.',
-  when: 'Pick any. I will be ready for these.',
+  when: 'I will be ready for these.',
   for: 'On a hard night, I will remind you.',
   faith: 'It changes which lessons come up.',
   tonight: 'Set it now, while it is easy.',
@@ -872,9 +874,11 @@ const OB_SAY: Record<string, string> = {
   account: 'Look at me now. You did that.',
   need: 'That is the pull now. Each one you ride out, you take back.',
   grow: 'Every honest day feeds me. This is what that looks like.',
-  why: 'Here a slip is something to learn from. What you earn stays yours.',
+  why: 'Try it. Tap a slip, and watch what stays.',
   review: 'Tick what to keep. The rest stays as it is.',
 };
+/** what the flame says on the why page once the sample slip is tapped: the stakes said plainly, and what is never lost */
+export const OB_SLIP_AFTER = 'I burn a little lower for a night, and I come back when you do. Nothing you earned is gone.';
 /** a walk-through: the flame has grown, and says so */
 const OB_SAY_REDO: Record<string, string> = {
   hello: 'Your log, points, level and badges stay just as they are.',

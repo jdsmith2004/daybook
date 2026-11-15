@@ -7,6 +7,7 @@ import { addDays, sumDay } from './legacy/core.js';
 import { nightState } from './away';
 import { heroNumber } from './hero';
 import { morningOf, nightTold } from './morning-set';
+import { tipQuiet, type TipNear } from './support';
 import { truthOn } from './truth';
 import type { DayKey, Days, Settings } from './types';
 
@@ -68,20 +69,54 @@ export function freeRun(days: Days, st: Settings, tk: DayKey): number {
      only stretch Daybook makes a moment of, so it gets the moment too.
    Any other free morning is null: the morning page grows the flame a step in place, quickly, with no page over it. Never after a slip
    logged today, the hours after it are for coming back, not for a party (CLAUDE.md "Stakes, not softness"). */
-export type IgniteWhy = 'slip' | 'away' | 'goal';
+/* The key moments (the owner, November 14, 2026: "if they've been struggling for a while and they finally have a good night, it's like,
+   hey, this is day 2 of your streak. Like, let's do this, ignite it"). Coming back is not all the same, so the lighting knows which:
+   - 'hard': the first free night after a hard stretch (HARD_SLIPS slip nights or more in the HARD_NIGHTS nights up to the slip);
+   - 'climb': the second and third free nights in a row after that hard stretch, the climb out of it. Only after a hard stretch: after
+     one slip, nights two and three are ordinary mornings (night three may still be the small goal), so it never plays every day;
+   - 'long': the first free night after a slip that ended a run of LONG_RUN nights or more. That run stays earned (the longest run never
+     drops), and the lighting says so;
+   - 'slip': the first free night after any other slip.
+   The first clean week is the small goal ('goal', at 7). Never in the quiet hours after an SOS or a slip (support.ts tipQuiet, when the
+   app passes `near`). */
+export type IgniteWhy = 'slip' | 'away' | 'goal' | 'hard' | 'climb' | 'long';
 
-/** why this free morning lights the flame in full, or null for the quick step in place. Read after last night is told free. */
-export function igniteWhy(days: Days, st: Settings, tk: DayKey): IgniteWhy | null {
+/** slip nights, in the nights up to and including the slip that broke the run, that make it a hard stretch */
+export const HARD_SLIPS = 3;
+export const HARD_NIGHTS = 14;
+/** a run this long, ended by a slip, is a long run, and the first free night after it is its own moment */
+export const LONG_RUN = 7;
+
+/** the slip just before this run of free nights: how hard the stretch up to it was, and how long the run it ended */
+function slipBefore(days: Days, st: Settings, tk: DayKey, run: number, first: DayKey | null): { hard: boolean; ended: number } | null {
+  const gap = addDays(tk, -1 - run);
+  if (nightMark(days, st, gap, first) !== 'slip') return null;
+  let slips = 0;
+  for (let i = 0; i < HARD_NIGHTS; i++) if (nightMark(days, st, addDays(gap, -i), first) === 'slip') slips++;
+  return { hard: slips >= HARD_SLIPS, ended: freeRun(days, st, gap) };
+}
+
+/** why this free morning lights the flame in full, or null for the quick step in place. Read after last night is told free. near: the
+    time and the last SOS or care tool, so it never plays in the quiet hours after one (or after a slip). */
+export function igniteWhy(days: Days, st: Settings, tk: DayKey, near?: TipNear): IgniteWhy | null {
   const last = addDays(tk, -1);
   const first = firstTold(days, tk);
   if (nightMark(days, st, last, first) !== 'free') return null;
   if ((days[tk]?.events || []).some((e) => e.outcome === 'slipped')) return null;
-  const before = nightMark(days, st, addDays(tk, -2), first);
-  if (before === 'slip') return 'slip';
-  if (before === 'untold') return 'away';
-  if (goalStep(freeRun(days, st, tk), (st as { fwGoal?: number }).fwGoal).kept) return 'goal';
+  if (near && tipQuiet(days, st, near)) return null;
+  const run = freeRun(days, st, tk);
+  const back = slipBefore(days, st, tk, run, first);
+  if (run === 1 && back) return back.hard ? 'hard' : back.ended >= LONG_RUN ? 'long' : 'slip';
+  if (run === 1 && nightMark(days, st, addDays(tk, -2), first) === 'untold') return 'away';
+  if ((run === 2 || run === 3) && back?.hard) return 'climb';
+  if (goalStep(run, (st as { fwGoal?: number }).fwGoal).kept) return 'goal';
   return null;
 }
+
+/** the flame was lit in full today (a key moment on this morning): Today asks for nothing else until tomorrow, so one moment is one
+    celebration (the account card, its nudge and the tip wait a day; the lighting goes first). Only a morning that told last night
+    lights it, so a day with no morning told is never one. */
+export const litToday = (days: Days, st: Settings, tk: DayKey): boolean => !!morningOf(days[tk])?.n && igniteWhy(days, st, tk) !== null;
 
 /** the count the lighting turns over: yesterday's, then today's, the same count Today shows (CLAUDE.md: one count, shown the same
     everywhere). Telling the morning does not move the count itself (it moved when the day began), so the turnover shows the day
@@ -112,11 +147,24 @@ const KEPT = [
   'One more night kept. It is starting to be you.',
 ];
 
+/** what the flame says at the key moments (igniteWhy 'hard', 'climb', 'long'). No numbers: the count above it counts days, not
+    nights, so a number here could disagree with it. */
+export const MOMENT_LINE = {
+  hard: 'A hard stretch, and last night you won. Let us do this.',
+  climb2: 'Back to back. Let us keep this going.',
+  climb3: 'You are climbing out of it. Keep choosing it tonight.',
+  long: 'Everything you built still stands. Last night began the next run.',
+} as const;
+
 /** what the flame says once it is lit: who the person is becoming, not only the number */
 export function igniteLine(days: Days, st: Settings, tk: DayKey): string {
   const run = freeRun(days, st, tk);
+  const why = igniteWhy(days, st, tk);
+  if (why === 'hard') return MOMENT_LINE.hard;
+  if (why === 'long') return MOMENT_LINE.long;
+  if (why === 'climb') return run === 2 ? MOMENT_LINE.climb2 : MOMENT_LINE.climb3;
   if (run <= 1 && comeback(days, st, tk)) return 'Back to free. A slip did not change who you are.';
-  if (run <= 1 && igniteWhy(days, st, tk) === 'away') return 'You came back, and the night was free. That is who you are.';
+  if (run <= 1 && why === 'away') return 'You came back, and the night was free. That is who you are.';
   if (run <= 1) return 'A free night. This is where it starts.';
   if (run === 3) return 'Three nights in a row. You set a goal and kept it.';
   if (run === 7) return 'A whole week of free nights. This is who you are now.';

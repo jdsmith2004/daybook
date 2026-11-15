@@ -51,7 +51,8 @@ describe('what the flame says', () => {
   it('after a slip, speaks to the comeback and who the person is, never the number', () => {
     let days = told(16, 21);
     days = core.addEvent(days, '2026-10-19', 'slipped', null, {}, at(19, 23)).days;
-    const line = core.igniteLine(days, st, '2026-10-21');
+    /* a short run before the slip (a long one has its own words: the key moments, below) */
+    const line = core.igniteLine(days, core.normSettings({ ...st, start: '2026-10-16' }), '2026-10-21');
     expect(line).toMatch(/Back to free/);
     expect(line).not.toMatch(/\d/);
   });
@@ -182,5 +183,60 @@ describe('the count before the night was told', () => {
     const shown = core.heroNumber(days, s3, '2026-10-15', at(15, 8))!.n;
     expect(+c.from).toBeLessThanOrEqual(+shown);
     expect(+c.from).toBeLessThan(+c.to);
+  });
+});
+
+describe('the key moments (the owner, November 14, 2026)', () => {
+  const s = core.normSettings({ ...st, start: '2026-10-01', day1: '2026-10-01', truthFrom: '2026-10-01' } as never);
+  const k = (d: number) => '2026-10-' + String(d).padStart(2, '0');
+  const tell = (days: Days, d: number, v: 'free' | 'slip' = 'free') => core.answerNight(days, s, k(d), v, at(d, 7));
+  /** mornings from..to tell last night, a slip on the mornings in slips */
+  const nights = (from: number, to: number, slips: number[] = [], days: Days = {}) => {
+    let out = days;
+    for (let d = from; d <= to; d++) out = tell(out, d, slips.includes(d) ? 'slip' : 'free');
+    return out;
+  };
+  /* a hard stretch: three slips in two weeks, the last on the night of the 14th, then free nights */
+  const hard = nights(2, 19, [11, 13, 15]);
+  it('the first free night after a hard stretch, then the climb on nights two and three', () => {
+    expect(core.igniteWhy(hard, s, k(16))).toBe('hard');
+    expect(core.igniteLine(hard, s, k(16))).toMatch(/hard stretch.*Let us do this/);
+    expect(core.igniteWhy(hard, s, k(17))).toBe('climb');
+    expect(core.igniteLine(hard, s, k(17))).toBe(core.MOMENT_LINE.climb2);
+    expect(core.igniteWhy(hard, s, k(18))).toBe('climb');
+    expect(core.igniteLine(hard, s, k(18))).toBe(core.MOMENT_LINE.climb3);
+    /* night four is an ordinary morning again, and the week is the small goal */
+    expect(core.igniteWhy(hard, s, k(19))).toBeNull();
+    expect(core.igniteWhy(nights(20, 22, [], hard), s, k(22))).toBe('goal');
+  });
+  it('one slip is not a hard stretch: nights two and three stay ordinary', () => {
+    const one = nights(9, 18, [15], nights(2, 8));
+    const st10 = core.normSettings({ ...s, start: '2026-10-10', day1: '2026-10-10' } as never);
+    expect(core.igniteWhy(one, st10, k(16))).toBe('slip');
+    expect(core.igniteWhy(one, st10, k(17))).toBeNull();
+  });
+  it('the first free night after a slip ended a long run says the run still stands', () => {
+    const long = nights(2, 16, [15]);
+    expect(core.igniteWhy(long, s, k(16))).toBe('long');
+    const line = core.igniteLine(long, s, k(16));
+    expect(line).toMatch(/still stands/);
+    expect(line).not.toMatch(/\d/);
+  });
+  it('never in the quiet hours after an SOS', () => {
+    expect(core.igniteWhy(hard, s, k(16), { now: at(16, 7), sos: at(16, 6) })).toBeNull();
+    expect(core.igniteWhy(hard, s, k(16), { now: at(16, 7), sos: at(15, 6) })).toBe('hard');
+  });
+  it('one celebration per moment: on a day the flame was lit, the account card and its nudge wait', () => {
+    expect(core.litToday(hard, s, k(16))).toBe(true);
+    expect(core.accountAsk(hard, s, k(16), 1, false)).toBeNull();
+    expect(core.litToday(hard, s, k(19))).toBe(false);
+    expect(core.accountAsk(hard, s, k(19), 1, false)).toBe('week');
+    /* a lesson finished on the lit day would nudge on any other day */
+    const withLesson = (d: Days, day: number): Days => ({ ...d, [k(day)]: { ...d[k(day)], p: { ...(d[k(day)]?.p || {}), ls: ['l1'] } } as never });
+    expect(core.accountNudge(withLesson(hard, 16), s, k(16), false, false)).toBeNull();
+    expect(core.accountNudge(withLesson(hard, 19), s, k(19), false, false)).toBe('lesson');
+  });
+  it('speaks plainly: no contractions, no shame', () => {
+    for (const line of Object.values(core.MOMENT_LINE)) expect(line).not.toMatch(/'|\d|\b(failed|lost|ruined|addict|clean)\b/i);
   });
 });

@@ -47,6 +47,41 @@ const S = {
     'Kelly, Humphreys & Ferri (2020): Alcoholics Anonymous and other 12-step programs for alcohol use disorder, Cochrane review',
     'https://cochranelibrary.com/cdsr/doi/10.1002/14651858.CD012880.pub2/information',
   ],
+  bowen14: [
+    'Bowen et al. (2014): mindfulness-based relapse prevention compared with relapse prevention and usual care, JAMA Psychiatry',
+    'https://www.psychiatry.wisc.edu/wp-content/uploads/2025/05/Article-1_Bowen-et-al-JAMA-2014.pdf',
+  ],
+  witkiewitz10: [
+    'Witkiewitz & Bowen (2010): depression, craving, and substance use following a randomized trial of mindfulness-based relapse prevention, Journal of Consulting and Clinical Psychology',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC3280693/',
+  ],
+  mbrpslides: [
+    'Penn State (prevention.psu.edu): slides on relapse prevention and mindfulness-based relapse prevention, including the SOBER breathing space',
+    'https://prevention.psu.edu/wp-content/uploads/2009/11/marlatt_RP_MBRP_full.pdf',
+  ],
+  christakis: [
+    'Christakis & Fowler (2008): the collective dynamics of smoking in a large social network, New England Journal of Medicine',
+    'https://pubmed.ncbi.nlm.nih.gov/18499567/',
+  ],
+  kelly17: [
+    'Kelly (2017): “Is Alcoholics Anonymous religious, spiritual, neither?” Addiction (a summary from the Recovery Research Institute)',
+    'https://www.recoveryanswers.org/research-post/alcoholics-anonymous-religious-spiritual-neither-review-finds-aa-effective-not-way-think/',
+  ],
+  nehemiah: ['Nehemiah 4:9 and 4:17, the wall rebuilt under threat', 'https://www.biblegateway.com/passage/?search=Nehemiah+4&version=KJV'],
+  cor12: ['2 Corinthians 12:7 to 9, the thorn in the flesh', 'https://www.biblegateway.com/passage/?search=2+Corinthians+12%3A7-9&version=KJV'],
+  nephi: ['1 Nephi 7:17, the prayer for strength to burst the bands', 'https://www.churchofjesuschrist.org/study/scriptures/bofm/1-ne/7?lang=eng'],
+  bednar01: [
+    'Bednar (2001, reprinted 2012): the Atonement and the journey of mortality, Liahona',
+    'https://www.churchofjesuschrist.org/study/liahona/2012/04/the-atonement-and-the-journey-of-mortality',
+  ],
+  packer73: [
+    'Packer (1973, reprinted 2008): worthy music, worthy thoughts, the mind as a stage, Liahona',
+    'https://www.churchofjesuschrist.org/study/liahona/2008/04/worthy-music-worthy-thoughts',
+  ],
+  kelly11: [
+    'Kelly, Stout, Magill, Tonigan & Pagano (2011): spirituality in recovery, a lagged mediational analysis of Alcoholics Anonymous, Alcoholism: Clinical and Experimental Research',
+    'https://pmc.ncbi.nlm.nih.gov/articles/PMC3117904/',
+  ],
 } satisfies Record<string, Src>;
 
 export const STORIES_D: Record<string, Story> = {
@@ -63,7 +98,7 @@ export const STORIES_D: Record<string, Story> = {
         h: 'People who are quitting often ask one question, quietly, after a slip.',
         p: '**Does it hurt this much because I am out of control?** The guilt can feel far bigger than the slip, and the size of it seems to be saying something.',
         art: ['scene', { k: 'l22-gauge' }],
-        dx: 'It usually comes after a slip that was rare, a day or two after a long good stretch. The slip itself took minutes. The guilt has lasted for days, and it will not let up. So the mind does the obvious math: if it hurts this much, it must be this bad. **Does it hurt this much because I am out of control?** It is a fair question, and it deserves a real answer, not a pat on the back.',
+        dx: 'It often comes after a slip that broke a long good stretch. The slip itself took minutes. The guilt has lasted for days, and it will not let up. So the mind does the obvious math: if it hurts this much, it must be this bad. **Does it hurt this much because I am out of control?** It is a fair question, and it deserves a real answer, not a pat on the back.',
       },
       {
         k: 'ask',
@@ -112,12 +147,11 @@ export const STORIES_D: Record<string, Story> = {
       {
         long: 1,
         h: 'Each answer has its own kind of help.',
-        p: 'Losing control needs skills and a plan, the tools in this app. A clash with what you hold needs **a calm, honest look**, often with someone who shares your values. Many people have some of each.',
+        p: 'Losing control needs skills and a plan, the tools in this app. A clash with what you hold needs something else: **less punishing, and steady closing of the gap**, often with someone who shares your values. Many people have some of each.',
         art: ['scene', { k: 'l22-two-helps' }],
-        dx: 'If the log shows a habit that runs over your choices, the help is practical: a plan for hard hours, changes to the setting, tools for an urge, people who know. If the hurt is mostly about the clash with what you hold, more willpower will not quiet it. What helps is **a calm, honest look** at what you believe and why, often with someone who shares your values and will not push you toward an answer. Most people find some of each, and both are real.',
+        dx: 'If the log shows a habit that runs over your choices, the help is practical: a plan for hard hours, changes to the setting, tools for an urge, people who know. If the hurt is mostly about the clash with what you hold, beating yourself up will not quiet it. What helps is **less punishing, and steady closing of the gap**: separating what you did from who you are, so the hurt points you forward instead of crushing you, one kept choice at a time, often with someone who shares your values. Most people find some of each, and both are real.',
       },
       {
-        long: 1,
         h: 'The part of you that hurts is on your side.',
         p: 'Pain after a slip is easy to read as a verdict. It is closer to a compass needle, pointing at **what you want your life to be about**. Someone who did not care would not feel it.',
         art: ['scene', { k: 'l22-compass' }],
@@ -127,13 +161,13 @@ export const STORIES_D: Record<string, Story> = {
     mine: { h: 'Your log answers the first question honestly.', k: 'clean30' },
     today: {
       h: 'Answer the two questions apart today.',
-      l: ['Look at your log: how often, this month?', 'Name the one thing it goes against', 'Pick one kind of help for each'],
+      l: ['Look at your log: how often, this month?', 'Name the one thing it goes against', 'Pick the help that fits what you found'],
     },
     you: {
       h: 'When it hurts the most, what is the thing you hold that the habit goes against?',
       o: [
         ['Being faithful to someone I love', 'Then the hurt is guarding a person. That is worth more than any count.'],
-        ['Being honest about who I am', 'Then the hurt is asking you to close the gap, one honest day at a time.'],
+        ['What I believe is right', 'Then the hurt is keeping faith with that. Let it guide the next choice.'],
         ['The respect I want to have for myself', 'That comes back too, one kept choice at a time.'],
         ['I do not know yet', 'Fair. Next time it hurts, ask it plainly what it is pointing at.'],
       ],
@@ -154,18 +188,6 @@ export const STORIES_D: Record<string, Story> = {
     np: 'The hour I will claim, and what goes in it first',
     tell: [
       {
-        h: 'Picture your mind as a small theater.',
-        p: 'The curtain is always up. Something is always playing on the stage, **from the moment you wake** to the moment you fall asleep.',
-        art: ['scene', { k: 'l22-stage' }],
-        dx: 'Picture your mind as a small theater with one stage. The odd thing about this theater is that the curtain never comes down. Something is always playing on the stage, **from the moment you wake** to the moment you fall asleep: a plan, a worry, a song, a conversation you are having in your head with someone who is not there. You are the audience, and most of the time you did not choose the show.',
-      },
-      {
-        h: 'When nothing is planned, the stage does not stay empty.',
-        p: 'Thoughts wait in the wings. Onto **an empty stage**, whatever is nearest walks on: a worry, a memory, a picture. It plays whatever it is allowed to.',
-        art: ['scene', { k: 'l22-wings' }],
-        dx: 'Some thoughts wait just off the stage, in the wings, for a gap. While something you chose is playing, they stay there. But when the stage goes quiet, when the plan runs out and nothing is next, the nearest one walks on. It might be a worry, an old memory or a picture you do not want. Nobody sent for it. It came because **an empty stage** is an invitation, and it will play for as long as it is allowed to stay.',
-      },
-      {
         h: 'In 2014, researchers left people alone in a plain room for fifteen minutes.',
         p: 'No phone, no book, nothing to do but think. On the table was a button that gave **a mild electric shock**, one they had already felt and said they would pay money to avoid.',
         art: ['scene', { k: 'l22-button-room' }],
@@ -179,7 +201,7 @@ export const STORIES_D: Record<string, Story> = {
           ['Sit and think. It is only fifteen minutes', 'That is what most people expect of themselves. Look at what they did.'],
           ['Press the button once, to see', 'Then you know something about empty time already. Look at how many did.'],
           ['Get restless fast', 'That is honest, and it is the feeling this study caught.'],
-          ['I do not know', 'Fair. Almost nobody guesses this one right about themselves.'],
+          ['I do not know', 'Fair. Look at what they did.'],
         ],
       },
       {
@@ -196,6 +218,18 @@ export const STORIES_D: Record<string, Story> = {
         dx: 'The shock was only one part of the work. Across eleven studies, with students and with adults of every age from a farmers’ market and a church, the finding kept coming back: most people did not enjoy six to fifteen minutes alone with their thoughts, and found it hard to keep their minds on anything. When people were asked to try it at home, about a third admitted they had cheated, and many **reached for a phone** or got up before the time was done.',
       },
       {
+        h: 'Here is one way to see what happened. Picture your mind as a small theater.',
+        p: 'The curtain is always up. Something is always playing on the stage, **from the moment you wake** to the moment you fall asleep.',
+        art: ['scene', { k: 'l22-stage' }],
+        dx: 'Picture your mind as a small theater with one stage. The odd thing about this theater is that the curtain never comes down. Something is always playing on the stage, **from the moment you wake** to the moment you fall asleep: a plan, a worry, a song, a conversation you are having in your head with someone who is not there. You are the audience, and most of the time you did not choose the show.',
+      },
+      {
+        h: 'When nothing is planned, the stage does not stay empty.',
+        p: 'Thoughts wait in the wings. Onto **an empty stage**, whatever is nearest walks on: a worry, a memory, a pull. It plays whatever it is allowed to.',
+        art: ['scene', { k: 'l22-wings' }],
+        dx: 'Some thoughts wait just off the stage, in the wings, for a gap. While something you chose is playing, they stay there. But when the stage goes quiet, when the plan runs out and nothing is next, the nearest one walks on. It might be a worry, an old memory or a pull you do not want. Nobody sent for it. It came because **an empty stage** is an invitation, and it will play for as long as it is allowed to stay.',
+      },
+      {
         long: 1,
         h: 'Boredom is not having nothing to do. It is having nothing to hold.',
         p: 'Researchers who study attention describe it as wanting to be engaged and finding **nothing that holds you**. It is uncomfortable, so the mind grabs whatever is closest.',
@@ -207,17 +241,18 @@ export const STORIES_D: Record<string, Story> = {
         h: 'So the hard hours are often not the busy ones.',
         p: 'They are **the hours nobody has claimed**: the hour after work, a free afternoon, a long wait. The habit does not need a reason to show up. It needs room.',
         art: ['scene', { k: 'l22-unclaimed' }],
-        dx: 'Ask people when their hardest moments come, and many expect the answer to be the stressful hours, the arguments, the bad days. Often it is not. It is the gap after the stress: the hour after work, a free afternoon, a long wait, the stretch of a day off with nothing planned. These are **the hours nobody has claimed**. The habit does not need a crisis to show up. It needs room, and an unclaimed hour is room.',
-      },
-      {
-        h: 'Here is the hard part. Whatever you do not take charge of, something else will.',
-        p: 'An hour left open is not neutral ground. It goes to whatever is nearest, and the habit is good at being nearest. But it works the other way too: **an hour you claim is yours**.',
-        art: ['scene', { k: 'l22-flag' }],
-        dx: 'This is the truth under all of it, and it is not comfortable. Wherever nobody takes charge, something else does. A field nobody tends grows weeds. A team nobody leads gets led by the loudest voice. An hour you leave open is not neutral ground, and the habit is very good at being the nearest thing in it. But that same truth carries the hope. Wherever you step in and take charge, the ground is yours. **An hour you claim is yours**, and the habit has to find somewhere else to stand.',
+        dx: 'Ask people when their hardest moments come, and many expect the answer to be the stressful hours, the arguments, the bad days. Often it is the gap after the stress: the hour after work, a free afternoon, a long wait, the stretch of a day off with nothing planned. These are **the hours nobody has claimed**. The habit does not need a crisis to show up. It needs room, and an unclaimed hour is room.',
       },
       {
         long: 1,
-        h: 'Getting active on a plan did as well as talk therapy, a year on.',
+        h: 'The hard part is plain. Whatever you do not take charge of, something else will.',
+        p: 'An hour left open is not neutral ground. It goes to whatever is nearest, and the habit is good at being nearest. But it works the other way too: **an hour you claim is yours**.',
+        art: ['scene', { k: 'l22-flag' }],
+        dx: 'Under all of it is a hard truth, and it is not comfortable. Wherever nobody takes charge, something else does. A field nobody tends grows weeds. A team nobody leads gets led by the loudest voice. An hour you leave open is not neutral ground, and the habit is very good at being the nearest thing in it. But that same truth carries the hope. Wherever you step in and take charge, the ground is yours. **An hour you claim is yours**, and the habit has to find somewhere else to stand.',
+      },
+      {
+        long: 1,
+        h: 'Getting active on a plan did as well as the best-known talking therapy, a year on.',
         p: 'In a large trial for depression, people who planned small, real things into their days, and did them before they felt like it, did **about as well** as people in therapy.',
         art: ['scene', { k: 'l22-planner' }],
         fact: { s: 'Trial · 440 adults · Richards and colleagues, 2016', i: [2] },
@@ -241,7 +276,7 @@ export const STORIES_D: Record<string, Story> = {
       o: [
         ['A walk, out of the house', 'Out of the house changes the stage and the hour at once.'],
         ['A call or a message to someone', 'A person on the stage leaves little room for anything else.'],
-        ['Something with my hands', 'Hands that are busy make a picture hard to hold.'],
+        ['Something with my hands', 'Busy hands leave the pull less room.'],
         ['I do not know yet', 'Fair. Watch which hour goes empty this week, and start there.'],
       ],
     },
@@ -260,10 +295,10 @@ export const STORIES_D: Record<string, Story> = {
     np: 'One question I would ask a therapist',
     tell: [
       {
-        h: 'Most people picture therapy the same way.',
-        p: 'A stranger behind a desk, a notepad, a long silence, and **a verdict at the end** about what is wrong with you.',
-        art: ['scene', { k: 'l22-judge' }],
-        dx: 'Ask people what they picture when they think of seeing a therapist, and the answers are much the same. A stranger behind a desk. A notepad, and a pen that writes while you talk. A long silence that you are meant to fill. And when it is over, **a verdict at the end** about what is wrong with you, in words you do not understand. It is no wonder people put it off for years. Nobody wants to walk into a courtroom.',
+        h: 'For fifty years, researchers argued about which kind of therapy works best.',
+        p: 'This school against that one, long courses against short ones. Hundreds of studies piled up, each measuring how people did. And **one answer kept coming back**, in almost every kind of therapy.',
+        art: ['scene', { k: 'l22-stacks' }],
+        dx: 'For more than fifty years, researchers have argued about what makes therapy work. Some said it was the method: this school against that one. Some said it was the number of sessions, or the training, or the kind of problem a person brought in. Hundreds of studies piled up, each measuring how people did and what they had received. When the studies were finally gathered and compared side by side, **one answer kept coming back**, in almost every kind of therapy, whatever its name.',
       },
       {
         k: 'ask',
@@ -276,13 +311,7 @@ export const STORIES_D: Record<string, Story> = {
         ],
       },
       {
-        h: 'Researchers have spent decades asking what makes therapy work.',
-        p: 'Which method is best, how long it should last, what kind of training helps. And one answer kept coming back, in **almost every kind of therapy** they looked at.',
-        art: ['scene', { k: 'l22-stacks' }],
-        dx: 'For more than fifty years, researchers have argued about what makes therapy work. Some said it was the method: this school against that one. Some said it was the number of sessions, or the training, or the kind of problem. Hundreds of studies piled up, each measuring how people did and what they had received. When the studies were gathered and compared, one answer kept coming back, in **almost every kind of therapy**, whatever its name.',
-      },
-      {
-        h: 'It was how well the two people worked together.',
+        h: 'The answer was how well the two people worked together.',
         p: 'In 295 studies with more than 30,000 people, how well the person and the therapist **agreed on goals and trusted each other** was one of the steadiest signs of how it would go.',
         art: ['scene', { k: 'l22-two-chairs' }],
         fact: { s: 'Review · 295 studies · Flückiger and colleagues, 2018', i: [0] },
@@ -292,7 +321,7 @@ export const STORIES_D: Record<string, Story> = {
         h: 'So therapy is not a verdict. It is closer to a partnership.',
         p: 'You are not the one on trial. You are **choosing a partner** to work with, and the fit is something you get to judge, from the first session.',
         art: ['scene', { k: 'l22-partners' }],
-        dx: 'That changes the picture of the courtroom completely. If the bond between the two of you is one of the best signs of how it will go, then you are not walking in to be judged. You are walking in to find out whether this is someone you can work with. You are **choosing a partner**, the way you would choose a coach or a doctor you trust. And the fit is yours to judge, from the very first hour.',
+        dx: 'That changes the picture many people carry, of a stranger with a notepad and a verdict at the end. If the bond between the two of you is one of the best signs of how it will go, then you are not walking in to be judged. You are walking in to find out whether this is someone you can work with. You are **choosing a partner**, the way you would choose a coach or a doctor you trust. And the fit is yours to judge, from the very first hour.',
       },
       {
         long: 1,
@@ -305,13 +334,12 @@ export const STORIES_D: Record<string, Story> = {
       {
         long: 1,
         h: 'For this habit, help has been tested.',
-        p: 'A review of 24 studies found that treatment for problem porn use helped, and **skills-based therapy** (CBT) had the most support. A typical course is about five to fifteen sessions.',
+        p: 'A review of 24 studies found that treatment for problem porn use seemed to help, though most studies were small. **Skills-based therapy** (CBT) had the most support. A typical course is about five to twenty sessions.',
         art: ['scene', { k: 'l22-toolkit' }],
         fact: { s: 'Review · 24 studies · Antons and colleagues, 2022 · Guide · NHS', i: [2, 3] },
-        dx: 'In 2022, a review gathered the studies of treatment for compulsive sexual behavior and problem porn use. There were not as many as for drinking or depression, and many were small. But across 24 of them, treatment appeared to help, and **skills-based therapy**, called cognitive behavioral therapy or CBT, had the strongest support. In CBT you learn to notice the thoughts and moments that lead to the habit, and practice other moves between sessions. A course often runs about five to fifteen sessions.',
+        dx: 'In 2022, a review gathered the studies of treatment for compulsive sexual behavior and problem porn use. There were not as many as for drinking or depression, and many were small. But across 24 of them, treatment appeared to help, and **skills-based therapy**, called cognitive behavioral therapy or CBT, had the strongest support. In CBT you learn to notice the thoughts and moments that lead to the habit, and practice other moves between sessions. A course often runs about five to twenty sessions.',
       },
       {
-        long: 1,
         h: 'The first hour is mostly talking about what you want.',
         p: 'They ask what brings you in and what you hope will change. You can say it in one sentence. They have heard it many times, and **what you say stays in the room**, with a few limits they will explain.',
         art: ['scene', { k: 'l22-first-hour' }],
@@ -327,7 +355,7 @@ export const STORIES_D: Record<string, Story> = {
     mine: { h: 'You have already started the work, before any session.', k: 'acted' },
     today: {
       h: 'Take one step toward the right partner.',
-      l: ['Look up two therapists, near or online', 'Write one question to ask them', 'Ask it on the first call'],
+      l: ['Find two therapists: near, online, low-cost', 'Write one question to ask them', 'Ask it on the first call'],
     },
     you: {
       h: 'What would make a therapist the right fit for you?',
@@ -353,17 +381,11 @@ export const STORIES_D: Record<string, Story> = {
     np: 'One person I could help, and the one thing I would tell them',
     tell: [
       {
-        h: 'Most people picture the twelve steps as a ladder.',
-        p: 'You start at the bottom, admitting you have a problem, and climb toward the top, helping others. You only reach that last rung **once you have it all figured out**.',
-        art: ['scene', { k: 'l22-ladder' }],
-        dx: 'The twelve steps began with Alcoholics Anonymous in the 1930s, and since then they have been borrowed by groups for almost every habit there is. Most people who have heard of them picture a ladder. At the bottom is step one, admitting that you have a problem. At the top is step twelve, carrying the message to others. You climb one rung at a time, and you only reach the top **once you have it all figured out**. This study turns that picture over.',
-      },
-      {
-        h: 'In plain words, the steps come down to three things.',
-        p: 'Be honest about where you are. Let other people in. Act. Admit willpower alone has not been enough, tell someone the truth, **make things right where you can**, and help others.',
+        h: 'The twelve steps began with Alcoholics Anonymous, in the 1930s.',
+        p: 'In plain words they ask three things. Be honest about where you are. Let other people in. Then act: **make things right where you can**, and help someone else. Many groups speak of a higher power, and each person reads that their own way.',
         art: ['scene', { k: 'l22-three' }],
         fact: { s: 'Program · Alcoholics Anonymous, the Twelve Steps', i: [0] },
-        dx: 'In plain words, not their own, the steps run like this. Admit that willpower alone has not been enough, and reach for help bigger than yourself. Take an honest look at your life and tell another person what you find. **Make things right where you can**, where doing so would not hurt anyone. Keep checking yourself, and keep going. And help someone else who is where you were. Under all twelve are three things: honesty, other people, and action.',
+        dx: 'The steps were written by the first members of Alcoholics Anonymous, and since then they have been borrowed by groups for almost every habit there is. In plain words, not their own, they run like this. Admit that willpower alone has not been enough, and reach for help bigger than yourself. Take an honest look at your life and tell another person what you find. **Make things right where you can**, where doing so would not hurt anyone. Keep checking yourself, and keep going. And help someone else who is where you were. Many groups speak of a higher power, and each person reads that their own way.',
       },
       {
         h: 'Researchers wanted to know which part of it did the most good.',
@@ -384,15 +406,15 @@ export const STORIES_D: Record<string, Story> = {
       },
       {
         h: 'A year after treatment, 40 in 100 of the helpers had not had a drink.',
-        p: 'Among the people who were not helping, it was 22 in 100. And the gap held **however many meetings people went to**. Sitting in the room was not the whole of it. Giving was.',
+        p: 'Among the people who were not helping, it was 22 in 100. And it held **when the researchers took meeting attendance into account**. Sitting in the room was not the whole of it.',
         art: ['people', { n: 40, was: 22, s: 'stayed sober' }],
-        dx: 'In the year after treatment, 40 in every 100 of the people who were helping others had not had a single drink. Among the people who were not helping, it was 22 in 100. The researchers checked whether the helpers had only gone to more meetings, and the gap held **however many meetings people went to**. Being in the room was good. But the people who gave something away while they were there did better again, by a wide margin.',
+        dx: 'In the year after treatment, 40 in every 100 of the people who were helping others had not had a single drink. Among the people who were not helping, it was 22 in 100. The researchers checked whether the helpers had only gone to more meetings, and the gap held **when they took meeting attendance into account**. Being in the room was good. But the people who gave something away while they were there did better again, by a wide margin.',
       },
       {
-        h: 'And the helpers were not near the top of any ladder.',
-        p: 'They were only months into their own recovery, still shaky, still learning. Helping was not a reward for being well. **It was part of how they got well.**',
+        h: 'The steps are often drawn as a ladder, with helping others on the top rung.',
+        p: 'These helpers were nowhere near the top. They were still in their first months of recovery, still shaky, still learning. Helping was not a reward for being well. **It was part of how they got well.**',
         art: ['scene', { k: 'l22-early-help' }],
-        dx: 'Look at who these helpers were. They were not people with ten years behind them. They were only months out of treatment, many of them still shaky, still learning the same things they were passing on. If the steps were a ladder, they were near the bottom. They did not wait until they were sure of themselves to help. Helping was not the reward at the end for being well. **It was part of how they got well.**',
+        dx: 'People who know the steps often picture a ladder. Step one at the bottom, admitting there is a problem. Step twelve at the top, carrying the message to others, a rung you reach once you have it all figured out. Now look at who these helpers were. They were not people with ten years behind them. They were still in their first months of recovery, many of them shaky, still learning the same things they were passing on. They did not wait until they were sure of themselves. **It was part of how they got well.**',
       },
       {
         long: 1,
@@ -428,7 +450,7 @@ export const STORIES_D: Record<string, Story> = {
     mine: { h: 'You already know things someone newer does not.', k: 'acted' },
     today: {
       h: 'Take the last step first, in a small way.',
-      l: ['Think of one person who is struggling', 'Tell them one thing that helped you', 'Keep it short and honest'],
+      l: ['Think of one person who is struggling', 'Tell them one thing that helped you', 'Or write one honest reply in a group'],
     },
     you: {
       h: 'Who could you help right now, with what you already know?',
@@ -442,5 +464,383 @@ export const STORIES_D: Record<string, Story> = {
     scope:
       'The helping study was about drinking, not porn, and it followed people rather than testing helping as a treatment, so the helpers may have differed in other ways. The review of 12-step programs was about alcohol too. What carries over is the shape: honesty, other people and action, with helping part of it from early on.',
     src: [S.aa12, S.pagano04, S.riessman, S.cochrane],
+    hab: {
+      alcohol: {
+        scope:
+          'The helping study and the review of 12-step programs were both about drinking. The helping study followed people rather than testing helping as a treatment, so the helpers may have differed in other ways. What it shows is the shape: honesty, other people and action, with helping part of it from early on.',
+      },
+      gambling: {
+        scope:
+          'The helping study and the review of 12-step programs were about drinking, not gambling, and the helping study followed people rather than testing helping as a treatment. What carries over is the shape: honesty, other people and action, with helping part of it from early on.',
+      },
+      other: {
+        scope:
+          'The helping study and the review of 12-step programs were about drinking, not this habit, and the helping study followed people rather than testing helping as a treatment. What carries over is the shape: honesty, other people and action, with helping part of it from early on.',
+      },
+    },
+  },
+  l27: {
+    id: 'l27',
+    form: 'study',
+    title: 'Mindfulness and relapse prevention',
+    tag: 'Why noticing an urge outlasted a plan.',
+    ic: 'wind',
+    ask: 'Can I learn to pause before I act on an urge?',
+    key: 'A plan covers the moments you see coming. Noticing goes with you into the rest.',
+    np: 'One place in my day for a one-minute pause',
+    tell: [
+      {
+        h: 'In 2014, a team in Seattle followed 286 people for a year after treatment.',
+        p: 'They had finished treatment for drugs or alcohol. Now came **the hardest stretch**: the months back in ordinary life, when most people who go back to a habit do.',
+        art: ['scene', { k: 'l22-out-door' }],
+        dx: 'A team led by the psychologist Sarah Bowen, which grew out of Alan Marlatt’s lab, where relapse prevention was built, signed up 286 adults who had just finished treatment for drugs or alcohol. Everyone in the field knew where the danger was. Treatment ends, and a person walks back into the same streets, the same moods, the same people. That is **the hardest stretch**, the months after, and it is when most people who go back to a habit do. The question was what would carry them through it.',
+      },
+      {
+        h: 'Each person was given one of three kinds of help.',
+        p: 'Some had the usual support groups. Some learned relapse prevention: spot the risky moments ahead, and **plan a way around them**. The third group learned the plans too, plus a daily practice of noticing urges without obeying them.',
+        art: ['scene', { k: 'l22-three-helps' }],
+        dx: 'The people were split by chance into three groups. The first had the usual aftercare, mostly support groups. The second learned relapse prevention, the method Marlatt had built over decades: learn your risky moments, the places, people and moods that come before a slip, and **plan a way around them**. The third learned those same plans, and something more. Each day they practiced noticing an urge, the thoughts and the feeling in the body, without pushing it away and without obeying it.',
+      },
+      {
+        k: 'ask',
+        h: 'When an urge comes, what do you usually reach for first?',
+        o: [
+          ['A rule: do not do it', 'Many people start there. Look at what the plans did, and when.'],
+          ['A plan to get away from it', 'That is the second group. Look at how they did.'],
+          ['Something to distract me', 'That can help. Look at what worked longest.'],
+          ['Often I just give in', 'Then this study is for you. Look at what grew stronger with time.'],
+        ],
+      },
+      {
+        h: 'Six months in, the planners looked strongest.',
+        p: 'Both new kinds of help beat the usual support, and **the group with plans** had a slight edge. Steer around the risky moment, and you steer around the slip. It made sense.',
+        art: ['scene', { k: 'l22-map' }],
+        dx: 'At six months, both of the new kinds of help were doing better than the usual support. And **the group with plans** had a slight edge, even over the group that also practiced noticing: they went longer, on average, before their first use of a drug. It made good sense. If you know your risky moments and steer around them, you avoid most of the chances to slip. On that reading, a good plan was all anyone needed.',
+      },
+      {
+        h: 'A year in, the noticing group had pulled ahead.',
+        p: 'They used on fewer days than either other group, and heavy drinking had dropped further. The plans had started to wear thin. **The skill of noticing was still working.**',
+        art: ['scene', { k: 'l22-year-on' }],
+        fact: { s: 'Trial · 286 adults · Bowen and colleagues, 2014', i: [0] },
+        dx: 'Then came the twelve-month check. The people who had practiced noticing now reported fewer days of using than either other group, and their heavy drinking had fallen further too. The planners’ edge had faded. Something about the plans had worn thin over the year, while **the skill of noticing was still working**, months after the classes had ended. The researchers called for more work to be sure, and the pattern was hard to miss.',
+      },
+      {
+        h: 'A plan works in the moments you saw coming.',
+        p: 'But urges do not keep to the plan. They show up on a good day, in a new place, in a mood nobody planned for. Noticing goes with you **into the moments nobody planned**.',
+        art: ['scene', { k: 'l22-side-wave' }],
+        dx: 'Here is a likely reason. A plan is a map of the places you already know are risky, and it works well there. But urges do not keep to the map. They show up on a good day, in a new town, after news nobody saw coming, in a mood that was never on the list. A plan has nothing to say there. Noticing does, because it is not tied to a place. It is a way of meeting whatever arrives, and it goes with you **into the moments nobody planned**.',
+      },
+      {
+        long: 1,
+        h: 'They also looked at what low moods did.',
+        p: 'In an earlier trial, a low mood led to craving, and craving to using, in the usual care group. After the practice, a low mood **no longer dragged craving all the way** to using. The mood still came. The chain had loosened.',
+        art: ['chain', { n: ['Low mood', 'Craving', 'Acting on it'] }],
+        fact: { s: 'Trial · 168 adults · Witkiewitz & Bowen, 2010', i: [1] },
+        dx: 'An earlier trial with 168 adults looked inside the slip itself. In the usual care group, the path was plain: a low mood led to craving, and craving led to using. After eight weeks of practice in noticing, that path had changed. People still had low days, as everyone does. But a low mood **no longer dragged craving all the way** to using, and two months later the link from mood to craving was weaker too. Nobody had fixed their moods. The chain between the links had loosened.',
+      },
+      {
+        long: 1,
+        h: 'The practice itself is plain, and it takes about a minute.',
+        p: 'Stop. Observe what is in your body and mind. Breathe. Expand your attention to the whole room. Then respond, **by choice**. Nothing has to go away first.',
+        art: ['scene', { k: 'l22-breathe' }],
+        fact: { s: 'Training · Marlatt, the SOBER breathing space', i: [2] },
+        dx: 'The program gives it a short name, SOBER. Stop whatever you are doing. Observe what is going on, in your body, in your thoughts, in the pull itself, the way you would watch weather. Breathe, slowly, a few times. Expand your attention out from the urge to your whole body and the room around you. Then respond, **by choice**, instead of on autopilot. It takes about a minute. The urge does not have to leave first. You are making room to choose with it there.',
+      },
+      {
+        h: 'So the urge does not have to leave before you are safe.',
+        p: 'You do not need a calm mood or an empty mind. You need a pause long enough to see the urge for what it is, **and then choose**. Each time you do, the skill grows.',
+        art: ['scene', { k: 'l22-pause' }],
+        dx: 'Many people wait for a better mood before they feel safe from an urge, or try to empty their minds of it. This trial points somewhere else. You do not need a calm mood, an empty mind, or a perfect plan. You need a pause long enough to see the urge for what it is, a wave rising in you, **and then choose**. Like any skill, it is clumsy at first and grows with every try, and in this trial it kept working after the plans had worn thin.',
+        back: 'l2',
+      },
+    ],
+    mine: { h: 'Urges come with moods, and they still end.', k: 'rode' },
+    today: {
+      h: 'Run the one-minute pause once today.',
+      l: ['Stop, and notice what you feel', 'Breathe, and widen to the room', 'Then choose what comes next'],
+    },
+    you: {
+      h: 'Where in your day could one minute of noticing fit?',
+      o: [
+        ['When I first get home', 'A doorway is a good cue. The pause can start with the key in the lock.'],
+        ['Right after something stressful', 'That is where the chain starts. A minute there loosens it.'],
+        ['When I reach for my phone without thinking', 'That reach is autopilot. Noticing it is the whole skill.'],
+        ['I do not know yet', 'Fair. Try it once today, anywhere, and see where it fits.'],
+      ],
+    },
+    scope:
+      'These trials were with adults leaving treatment for drugs or alcohol, not this habit in particular, and the researchers call for more work. What carries over is the skill: a pause, practiced, changed what urges and low moods led to, and it held over a year.',
+    src: [S.bowen14, S.witkiewitz10, S.mbrpslides],
+  },
+
+  l28: {
+    id: 'l28',
+    form: 'study',
+    title: 'Why groups help',
+    tag: 'What the friendships of 12,000 people showed about quitting.',
+    ic: 'dots',
+    ask: 'Why would a group help me quit?',
+    key: 'You do not quit on willpower alone. You quit inside a circle, and you can choose the circle.',
+    np: 'One group or one person I could spend an hour with',
+    tell: [
+      {
+        h: 'In 1948, a town in Massachusetts agreed to be studied for life.',
+        p: 'Framingham signed up to help doctors learn about the heart. For decades its people came in for checkups, and the clinic kept careful records, **including who their friends were**.',
+        art: ['scene', { k: 'l22-town' }],
+        dx: 'After the Second World War, doctors knew almost nothing about why hearts fail. So the town of Framingham, near Boston, agreed to be watched, for life. Every few years thousands of its people came in to be measured and asked about their habits, and later their children joined too. To be able to find people again, the clinic wrote down the names of those close to them, **including who their friends were**: spouses, brothers and sisters, neighbors, coworkers. Nobody planned to use those lists for anything else.',
+      },
+      {
+        h: 'Decades later, two researchers turned those lists into a map.',
+        p: 'Nicholas Christakis and James Fowler drew **a web of 12,067 people**, from 1971 to 2003: who was friends with whom, married to whom, related to whom. Then they watched smoking move across it.',
+        art: ['scene', { k: 'l22-web' }],
+        dx: 'In the 2000s, Nicholas Christakis and James Fowler saw what the old lists were. Put together, they made **a web of 12,067 people**, followed from 1971 to 2003, with every tie marked: who was friends with whom, married to whom, related to whom, working beside whom. Over those thirty years, smoking in America fell sharply. The two researchers wanted to know how it fell. Did people quit one by one, each on their own willpower, or did something move through the web?',
+      },
+      {
+        k: 'ask',
+        h: 'Think of the people you spend the most time with. How much do they shape what you do?',
+        o: [
+          ['A lot, more than I like to admit', 'Most people find that. Look at what the web showed.'],
+          ['Not much. I decide for myself', 'You do decide. Look at how quietly the people around you tip it.'],
+          ['They do not know about this habit', 'Then they cannot help with it yet. That is worth noticing.'],
+          ['I am not sure', 'Fair. Look at what thirty years of records showed.'],
+        ],
+      },
+      {
+        h: 'People did not quit one at a time. They quit in clusters.',
+        p: 'As smoking fell, **whole circles of friends stopped together**, like lights going out in groups. The smokers who were left drifted to the edges of the web, with fewer ties to anyone.',
+        art: ['scene', { k: 'l22-clusters' }],
+        dx: 'When the researchers played the thirty years forward on their map, they saw something nobody had expected. Smokers did not drop out one by one, scattered at random. **Whole circles of friends stopped together**, like lights going out in groups across a city. And the smokers who were left did not stay in the middle of things. Year by year they drifted to the edges of the web, with fewer ties to anyone, until smoking became something people on the margins did. The edges were not a fixed place, though. One new tie moved a person in.',
+      },
+      {
+        n: '36%',
+        h: 'lower odds of still smoking, once a friend had quit.',
+        p: 'When a spouse quit, the odds dropped by 67%. A brother or sister, 25%. Even a coworker in a small firm **made a difference**.',
+        fact: { s: 'Study · 12,067 people · Christakis & Fowler, 2008', i: [0] },
+        dx: 'Then they put numbers on it. When a person’s friend quit, the odds that the person was still smoking dropped by 36 in every 100. When a husband or wife quit, by 67. A brother or sister, by 25. Even a coworker, in a small firm where people saw each other every day, **made a difference**. Nobody had asked anyone to quit together. The study shows what moved together over time, not proof of cause, and the pattern held across thirty years.',
+      },
+      {
+        h: 'Nobody in that town signed a pledge.',
+        p: 'Nobody gave a speech or asked their friends to quit together. They watched the people around them stop, and quitting started to **feel normal**, one friend at a time.',
+        art: ['scene', { k: 'l22-inside' }],
+        dx: 'Think about what that means. Nobody in Framingham joined a campaign or signed a pledge with their friends. They watched the people around them stop, and something shifted: what people like us do had changed. Quitting stopped being strange and started to **feel normal**. Willpower is something you carry alone, and it gets heavy. Company is something you live inside, and it carries you without your noticing.',
+      },
+      {
+        long: 1,
+        h: 'When researchers asked how AA helps, the biggest answer was the same.',
+        p: 'Across 25 years of studies, members changed who they spent time with: fewer people who drank, more who backed the change. **The company did more** than any one idea.',
+        art: ['scene', { k: 'l22-new-circle' }],
+        fact: { s: 'Review · 25 years of studies · Kelly, 2017', i: [1] },
+        dx: 'People have argued for decades about why groups like AA help: the steps, the meetings, the sponsor, the spiritual side. A review of about 25 years of research found that the biggest route was plainer than any of those. Members changed who they spent time with. They dropped heavy drinkers from their circle and spent more time with people who did not drink or were in recovery. Confidence, less craving and better coping helped too. But **the company did more** than any one idea.',
+      },
+      {
+        h: 'So a group does not have to change you directly.',
+        p: 'It changes who is around you, and those people do the rest. The first time, you only have to listen. **Being there is already the change.**',
+        art: ['scene', { k: 'l22-seat' }],
+        dx: 'A room of strangers cannot reach in and rewire you, and it does not need to. What it does is quieter. It changes who is around you, a little, each week. Over time those people make the change feel like what people like you do. The first time, you do not have to share a thing or be sure of anything. You can sit and listen. **Being there is already the change**, because you have just moved yourself a little further into the right part of the web.',
+      },
+      {
+        long: 1,
+        h: 'It does not have to be a room.',
+        p: 'A group online, one friend who checks in each week, or someone who is quitting too all change the web around you. Start with **one connection**, and let it grow.',
+        art: ['scene', { k: 'l22-links' }],
+        dx: 'The town study was about friends, family and coworkers, the people of ordinary life. So the change you are looking for does not have to come from a meeting hall. A group that meets online with cameras off counts. So does one friend who knows and checks in once a week, or a person who is quitting the same thing and messages you on the hard days. Each one is a new tie in your web. Start with **one connection**, and let the web grow from there.',
+      },
+    ],
+    today: {
+      h: 'Add one person to your web this week.',
+      l: ['Find one group, online or near you', 'Or ask one person to check in weekly', 'Listen first, and speak when ready'],
+    },
+    you: {
+      h: 'Who could be the first new tie in your web?',
+      o: [
+        ['A friend I trust', 'Then one honest message can start it. They may be glad you asked.'],
+        ['Someone who is quitting too', 'Two people changing together is a cluster of two.'],
+        ['A group I have not tried yet', 'Go once, and only listen. Being there counts.'],
+        ['No one yet', 'That is honest. A group is often the easiest place to find the first one.'],
+      ],
+    },
+    scope:
+      'The town study followed smokers and the AA review followed people with drinking problems, and both show what went together rather than proof of cause. They agree on something hopeful: the people around you shape a habit, and choosing to be around people who are changing is a step you can take this week.',
+    src: [S.christakis, S.kelly17],
+  },
+
+  l29: {
+    id: 'l29',
+    form: 'breakdown',
+    title: 'God and a plan',
+    tag: 'Why a prayer and a guard go together.',
+    ic: 'star',
+    ask: 'If I pray about this, why does the pull keep coming back?',
+    key: 'A pull that comes back is not a failed prayer. Pray for strength, then post your guard.',
+    np: 'My guard: the move that goes with my prayer',
+    tell: [
+      {
+        h: 'People of faith often carry a question they are almost afraid to say.',
+        p: '**If I prayed about this, why does the pull keep coming back?** It can feel as if the prayer was not heard, or was not good enough.',
+        art: ['scene', { k: 'l22-pray-wave' }],
+        dx: 'You prayed about it, and you meant it. Maybe you have prayed about it a hundred times. And then, an hour later or a day later, the pull is back, as strong as before. **If I prayed about this, why does the pull keep coming back?** It is a question many faithful people carry quietly, because saying it out loud feels like doubting God. It deserves an honest answer, and the scriptures give one.',
+      },
+      {
+        k: 'ask',
+        h: 'When you pray about this, what are you mostly asking for?',
+        o: [
+          ['That the urge be taken away', 'Many people pray for that. Look at what an old builder did.'],
+          ['Strength to get through it', 'Look at what Paul was given when he asked for the other kind.'],
+          ['Forgiveness, after', 'That prayer matters. This lesson is about the one before.'],
+          ['I am not sure how to pray about it', 'That is honest. The scriptures give a plain pattern.'],
+        ],
+      },
+      {
+        h: 'There is an old story about a wall.',
+        p: 'Nehemiah led the people rebuilding the walls of Jerusalem, while enemies plotted to attack. He wrote down what they did: **they prayed unto God, and set a watch** against them day and night.',
+        art: ['scene', { k: 'l22-wall' }],
+        fact: { s: 'Scripture · Nehemiah 4:9', i: [0] },
+        dx: 'After the exile, Nehemiah came back to a Jerusalem whose walls lay in ruins, and he set the people to rebuilding them. Their enemies mocked them, then plotted to attack and stop the work. Nehemiah tells what came next in one plain sentence: they made their prayer unto God, and set a watch against them day and night. **They prayed unto God, and set a watch.** Not one or the other. Both, in the same breath, and the wall went up.',
+      },
+      {
+        h: 'He did not treat the watch as doubt.',
+        p: 'Praying and posting a guard were not two rival plans. They were **one act of faith**. Later the builders worked with a tool in one hand and a weapon in the other.',
+        art: ['scene', { k: 'l22-trowel' }],
+        fact: { s: 'Scripture · Nehemiah 4:17', i: [0] },
+        dx: 'Nehemiah never seems to wonder whether setting a guard showed a lack of trust in God. To him, praying and posting a watch were **one act of faith**: the prayer asked for help, and the watch was how they took it. A few verses later the picture gets plainer still. Those who built the wall worked with one hand, and held a weapon in the other. Faith, in that story, had both hands busy.',
+      },
+      {
+        h: 'Paul prayed three times for something to be taken away.',
+        p: 'He called it a thorn in the flesh. It was not taken. The answer he heard was: **My grace is sufficient for thee**, for my strength is made perfect in weakness.',
+        art: ['scene', { k: 'l22-thorn' }],
+        fact: { s: 'Scripture · 2 Corinthians 12:7 to 9', i: [1] },
+        dx: 'The apostle Paul wrote of a thorn in the flesh, something that troubled him, which he never names. Three times he asked the Lord to take it away. It was not taken. The answer he heard instead was: **My grace is sufficient for thee**, for my strength is made perfect in weakness. Paul did not read that as a prayer that failed. He read it as a different gift than the one he asked for: not the thorn removed, but strength to carry on with it. And the strength, not the thorn, was what grew.',
+      },
+      {
+        long: 1,
+        h: 'A church leader, David A. Bednar, noticed the same pattern.',
+        p: 'In the Book of Mormon, Nephi is tied up by his brothers. He asks to be delivered, and then he asks for more: **strength to burst the bands**. Pray for strength to change things, Bednar taught, more than for things to change.',
+        art: ['scene', { k: 'l22-bands' }],
+        fact: { s: 'Scripture · 1 Nephi 7:17 · Talk · Bednar, 2001', i: [2, 3] },
+        dx: 'David A. Bednar, a Latter-day Saint apostle, once pointed to a short verse. Nephi, bound with cords by his own brothers, prays: give me **strength to burst the bands** with which I am bound. Nephi asks first to be delivered from his brothers, and then he asks for more. Bednar noticed that last part: he asked for strength. Bednar suggested that Nephi may have had to strain against the cords until they gave. His counsel: pray for strength to change your situation, more than for your situation to be changed.',
+      },
+      {
+        h: 'So a pull that comes back is not a failed prayer.',
+        p: 'It is the hour to post the guard. The prayer asks for strength, and **the guard is how you use it**: stand up, leave the room, put the phone away, send one message.',
+        art: ['scene', { k: 'l22-guard' }],
+        dx: 'Put the three stories together and the question turns over. The pull coming back does not mean God did not hear. In each story the hard thing stayed for a while: the enemies, the thorn, the cords. What came was strength, and something to do with it. So when the pull comes back after you prayed, that is the hour to post the guard. **The guard is how you use it**: stand up, leave the room, put the phone where you cannot reach it, send one message to someone who knows.',
+      },
+      {
+        long: 1,
+        h: 'Put the prayer inside your plan.',
+        p: 'If the pull comes, then I pray one line, and I stand up. The prayer and the move together, every time, **like the builders and their two hands**.',
+        art: ['chain', { n: ['Pray one line', 'Stand up', 'Leave the room'] }],
+        dx: 'You already know how an if-then plan moves a decision out of the hard moment. A prayer fits inside one. If the pull comes, then I pray one honest line, and then I stand up and leave the room. Said ahead of time, it means you never have to choose between trusting God and doing something. You do both, in order, **like the builders and their two hands**: one on the work, one holding the guard.',
+        back: 'l9',
+      },
+    ],
+    today: {
+      h: 'Pray, then post your guard.',
+      l: ['Pray one honest line, in your own words', 'Then make one move: stand, leave the room', 'Tell one person you trust, when you can'],
+    },
+    you: {
+      h: 'What will your guard be, the move that goes with your prayer?',
+      o: [
+        ['Standing up and leaving the room', 'Simple and strong. Your body carries the prayer out of the room.'],
+        ['Putting the phone somewhere else', 'A watch on the wall. It stands guard while you live your day.'],
+        ['Messaging someone I trust', 'The builders did not guard the wall alone either.'],
+        ['I do not know yet', 'Fair. Ask for strength today, and watch for the move it shows you.'],
+      ],
+    },
+    scope:
+      'Nehemiah and Paul are read by Christians of every tradition, and Nehemiah by Jews as well. Nephi’s prayer is from the Book of Mormon, read by Latter-day Saints. The picture they share is clear: prayer and action belong together, and a pull that returns is a call to act, not a sign that faith failed.',
+    src: [S.nehemiah, S.cor12, S.nephi, S.bednar01],
+  },
+
+  l30: {
+    id: 'l30',
+    form: 'works',
+    title: 'A pause for prayer or quiet',
+    tag: 'Why a song learned by heart works where a fight does not.',
+    ic: 'sunrise',
+    ask: 'What can I do in the hard moment, using my faith?',
+    key: 'Choose your song before you need it. When a shady thought walks on, let the song fill the stage.',
+    np: 'The hymn, scripture or prayer I will learn by heart',
+    tell: [
+      {
+        h: 'A church leader once admitted something few people say out loud.',
+        p: 'Boyd K. Packer said that controlling his thoughts was one of the hardest things he ever tried, and that when he was young, **nobody told him how**. So he worked out a way.',
+        art: ['scene', { k: 'l22-thinker' }],
+        fact: { s: 'Talk · Packer, 1973', i: [0] },
+        dx: 'Boyd K. Packer, an apostle of the Church of Jesus Christ of Latter-day Saints, gave a talk to young people that began with a confession. Of all the things he had tried to master, controlling his own thoughts was among the hardest. He had been told many times to think clean thoughts. But **nobody told him how**. So, over years, he worked out a way of his own, and he gave it away in that talk so others would not have to wait as long.',
+      },
+      {
+        h: 'He pictured the mind as a stage, with the curtain always up.',
+        p: 'Something is always playing. Now and then **a shady thought** slips in from the wings and tries to take over the show. Left alone, it plays whatever it likes.',
+        art: ['scene', { k: 'l22-shady' }],
+        dx: 'Packer asked his listeners to picture the mind as a stage in a theater, with the curtain always up. Except when we sleep, something is always on it: a plan, a worry, a memory, a song. And now and then, he said, **a shady thought** edges in from the wings. It does not ask. If you let it stay, it draws in others like it, and the whole stage is given over to a show you never chose. He was honest that this happens to everyone.',
+      },
+      {
+        k: 'ask',
+        h: 'When a thought you do not want walks on, what do you usually do?',
+        o: [
+          ['Argue with it', 'Many people do. Look at what he tried.'],
+          ['Try to push it off the stage', 'Most people try that first. Look at his way.'],
+          ['Pray for it to leave', 'Look at what he kept ready beside the prayer.'],
+          ['Let it play', 'That is honest. Look at how he took the stage back.'],
+        ],
+      },
+      {
+        h: 'His answer was a song, chosen ahead of time.',
+        p: 'Pick a hymn you love, he said, and **learn it by heart**. When a shady thought appears, start the song. As the music fills the stage, the thought slips away.',
+        art: ['scene', { k: 'l22-song' }],
+        dx: 'His advice was plain enough for a child. Choose a favorite hymn, one with words that lift you and music you love, and **learn it by heart**. Keep it ready. Then, when a shady thought slips onto the stage, start the hymn in your mind. As the music begins, he said, the thought slinks away, because it cannot stay on a stage that is full of something better. The hymn becomes an emergency channel, always there.',
+      },
+      {
+        long: 1,
+        h: 'He told of a pilot in a desperate flight.',
+        p: 'With the engines straining and the danger real, the man held a favorite hymn in his mind, and **the engines seemed to sing it back** to him. He lived to tell it.',
+        art: ['scene', { k: 'l22-pilot' }],
+        dx: 'Packer told the story of a pilot in a flight that had become desperate, with the danger real and nothing certain. In the worst of it, the man held a favorite hymn in his mind, and as he flew on, **the engines seemed to sing it back** to him. He lived to tell it, and Packer passed it on as a picture of what a hymn learned by heart can do in a hard moment.',
+      },
+      {
+        h: 'Here is why a song works where a fight does not.',
+        p: 'Staring a thought down keeps it in the spotlight. A song you know by heart **starts at once**, needs no thinking, and fills the stage before the shady one can settle.',
+        art: ['scene', { k: 'l22-song-stage' }],
+        dx: 'Staring a thought down keeps it in the spotlight, because to keep checking that it is gone, part of the mind has to keep looking at it. A song works the other way. Because you know it by heart, it **starts at once**, with no effort and no decision to make in a hard moment. It takes up the same space in the mind that the shady thought wanted. And because it is a hymn, it brings something with it: what you love, and who you want to be.',
+        back: 'l2',
+      },
+      {
+        h: 'A prayer can do the same. It is a place to stand, not a switch.',
+        p: 'A short prayer may not make the pull vanish at the first word. It puts you somewhere steady while the wave **rises, peaks and falls**, long enough to choose.',
+        art: ['wave', {}],
+        dx: 'Many people pray in a hard moment, and when the pull does not lift at the first word, they decide the prayer failed. But a prayer in that moment is not a switch to flip the urge off. It is a place to stand. It puts you somewhere steady, with words or with quiet, while the wave **rises, peaks and falls**, as every urge does. By the time it has passed, you are still standing, and the choice is still yours.',
+      },
+      {
+        long: 1,
+        h: 'In AA, growing spiritual practice carried part of the help.',
+        p: 'Adults with drinking problems were followed for over a year. As their spiritual practice grew, they drank less, and **that growth explained part of why AA helped**.',
+        art: ['scene', { k: 'l22-practice' }],
+        fact: { s: 'Study · Kelly and colleagues, 2011', i: [1] },
+        dx: 'A large study followed adults in treatment for drinking problems who went to Alcoholics Anonymous, measuring their spiritual practices and their drinking over fifteen months. People who went to more meetings grew in spiritual practice, things like prayer and quiet reflection, and **that growth explained part of why AA helped** them drink less. Faith was not a side comfort in their recovery. It was part of how the change happened.',
+      },
+      {
+        h: 'Choose yours now, while the stage is calm.',
+        p: 'A hymn, a line of scripture, a short prayer of your own, or a minute of quiet with God. What matters is that it is **ready before you need it**.',
+        art: ['scene', { k: 'l22-choose' }],
+        dx: 'It does not have to be a hymn. For some people it is a line of scripture they know by heart, for others a short prayer in their own words, or a minute of quiet with God. What matters most is that you choose it now, on a calm day, and learn it well, so it is **ready before you need it**. In a hard moment nobody can think of the right words. A song already learned does not have to be thought of. It only has to be started.',
+      },
+    ],
+    today: {
+      h: 'Choose your song or your words today.',
+      l: ['Pick one hymn, scripture or short prayer', 'Learn it by heart this week', 'Start it the moment a thought walks on'],
+    },
+    you: {
+      h: 'What will you play on the stage when a shady thought walks on?',
+      o: [
+        ['A hymn I already love', 'Then you only have to learn it all the way through.'],
+        ['A line of scripture', 'Short and sure. Say it slowly, and say it again.'],
+        ['A short prayer in my own words', 'Your own words come fastest. Keep them short.'],
+        ['A minute of quiet with God', 'Quiet is a stage too, and it can hold you.'],
+      ],
+    },
+    scope:
+      'Packer gave this advice to young Latter-day Saints, and people of many faiths use a hymn or a prayer the same way. The AA study followed adults with drinking problems over more than a year, and it is about faith growing over months, not one prayer. Together they give a hard moment a shape that faith and research both support.',
+    src: [S.packer73, S.kelly11],
   },
 };

@@ -1,6 +1,6 @@
-/* Scenes for lesson 44 told as a story (see story-kit.tsx): "Play it forward". The tale of lesson 41 goes on: Candlewick, the boy
+/* Scenes for lesson 44 told as a story (see story-kit.tsx): "Play it forward". The tale of lesson 41 goes on: Lampwick, the boy
    who says nothing matters, the night coach, the stable, and the hour after kept in the dark. Drawn after Collodi's book of 1883,
-   on its own, with no film in mind. No fire for the urge: Candlewick has a small curl of brown hair, and the lamps are round bulbs. */
+   on its own, with no film in mind. No fire for the urge: Lampwick has a small curl of brown hair, and the lamps are round bulbs. */
 import { useEffect, useState, type ComponentType } from 'react';
 import { Easing } from 'react-native';
 import { Circle, ClipPath, Defs, Ellipse, G, Line, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
@@ -54,7 +54,7 @@ function L44Pino({ x, y, s = 1, dir = 1, fill, face }: { x: number; y: number; s
   );
 }
 
-/* Candlewick: the same body style as Pinocchio and the lesson 41 boys (the kit's Person shape), stretched taller and slimmer, in a soft
+/* Lampwick: the same body style as Pinocchio and the lesson 41 boys (the kit's Person shape), stretched taller and slimmer, in a soft
    muted blue, with relaxed half-closed eyes, an easy smile and a small curl of brown hair (hair, never a flame). He is likeable and lazy.
    pose: pocket (hands in pockets), shrug (elbows out, hands still in pockets) or beckon (one arm waving you on). Origin at the feet, facing right. */
 function L44Wick({
@@ -117,7 +117,7 @@ function L44House({ x, y, w, h, wall, roof, win }: { x: number; y: number; w: nu
   );
 }
 
-/* ---------- 1. Candlewick: nothing matters ---------- */
+/* ---------- 1. Lampwick: nothing matters ---------- */
 function L44WickScene({ k }: { k: Ink }) {
   return (
     <Frame label="Pinocchio and a tall, slim, easygoing boy in blue with a small curl of hair stands beside Pinocchio outside a little schoolhouse, hands in his pockets, giving a lazy shrug">
@@ -141,7 +141,7 @@ function L44WickScene({ k }: { k: Ink }) {
       <Line x1={10} y1={166} x2={290} y2={166} stroke={k.line} strokeWidth={3} strokeLinecap="round" />
       <L44Pino x={68} y={166} s={1.15} fill={k.acc} face={k.bg} />
       <L44Wick x={124} y={166} s={1.3} pose="shrug" lean={4} />
-      <L44Cap k={k} s="Candlewick: nothing matters" />
+      <L44Cap k={k} s="Lampwick: nothing matters" />
     </Frame>
   );
 }
@@ -158,7 +158,7 @@ function L44CoachScene({ k }: { k: Ink }) {
     [286, 62, 1.2],
   ];
   return (
-    <Frame label="On a night road, Pinocchio stops at the roadside and half turns back toward a tiny lit house on a far hill, while Candlewick, the tall slim boy in blue, stands on the step of the waiting coach and waves him on">
+    <Frame label="On a night road, Pinocchio stops at the roadside and half turns back toward a tiny lit house on a far hill, while Lampwick, the tall slim boy in blue, stands on the step of the waiting coach and waves him on">
       <Defs>
         <ClipPath id="l44cn">
           <Rect x={0} y={0} width={300} height={172} rx={14} />

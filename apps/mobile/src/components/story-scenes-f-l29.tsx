@@ -174,30 +174,46 @@ function Wall({ k }: { k: Ink }) {
 /* ---------- one hand on the work ---------- */
 function Trowel({ k }: { k: Ink }) {
   return (
-    <Frame label="A builder close up at the wall of big stone blocks, laying a stone with a trowel in one hand and holding a sheathed sword upright at their side in the other">
+    <Frame label="A builder at a wall of big stone blocks. One hand presses a mason's trowel, a flat steel diamond with a short wooden handle, onto a fresh stone set in a line of gray mortar. The other hand grips a long sheathed sword held upright at their side, with a gold crossguard and pommel, its point resting on the ground">
       <Rect x={10} y={10} width={280} height={162} rx={12} fill={SKY} />
       <Circle cx={250} cy={40} r={24} fill={GOLD} opacity={0.35} />
       <Circle cx={250} cy={40} r={14} fill={GOLD} />
       <Courses x1={150} x2={290} yBottom={172} h={19} w={36} rows={4} />
-      <Rect x={150} y={93} width={46} height={3} rx={1.5} fill="#F3E6C8" />
-      <Rect x={206} y={77} width={36} height={19} rx={1.5} fill={STONE_L} stroke={EDGE} strokeWidth={1.3} />
-      <Rect x={10} y={150} width={140} height={22} rx={0} fill={SAND} opacity={0} />
+      {/* a fresh stone on a thick bed of gray mortar, squeezed out at the edges */}
+      <Path
+        d="M164 99 Q162 94 168 93 L232 93 Q238 94 236 99 Q234 101 228 99.5 L222 102 L214 99.5 L172 99.5 L168 102 Z"
+        fill="#A5A8AD"
+        stroke={BEAR_LINE}
+        strokeWidth={1.2}
+        strokeLinejoin="round"
+      />
+      <Rect x={170} y={72} width={58} height={22} rx={2.5} fill={STONE_L} stroke={BEAR_LINE} strokeWidth={1.5} />
+      <Path d="M200 79 L214 79 M206 87 L222 87" stroke={CREAM} strokeWidth={2} strokeLinecap="round" opacity={0.8} />
 
-      <Rect x={40} y={124} width={8} height={48} rx={3} fill={WOOD_D} stroke={BEAR_LINE} strokeWidth={1.3} />
-      <Rect x={39} y={140} width={10} height={3} fill={GOLD} stroke={BEAR_LINE} strokeWidth={1} />
-      <Rect x={39} y={156} width={10} height={3} fill={GOLD} stroke={BEAR_LINE} strokeWidth={1} />
-      <Rect x={30} y={117} width={28} height={7} rx={3.5} fill={GOLD} stroke={BEAR_LINE} strokeWidth={1.3} />
-      <Rect x={42} y={102} width={4} height={15} fill={WOOD_D} stroke={BEAR_LINE} strokeWidth={1.1} />
-      <Circle cx={44} cy={99} r={4.2} fill={GOLD} stroke={BEAR_LINE} strokeWidth={1.2} />
+      {/* the sword: upright in its sheath, point on the ground, held at the grip */}
+      <Path d="M29 119 L41 119 L40 164 Q40 169 35 169 Q30 169 30 164 Z" fill={WOOD_D} stroke={BEAR_LINE} strokeWidth={1.5} strokeLinejoin="round" />
+      <Rect x={28} y={125} width={14} height={5} rx={1.5} fill={GOLD} stroke={BEAR_LINE} strokeWidth={1.1} />
+      <Rect x={29} y={147} width={12} height={5} rx={1.5} fill={GOLD} stroke={BEAR_LINE} strokeWidth={1.1} />
+      <Rect x={29} y={159} width={12} height={10} rx={4} fill={GOLD} stroke={BEAR_LINE} strokeWidth={1.1} />
+      <Rect x={31.5} y={98} width={7} height={21} rx={2.5} fill={BROWN} stroke={BEAR_LINE} strokeWidth={1.4} />
+      <Path d="M31.5 103 L38.5 106 M31.5 108 L38.5 111 M31.5 113 L38.5 116" stroke={BEAR_LINE} strokeWidth={1} />
+      <Rect x={12} y={113} width={46} height={8} rx={4} fill={GOLD} stroke={BEAR_LINE} strokeWidth={1.5} />
+      <Circle cx={35} cy={92} r={7} fill={GOLD} stroke={BEAR_LINE} strokeWidth={1.5} />
 
-      <Folk x={90} y={172} s={1.9} robe={BLUE} />
-      <Path d="M69 82 Q69 61 90 61 Q111 61 111 82 Q100 73 90 73 Q80 73 69 82 Z" fill={WOOD_D} stroke={BEAR_LINE} strokeWidth={1.4} strokeLinejoin="round" />
-      <Tube fill={BLUE} parts={[['M64 130 L50 112', 9]]} />
-      <Hand x={46} y={110} r={5.5} />
-      <Tube fill={BLUE} parts={[['M116 124 Q138 116 158 98', 9]]} />
-      <Path d="M165 91 L198 92 L168 98 Z" fill={GRAY} stroke={BEAR_LINE} strokeWidth={1.4} strokeLinejoin="round" />
-      <Line x1={158} y1={98} x2={168} y2={94} stroke={WOOD_D} strokeWidth={4} strokeLinecap="round" />
-      <Hand x={158} y={98} r={5.5} />
+      <Folk x={92} y={172} s={1.9} robe={BLUE} />
+      <Path d="M71 82 Q71 61 92 61 Q113 61 113 82 Q102 73 92 73 Q82 73 71 82 Z" fill={WOOD_D} stroke={BEAR_LINE} strokeWidth={1.4} strokeLinejoin="round" />
+      <Tube fill={BLUE} parts={[['M68 132 Q52 128 40 106', 9]]} />
+      <Hand x={36} y={104} r={6.5} />
+
+      {/* the trowel: wooden handle, steel neck, a flat diamond blade pressed onto the stone */}
+      <Tube fill={BLUE} parts={[['M118 126 Q136 126 148 108', 9]]} />
+      <Path d="M148 106 L162 96" stroke={BEAR_LINE} strokeWidth={10} strokeLinecap="round" />
+      <Path d="M148 106 L162 96" stroke={WOOD} strokeWidth={7} strokeLinecap="round" />
+      <Path d="M162 96 L172 89" stroke={BEAR_LINE} strokeWidth={4} strokeLinecap="round" />
+      <Path d="M162 96 L172 89" stroke={GRAY} strokeWidth={2} strokeLinecap="round" />
+      <Path d="M171 89 L194 70 L228 84 L198 99 Z" fill="#D5DCEA" stroke={BEAR_LINE} strokeWidth={1.6} strokeLinejoin="round" />
+      <Path d="M175 88 L222 84" stroke={GRAY} strokeWidth={1.5} strokeLinecap="round" />
+      <Hand x={148} y={106} r={6.5} />
       <Cap k={k} s="One hand on the work" />
     </Frame>
   );

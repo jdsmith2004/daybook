@@ -170,41 +170,56 @@ function OutDoor({ k }: { k: Ink }) {
 }
 
 /* ---------- three kinds of help ---------- */
-function Chair({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+/* a person seated on a chair, standing on (x, y). dir 1 faces right, -1 faces left, 0 faces us. The chair is wood with a dark outline. */
+function Seated({ x, y, s = 1, dir, fill, face }: { x: number; y: number; s?: number; dir: 1 | -1 | 0; fill: string; face: string }) {
+  const line = { stroke: BEAR_LINE, strokeWidth: 1.2 };
+  const gap = { stroke: face, strokeWidth: 1.4 };
   return (
-    <G transform={`translate(${x} ${y}) scale(${s})`}>
-      <Rect x={-6} y={-8} width={2.4} height={8} fill={BROWN} />
-      <Rect x={3.6} y={-8} width={2.4} height={8} fill={BROWN} />
-      <Rect x={-6.5} y={-21} width={13} height={9} rx={2.5} fill={WOOD} stroke={BEAR_LINE} strokeWidth={1.1} />
-      <Rect x={-8} y={-12} width={16} height={5} rx={2} fill={WOOD} stroke={BEAR_LINE} strokeWidth={1.1} />
+    <G transform={`translate(${x} ${y}) scale(${dir === -1 ? -s : s} ${s})`}>
+      {dir === 0 ? (
+        <Rect x={-11} y={-38} width={22} height={26} rx={3} fill={WOOD} {...line} />
+      ) : (
+        <Rect x={-13} y={-38} width={4} height={27} rx={1.5} fill={WOOD} {...line} />
+      )}
+      <Rect x={-11} y={-11} width={4} height={11} fill={BROWN} {...line} />
+      <Rect x={7} y={-11} width={4} height={11} fill={BROWN} {...line} />
+      <Rect x={-13} y={-15} width={26} height={5} rx={2} fill={WOOD} {...line} />
+      {dir === 0 ? (
+        <G>
+          <Rect x={-9} y={-24} width={7} height={24} rx={3.5} fill={fill} {...gap} />
+          <Rect x={2} y={-24} width={7} height={24} rx={3.5} fill={fill} {...gap} />
+          <Path d="M-10 -14 L-10 -26 Q-10 -38 0 -38 Q10 -38 10 -26 L10 -14 Z" fill={fill} {...gap} />
+          <Circle cx={0} cy={-48} r={8.5} fill={fill} {...gap} />
+          <Circle cx={-2.8} cy={-48} r={1.5} fill={face} />
+          <Circle cx={2.8} cy={-48} r={1.5} fill={face} />
+        </G>
+      ) : (
+        <G>
+          <Rect x={0} y={-23} width={17} height={8} rx={4} fill={fill} {...gap} />
+          <Rect x={11} y={-23} width={7} height={23} rx={3.5} fill={fill} {...gap} />
+          <Path d="M-8 -14 L-8 -26 Q-8 -38 2 -38 Q12 -38 12 -26 L12 -14 Z" fill={fill} {...gap} />
+          <Circle cx={3} cy={-48} r={8.5} fill={fill} {...gap} />
+          <Circle cx={7} cy={-48} r={1.5} fill={face} />
+        </G>
+      )}
     </G>
   );
 }
 
 function ThreeHelps({ k }: { k: Ink }) {
-  const wave = (dy: number, o: number) => (
-    <G transform={`translate(0 ${dy})`} opacity={o}>
-      <Wave bx={262} by={158} w={32} h={40} still />
-    </G>
-  );
   return (
-    <Frame label="Three people stand side by side on one ground line. The left one stands beside a small ring of chairs, for a support group. The middle one holds an open map. The right one holds the same map and stands calm, with a small wave rising and falling beside them">
-      <Line x1={14} y1={158} x2={286} y2={158} stroke={k.line} strokeWidth={3} strokeLinecap="round" />
+    <Frame label="Three panels side by side on one ground line. On the left, a support group: three people sit on chairs in a small ring. In the middle, a person stands holding an open map with a dotted route. On the right, a person holds the same map and stands calm, watching a medium-sized wave rise beside them">
+      <Line x1={14} y1={160} x2={286} y2={160} stroke={k.line} strokeWidth={3} strokeLinecap="round" />
 
-      <Chair x={26} y={142} s={0.85} />
-      <Chair x={50} y={142} s={0.85} />
-      <Chair x={12} y={150} s={1.05} />
-      <Chair x={64} y={150} s={1.05} />
-      <Chair x={24} y={160} s={1.25} />
-      <Chair x={52} y={160} s={1.25} />
-      <Person x={100} y={158} s={1.4} fill={k.ink} face={k.bg} />
+      <Ellipse cx={56} cy={157} rx={48} ry={6} fill={k.soft} opacity={0.6} />
+      <Seated x={56} y={147} s={1.05} dir={0} fill={k.muted} face={k.bg} />
+      <Seated x={23} y={160} s={1.2} dir={1} fill={k.ink} face={k.bg} />
+      <Seated x={89} y={160} s={1.2} dir={-1} fill={k.muted} face={k.bg} />
 
-      <Holder x={166} y={158} s={1.4} fill={k.ink} face={k.bg} />
+      <Holder x={148} y={160} s={1.35} fill={k.ink} face={k.bg} />
 
-      <Holder x={226} y={158} s={1.4} fill={k.acc} face={k.bg} />
-      {wave(14, 0.28)}
-      {wave(-10, 0.4)}
-      <Wave bx={262} by={158} w={32} h={40} still />
+      <Holder x={220} y={160} s={1.35} fill={k.acc} face={k.bg} />
+      <Wave bx={254} by={160} w={36} h={40} still />
       <Cap k={k} s="Three kinds of help" />
     </Frame>
   );

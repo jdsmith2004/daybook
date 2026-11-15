@@ -90,7 +90,26 @@ export interface Store {
   putClaim(key: string, row: ClaimRow, was: ClaimRow | null): Promise<boolean>;
   /** removes the claims linked to this person (when the account is closed); how many */
   dropClaims(user: string): Promise<number>;
+  /* the server's own small items for Friends (friends.ts): a partition (a person, or a shared one starting with #) and a sort key
+     starting with #, a JSON value, and an optional time-to-live (seconds). They have no s, so they never show up in a pull. */
+  /** one item's value, or null */
+  auxGet(pk: string, sk: string): Promise<unknown>;
+  /** saves an item; with `fresh`, only when there is none yet (false when there was) */
+  auxPut(pk: string, sk: string, v: unknown, o?: { ttl?: number; fresh?: boolean }): Promise<boolean>;
+  /** every item in a partition whose sort key starts with `prefix` */
+  auxList(pk: string, prefix: string): Promise<{ sk: string; v: unknown }[]>;
+  /** removes these items */
+  auxDel(keys: { pk: string; sk: string }[]): Promise<void>;
 }
+
+const auxVal = (i: Record<string, unknown> | undefined): unknown => {
+  if (!i || typeof i.x !== 'string') return null;
+  try {
+    return JSON.parse(i.x);
+  } catch {
+    return null;
+  }
+};
 
 /** how long an erased log can be brought back */
 export const KEEP_ERASED = 7 * 24 * 3600_000;
@@ -429,6 +448,57 @@ export class DynamoStore implements Store {
     await this.batch(gone.map((sk) => ({ DeleteRequest: { Key: { pk: CLAIMS, sk } } })));
     return gone.length;
   }
+
+  async auxGet(pk: string, sk: string): Promise<unknown> {
+    const q = await this.db.send(
+      new QueryCommand({ TableName: this.table, KeyConditionExpression: 'pk = :p AND sk = :k', ExpressionAttributeValues: { ':p': pk, ':k': sk } }),
+    );
+    const i = q.Items?.[0];
+    /* time-to-live removes items within a day or two of their time: one past it is not there */
+    if (i && typeof i.ttl === 'number' && i.ttl * 1000 < Date.now()) return null;
+    return auxVal(i);
+  }
+
+  async auxPut(pk: string, sk: string, v: unknown, o: { ttl?: number; fresh?: boolean } = {}): Promise<boolean> {
+    try {
+      await this.db.send(
+        new PutCommand({
+          TableName: this.table,
+          Item: { pk, sk, x: JSON.stringify(v), ...(o.ttl ? { ttl: o.ttl } : {}) },
+          ...(o.fresh ? { ConditionExpression: 'attribute_not_exists(pk) OR #t < :now', ExpressionAttributeNames: { '#t': 'ttl' }, ExpressionAttributeValues: { ':now': Math.floor(Date.now() / 1000) } } : {}),
+        }),
+      );
+      return true;
+    } catch (e) {
+      if (e instanceof ConditionalCheckFailedException) return false;
+      throw e;
+    }
+  }
+
+  async auxList(pk: string, prefix: string): Promise<{ sk: string; v: unknown }[]> {
+    const out: { sk: string; v: unknown }[] = [];
+    let start: Record<string, unknown> | undefined;
+    do {
+      const q = await this.db.send(
+        new QueryCommand({
+          TableName: this.table,
+          KeyConditionExpression: 'pk = :p AND begins_with(sk, :x)',
+          ExpressionAttributeValues: { ':p': pk, ':x': prefix },
+          ExclusiveStartKey: start,
+        }),
+      );
+      for (const i of q.Items || []) {
+        if (typeof i.ttl === 'number' && i.ttl * 1000 < Date.now()) continue;
+        out.push({ sk: i.sk as string, v: auxVal(i) });
+      }
+      start = q.LastEvaluatedKey;
+    } while (start);
+    return out;
+  }
+
+  async auxDel(keys: { pk: string; sk: string }[]): Promise<void> {
+    await this.batch(keys.map((k) => ({ DeleteRequest: { Key: { pk: k.pk, sk: k.sk } } })));
+  }
 }
 
 export class MemoryStore implements Store {
@@ -497,6 +567,7 @@ export class MemoryStore implements Store {
       this.erasedCopies.delete(user);
       this.sups.delete(user);
       this.pats.delete(user);
+      this.aux.delete(user);
       return n;
     }
     let kept = this.erasedCopies.get(user);
@@ -579,5 +650,40 @@ export class MemoryStore implements Store {
       }
     }
     return n;
+  }
+
+  aux = new Map<string, Map<string, { v: string; ttl?: number }>>();
+  private auxOf(pk: string) {
+    let m = this.aux.get(pk);
+    if (!m) this.aux.set(pk, (m = new Map()));
+    return m;
+  }
+  /** the clock time-to-live is read against (the tests move it) */
+  auxNow = () => Date.now();
+  private live(x: { ttl?: number } | undefined) {
+    return !!x && !(x.ttl && x.ttl * 1000 < this.auxNow());
+  }
+
+  async auxGet(pk: string, sk: string): Promise<unknown> {
+    const x = this.aux.get(pk)?.get(sk);
+    return this.live(x) ? JSON.parse(x!.v) : null;
+  }
+
+  async auxPut(pk: string, sk: string, v: unknown, o: { ttl?: number; fresh?: boolean } = {}): Promise<boolean> {
+    const m = this.auxOf(pk);
+    if (o.fresh && this.live(m.get(sk))) return false;
+    m.set(sk, { v: JSON.stringify(v), ...(o.ttl ? { ttl: o.ttl } : {}) });
+    return true;
+  }
+
+  async auxList(pk: string, prefix: string): Promise<{ sk: string; v: unknown }[]> {
+    return [...(this.aux.get(pk)?.entries() || [])]
+      .filter(([sk, x]) => sk.startsWith(prefix) && this.live(x))
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([sk, x]) => ({ sk, v: JSON.parse(x.v) }));
+  }
+
+  async auxDel(keys: { pk: string; sk: string }[]): Promise<void> {
+    for (const k of keys) this.aux.get(k.pk)?.delete(k.sk);
   }
 }

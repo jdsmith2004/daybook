@@ -84,7 +84,7 @@ export function LikeAskNight({ onClose }: { onClose: () => void }) {
 export function LikeAsk({ onClose }: { onClose: () => void }) {
   const answer = useAnswer(onClose);
   return (
-    <View style={s.box}>
+    <View style={[s.box, { marginTop: 8 }]}>
       <T v="h2" style={s.c} accessibilityRole="header">
         {LIKE_WORDS.q}
       </T>

@@ -532,7 +532,7 @@ export function StoneCard({
       <View style={[s_.point, { left: x - 16 - 11, backgroundColor: bg }]} />
       <View style={s_.cardTop}>
         <Text style={[s_.cardEye, { color: ink }]}>
-          Lesson {no} · {lmin(L)}
+          Lesson {no} · {lmin(L, stg)}
           {when ? ' · done ' + when : ''}
         </Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} hitSlop={10} style={s_.x}>
@@ -930,6 +930,7 @@ export function LessonMapView({
 /** the next lesson's name beside its stone, toward the middle of the page */
 function NextLabel({ s, land, x, y, k, w, onPress }: { s: MapStone; land: MapLand; x: number; y: number; k: number; w: number; onPress: () => void }) {
   const c = useTheme();
+  const stg = useStore().snap.settings;
   const t = toneOf(c, toneName(land.u));
   const right = land.right;
   /* clear of the ring around the stone (54 from its center, and its line) */
@@ -938,13 +939,13 @@ function NextLabel({ s, land, x, y, k, w, onPress }: { s: MapStone; land: MapLan
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Up next: lesson ${s.n}, ${s.L.title}, ${lmin(s.L)}. Open its card.`}
+      accessibilityLabel={`Up next: lesson ${s.n}, ${s.L.title}, ${lmin(s.L, stg)}. Open its card.`}
       onPress={() => {
         buzz('tap');
         onPress();
       }}
       style={{ position: 'absolute', left, width, top: y - 30 * k, zIndex: 4, alignItems: right ? 'flex-start' : 'flex-end' }}>
-      <Text style={[s_.nextEye, { color: t.text, textAlign: right ? 'left' : 'right' }]}>Up next · {lmin(s.L)}</Text>
+      <Text style={[s_.nextEye, { color: t.text, textAlign: right ? 'left' : 'right' }]}>Up next · {lmin(s.L, stg)}</Text>
       <Text style={[s_.nextT, { color: c.ink, textAlign: right ? 'left' : 'right' }]}>
         {s.n}. {s.L.title}
       </Text>

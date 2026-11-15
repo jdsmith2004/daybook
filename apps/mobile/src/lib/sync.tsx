@@ -39,7 +39,7 @@ import { APPLE_WORDS, CognitoError } from '@daybook/core';
 
 import { track } from '@/lib/events';
 import { apple, appleOffered, appleRevoked, askApple } from './apple';
-import { accessToken, forgetSession, keepApple, loadSession, SignInExpired, signOut, type Session } from './auth';
+import { accessToken, forgetSession, keepApple, loadSession, saveSignInLater, SignInExpired, signOut, type Session } from './auth';
 import { SYNC_URL, syncOffered } from './config';
 import { here } from './here';
 import { useStore } from './store';
@@ -323,6 +323,15 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         code: 'net',
       });
       track('error', { err: 'net' });
+    } else if (e instanceof CognitoError) {
+      /* the sign-in service turned a renewal down for a reason that is not an ended sign-in (busy, or down for a moment) */
+      setStatus({
+        k: 'error',
+        msg: here('Your account’s sign-in did not answer this time. Your changes are kept on this phone and will sync later.'),
+        short: 'Your account’s sign-in did not answer.',
+        code: 'auth ' + e.code,
+      });
+      track('error', { err: 'sync' });
     } else if (e instanceof OddAnswer) {
       setStatus({
         k: 'error',
@@ -540,6 +549,8 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     const sub = AppState.addEventListener('change', (st) => {
       if (st === 'active') {
         paused.current = false;
+        /* a renewed sign-in that could not be saved while the phone locked is saved now (core renew.ts) */
+        saveSignInLater();
         retryRef.current();
       }
     });

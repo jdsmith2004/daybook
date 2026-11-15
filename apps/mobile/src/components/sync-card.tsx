@@ -242,7 +242,14 @@ export function SyncBody() {
       <T tone={st.k === 'error' || st.k === 'expired' ? 'danger' : 'ink'} accessibilityLiveRegion="polite">
         {line}
       </T>
-      {st.k === 'error' || st.k === 'expired' ? <HelpLine lead={here('Your log is safe on this phone.')} subject="Daybook: sync" /> : null}
+      {st.k === 'error' && st.code ? (
+        <T v="small" tone="muted" selectable>
+          Code: {st.code}
+        </T>
+      ) : null}
+      {st.k === 'error' || st.k === 'expired' ? (
+        <HelpLine lead={here('Your log is safe on this phone.')} subject={'Daybook: sync' + (st.k === 'error' && st.code ? ' (' + st.code + ')' : '')} />
+      ) : null}
       {st.k === 'expired' ? (
         <Button label="Sign in again" onPress={() => sync.signInNow({ why: 'in', email: sync.email })} />
       ) : st.k === 'need' && TIP_ON ? (

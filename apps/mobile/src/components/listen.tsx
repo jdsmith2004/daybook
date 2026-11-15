@@ -8,7 +8,7 @@ import { lfmt, voiceAt, voiceKey, voiceSaid, VOICES, type Settings } from '@dayb
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import * as Speech from 'expo-speech';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Icon, InkContext, T } from '@/components/ui';
@@ -17,6 +17,17 @@ import { getListen, RATES, setListen, useListen } from '@/lib/listen-prefs';
 import { getClip } from '@/lib/voice-clip';
 import { font, useTheme } from '@/lib/theme';
 
+/* whether a color is light: the filled speed takes dark words on it */
+function light(color: string): boolean {
+  const m = /^#([0-9a-f]{6})$/i.exec(color);
+  const r = /^rgba?\(([^)]+)\)$/.exec(color);
+  const [x, y, z] = m
+    ? [parseInt(m[1], 16) >> 16, (parseInt(m[1], 16) >> 8) & 255, parseInt(m[1], 16) & 255]
+    : r
+      ? r[1].split(',').map(Number)
+      : [255, 255, 255];
+  return 0.299 * x + 0.587 * y + 0.114 * z > 150;
+}
 /* a color with less of it: the words the voice has not reached yet */
 function fade(color: string, a: number): string {
   const m = /^#([0-9a-f]{6})$/i.exec(color);
@@ -92,6 +103,18 @@ const rateName = (r: number) => String(r).replace(/^0\./, '.') + '×';
     tap, and the speed and the voice are remembered (lib/listen-prefs.ts) */
 export function ListenButton({ on, onPress, ink }: { on: boolean; onPress: () => void; ink: string }) {
   const lp = useListen();
+  const [speeds, setSpeeds] = useState(false);
+  const grow = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!speeds) return;
+    grow.setValue(0);
+    Animated.spring(grow, { toValue: 1, useNativeDriver: Platform.OS !== 'web', speed: 22, bounciness: 6 }).start();
+  }, [speeds, grow]);
+  useEffect(() => {
+    if (!on) setSpeeds(false);
+  }, [on]);
+  /* the filled speed's words: dark on a light ink, white on a dark one */
+  const onInk = light(ink) ? '#15123A' : '#FFFFFF';
   const pill = (pressed: boolean, lit?: boolean) => [s.btn, { borderColor: ink, opacity: pressed ? 0.7 : 1 }, lit && s.btnOn];
   if (!on)
     return (
@@ -113,7 +136,33 @@ export function ListenButton({ on, onPress, ink }: { on: boolean; onPress: () =>
     0,
     VOICES.findIndex((v) => v.id === lp.voice),
   );
-  const ri = Math.max(0, (RATES as readonly number[]).indexOf(lp.rate));
+  /* the speeds open in place of the controls, one tap each (the owner, November 15, 2026: "let me put the speed higher like up to
+     2.0 maybe i tap it and it gives options ... but make it look really nice still"): a single tray, the one in use filled */
+  if (speeds)
+    return (
+      <Animated.View
+        style={[s.tray, { borderColor: ink, opacity: grow, transform: [{ scale: grow.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) }] }]}>
+        {RATES.map((r) => {
+          const now = r === lp.rate;
+          return (
+            <Pressable
+              key={r}
+              onPress={() => {
+                buzz('tap');
+                setListen({ rate: r });
+                setTimeout(() => setSpeeds(false), 180);
+              }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: now }}
+              accessibilityLabel={'Speed ' + r + ' times'}
+              hitSlop={4}
+              style={({ pressed }) => [s.speed, now && { backgroundColor: ink }, { opacity: pressed ? 0.7 : 1 }]}>
+              <Text style={[s.speedT, { color: now ? onInk : ink }]}>{rateName(r)}</Text>
+            </Pressable>
+          );
+        })}
+      </Animated.View>
+    );
   return (
     <View style={s.row}>
       <Pressable
@@ -131,10 +180,10 @@ export function ListenButton({ on, onPress, ink }: { on: boolean; onPress: () =>
       <Pressable
         onPress={() => {
           buzz('tap');
-          setListen({ rate: RATES[(ri + 1) % RATES.length] });
+          setSpeeds(true);
         }}
         accessibilityRole="button"
-        accessibilityLabel={'Speed ' + lp.rate + ' times. Tap to change.'}
+        accessibilityLabel={'Speed ' + lp.rate + ' times. Tap to choose.'}
         hitSlop={6}
         style={({ pressed }) => [pill(pressed), s.chip]}>
         <Text style={[s.btnT, { color: ink }]}>{rateName(lp.rate)}</Text>
@@ -349,4 +398,7 @@ const s = StyleSheet.create({
   round: { width: 44, minHeight: 44, paddingHorizontal: 0, justifyContent: 'center' },
   chip: { minHeight: 44, paddingHorizontal: 12 },
   b: { fontFamily: font.bodyBold },
+  tray: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 2, padding: 3, borderRadius: 999, borderWidth: 1.5 },
+  speed: { minWidth: 44, height: 38, paddingHorizontal: 6, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  speedT: { fontFamily: font.bodySemi, fontSize: 15 },
 });

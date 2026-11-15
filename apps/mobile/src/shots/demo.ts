@@ -25,6 +25,12 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   const SLIPS: Record<string, number[]> = { comeback: [-6, -4, -2], climb2: [-7, -5, -3], climb3: [-8, -6, -4], longrun: [-2] };
   const late = (q && SLIPS[q]) || [];
   const grad = q === 'grad';
+  /* ?demo=month: a full month of what people really do, for the Pattern cards: urges at their own hours with what set them off, two
+     slips, a lesson on most days, mornings that tell the night, and hard hours held (no feelings named, as most people name none) */
+  const month = q === 'month';
+  const MONTH_SLIPS = [day(DEMO.day, -17), day(DEMO.day, -9)];
+  const URGE_AT = ['21:40', '22:15', '14:30', '23:05', '10:20', '22:50'];
+  const URGE_WHY = ['late', 'stress', 'bored', 'tired', 'scroll', 'late'];
   const start = grad ? '2026-06-25' : '2026-09-08';
   const st = {
     ...defaultSettings(start),
@@ -57,10 +63,13 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     const d = day(start, i);
     if (d >= DEMO.day) break;
     const events = [];
-    if (i % 5 === 0) events.push(ev('21:30', 'rode', i % 2 ? 'Stressed' : 'Bored'));
+    if (month) {
+      if (i % 2 === 0) events.push(ev(URGE_AT[i % 6]!, 'rode', URGE_WHY[(i / 2) % 6]!));
+      if (MONTH_SLIPS.includes(d)) events.push({ ...ev(i % 2 ? '23:30' : '00:40', 'slipped', i % 2 ? 'late' : 'tired'), id: 'ms' + i });
+    } else if (i % 5 === 0) events.push(ev('21:30', 'rode', i % 2 ? 'Stressed' : 'Bored'));
     /* the one slip, with what was going on before it and how it felt after (the studio opens its comeback pages on it) */
     if (late.some((n) => day(DEMO.day, n) === d)) events.push({ ...ev('23:10', 'slipped', 'lonely'), id: 'late' + i });
-    else if (d === '2026-09-12') events.push({ ...ev('23:50', 'slipped', 'lonely'), id: 'slip', fa: 'flat' });
+    else if (!month && d === '2026-09-12') events.push({ ...ev('23:50', 'slipped', 'lonely'), id: 'slip', fa: 'flat' });
     else if (hard && (i * 37) % 11 < 5) {
       events.push({ ...ev('22:40', 'slipped', 'tired'), id: 'slip' + i });
       if (i % 9 === 4) events.push({ ...ev('23:55', 'slipped', 'tired'), id: 'slip' + i + 'b' });
@@ -69,7 +78,9 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
       d,
       events,
       checkin:
-        i % 5 === 4 ? null : { m: 6 + (i % 4), c: 6, e: 6 + (i % 3), s: 4 - (i % 3), h: 7, so: i % 3 === 0 ? 'Y' : 'N', ro: 'N', n: '', done: true, at: 0 },
+        i % 5 === 4 || (month && i % 4)
+          ? null
+          : { m: 6 + (i % 4), c: 6, e: 6 + (i % 3), s: 4 - (i % 3), h: 7, so: i % 3 === 0 ? 'Y' : 'N', ro: 'N', n: '', done: true, at: 0 },
       p: {
         w: [],
         wd: false,
@@ -78,7 +89,9 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
         m: false,
         tl: [],
         po: null,
-        ls: i % 5 === 0 && lessons.length ? [lessons.shift()] : [],
+        ls: month ? (i % 5 === 2 ? [] : ['l' + ((i % 30) + 1)]) : i % 5 === 0 && lessons.length ? [lessons.shift()] : [],
+        ...(month && i % 4 === 1 ? { hw: i % 3 ? 22 : 21 } : {}),
+        ...(month && i > 0 && i % 6 !== 5 ? { ms: { at: 1, set: 1, n: MONTH_SLIPS.includes(day(start, i - 1)) ? 'slip' : 'free' } } : {}),
         lv: RECENT.includes(d) ? ['l2'] : [],
         ov: {},
       },

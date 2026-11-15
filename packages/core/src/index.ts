@@ -70,6 +70,7 @@ export * from './apple-sign-in';
 export * from './rekindle-learn';
 export * from './pattern';
 export * from './pattern-cards';
+export * from './pattern-work';
 export * from './pattern-offer';
 export * from './sunday';
 export * from './when';

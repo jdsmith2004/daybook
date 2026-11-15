@@ -2,7 +2,7 @@
    journal's own night page, so it reads as the same quiet room. Top to bottom: three numbers with a word under each (entries this year,
    days written, words written), a small flame by the words that grows a little as they do; the month, a warm dot on each day written,
    swiped for the months before; and the feelings named most often, five bars on one baseline with the word at the start and the count at
-   the end, each in its feeling's own color. Empty, it is the same page in gray: zeros, an empty month, five gray bars with no words. */
+   the end, each in its feeling's own color. Empty, it is the same page in gray: zeros, an empty month, five gray bars with no words, and one line on how the feelings fill. */
 import { gameCompute, jnInsights, jnMonth, jnMonths, JN_TOP, type DayKey } from '@daybook/core';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useRef, useState } from 'react';
@@ -69,7 +69,8 @@ export default function Insights() {
 
           <View style={s.feels}>
             <Text style={s.h}>Felt most often</Text>
-            <Bars top={ins.top} empty={empty} />
+            {empty || !ins.top.length ? <Text style={s.fill}>Pick a feeling when you write, and the ones you feel most show here.</Text> : null}
+            <Bars top={ins.top} empty={empty || !ins.top.length} />
           </View>
         </View>
       </ScrollView>
@@ -273,6 +274,7 @@ const s = StyleSheet.create({
   today: { color: JN.ink, fontFamily: font.bodySemi },
   dot: { width: 7, height: 7, borderRadius: 4 },
   feels: { gap: 14 },
+  fill: { fontFamily: font.body, fontSize: 15, lineHeight: 20, color: JN.quiet },
   bars: { gap: 10 },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   barW: { width: 116, fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 19, color: JN.ink },

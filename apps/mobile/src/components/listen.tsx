@@ -7,15 +7,32 @@
 import { lfmt, voiceAt, voiceKey, voiceSaid, VOICES, type Settings } from '@daybook/core';
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import * as Speech from 'expo-speech';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform, Pressable, StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { Text } from '@/components/text';
-import { Icon, T } from '@/components/ui';
+import { Icon, InkContext, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { getListen, RATES, setListen, useListen } from '@/lib/listen-prefs';
 import { getClip } from '@/lib/voice-clip';
-import { font } from '@/lib/theme';
+import { font, useTheme } from '@/lib/theme';
+
+/* a color with less of it: the words the voice has not reached yet */
+function fade(color: string, a: number): string {
+  const m = /^#([0-9a-f]{6})$/i.exec(color);
+  if (m) {
+    const n = parseInt(m[1], 16);
+    return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
+  }
+  const r = /^rgba?\(([^)]+)\)$/.exec(color);
+  if (r) {
+    const [x, y, z, o = '1'] = r[1].split(',').map((t) => t.trim());
+    return `rgba(${x},${y},${z},${Number(o) * a})`;
+  }
+  return color;
+}
+/* on the web, each word eases up to full ink instead of snapping */
+const GLIDE = (Platform.OS === 'web' ? { transitionProperty: 'color', transitionDuration: '220ms' } : null) as TextStyle | null;
 
 /** Listen is offered everywhere now: the recordings play on iOS, Android and the web, and the phone's own voice covers the rest */
 export const LISTEN_OK = true;
@@ -186,8 +203,10 @@ export function SpokenCard({
     const still = () => alive && live.current === me;
     /* switched voice partway through: the new voice picks up at the word the old one was on */
     const from = nowRef.current > 0 && nowRef.current < said.length ? nowRef.current : -1;
-    /* the phone's own voice, when there is no recording to be had */
-    me.speak = () => {
+    /* the phone's own voice, when there is no recording to be had. It is handed to the play and pause effect only once the recording
+       is known to be missing: handed over while the recording was still loading, a tap or a new card started both voices at once,
+       and the phone's voice talked first (the owner heard the old voice on the November 14 build) */
+    const speakNow = () => {
       void Speech.stop();
       if (settings.current.paused) return;
       void bestVoice().then((v) => {
@@ -214,8 +233,10 @@ export function SpokenCard({
       hush();
       const clip = await getClip(voiceKey(said, voice));
       if (!still()) return;
-      if (!clip) return me.speak?.();
-      me.speak = null;
+      if (!clip) {
+        me.speak = speakNow;
+        return speakNow();
+      }
       await loud();
       if (!still()) return;
       const p = thePlayer(clip.uri);
@@ -277,19 +298,21 @@ export function SpokenCard({
   }, [on, paused, rate, again]);
   /* leaving the lesson, or turning Listen off: the sound guide's own way again */
   useEffect(() => (on ? () => void quiet() : undefined), [on]);
-  /* the word whose span holds the place being said */
-  const lit = (w: Word, next?: Word) => now >= w.at && now < (next ? next.at : w.at + w.t.length);
-  /* the light sits on the word alone, not on the space after it */
+  /* the scripture reader's way, like Apple Music (the owner, November 15, 2026: "it like has a beautiful karaoke view. I'd like to copy
+     the play view from that"): once the voice starts, the words still to come are faint, and each word comes up to full ink as it is
+     said, so the eye rides just behind the voice. Only the color changes, so no line ever moves. */
+  const inkCx = useContext(InkContext);
+  const c = useTheme();
+  const ink = (inkCx && inkCx.ink) || c.ink;
+  const faint = useMemo(() => fade(ink, 0.42), [ink]);
+  /* a word is reached once the place being said is inside it */
+  const reached = (w: Word) => now >= w.at;
   const draw = (ws: Word[]) =>
-    ws.map((w, i) => {
-      const word = w.t.trimEnd();
-      return (
-        <Text key={i} style={w.b ? s.b : undefined}>
-          <Text style={lit(w, ws[i + 1]) ? s.lit : undefined}>{word}</Text>
-          {w.t.slice(word.length)}
-        </Text>
-      );
-    });
+    ws.map((w, i) => (
+      <Text key={i} style={[w.b ? s.b : undefined, now >= 0 && { color: reached(w) ? ink : faint }, GLIDE]}>
+        {w.t}
+      </Text>
+    ));
   if (!on)
     return (
       <>
@@ -326,6 +349,4 @@ const s = StyleSheet.create({
   round: { width: 44, minHeight: 44, paddingHorizontal: 0, justifyContent: 'center' },
   chip: { minHeight: 44, paddingHorizontal: 12 },
   b: { fontFamily: font.bodyBold },
-  /* the word being said: a warm light behind it, like a finger under the line */
-  lit: { backgroundColor: 'rgba(255,210,90,0.45)', borderRadius: 4 },
 });

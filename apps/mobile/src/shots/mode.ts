@@ -44,7 +44,8 @@ if (typeof window !== 'undefined') {
      that is not a number froze the page */
   const asked = new RealDate(q.get('at') || '').getTime();
   const at = Number.isFinite(asked) ? asked : new RealDate(DEMO.at).getTime();
-  Object.defineProperty(window, 'localStorage', { value: new Mem(demoStorage(at, theme)), configurable: true });
+  /* What is new counts as seen (a version past any real one), so no update page opens over the screen being shown */
+  Object.defineProperty(window, 'localStorage', { value: new Mem({ ...demoStorage(at, theme), 'daybook.seenVersion': '99.0.0' }), configurable: true });
   Object.defineProperty(window, 'sessionStorage', { value: new Mem({}), configurable: true });
 
   /* the clock: the demo moment, moving on from there as the page runs (so animations and timers still work) */

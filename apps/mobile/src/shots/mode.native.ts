@@ -28,6 +28,8 @@ globalThis.Date = DemoDate as unknown as DateConstructor;
    before any screen reads it. */
 const store = demoStorage(at, 'auto');
 store['daybook.notify'] = JSON.stringify(notifyQuiet(notifyMemNew(), logicalKey(at, 4)));
+/* and What is new has been seen (a version past any real one), so no update page opens over Today */
+store['daybook.seenVersion'] = '99.0.0';
 AsyncStorage.clear().catch(() => undefined);
 AsyncStorage.multiSet(Object.entries(store)).catch(() => undefined);
 

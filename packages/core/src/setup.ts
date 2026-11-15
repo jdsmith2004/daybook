@@ -157,7 +157,9 @@ export function obReasonOpts(a: SetupAnswers, st: Settings | null, redo: boolean
 }
 /** the reasons picked, with the one written in */
 export function obReasonList(a: SetupAnswers): string[] {
-  const list = (a.rs || []).slice();
+  /* a walk-through starts with the reasons kept (obPrefill): one that a "who for" pick gave is dropped when that pick is taken off */
+  const picked = Array.isArray(a.for) ? (a.for as string[]) : null;
+  const list = (a.rs || []).filter((t) => !picked || !OB_FOR.some((x) => x[3] === t && picked.indexOf(x[0]) < 0));
   obForReasons(a).forEach((t) => {
     if (!list.some((x) => sameReason(x, t))) list.push(t);
   });
@@ -864,7 +866,7 @@ const OB_SAY: Record<string, string> = {
   sos: 'When an urge hits, tap SOS. Try it now, while it is calm. It takes a few seconds.',
   habit: 'Pick the closest one. I can help with each.',
   freq: 'Rough is fine. Only you see this.',
-  when: 'Pick any. I will be ready for these.',
+  when: 'I will be ready for these.',
   for: 'On a hard night, I will remind you.',
   faith: 'It changes which lessons come up.',
   tonight: 'Set it now, while it is easy.',

@@ -61,7 +61,7 @@ export const WHATS_NEW: { v: string; items: NewItem[] }[] = [
       },
       {
         t: 'Helping Daybook get better',
-        line: 'Daybook now learns how the app is used, anonymously. Never your journal, notes or words. More, Anonymous data, turns it off.',
+        line: 'Daybook now learns how the app is used, anonymously. Never your journal, notes or words. Settings, Anonymous data, turns it off.',
         art: 'chart',
       },
       {

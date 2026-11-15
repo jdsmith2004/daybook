@@ -3,7 +3,7 @@
    November 13, 2026): the question at the top with the flame, a box to write your own near the top (its Save beside it, since
    the keyboard covers the bottom), and the starter sentences from core OB_BE low, where the thumb is. Saving sets
    settings.becoming the way My plan does (core setField), and the flame says the sentence back. No account: it is care. */
-import { BE_LEN, gameCompute, OB_BE, setField } from '@daybook/core';
+import { BE_LEN, gameCompute, keepOwn, OB_BE, ownChoices, setField } from '@daybook/core';
 import { Redirect } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -35,8 +35,10 @@ export default function Becoming() {
   const st = snap.settings;
   const had = tidy(String(st?.becoming || ''));
   /* what is picked: a starter, or the person's own words (a starter typed out by hand counts as the starter) */
-  const [pick, setPick] = useState<string>(OB_BE.indexOf(had) >= 0 ? had : '');
-  const [own, setOwn] = useState<string>(OB_BE.indexOf(had) >= 0 ? '' : had);
+  /* the starters, then every sentence the person wrote before (core saved-answers.ts), and the one saved now, so none is lost */
+  const [opts] = useState(() => ownChoices(st, 'become', OB_BE, had ? [had] : []));
+  const [pick, setPick] = useState<string>(had);
+  const [own, setOwn] = useState<string>('');
   const [said, setSaid] = useState<string | null>(null);
   const [pulse, setPulse] = useState(0);
   const level = useMemo(() => (st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1), [st, snap.days, snap.reviews, tk]);
@@ -46,7 +48,7 @@ export default function Becoming() {
   const cur = tidy(own) || pick;
   const save = () => {
     if (!cur) return;
-    apply((x) => ({ st: setField(x, 'becoming', cur) }));
+    apply((x) => ({ st: keepOwn(setField(x, 'becoming', cur), 'become', cur, OB_BE) }));
     buzz('lit');
     setPulse((n) => n + 1);
     setSaid(cur);
@@ -135,7 +137,7 @@ export default function Becoming() {
       <Middle>{null}</Middle>
       <Say text="Say who you are, not what you avoid. I will show it to you on hard days." />
       <View style={{ gap: 8 }}>
-        {OB_BE.map((x) => {
+        {opts.map((x) => {
           const on = !tidy(own) && pick === x;
           return (
             <Answer

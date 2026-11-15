@@ -119,7 +119,8 @@ describe('the three flames, and the comeback count', () => {
     const day = addDays(K, 2);
     const all = core.moments(d, st, {}, day, at(day, 9));
     const cb = all.find((x) => x.k === 'comeback')!;
-    const next = core.openTile(d, st, day, at(day, 9));
+    /* the comeback leads on to Today's one next step (next-step.ts) */
+    const next = core.todayLine(d, st, {}, day, at(day, 9)).next;
     expect(cb.btn).toBe(next ? next.btn : 'Nice');
     if (next) expect([cb.go, cb.nx]).toEqual([next.go, next.head]);
     expect(core.moments(d, st, {}, day, at(day, 9), { comebackSeen: K }).some((x) => x.k === 'comeback')).toBe(false);

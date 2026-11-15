@@ -27,6 +27,8 @@ import {
   habitOf,
   safetyFor,
   faithOut,
+  keepOwn,
+  ownChoices,
 } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
@@ -250,6 +252,10 @@ function IfThenForm({
   onRemove?: () => void;
 }) {
   const c = useTheme();
+  /* the ideas, then every if and then the person wrote before, here or in the Sunday review (core saved-answers.ts) */
+  const { snap, apply } = useStore();
+  const whenIdeas = ownChoices(snap.settings, 'when', WHEN_IDEAS);
+  const thenIdeas = ownChoices(snap.settings, 'then', THEN_IDEAS);
   const [when, setWhen] = useState(when0);
   const [then, setThen] = useState(then0);
   const [ask, setAsk] = useState(false);
@@ -270,7 +276,7 @@ function IfThenForm({
       />
       {when0 ? null : (
         <Packed>
-          {WHEN_IDEAS.map((x) => (
+          {whenIdeas.map((x) => (
             <Chip key={x} label={x} on={when.trim() === x} onPress={() => setWhen(x)} />
           ))}
         </Packed>
@@ -290,7 +296,7 @@ function IfThenForm({
         />
         {then0 ? null : (
           <View>
-            {THEN_IDEAS.map((x) => {
+            {thenIdeas.map((x) => {
               const on = then.trim() === x;
               return (
                 <Pressable
@@ -309,7 +315,15 @@ function IfThenForm({
             })}
           </View>
         )}
-        <Button label={save} disabled={!ok} onPress={() => onSave(when, then)} />
+        <Button
+          label={save}
+          disabled={!ok}
+          onPress={() => {
+            onSave(when, then);
+            /* after the save, which may hand over settings read before it: these read the latest */
+            apply((cur) => ({ st: keepOwn(keepOwn(cur, 'when', when, WHEN_IDEAS), 'then', then, THEN_IDEAS) }));
+          }}
+        />
       </KeepAbove>
       <Pressable accessibilityRole="button" onPress={onCancel} style={s.remove}>
         <T v="small" style={{ fontFamily: font.bodySemi, textDecorationLine: 'underline' }}>

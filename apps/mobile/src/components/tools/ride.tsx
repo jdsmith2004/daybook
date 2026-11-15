@@ -1,5 +1,5 @@
 /* Ride the wave: Get curious, Name the thought, Play it forward. Ported from the legacy SCENES.curious, thought and forward. */
-import { CU_BODY, CU_CHG, CU_D, CU_MS, CU_SAY, cuLine, FWD_A, FWD_B, FWD_TOMORROW, THOUGHTS, thoughtIn } from '@daybook/core';
+import { CU_BODY, CU_CHG, CU_D, CU_MS, CU_SAY, cuLine, FWD_A, FWD_B, FWD_TOMORROW, keepOwn, ownOf, THOUGHTS, thoughtIn } from '@daybook/core';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
@@ -16,6 +16,7 @@ import { breathAt, useBreathSeconds, type Steps } from '@/lib/breath';
 import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
+import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
 import type { ToolProps } from './types';
@@ -293,6 +294,14 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
   const c = useTheme();
   const [writing, setWriting] = useState(false);
   const [own, setOwn] = useState('');
+  /* thoughts written before are tiles of their own, kept for good (core saved-answers.ts) */
+  const { snap, apply } = useStore();
+  const tiles: [string, string][] = [
+    ...(THOUGHTS as [string, string][]),
+    ...ownOf(snap.settings, 'thought')
+      .filter((t) => !THOUGHTS.some((y) => y[1].toLowerCase() === t.toLowerCase()))
+      .map((t): [string, string] => ['own:' + t, t]),
+  ];
   const reduce = useReducedMotion();
   const [gone, setGone] = useState(false);
   /* saying it fast, over and over, for 20 seconds: when it started (null when not saying it) */
@@ -329,6 +338,14 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
                 onPress={() => {
                   const t = own.replace(/\s+/g, ' ').trim().slice(0, 80);
                   if (t) {
+                    apply((cur) => ({
+                      st: keepOwn(
+                        cur,
+                        'thought',
+                        t,
+                        THOUGHTS.map((y) => y[1]),
+                      ),
+                    }));
                     setText(t);
                     setWriting(false);
                   }
@@ -340,10 +357,10 @@ export function Thought({ finish, text, setText }: ToolProps & { text: string | 
         ) : null}
         <Dock>
           <Tiles
-            list={THOUGHTS}
+            list={tiles}
             cur={null}
             onPick={(v) => {
-              const x = THOUGHTS.find((y) => y[0] === v);
+              const x = tiles.find((y) => y[0] === v);
               if (x) {
                 setText(x[1]);
                 buzz('tap');

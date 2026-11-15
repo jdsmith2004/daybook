@@ -1,7 +1,7 @@
 /* The made-up log the screenshot studio shows (dev only): someone about six weeks in, whose flame is still a flame. They started on September 8, the day
    they set as their quit date, rode out an urge every few days, slipped once in September (lonely, late at night) and kept going, checked in most evenings and
    did a lesson now and then. Every value is fixed, so every shot is the same each time. Nothing here is anyone's real data. */
-import { defaultSettings, keepHard, logicalKey, normDay, normSettings, riskToKeep, type Days } from '@daybook/core';
+import { answerNight, defaultSettings, keepHard, logicalKey, normDay, normSettings, riskToKeep, setTonight, type Days } from '@daybook/core';
 
 import { DEMO } from './config';
 
@@ -85,6 +85,9 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   for (const k in o) if (k.startsWith('daybook:days/')) days[k.slice(13)] = normDay(o[k], k.slice(13));
   const tk = logicalKey(at, sn.rollover);
   for (let x = riskToKeep(days, sn, tk, at), n = 0; x && n < 4; x = riskToKeep(days, sn, tk, at), n++) days = keepHard(days, x.k, x.r.win.start, at);
+  /* this morning is already set (last night free, tonight's reason and time), as a person who opens Daybook every morning has it, so the
+     pictures open on Today and not on the morning page over it */
+  days = setTonight(answerNight(days, sn, tk, 'free', at), sn, tk, { r: st.reasons[0]!, nt: '22:30' }, at).days;
   const out: Record<string, string> = { 'daybook:settings': JSON.stringify(st) };
   for (const k in days) out['daybook:days/' + k] = JSON.stringify(days[k]);
   /* a few journal entries over the last week and a half, each started with a feeling, one with only the feeling */

@@ -8,7 +8,7 @@
       "bg": "night",
       "theme": "light",
       "top": 0.362,
-      "playTop": 0.15,
+      "playTop": 0.25,
       "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
       "hero": "19",
       "heroSize": 0.88,

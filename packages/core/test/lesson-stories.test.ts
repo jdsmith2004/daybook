@@ -12,7 +12,7 @@ const SWEAR = /\b(hell|damn|crap|sucks?|screw(ed)?|pissed|freaking)\b/i;
 const wordsOf = (S: Story): string[] => [
   S.title,
   S.key,
-  ...S.tell.flatMap((t) => (t.k === 'guess' || t.k === 'ask' ? [t.h, ...t.o.flat()] : t.k === 'flip' ? [t.think, t.see] : [t.h, t.p || ''])),
+  ...S.tell.flatMap((t) => (t.k === 'guess' || t.k === 'ask' ? [t.h, ...t.o.flat()] : t.k === 'flip' ? [t.think, t.see] : [t.h, t.p || '', t.dx || ''])),
   S.today.h,
   ...(S.today.l || []),
   S.you.h,
@@ -63,6 +63,14 @@ describe.each(Object.values(STORIES).map((S) => [S.id, S] as const))('%s', (id, 
     wordsOf(S).forEach((w) => {
       expect(CLOCK.test(w), 'a clock time or a bed: ' + w).toBe(false);
       expect(SWEAR.test(w), 'a swear word: ' + w).toBe(false);
+    });
+  });
+
+  it('tells a card in full in Deep: longer than the short telling, never a copy of it', () => {
+    S.tell.forEach((t) => {
+      if (t.k && t.k !== 'say') return;
+      if (!t.dx) return;
+      expect(t.dx.length, 'Deep goes further than Long: ' + t.h).toBeGreaterThan((t.p || '').length * 1.4);
     });
   });
 

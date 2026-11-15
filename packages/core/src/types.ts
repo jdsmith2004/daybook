@@ -181,7 +181,11 @@ export interface Settings {
     notes: Record<string, string>;
     faith: 'mix' | 'first' | 'after';
     faithSet: boolean;
-    len: '' | 'q' | 'f';
+    len: '' | 'q' | 'f' | 'd';
+    /** Deep lessons (about 10 minutes) turned on in Settings: every lesson then offers Deep beside Short and Long */
+    deep?: boolean;
+    /** how many times each length was picked; the one picked most is marked first (setup.ts lessonLen) */
+    lens?: Partial<Record<'q' | 'f' | 'd', number>>;
     prac: Record<string, 1>;
     picks: Record<string, string>;
     wr: Record<string, { a: string[]; u: number }>;

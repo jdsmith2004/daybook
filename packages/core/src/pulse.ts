@@ -123,7 +123,7 @@ export function pulseMeaning(k: string): string {
     sunrise: 'Finished the sunrise check',
     rk_small: 'Did a Rekindle small thing',
     rk_phone: 'Put the phone away for a Rekindle night',
-    goodnight: 'Said Goodnight in the wind-down',
+    goodnight: 'Said Good night in the wind-down',
     urge_logged: 'Logged an urge',
     slip_logged: 'Logged a slip',
     feedback: 'Sent feedback',

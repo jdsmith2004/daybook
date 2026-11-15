@@ -39,8 +39,9 @@ import {
   lessonLast,
   OB_CREED,
   setFaith,
-  lessonLen,
-  setLessonLen,
+  deepOn,
+  DEEP_READY,
+  setDeep,
   NIGHT_TIMES,
   PULL_LIFT,
   PULL_LONG,
@@ -403,17 +404,27 @@ function useParts(): Partial<Record<PartId, Part | null>> | null {
     lessons: {
       icon: 'book',
       title: 'Lesson length',
-      value: lessonLen(st) === 'f' ? 'Long' : 'Short',
+      value: deepOn(st) ? 'Deep on' : 'Asks each time',
       body: (
-        <SetGroup head="How long should a lesson be?" foot="Short plays the main idea and one check. Long adds the science and the questions behind it.">
-          <SetPick
-            options={[
-              ['q', 'Short, about 2 minutes'],
-              ['f', 'Long, about 5 minutes'],
-            ]}
-            value={lessonLen(st)}
-            onPick={(v) => v && apply({ st: setLessonLen(st, v) })}
-          />
+        /* every lesson asks its length (core lessonLen); Deep, the 10-minute lesson, is offered only here, never on a lesson or in a
+           nudge, and only once every lesson has its fuller telling (core DEEP_READY) */
+        <SetGroup
+          head="Each lesson asks how long you want it"
+          foot={
+            DEEP_READY
+              ? 'Short is about 2 minutes and Long about 5. Deep, about 10, tells each part of the story in full.'
+              : 'Short is about 2 minutes and Long about 5. The one you pick most is marked first.'
+          }>
+          {DEEP_READY ? (
+            <SetPick
+              options={[
+                ['off', 'Short and Long'],
+                ['on', 'Short, Long and Deep'],
+              ]}
+              value={deepOn(st) ? 'on' : 'off'}
+              onPick={(v) => v && apply({ st: setDeep(st, v === 'on') })}
+            />
+          ) : null}
         </SetGroup>
       ),
     },

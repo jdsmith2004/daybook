@@ -56,7 +56,7 @@ export function windLine(st: Settings, leftToOff: number, p: Play | null | undef
 export function windWhen(st: Settings, leftToOff: number): string {
   const off = fmtClock(st.screensOff);
   if (leftToOff > 0 && leftToOff <= 600) return `Screens off at ${off} · in ${fmtLeft(leftToOff)}`;
-  if (leftToOff <= 0 && leftToOff > -300) return `Past ${off}. Goodnight still counts.`;
+  if (leftToOff <= 0 && leftToOff > -300) return `Past ${off}. Good night still counts.`;
   return `Screens off at ${off}`;
 }
 

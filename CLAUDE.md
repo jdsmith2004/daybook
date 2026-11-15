@@ -169,7 +169,14 @@ need, without letting the screen turn into a list of features.
   build, `EXPO_PUBLIC_SHOTS=1`, load the page with `?motion=1`), and a screenshot taken just then proves it. Give the owner a way to
   play each change themself: a button or link per moment (for celebrations, `/celebrations` in the demo build), not only a list of
   steps. Anything that moves is checked moving on the web; a web-only bug (like a mouse release counting as a tap) is fixed, not
-  blamed on the web. If the pane is closed later, open it again on the same page. A question the owner was asked to decide (a choice of direction,
+  blamed on the web. If the pane is closed later, open it again on the same page.
+  **A link to press, right above "Archive this chat?" (the owner, November 14, 2026: "it needs to be a preview you give me right
+  above the archive where I can just press it and open the preview").** The browser pane alone is not enough: the owner is often in
+  another window or on the phone, where the pane cannot show (`show_pane` then says the chat is not open in any window). So the
+  closing message, the text just above the wrap-up box, ends with plain clickable links, each straight to the changed screen: the
+  live site (`SITE_URL` in core `supporter.ts`, after the `[deploy]` run has finished: check `gh run list --workflow Deploy`) for
+  the phone, and the running local preview (`http://localhost:<port>/<path>`, with the demo data when the change needs it) for the
+  Mac. Check each link answers before giving it. Never say "it is open in the pane" as the only way to see it. A question the owner was asked to decide (a choice of direction,
   sample lessons to judge) still waits for the answer before the work it decides. The iPhone QA happens before publishing.
 - **Merge to main, then archive; the iPhone check is TestFlight from main (the owner, November 13, 2026: "i want the chats
   to merge to main then archive alot of these chats keep not merging to main bc it's not tested on iphone, we will test it on

@@ -173,9 +173,9 @@ describe('families', () => {
     expect(tl.coming.flatMap((x) => x.left).length + 1 + 1).toBe(core.lessonPath().length);
   });
 
-  it('a lesson starts on its first card: the review question is gone (the owner, November 1, 2026)', () => {
+  it('a lesson starts on its first card: the review question is gone (the owner, November 1, 2026); Deep plays every card', () => {
     core.LESSONS.forEach((L: Lesson) => {
-      const seq = core.lessonSeq(L, 'f');
+      const seq = core.lessonSeq(L, 'd');
       expect(seq[0]).toMatchObject({ t: 'card', ci: 0 });
       expect(seq[seq.length - 1]).toEqual({ t: 'done' });
       expect(seq.filter((x) => x.t === 'card').length).toBe(core.lessonCore(L).length);

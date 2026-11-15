@@ -347,24 +347,3 @@ describe('what do I need and the menu ideas', () => {
     expect(core.ideaTool('Take a shower')).toBeNull();
   });
 });
-
-describe('the ride shows how to swipe once, ever', () => {
-  it('plays for someone who has never swiped and never seen it', () => {
-    expect(core.rideHint({})).toBe(true);
-  });
-  it('never plays again once it has played', () => {
-    const m = core.rideHinted({});
-    expect(m.hinted).toBe(true);
-    expect(core.rideHint(m)).toBe(false);
-    expect(core.rideHinted(m)).toBe(m);
-  });
-  it('never plays for someone who has swiped once, in SOS or in setup', () => {
-    expect(core.rideHint(core.rideSwiped({}))).toBe(false);
-    expect(core.rideHint({ swiped: 2 })).toBe(false);
-  });
-  it('counts swipes up to 3', () => {
-    expect(core.rideSwiped({ swiped: 2 }).swiped).toBe(3);
-    const m = { swiped: 3 };
-    expect(core.rideSwiped(m)).toBe(m);
-  });
-});

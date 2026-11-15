@@ -12,6 +12,10 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { useReducedMotion } from '@/lib/motion';
 
 const WEB = Platform.OS === 'web';
+/* on the web a scroll view cuts off whatever it holds at its own edges, and it sits inside the scene's 16-point margin (SceneFrame), so
+   the breathing sun's glow was cut into two hard lines down the sides. There the scroll view reaches the screen's edges and each page
+   keeps the margin inside it; the page itself is exactly where it was. A phone is left as it is. */
+const BLEED = WEB ? 16 : 0;
 
 export function RidePager({
   count,
@@ -97,7 +101,7 @@ export function RidePager({
   };
 
   return (
-    <View style={StyleSheet.absoluteFill} onLayout={(e) => setH(Math.round(e.nativeEvent.layout.height))}>
+    <View style={[StyleSheet.absoluteFill, BLEED ? { left: -BLEED, right: -BLEED } : null]} onLayout={(e) => setH(Math.round(e.nativeEvent.layout.height))}>
       {h ? (
         <ScrollView
           ref={ref}
@@ -115,7 +119,7 @@ export function RidePager({
           onMomentumScrollEnd={(e) => land(e.nativeEvent.contentOffset.y)}
           style={s.box}>
           {Array.from({ length: count }, (_, i) => (
-            <View key={i} style={{ height: h }}>
+            <View key={i} style={{ height: h, paddingHorizontal: BLEED }}>
               {Math.abs(i - at) <= 1 ? render(i) : null}
             </View>
           ))}

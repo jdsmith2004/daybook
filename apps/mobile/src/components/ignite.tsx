@@ -21,11 +21,12 @@
             the new one drops in from above (Success).
       1470  Warm puffs swell over the flame and an empty bubble comes up (Light knock). Under the puffs the flame wakes; as they break
             apart it is awake and glowing.
-      1670  Its words type out (26 ms a letter, a soft tick every five), and the line under the number comes in.
+      1670  Its words type out (24 ms a letter, a soft tick every five), and the line under the number comes in.
             While the last words type, the column rises and the row of days fades in, all together.
-  row+600   The day just kept turns into a coin: it jumps, flips over to its check, and lands with a squash and sparks (a roll, then a land).
+  row+400   The day just kept turns into a coin: it jumps, flips over to its check, and lands with a squash and sparks (a roll, then a land).
             The small goal, when there is one, comes in after it.
- land+2500  Only then the button (Duolingo waits as long: two quiet seconds with the mascot alive, so nobody taps past the moment).
+ land+400  The button, right after the coin lands (the owner, November 14, 2026: "after it flips the first day or whatever, it's a huge
+            wait between that and keep going"; it used to wait two and a half seconds, as Duolingo's does).
    A tap anywhere after the swipe brings everything in at once, for someone in a hurry. Reduce Motion: it lights with a fade, everything
    comes in together, one knock. */
 import { type NightMark } from '@daybook/core';
@@ -88,13 +89,13 @@ const AT = {
 /** how long the flame takes to catch, once it does (BigFlame relight) */
 const CATCH_MS = 260;
 /** a letter of the words, and the longest the typing may take */
-const LETTER = 26;
-const TYPE_MAX = 1800;
+const LETTER = 24;
+const TYPE_MAX = 1400;
 /** the coin: its jump and flip, then the sparks */
 const COIN_FLY = 600;
 const COIN_ALL = 1050;
-/** from the coin landing to the button */
-const QUIET = 2500;
+/** from the coin landing to the button: just long enough to see the check land */
+const QUIET = 400;
 
 export interface IgniteDay {
   k: string;
@@ -206,6 +207,7 @@ export function Ignition({
 
   /* when it lit: the end of the swipe that lit it also lands as a tap on the web (a mouse up is a click), and must not skip the moment */
   const litAt = useRef(0);
+  const pressAt = useRef(0);
   const light = () => {
     if (beat !== 0) return;
     litAt.current = Date.now();
@@ -287,31 +289,31 @@ export function Ignition({
         });
     });
     /* while the last words type, the column rises and the days fade in together; then the day just kept flips over to its check */
-    const rowAt = Math.max(AT.words + 600, AT.words + n * step - 400);
-    const land = rowAt + 600 + COIN_FLY;
+    const rowAt = Math.max(AT.words + 500, AT.words + n * step - 500);
+    const land = rowAt + 400 + COIN_FLY;
     at(rowAt, () => {
       rowV.value = withTiming(1, { duration: 500, easing: Easing.inOut(Easing.cubic) });
     });
     if (m.row.length) {
-      at(rowAt + 600, () => {
+      at(rowAt + 400, () => {
         buzz('roll');
         coin.value = withTiming(1, { duration: COIN_ALL, easing: Easing.linear });
       });
       at(land, () => buzz('land'));
     }
     /* the small goal */
-    const goalAt = land + 400;
+    const goalAt = land;
     if (goal) {
       at(goalAt, () => {
         goalV.value = withTiming(1, { duration: 320, easing: Easing.out(Easing.cubic) });
       });
-      at(goalAt + 400, () => {
+      at(goalAt + 200, () => {
         knock(goal.kept ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Light);
         segV.value = withSpring(1, SETTLE);
       });
     }
-    /* the button, last, after the quiet */
-    at(Math.max(land + QUIET, goal ? goalAt + 1200 : 0), () => {
+    /* the button, right after the coin lands (the goal fills in beside it) */
+    at(land + QUIET, () => {
       setBeat(2);
       btn.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.quad) });
     });
@@ -407,8 +409,12 @@ export function Ignition({
         <Pressable
           style={StyleSheet.absoluteFill}
           accessible={false}
+          onPressIn={() => {
+            pressAt.current = Date.now();
+          }}
           onPress={() => {
-            if (beat === 1 && Date.now() - litAt.current > 700) all();
+            /* only a press that began after it lit: the swipe that lit it ends as a press too (a mouse up on the web) */
+            if (beat === 1 && pressAt.current > litAt.current) all();
           }}
         />
         <View style={[s.top, { paddingTop: inset.top + 8 }]} pointerEvents="box-none">

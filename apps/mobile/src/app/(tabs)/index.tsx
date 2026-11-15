@@ -11,6 +11,7 @@
 import {
   accountAsk,
   accountNudge,
+  litToday,
   awayDue,
   awayStart,
   dayFeelDue,
@@ -380,7 +381,8 @@ export default function Today() {
   const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
   /* the button beside Ideas glows with a line every few days after a good moment, never on a day the card already asks (core accountNudge) */
   const nudgeNow = ask ? null : accountNudge(snap.days, st, tk, !!account, quiet);
-  const tip = !quiet && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: careLastAt(sos.mem) });
+  /* the day the flame was lit in full is that moment's, so the tip waits a day too (the account card and nudge wait in core) */
+  const tip = !quiet && !litToday(snap.days, st, tk) && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: careLastAt(sos.mem) });
   /* one quiet line under the next step: the week's goal from Sunday (today's entries are in Today so far, under it) */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name, nights)?.note;
   /* the quiet lines under the next step take their room from the sky */

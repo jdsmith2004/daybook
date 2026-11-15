@@ -47,6 +47,11 @@ export default function Celebrations() {
     },
     { name: 'New badge', what: 'Rays, the medal lands and settles. No confetti.', go: () => badge && play([{ type: 'badge', b: badge }]) },
     { name: 'Streak lighting', what: 'Swipe up on the ember to light it. A tap during it skips to the end.', go: () => open('/ignite') },
+    /* the key moments (core igniteWhy), played for real: the demo log has the hard stretch, and Free of it on the morning lights it */
+    { name: 'Lighting after a hard stretch', what: 'Three slips this week. Tap Free of it, then swipe up.', go: () => fresh('/morning?demo=comeback') },
+    { name: 'Lighting, night two of the climb', what: 'The second free night after a hard stretch. Tap Free of it.', go: () => fresh('/morning?demo=climb2') },
+    { name: 'Lighting, night three of the climb', what: 'The third free night after a hard stretch. Tap Free of it.', go: () => fresh('/morning?demo=climb3') },
+    { name: 'Lighting after a long run', what: 'One slip after weeks free. Tap Free of it.', go: () => fresh('/morning?demo=longrun') },
     { name: 'Morning done', what: 'Tap Free of it.', go: () => open('/morning') },
     { name: 'Urge ridden out', what: 'SOS, It passed.', go: () => open('/sos?won=1') },
     { name: 'Check-in finished', what: 'Day logged, with the points.', go: () => open('/checkin?end=1') },

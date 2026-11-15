@@ -19,6 +19,11 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
      person, started in July, graduated on October 4 (the graduation page and the flame in its cap) */
   const q = typeof window !== 'undefined' && !!window.location ? new URLSearchParams(window.location.search).get('demo') : null;
   const hard = q === 'hard';
+  /* the key moments of the lighting (core igniteWhy), played from the morning page by telling last night free: ?demo=comeback, a hard
+     stretch (three slips in a week) ending the night before last; climb2 and climb3, the same stretch one and two free nights back;
+     longrun, one slip the night before last, after weeks free */
+  const SLIPS: Record<string, number[]> = { comeback: [-6, -4, -2], climb2: [-7, -5, -3], climb3: [-8, -6, -4], longrun: [-2] };
+  const late = (q && SLIPS[q]) || [];
   const grad = q === 'grad';
   const start = grad ? '2026-06-25' : '2026-09-08';
   const st = {
@@ -54,7 +59,8 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     const events = [];
     if (i % 5 === 0) events.push(ev('21:30', 'rode', i % 2 ? 'Stressed' : 'Bored'));
     /* the one slip, with what was going on before it and how it felt after (the studio opens its comeback pages on it) */
-    if (d === '2026-09-12') events.push({ ...ev('23:50', 'slipped', 'lonely'), id: 'slip', fa: 'flat' });
+    if (late.some((n) => day(DEMO.day, n) === d)) events.push({ ...ev('23:10', 'slipped', 'lonely'), id: 'late' + i });
+    else if (d === '2026-09-12') events.push({ ...ev('23:50', 'slipped', 'lonely'), id: 'slip', fa: 'flat' });
     else if (hard && (i * 37) % 11 < 5) {
       events.push({ ...ev('22:40', 'slipped', 'tired'), id: 'slip' + i });
       if (i % 9 === 4) events.push({ ...ev('23:55', 'slipped', 'tired'), id: 'slip' + i + 'b' });

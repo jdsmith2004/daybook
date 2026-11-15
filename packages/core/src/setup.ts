@@ -193,7 +193,22 @@ export function obThenPick(a: SetupAnswers, st: Settings | null, redo: boolean, 
    week, one part a day, each set up by using it (unlock.ts). Duolingo is the model (the owner, November 12, 2026): the flame
    talks in its bubble and answers each pick, one question a page with big answers low, a bar across the top, the first win
    inside setup, and the flame lit by the person at the end. Every question can be skipped; setup itself cannot. */
-export type PageKind = 'hello' | 'how' | 'sos' | 'account' | 'tiles' | 'multi' | 'promise' | 'tonight' | 'light' | 'review' | 'done' | 'need' | 'grow' | 'why';
+export type PageKind =
+  | 'hello'
+  | 'how'
+  | 'sos'
+  | 'account'
+  | 'tiles'
+  | 'multi'
+  | 'promise'
+  | 'tonight'
+  | 'remind'
+  | 'light'
+  | 'review'
+  | 'done'
+  | 'need'
+  | 'grow'
+  | 'why';
 export interface ObPage {
   id: string;
   k: PageKind;
@@ -320,6 +335,10 @@ export const OB_PAGES: ObPage[] = [
      screens-off time and the phone plans are about the phone in bed, which other habits do not share (the owner, via WP3,
      November 13, 2026) */
   { id: 'tonight', k: 'tonight', need: (a, env) => !env.redo && habitIn(a) === 'porn' },
+  /* the same ask for every other habit, in its own words (the owner, November 15, 2026: "definitely do this: People quitting alcohol
+     or gambling don't get the notification ask in setup"): reminders, pictured as the two notes that come (the day's lesson, and a
+     heads-up before the hard hours), with no phone-down time. Only where the device can remind (not a web page). */
+  { id: 'remind', k: 'remind', need: (a, env) => !env.redo && !!env.notify && habitIn(a) !== 'porn' },
   /* the person lights their flame: the plan is saved, counting starts tonight (D14), and the first small goal is picked */
   { id: 'light', k: 'light', need: isNew },
   /* why it works, once the flame is lit: a slip takes nothing away here, and keeping track works. It also shows what the account keeps. */
@@ -895,6 +914,8 @@ const OB_SAY: Record<string, string> = {
   for: 'On a hard night, I will remind you.',
   faith: 'It changes which lessons come up.',
   tonight: 'Set it now, while it is easy.',
+  /* habitSay puts the habit's own word in place of porn (obSay) */
+  remind: 'A heads-up before your hard hours. Never a word about porn on your lock screen.',
   light: 'Swipe up. Light me.',
   account: 'Look at me now. You did that.',
   need: 'That is the pull now. Each one you ride out, you take back.',
@@ -910,7 +931,14 @@ const OB_SAY_REDO: Record<string, string> = {
 };
 /** what the flame says first on a page, or null */
 export const obSay = (id: string, redo = false, h: Habit = 'porn'): string | null =>
-  (redo && OB_SAY_REDO[id]) || (id === 'freq' ? habitMedical(h) : null) || OB_SAY[id] || null;
+  (redo && OB_SAY_REDO[id]) || (id === 'freq' ? habitMedical(h) : null) || (id === 'remind' ? habitSay(OB_SAY.remind, h) : OB_SAY[id]) || null;
+
+/** the reminders page for a habit other than porn (the porn path asks on its tonight page) */
+export const OB_REMIND = {
+  h: 'Let me reach you when it counts.',
+  yes: 'Turn on reminders',
+  skip: 'Go on without reminders',
+};
 
 /** the flame's answer to a one-tap pick, by the question's key and the answer's id */
 export const OB_REPLY: Record<string, Record<string, string>> = {

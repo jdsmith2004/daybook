@@ -5,8 +5,9 @@
    It slides up as a sheet (the owner, November 14, 2026: "the add feedback page should actually be a slide up page and so
    should this one"). The box and Send stay together near the top, where the keyboard leaves them in sight; the person's own
    flame waits below and cheers when it is sent. A lesson's feedback says which lesson it is about at the start of the words,
-   so nothing new is sent beside them (the privacy page, Feedback). */
-import { FEEDBACK_LEN, gameCompute } from '@daybook/core';
+   so nothing new is sent beside them (the privacy page, Feedback). "Not yet" to "Do you like Daybook so far?" opens it too, asking
+   what would help (like=1). */
+import { FEEDBACK_LEN, gameCompute, LIKE_WORDS } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -27,7 +28,9 @@ const aboutLesson = (n: string, title: string) => `About lesson ${n}, ${title}: 
 export default function Feedback() {
   const { snap, tk } = useStore();
   const st = snap.settings;
-  const q = useLocalSearchParams<{ n?: string; title?: string }>();
+  const q = useLocalSearchParams<{ n?: string; title?: string; like?: string }>();
+  /* opened by "Not yet" to "Do you like Daybook so far?" (components/like-ask.tsx) */
+  const like = q.like === '1';
   const lesson = q.n && q.title ? { n: String(q.n).slice(0, 4), title: String(q.title).slice(0, 80) } : null;
   /* the person's own flame, as it is on Today */
   const level = useMemo(() => (st ? Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n) : 1), [st, snap.days, snap.reviews, tk]);
@@ -72,8 +75,8 @@ export default function Feedback() {
 
   return (
     <SheetFrame
-      title={lesson ? 'This lesson' : 'Your idea'}
-      sub={lesson ? `Lesson ${lesson.n}, ${lesson.title}` : 'Big or small, it goes straight to the person who builds Daybook.'}>
+      title={lesson ? 'This lesson' : like ? 'What would help' : 'Your idea'}
+      sub={lesson ? `Lesson ${lesson.n}, ${lesson.title}` : like ? LIKE_WORDS.noThanks : 'Big or small, it goes straight to the person who builds Daybook.'}>
       <View style={s.form}>
         <Field
           label={lesson ? 'What you thought of this lesson' : 'Your idea'}
@@ -82,7 +85,13 @@ export default function Feedback() {
           maxLength={FEEDBACK_LEN - head.length}
           value={t}
           onChangeText={setT}
-          placeholder={lesson ? 'Like: this one hit home, or this part lost me.' : 'Like: I wish I could see my whole week at a glance.'}
+          placeholder={
+            lesson
+              ? 'Like: this one hit home, or this part lost me.'
+              : like
+                ? 'Like: the reminders come at the wrong time.'
+                : 'Like: I wish I could see my whole week at a glance.'
+          }
           style={{ minHeight: 120 }}
         />
         <Field

@@ -696,6 +696,7 @@ const ONCE = [
   'wk1',
   'toldStart',
   'likeAsk',
+  'likeAt',
   'acctNo',
   'acctNudge',
   'tipAsk',
@@ -718,6 +719,8 @@ export function accountHere(theirs: Settings | null, mine: Settings | null): Set
   /* the true record's first day is the earlier of the two too, so a night already counted the new way is never counted the old */
   const tf = [theirs.truthFrom, mine.truthFrom].filter((x): x is string => isKey(x)).sort()[0];
   if (tf) out.truthFrom = tf;
+  /* a Yes to "Do you like Daybook so far?" on either copy holds: it is the one answer that ends the question (like.ts) */
+  if (mine.likeAsk?.a === 'yes' && out.likeAsk?.a !== 'yes') out.likeAsk = { ...mine.likeAsk };
   if (same({ ...out, u: 0 }, { ...theirs, u: 0 })) return null;
   return { ...out, u: Math.max(theirs.u || 0, mine.u || 0) + 1 };
 }

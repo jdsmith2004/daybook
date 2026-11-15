@@ -277,8 +277,10 @@ export interface Settings {
   sup?: Supporter | null;
   /** Daybook Pattern on this device (supporter.ts). Optional, so older records need no change. */
   pat?: PatRec | null;
-  /** the answer to "Do you like Daybook so far?" at the end of setup, and the day (see like.ts). Optional. */
+  /** the last answer to "Do you like Daybook so far?", and its day (see like.ts). Only Yes ends the question. Optional. */
   likeAsk?: { a: 'yes' | 'no'; d: DayKey } | null;
+  /** the day "Do you like Daybook so far?" last came (see like.ts). Optional, so older records need no change. */
+  likeAt?: DayKey | null;
   /** "How much do you see yourself as someone free of this?", 0 to 10, once a month, oldest first (north.ts). Synced with the
       rest. Optional, so older records need no change. */
   free?: { d: DayKey; s: number }[];

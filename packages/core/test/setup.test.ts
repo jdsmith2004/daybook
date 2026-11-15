@@ -135,6 +135,22 @@ describe('setup in two minutes (WP10)', () => {
     }
     expect(core.obPages({ habit: 'porn' }).map((p) => p.id)).toContain('tonight');
   });
+  it('asks every other habit about reminders too, in its own words (the owner, November 15, 2026)', () => {
+    for (const habit of ['alcohol', 'gambling', 'other']) {
+      const ids = core.obPages({ habit }, { notify: true }).map((p) => p.id);
+      expect(ids, habit).toContain('remind');
+      expect(ids.indexOf('light')).toBe(ids.indexOf('remind') + 1);
+      expect(core.obPages({ habit }, { notify: false }).map((p) => p.id)).not.toContain('remind');
+      expect(core.obPages({ habit }, { notify: true, redo: true }).map((p) => p.id)).not.toContain('remind');
+      const say = core.obSay('remind', false, core.habitIn({ habit }));
+      expect(say).toBeTruthy();
+      expect(say).not.toMatch(/porn/i);
+    }
+    expect(core.obSay('remind', false, 'alcohol')).toMatch(/drinking/);
+    expect(core.obSay('remind', false, 'gambling')).toMatch(/gambling/);
+    /* porn asks on its tonight page, so it never gets a second ask */
+    expect(core.obPages({ habit: 'porn' }, { notify: true }).map((p) => p.id)).not.toContain('remind');
+  });
   it('marks the length picked most, Short until one is picked, and offers Deep only when turned on (the owner, November 14, 2026)', () => {
     const tk = '2026-11-12' as core.DayKey;
     const st = core.obBegin({}, tk, 0);

@@ -9,6 +9,7 @@ import { Text } from '@/components/text';
 import { FitArt } from '@/components/fit';
 import { FlameMedallion } from '@/components/flame-medallion';
 import { Dock, SceneFrame } from '@/components/scene';
+import { LikeAsk, useLikeAsk } from '@/components/like-ask';
 import { MomentAsk, useTipMoment } from '@/components/support';
 import { Button, T } from '@/components/ui';
 import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
@@ -23,6 +24,8 @@ export default function Week() {
   const st = snap.settings;
   /* finishing the first week is a moment of earned value: it can carry a short tip ask (core tipMoment) */
   const ask = useTipMoment('week');
+  /* with no tip ask on it, the week can ask "Do you like Daybook so far?" (core like.ts), in place of Keep going */
+  const like = useLikeAsk(ask);
   useEffect(() => {
     if (st && firstWeekDue(st, tk)) apply({ st: firstWeekSeen(st, tk) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -31,7 +34,7 @@ export default function Week() {
   const w = firstWeek(snap.days, st, tk);
   const level = gameCompute(snap.days, st, snap.reviews, tk).level.n;
   return (
-    <SceneFrame title="Your first week" sky="mint" onClose={close} pin={<Button label="Keep going" onPress={close} />}>
+    <SceneFrame title="Your first week" sky="mint" onClose={close} pin={like ? undefined : <Button label="Keep going" onPress={close} />}>
       <T v="title" style={s.c} accessibilityRole="header">
         {w.h}
       </T>
@@ -69,7 +72,7 @@ export default function Week() {
       {w.be ? <T style={[s.c, { fontFamily: font.bodySemi }]}>{w.be}</T> : null}
       <Dock>
         <T style={s.c}>{w.next}</T>
-        {ask ? <MomentAsk why="week" onGo={close} center /> : null}
+        {ask ? <MomentAsk why="week" onGo={close} center /> : like ? <LikeAsk onClose={close} /> : null}
       </Dock>
     </SceneFrame>
   );

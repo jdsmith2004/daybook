@@ -22,6 +22,7 @@ import {
   keyOfDate,
   LEARN_FREE,
   NUDGE_WORDS,
+  OB_REMIND,
   obFirstGoals,
   OB_PAGES,
   obBegin,
@@ -80,7 +81,7 @@ import { buzz } from '@/lib/feel';
 import { lessonLook, PAPER_INK, type LookKind } from '@/lib/lesson-look';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { close } from '@/lib/nav';
-import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
+import { setNotifyMem, setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { countSetup } from '@/lib/pulse';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { setupKeep, setupStored, storeSetup, type SetupFlow } from '@/lib/setup-keep';
@@ -120,6 +121,8 @@ export default function Setup() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const rem = useReminderPrefs();
+  /* setup asked about reminders: Today's banner (components/notify-banner.tsx) waits until tomorrow, so nobody is asked twice in one day */
+  const askedToday = () => setNotifyMem((m) => ({ ...m, quiet: tk }));
   const env = { notify: remindersOffered, account: !f.redo && sync.status.k === 'out', redo: f.redo };
   const until = useRef(0);
   /** which way the last move went, so the next page comes in from that side */
@@ -613,6 +616,7 @@ export default function Setup() {
           setReminderPrefs({ ...rem, wind: true });
           buzz('save');
         } else say(WORDS.notifyOff);
+        askedToday();
         go(1);
       };
       body = (
@@ -654,10 +658,72 @@ export default function Setup() {
                 if (busy() || asking.current) return;
                 keep();
                 if (!f.redo) track('setup_skip', { page: pg.id });
+                askedToday();
                 go(1);
               }}
             />
           ) : null}
+        </View>
+      );
+      break;
+    }
+    case 'remind': {
+      /* every other habit's reminders ask (core OB_REMIND): the two notes that will come, pictured on a locked screen in the middle,
+         the flame's word (in the habit's own words) above the button, Turn on reminders at the bottom */
+      const lesson = NUDGE_WORDS.preview.am;
+      const risk = NUDGE_WORDS.risk;
+      const yes = async () => {
+        if (busy() || asking.current) return;
+        asking.current = true;
+        until.current = Date.now() + 1500;
+        const ok = await allowReminders().catch(() => false);
+        asking.current = false;
+        until.current = 0;
+        if (ok) {
+          /* the lesson note and the heads-up are on unless turned off (core NUDGE_DEFAULTS); turned on fresh, they start every day */
+          setReminderPrefs({ ...rem, lesson: true, risk: true });
+          buzz('save');
+        } else say(WORDS.notifyOff);
+        askedToday();
+        go(1);
+      };
+      body = (
+        <>
+          <Head h={OB_REMIND.h} />
+          <Middle>
+            <View style={{ alignSelf: 'stretch', gap: 12 }}>
+              {[lesson, risk].map((n) => (
+                <View
+                  key={n.t}
+                  style={[s.lock, { backgroundColor: skies.light.night[0] }]}
+                  accessible
+                  accessibilityLabel={'A note will look like this: Daybook. ' + n.t + '. ' + n.b}>
+                  <View style={[s.lockIc, { backgroundColor: c.accent }]}>
+                    <Icon name="flame" size={16} color={c.accentInk} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.lockT, { color: nightInk.ink }]}>{n.t}</Text>
+                    <Text style={[s.lockB, { color: nightInk.ink }]}>{n.b}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </Middle>
+          <Say text={voice} />
+        </>
+      );
+      foot = (
+        <View key="r" style={[s.footOne, { gap: 2 }]}>
+          <Next label={OB_REMIND.yes} onPress={yes} off={false} noIcon />
+          <Ghost
+            label={OB_REMIND.skip}
+            onPress={() => {
+              if (busy() || asking.current) return;
+              track('setup_skip', { page: pg.id });
+              askedToday();
+              go(1);
+            }}
+          />
         </View>
       );
       break;

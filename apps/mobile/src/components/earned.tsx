@@ -16,7 +16,8 @@
    Anything else earned at the same time lands under it as small rows, one at a time: never a second moment on top of this one
    (CelebrateHost queues). A tap anywhere brings it all in at once. Reduce Motion: everything there, settled, one buzz.
    Quiet (anything that arrives in the hours after a slip, or the honesty badge): no shout, no confetti, no knocks, no ask; the
-   moment is calm, and says what was earned. The tip ask rides only on a new form, never when quiet (core tipMoment). */
+   moment is calm, and says what was earned. The tip ask rides only on a new form, never when quiet (core tipMoment). Any other
+   calm moment can carry "Do you like Daybook so far?" in place of its button (core like.ts, components/like-ask.tsx). */
 import { addDays, badgeDone, gameCompute, nextLine, shownBadges, type CelItem, type Level } from '@daybook/core';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
@@ -43,6 +44,7 @@ import { Flame } from '@/components/flame';
 import { FutureInvite, useFutureInvite } from '@/components/future-invite';
 import { Medal } from '@/components/medal';
 import { btnStyle, Burst, GOLD, Meter, meterTime, NIGHT, Shout, Sparkles, type MeterSpec } from '@/components/reward-kit';
+import { LikeAskNight, useLikeAsk } from '@/components/like-ask';
 import { MomentAsk, useTipMoment } from '@/components/support';
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
@@ -184,8 +186,10 @@ function Moment({
      the hours after an SOS; Future you can be invited on a new level or form with no ask riding on it */
   const why = !more && !quiet && !quietAsks && group.some((x) => x.type === 'level' && x.from > 0 && x.evolve) ? 'level' : null;
   const ask = useTipMoment(why || 'level', !why);
+  /* "Do you like Daybook so far?" rides on any calm moment that carries no tip ask (core like.ts), until the person says Yes */
+  const like = useLikeAsk(more || quiet || quietAsks || !!(ask && why));
   const lifted = !more && !quiet && !quietAsks && group.some((x) => x.type === 'level' && x.from > 0);
-  const invite = useFutureInvite(!lifted || !!(ask && why));
+  const invite = useFutureInvite(!lifted || !!(ask && why) || like);
   const firstNote = useFuture().notes.length === 0;
 
   /* each line starts as the one before it settles */
@@ -278,14 +282,20 @@ function Moment({
           </View>
         ) : null}
         <Reanimated.View style={[{ gap: 12 }, btnIn]} pointerEvents={ready ? 'auto' : 'none'}>
-          {ask && why ? <MomentAsk why={why} onGo={onClose} center /> : invite ? <FutureInvite first={firstNote} onGo={onClose} /> : null}
-          <Pressable accessibilityRole="button" onPress={onClose}>
-            {({ pressed }) => (
-              <View style={[btnStyle.btn, pressed && btnStyle.down]}>
-                <Text style={btnStyle.text}>{more ? 'Next' : kind === 'form' ? 'Keep going' : 'Continue'}</Text>
-              </View>
-            )}
-          </Pressable>
+          {like ? (
+            <LikeAskNight onClose={onClose} />
+          ) : (
+            <>
+              {ask && why ? <MomentAsk why={why} onGo={onClose} center /> : invite ? <FutureInvite first={firstNote} onGo={onClose} /> : null}
+              <Pressable accessibilityRole="button" onPress={onClose}>
+                {({ pressed }) => (
+                  <View style={[btnStyle.btn, pressed && btnStyle.down]}>
+                    <Text style={btnStyle.text}>{more ? 'Next' : kind === 'form' ? 'Keep going' : 'Continue'}</Text>
+                  </View>
+                )}
+              </Pressable>
+            </>
+          )}
         </Reanimated.View>
       </View>
       {/* confetti only for a new form, and light (docs/design-standards.md, Celebrations); a level and a badge get the glow and sparks */}

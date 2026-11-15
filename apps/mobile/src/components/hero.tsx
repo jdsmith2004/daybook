@@ -43,7 +43,8 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View, type ViewInstance } from 'react-native';
+import Reanimated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/text';
 
@@ -56,6 +57,7 @@ import { useCelebrating } from '@/components/celebrate';
 import { NightMarks } from '@/components/night-marks';
 import { Icon } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
+import { landFlame, useLaunchPhase } from '@/lib/launch';
 import { pullIgnoredAt, pullNights } from '@/lib/pull';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
@@ -232,6 +234,27 @@ function Sky({
     a.start();
     return () => a.stop();
   }, [cut, cutA, reduce]);
+  /* opening the app (lib/launch.ts, components/launch.tsx): the flame that wakes on the splash flies here, so this one says where it
+     is, and stays out of sight until the other lands */
+  const spotRef = useRef<ViewInstance>(null);
+  useEffect(() => {
+    let live = true;
+    const t = requestAnimationFrame(() => {
+      const v = spotRef.current;
+      if (!v || !live) return;
+      try {
+        v.measureInWindow((x, y, w, h) => live && w > 0 && h > 0 && landFlame({ x, y, size: FLAME, level: lvl.n, skyH: SCENE_H - cut }));
+      } catch {
+        /* not measured: the scene fades instead */
+      }
+    });
+    return () => {
+      live = false;
+      cancelAnimationFrame(t);
+    };
+  }, [FLAME_TOP, FLAME, lvl.n, SCENE_H, cut]);
+  const launching = useLaunchPhase() !== 'done';
+  const launchHide = useAnimatedStyle(() => ({ opacity: withTiming(launching ? 0 : 1, { duration: launching ? 0 : 120 }) }), [launching]);
   const { light, glass } = skyInk(lvl.n, phase ?? undefined);
   /* the words along the bottom take the ink that reads on what is behind them, hills or the bottom of the hour's sky (core wordsInk,
      where a test holds the contrast for every form and hour) */
@@ -393,14 +416,15 @@ function Sky({
               />
             ) : null}
           </Pressable>
-          <View style={[s.flame, { top: FLAME_TOP }]} pointerEvents="box-none">
+          <Reanimated.View style={[s.flame, { top: FLAME_TOP }, launchHide]} pointerEvents="box-none">
             <Pressable
+              ref={spotRef}
               accessibilityRole="button"
               accessibilityLabel={`${title}. Your flame, level ${lvl.n}.${words ? ' ' + words.h + '.' : ''} Tap to say hi.`}
               onPress={hello}>
               <BigFlame level={lvl.n} size={FLAME} pulse={pulse} low={shown} douse={douse} smoke={light ? '#C9C2DA' : '#6B6577'} />
             </Pressable>
-          </View>
+          </Reanimated.View>
         </Animated.View>
         {lead ? (
           <View style={[s.lead, { top: inset.top + 10 }]} pointerEvents="box-none">

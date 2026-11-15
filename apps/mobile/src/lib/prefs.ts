@@ -21,7 +21,7 @@ let theme: ThemePref = 'auto';
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((f) => f());
 
-AsyncStorage.getItem(KEY)
+const themeReady = AsyncStorage.getItem(KEY)
   .then((v) => {
     if (v === 'light' || v === 'dark') {
       theme = v;
@@ -166,6 +166,9 @@ const lockReady = AsyncStorage.getItem(LKEY)
     emit();
   });
 export const whenLockKnown = () => lockReady;
+/** the theme and the lock, read: the first frame the app draws is in the right colors, and the lock's cover is not drawn a beat late
+    (the root layout waits for this before it draws anything, so nothing flashes under the splash) */
+export const whenPrefsKnown = () => Promise.all([themeReady, lockReady]).then(() => undefined);
 export const getLockPref = () => lock;
 export function setLockPref(on: boolean) {
   lock = on;

@@ -14,8 +14,10 @@
 import type { FaithVoice } from './faith';
 
 export interface WrittenPull {
-  /** what the pull says, struck through on the page */
+  /** what the pull says, on the front of the card */
   pull: string;
+  /** the old move it is, under the pull: seeing the pattern is half of the answer (the bishop's note: the attack has a pattern) */
+  trick: string;
   /** what He faced, or what the pull claims, leading into the answer */
   faced: string;
   /** the answer's first words, in the sun color ("It is written,") */
@@ -34,7 +36,7 @@ export interface WrittenWords {
   end: { head: string; sub: string; lead: string; rest: string; ref: string | null };
   /** Matthew 5, taught soon after on the mountain: where it starts (the heart), cutting off what feeds it, and who you are */
   heart: { head: string; sub: string; lead: string; rest: string; ref: string | null };
-  cast: { head: string; sub: string; lead: string; rest: string; ref: string | null; ask: string; doIt: string; doSub: string; did: string };
+  cast: { head: string; sub: string; lead: string; rest: string; ref: string | null; ask: string; did: string };
   light: { head: string; sub: string; lead: string; rest: string; ref: string | null };
   /** Matthew 5 in the person's own scripture app, or null */
   link5: { label: string; url: string } | null;
@@ -49,33 +51,45 @@ export const WRITTEN_BIBLE = 'https://www.bible.com/bible/1/MAT.4.1-11.KJV';
 /** Matthew 5:1-16, the start of the Sermon on the Mount, the same two ways */
 export const WRITTEN_GL5 = 'https://www.churchofjesuschrist.org/study/scriptures/nt/matt/5?lang=eng&id=p1-p16#p1';
 export const WRITTEN_BIBLE5 = 'https://www.bible.com/bible/1/MAT.5.1-16.KJV';
-/** what to cast away right now, one tap (the Cast it from you page) */
+/** Cast it from you: first what is feeding the urge right now (one tap, and "I do not know" is a fine answer), then the one
+    thing to do about it. The owner, November 15, 2026, on the old "What will you cast away right now?": "I don't know. It
+    might be a good question, actually. It's just hard." So the page asks what a person can see, and gives the step. */
 export const WRITTEN_CAST: [string, string][] = [
-  ['close', 'Close what was open'],
-  ['room', 'Leave this room'],
-  ['people', 'Go where people are'],
-  ['down', 'Put the phone down after this'],
+  ['screen', 'The screen in my hand'],
+  ['room', 'This room'],
+  ['alone', 'Being alone'],
+  ['unsure', 'I do not know'],
 ];
-const CAST_DO = { ask: 'What will you cast away right now?', doIt: 'Do it now.', doSub: 'Then come back. The ride waits for you.', did: 'I did it' };
+/** the one thing to do for each answer */
+export const WRITTEN_CAST_DO: Record<string, string> = {
+  screen: 'Put it face down and walk away from it.',
+  room: 'Get up and go to another room.',
+  alone: 'Go where people are, or text someone.',
+  unsure: 'Set the phone down and stand up, now.',
+};
+const CAST_DO = { ask: 'What is feeding it right now?', did: 'I did it' };
 
 const BIBLE_PULLS: WrittenWords['pulls'] = [
   {
     pull: '“You need this.\nYou have earned it.”',
-    faced: 'He was hungry, and the pull said feed it now. He answered:',
+    trick: 'It calls a want a need.',
+    faced: 'After forty days without food, He answered:',
     lead: 'It is written,',
     rest: 'Man shall not live by bread alone, but by every word that proceedeth out of the mouth of God.',
     ref: 'Matthew 4:4',
   },
   {
     pull: '“Just a look.\nYou can stop after.”',
-    faced: 'The pull said nothing bad would happen. He answered:',
+    trick: 'It calls the first step small.',
+    faced: 'Told to jump, that nothing bad would happen, He answered:',
     lead: 'It is written again,',
     rest: 'Thou shalt not tempt the Lord thy God.',
     ref: 'Matthew 4:7',
   },
   {
     pull: '“This will make\nit all better.”',
-    faced: 'The pull promised Him everything. He answered:',
+    trick: 'It promises what it has never given.',
+    faced: 'Offered every kingdom of the world, He answered:',
     lead: 'Get thee hence, Satan:',
     rest: 'for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve.',
     ref: 'Matthew 4:10',
@@ -100,28 +114,28 @@ const bible = (link: WrittenWords['link'], link5: WrittenWords['link5']): Writte
   pulls: BIBLE_PULLS,
   end: {
     head: 'Then it left.',
-    sub: 'It leaves, and help comes. It did for Him, and it will for you.',
+    sub: 'It will for you too.',
     lead: 'Then the devil leaveth him,',
     rest: 'and, behold, angels came and ministered unto him.',
     ref: 'Matthew 4:11',
   },
   heart: {
     head: 'It starts in the heart.',
-    sub: 'Soon after, on a mountain, He taught that it begins with a look, before anything is done. So it is won there too, right now.',
+    sub: 'It begins with a look, before anything is done. You are there now, the easiest place to win.',
     lead: 'Blessed are the pure in heart:',
     rest: 'for they shall see God.',
     ref: 'Matthew 5:8',
   },
   cast: {
     head: 'Cast it from you.',
-    sub: 'He did not mean an eye. He meant: cut off what feeds it, and do it now.',
+    sub: 'Take away what feeds it, now.',
     lead: 'If thy right eye offend thee,',
     rest: 'pluck it out, and cast it from thee.',
     ref: 'Matthew 5:29',
     ...CAST_DO,
   },
   light: {
-    head: 'You are the light.',
+    head: 'You stood.',
     sub: 'This is who He says you are.',
     lead: 'Ye are the light of the world.',
     rest: 'Let your light so shine before men, that they may see your good works, and glorify your Father which is in heaven.',
@@ -143,44 +157,47 @@ const PLAIN: WrittenWords = {
   pulls: [
     {
       pull: '“You need this.\nYou have earned it.”',
-      faced: 'The pull says feed it now. Answer it:',
+      trick: 'It calls a want a need.',
+      faced: 'Answer it:',
       lead: 'I am fed by more than this.',
       rest: 'What I am hungry for, this has never filled.',
       ref: null,
     },
     {
       pull: '“Just a look.\nYou can stop after.”',
-      faced: 'The pull says nothing bad will happen. Answer it:',
+      trick: 'It calls the first step small.',
+      faced: 'Answer it:',
       lead: 'I do not need to test it.',
       rest: 'I already know where it goes, and God is with me here.',
       ref: null,
     },
     {
       pull: '“This will make\nit all better.”',
-      faced: 'The pull promises everything. Answer it:',
+      trick: 'It promises what it has never given.',
+      faced: 'Answer it:',
       lead: 'God is enough for me.',
       rest: 'What this promises, it has never given.',
       ref: null,
     },
   ],
-  end: { head: 'Then it left.', sub: 'It leaves, and help comes.', lead: 'It passes.', rest: 'It always has, and God stays when it goes.', ref: null },
+  end: { head: 'Then it left.', sub: 'Help comes after.', lead: 'It passes.', rest: 'It always has, and God stays when it goes.', ref: null },
   heart: {
     head: 'It starts in the heart.',
-    sub: 'It begins with a look, before anything is done. So it is won there too, right now.',
+    sub: 'It begins with a look, before anything is done. You are there now, the easiest place to win.',
     lead: 'A clean heart',
     rest: 'sees God more clearly.',
     ref: null,
   },
   cast: {
     head: 'Cut off what feeds it.',
-    sub: 'Do not argue with it. Take away what it needs, and do it now.',
+    sub: 'Do not argue with it. Take away what it needs, now.',
     lead: 'What feeds it,',
     rest: 'I can put out of reach.',
     ref: null,
     ...CAST_DO,
   },
   light: {
-    head: 'You are a light.',
+    head: 'You stood.',
     sub: 'This is who you are becoming.',
     lead: 'What is good in you shines.',
     rest: 'Let it. Someone near you is helped by it.',

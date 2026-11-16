@@ -168,6 +168,16 @@ describe('It is written', () => {
     expect([plain.heart, plain.cast, plain.light].every((x) => x.ref === null)).toBe(true);
     [lds, chr, plain].forEach((w) => expect(JSON.stringify(w)).not.toMatch(/n't|'re|'ll|'ve|can't/i));
   });
+  it('names the old move under each pull, and Cast it asks what a person can see, with one step for each answer', () => {
+    [core.writtenWords('lds'), core.writtenWords('plain')].forEach((w) => {
+      expect(w.pulls.map((p) => p.trick)).toEqual(['It calls a want a need.', 'It calls the first step small.', 'It promises what it has never given.']);
+      expect(w.cast.ask).toBe('What is feeding it right now?');
+    });
+    core.WRITTEN_CAST.forEach(([id]) => expect(core.WRITTEN_CAST_DO[id]).toBeTruthy());
+    expect(core.WRITTEN_CAST.map((x) => x[1])).toContain('I do not know');
+    /* the Scripture is quoted exactly */
+    expect(core.writtenWords('lds').pulls[0].rest).toBe('Man shall not live by bread alone, but by every word that proceedeth out of the mouth of God.');
+  });
 });
 
 describe('the order of SOS', () => {

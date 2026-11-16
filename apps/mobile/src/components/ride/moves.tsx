@@ -29,6 +29,7 @@ import {
   URGE_OBJECTS,
   urFromYou,
   WRITTEN_CAST,
+  WRITTEN_CAST_DO,
   writtenWords,
   type UrMem,
   type WrittenWords,
@@ -452,10 +453,12 @@ export function FutureMove({ on, onDone }: MoveProps) {
 }
 
 /* ---------- it is written (Matthew 4:1-11, then Matthew 5; core written.ts) ---------- */
-const WR_READ = 12;
 const WR_HOLD = 1800;
-/** how long each page that runs by itself stays, in seconds: the three pulls, then it left, the heart, and the light */
-const WR_SEC: Record<number, number> = { 2: WR_READ, 3: WR_READ, 4: WR_READ, 5: 10, 6: WR_READ, 8: 16 };
+/** the pages that run by itself (the three pulls, then it left, the heart, the light); a tap anywhere goes on at once */
+const WR_TIMED = [2, 3, 4, 5, 6, 8];
+/** how long a page stays when nobody taps, from how many words it has: a quick reader taps on, and the page never makes a
+    slow one hurry (the owner, November 15, 2026: "I read much faster than that, and then I just have to wait") */
+export const wrSec = (text: string) => Math.max(4, Math.min(10, 2.5 + text.split(/\s+/).filter(Boolean).length * 0.25));
 /** the pages: 0 the question, 1 the hold, 2 to 4 the three pulls, 5 then it left, 6 the heart, 7 cast it away, 8 the light */
 export function WrittenMove({ on, onDone, level }: MoveProps) {
   const c = useTheme();
@@ -469,19 +472,42 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
     buzz('tap');
     setPg(n);
   };
-  const timed = !!WR_SEC[pg];
-  const sec = useClock(on && timed);
-  const [t0, setT0] = useState(0);
-  useEffect(() => setT0(sec), [pg]); // eslint-disable-line react-hooks/exhaustive-deps
-  const read = timed ? Math.min(1, (sec - t0) / WR_SEC[pg]) : 0;
-  useEffect(() => {
-    if (read < 1) return;
-    if (pg < 8) setPg(pg + 1);
-    else onDone();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [read >= 1]);
+  const timed = WR_TIMED.indexOf(pg) >= 0;
   const pull = pg >= 2 && pg <= 4 ? w.pulls[pg - 2] : null;
   const page = pg === 5 ? w.end : pg === 6 ? w.heart : pg === 7 ? w.cast : pg === 8 ? w.light : null;
+  /* a pull is a card turned like a lesson's: first what the pull says and the old move it is, then a tap answers it */
+  const [turned, setTurned] = useState(false);
+  const front = !!pull && !turned;
+  const stage = pg + (front ? 'f' : 'b');
+  const stageSec = pull
+    ? front
+      ? Math.max(3, Math.min(6, 1.5 + (pull.pull + ' ' + pull.trick).split(/\s+/).length * 0.25))
+      : wrSec([pull.faced, pull.lead, pull.rest].join(' '))
+    : page
+      ? wrSec([page.head, page.sub, page.lead, page.rest].join(' '))
+      : 0;
+  /* each stage times itself from when it came into view (and again when the ride comes back to it) */
+  const tick = useClock(on && timed);
+  const startAt = useRef(Date.now());
+  useEffect(() => {
+    startAt.current = Date.now();
+  }, [stage, on]);
+  const read = timed && stageSec && on ? Math.min(1, (Date.now() - startAt.current) / 1000 / stageSec) : 0;
+  void tick;
+  const onward = () => {
+    if (front) {
+      buzz('save');
+      return setTurned(true);
+    }
+    setTurned(false);
+    if (pg < 8) go(pg + 1);
+    else onDone();
+  };
+  useEffect(() => {
+    if (read < 1) return;
+    onward();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [read >= 1]);
   const head = pg === 0 ? w.ask.head : pg === 1 ? w.stand.head : pull ? pull.pull.replace('\n', ' ') : page ? page.head : '';
   useSay(head, on);
   if (pg === 0)
@@ -498,20 +524,27 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
         <BigOption tone="sun" icon="shield" title={w.ask.yes} sub={w.ask.yesSub} onPress={() => go(1)} />
       </View>
     );
-  if (pg === 1) return <WrittenStand w={w} on={on} onFull={() => setTimeout(() => setPg(2), 2600)} />;
+  if (pg === 1) return <WrittenStand w={w} on={on} onFull={() => setTimeout(() => setPg(2), 2200)} />;
   const card = pull || page!;
   const link = pg === 5 ? w.link : pg === 8 ? w.link5 : null;
   /* with the scripture library on, the chapter opens in Daybook on the verses the page quoted */
   const inLib = lib.on ? (pg === 5 ? SCR_WRITTEN.link : pg === 8 ? SCR_WRITTEN.link5 : null) : null;
   /* Matthew 4 is the first three marks, Matthew 5 the next three */
   const four = pg <= 5;
+  const tone = four ? c.sun2 : c.mint;
+  const castDo = cast ? WRITTEN_CAST_DO[cast] : null;
   return (
-    <View style={s.move}>
-      <Steps n={3} i={four ? pg - 2 : pg - 6} color={four ? c.sun2 : c.mint} track={(four ? c.sun2 : c.mint) + '33'} />
+    /* a tap anywhere on a page that runs by itself answers the pull or goes on. Not a button itself, since the page holds
+       buttons of its own (a screen reader has the page read out, and it goes on by itself or with Next) */
+    <Pressable style={s.move} accessible={false} onPress={timed ? onward : undefined}>
+      <Steps n={3} i={four ? pg - 2 : pg - 6} color={tone} track={tone + '33'} />
       <View style={s.words} accessibilityLiveRegion="polite" aria-live="polite">
         <Appear key={pg} by={6} duration={220}>
           {pull ? (
-            <Text style={[s.pullT, { color: c.muted }]} accessibilityRole="header" accessibilityLabel={'The pull says: ' + head}>
+            <Text
+              style={[s.pullT, turned ? s.pullDone : null, { color: turned ? c.muted : c.ink }]}
+              accessibilityRole="header"
+              accessibilityLabel={'The pull says: ' + head}>
               {pull.pull}
             </Text>
           ) : (
@@ -520,9 +553,13 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
             </Text>
           )}
         </Appear>
-        <T tone="muted" style={s.c}>
-          {pull ? pull.faced : page!.sub}
-        </T>
+        {pull ? (
+          <Text style={[s.trickT, { color: c.sunText }]}>{pull.trick}</Text>
+        ) : (
+          <T tone="muted" style={s.c}>
+            {page!.sub}
+          </T>
+        )}
       </View>
       <View style={s.mid}>
         {pg === 8 ? (
@@ -536,23 +573,34 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
             <BigFlame level={level || 1} size={170} pulse={pulse} noLand />
           </Pressable>
         ) : null}
-        {pg === 7 && cast ? (
+        {front ? (
+          /* the pull, before it is answered: a hard shape that the answer replaces */
+          <Appear key={'f' + pg} by={10} duration={420}>
+            <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              <MorphShape kind="softBurst" size={170} color={c.muted + '2E'}>
+                <Text style={[s.big, { color: c.muted }]}>“</Text>
+              </MorphShape>
+            </View>
+          </Appear>
+        ) : pg === 7 && castDo ? (
           <Appear key="did" by={10} duration={420}>
             <View style={s.castDo}>
-              <MorphShape kind="sunny" size={150} color={c.mint}>
+              <MorphShape kind="sunny" size={130} color={c.mint}>
                 <View>
-                  <Icon name="check" size={56} color="#FFFFFF" />
+                  <Icon name="check" size={52} color="#FFFFFF" />
                 </View>
               </MorphShape>
-              <Text style={[s.standT, { color: c.ink }]}>{(WRITTEN_CAST.find((x) => x[0] === cast) || ['', ''])[1] + '. ' + w.cast.doIt}</Text>
-              <T tone="muted" style={s.c}>
-                {w.cast.doSub}
-              </T>
+              <Text style={[s.standT, { color: c.ink }]}>{castDo}</Text>
             </View>
           </Appear>
         ) : (
           <Appear key={'v' + pg} by={10} duration={420}>
             <View style={[s.note, { backgroundColor: four ? c.sunSoft : c.mintSoft }]}>
+              {pull ? (
+                <T v="small" tone="muted">
+                  {pull.faced}
+                </T>
+              ) : null}
               <Text style={[s.verseT, { color: c.ink }]}>
                 <Text style={{ color: four ? c.sunText : c.mintText }}>{card.lead}</Text> {card.rest}
               </Text>
@@ -566,7 +614,7 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
         )}
       </View>
       {pg === 7 ? (
-        cast ? (
+        castDo ? (
           <Button label={w.cast.did} onPress={() => go(8)} />
         ) : (
           <View style={{ gap: 10 }}>
@@ -594,12 +642,12 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
       ) : pg === 5 || pg === 8 ? null : (
         <View style={[s.line, { gap: 8 }]}>
           <T v="label" style={s.c}>
-            {w.pulls[0].ref ? 'Read it out loud, slowly.' : 'Say it out loud, slowly.'}
+            {front ? 'Tap to answer it.' : (w.pulls[0].ref ? 'Read it out loud.' : 'Say it out loud.') + ' Tap to go on.'}
           </T>
-          <WavyLine width={220} p={read} color={four ? c.sun2 : c.mint} track={(four ? c.sun2 : c.mint) + '33'} />
+          <WavyLine width={220} p={read} color={tone} track={tone + '33'} />
         </View>
       )}
-    </View>
+    </Pressable>
   );
 }
 
@@ -841,7 +889,9 @@ const s = StyleSheet.create({
   fastT: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 42, textAlign: 'center' },
   note: { alignSelf: 'stretch', gap: 8, padding: 24, borderRadius: 20 },
   noteT: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
-  pullT: { fontFamily: font.display, fontSize: 22, lineHeight: 28, textAlign: 'center', textDecorationLine: 'line-through' },
+  pullT: { fontFamily: font.display, fontSize: 22, lineHeight: 28, textAlign: 'center' },
+  pullDone: { textDecorationLine: 'line-through' },
+  trickT: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 23, textAlign: 'center' },
   verseT: { fontFamily: font.display, fontSize: 22, lineHeight: 30 },
   castDo: { alignItems: 'center', gap: 10 },
   standT: { fontFamily: font.display, fontSize: 22, lineHeight: 28, textAlign: 'center' },

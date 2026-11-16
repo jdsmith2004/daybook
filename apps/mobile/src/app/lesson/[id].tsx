@@ -50,6 +50,9 @@ import {
   deedAnswer,
   deedAskBack,
   deedDone,
+  deedJot,
+  stepAt,
+  deedWrite,
   deedSet,
   deedWords,
   landOfIn,
@@ -99,7 +102,7 @@ import { Bar, Praise, praiseFor, thanksFor } from '@/components/lesson-play';
 import { FlashCard } from '@/components/lesson-flash';
 import { Next, Rich } from '@/components/lx';
 import { LISTEN_OK, ListenButton, SpokenCard } from '@/components/listen';
-import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
+import { DeedWrite, GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { play } from '@/lib/sound';
@@ -147,7 +150,9 @@ export default function LessonScreen() {
     vo: voQ,
   } = useLocalSearchParams<{ id: string; at?: string; pick?: string; len?: string; card?: string; vo?: string }>();
   /* the lesson preview (dev only, the demo build: /lesson-preview): any lesson opens at the length asked for, with nothing in the way */
-  const preview = PREVIEW_ON && at === 'preview';
+  const preview = PREVIEW_ON && (at === 'preview' || at === 'deed');
+  /* the demo build may open straight on the deed of the step this lesson is on (at=deed), to look at it and write in it */
+  const deedPv = PREVIEW_ON && at === 'deed';
   const { snap, tk, update, apply, say } = useStore();
   /* the first week's part for today (WP10, unlock.ts): it opens after the lesson, never on a care lesson */
   const part = useUnlock();
@@ -213,6 +218,12 @@ export default function LessonScreen() {
   const [sheet, setSheet] = useState<Sheet | null>(null);
   /* the step's deed: what was chosen at the end of this lesson, and whether the one ask back was answered as it opened */
   const [deedA, setDeedA] = useState<'did' | 'later' | null>(null);
+  /* the deed's words, when it asks for some (core deed-journal.ts): the journal entry they went into, saved a moment after typing */
+  const [deedT, setDeedT] = useState('');
+  const deedJ = useRef<{ id: string | null; t: string; timer?: ReturnType<typeof setTimeout> }>({ id: null, t: '' });
+  /* words still waiting are saved when the page closes, however it closes */
+  const flushRef = useRef<() => void>(() => {});
+  useEffect(() => () => void (deedJ.current.timer && flushRef.current()), []);
   const [askedBack, setAskedBack] = useState(false);
   /* the practice step: what was added, opened and copied here, and the line whose words are being changed */
   const [got, setGot] = useState<Record<number, Got>>({});
@@ -281,12 +292,12 @@ export default function LessonScreen() {
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
   if (!care && !preview && !lessonOpen(L, done, account, st)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
   /* the step whose deed comes after this lesson (its last on the path), shown once the lesson is read, unless it was done already */
-  const dk = care ? -1 : deedAfter(L, st, snap.days);
+  const dk = deedPv ? stepAt(L.id) : care ? -1 : deedAfter(L, st, snap.days);
   const deedNext = dk >= 0 && !deedDone(st, dk) && deedA == null;
   /* the step before this one, asked about once more as its first lesson opens (never after a slip) */
   const askK = care || askedBack ? -1 : deedAskBack(L, snap.days, st, tk);
   /* one way in: with nothing to ask before the step, the lesson opens on its first card */
-  const stg: Stage = !chose && !care ? 'len' : stage === 'cover' && askK < 0 ? 'run' : stage;
+  const stg: Stage = deedPv && dk >= 0 ? (deedA == null ? 'deed' : 'practiced') : !chose && !care ? 'len' : stage === 'cover' && askK < 0 ? 'run' : stage;
   /* the cards; the old Done card is gone: after the last card comes Put it to work, the step's deed, then one finish page */
   const seq = lessonSeq(L, len).filter((x): x is Extract<SeqItem, { t: 'card' }> => x.t === 'card');
   const pr0 = lessonPractice(L, st);
@@ -393,7 +404,28 @@ export default function LessonScreen() {
     });
     return g;
   };
+  const deedFlush = () => {
+    const j = deedJ.current;
+    clearTimeout(j.timer);
+    j.timer = undefined;
+    if (dk < 0) return;
+    const words = deedWords(dk, st);
+    update((s0) => {
+      const r = deedJot(s0.journal || {}, j.id, tk, words, j.t);
+      j.id = r.id;
+      return r.jn === s0.journal ? s0 : { ...s0, journal: r.jn };
+    });
+  };
+  const deedType = (v: string) => {
+    setDeedT(v);
+    const j = deedJ.current;
+    j.t = v;
+    clearTimeout(j.timer);
+    j.timer = setTimeout(deedFlush, 500);
+  };
+  flushRef.current = deedFlush;
   const chooseDeed = (a: 'did' | 'later') => {
+    if (deedJ.current.timer) deedFlush();
     const g = deedSave((st0) => deedSet(st0, dk, a, tk));
     setDeedA(a);
     if (a === 'did') {
@@ -832,6 +864,8 @@ export default function LessonScreen() {
           Now do it for real
         </T>
         <Bubble text={deedWords(dk, st)} />
+        {/* a deed that asks for words gets the place to write them, near the top so the keyboard leaves it in sight */}
+        {deedWrite(dk) ? <DeedWrite value={deedT} placeholder={deedWrite(dk)!} label={deedWords(dk, st)} onChange={deedType} /> : null}
         <FlameSlot size={SHORT ? 230 : 300} min={110} />
         <Dock>
           <View style={{ gap: 12 }}>

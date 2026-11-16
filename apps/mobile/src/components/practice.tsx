@@ -3,8 +3,8 @@
    changes a line's words before it is added (it sits at the top, above the keyboard), and a tool or page to open. */
 import { type PItem } from '@daybook/core';
 import { ITEM_WHEN_LEN, ITEM_WHERE, itemButton, itemDone, itemLen } from '@daybook/core/lesson-content';
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';
 import { Text, TextInput } from '@/components/text';
 
@@ -240,6 +240,51 @@ export function WriteBox({
         Saved as you type. Only you see it.
       </T>
     </View>
+  );
+}
+
+/** a step's deed that asks for words (core steps.ts write): the box is the place to write them, and they go into the journal
+    as they are typed, so nothing is lost if the page closes. The box and its Save stay together, above the keyboard. Save only
+    puts the keyboard away and says where the words went: they were saved already. */
+export function DeedWrite({ value, placeholder, label, onChange }: { value: string; placeholder: string; label: string; onChange: (v: string) => void }) {
+  const c = useTheme();
+  const [focus, setFocus] = useState(false);
+  const box = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const has = !!value.trim();
+  return (
+    <KeepAbove style={{ gap: 10 }}>
+      <TextInput
+        ref={box}
+        value={value}
+        onChangeText={onChange}
+        onFocus={() => setFocus(true)}
+        onBlur={() => setFocus(false)}
+        multiline
+        maxLength={1000}
+        placeholder={placeholder}
+        placeholderTextColor={c.muted}
+        accessibilityLabel={label}
+        style={[s.in, { color: c.ink, backgroundColor: c.surface, borderColor: focus ? c.accent : c.line, minHeight: 84, textAlignVertical: 'top' }]}
+      />
+      {focus && has ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            buzz('save');
+            box.current?.blur();
+            Keyboard.dismiss();
+          }}
+          style={({ pressed }) => [s.btn, s.btnMain, { backgroundColor: c.accent, shadowColor: c.accentDeep, transform: [{ translateY: pressed ? 2 : 0 }] }]}>
+          <Icon name="check" size={19} color={c.accentInk} />
+          <Text style={[s.btnT, { color: c.accentInk }]}>Save to my journal</Text>
+        </Pressable>
+      ) : (
+        <View style={s.eye} accessibilityLiveRegion="polite">
+          {has ? <Icon name="check" size={15} color={c.ink} /> : null}
+          <Text style={[s.eyeT, { color: c.ink }]}>{has ? 'In your journal. Only you see it.' : 'It goes into your journal. Only you see it.'}</Text>
+        </View>
+      )}
+    </KeepAbove>
   );
 }
 

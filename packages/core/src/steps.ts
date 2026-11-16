@@ -30,6 +30,9 @@ export interface PathStep {
   /** the deed for someone who said No to faith, when it names God */
   deedNoFaith?: string;
   back: string;
+  /** the deed asks for words: a box on the deed's page, saved to the journal as it is typed (deed-journal.ts), with these
+      starting words showing in it while it is empty */
+  write?: string;
 }
 
 export const PATH_STEPS: PathStep[] = [
@@ -43,6 +46,7 @@ export const PATH_STEPS: PathStep[] = [
     god: 'g1',
     deed: 'Write three honest lines: what it gives you, what it costs you, and what you want instead.',
     back: 'write your three lines',
+    write: 'It gives me… It costs me… Instead I want…',
   },
   {
     id: 's2',
@@ -55,6 +59,7 @@ export const PATH_STEPS: PathStep[] = [
     deed: 'Name what you will lean on instead: God, a person, or a plan. Say it, or write it down.',
     deedNoFaith: 'Name what you will lean on instead: a person, a plan, or what you stand for. Say it, or write it down.',
     back: 'name what you will lean on',
+    write: 'I will lean on…',
   },
   {
     id: 's3',
@@ -78,6 +83,7 @@ export const PATH_STEPS: PathStep[] = [
     god: 'g4',
     deed: 'Write one sentence about who you are becoming, and say it out loud once.',
     back: 'say your sentence out loud',
+    write: 'I am becoming someone who…',
   },
   {
     id: 's5',
@@ -90,6 +96,7 @@ export const PATH_STEPS: PathStep[] = [
     god: 'g5',
     deed: 'Walk one slip back, link by link. Write the chain, and one thing you did right.',
     back: 'walk one slip back',
+    write: 'It started with… One thing I did right…',
   },
   {
     id: 's6',
@@ -112,6 +119,7 @@ export const PATH_STEPS: PathStep[] = [
     god: 'g7',
     deed: 'Write your first hour after a slip, in your own words, so it is ready before you need it.',
     back: 'write your first hour after a slip',
+    write: 'In the first hour after a slip, I will…',
   },
   {
     id: 's8',

@@ -51,6 +51,7 @@ export * from './time-back';
 export * from './proof';
 export * from './journal';
 export * from './journal-entries';
+export * from './deed-journal';
 export * from './journal-notes';
 export * from './scripture';
 export * from './journal-notes-in';

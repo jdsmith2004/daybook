@@ -1,7 +1,19 @@
 /* The made-up log the screenshot studio shows (dev only): someone about six weeks in, whose flame is still a flame. They started on September 8, the day
    they set as their quit date, rode out an urge every few days, slipped once in September (lonely, late at night) and kept going, checked in most evenings and
    did a lesson now and then. Every value is fixed, so every shot is the same each time. Nothing here is anyone's real data. */
-import { answerNight, defaultSettings, keepHard, logicalKey, normDay, normSettings, riskToKeep, setTonight, type Days } from '@daybook/core';
+import {
+  answerNight,
+  defaultSettings,
+  JN_NO_FEEL,
+  PATH_STEPS,
+  keepHard,
+  logicalKey,
+  normDay,
+  normSettings,
+  riskToKeep,
+  setTonight,
+  type Days,
+} from '@daybook/core';
 
 import { DEMO } from './config';
 
@@ -140,6 +152,12 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
       const id = 'demo' + (i + 1);
       out['daybook:journal/' + id] = JSON.stringify({ id, d, at, w, t, u: at });
     });
+  /* ?deed=1 adds what was written in step 4's deed box today (lesson at=deed), so the journal shows a deed's entry */
+  if (typeof window !== 'undefined' && !!window.location && new URLSearchParams(window.location.search).get('deed') === '1') {
+    const at = new Date(`${DEMO.day}T11:40:00`).getTime();
+    const t = 'I am becoming someone who is free, and who shows up for the people I love.';
+    out['daybook:journal/demodeed'] = JSON.stringify({ id: 'demodeed', d: DEMO.day, at, w: JN_NO_FEEL, t, q: PATH_STEPS[3].deed, u: at });
+  }
   if (theme !== 'auto') out['daybook.theme'] = theme;
   /* the app was already opened today, so "How are you feeling today?" does not cover the shot (lib/day-open.ts); an updating person
      opens it fresh, as they would, unless ?seen= stands for a later open */

@@ -834,6 +834,8 @@ function WritePage({
                 <Text style={s.word} maxFontSizeMultiplier={1.25} numberOfLines={1}>
                   {e.w}
                 </Text>
+                {/* the question it answers, when it came with one (a step's deed, core deed-journal.ts), so reading it back makes sense */}
+                {e.q ? <Text style={s.nudge}>{e.q}</Text> : null}
                 {blank && named ? (
                   <Text style={s.nudge}>
                     Explore why you might be feeling <Text style={[s.nudge, s.nudgeW, { color: look.color }]}>{word}</Text>

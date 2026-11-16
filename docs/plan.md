@@ -78,7 +78,8 @@ good tool ... write down that it's going to be second for those who are faith-ba
   paper cards face down on the first page (the pulls to come); the hold opens with sparkles; the three pulls stay as they were before this pass (the owner,
   November 15, 2026, after a flip card and then a scripture-first page were both tried and turned down: "Before ... it had
   scriptures and a good flow. It just needed a little bit of refinement. You went way too far"): the pull and its old move, a tap
-  answers it with the verse in its sun box, and the pull is struck through. Any change to them goes to the owner as a sample first; on "Then it left" the three answered cards drift up and away and the sun comes
+  answers it with the verse in its sun box, and the pull is struck through. Any change to them goes to the owner as a sample first. Each answer box quotes the tempter's exact words first (Matthew 4:3, 4:6, 4:9, King James), then His answer
+  (the owner, November 15, 2026: "Jesus is the example ... quote directly"; shipped on his "Yes, ship it"); on "Then it left" the three answered cards drift up and away and the sun comes
   up where they were, with sparkles for the angels; the heart page is one mint heart beating slowly; on Cast, what is feeding it
   is a shape in the middle and "I did it" throws it up off the screen; the last page is the person's flame, big, saying the verse
   in the lesson's cream bubble. Plain on purpose: verses sit on the sky with no box, the one timer is the squiggle under pages that

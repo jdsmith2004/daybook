@@ -85,7 +85,7 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
   const stageSec = pull
     ? front
       ? Math.max(3, Math.min(6, 1.5 + (pull.pull + ' ' + pull.trick).split(/\s+/).length * 0.25))
-      : wrSec([pull.faced, pull.lead, pull.rest].join(' '))
+      : Math.min(14, wrSec([pull.said ? pull.said.text : '', pull.faced, pull.lead, pull.rest].join(' ')) + (pull.said ? 2 : 0))
     : page
       ? wrSec([page.head, page.sub, page.lead, page.rest].join(' '))
       : 0;
@@ -186,6 +186,17 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
             ) : (
               <Appear key={'v' + pg} by={10} duration={420}>
                 <View style={[s.note, { backgroundColor: c.sunSoft }]}>
+                  {pull.said ? (
+                    <View style={s.said}>
+                      <T v="small" tone="muted">
+                        The tempter said,
+                      </T>
+                      <Text style={[s.saidT, { color: c.ink }]}>{'“' + pull.said.text + '”'}</Text>
+                      <T v="small" tone="muted">
+                        {pull.said.ref}
+                      </T>
+                    </View>
+                  ) : null}
                   <T v="small" tone="muted">
                     {pull.faced}
                   </T>
@@ -555,6 +566,8 @@ const s = StyleSheet.create({
   pullDone: { textDecorationLine: 'line-through' },
   trickT: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 23, textAlign: 'center' },
   note: { alignSelf: 'stretch', gap: 8, padding: 24, borderRadius: 20 },
+  said: { gap: 4, paddingBottom: 10, marginBottom: 2, borderBottomWidth: 1, borderBottomColor: 'rgba(122,75,0,0.18)' },
+  saidT: { fontFamily: font.display, fontSize: 17, lineHeight: 24, opacity: 0.8 },
   noteVerse: { fontFamily: font.display, fontSize: 22, lineHeight: 30 },
   /* the three face-down cards, and the answered ones leaving */
   fan: { width: 250, height: 190 },

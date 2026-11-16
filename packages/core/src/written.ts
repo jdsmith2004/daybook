@@ -18,7 +18,10 @@ export interface WrittenPull {
   pull: string;
   /** the old move it is, under the pull: seeing the pattern is half of the answer (the bishop's note: the attack has a pattern) */
   trick: string;
-  /** what He faced, or what the pull claims, leading into the answer */
+  /** what the tempter said, quoted exactly from the King James Bible, and its verse; null in the plain voice (the owner, November 15,
+      2026: "Jesus is the example, and he has this scripture which I have told you multiple times to quote directly") */
+  said: { text: string; ref: string } | null;
+  /** what leads into the answer */
   faced: string;
   /** the answer's first words, in the sun color ("It is written,") */
   lead: string;
@@ -73,7 +76,8 @@ const BIBLE_PULLS: WrittenWords['pulls'] = [
   {
     pull: '“You need this.\nYou have earned it.”',
     trick: 'It calls a want a need.',
-    faced: 'After forty days without food, He answered:',
+    said: { text: 'If thou be the Son of God, command that these stones be made bread.', ref: 'Matthew 4:3' },
+    faced: 'He answered,',
     lead: 'It is written,',
     rest: 'Man shall not live by bread alone, but by every word that proceedeth out of the mouth of God.',
     ref: 'Matthew 4:4',
@@ -81,7 +85,8 @@ const BIBLE_PULLS: WrittenWords['pulls'] = [
   {
     pull: '“Just a look.\nYou can stop after.”',
     trick: 'It calls the first step small.',
-    faced: 'Told to jump, that nothing bad would happen, He answered:',
+    said: { text: 'If thou be the Son of God, cast thyself down.', ref: 'Matthew 4:6' },
+    faced: 'He answered,',
     lead: 'It is written again,',
     rest: 'Thou shalt not tempt the Lord thy God.',
     ref: 'Matthew 4:7',
@@ -89,7 +94,8 @@ const BIBLE_PULLS: WrittenWords['pulls'] = [
   {
     pull: '“This will make\nit all better.”',
     trick: 'It promises what it has never given.',
-    faced: 'Offered every kingdom of the world, He answered:',
+    said: { text: 'All these things will I give thee, if thou wilt fall down and worship me.', ref: 'Matthew 4:9' },
+    faced: 'He answered,',
     lead: 'Get thee hence, Satan:',
     rest: 'for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve.',
     ref: 'Matthew 4:10',
@@ -158,6 +164,7 @@ const PLAIN: WrittenWords = {
     {
       pull: '“You need this.\nYou have earned it.”',
       trick: 'It calls a want a need.',
+      said: null,
       faced: 'Answer it:',
       lead: 'I am fed by more than this.',
       rest: 'What I am hungry for, this has never filled.',
@@ -166,6 +173,7 @@ const PLAIN: WrittenWords = {
     {
       pull: '“Just a look.\nYou can stop after.”',
       trick: 'It calls the first step small.',
+      said: null,
       faced: 'Answer it:',
       lead: 'I do not need to test it.',
       rest: 'I already know where it goes, and God is with me here.',
@@ -174,6 +182,7 @@ const PLAIN: WrittenWords = {
     {
       pull: '“This will make\nit all better.”',
       trick: 'It promises what it has never given.',
+      said: null,
       faced: 'Answer it:',
       lead: 'God is enough for me.',
       rest: 'What this promises, it has never given.',

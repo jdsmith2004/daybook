@@ -33,6 +33,11 @@
         height: 100%;
         flex: 1;
       }
+      /* while the code loads, the page is the launch screen's night (core LAUNCH_BG), not a white page; once the app draws, the
+         root is no longer empty and this stops */
+      #root:empty {
+        background-color: #15123a;
+      }
     </style>
   </head>
 

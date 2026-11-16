@@ -53,7 +53,7 @@ export default function Friend() {
     if (!r.ok) return setMsg(r.msg);
     buzz('lit');
     setPulse((n) => n + 1);
-    track('friend_cheer', { what: pick });
+    if (!fr.demo) track('friend_cheer', { what: pick });
     setMsg('Sent. ' + f.name + ' sees it next time they open Friends.');
   };
   const finish = async () => {
@@ -63,7 +63,7 @@ export default function Friend() {
     if (!r.ok) return setMsg(r.msg);
     /* the owner hears of a report at once, through the feedback inbox: only that one came in and why, never who or what they wrote
        (that stays in the #reports partition of the records table, for the owner to read there) */
-    if (end === 'block' && why)
+    if (end === 'block' && why && !fr.demo)
       sendFeedback('A Friends report came in (' + why + '). It is in the #reports partition of daybook-records.', '').catch(() => false);
     closeSheet();
   };

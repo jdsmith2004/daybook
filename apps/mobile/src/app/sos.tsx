@@ -23,6 +23,7 @@ import {
   godOn,
   newUrge,
   rateUrTool,
+  RIDE_FAITH,
   RIDE_FRESH,
   RIDE_MOVES,
   RIDE_REPLAY,
@@ -365,11 +366,11 @@ export default function Sos() {
     if (done) setUr(u);
     /* a ride move done eases its count of passes; Next before it was done adds to it, more for a quick pass (core ride.ts
        ridePassed): a move passed over often comes later. The other pages (a note, It is written, If it were a thing) keep
-       their own count (sos.ts urNote) */
+       their own count (sos.ts urNote); It is written counts like a move */
     if (!practice && !back) {
       const ms = Date.now() - pageAt.current;
       if (done) sos.setMem((m) => rideFinished(m, id));
-      else if (RIDE_MOVES.indexOf(id) >= 0) sos.setMem((m) => ridePassed(m, id, ms));
+      else if (RIDE_MOVES.indexOf(id) >= 0 || id === RIDE_FAITH) sos.setMem((m) => ridePassed(m, id, ms));
       else sos.setMem((m) => urNote(m, id, null));
     }
     buzz('tap');

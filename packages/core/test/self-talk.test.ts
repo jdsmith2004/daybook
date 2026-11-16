@@ -33,6 +33,17 @@ describe('Self Talk in the ride', () => {
     expect(core.rideOften(m, 'selftalk')).toBe(true);
     expect(ride(30, { words: true }, m)).toContain('selftalk');
   });
+  it('the heart saves it, and a hearted Self Talk comes sooner', () => {
+    const liked = core.rateUrTool(core.rateUrTool(plain, 'selftalk', 1), 'selftalk', 1);
+    expect(core.urLikeOf(liked, 'selftalk')).toBe(2);
+    const sc = core.newUrge(now, 0);
+    const at = (st: Settings) => {
+      const out: string[] = [];
+      for (let i = 0; i < 24; i++) out.push(core.rideNext(sc, {}, st, tk, now, {}, { words: true }, out));
+      return out.indexOf('selftalk');
+    };
+    expect(at(liked)).toBeLessThan(at(plain));
+  });
   it('has a line on why it works, and a lesson', () => {
     const s = core.rideScience('selftalk');
     expect(s!.t).toBeTruthy();

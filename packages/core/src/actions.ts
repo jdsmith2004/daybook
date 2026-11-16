@@ -285,7 +285,8 @@ export const setUrOff = (st: Settings, id: string, on: boolean): Settings =>
 /** "Would you use this again?": d is +1 for Yes and -1 for Not really (or the change, when the answer is changed) */
 export const rateUrTool = (st: Settings, id: string, d: number): Settings =>
   changeSettings(st, (s) => {
-    if (id !== 'written' && !(TOOLS as { id: string }[]).some((t) => t.id === id)) return;
+    /* It is written and Self Talk are ride moves, not tools, and can be hearted too */
+    if (id !== 'written' && id !== 'selftalk' && !(TOOLS as { id: string }[]).some((t) => t.id === id)) return;
     s.urLike = { ...(s.urLike && typeof s.urLike === 'object' ? s.urLike : {}), [id]: Math.max(-3, Math.min(3, urLikeOf(s, id) + d)) };
   });
 /** haptics on (the setting is left out) or off */

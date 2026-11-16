@@ -145,7 +145,11 @@ export function rideWeights(sc: UrState, days: Days, st: Settings | null, tk: Da
   /* a move that is not a tool (Self Talk) starts from the lowest score the tools have here, so its place in RIDE_ORDER, what
      the person says helps and what they pass over decide where it lands */
   const floor = Math.min(0, ...rank.filter((x) => RIDE_MOVES.indexOf(x.id) >= 0).map((x) => x.score));
-  const own = (id: string) => ({ id, score: floor, r: null, rt: null, ra: null, tk: '', pin: false, off: false });
+  /* and the heart lifts it as urRank lifts a hearted tool */
+  const own = (id: string) => {
+    const lk = urLikeOf(st, id);
+    return { id, score: floor + (lk > 0 ? lk * 2 : lk * 3), r: null, rt: null, ra: null, tk: '', pin: false, off: false };
+  };
   const list = RIDE_MOVES.filter((id) => (urTool(id) || RIDE_ONLY.indexOf(id) >= 0) && (id !== 'reasons' || can.words))
     .map((id) => ({ id, r: rank.find((x) => x.id === id) || (RIDE_ONLY.indexOf(id) >= 0 ? own(id) : undefined) }))
     .filter((x) => x.r && (!x.r.off || x.r.pin))

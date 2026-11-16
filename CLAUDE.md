@@ -196,8 +196,8 @@ need, without letting the screen turn into a list of features.
     picks its own port, so chats never share one. `?demo=month`, `hard`, `grad` or `comeback` and `?theme=dark` pick the state.
   - Every link is checked in a fresh browser profile with no saved data (a new Playwright context, or a private window) before it
     is given, and it must open on the changed screen, never on setup.
-  - A screen that needs an account, a friend or a server answer gets a demo state in `src/shots` (as `?demo=friends` does for
-    Friends), built by the chat that builds the screen, so the link shows it filled in.
+  - A screen that needs an account, a friend or a server answer gets a demo state in `src/shots` (as `/friends?demo=1` does
+    for Friends), built by the chat that builds the screen, so the link shows it filled in.
 - **Merge to main, then archive; the iPhone check is TestFlight from main (the owner, November 13, 2026: "i want the chats
   to merge to main then archive alot of these chats keep not merging to main bc it's not tested on iphone, we will test it on
   iphone by making a build from main and publishing it to testflight").** A chat whose work is done (tests pass, QA on the web

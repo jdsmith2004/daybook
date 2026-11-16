@@ -1,19 +1,22 @@
-/* What the breathing figure looks like at one moment: the sun, the dots round it, and the color of its words. The web
-   draws it on a canvas and a phone with Skia (components/breath-field), both from this one list, so they cannot drift
-   apart. Everything here runs on the UI thread (each function is a worklet) and depends only on the time.
+/* What the breathing figure looks like at one moment: its dots and the color of its words. The web draws it on a canvas
+   and a phone with Skia (components/breath-field), both from this one list, so they cannot drift apart. Everything here
+   runs on the UI thread (each function is a worklet) and depends only on the time.
 
-   Every pattern has the sun in the middle, always gold, growing on a breath in and settling on a breath out, with a soft
-   edge that gives off small sparks of light (the owner, November 15, 2026, of a flat disc: "the sun looks pretty
-   artificial"). Each pattern is its own picture round it (the owner: "feel free to be creative so it's not a carbon copy"):
-   - the sigh: a field of dots that dissolves into the sun on the breath in and shoots back out on the breath out.
-   - long breath out: a sunrise over water. The sun climbs as you breathe in and the stars fade; it sinks slowly as you
-     breathe out, and its light on the water narrows.
-   - box: a square of dots, one side for each count of four. Light runs up, across, down and back, so a hold has somewhere
-     to be.
-   - 4-7-8: a sunflower of dots that opens on the breath in, ripples once a second through the hold of seven, and closes
-     slowly on the long breath out.
-   The dots' color tells the step, like a sky: rose, coral and gold on the way in, cooling to teal on the way out. With
-   Reduce Motion nothing moves, and only the color and the words change. */
+   It is made of small, flat, crisp dots and nothing else: no glow, no halo, no sun (the owner, November 15, 2026, of the
+   glowing sun and the pictures round it: "scrap it ... make it look more like How We Feel"). Each pattern is one figure:
+   - the sigh: rings of dots round one small circle. They go all the way into it on the breath in, every ring but the
+     last, and it rests; "a little more" takes the last ring. They leave it, unhurried, on the breath out.
+   - long breath out: a globe of dots. It fills from the top down and a light crosses it as you breathe in, and both go
+     back as you breathe out.
+   - box: a square grid of dots and one dot that walks round its edge, a side for each count of four. The grid leans
+     toward the walking dot, swells on the breath in and flattens on the breath out.
+   - 4-7-8: a ball of scattered dots that turns. It fills dot by dot on the breath in, is whole and quiet through the
+     hold of seven, and lets go dot by dot on the long breath out.
+   Every figure starts as one small dot while the words say to get settled, and its dots drift out of that dot from the
+   first moment, so
+   the figure is there before the first breath (the owner: "it should start shooting out while it's like get settled").
+   The whole figure is one color at a time, and the color tells the step: rose, coral and gold on the way in, cooling to
+   teal on the way out. With Reduce Motion nothing moves, and only the color and the words change. */
 import { FIELD_ORDER, FIELD_PATTERNS, type FieldId } from '@daybook/core';
 
 import { breathAt, type Steps } from '@/lib/breath';
@@ -68,52 +71,57 @@ const PAT = Object.fromEntries(
   }),
 ) as Record<FieldId, Pat>;
 
-/* ---- the sigh: rings of dots round the sun ---- */
-const RINGS = 5;
-const NEAR = 0.6;
+/* ---- the sigh: rings of dots round a small circle ---- */
+const RINGS = 6;
+const NEAR = 0.34;
 const FALL = 0.38;
-const FLY = 0.5;
-/** [how far out it rests, its angle, when it arrives on a breath in, when it leaves on a breath out, when it drifts out in the settle, how pale] */
+const FLY = 0.7;
+/** [how far out it rests, its angle, when it arrives on a breath in, when it leaves on a breath out, when it drifts out in the settle, how fast its ring turns,
+    its ring (0 is the inmost), a steady random number] */
 const RING_DOTS: number[][] = [];
 for (let r = 0; r < RINGS; r++) {
   const rr = NEAR + ((1 - NEAR) * r) / (RINGS - 1);
-  const n = Math.round(22 + r * 6.5);
+  const n = 10 + r * 7;
   for (let j = 0; j < n; j++) {
     const k = r * 97 + j;
     RING_DOTS.push([
-      rr + (rnd(k + 1) - 0.5) * 0.045,
-      ((j + (r % 2) * 0.5 + (rnd(k + 2) - 0.5) * 0.35) / n) * TAU,
-      Math.min(1, FALL + 0.02 + (r / (RINGS - 1)) * 0.52 + rnd(k + 3) * 0.1),
-      ((RINGS - 1 - r) / (RINGS - 1)) * 0.3 + rnd(k + 4) * 0.12,
-      rnd(k + 6),
-      rnd(k + 5) * 0.16,
+      rr,
+      ((j + (r % 2) * 0.5) / n) * TAU,
+      Math.min(1, FALL + 0.02 + (r / (RINGS - 1)) * 0.52 + rnd(k + 3) * 0.08),
+      ((RINGS - 1 - r) / (RINGS - 1)) * 0.2 + rnd(k + 4) * 0.08,
+      (r / (RINGS - 1)) * 0.6 + rnd(k + 6) * 0.4,
+      (r % 2 ? 1 : -0.7) * (0.05 - r * 0.004),
+      r,
+      rnd(k + 8),
     ]);
   }
 }
 
-/* ---- long breath out: stars over water ---- */
-/** [x, y (parts of the radius from the middle; the horizon is at 0.5), twinkle speed, seed, size] */
-const STARS: number[][] = [];
-for (let i = 0; STARS.length < 64 && i < 400; i++) {
-  const x = rnd(i * 3 + 1) * 2 - 1;
-  const y = rnd(i * 3 + 2) * 1.42 - 1;
-  if (x * x + y * y > 1 || y > 0.38) continue;
-  STARS.push([x, y, 0.5 + rnd(i * 3 + 3) * 1.4, rnd(i + 0.7), 0.55 + rnd(i + 0.3) * 0.6]);
+/* ---- long breath out: a globe, dots along its lines ---- */
+/** [x, y, z] on a ball of radius 1 */
+const GLOBE: number[][] = [];
+for (let j = 1; j < 12; j++) {
+  const lat = -Math.PI / 2 + (Math.PI * j) / 12;
+  const n = Math.max(1, Math.round(24 * Math.cos(lat)));
+  for (let k = 0; k < n; k++) {
+    const lon = ((k + (j % 2) * 0.5) / n) * TAU;
+    GLOBE.push([Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)]);
+  }
 }
-const SEA_ROWS = 5;
-const HORIZON = 0.5;
 
-/* ---- box: a square of dots ---- */
-const BOX_SIDE = 10;
-const BOX_HALF = 0.8;
+/* ---- box: a square grid ---- */
+const GRID = 15;
 
-/* ---- 4-7-8: a sunflower ---- */
-const SEEDS = 120;
+/* ---- 4-7-8: a ball of scattered dots ---- */
 const GOLDEN = 2.39996323;
-
-/* ---- the sun's sparks: [angle, seed, speed, size] ---- */
-const SPARKS: number[][] = [];
-for (let i = 0; i < 44; i++) SPARKS.push([rnd(i + 11) * TAU, rnd(i + 23), 0.75 + rnd(i + 37) * 0.6, 0.7 + rnd(i + 41) * 0.7]);
+/** [x, y, z, when it drifts out in the settle] */
+const BALL: number[][] = [];
+for (let i = 0; i < 230; i++) {
+  const y = Math.max(-1, Math.min(1, 1 - (2 * (i + 0.5)) / 230 + (rnd(i + 5) - 0.5) * 0.05));
+  const r = Math.sqrt(1 - y * y);
+  const a = i * GOLDEN + (rnd(i + 9) - 0.5) * 0.7;
+  BALL.push([r * Math.cos(a), y, r * Math.sin(a), rnd(i + 2)]);
+}
 
 function clamp(x: number) {
   'worklet';
@@ -169,10 +177,6 @@ export function inkAt(id: FieldId, t: number, settle: number, still: boolean, li
 export type Scene = {
   /** every dot, seven numbers each: x, y, radius, red, green, blue, how much it shows */
   dots: number[];
-  /** the dots from this index on are drawn over the sun; the ones before it, under */
-  over: number;
-  /** the sun: x, y, radius, how full the breath is (0 to 1), and how far its faint halo reaches (it stays inside the room) */
-  sun: number[];
   /** the nose (1) or the lips (2) under the words, or neither (0); where its 24 by 24 grid starts and how big a unit is */
   by: number;
   ix: number;
@@ -194,12 +198,13 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
   const u = 34 / 24;
   const ix = cx - 12 * u;
   const iy = h - SCENE_WORDS + 46;
-  if (R < 60) return { dots, over: 0, sun: [cx, cy, 0, 0, 0], by: 0, ix, iy, u, ink };
+  if (R < 60) return { dots, by: 0, ix, iy, u, ink };
   const b = t - settle;
   let v = 0;
   let out = 1;
   let step = 0;
   let at = 0;
+  let dur = 1;
   if (b >= 0) {
     const br = breathAt(p.steps, b);
     v = br[0];
@@ -207,6 +212,7 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
     const st = stepAt(p, b);
     step = st[0];
     at = st[1];
+    dur = st[2];
   }
   if (still) v = 0.5;
   const part = b < 0 ? 0 : fract(b / p.total);
@@ -216,181 +222,171 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
     sky[1] *= DEEP;
     sky[2] *= DEEP;
   }
-  const GOLD = light ? AMBER : GOLD_NIGHT;
-  /* a dot is a touch paler than its tone at night, and never by day */
-  const PALE = light ? 0 : 1;
+  if (b < 0 && !still) {
+    /* while it settles it is gold, and it turns to the first breath's color as the breath comes */
+    const gold = light ? AMBER : GOLD_NIGHT;
+    const g = 1 - smooth(clamp((t - settle * 0.55) / Math.max(0.01, settle * 0.45)));
+    for (let i = 0; i < 3; i++) sky[i] += (gold[i] - sky[i]) * g;
+  }
   const full = smooth(v);
-  /* the settle: the sun is a dot that grows, and the figure comes in round it over its second half */
-  const born = b < 0 && !still ? 0.22 + 0.78 * smooth(clamp(t / Math.max(0.01, settle * 0.85))) : 1;
-  const from = settle * 0.5;
-  const span = Math.max(0.01, settle * 0.45);
-  const intro = b < 0 && !still ? smooth(clamp((t - from) / span)) : 1;
-  const d = Math.max(2.1, Math.min(2.8, R / 62));
-  let sx = cx;
-  let sy = cy;
-  let sunR = R * (0.17 + 0.29 * full) * born;
+  /* the settle: one dot that grows, and from a third of the way in the figure's dots drift out of it, slowly */
+  const settling = b < 0 && !still;
+  const from = 0;
+  const span = Math.max(0.01, settle - from);
+  const born = settling ? smooth(clamp(t / 0.5)) : 1;
+  /** how far a dot has come out of the middle (0 to 1); `late` (0 to 1) is its place in the line */
+  const come = (late: number) => {
+    'worklet';
+    if (!settling) return 1;
+    const f = clamp((t - from - late * span * 0.4) / (span * 0.6));
+    return f * f * (3 - 2 * f);
+  };
+  const d = Math.max(1.8, Math.min(2.5, R / 70));
+  const seed = R * 0.055;
 
   if (id === 'sigh') {
-    const edge = sunR * 0.86;
-    const turn = still ? 0 : 0.045 * t;
+    /* one small circle in the middle. Every dot goes all the way into it and is gone, and it grows a little for each one
+       it holds. The first breath in takes every ring but the last and comes to rest; "a little more" takes the last ring. */
+    const small = Math.max(d * 1.5, R * 0.024);
+    const big = R * 0.085;
+    const a1 = step === 0 ? clamp(at / (dur * 0.8)) : 1;
+    const a2 = step === 1 ? clamp((at - 0.15) / Math.max(0.1, dur - 0.45)) : step === 0 ? 0 : 1;
+    const o = step === 2 ? at / dur : 0;
+    let inside = 0;
     for (let i = 0; i < RING_DOTS.length; i++) {
       const l = RING_DOTS[i];
       const rest = R * l[0];
-      let rad = rest;
-      let ang = l[1] + turn;
-      let seen = 1;
-      let gold = 0;
-      let size = 1;
+      /* how far in it is (0 on its ring, 1 in the circle) */
+      let pos = 0;
       if (still) {
         /* nothing moves */
       } else if (b < 0) {
-        /* the settle: the dots drift out of the small sun */
-        const f = clamp((t - from - l[4] * span * 0.45) / (span * 0.55));
-        const fe = 1 - (1 - f) * (1 - f) * (1 - f);
-        rad = edge + (rest - edge) * fe;
-        seen = clamp(f * 5);
-        gold = 1 - fe;
-        size = 0.6 + 0.4 * fe;
-      } else if (!out) {
-        /* a breath in: it falls into the sun, curling a little, turning gold, and dissolves at the edge */
-        const e = smooth(clamp((v - (l[2] - FALL)) / FALL));
-        rad = rest + (edge - rest) * e * e;
-        ang += 0.55 * e;
-        seen = 1 - clamp((e - 0.72) / 0.28);
-        gold = clamp((e - 0.35) / 0.65);
-        size = 1 - 0.35 * e;
+        /* out of the circle from the first moment, quick at first and slowing to its ring */
+        const f = clamp((t - l[4] * settle * 0.4) / (settle * 0.6));
+        pos = (1 - f) * (1 - f);
+      } else if (step < 2) {
+        const e = l[6] === RINGS - 1 ? smooth(clamp((a2 - l[7] * 0.25) / 0.75)) : smooth(clamp((a1 - (l[6] / (RINGS - 2)) * 0.45 - l[7] * 0.08) / 0.47));
+        pos = e * e;
       } else {
-        /* a breath out: it shoots from the sun, fast at first, and slows to rest */
-        const f = clamp((1 - v - l[3]) / FLY);
-        const fe = 1 - (1 - f) * (1 - f) * (1 - f);
-        rad = edge + (rest - edge) * fe;
-        seen = clamp(f * 7);
-        gold = 1 - clamp(f / 0.6);
-        size = 0.65 + 0.35 * fe;
+        pos = 1 - smooth(clamp((o - l[3]) / FLY));
       }
+      inside += pos > 0.9 ? 1 : 0;
+      const seen = 1 - clamp((pos - 0.9) / 0.1);
       if (seen <= 0.01) continue;
-      const pale = l[5] * PALE;
-      dots.push(
-        cx + rad * Math.cos(ang),
-        cy + rad * Math.sin(ang),
-        d * size,
-        sky[0] + (255 - sky[0]) * pale + (GOLD[0] - sky[0] - (255 - sky[0]) * pale) * gold,
-        sky[1] + (255 - sky[1]) * pale + (GOLD[1] - sky[1] - (255 - sky[1]) * pale) * gold,
-        sky[2] + (255 - sky[2]) * pale + (GOLD[2] - sky[2] - (255 - sky[2]) * pale) * gold,
-        seen,
-      );
+      const rad = rest + (small * 0.4 - rest) * pos;
+      const ang = l[1] + (still ? 0 : l[5] * t) + 0.55 * pos;
+      dots.push(cx + rad * Math.cos(ang), cy + rad * Math.sin(ang), d * (1 - 0.35 * pos), sky[0], sky[1], sky[2], seen);
     }
-  } else if (id === 'long') {
-    /* the sun climbs from just over the water */
-    const y0 = cy + HORIZON * R;
-    sunR = R * (0.15 + 0.2 * full) * born;
-    sy = y0 - R * 0.22 - R * 0.62 * full;
-    /* the stars go out as the sun comes up, and those near it first */
-    for (let i = 0; i < STARS.length; i++) {
-      const s = STARS[i];
-      const x = cx + s[0] * R;
-      const y = cy + s[1] * R;
-      const far = Math.sqrt((x - sx) * (x - sx) + (y - sy) * (y - sy));
-      const tw = still ? 0.85 : 0.72 + 0.28 * Math.sin(t * s[2] + s[3] * TAU);
-      const seen = intro * (1 - 0.86 * full) * tw * clamp((far - sunR * 1.5) / (sunR * 1.2 + 1));
-      if (seen <= 0.02) continue;
-      dots.push(x, y, d * s[4], sky[0] + (255 - sky[0]) * 0.3 * PALE, sky[1] + (255 - sky[1]) * 0.3 * PALE, sky[2] + (255 - sky[2]) * 0.3 * PALE, seen);
-    }
-    /* the water: rows of dots that rock a little, lit gold in a path under the sun that widens as it climbs */
-    for (let k = 0; k <= SEA_ROWS; k++) {
-      const y = y0 + (k ? 0.03 + 0.092 * k : 0) * R;
-      const gap = R * (0.105 + 0.016 * k);
-      const n = Math.floor((R * 0.98) / gap);
-      const wide = R * (0.1 + 0.075 * k) * (0.45 + 0.9 * full);
-      for (let j = -n; j <= n; j++) {
-        const rock = still || !k ? 0 : R * 0.012 * Math.sin(t * 0.9 + k * 1.3 + j * 0.6);
-        const x = cx + j * gap + (k % 2 ? gap / 2 : 0) + rock;
-        if (Math.abs(x - cx) > R) continue;
-        const lit = clamp(1 - Math.abs(x - cx) / wide) * (0.35 + 0.65 * full);
-        const glint = still ? 0.85 : 0.7 + 0.3 * Math.sin(t * 2.1 + j * 1.7 + k * 0.9);
-        const g = lit * glint;
-        /* the far edge of the water fades away */
-        const rim = clamp((1 - Math.abs(x - cx) / R) * 3);
+    const mid = still ? small : (small + (big - small) * Math.sqrt(inside / RING_DOTS.length)) * born;
+    dots.push(cx, cy, mid, sky[0], sky[1], sky[2], 1);
+  } else {
+    if (id === 'long') {
+      /* a globe: it turns slowly, and a light crosses it from one side to the other with the breath. It fills from the top
+         down, dot by dot, so it swells like a chest and is never one ball pushed in and out */
+      const turn = still ? 0.4 : 0.1 * t;
+      const ct = Math.cos(turn);
+      const sn = Math.sin(turn);
+      const tilt = 0.32;
+      const cq = Math.cos(tilt);
+      const sq = Math.sin(tilt);
+      const a = Math.PI * (0.12 + 0.76 * full);
+      const lx = -Math.cos(a);
+      const ly = -0.3;
+      const lz = 0.25 + 0.75 * Math.sin(a);
+      const ll = Math.sqrt(lx * lx + ly * ly + lz * lz);
+      for (let i = 0; i < GLOBE.length; i++) {
+        const g = GLOBE[i];
+        const x = g[0] * ct + g[2] * sn;
+        const z0 = -g[0] * sn + g[2] * ct;
+        const y = g[1] * cq - z0 * sq;
+        const z = g[1] * sq + z0 * cq;
+        const e = come((g[1] + 1) / 2);
+        const fill = smooth(clamp(v * 1.45 - ((g[1] + 1) / 2) * 0.45));
+        const rad = R * (0.52 + 0.44 * fill);
+        const lit = clamp(((x * lx + y * ly + z * lz) / ll) * 0.7 + 0.42);
+        const near = z < 0 ? 0.42 : 1;
+        const k = (1 + 0.16 * z) * e;
         dots.push(
-          x,
-          y,
-          d * (k ? 0.72 + 0.06 * k : 0.8) * (1 + 0.45 * g),
-          sky[0] + (GOLD[0] - sky[0]) * g,
-          sky[1] + (GOLD[1] - sky[1]) * g,
-          sky[2] + (GOLD[2] - sky[2]) * g,
-          intro * rim * ((k ? 0.2 : 0.42) + 0.8 * g),
+          cx + x * rad * k,
+          cy + y * rad * k,
+          d * (0.5 + 1.15 * lit * lit) * (0.85 + 0.15 * z),
+          sky[0],
+          sky[1],
+          sky[2],
+          e * near * (0.18 + 0.82 * lit * Math.sqrt(lit)),
+        );
+      }
+    } else if (id === 'box') {
+      /* a square grid and one dot that walks round it: along the top on the breath in, down the side on the hold, back along
+         the bottom on the breath out, up on the hold. The grid leans toward the walking dot (the near corner opens and
+         brightens, the far one closes and fades), so the whole figure goes round with it. */
+      const q = still || b < 0 ? 0 : (step + smooth(at / dur)) / 4;
+      const side = Math.floor(q * 4) % 4;
+      const f = q * 4 - Math.floor(q * 4);
+      const wx = side === 0 ? -1 + 2 * f : side === 1 ? 1 : side === 2 ? 1 - 2 * f : -1;
+      const wy = side === 0 ? -1 : side === 1 ? -1 + 2 * f : side === 2 ? 1 : 1 - 2 * f;
+      const wl = Math.sqrt(wx * wx + wy * wy);
+      const cl = wx / wl;
+      const sl = wy / wl;
+      const lean = still ? 0 : 0.16;
+      const bulge = still ? 0.07 : 0.16 * full;
+      const half = R * (0.6 + 0.08 * full);
+      /** where a point of the grid is on the screen, and how near it is (about -1 to 1) */
+      const put = (gx: number, gy: number) => {
+        'worklet';
+        const z = (gx * cl + gy * sl) / 1.42;
+        const k = 1 / (1 - lean * z);
+        return [cx + (gx * (1 + bulge * (1 - gy * gy)) * k - cl * lean * 0.5) * half, cy + (gy * (1 + bulge * (1 - gx * gx)) * k - sl * lean * 0.5) * half, z];
+      };
+      for (let iy2 = 0; iy2 < GRID; iy2++)
+        for (let ix2 = 0; ix2 < GRID; ix2++) {
+          const gx = (ix2 / (GRID - 1)) * 2 - 1;
+          const gy = (iy2 / (GRID - 1)) * 2 - 1;
+          const e = come(Math.max(Math.abs(gx), Math.abs(gy)));
+          const at2 = put(gx * e, gy * e);
+          /* it comes out evenly lit, and the light finds its corner as it opens */
+          const lit = 0.45 + (clamp(0.5 + at2[2] * 0.62) - 0.45) * e;
+          dots.push(at2[0], at2[1], d * (0.26 + 1.35 * lit * lit), sky[0], sky[1], sky[2], e * (0.05 + 0.95 * lit * Math.sqrt(lit)));
+        }
+      /* the walker keeps just outside the grid's edge, along its curve */
+      const e = come(1);
+      const wk = put(wx * 1.13 * e, wy * 1.13 * e);
+      dots.push(wk[0], wk[1], d * 1.9, sky[0], sky[1], sky[2], clamp(e * 3));
+    } else {
+      /* a ball of scattered dots that turns. It fills dot by dot on the breath in, is whole and quiet through the hold, and
+         lets go dot by dot on the long breath out */
+      const turn = still ? 0.4 : 0.16 * t;
+      const ct = Math.cos(turn);
+      const sn = Math.sin(turn);
+      const tilt = 0.4;
+      const cq = Math.cos(tilt);
+      const sq = Math.sin(tilt);
+      for (let i = 0; i < BALL.length; i++) {
+        const g = BALL[i];
+        const x = g[0] * ct + g[2] * sn;
+        const z0 = -g[0] * sn + g[2] * ct;
+        const y = g[1] * cq - z0 * sq;
+        const z = g[1] * sq + z0 * cq;
+        const e = come(g[3]);
+        const fill = smooth(clamp(v * 1.5 - g[3] * 0.5));
+        const rad = R * (0.3 + 0.64 * fill);
+        const near = (z + 1) / 2;
+        const k = (1 + 0.18 * z) * e;
+        dots.push(
+          cx + x * rad * k,
+          cy + y * rad * k,
+          d * (0.5 + 0.75 * near),
+          sky[0],
+          sky[1],
+          sky[2],
+          e * Math.min(1, 0.2 + 0.8 * near * Math.sqrt(near)) * (0.7 + 0.3 * fill),
         );
       }
     }
-  } else if (id === 'box') {
-    /* a square, a side for each step: the light runs up on the breath in, across on the hold, down on the breath out and back */
-    const a = R * BOX_HALF;
-    const n = BOX_SIDE * 4;
-    sunR = R * (0.19 + 0.25 * full) * born;
-    for (let i = 0; i < n; i++) {
-      const side = Math.floor(i / BOX_SIDE);
-      const f = ((i % BOX_SIDE) / BOX_SIDE) * 2 - 1;
-      const x = side === 0 ? -a : side === 1 ? f * a : side === 2 ? a : -f * a;
-      const y = side === 0 ? -f * a : side === 1 ? -a : side === 2 ? f * a : a;
-      /* how long ago the light passed this dot, in rounds; it stays lit for a side and fades */
-      const ago = fract(part - i / n);
-      const lit = still ? 0.5 : b < 0 ? 0 : ago < 0.25 ? 1 - 0.85 * smooth(ago / 0.25) : 0.15;
-      const head = !still && b >= 0 ? clamp(1 - ago / 0.03) : 0;
-      dots.push(
-        cx + x,
-        cy + y,
-        d * (0.9 + 0.45 * lit + 0.5 * head),
-        sky[0] + (GOLD[0] - sky[0]) * lit,
-        sky[1] + (GOLD[1] - sky[1]) * lit,
-        sky[2] + (GOLD[2] - sky[2]) * lit,
-        intro * (0.32 + 0.68 * lit),
-      );
-    }
-  } else {
-    /* a sunflower: it opens on the breath in, ripples once a second through the hold, and closes on the breath out */
-    sunR = R * (0.16 + 0.2 * full) * born;
-    const open = 0.46 + 0.54 * full;
-    const turn = still ? 0 : 0.03 * t + (1 - open) * 1.3;
-    const holding = !still && b >= 0 && p.kind[step] === 1;
-    const beat = fract(at);
-    for (let i = 0; i < SEEDS; i++) {
-      const fr = Math.sqrt((i + 8) / (SEEDS + 8));
-      const rad = R * fr * open;
-      if (rad < sunR * 0.8) continue;
-      const ang = i * GOLDEN + turn;
-      /* the ripple: a ring of light that leaves the sun on each second of a hold */
-      const far = (rad - sunR) / Math.max(1, R * open - sunR);
-      const wave = holding ? Math.exp(-Math.pow((far - beat * 1.15) / 0.16, 2)) * (1 - beat * 0.6) : 0;
-      const pale = 0.14 * rnd(i + 0.5) * PALE;
-      dots.push(
-        cx + rad * Math.cos(ang),
-        cy + rad * Math.sin(ang),
-        d * (0.66 + 0.5 * fr) * (1 + 0.55 * wave),
-        sky[0] + (255 - sky[0]) * pale + (GOLD[0] - sky[0]) * wave * 0.8,
-        sky[1] + (255 - sky[1]) * pale + (GOLD[1] - sky[1]) * wave * 0.8,
-        sky[2] + (255 - sky[2]) * pale + (GOLD[2] - sky[2]) * wave * 0.8,
-        intro * clamp((rad - sunR * 0.8) / (sunR * 0.3 + 1)) * (0.78 + 0.22 * wave),
-      );
-    }
+    /* the dot the figure came out of: it is gone by the first breath */
+    if (settling) dots.push(cx, cy, seed * born * (1 - come(0.5)), sky[0], sky[1], sky[2], 1);
   }
 
-  const over = dots.length;
-  /* the sun's sparks: small lights that lift off its edge and fade, so the edge is alive and never a hard line */
-  for (let i = 0; i < SPARKS.length; i++) {
-    const s = SPARKS[i];
-    const q = still ? s[1] : fract(t * 0.2 * s[2] + s[1]);
-    const rad = sunR * (0.97 + 0.3 * q);
-    const ang = s[0] + (still ? 0 : 0.3 * Math.sin(t * 0.35 + s[1] * TAU));
-    dots.push(
-      sx + rad * Math.cos(ang),
-      sy + rad * Math.sin(ang),
-      Math.max(0.5, sunR * 0.028 * s[3] * (1 - 0.5 * q)),
-      light ? 240 : 255,
-      light ? 160 : 226,
-      light ? 40 : 150,
-      Math.sin(Math.PI * q) * 0.7 * born,
-    );
-  }
   /* the air: dots rising into the nose on a breath in, and leaving the lips on a breath out */
   const by = b < 0 ? 0 : p.by[step];
   const fade = ink[3];
@@ -406,8 +402,5 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
         const q = still ? (k + 0.5) / 2 : fract(t * 0.42 + k / 2 + (lane + 1) * 0.17);
         dots.push(ix + (12 + lane * (1.8 + 4.4 * q)) * u, iy + (16.5 + 11 * q) * u, (0.65 + 0.3 * q) * u, ink[0], ink[1], ink[2], fade * Math.sin(Math.PI * q));
       }
-  /* the sun breathes very slightly by itself, so it is never a still disc */
-  if (!still) sunR *= 1 + 0.012 * Math.sin(t * 1.1);
-  const far = Math.max(sunR * 1.2, Math.min(sunR * 3.6, sx, w - sx, sy, h - SCENE_WORDS - sy + 40));
-  return { dots, over, sun: [sx, sy, sunR, v, far], by, ix, iy, u, ink };
+  return { dots, by, ix, iy, u, ink };
 }

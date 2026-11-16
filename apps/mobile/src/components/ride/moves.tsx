@@ -2,7 +2,8 @@
    done (onDone), so the ride flows on to the next without a button. Every move is short (about half a minute to a
    minute) and has one living thing in the middle to follow.
    - Breathe: the sun and its dots, three breaths in the pattern the person chose (components/breath-ride).
-   - Squeeze: four body parts, each squeezed hard for five seconds and let go for four. The shape clenches with you.
+   - Squeeze: four body parts, each squeezed hard for seven seconds and let go for eight, in a seat or on your feet. A disc
+     of dots pulls into a hot knot with you and opens from the middle when you let go (core squeeze.ts).
    - Fit the shapes: a small block puzzle for the eyes and hands (stack.tsx).
    - 5-4-3-2-1: find things around you, one tap each.
    - Name it: the feeling under the urge, on the feelings field, and what it is asking for (feel-move.tsx).
@@ -25,6 +26,12 @@ import {
   GROUND,
   scrWrittenLabel,
   SCR_WRITTEN,
+  SQZ_HOLD,
+  SQZ_LAST_REST,
+  SQZ_READY,
+  SQZ_REST,
+  squeezeAt,
+  sqzParts,
   THOUGHTS,
   URGE_OBJECTS,
   urFromYou,
@@ -34,6 +41,7 @@ import {
   type UrMem,
   type WrittenWords,
 } from '@daybook/core';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -42,6 +50,7 @@ import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring,
 import { Appear } from '@/components/appear';
 import { BigOption, Link, Tiles } from '@/components/choices';
 import { BreathRide } from '@/components/breath-ride';
+import { SqueezeField } from '@/components/squeeze-field';
 import { useSeconds, useStartWhen } from '@/components/orb';
 import { MorphShape, SQUIGGLE, useClock, WavyLine, WavyRing, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
@@ -53,7 +62,7 @@ import { Button, Icon, T } from '@/components/ui';
 import { useFutureNote } from '@/components/future-note';
 import { BigPlay } from '@/components/voice-note';
 import { track } from '@/lib/events';
-import { buzz } from '@/lib/feel';
+import { buzz, knock } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { useScripture } from '@/lib/scripture';
 import { useSos } from '@/lib/sos';
@@ -102,67 +111,69 @@ export function BreatheMove({ on, onDone }: MoveProps) {
   return <BreathRide on={on} onDone={onDone} />;
 }
 
-/* ---------- squeeze ---------- */
-/** each part: what to squeeze, and how */
-const PARTS: [string, string][] = [
-  ['Squeeze your fists', 'As hard as you can.'],
-  ['Shoulders up to your ears', 'Pull them up tight.'],
-  ['Legs and feet', 'Press your feet down. Tense your legs.'],
-  ['Everything at once', 'Fists, arms, legs, face. All of it.'],
-];
-const HOLD = 5;
-const REST = 4;
-const ROUND = HOLD + REST;
+/* ---------- squeeze (core squeeze.ts; the figure is components/squeeze-field) ---------- */
+/** the touch of a squeeze, timed from `start`: a firm knock as it starts, a knock each second of the hold that gets firmer
+    as it goes, and on letting go two soft ones that fall away. A tap already late is dropped, not played out of step. */
+function useSqueezeTouch(start: number | null, on: boolean) {
+  useEffect(() => {
+    if (!on || start == null || Platform.OS === 'web') return;
+    const taps: [number, Haptics.ImpactFeedbackStyle][] = [];
+    let at = SQZ_READY;
+    for (let i = 0; i < 4; i++) {
+      taps.push([at, Haptics.ImpactFeedbackStyle.Heavy]);
+      for (let k = 1; k < SQZ_HOLD; k++) taps.push([at + k, k < 4 ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Rigid]);
+      at += SQZ_HOLD;
+      taps.push([at, Haptics.ImpactFeedbackStyle.Soft], [at + 0.4, Haptics.ImpactFeedbackStyle.Soft]);
+      at += i === 3 ? SQZ_LAST_REST : SQZ_REST;
+    }
+    const now = Date.now();
+    const ids = taps
+      .filter(([sec]) => start + sec * 1000 >= now - 40)
+      .map(([sec, kind]) => setTimeout(() => knock(kind), Math.max(0, start + sec * 1000 - now)));
+    return () => ids.forEach(clearTimeout);
+  }, [start, on]);
+}
 
 export function SqueezeMove({ on, onDone }: MoveProps) {
   const c = useTheme();
-  const reduce = useReducedMotion();
+  const sos = useSos();
+  /* in a seat (at work, in a car) or free to get up; kept on this phone and shared with the Move tool. A seat is the start,
+     because it works anywhere. */
+  const sit = sos.mem.moveSit !== false;
+  const parts = sqzParts(sit);
   const t0 = useStartWhen(on);
-  /* ten ticks a second is plenty for the count; the clench itself runs on the native side */
   const sec = useSeconds(t0, on);
-  const i = Math.min(PARTS.length - 1, Math.floor(sec / ROUND));
-  const x = sec - i * ROUND;
-  const all = sec >= PARTS.length * ROUND;
-  const hold = !all && x < HOLD;
-  const left = hold ? Math.ceil(HOLD - x) : 0;
-  /* the shape clenches small and tight on a squeeze, and springs open on let go */
-  const squeeze = useSharedValue(0);
+  const n = squeezeAt(sec);
+  const all = n.kind === 'done';
+  useSqueezeTouch(t0, on);
   useEffect(() => {
-    squeeze.value = reduce ? (hold ? 1 : 0) : hold ? withTiming(1, { duration: 450 }) : withSpring(0, { damping: 8, stiffness: 120 });
-  }, [hold, reduce, squeeze]);
-  const clench = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 - 0.22 * squeeze.value }, { rotate: squeeze.value * 18 + 'deg' }],
-  }));
-  /* a firm knock on each second of the squeeze, and a soft one when it is time to let go */
-  const beat = all ? -1 : i * 10 + (hold ? left : 0);
-  useEffect(() => {
-    if (beat < 0 || !on) return;
-    buzz(hold ? 'tick' : 'land');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [beat]);
-  useDoneAfter(all, 600, onDone);
-  const head = all ? 'Feel it drain away' : hold ? PARTS[i][0] : 'And let go';
-  const sub = all ? 'Shake your hands out.' : hold ? PARTS[i][1] : 'Feel the warmth spread.';
+    if (all) buzz('lit');
+  }, [all]);
+  useDoneAfter(all, 1400, onDone);
+  /* halfway through letting go, the next part shows, so there is time to get into place (a wall, a squat) */
+  const ahead = n.kind === 'rest' && n.s >= 3 && n.i < parts.length - 1 ? 1 : 0;
+  const part = parts[Math.min(parts.length - 1, n.i + ahead)];
+  const head = all ? 'Shake it out' : part.head;
+  const sub = all ? 'Notice how your body feels now.' : part.sub;
   useSay(head, on);
   return (
     <View style={s.move}>
       <Words head={head} sub={sub} />
-      <View style={s.mid} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <WavyRing size={250} p={hold ? x / HOLD : all ? 1 : 1 - (x - HOLD) / REST} color={c.coral} track={c.coral + '2E'} stroke={6} speed={0}>
-          <Reanimated.View style={clench}>
-            <MorphShape kind={hold ? 'cookie4' : 'cookie12'} size={190} color={hold ? c.coral : c.coralSoft}>
-              {all ? (
-                <View>
-                  <Icon name="check" size={56} color={c.coralText} />
-                </View>
-              ) : (
-                <Text style={[s.count, { color: hold ? '#FFFFFF' : c.coralText }]}>{hold ? left : ''}</Text>
-              )}
-            </MorphShape>
-          </Reanimated.View>
-        </WavyRing>
-      </View>
-      <Steps n={PARTS.length} i={all ? PARTS.length : i} color={c.coral} track={c.coral + '33'} />
+      <SqueezeField on={on} start={t0} light={c.scheme === 'light'} />
+      <Steps n={parts.length} i={n.kind === 'ready' ? -1 : n.i} color={c.coral} track={c.coral + '33'} />
+      {/* the one quiet switch, low: the moves for where you are */}
+      <Pressable
+        onPress={() => {
+          buzz('tick');
+          sos.setMem((x) => ({ ...x, moveSit: !sit }));
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={(sit ? 'In my seat' : 'On my feet') + '. Change'}
+        hitSlop={6}
+        style={({ pressed }) => [s.pick, { opacity: pressed ? 0.6 : 1 }]}>
+        <Icon name="swap" size={16} color={c.muted} />
+        <Text style={[s.pickT, { color: c.muted }]}>{sit ? 'In my seat' : 'On my feet'}</Text>
+      </Pressable>
     </View>
   );
 }
@@ -886,6 +897,8 @@ const s = StyleSheet.create({
   tomorrow: { alignSelf: 'stretch', gap: 2, padding: 16, borderRadius: 20 },
   tmT: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },
   quiet: { alignSelf: 'center', minHeight: 36, justifyContent: 'center' },
+  pick: { alignSelf: 'center', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16 },
+  pickT: { fontFamily: font.bodySemi, fontSize: 15 },
   fastT: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 42, textAlign: 'center' },
   note: { alignSelf: 'stretch', gap: 8, padding: 24, borderRadius: 20 },
   noteT: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },

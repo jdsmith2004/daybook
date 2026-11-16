@@ -46,6 +46,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { CelebrateHost } from '@/components/celebrate';
 import { LaunchScene } from '@/components/launch';
+import { dropWebShell } from '@/lib/web-shell';
 import { LockGate } from '@/components/lock';
 import { Oops } from '@/components/oops';
 import { Toast } from '@/components/toast';
@@ -335,6 +336,8 @@ function Shell() {
      could not be opened there is no scene, so the splash goes here */
   useEffect(() => {
     if (go && loadFailed) SplashScreen.hideAsync().catch(() => undefined);
+    /* on the web, the page's own first picture (lib/web-shell.ts) goes once the app has drawn */
+    if (go) dropWebShell();
   }, [go, loadFailed]);
   const base = c.scheme === 'dark' ? DarkTheme : DefaultTheme;
   const nav = { ...base, colors: { ...base.colors, background: c.bg, card: c.surface, text: c.ink, primary: c.accent, border: c.line } };

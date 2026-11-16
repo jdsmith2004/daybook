@@ -12,6 +12,7 @@ export * from './actions';
 export * from './mutate';
 export * from './rekindle';
 export * from './sos';
+export * from './squeeze';
 export * from './breath-field';
 export * from './breath-touch';
 export * from './ride';

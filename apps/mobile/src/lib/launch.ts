@@ -68,7 +68,15 @@ const query = Platform.OS === 'web' && typeof window !== 'undefined' && window.l
 export const LAUNCH_ASKED = query?.get('launch') === '1';
 /** ?slow=N with it stretches every beat N times, to look at the opening frame by frame */
 export const LAUNCH_SLOW = LAUNCH_ASKED ? Math.max(1, Math.min(10, Number(query?.get('slow')) || 1)) : 1;
-let played = false;
+/* On the web the opening plays only when the page opens on Today: a link straight to another page (/sos, a lesson, a preview) goes
+   straight to it, with no scene in the way (the owner, November 15, 2026: "all the links are taking so long to load"). The demo
+   build (npm run preview, the screenshot studio) plays it only when ?launch=1 asks. Native always plays it: there the scene is
+   also what lets the splash go. */
+const path = Platform.OS === 'web' && typeof window !== 'undefined' && window.location ? window.location.pathname.replace(/\/+$/, '') : '';
+const WEB_SKIP = Platform.OS === 'web' && !LAUNCH_ASKED && (process.env.EXPO_PUBLIC_SHOTS === '1' || path !== '');
+let played = WEB_SKIP;
+/** on the web, whether this load opens with the scene (then the page's own first picture can go at once: the scene is the same picture) */
+export const WEB_LAUNCH = Platform.OS === 'web' && !WEB_SKIP;
 /** whether the opening still has to play in this load of the app */
 export const launchDue = () => !played;
 export const launchPlayed = () => {

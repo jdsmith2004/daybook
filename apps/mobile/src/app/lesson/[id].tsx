@@ -848,6 +848,7 @@ export default function LessonScreen() {
     const nx = care ? null : nextLessonOk(L, w, snap.days, st, tk, account);
     return (
       <LessonFinish
+        spendSpark
         lessonId={L.id}
         title={L.title}
         n={n || 0}

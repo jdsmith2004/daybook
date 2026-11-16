@@ -70,5 +70,7 @@ if (typeof window !== 'undefined') {
     return realFetch(input, init);
   };
 
-  if (q.get('motion') !== '1') AccessibilityInfo.isReduceMotionEnabled = () => Promise.resolve(true);
+  /* the preview (npm run preview, EXPO_PUBLIC_PREVIEW=1) is for seeing the app as a person does, so it keeps full motion unless ?motion=0 */
+  const motion = process.env.EXPO_PUBLIC_PREVIEW === '1' ? q.get('motion') !== '0' : q.get('motion') === '1';
+  if (!motion) AccessibilityInfo.isReduceMotionEnabled = () => Promise.resolve(true);
 }

@@ -12,10 +12,13 @@ const PULL = process.env.DAYBOOK_PULL === '1';
 const SCRIPTURE = process.env.DAYBOOK_SCRIPTURE === '1';
 const GROUP = 'group.com.jdsmith2004.daybook';
 
+/* The web export splits the code granularly (experiments.chunking): the first page loads only what its own screen needs, and each
+   other screen fetches its part when opened, instead of one shared file of every screen's code (6.3 MB) up front. It applies to
+   the web export alone; the phone apps and the dev server are unchanged. */
 module.exports = ({ config }) => {
   const base = {
     ...config,
-    experiments: { ...config.experiments, baseUrl: process.env.EXPO_BASE_URL || '' },
+    experiments: { ...config.experiments, baseUrl: process.env.EXPO_BASE_URL || '', chunking: { mode: 'granular' } },
   };
   const out = SCRIPTURE ? { ...base, ios: { ...base.ios, infoPlist: { ...base.ios?.infoPlist, DaybookScripture: true } } } : base;
   if (!PULL) return out;

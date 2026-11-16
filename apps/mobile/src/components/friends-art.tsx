@@ -274,9 +274,9 @@ export function FriendsSky({
       ) : null}
 
       {/* names, under the flames */}
-      <Name x={p.me.x} width={width} y={ground + 2} label="You" color={ink.ink} />
+      <Name x={p.me.x} width={width} y={ground + 12} label="You" color={ink.ink} />
       {shown.map((f, i) => (
-        <Name key={'n' + f.fid} x={p.them[i].x} width={width} y={ground + 2} label={f.name} color={ink.ink} />
+        <Name key={'n' + f.fid} x={p.them[i].x} width={width} y={ground + 12} label={f.name} color={ink.ink} />
       ))}
 
       {shown.length === 0 ? (

@@ -4,7 +4,8 @@
 
    The first pattern is the sigh ("cyclic sighing": a full breath in through the nose, a short second one on top, and a
    long slow breath out through the mouth). In a month-long randomized study it lifted mood and slowed breathing more than
-   box breathing or mindfulness (Balban and others, 2023, Cell Reports Medicine), and it works within a breath or two. */
+   box breathing or mindfulness (Balban and others, 2023, Cell Reports Medicine), and it works within a breath or two. It runs
+   slowly, twelve seconds a breath (the owner, November 15, 2026, of nine seconds: "it's too fast"). */
 
 /** what a step does: breathe in, the first and second part of a double breath in, hold, breathe out */
 export type FieldKind = 'in' | 'in1' | 'in2' | 'hold' | 'out';
@@ -29,9 +30,9 @@ export const FIELD_PATTERNS = {
   sigh: {
     name: 'Sigh',
     steps: [
-      ['in1', 2],
-      ['in2', 1],
-      ['out', 6],
+      ['in1', 3],
+      ['in2', 1.5],
+      ['out', 7.5],
     ],
     words: { in1: 'Breathe in', in2: 'A little more', out: 'Let it out slowly' },
     by: { in1: 'nose', in2: 'nose', out: 'mouth' },

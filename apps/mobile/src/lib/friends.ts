@@ -1,15 +1,17 @@
 /* Friends (beta): the app's side of services/api friends.ts. The Friends page and its sheets read one shared copy of what the
    server keeps (useFriends), and this phone sends its card's numbers for the week now and then (FriendsKeeper in _layout), only
-   while the person has a card. What this phone remembers on its own (never synced): that it is in Friends, when the numbers were
-   last sent, the last encouragement seen, and that the person pre-joined the community. */
+   while the person has a card, and schedules each friend's daily report as one quiet note at the hour that friend picked. What this
+   phone remembers on its own (never synced): that it is in Friends, when the numbers were last sent, the last encouragement seen,
+   the friends whose daily report is muted here, and that the person pre-joined the community. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { normCode, weekShare, type FriendCard, type ShareKey, type ShareVals } from '@daybook/core';
+import { normCode, REPORT_DEFAULT, SHARE_DEFAULT, weekShare, type FriendCard, type ShareKey, type ShareVals } from '@daybook/core';
 import { router, useSegments } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 
 import { track } from './events';
+import { scheduleFriendReports } from './reminders';
 import { useStore } from './store';
 import { useSync } from './sync';
 
@@ -17,13 +19,14 @@ export interface FriendView {
   fid: string;
   since: number;
   name: string;
-  goals: string[];
   vals: ShareVals;
+  /** when their daily report comes ('HH:MM'), or null */
+  rt: string | null;
   cheer?: { k: string; at: number };
   sent?: number;
 }
 export interface FriendsData {
-  me: { name: string; goals: string[]; on: FriendCard['on'] } | null;
+  me: { name: string; on: FriendCard['on']; rt: string | null } | null;
   invite: { code: string; exp: number } | null;
   friends: FriendView[];
 }
@@ -42,7 +45,7 @@ const sub = (f: () => void) => {
 
 /* ---------- what this phone keeps ---------- */
 const KEY = 'daybook.friends';
-type Local = { in?: boolean; sentAt?: number; sentVals?: string; seen?: number; community?: number; pending?: string; next?: 'add' | 'code' };
+type Local = { in?: boolean; sentAt?: number; sentVals?: string; seen?: number; community?: number; pending?: string; next?: 'add' | 'code'; mute?: string[] };
 let local: Local = {};
 const localSubs = new Set<() => void>();
 AsyncStorage.getItem(KEY)
@@ -95,6 +98,21 @@ export function takeNext(): { code?: string; next?: 'add' | 'code' } {
   return out;
 }
 
+/** a friend's daily report on this phone: on (the default) or muted. Only this phone knows. */
+export function muteReport(fid: string, mute: boolean) {
+  const cur = new Set(local.mute || []);
+  if (mute) cur.add(fid);
+  else cur.delete(fid);
+  keepLocal({ mute: [...cur] });
+  planReports();
+}
+/** each friend's daily report as a note on this phone (none on the web), from what the server last said */
+function planReports() {
+  const friends = state.data?.friends || [];
+  const mute = new Set(local.mute || []);
+  scheduleFriendReports(friends.filter((f) => f.rt && !mute.has(f.fid)).map((f) => ({ fid: f.fid, name: f.name, rt: f.rt! }))).catch(() => undefined);
+}
+
 /** the encouragements seen up to now */
 export const markSeen = (at: number) => keepLocal({ seen: Math.max(local.seen || 0, at) });
 
@@ -120,12 +138,13 @@ export function useFriends() {
       const data = r.body as unknown as FriendsData;
       set({ data, loading: false, error: null });
       if (!!data.me !== !!local.in) keepLocal({ in: !!data.me });
+      planReports();
     } else set({ loading: false, error: friendWords(r) });
   }, [signedIn, sync]);
 
-  /** saves the card: the words, what is on, and this week's numbers */
+  /** saves the card: the name, what is on, the daily report's hour, and this week's numbers */
   const saveCard = useCallback(
-    async (c: { name: string; goals: string[]; on: Partial<Record<ShareKey, boolean>> }): Promise<string | null> => {
+    async (c: { name: string; on: Partial<Record<ShareKey, boolean>>; rt: string | null }): Promise<string | null> => {
       if (!snap.settings) return 'Finish setup first.';
       const vals = weekShare(snap.days, snap.settings, snap.reviews, tk);
       const r = await sync.api('POST', '?friends=card', { card: { ...c, vals, at: Date.now() } });
@@ -147,6 +166,16 @@ export function useFriends() {
     [sync, load],
   );
 
+  /** the card with everything automatic (what is shared, the report at 9 PM), made the first time with just a name */
+  const ensureCard = useCallback(
+    async (name: string): Promise<string | null> => {
+      const me = state.data?.me;
+      if (me && me.name === name.trim()) return null;
+      return saveCard({ name: name.trim(), on: me?.on || SHARE_DEFAULT, rt: me ? me.rt : REPORT_DEFAULT });
+    },
+    [saveCard],
+  );
+
   const look = useCallback(
     async (code: string) => {
       const r = await sync.api('GET', '?friends=look&code=' + encodeURIComponent(code));
@@ -157,7 +186,7 @@ export function useFriends() {
     [sync],
   );
 
-  return { ...s, signedIn, load, saveCard, call, look };
+  return { ...s, signedIn, load, saveCard, ensureCard, call, look };
 }
 
 /** for a sheet opened on its own (a link, a reload): the friends data, loaded if it is not here yet. ready: it is known (or there is no
@@ -195,7 +224,8 @@ export function FriendsKeeper() {
       const vals = weekShare(snap.days, st, snap.reviews, tk);
       const text = JSON.stringify(vals);
       const since = Date.now() - (local.sentAt || 0);
-      if ((text === local.sentVals && since < 24 * 3600_000) || since < 3 * 3600_000) return;
+      /* today's numbers move through the day, so a change goes out after 20 minutes; the same numbers once a day, to stay fresh */
+      if (text === local.sentVals ? since < 24 * 3600_000 : since < 20 * 60_000) return;
       const cur = state.data?.me ?? ((await sync.api('GET', '?friends=1'))?.body?.me as FriendsData['me'] | undefined);
       if (!cur) {
         keepLocal({ in: false });
@@ -207,6 +237,17 @@ export function FriendsKeeper() {
         keepLocal({ sentAt: Date.now(), sentVals: text });
       }
     };
+    /* the friends list and their report hours, once an open, so the daily notes stay right */
+    if (!state.data)
+      sync.api('GET', '?friends=1').then(
+        (r) => {
+          if (r?.status === 200) {
+            set({ data: r.body as unknown as FriendsData });
+            planReports();
+          }
+        },
+        () => undefined,
+      );
     const t = setTimeout(() => push().catch(() => undefined), 4000);
     const a = AppState.addEventListener('change', (x) => x === 'active' && push().catch(() => undefined));
     return () => {

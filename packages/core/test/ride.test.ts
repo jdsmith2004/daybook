@@ -151,3 +151,77 @@ describe('It is written', () => {
     [lds, chr, plain].forEach((w) => expect(JSON.stringify(w)).not.toMatch(/n't|'re|'ll|'ve|can't/i));
   });
 });
+
+describe('the order of SOS', () => {
+  /** a ride n long with this memory */
+  const rideMem = (n: number, mem: core.UrMem, days: Days = {}) => {
+    const sc = core.newUrge(now, 0);
+    const out: string[] = [];
+    for (let i = 0; i < n; i++) out.push(core.rideNext(sc, days, st, tk, now, mem, can, out));
+    return out;
+  };
+  /** three SOS rides, each passing `id` over quickly once */
+  const skipped = (id: string, times = 3) => {
+    let m: core.UrMem = {};
+    for (let i = 0; i < times; i++) m = core.ridePassed(core.rideFade(m), id, 1000);
+    return m;
+  };
+
+  it('opens with the breath, then the body, before the moves that need a clear head', () => {
+    const r = rideMem(12, {});
+    /* the breath, then 5-4-3-2-1 (one of the two strong first picks, the owner, October 24, 2026), then the body and the eyes */
+    expect(r.slice(0, 4)).toEqual(['breathe', 'ground', 'move', 'stack']);
+    expect(r.indexOf('move')).toBeLessThan(r.indexOf('forward'));
+    expect(r.indexOf('stack')).toBeLessThan(r.indexOf('reasons'));
+    expect(core.RIDE_ORDER.slice().sort()).toEqual(core.RIDE_MOVES.slice().sort());
+  });
+
+  it('a quick pass counts more than a late one, finishing halves it, and each SOS fades it', () => {
+    expect(core.rideSkipOf(core.ridePassed({}, 'move', 1000), 'move')).toBe(1);
+    expect(core.rideSkipOf(core.ridePassed({}, 'move', 20000), 'move')).toBe(0.5);
+    expect(core.rideSkipOf(core.rideFinished({ rsk: { move: 2 } }, 'move'), 'move')).toBe(1);
+    expect(core.rideSkipOf(core.rideFade({ rsk: { move: 2 } }), 'move')).toBeCloseTo(1.8);
+    /* only the ride's moves are counted here; the other pages keep their own count */
+    expect(core.ridePassed({}, 'object', 1000)).toEqual({});
+  });
+
+  it('three quick passes in three rides is often; two is not', () => {
+    expect(core.rideOften(skipped('move', 2), 'move')).toBe(false);
+    expect(core.rideOften(skipped('move', 3), 'move')).toBe(true);
+  });
+
+  it('a move passed over often comes later in a ride, but still comes', () => {
+    const fresh = rideMem(14, {});
+    const after = rideMem(14, skipped('move'));
+    expect(fresh[2]).toBe('move');
+    expect(after.indexOf('move')).toBeGreaterThan(fresh.indexOf('move') + 2);
+    expect(after).toContain('move');
+    /* and the others are not all pushed aside: every move still comes round */
+    core.RIDE_MOVES.forEach((id) => expect(after).toContain(id));
+  });
+
+  it('it comes back by itself: a run of SOS rides without passing it fades the count', () => {
+    let m = skipped('move');
+    for (let i = 0; i < 10; i++) m = core.rideFade(m);
+    expect(core.rideOften(m, 'move')).toBe(false);
+    expect(rideMem(4, m).indexOf('move')).toBeGreaterThan(0);
+  });
+
+  it('a move you said helped comes up', () => {
+    const liked = core.rateUrTool(core.rateUrTool(st, 'reasons', 1), 'reasons', 1);
+    const sc = core.newUrge(now, 0);
+    const out: string[] = [];
+    for (let i = 0; i < 4; i++) out.push(core.rideNext(sc, {}, liked, tk, now, {}, can, out));
+    expect(out.indexOf('reasons')).toBeGreaterThan(0);
+    expect(out.indexOf('reasons')).toBeLessThanOrEqual(2);
+  });
+
+  it('the old count of Next taps no longer holds a ride move down for good', () => {
+    expect(rideMem(4, { pass: { move: 6 } })[2]).toBe('move');
+  });
+
+  it('It is written stays only for people with faith on, even when moves are passed over', () => {
+    const r = rideMem(14, skipped('stack'));
+    expect(r).not.toContain('written');
+  });
+});

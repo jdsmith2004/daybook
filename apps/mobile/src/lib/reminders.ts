@@ -70,7 +70,8 @@ export function scheduleNudges(plan: Nudge[]): Promise<void> {
 }
 async function replaceSchedule(plan: Nudge[]): Promise<void> {
   for (const n of await Notifications.getAllScheduledNotificationsAsync())
-    if (n.identifier !== TALK && !n.identifier.startsWith(TRAIL)) await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    if (n.identifier !== TALK && !n.identifier.startsWith(TRAIL) && !n.identifier.startsWith(FRIEND))
+      await Notifications.cancelScheduledNotificationAsync(n.identifier);
   if (!plan.length || !(await Notifications.getPermissionsAsync()).granted) return;
   await makeChannels();
   const now = Date.now();
@@ -115,6 +116,27 @@ export async function exactAlarmsAsk(): Promise<boolean> {
 /** the phone's settings page for Daybook, where notifications can be turned on after a no */
 export function openPhoneSettings(): void {
   Linking.openSettings().catch(() => undefined);
+}
+
+/* Friends (beta; lib/friends.ts): each friend's daily report, one quiet note a day at the hour that friend picked. The words name
+   only the friend, so a locked screen says nothing about what Daybook is for. It never asks for permission on its own. */
+const FRIEND = 'friend-';
+const FRIEND_CHANNEL = 'friends';
+export async function scheduleFriendReports(list: { fid: string; name: string; rt: string }[]): Promise<void> {
+  const want = new Map(list.map((f) => [FRIEND + f.fid, f]));
+  for (const n of await Notifications.getAllScheduledNotificationsAsync())
+    if (n.identifier.startsWith(FRIEND)) await Notifications.cancelScheduledNotificationAsync(n.identifier);
+  if (!want.size || !(await Notifications.getPermissionsAsync()).granted) return;
+  if (Platform.OS === 'android')
+    await Notifications.setNotificationChannelAsync(FRIEND_CHANNEL, { name: 'Friends', importance: Notifications.AndroidImportance.DEFAULT });
+  for (const [id, f] of want) {
+    const [hour, minute] = f.rt.split(':').map(Number);
+    await Notifications.scheduleNotificationAsync({
+      identifier: id,
+      content: { title: f.name, body: 'How ' + f.name + '’s day went. Warm their flame if you like.', data: { url: '/friends', id } },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: FRIEND_CHANNEL },
+    });
+  }
 }
 
 const TALK = 'talk';

@@ -267,8 +267,10 @@ cd apps/mobile && npx expo start
   **Friends share only what the person chooses (the owner, November 15, 2026: "let's add the option to add them in the app instead ...
   it should just get a log, like tell them your goals. And they're not going to be centered around the addiction. They'll be around
   like using the app, or like using SOS").** Friends (beta; core `friends.ts`, services/api `friends.ts`) is the one place anything
-  is shared: with friends the person added by a code one of them sent, only the name and goals they wrote for friends and the effort
-  items they turned on (all off at first), never a slip, a count that resets, times, the journal or notes. A friend reads a card
+  is shared: with friends the person added by a code one of them sent, only their first name and their effort in Daybook (lessons,
+  check-ins, days in Daybook and the flame, shared from the start and said on screen before anything is shared, each one can be
+  turned off; the owner, November 15, 2026: "having them write out a bunch of goals is too much ... just have automated goals"),
+  and a daily report at the hour they pick; never a slip, a count that resets, times, the journal or notes. A friend reads a card
   only through the endpoint that checks the friendship both ways. SOS never alerts a friend live, only as an opt-in weekly count
   (the owner's answer, November 15). Remove and block are quiet, and closing the account removes every friendship on both sides. **The owner may read their own account (the owner, November 15, 2026: "I want us to build it in where you can at least see my
   logs because I'm using that to train the data so that doesn't have to be anonymous").** `npm run mylog` (scripts/mylog.ts) signs

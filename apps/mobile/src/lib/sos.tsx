@@ -4,7 +4,7 @@
    "daybook.ur.v1" and "daybook.timer". Your safe person's number is kept here too, on this device only: it is someone
    else's number, so it never goes to the server. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { cleanPhone, newUrge, type UrMem, type UrState } from '@daybook/core';
+import { cleanPhone, newUrge, rideFade, type UrMem, type UrState } from '@daybook/core';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 const MEM = 'daybook.ur.v1';
@@ -93,7 +93,8 @@ export function SosProvider({ children }: { children: ReactNode }) {
       urRef.current = u;
       setUr(u);
       setCombo(null);
-      setMem((m) => ({ ...m, sosAt: u.t0 }));
+      /* a new SOS fades the ride's count of moves passed over (core ride.ts rideFade) */
+      setMem((m) => ({ ...rideFade(m), sosAt: u.t0 }));
       return u;
     },
     [setMem],

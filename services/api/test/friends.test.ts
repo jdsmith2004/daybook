@@ -24,11 +24,11 @@ async function call(user: string, method: string, friends: string, body?: unknow
   return { status: r.statusCode ?? 0, body: JSON.parse(r.body as string) };
 }
 const view = async (user: string) => (await call(user, 'GET', '1')).body;
-const ALL_ON = { lessons: true, mornings: true, nights: true, rode: true, level: true };
-const VALS = { lessons: 4, mornings: 3, nights: 5, rode: 2, level: 6, lname: 'Steady' };
+const ALL_ON = { lessons: true, checkins: true, days: true, rode: true, level: true };
+const VALS = { lessons: 4, checkins: 3, days: 5, rode: 2, level: 6, lname: 'Steady', dk: '2026-11-15', dl: 1, dc: 1 };
 
 async function setCard(user: string, name: string, on: Record<string, boolean> = {}, extra: Record<string, unknown> = {}) {
-  return call(user, 'POST', 'card', { card: { name, goals: ['Do a lesson each day'], on, vals: VALS, at: now, ...extra } });
+  return call(user, 'POST', 'card', { card: { name, on, vals: VALS, rt: '21:00', at: now, ...extra } });
 }
 async function befriend(a: string, b: string) {
   const inv = await call(a, 'POST', 'invite', {});
@@ -56,10 +56,11 @@ describe('what a friend can read', () => {
     expect(f[0].vals).toEqual({});
     await setCard('alice', 'Alice', { lessons: true, rode: true });
     f = (await view('bob')).friends;
-    expect(f[0].vals).toEqual({ lessons: 4, rode: 2 });
+    expect(f[0].vals).toEqual({ lessons: 4, rode: 2, dk: '2026-11-15', dl: 1 });
+    expect(f[0].rt).toBe('21:00');
     /* the numbers for what is off are never even kept */
     expect(Object.keys((await store.auxGet('alice', CARD)) as object)).not.toContain('slips');
-    expect(((await store.auxGet('alice', CARD)) as { vals: object }).vals).toEqual({ lessons: 4, rode: 2 });
+    expect(((await store.auxGet('alice', CARD)) as { vals: object }).vals).toEqual({ lessons: 4, rode: 2, dk: '2026-11-15', dl: 1 });
   });
 
   it('a card can never carry a slip, a count or anything outside the shape', async () => {
@@ -69,7 +70,7 @@ describe('what a friend can read', () => {
     const f = (await view('bob')).friends[0];
     const text = JSON.stringify(f);
     for (const w of ['slips', 'count', 'journal', 'secret', 'notes']) expect(text).not.toContain(w);
-    expect(Object.keys(f.vals).sort()).toEqual(['lessons', 'level', 'lname', 'mornings', 'nights', 'rode']);
+    expect(Object.keys(f.vals).sort()).toEqual(['checkins', 'days', 'dc', 'dk', 'dl', 'lessons', 'level', 'lname', 'rode']);
   });
 
   it('a stranger, or someone on one side only, reads nothing', async () => {
@@ -96,19 +97,19 @@ describe('what a friend can read', () => {
     expect(JSON.stringify(await view('alice'))).not.toContain('bob"');
   });
 
-  it('numbers older than a week are not shown; the name, goals and flame stay', async () => {
+  it('numbers older than a week are not shown; the name and flame stay', async () => {
     await setCard('alice', 'Alice', ALL_ON);
     await setCard('bob', 'Bob');
     await befriend('alice', 'bob');
     now += 9 * 86400_000;
     const f = (await view('bob')).friends[0];
     expect(f.vals).toEqual({ level: 6, lname: 'Steady' });
-    expect(f.goals).toEqual(['Do a lesson each day']);
+    expect(f.name).toBe('Alice');
   });
 
   it('words with a link, a phone number or crude words are refused', async () => {
     expect((await setCard('alice', 'see www.x.com')).status).toBe(400);
-    expect((await setCard('alice', 'Al', {}, { goals: ['call 555 123 4567'] })).status).toBe(400);
+    expect((await setCard('alice', 'call 555 123 4567')).status).toBe(400);
     expect((await setCard('alice', 'Dickson')).status).toBe(200);
   });
 });

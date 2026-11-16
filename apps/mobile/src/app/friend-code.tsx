@@ -1,6 +1,6 @@
 /* Friends: entering a friend's code (or opening their link, which fills it in). It shows whose code it is first, then one tap makes
    you friends. Both people chose this: one sent the code, the other entered it; and nothing is shared until each turns it on. */
-import { gameCompute, normCode, showCode } from '@daybook/core';
+import { gameCompute, NAME_MAX, normCode, showCode, wordsTrouble } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -11,6 +11,7 @@ import { Dock } from '@/components/scene';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Button, T } from '@/components/ui';
 import { track } from '@/lib/events';
+import { allowReminders } from '@/lib/reminders';
 import { buzz } from '@/lib/feel';
 import { useFriendsReady } from '@/lib/friends';
 import { useStore } from '@/lib/store';
@@ -27,6 +28,8 @@ export default function FriendCode() {
   const [done, setDone] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const me = fr.data?.me || null;
+  const [name, setName] = useState('');
 
   const find = async (raw = code) => {
     const c = normCode(raw);
@@ -43,18 +46,33 @@ export default function FriendCode() {
     if (!fr.ready || started.current) return;
     started.current = true;
     if (!fr.signedIn) router.replace({ pathname: '/friends', params: p.code ? { code: p.code } : {} });
-    else if (!fr.data?.me) router.replace({ pathname: '/friend-me', params: { next: 'code', ...(p.code ? { code: p.code } : {}) } });
     else if (p.code && normCode(p.code)) find(p.code).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fr.ready]);
 
   const accept = async () => {
+    setErr('');
+    /* someone new to Friends writes one thing, their first name, right here; the rest is automatic */
+    if (!me) {
+      const nm = name.trim();
+      if (!nm) return setErr('Add your first name, so they know it is you.');
+      const t = wordsTrouble(nm);
+      if (t) return setErr(t);
+      setBusy(true);
+      const e = await fr.ensureCard(nm);
+      if (e) {
+        setBusy(false);
+        return setErr(e);
+      }
+    }
     setBusy(true);
     const r = await fr.call('accept', { code: normCode(code) });
     setBusy(false);
     if (!r.ok) return setErr(r.msg);
     buzz('lit');
     track('friend_added');
+    /* their daily report comes as a note on a phone: ask for notes now, once, when it was never asked (it never asks again) */
+    allowReminders().catch(() => false);
     setDone(String(r.body.name || found?.name || ''));
   };
 
@@ -71,7 +89,7 @@ export default function FriendCode() {
               You and {done} are friends
             </T>
             <T tone="muted" style={{ textAlign: 'center' }}>
-              Choose what they see of you on the Friends page. Everything starts off.
+              They see your lessons, check-ins and flame. Change it any time on the Friends page.
             </T>
           </View>
           <Dock>
@@ -112,7 +130,7 @@ export default function FriendCode() {
               </T>
               {!found.self && !found.already ? (
                 <T tone="muted" style={{ textAlign: 'center' }}>
-                  You will see each other&apos;s name and goals. Anything more, each of you turns on.
+                  You will see how each other&apos;s days go in Daybook: lessons, check-ins and the flame. Never a slip.
                 </T>
               ) : null}
               {err ? <T tone="danger">{err}</T> : null}
@@ -121,7 +139,23 @@ export default function FriendCode() {
               {found.self || found.already ? (
                 <Button label="Done" onPress={closeSheet} />
               ) : (
-                <Button label={busy ? 'One moment' : 'Become friends'} disabled={busy} onPress={accept} />
+                <>
+                  {!me ? (
+                    <Field
+                      label="Your first name"
+                      placeholder={'So ' + found.name + ' knows it is you'}
+                      value={name}
+                      onChangeText={(v) => {
+                        setName(v);
+                        setErr('');
+                      }}
+                      maxLength={NAME_MAX}
+                      autoComplete="given-name"
+                      returnKeyType="done"
+                    />
+                  ) : null}
+                  <Button label={busy ? 'One moment' : 'Become friends'} disabled={busy} onPress={accept} />
+                </>
               )}
             </Dock>
           </>

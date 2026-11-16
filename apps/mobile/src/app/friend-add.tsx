@@ -1,16 +1,18 @@
-/* Friends: your code, big, and one tap to send it as a link through any messenger. The code works for a week, for as many friends
-   as you send it to; a new one ends the old (the owner's answer, November 15, 2026). The message never names the habit. */
-import { gameCompute, INVITE_DAYS, inviteLink, inviteText, showCode, SITE_URL } from '@daybook/core';
+/* Friends: adding a friend in one screen, low effort (the owner, November 15, 2026: "it should be a very clean process ... it's low
+   effort, it's very easy"). At the top, what the friend will see, said plainly and automatic (only a first name to write, the first
+   time); at the bottom, under the thumb, three ways on: share the invite link, share the code, or enter a friend's code. The code
+   is made on the first share, works for a week, for as many friends as the person sends it to. The message never names the habit. */
+import { codeText, inviteLink, inviteText, NAME_MAX, REPORT_DEFAULT, reportAt, SHARE_DEFAULT, SITE_URL, wordsTrouble, type ShareKey } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Share, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, Share, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { BigFlame } from '@/components/big-flame';
+import { Field } from '@/components/choices';
 import { Dock } from '@/components/scene';
 import { SheetFrame } from '@/components/sheet';
 import { LinkText } from '@/components/today';
-import { Button, T } from '@/components/ui';
+import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { useFriendsReady } from '@/lib/friends';
 import { useStore } from '@/lib/store';
@@ -19,73 +21,106 @@ import { useTheme } from '@/lib/theme';
 /** the link opens the web app on the code; on the web that is this very site */
 const site = () => (Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : SITE_URL);
 
+/** what the friend will see, line by line, from what is on */
+function seeLines(on: Partial<Record<ShareKey, boolean>>, rt: string | null): string[] {
+  const out: string[] = [];
+  if (on.lessons) out.push('How often you do a lesson');
+  if (on.checkins || on.days) out.push('How often you check in and open Daybook');
+  if (on.rode) out.push('Urges you ride out, as a weekly count');
+  if (on.level) out.push('Your flame as it grows');
+  if (rt) out.push('A short daily report at ' + reportAt(rt));
+  return out;
+}
+
 export default function FriendAdd() {
   const c = useTheme();
+  const { say } = useStore();
   const fr = useFriendsReady();
-  const { snap, tk, say } = useStore();
-  const level = snap.settings ? gameCompute(snap.days, snap.settings, snap.reviews, tk).level.n : 1;
   const { height } = useWindowDimensions();
-  const [inv, setInv] = useState<{ code: string; exp: number } | null>(fr.data?.invite || null);
+  const me = fr.data?.me || null;
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState<'link' | 'code' | null>(null);
   const [err, setErr] = useState('');
-
-  const get = async (fresh: boolean) => {
-    setErr('');
-    const r = await fr.call('invite', { fresh });
-    if (r.ok) setInv({ code: String(r.body.code), exp: Number(r.body.exp) });
-    else setErr(r.msg);
-  };
+  /* opened with no account (a reload, an old link): the Friends page asks for one */
   const started = useRef(false);
   useEffect(() => {
     if (!fr.ready || started.current) return;
     started.current = true;
     if (!fr.signedIn) router.replace('/friends');
-    else if (!fr.data?.me) router.replace({ pathname: '/friend-me', params: { next: 'add' } });
-    else if (!inv) get(false).catch(() => undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fr.ready]);
+  }, [fr.ready, fr.signedIn]);
 
-  const send = async () => {
-    if (!inv || !fr.data?.me) return;
-    const link = inviteLink(site(), inv.code);
-    const text = inviteText(fr.data.me.name, link, inv.code);
+  const share = async (how: 'link' | 'code') => {
+    setErr('');
+    const nm = me ? me.name : name.trim();
+    if (!nm) return setErr('Add your first name, so your friend knows it is you.');
+    const t = wordsTrouble(nm);
+    if (t) return setErr(t);
+    setBusy(how);
+    if (!me) {
+      const e = await fr.ensureCard(nm);
+      if (e) {
+        setBusy(null);
+        return setErr(e);
+      }
+    }
+    const kept = fr.data?.invite && fr.data.invite.exp > Date.now() + 3600_000 ? fr.data.invite : null;
+    const r = kept ? { ok: true, msg: '', body: { code: kept.code } as Record<string, unknown> } : await fr.call('invite', {});
+    setBusy(null);
+    if (!r.ok) return setErr(r.msg);
+    const code = String(r.body.code);
+    const text = how === 'link' ? inviteText(nm, inviteLink(site(), code), code) : codeText(nm, code);
     buzz('tap');
     try {
       if (Platform.OS !== 'web' || (typeof navigator !== 'undefined' && 'share' in navigator)) {
-        await Share.share(Platform.OS === 'ios' ? { message: text } : { message: text, title: 'Daybook' });
+        await Share.share({ message: text });
         return;
       }
     } catch {
       /* the share sheet was closed, or this browser has none: copy instead */
     }
     await Clipboard.setStringAsync(text).catch(() => undefined);
-    say('The invite is copied. Paste it to your friend.');
+    say(how === 'link' ? 'The invite link is copied. Paste it to your friend.' : 'Your code is copied. Paste it to your friend.');
   };
 
-  const days = inv ? Math.max(1, Math.ceil((inv.exp - Date.now()) / 86400_000)) : INVITE_DAYS;
+  const lines = seeLines(me?.on || SHARE_DEFAULT, me ? me.rt : REPORT_DEFAULT);
   return (
     <SheetFrame title="Add a friend">
-      <View style={[s.wrap, { minHeight: Math.max(440, height - 150) }]}>
-        <T tone="muted">Send this to someone on your side. When they enter it, you are friends, and nothing is shared until you each turn it on.</T>
-        <View style={s.middle}>
-          <BigFlame level={level} size={160} noLand />
-          {inv ? (
-            <T v="big" selectable accessibilityLabel={'Your code: ' + inv.code.split('').join(' ')} style={{ color: c.ink }}>
-              {showCode(inv.code)}
-            </T>
-          ) : err ? null : (
-            <ActivityIndicator color={c.accent} />
+      <View style={[s.wrap, { minHeight: Math.max(460, height - 150) }]}>
+        <Card style={{ gap: 12 }}>
+          {me ? (
+            <T v="label">They will see, as {me.name}:</T>
+          ) : (
+            <Field
+              label="Your first name"
+              placeholder="So your friend knows it is you"
+              value={name}
+              onChangeText={(v) => {
+                setName(v);
+                setErr('');
+              }}
+              maxLength={NAME_MAX}
+              autoComplete="given-name"
+              returnKeyType="done"
+            />
           )}
-          {inv ? (
-            <T v="small" tone="muted">
-              Works for {days === 1 ? 'one more day' : days + ' days'}, for as many friends as you like
-            </T>
-          ) : null}
-        </View>
+          <View style={{ gap: 8 }}>
+            {lines.map((l) => (
+              <View key={l} style={s.line}>
+                <Icon name="check" size={18} color={c.mintText} />
+                <T style={{ flex: 1 }}>{l}</T>
+              </View>
+            ))}
+          </View>
+          <T v="small" tone="muted">
+            Never a slip, your journal or your notes. You can change what they see on the Friends page.
+          </T>
+        </Card>
         {err ? <T tone="danger">{err}</T> : null}
         <Dock>
-          <Button label="Send the invite" icon="ext" disabled={!inv} onPress={send} />
+          <Button label={busy === 'link' ? 'One moment' : 'Share my invite link'} icon="ext" disabled={!!busy} onPress={() => share('link')} />
+          <Button label={busy === 'code' ? 'One moment' : 'Share my code'} kind="ghost" disabled={!!busy} onPress={() => share('code')} />
           <View style={{ alignItems: 'center' }}>
-            <LinkText label="Make a new code" onPress={() => get(true)} />
+            <LinkText label="Enter a friend's code" onPress={() => router.replace('/friend-code')} />
           </View>
         </Dock>
       </View>
@@ -94,6 +129,6 @@ export default function FriendAdd() {
 }
 
 const s = StyleSheet.create({
-  wrap: { gap: 16, minHeight: 440 },
-  middle: { alignItems: 'center', gap: 8, paddingVertical: 24 },
+  wrap: { gap: 16 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 });

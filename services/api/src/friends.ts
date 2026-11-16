@@ -12,7 +12,7 @@
    POST /sync?friends=leave                leaves Friends: my card, code and every friendship go
 
    Where things are kept (the records table; every sort key starts with #, so nothing here is ever pulled or erased with the log):
-   - <me>  #card            my card: what I wrote for friends, what is on, this week's numbers
+   - <me>  #card            my card: my name for friends, what is on, the week's and today's numbers, the daily report's hour
    - <me>  #fr/<them>       one side of a friendship: { fid, at }. A friendship is both sides; a card is read only when both are there
    - <me>  #cheer/<them>    the last encouragement they sent me: { k, at }
    - <me>  #block/<them>    they can never use my code, and I can never use theirs
@@ -104,12 +104,12 @@ export async function friendsView(store: Store, user: string, now: number) {
     friends.push({
       fid: f.fid,
       since: f.at,
-      ...(c ? cardForFriend(c, now) : { name: 'Friend', goals: [], vals: {} }),
+      ...(c ? cardForFriend(c, now) : { name: 'Friend', vals: {}, rt: null }),
       ...(cheer && isCheer(cheer.k) && typeof cheer.at === 'number' ? { cheer: { k: cheer.k, at: cheer.at } } : {}),
       ...(sent && typeof sent.at === 'number' ? { sent: sent.at } : {}),
     });
   }
-  return { me: me ? { name: me.name, goals: me.goals, on: me.on } : null, invite, friends };
+  return { me: me ? { name: me.name, on: me.on, rt: me.rt } : null, invite, friends };
 }
 
 export async function saveCard(store: Store, user: string, raw: unknown, now: number): Promise<FriendCard> {
@@ -214,9 +214,9 @@ export async function blockFriend(store: Store, user: string, fid: unknown, why:
   const them = await byFid(store, user, fid);
   if (why != null) {
     if (!isReportWhy(why)) throw new FriendError(400, 'Pick a reason.');
-    /* what they had shared, as it was, so the owner can see what was reported */
+    /* the name they had shared, as it was, so the owner can see what was reported */
     const c = await card(store, them);
-    await store.auxPut(REPORTS, now + '/' + user, { from: user, about: them, why, name: c?.name || '', goals: c?.goals || [], at: now });
+    await store.auxPut(REPORTS, now + '/' + user, { from: user, about: them, why, name: c?.name || '', at: now });
   }
   await unfriend(store, user, them);
   await store.auxPut(user, BLOCK + them, { at: now });

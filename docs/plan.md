@@ -38,6 +38,15 @@ What is built (effort: high for the server, medium for the page):
 4. **Community, coming soon:** a card on the Friends page; pre-join records the anonymous event and shows "You are on the list".
 5. **Calm:** no ranking, no side-by-side counts, no "last seen", no badges, no push to friends. A quiet week shows just the name and goals.
 
+**Second pass, the same day (the owner: "having them write out a bunch of goals is too much. Let's just have automated goals ... this will
+tell them how often you do a lesson, how often you check up and use the app, and just a daily report you can choose when it lets them
+know ... and then it's here's the code ... it should be a very clean process").** Goals are gone. Adding a friend is one screen: what the
+friend will see, said plainly (lessons, check-ins and days in Daybook, the flame, a daily report at 9 PM), a first name the first time,
+and three ways on at the bottom: Share my invite link, Share my code, Enter a friend's code. The items are shared from the start and each
+can be turned off; urges ridden out stays off until turned on (the SOS answer stands). The daily report is a note the friend's own phone
+makes at the hour the person picked (8 AM, 12 PM, 6 PM, 9 PM or off), naming only the person; the friend can mute it per friend. No
+server push is needed, so it costs nothing.
+
 Store review notes (Guideline 1.2): friends add each other only by a code one of them sends; what passes between them is a name,
 up to three short goals (links, emails and phone numbers refused, with a word filter), numbers and three fixed encouragements. Each
 friend has Remove, Block and Report; reports reach the owner, who answers within 24 hours at the support email.

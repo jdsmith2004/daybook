@@ -4,7 +4,7 @@
    One sky holds your flame with your friends' flames beside it: the circle you are building, never a ranking (every friend's flame is
    drawn the same size). Below it, encouragement that came in, your friends, what they see of you (each item off until you turn it
    on), and the community that is coming. Calm on purpose: no counts side by side, no "last seen", no badges, no red. */
-import { FRIEND_CHEERS, friendLines, gameCompute, SHARE_KEYS, SHARE_WORDS, weekShare, type ShareKey } from '@daybook/core';
+import { FRIEND_CHEERS, friendLines, friendToday, gameCompute, REPORT_TIMES, reportAt, SHARE_KEYS, SHARE_WORDS, weekShare, type ShareKey } from '@daybook/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -48,11 +48,9 @@ export default function Friends() {
     useCallback(() => {
       if (!ready) return;
       const t = takeNext();
-      const hasCard = !!fr.data?.me;
-      if (t.code)
-        router.push(hasCard ? { pathname: '/friend-code', params: { code: t.code } } : { pathname: '/friend-me', params: { next: 'code', code: t.code } });
-      else if (t.next === 'add') router.push(hasCard ? '/friend-add' : { pathname: '/friend-me', params: { next: 'add' } });
-      else if (t.next === 'code') router.push(hasCard ? '/friend-code' : { pathname: '/friend-me', params: { next: 'code' } });
+      if (t.code) router.push({ pathname: '/friend-code', params: { code: t.code } });
+      else if (t.next === 'add') router.push('/friend-add');
+      else if (t.next === 'code') router.push('/friend-code');
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ready]),
   );
@@ -84,14 +82,14 @@ export default function Friends() {
       keepNext('add');
       return sync.signInNow({ why: 'friends' });
     }
-    router.push(me ? '/friend-add' : { pathname: '/friend-me', params: { next: 'add' } });
+    router.push('/friend-add');
   };
   const haveCode = () => {
     if (needAccount) {
       if (!lo.pending) keepNext('code');
       return sync.signInNow({ why: 'friends' });
     }
-    router.push(me ? '/friend-code' : { pathname: '/friend-me', params: { next: 'code' } });
+    router.push('/friend-code');
   };
 
   const SKY = Math.min(300, Math.round(width * 0.72));
@@ -218,8 +216,10 @@ function Circle({ level, friends, height, pulse, onAdd }: { level: number; frien
 
 function FriendRow({ f, last }: { f: FriendView; last: boolean }) {
   const c = useTheme();
+  const { tk } = useStore();
+  const today = friendToday(f.vals, tk);
   const lines = friendLines(f.vals);
-  const line = lines.length ? lines.join(' · ') : f.goals[0] || '';
+  const line = today ? 'Today: ' + today : lines.join(' · ');
   const sentToday = !!f.sent && Date.now() - f.sent < 20 * 3600_000;
   return (
     <Pressable
@@ -257,8 +257,13 @@ function YourCard() {
   const flip = async (k: ShareKey) => {
     buzz('tap');
     setBusy(k);
-    const e = await fr.saveCard({ name: me.name, goals: me.goals, on: { ...me.on, [k]: !me.on[k] } });
+    const e = await fr.saveCard({ name: me.name, on: { ...me.on, [k]: !me.on[k] }, rt: me.rt });
     setBusy(null);
+    setErr(e || '');
+  };
+  const pickTime = async (rt: string | null) => {
+    buzz('tick');
+    const e = await fr.saveCard({ name: me.name, on: me.on, rt });
     setErr(e || '');
   };
   return (
@@ -267,7 +272,7 @@ function YourCard() {
       <Card style={{ gap: 12 }}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={'Change your name and goals. ' + me.name}
+          accessibilityLabel={'Change your name. ' + me.name}
           onPress={() => router.push('/friend-me')}
           style={({ pressed }) => [{ gap: 4 }, pressed && { opacity: 0.7 }]}>
           <View style={s.cardHead}>
@@ -276,15 +281,6 @@ function YourCard() {
             </T>
             <Icon name="pencil" size={16} color={c.muted} />
           </View>
-          {me.goals.length ? (
-            me.goals.map((g, i) => (
-              <T key={i} tone="muted">
-                {g}
-              </T>
-            ))
-          ) : (
-            <T tone="muted">Add a goal or two</T>
-          )}
         </Pressable>
         <View style={s.chips}>
           {SHARE_KEYS.map((k) => {
@@ -311,8 +307,32 @@ function YourCard() {
             );
           })}
         </View>
+        <View style={{ gap: 8 }}>
+          <T v="label">Daily report</T>
+          <View style={s.chips} accessibilityRole="radiogroup">
+            {[...REPORT_TIMES, null].map((t) => {
+              const on = me.rt === t;
+              return (
+                <Pressable
+                  key={t || 'off'}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: on }}
+                  onPress={() => pickTime(t)}
+                  style={({ pressed }) => [
+                    s.chip,
+                    on ? { backgroundColor: c.accentSoft } : { backgroundColor: c.bg, borderColor: c.line, borderWidth: 1 },
+                    pressed && { opacity: 0.7 },
+                  ]}>
+                  <T v="small" style={{ color: on ? c.accentText : c.muted }}>
+                    {t ? reportAt(t) : 'Off'}
+                  </T>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
         <T v="small" tone="muted">
-          Tap one to share it. A slip, your journal and your notes are never shared.
+          Tap an item to stop or start sharing it. A slip, your journal and your notes are never shared.
         </T>
         {err ? (
           <T v="small" tone="danger">

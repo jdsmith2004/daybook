@@ -1,6 +1,6 @@
 /* Friends: one friend. Their flame, their goals and the effort they share, then a ready-made encouragement (one a day; no chat), and at
    the bottom, quietly, Remove and Block and report (Apple Guideline 1.2). Removing is quiet both ways: the other person is not told. */
-import { FRIEND_CHEERS, friendLines, REPORT_WHY, type CheerKind, type ReportWhy } from '@daybook/core';
+import { FRIEND_CHEERS, friendLines, friendToday, reportAt, REPORT_WHY, type CheerKind, type ReportWhy } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -12,7 +12,9 @@ import { LinkText } from '@/components/today';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
-import { useFriendsReady } from '@/lib/friends';
+import { muteReport, useFriendsLocal, useFriendsReady } from '@/lib/friends';
+import { useStore } from '@/lib/store';
+import { Toggle } from '@/components/settings-ui';
 import { sendFeedback } from '@/lib/pulse';
 import { useTheme } from '@/lib/theme';
 
@@ -20,6 +22,8 @@ export default function Friend() {
   const c = useTheme();
   const { fid } = useLocalSearchParams<{ fid: string }>();
   const fr = useFriendsReady();
+  const lo = useFriendsLocal();
+  const { tk } = useStore();
   const { height } = useWindowDimensions();
   const f = fr.data?.friends.find((x) => x.fid === fid);
   const [pick, setPick] = useState<CheerKind | null>(null);
@@ -39,6 +43,8 @@ export default function Friend() {
 
   const sentToday = !!f.sent && Date.now() - f.sent < 20 * 3600_000;
   const lines = friendLines(f.vals);
+  const today = friendToday(f.vals, tk);
+  const muted = (lo.mute || []).includes(f.fid);
   const send = async () => {
     if (!pick) return;
     setBusy(true);
@@ -75,18 +81,27 @@ export default function Friend() {
           ) : null}
         </View>
 
-        {f.goals.length || lines.length ? (
-          <Card style={{ gap: 8 }}>
-            {f.goals.map((g, i) => (
-              <T key={i}>{g}</T>
-            ))}
-            {lines.length ? (
-              <T v="small" tone="muted">
-                This week: {lines.join(' · ')}
+        <Card style={{ gap: 8 }}>
+          {today ? <T v="label">Today: {today}</T> : null}
+          {lines.length ? (
+            <T v="small" tone="muted">
+              This week: {lines.join(' · ')}
+            </T>
+          ) : null}
+          {!today && !lines.length ? (
+            <T v="small" tone="muted">
+              Nothing to show yet this week.
+            </T>
+          ) : null}
+          {f.rt ? (
+            <View style={s.report}>
+              <T v="small" style={{ flex: 1 }}>
+                Daily report at {reportAt(f.rt)}
               </T>
-            ) : null}
-          </Card>
-        ) : null}
+              <Toggle on={!muted} label={'Daily report from ' + f.name} onChange={(v) => muteReport(f.fid, !v)} />
+            </View>
+          ) : null}
+        </Card>
 
         <Dock>
           {!end ? (
@@ -179,4 +194,5 @@ const s = StyleSheet.create({
   cheers: { gap: 8 },
   cheer: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, borderRadius: 20, paddingHorizontal: 16, borderWidth: 1.5 },
   quiet: { alignItems: 'center', gap: 4, paddingTop: 8 },
+  report: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 4 },
 });

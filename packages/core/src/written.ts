@@ -26,9 +26,6 @@ export interface WrittenPull {
   rest: string;
   /** the verse, or null in the plain voice */
   ref: string | null;
-  /** what the verse means for the person right now, after the old move is named (the owner, November 15, 2026: "focus heavily on
-      the scriptures and how it applies to them right then"); null where the answer is already in the person's own words */
-  now: string | null;
 }
 export interface WrittenWords {
   /** the move's name in the ride */
@@ -80,7 +77,6 @@ const BIBLE_PULLS: WrittenWords['pulls'] = [
     lead: 'It is written,',
     rest: 'Man shall not live by bread alone, but by every word that proceedeth out of the mouth of God.',
     ref: 'Matthew 4:4',
-    now: 'You can feel hungry for it right now and still not need it.',
   },
   {
     pull: '“Just a look.\nYou can stop after.”',
@@ -89,7 +85,6 @@ const BIBLE_PULLS: WrittenWords['pulls'] = [
     lead: 'It is written again,',
     rest: 'Thou shalt not tempt the Lord thy God.',
     ref: 'Matthew 4:7',
-    now: 'You already know where one look goes. You do not have to test it.',
   },
   {
     pull: '“This will make\nit all better.”',
@@ -98,7 +93,6 @@ const BIBLE_PULLS: WrittenWords['pulls'] = [
     lead: 'Get thee hence, Satan:',
     rest: 'for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve.',
     ref: 'Matthew 4:10',
-    now: 'Say His words out loud, and tell it to go.',
   },
 ];
 
@@ -168,7 +162,6 @@ const PLAIN: WrittenWords = {
       lead: 'I am fed by more than this.',
       rest: 'What I am hungry for, this has never filled.',
       ref: null,
-      now: null,
     },
     {
       pull: '“Just a look.\nYou can stop after.”',
@@ -177,7 +170,6 @@ const PLAIN: WrittenWords = {
       lead: 'I do not need to test it.',
       rest: 'I already know where it goes, and God is with me here.',
       ref: null,
-      now: null,
     },
     {
       pull: '“This will make\nit all better.”',
@@ -186,7 +178,6 @@ const PLAIN: WrittenWords = {
       lead: 'God is enough for me.',
       rest: 'What this promises, it has never given.',
       ref: null,
-      now: null,
     },
   ],
   end: { head: 'Then it left.', sub: 'Help comes after.', lead: 'It passes.', rest: 'It always has, and God stays when it goes.', ref: null },

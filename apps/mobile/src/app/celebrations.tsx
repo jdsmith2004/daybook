@@ -39,6 +39,11 @@ export default function Celebrations() {
     if (typeof window !== 'undefined') window.location.href = path + '&motion=1';
   };
   const rows: { name: string; what: string; go: () => void }[] = [
+    {
+      name: 'Opening Daybook',
+      what: 'The flame asleep on the splash wakes, and flies to its home as Today builds in under it.',
+      go: () => fresh('/?launch=1'),
+    },
     { name: 'Lesson finished', what: 'The band, the flame gliding home, the points into the level line.', go: () => setLesson((x) => x + 1) },
     {
       name: 'Sunday review saved',

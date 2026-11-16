@@ -63,6 +63,16 @@ tap away as More. Colors come from `lessonLook` through `PaletteOverride`, so wh
 - **Smooth, never ticking.** Anything that moves with time (a dot, a ring, a crawl) reads its position from a smooth clock
   (`useClock`, about 30 times a second), never from a once-a-second count. A number of seconds left can tick; the motion
   cannot.
+- **Opening the app is one motion (the owner, November 15, 2026, after filming Daybook beside How We Feel).** The native splash is the
+  flame asleep, big in the middle (about two fifths of the screen across), on the launch color (core `LAUNCH_BG`, the dark theme's page;
+  `app.json`, both light and dark); the root view behind React is that color too, so nothing white or cream can ever show. The app's
+  first frame is the same picture (core `launchFlameSvg`, one drawing for the splash image and the first frame), drawn over everything
+  by `components/launch.tsx`, and only then does the native splash go, with no fade of its own. Then, timed against theirs: the flame
+  comes alive and wakes (eyes open, one breath) over about 1.2 s, flies to its home on Today's sky in about 0.5 s while Today's sky and
+  then the page show under it, and lands where Today's own flame takes over (the hero reports its place, `lib/launch.ts`). Under Reduce
+  Motion, with the lock on, before setup, or on a link to another page, the same first picture simply cross-fades to the app. A warm
+  launch has no scene. On the web, `?launch=1` plays it again (`&slow=N` stretches it, to look at it frame by frame); the celebrations
+  page in the demo build has a row for it. Never put the badge or a ring back on the splash, and never let the first frame differ from it.
 - **Something still must not look alive.** Do not reuse a moving pattern (the breath dots, a beat) standing still: if it
   is not moving, it looks broken. Either it moves, or it is a plain shape.
 - **The flame moves as fire, never as a whole figure (the owner, October 31, 2026).** The face and the body hold still; the tips lick, a sun's rays lick out

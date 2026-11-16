@@ -6,7 +6,8 @@
  *   icon.png                     1024, full bleed (iOS rounds the corners itself)
  *   android-icon-foreground.png  1024, the flame badge inside Android's safe zone, transparent around it
  *   android-icon-background.png  1024, the night color
- *   splash-icon.png              1024, the flame badge on transparent
+ *   splash-icon.png              1024, the flame asleep, big, on transparent (core launchFlameSvg: the same drawing the app's first
+ *                                frame shows, so opening the app is one motion from the splash to Today)
  *   favicon.png                  48, the flame badge for the browser tab
  *   notification-icon.png        96, the flame's outline in white on clear (Android's small note icon)
  *   notification-large.png       256, the flame badge on transparent (Android's large note icon)
@@ -27,6 +28,7 @@ import { existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ICON_LOOKS, iconLookFor, flameIconSvg, flameLookSvg, flameMaskSvg, flameSvg } from '../packages/core/src/flame-art.ts';
+import { launchFlameSvg } from '../packages/core/src/big-layers.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'apps/mobile/assets/images');
@@ -44,6 +46,17 @@ if (LOOK && !ICON_LOOKS.includes(LOOK)) {
 
 function findChromium() {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
+  /* Playwright's own browsers on a Mac */
+  const home = process.env.HOME ? join(process.env.HOME, 'Library/Caches/ms-playwright') : null;
+  if (home && existsSync(home)) {
+    const dir = readdirSync(home)
+      .filter((d) => /^chromium-\d+$/.test(d))
+      .sort()
+      .pop();
+    for (const p of ['chrome-mac/Chromium.app/Contents/MacOS/Chromium', 'chrome-mac-arm64/Chromium.app/Contents/MacOS/Chromium']) {
+      if (dir && existsSync(join(home, dir, p))) return join(home, dir, p);
+    }
+  }
   const base = process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/pw-browsers';
   if (!existsSync(base)) return undefined;
   const dir = readdirSync(base)
@@ -76,7 +89,8 @@ const jobs = [
     bg: 'transparent',
   },
   { file: 'android-icon-background.png', size: 1024, html: () => '', bg: NIGHT },
-  { file: 'splash-icon.png', size: 1024, html: (s) => badge(s), bg: 'transparent' },
+  /* the splash: the flame asleep, with no badge and no frame, on the launch color set in app.json (expo-splash-screen) */
+  { file: 'splash-icon.png', size: 1024, html: (s) => sized(launchFlameSvg(), s), bg: 'transparent' },
   { file: 'favicon.png', size: 48, html: (s) => badge(s), bg: 'transparent' },
   /* the web app on a Home Screen (public/manifest.json and the apple-touch-icon in public/index.html), like icon.png */
   { file: 'apple-touch-icon.png', size: 180, html: (s) => bleed(s), bg: NIGHT, dir: pub },

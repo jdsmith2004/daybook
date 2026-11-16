@@ -44,6 +44,7 @@ import { AppState, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { CelebrateHost } from '@/components/celebrate';
+import { LaunchScene } from '@/components/launch';
 import { LockGate } from '@/components/lock';
 import { Oops } from '@/components/oops';
 import { Toast } from '@/components/toast';
@@ -52,7 +53,7 @@ import { forgetDrafts } from '@/lib/drafts';
 import { useFlameWidget } from '@/lib/flame-widget';
 import { keepRootState, SHEETS, type NavState } from '@/lib/nav';
 import { NoteCopy } from '@/lib/notes';
-import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
+import { setNudgeLog, useNudgeLog, useReminderPrefs, whenPrefsKnown } from '@/lib/prefs';
 import { listenForTaps, onPermission, remindersAllowed, remindersOffered, scheduleNudges, scheduleTrail } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
@@ -68,7 +69,10 @@ import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 import { useWhatsNew } from '@/lib/whats-new';
 
+/* the splash stays up until the app's first frame, which is the same picture (components/launch.tsx), and goes with no fade of its own:
+   the scene carries on from it */
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
+SplashScreen.setOptions({ fade: false });
 
 /* the phone's notifications (core nudges.ts): each time the app opens, what was delivered is judged (helped or missed) and the
    plan for today and tomorrow, with the come-back notes, is made again; the phone's schedule changes only when the plan does.
@@ -315,10 +319,17 @@ function Shell() {
     InstrumentSans_700Bold,
     Newsreader_400Regular,
   });
-  const go = ready && (fonts || !!fontError);
+  /* the device's own choices (the theme, the lock) are read before the first frame, so nothing is drawn in one look and redrawn in another */
+  const [prefs, setPrefs] = useState(false);
   useEffect(() => {
-    if (go) SplashScreen.hideAsync().catch(() => undefined);
-  }, [go]);
+    whenPrefsKnown().then(() => setPrefs(true));
+  }, []);
+  const go = ready && prefs && (fonts || !!fontError);
+  /* the first frame lets the splash go (the opening scene, components/launch.tsx, once it has drawn the same picture); when the log
+     could not be opened there is no scene, so the splash goes here */
+  useEffect(() => {
+    if (go && loadFailed) SplashScreen.hideAsync().catch(() => undefined);
+  }, [go, loadFailed]);
   const base = c.scheme === 'dark' ? DarkTheme : DefaultTheme;
   const nav = { ...base, colors: { ...base.colors, background: c.bg, card: c.surface, text: c.ink, primary: c.accent, border: c.line } };
   if (!go) return null;
@@ -395,6 +406,8 @@ function Shell() {
         <WhatsNewGate />
         <Toast />
       </LockGate>
+      {/* over everything, the lock's cover included: the opening, from the splash's picture to Today */}
+      <LaunchScene />
     </ThemeProvider>
   );
 }

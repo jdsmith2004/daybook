@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SqueezeField } from '@/components/squeeze-field';
-import { SqueezeMove } from '@/components/ride/moves';
+import { SqueezeMove } from '@/components/ride/squeeze';
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
 import { font, MAX_WIDTH, NightContext, nightInk, skies } from '@/lib/theme';

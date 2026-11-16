@@ -14,25 +14,7 @@
    - If it were a thing: once a ride, "If the urge were an object, what would it be?" One tap (a tight knot, a hot stone),
      then the thing is watched from a step back while it softens and shrinks (core ride.ts RIDE_OBJECT). Next skips it.
    - It is written: for faith people only (core written.ts), in its own file (written.tsx). */
-import {
-  futureCap,
-  futurePick,
-  FWD_A,
-  FWD_B,
-  FWD_TOMORROW,
-  GROUND,
-  SQZ_HOLD,
-  SQZ_LAST_REST,
-  SQZ_READY,
-  SQZ_REST,
-  squeezeAt,
-  sqzParts,
-  THOUGHTS,
-  URGE_OBJECTS,
-  urFromYou,
-  type UrMem,
-} from '@daybook/core';
-import * as Haptics from 'expo-haptics';
+import { futureCap, futurePick, FWD_A, FWD_B, FWD_TOMORROW, GROUND, THOUGHTS, URGE_OBJECTS, urFromYou, type UrMem } from '@daybook/core';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
@@ -40,19 +22,19 @@ import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring,
 import { Appear } from '@/components/appear';
 import { Tiles } from '@/components/choices';
 import { BreathRide } from '@/components/breath-ride';
-import { SqueezeField } from '@/components/squeeze-field';
 import { useSeconds, useStartWhen } from '@/components/orb';
-import { MorphShape, SQUIGGLE, useClock, WavyLine, WavyRing, type ShapeKind } from '@/components/shapes';
+import { MorphShape, SQUIGGLE, useClock, WavyLine, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { FastWords, Fork } from '@/components/tools/ride';
 import { FeelMove } from './feel-move';
+import { SqueezeMove } from './squeeze';
 import { StackMove } from './stack';
 import { WrittenMove } from './written';
 import { Button, Icon, T } from '@/components/ui';
 import { useFutureNote } from '@/components/future-note';
 import { BigPlay } from '@/components/voice-note';
 import { track } from '@/lib/events';
-import { buzz, knock } from '@/lib/feel';
+import { buzz } from '@/lib/feel';
 import { useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
 import { useCareSettings } from '@/lib/store';
@@ -98,73 +80,6 @@ function useDoneAfter(when: boolean, ms: number, onDone: () => void) {
 /* ---------- breathe ---------- */
 export function BreatheMove({ on, onDone }: MoveProps) {
   return <BreathRide on={on} onDone={onDone} />;
-}
-
-/* ---------- squeeze (core squeeze.ts; the figure is components/squeeze-field) ---------- */
-/** the touch of a squeeze, timed from `start`: a firm knock as it starts, a knock each second of the hold that gets firmer
-    as it goes, and on letting go two soft ones that fall away. A tap already late is dropped, not played out of step. */
-function useSqueezeTouch(start: number | null, on: boolean) {
-  useEffect(() => {
-    if (!on || start == null || Platform.OS === 'web') return;
-    const taps: [number, Haptics.ImpactFeedbackStyle][] = [];
-    let at = SQZ_READY;
-    for (let i = 0; i < 4; i++) {
-      taps.push([at, Haptics.ImpactFeedbackStyle.Heavy]);
-      for (let k = 1; k < SQZ_HOLD; k++) taps.push([at + k, k < 4 ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Rigid]);
-      at += SQZ_HOLD;
-      taps.push([at, Haptics.ImpactFeedbackStyle.Soft], [at + 0.4, Haptics.ImpactFeedbackStyle.Soft]);
-      at += i === 3 ? SQZ_LAST_REST : SQZ_REST;
-    }
-    const now = Date.now();
-    const ids = taps
-      .filter(([sec]) => start + sec * 1000 >= now - 40)
-      .map(([sec, kind]) => setTimeout(() => knock(kind), Math.max(0, start + sec * 1000 - now)));
-    return () => ids.forEach(clearTimeout);
-  }, [start, on]);
-}
-
-export function SqueezeMove({ on, onDone }: MoveProps) {
-  const c = useTheme();
-  const sos = useSos();
-  /* in a seat (at work, in a car) or free to get up; kept on this phone and shared with the Move tool. A seat is the start,
-     because it works anywhere. */
-  const sit = sos.mem.moveSit !== false;
-  const parts = sqzParts(sit);
-  const t0 = useStartWhen(on);
-  const sec = useSeconds(t0, on);
-  const n = squeezeAt(sec);
-  const all = n.kind === 'done';
-  useSqueezeTouch(t0, on);
-  useEffect(() => {
-    if (all) buzz('lit');
-  }, [all]);
-  useDoneAfter(all, 1400, onDone);
-  /* halfway through letting go, the next part shows, so there is time to get into place (a wall, a squat) */
-  const ahead = n.kind === 'rest' && n.s >= 3 && n.i < parts.length - 1 ? 1 : 0;
-  const part = parts[Math.min(parts.length - 1, n.i + ahead)];
-  const head = all ? 'Shake it out' : part.head;
-  const sub = all ? 'Notice how your body feels now.' : part.sub;
-  useSay(head, on);
-  return (
-    <View style={s.move}>
-      <Words head={head} sub={sub} />
-      <SqueezeField on={on} start={t0} light={c.scheme === 'light'} />
-      <Steps n={parts.length} i={n.kind === 'ready' ? -1 : n.i} color={c.coral} track={c.coral + '33'} />
-      {/* the one quiet switch, low: the moves for where you are */}
-      <Pressable
-        onPress={() => {
-          buzz('tick');
-          sos.setMem((x) => ({ ...x, moveSit: !sit }));
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={(sit ? 'In my seat' : 'On my feet') + '. Change'}
-        hitSlop={6}
-        style={({ pressed }) => [s.pick, { opacity: pressed ? 0.6 : 1 }]}>
-        <Icon name="swap" size={16} color={c.muted} />
-        <Text style={[s.pickT, { color: c.muted }]}>{sit ? 'In my seat' : 'On my feet'}</Text>
-      </Pressable>
-    </View>
-  );
 }
 
 /* ---------- 5-4-3-2-1 ---------- */
@@ -624,8 +539,6 @@ const s = StyleSheet.create({
   tomorrow: { alignSelf: 'stretch', gap: 2, padding: 16, borderRadius: 20 },
   tmT: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },
   quiet: { alignSelf: 'center', minHeight: 36, justifyContent: 'center' },
-  pick: { alignSelf: 'center', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16 },
-  pickT: { fontFamily: font.bodySemi, fontSize: 15 },
   fastT: { fontFamily: font.displayBold, fontSize: 34, lineHeight: 42, textAlign: 'center' },
   note: { alignSelf: 'stretch', gap: 8, padding: 24, borderRadius: 20 },
   noteT: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },

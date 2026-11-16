@@ -70,9 +70,9 @@ export default function FriendCode() {
     setBusy(false);
     if (!r.ok) return setErr(r.msg);
     buzz('lit');
-    track('friend_added');
+    if (!fr.demo) track('friend_added');
     /* their daily report comes as a note on a phone: ask for notes now, once, when it was never asked (it never asks again) */
-    allowReminders().catch(() => false);
+    if (!fr.demo) allowReminders().catch(() => false);
     setDone(String(r.body.name || found?.name || ''));
   };
 

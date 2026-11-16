@@ -80,6 +80,10 @@ export const EV_NAMES = {
   account: 'Made an account (how)',
   sync_on: 'Turned sync on',
   feedback: 'Sent feedback (never the words here)',
+  /* Friends (beta; friends.ts): that it happened, never who, never a name or a goal */
+  friend_added: 'Became friends with someone in Daybook (never who)',
+  friend_cheer: 'Sent a friend a ready-made encouragement (what: which one)',
+  community_join: 'Pre-joined the community that is coming (the waitlist is only this count)',
   /* Mithras people coming over (mithras.ts) */
   import: 'Bringing a Mithras journal over (stage: how far it got; how: apple or email; ents and days: how many entries and Mithras days, in bands)',
   /* word tests (ab.ts) */
@@ -218,6 +222,9 @@ export const EV_PROPS: Record<string, Prop> = {
     'rekindle',
     'idea',
     'future',
+    'warm',
+    'proud',
+    'with',
     'other',
   ]),
   note: one(() => ['voice', 'text']),

@@ -45,6 +45,52 @@ that move by themselves are liked less when they say so.
 It helps the person (the first minute does more) and Daybook (an SOS that works is the best reason to keep the app and to
 rate it). Nothing here is locked.
 
+**Next (the owner, November 15, 2026):** "that initial order is fine though", and "the squeeze tool is kind of bad right now
+wait for the breathing design to finish and then use that as inspiration for a squeeze tool redesign". Squeeze is third in
+the order, so its redesign starts once the breathing redesign has merged.
+
+## Friends (beta): add a friend inside Daybook, and a community coming soon (the owner, November 15, 2026; answers chosen November 15, each the recommended option; built on `claude/great-galileo-789c33`)
+
+The owner: "the texting doesn't work let's add the option to add them in the app instead ... it should just get a log, like tell them
+your goals ... around like using the app, or like using SOS ... it should be simple and just not pressure ... calm and relaxed and just
+help them and get a community. Also add a coming soon community". For now it is a beta row in Settings; the journal and the tabs do not move.
+
+Research (side-session notes `friends-research-apps.md`, `friends-research-evidence.md`): no study tests live SOS alerts to a friend;
+watched-feeling research (reactance, people hiding things) supports the owner's worry; regular, expected, positive contact is what the
+accountability evidence favours (Mohr 2011; Koelen 2022, a small edge for human support); autonomy-supportive help beats directive
+help (Gorin 2013, 2019); lost streaks and rankings cause shame and quitting (13,799 negative fitness-app posts). The apps that do this
+well (Finch, Apple Activity sharing, How We Feel, Locket) share by the person's own tap, invite by link or code, cap the circle, use
+ready-made encouragements instead of chat, and remove silently.
+
+The owner's answers:
+
+- **SOS:** no live alert ever. A weekly "rode out N urges" is one share item, off until the person turns it on, said as strength.
+- **Invite:** one short code (like K7Q-M2P), sent as a link through any messenger, good for several friends for 7 days; a new code
+  ends the old one.
+- **Accounts:** both people need a free account (friendships live on the server); the account sheet opens at the first tap on Add
+  a friend or I have a code, with a warm line. No tip needed: Friends is free.
+- **Waitlist:** an anonymous count (the event `community_join`, on the fixed list), never a name, email or account; the phone
+  remembers "You are on the list".
+
+What is built (effort: high for the server, medium for the page):
+
+1. **Server** (`services/api/src/friends.ts`, on the existing `/sync` routes as `?friends=`; no new route, IAM role or table, so nothing
+   for `infra/bootstrap`). Each person's card (`#card`: the name and goals they wrote for friends, which items are on, this week's
+   numbers) lives in their own partition. A friendship is two rows, one in each person's partition; a friend's card is read only when
+   both rows are there, and only the items the sharer turned on leave the server. Codes live in `#invites` with a 7-day time-to-live.
+   Remove deletes both rows and any encouragement between them, and the other person is not told. Block also stops that person from
+   using a code of yours again; Report (with Block) keeps one row in `#reports` for the owner to read in the AWS console. Closing the
+   account removes the card, every friendship on both sides, codes, encouragements, blocks and reports.
+2. **What a friend sees:** the name and up to three goals the person wrote, and any of: lessons done this week, mornings set, nights
+   said good night, urges ridden out, the flame's level. Never a slip, a count that resets, the journal, notes, or times.
+3. **Encouragement:** three ready-made ones (warm their flame, proud of you, with you today), one a day per friend. No chat.
+4. **Community, coming soon:** a card on the Friends page; pre-join records the anonymous event and shows "You are on the list".
+5. **Calm:** no ranking, no side-by-side counts, no "last seen", no badges, no push to friends. A quiet week shows just the name and goals.
+
+Store review notes (Guideline 1.2): friends add each other only by a code one of them sends; what passes between them is a name,
+up to three short goals (links, emails and phone numbers refused, with a word filter), numbers and three fixed encouragements. Each
+friend has Remove, Block and Report; reports reach the owner, who answers within 24 hours at the support email.
+
 ## Lessons with soul again: every lesson rewritten, a Short and a Long (the owner, November 14, 2026; planned, samples first)
 
 The owner, November 14, 2026: "the lessons have dropped in quality dramatically", and "these lessons need to be enshrined in stone".

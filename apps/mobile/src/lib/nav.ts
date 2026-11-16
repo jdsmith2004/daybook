@@ -33,6 +33,10 @@ export const SHEETS = [
   'notes',
   'scripture-note',
   'insights',
+  'friend-me',
+  'friend-add',
+  'friend-code',
+  'friend/[fid]',
 ];
 
 /** from iOS 26 a sheet is a card below the status bar with the page it opened from still whole behind the clock. Older iPhones shrink that page

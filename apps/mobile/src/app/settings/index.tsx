@@ -102,6 +102,8 @@ export default function Settings() {
             {/* a test feature, kept quiet and low on purpose (the owner, November 14, 2026; app/love.tsx) */}
             <SetGroup>
               <SetRow icon="heart" tone="coral" label="Real love (beta)" onPress={() => router.push('/love')} />
+              {/* add a friend inside Daybook, and the community that is coming (the owner, November 15, 2026; app/friends.tsx) */}
+              <SetRow icon="flame" tone="coral" label="Friends (beta)" onPress={() => router.push('/friends')} />
             </SetGroup>
             <HelpFoot />
           </>

@@ -5,6 +5,7 @@ import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
+import { Newsreader_600SemiBold_Italic } from '@expo-google-fonts/newsreader/600SemiBold_Italic';
 import {
   nudgeAt,
   nudgeCounts,
@@ -63,6 +64,7 @@ import { DayEvents, FlameEvents } from '@/lib/events-day';
 import { NightPackKeeper } from '@/lib/night-pack';
 import { PullKeeper } from '@/lib/pull';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
+import { FriendsKeeper } from '@/lib/friends';
 import { SyncProvider, useAccount } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
@@ -317,6 +319,7 @@ function Shell() {
     InstrumentSans_600SemiBold,
     InstrumentSans_700Bold,
     Newsreader_400Regular,
+    Newsreader_600SemiBold_Italic,
   });
   /* the device's own choices (the theme, the lock) are read before the first frame, so nothing is drawn in one look and redrawn in another */
   const [prefs, setPrefs] = useState(false);
@@ -357,6 +360,7 @@ function Shell() {
       <NavKeeper />
       <HealthKeeper rollover={snap.settings?.rollover ?? 4} />
       <PullKeeper />
+      <FriendsKeeper />
       <NightPackKeeper />
       <SetupGate />
       <LockGate>

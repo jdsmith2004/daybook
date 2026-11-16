@@ -8,10 +8,11 @@ import Svg, { Circle, Ellipse, G, Path, Rect, Text as SvgText } from 'react-nati
 import { pop, useAppear } from '@/lib/motion';
 import { font, useTheme, type Tone } from '@/lib/theme';
 
-export type Ink = { ink: string; line: string; muted: string; acc: string; soft: string; bg: string };
+/** text: words drawn on a soft fill (the tone's own text color, which reads on its soft in light and night alike) */
+export type Ink = { ink: string; line: string; muted: string; acc: string; soft: string; bg: string; text?: string };
 export const useInk = (t: Tone): Ink => {
   const c = useTheme();
-  return { ink: c.ink, line: c.line, muted: c.muted, acc: t.ic, soft: t.soft, bg: c.bg };
+  return { ink: c.ink, line: c.line, muted: c.muted, acc: t.ic, soft: t.soft, bg: c.bg, text: t.text };
 };
 
 export const W = 300;

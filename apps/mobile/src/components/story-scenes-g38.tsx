@@ -117,7 +117,7 @@ function L38Words({ k }: { k: Ink }) {
         <Person x={68} y={170} s={0.72} fill={k.muted} />
       </G>
       <L38Bubble x={162} y={30} w={124} h={74} tx={222} px={226} py={122} fill={k.soft} stroke={k.acc} sw={3} />
-      <Say x={222} y={75} s="I do not" fill={k.ink} size={22} />
+      <Say x={222} y={75} s="I do not" fill={k.text ?? k.ink} size={22} />
       <L38Flag x={278} y={46} h={34} fill={k.acc} pole={k.acc} />
       <Person x={226} y={170} s={0.72} fill={k.ink} face={k.bg} />
       <L38Cap k={k} s="Two ways to say no" />

@@ -45,7 +45,15 @@ if (typeof window !== 'undefined') {
   const asked = new RealDate(q.get('at') || '').getTime();
   const at = Number.isFinite(asked) ? asked : new RealDate(DEMO.at).getTime();
   /* What is new counts as seen (a version past any real one), so no update page opens over the screen being shown */
-  Object.defineProperty(window, 'localStorage', { value: new Mem({ ...demoStorage(at, theme), 'daybook.seenVersion': '99.0.0' }), configurable: true });
+  const demo = demoStorage(at, theme);
+  /* ?faith=lds (or christian, or plain): the demo person said faith plays a big part, in that voice, so It is written shows in SOS */
+  const faith = q.get('faith');
+  if (faith === 'lds' || faith === 'christian' || faith === 'plain') {
+    const st = JSON.parse(demo['daybook:settings'] || '{}');
+    st.onb = { ...(st.onb || {}), a: { ...((st.onb && st.onb.a) || {}), faith: 'big', creed: faith === 'plain' ? 'other' : faith } };
+    demo['daybook:settings'] = JSON.stringify(st);
+  }
+  Object.defineProperty(window, 'localStorage', { value: new Mem({ ...demo, 'daybook.seenVersion': '99.0.0' }), configurable: true });
   Object.defineProperty(window, 'sessionStorage', { value: new Mem({}), configurable: true });
 
   /* the clock: the demo moment, moving on from there as the page runs (so animations and timers still work) */
@@ -70,5 +78,7 @@ if (typeof window !== 'undefined') {
     return realFetch(input, init);
   };
 
-  if (q.get('motion') !== '1') AccessibilityInfo.isReduceMotionEnabled = () => Promise.resolve(true);
+  /* the preview (npm run preview, EXPO_PUBLIC_PREVIEW=1) is for seeing the app as a person does, so it keeps full motion unless ?motion=0 */
+  const motion = process.env.EXPO_PUBLIC_PREVIEW === '1' ? q.get('motion') !== '0' : q.get('motion') === '1';
+  if (!motion) AccessibilityInfo.isReduceMotionEnabled = () => Promise.resolve(true);
 }

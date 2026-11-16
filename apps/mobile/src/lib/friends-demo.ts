@@ -1,4 +1,5 @@
-/* Friends (beta), the demo: /friends?demo=1 opens the Friends page with made-up friends already added, with no setup and no
+/* Friends (beta), the demo: /friends?demo=1 opens the Friends page with one made-up friend already added (the usual case; entering any
+   code adds a second), with no setup and no
    account, so anyone can see and play it, on the live site too (the owner, November 15, 2026: "so it can actually load me something
    that I can view"). It answers the way services/api friends.ts does, in memory on this page only: nothing is sent or kept, and a
    reload without ?demo=1 is the real Friends page again. */
@@ -41,15 +42,6 @@ function fresh(): World {
         rt: '21:00',
         cheer: { k: 'warm', at: now - H },
       },
-      {
-        fid: 'demo-maya',
-        since: now - 9 * 24 * H,
-        name: 'Maya',
-        vals: { lessons: 3, checkins: 6, days: 7, rode: 2, level: 9, lname: 'Bright', dk, dl: 0, dc: 1 },
-        rt: '18:00',
-        sent: now - 2 * H,
-      },
-      { fid: 'demo-chris', since: now - 3 * 24 * H, name: 'Chris', vals: { lessons: 1, days: 2, level: 3, lname: 'Spark' }, rt: null },
     ],
   };
 }

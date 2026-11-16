@@ -1,7 +1,7 @@
 /* The big opener of a win, the one the lesson finish starts with (the owner, November 13, 2026: "i love the celebration"),
    shared so every win gets it (the owner, November 12, 2026: "i honestly want constant celebrations"). Modeled on Duolingo's:
-   a tilted band sweeps in across a flat night with the flame huge inside it, a short shout pops in sun yellow and confetti
-   bursts (a heavy knock, then a buzz, and a chime when sound is on). After a beat the band slides off, the flame and the night
+   a tilted band sweeps in across a flat night with the flame huge inside it, a short shout settles in in sun yellow, with no
+   confetti and no bounce (the owner, November 14, 2026: too much confetti) (a heavy knock, then a buzz, and a chime when sound is on). After a beat the band slides off, the flame and the night
    fade, and the page under it shows. A tap skips ahead. It lays itself over the page: `onLeave` fires as it starts to go, so the
    page can mount under it, and `onEnd` once it is gone. Under Reduce Motion, or with celebrations off, do not show it.
    The flame is drawn at its biggest and only ever scaled down, so it stays sharp (iOS scales the drawn picture). */
@@ -23,6 +23,7 @@ import Reanimated, {
 import { BigFlame } from '@/components/big-flame';
 import { Text } from '@/components/text';
 import { buzz, knock } from '@/lib/feel';
+import { SETTLE, SETTLE_SLOW } from '@/lib/motion';
 import { play } from '@/lib/sound';
 import { font } from '@/lib/theme';
 
@@ -39,7 +40,6 @@ export function Opener({ level, shout, onLeave, onEnd }: { level: number; shout:
   const band = useSharedValue(0);
   const grow = useSharedValue(0);
   const say = useSharedValue(0);
-  const conf = useSharedValue(0);
   const gone = useSharedValue(0);
   const left = useRef(false);
   const [live, setLive] = useState(true);
@@ -63,19 +63,18 @@ export function Opener({ level, shout, onLeave, onEnd }: { level: number; shout:
 
   useEffect(() => {
     knock(Haptics.ImpactFeedbackStyle.Heavy);
-    band.value = withSpring(1, { damping: 16, stiffness: 140 });
-    grow.value = withDelay(80, withSpring(1, { damping: 9, stiffness: 160 }));
+    band.value = withSpring(1, SETTLE_SLOW);
+    grow.value = withDelay(80, withSpring(1, SETTLE_SLOW));
     const t = timers.current;
     t.push(
       setTimeout(() => {
         play('chime');
-        say.value = withSpring(1, { damping: 8, stiffness: 220 });
+        say.value = withSpring(1, SETTLE);
       }, 260),
     );
     t.push(
       setTimeout(() => {
         buzz('lit');
-        conf.value = withTiming(1, { duration: 1600, easing: Easing.linear });
       }, 300),
     );
     t.push(setTimeout(leave, HOLD));
@@ -111,7 +110,6 @@ export function Opener({ level, shout, onLeave, onEnd }: { level: number; shout:
           {shout}
         </Text>
       </Reanimated.View>
-      <Confetti v={conf} x={win.width / 2} y={midY} w={win.width} />
       <Pressable style={StyleSheet.absoluteFill} accessible={false} onPress={leave} />
     </View>
   );

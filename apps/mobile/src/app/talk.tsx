@@ -56,6 +56,8 @@ import {
   type TalkNeed,
   type TalkPath,
   NUDGE_WORDS,
+  ownOf,
+  type OwnKind,
 } from '@daybook/core';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -210,10 +212,12 @@ export default function TalkIt() {
   const persist = (t: Talk) => update((s0) => ({ ...s0, days: saveTalk(s0.days, day, t) }));
   const needWord = talkNeedWord(talk.n, talk.nx);
   const mx = talk.mx || [];
-  const ownField = (placeholder: string, onSave: (t: string) => void) => (
+  /* written answers are kept for good (core saved-answers.ts) and offered again here and on every page that asks the same */
+  const ownField = (placeholder: string, kind: OwnKind, onSave: (t: string) => void) => (
     <OwnField
       placeholder={placeholder}
       max={TALK_OWN_LEN}
+      kind={kind}
       onSave={(t) => {
         onSave(t);
         setOwn(null);
@@ -221,6 +225,9 @@ export default function TalkIt() {
       onCancel={() => setOwn(null)}
     />
   );
+  const savedNeeds = ownOf(snap.settings, 'need');
+  const savedMoves = ownOf(snap.settings, 'move');
+  const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
   const addOwn = (list: string[], t: string) => (list.some((x) => x.toLowerCase() === t.toLowerCase()) ? list : list.concat(t));
 
   /* choosing a path. Going ahead is saved now, so it reaches the look back (and the log) even if nothing else is
@@ -311,7 +318,7 @@ export default function TalkIt() {
           What usually makes these hours hard?
         </T>
         {own === 'need' ? (
-          ownField('Like: being home alone', (t) => set({ n: null, nx: t }))
+          ownField('Like: being home alone', 'need', (t) => set({ n: null, nx: t }))
         ) : (
           <Dock>
             <View style={s.list}>
@@ -332,14 +339,23 @@ export default function TalkIt() {
                   }}
                 />
               ))}
-              <Answer
-                icon="pencil"
-                tone="accent"
-                title={talk.nx && !talk.n ? talk.nx : 'Something else'}
-                sub={talk.nx && !talk.n ? 'In your own words. Tap to change it.' : 'Say it in your own words'}
-                on={!!talk.nx && !talk.n}
-                onPress={() => setOwn('need')}
-              />
+              {[...savedNeeds, ...(talk.nx && !talk.n && !savedNeeds.some((x) => same(x, talk.nx!)) ? [talk.nx] : [])].map((t) => (
+                <Answer
+                  key={'own' + t}
+                  icon="pencil"
+                  tone="accent"
+                  title={t}
+                  sub="In your own words"
+                  on={!talk.n && !!talk.nx && same(talk.nx, t)}
+                  onPress={() => {
+                    set({ n: null, nx: t });
+                    if (moving.current) return;
+                    moving.current = true;
+                    setTimeout(() => go('cMoves'), 220);
+                  }}
+                />
+              ))}
+              <Answer icon="plus" tone="accent" title="Something else" sub="Say it in your own words" onPress={() => setOwn('need')} />
             </View>
             {talk.nx && !talk.n ? next('cMoves') : null}
           </Dock>
@@ -388,7 +404,7 @@ export default function TalkIt() {
             : 'What you need is real. Pick how you will give it to yourself.'}
         </T>
         {own === 'cMoves' ? (
-          ownField('Like: play guitar for 20 minutes', (t) => set({ mx: addOwn(mx, t) }))
+          ownField('Like: play guitar for 20 minutes', 'move', (t) => set({ mx: addOwn(mx, t) }))
         ) : (
           <Dock>
             <View style={s.list}>
@@ -404,9 +420,20 @@ export default function TalkIt() {
                   onPress={() => set({ m: toggle(talk.m, k) })}
                 />
               ))}
-              {mx.map((t) => (
-                <Answer key={'own' + t} multi icon="pencil" tone="mint" title={t} on onPress={() => set({ mx: mx.filter((x) => x !== t) })} />
-              ))}
+              {[...mx, ...savedMoves.filter((t) => !mx.some((x) => same(x, t)))].map((t) => {
+                const on = mx.some((x) => same(x, t));
+                return (
+                  <Answer
+                    key={'own' + t}
+                    multi
+                    icon="pencil"
+                    tone="mint"
+                    title={t}
+                    on={on}
+                    onPress={() => (on ? set({ mx: mx.filter((x) => !same(x, t)) }) : mx.length < 3 ? set({ mx: addOwn(mx, t) }) : undefined)}
+                  />
+                );
+              })}
               {mx.length < 3 ? <Answer multi icon="plus" tone="accent" title="My own idea" sub="In your own words" onPress={() => setOwn('cMoves')} /> : null}
             </View>
             {next('cWhen', talk.m.length + mx.length > 0)}
@@ -511,21 +538,24 @@ export default function TalkIt() {
           What you need, another way.
         </T>
         {own === 'wUntil' ? (
-          ownField('Like: play guitar for 20 minutes', (t) => set({ m: [], mx: [t] }))
+          ownField('Like: play guitar for 20 minutes', 'move', (t) => set({ m: [], mx: [t] }))
         ) : (
           <Dock>
             <View style={s.list}>
               {talkMoves(talk.n).map((k) => (
                 <Answer key={k} icon={MOVE_IC[k]} tone="mint" title={TALK_MOVES[k][0]} on={talk.m[0] === k} onPress={() => set({ m: [k], mx: undefined })} />
               ))}
-              <Answer
-                icon="pencil"
-                tone="accent"
-                title={mx[0] && !talk.m.length ? mx[0] : 'My own idea'}
-                sub={mx[0] && !talk.m.length ? 'In your own words. Tap to change it.' : 'In your own words'}
-                on={!!mx[0] && !talk.m.length}
-                onPress={() => setOwn('wUntil')}
-              />
+              {[...savedMoves, ...(mx[0] && !savedMoves.some((x) => same(x, mx[0])) ? [mx[0]] : [])].map((t) => (
+                <Answer
+                  key={'own' + t}
+                  icon="pencil"
+                  tone="mint"
+                  title={t}
+                  on={!talk.m.length && !!mx[0] && same(mx[0], t)}
+                  onPress={() => set({ m: [], mx: [t] })}
+                />
+              ))}
+              <Answer icon="plus" tone="accent" title="My own idea" sub="In your own words" onPress={() => setOwn('wUntil')} />
             </View>
             {remindersOffered && talk.at ? (
               <View style={s.row}>

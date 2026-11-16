@@ -4,6 +4,8 @@ import { LESSONS } from '../src/legacy/core.js';
 import { cardArt, cardBeat, cardLook, cardNumber, lessonBeats } from '../src/lesson-beats';
 import type { Lesson } from '../src/lessons';
 
+/* a lesson told as a story (lesson-stories.ts) tells it in fuller sentences, by the owner's choice (November 14, 2026: "you don't have to condense so much out") */
+const STORY = { head: 120, p: 260 };
 const MAX = { head: 64, question: 125, say: 72, p: 110, line: 46, comment: 92, answer: 62, key: 110, rvH: 72 };
 const CONTRACTION = /\b\w+(?:n['’]t|['’](?:re|ve|ll|d|m))\b|\b(?:it|that|there|here|what|who|he|she|let)['’]s\b/i;
 /* the usual tells of machine writing: a reveal, a stock phrase, a dash */
@@ -15,7 +17,7 @@ function wordsOf(L: Lesson): string[] {
   if (!b) return [];
   const out: string[] = [b.key];
   b.cards.forEach((x) => {
-    [x.h, x.say, x.p, x.rv?.h, x.rv?.p].forEach((w) => w && out.push(w));
+    [x.h, x.say, x.p, x.dx, x.rv?.h, x.rv?.p].forEach((w) => w && out.push(w));
     (x.l || []).concat(x.c || [], x.o || []).forEach((w) => out.push(w));
   });
   if (b.rc) out.push(...(b.rc.q ? [b.rc.q] : []), ...(b.rc.o || []), ...b.rc.c);
@@ -49,9 +51,9 @@ describe('lesson beats', () => {
           long(x.rv!.p, MAX.p);
         } else {
           /* a God lesson's closing prayer is said, not scanned, and may run longer (lesson-turns.ts close) */
-          long(x.h, look === 'number' ? MAX.rvH : card.e === 'close' ? MAX.p : MAX.head);
+          long(x.h, L.form ? STORY.head : look === 'number' ? MAX.rvH : card.e === 'close' ? MAX.p : MAX.head);
           long(x.say, MAX.say);
-          long(x.p, MAX.p);
+          long(x.p, L.form ? STORY.p : MAX.p);
           (x.l || []).forEach((w) => long(w, MAX.line));
           expect((x.l || []).length, at + 'three lines at most').toBeLessThanOrEqual(3);
           expect(x.say && x.p, at + 'say or p, not both').toBeFalsy();

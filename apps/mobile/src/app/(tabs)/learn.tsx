@@ -37,8 +37,8 @@ import {
   urTags,
   urTried,
   weekGame,
-  lessonTo,
 } from '@daybook/core';
+import { lessonTo } from '@daybook/core/lesson-content';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -56,6 +56,7 @@ import { LinkCard, Rows } from '@/components/link-card';
 import { PauseBanner } from '@/components/today-log';
 import { Button, Card, Chip, Icon, T } from '@/components/ui';
 import { Packed } from '@/components/packed';
+import { buzz } from '@/lib/feel';
 import { useCountFocus } from '@/lib/pulse';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useSos } from '@/lib/sos';
@@ -248,10 +249,13 @@ function Floating({ show, due, children }: { show: boolean; due: number; childre
       {show && due ? (
         <Pressable
           accessibilityRole="button"
-          onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(due) } })}
+          onPress={() => {
+            buzz('tap');
+            router.push({ pathname: '/lwrite/[n]', params: { n: String(due) } });
+          }}
           style={({ pressed }) => [s.due, { backgroundColor: c.violetSoft, opacity: pressed ? 0.9 : 1 }]}>
           <Icon name="pencil" size={16} color={c.violetText} />
-          <Text style={[s.dueT, { color: c.violetText }]}>Checkpoint {lcheckNo(due, snap.settings)} is ready: write it out</Text>
+          <Text style={[s.dueT, { color: c.violetText }]}>Checkpoint {lcheckNo(due, snap.settings, snap.days)} is ready: write it out</Text>
           <Icon name="next" size={16} color={c.violetText} />
         </Pressable>
       ) : null}
@@ -259,7 +263,7 @@ function Floating({ show, due, children }: { show: boolean; due: number; childre
   );
 }
 
-const openLesson = (id: string) => router.push({ pathname: '/lesson/[id]', params: { id } });
+const openLesson = (id: string) => router.push({ pathname: '/lesson/[id]', params: { id, pick: '1' } });
 
 /* ---------- lessons ---------- */
 function LessonsPane({
@@ -303,7 +307,8 @@ function LessonsPane({
           <View style={{ gap: 2 }}>
             <T v="h2">Write it out</T>
             <T v="small">
-              Checkpoint {lcheckNo(due, st)}: {LCHECKS[due - 1].t}. About {pair ? lcheckAbout(pair, st) : 'two lessons'}. 3 to 5 minutes, and only you see it.
+              Checkpoint {lcheckNo(due, st, snap.days)}: {LCHECKS[due - 1].t}. About {pair ? lcheckAbout(pair, st, snap.days) : 'two lessons'}. 3 to 5 minutes,
+              and only you see it.
             </T>
           </View>
           <Button label="Start writing" onPress={() => router.push({ pathname: '/lwrite/[n]', params: { n: String(due) } })} />
@@ -400,12 +405,15 @@ function LessonRow({ L, done, locked, side, sub }: { L: Lesson; done?: boolean; 
   const c = useTheme();
   const t = toneOf(c, lessonUnit(L).tone);
   const { snap } = useStore();
-  const no = lessonNo(L, snap.settings);
+  const no = lessonNo(L, snap.settings, snap.days);
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${no ? 'Lesson ' + no : L.f ? 'Faith lesson' : 'Lesson'}: ${L.title}. ${done ? 'Done, ' + side + '.' : locked ? 'Opens with a free account.' : side + '.'}`}
-      onPress={() => openLesson(L.id)}
+      onPress={() => {
+        buzz('tap');
+        openLesson(L.id);
+      }}
       style={({ pressed }) => [s.row, { borderTopColor: c.line, opacity: pressed ? 0.7 : 1 }]}>
       <View style={s.lrIc}>
         {done ? (

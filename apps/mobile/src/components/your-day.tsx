@@ -2,16 +2,16 @@
    next is the one big bright card on the line, and its tap starts it; the other stops are slim rows beside the line, so there is
    never a question of what to do. The part of the day already done is the squiggle (docs/design-standards.md: squiggle means
    progress), the rest quiet dashes. Every stop opens its moment with one tap, at any time: the lesson, the check-in (app/checkin.tsx)
-   and the wind-down (app/wind.tsx). When a bigger moment has the next step (core pickMoment, moment-card.tsx), its card sits above and
-   the stops here are all rows. "Change" opens the list in the same view as its unlock (app/day-list.tsx). */
+   and the wind-down (app/wind.tsx), and on Sunday the review. Which stop is next is core next-step.ts (todayLine), one ordered list.
+   When a bigger moment has the next step (core pickMoment, moment-card.tsx), its card sits above in the same look and the stops here
+   are all quiet rows, with no lit mark, so there are never two next steps. "Change" opens the list in the same view as its unlock (app/day-list.tsx). */
 import {
   lessonsDone,
   lineOrder,
-  openTile,
   routineChanged,
   logicalKey,
   reachMark,
-  stopTiles,
+  todayLine,
   type Moment,
   type Snapshot,
   type StopGo,
@@ -27,23 +27,26 @@ import { Text } from '@/components/text';
 import { Shape, SQUIGGLE, squigglePath, SVG_HIDE, useClock, type ShapeKind } from '@/components/shapes';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { NATIVE, SETTLE, useReducedMotion } from '@/lib/motion';
 import { useSpot } from '@/lib/tour';
 import { useStore } from '@/lib/store';
 import { useAccount } from '@/lib/sync';
+import { useUnlockMark } from '@/lib/unlock';
 import { font, nightInk, useTheme, type Palette } from '@/lib/theme';
 
 /** open a stop's moment */
 export function openStop(go: StopGo, id?: string) {
   buzz('tap');
   if (go === 'lesson') {
-    if (id) router.push({ pathname: '/lesson/[id]', params: { id } });
+    if (id) router.push({ pathname: '/lesson/[id]', params: { id, pick: '1' } });
     return;
   }
   /* the any-time stops: the journal opens on its feeling picker, a new entry's first step (reaching out is marked in place, Row) */
   if (go === 'journal') return router.push({ pathname: '/write', params: { new: '1' } });
   if (go === 'reach') return;
   if (go === 'morning') return router.push('/morning');
+  /* the Sunday review: the first one opens its own page first (core next-step.ts sundayTile) */
+  if (go === 'review') return id ? router.push({ pathname: '/review', params: { s: id } }) : undefined;
   router.push(go === 'checkin' ? '/checkin' : '/night');
 }
 /** Next up names a stop by its key (evening, night; the lesson opens itself) */
@@ -87,15 +90,20 @@ export function YourDay({
   const c = useTheme();
   const st = snap.settings!;
   const account = useAccount();
-  const r = stopTiles(snap.days, st, tk, now, snap.journal, !!account);
-  /* the stop that is next, as the card at the top opens it (a re-read in place of a lesson that waits behind an account) */
-  const open = openTile(snap.days, st, tk, now, !!account);
+  /* the line and its one next step (core next-step.ts): the morning while it is open, the Sunday review while it is due, then the
+     day's open stop (a re-read in place of a lesson that waits behind an account) */
+  const r = todayLine(snap.days, st, snap.reviews, tk, now, snap.journal, !!account);
   const changed = routineChanged(st, snap.days[tk]?.p);
   const n = r.tiles.length;
-  /* the big card goes on the stop it starts */
-  const heroKey = hero ? (hero.go === 'checkin' ? 'evening' : hero.go === 'wind' ? 'night' : hero.go === 'lesson' ? 'lesson' : null) : null;
-  const heroShown = !!hero && r.tiles.some((t) => t.k === heroKey && !t.done);
-  const big = heroShown ? heroKey : null;
+  /* the big card goes on the next step, only when Today has no bigger moment leading above the line (then every stop is a quiet row) */
+  const big = hero && r.next ? r.next.k : null;
+  const heroShown = !!big;
+  const mark = useUnlockMark();
+  const intro = big === 'sunday' && !!r.next?.intro;
+  useEffect(() => {
+    if (intro) mark.shown('sunday');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intro]);
   return (
     <View>
       {heroShown ? null : <View style={s.noteTop}>{note}</View>}
@@ -109,7 +117,6 @@ export function YourDay({
           big={big}
           hero={hero}
           note={note}
-          tileOf={(t) => (open && open.k === t.k && !t.done ? open : t)}
           first={!lessonsDone(snap.days).size}
           spots
         />
@@ -281,7 +288,8 @@ function DayLine({ tiles, mids, curKey, glass }: { tiles: StopTile[]; mids: (num
   if (mids.some((m) => m == null)) return null;
   const at = mids as number[];
   const x = RAIL / 2;
-  const solid = (i: number) => tiles[i].done || tiles[i].cur || tiles[i].k === curKey;
+  /* only the big card's mark is lit: when a bigger moment leads above the line, no stop on it looks like the next step */
+  const solid = (i: number) => tiles[i].done || tiles[i].k === curKey;
   return (
     <View style={s.rail} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <Svg width={RAIL} height={at[at.length - 1] + MARK} {...SVG_HIDE}>
@@ -328,15 +336,29 @@ type BigCard = Pick<Moment, 'eb' | 'h' | 'btn' | 'go'>;
 /** the big bright card on its own: Today after the night hour shows only this one, Phone to bed (app/(tabs)/index.tsx) */
 export const StopCard = ({ m, t }: { m: BigCard; t: StopTile }) => <Hero m={m} t={t} />;
 function Hero({ m, t, first }: { m: BigCard; t: StopTile; first?: boolean }) {
+  const card = (
+    <NextCard
+      m={m}
+      first={first}
+      onPress={() => (t.intro ? (buzz('tap'), router.push({ pathname: '/unlock', params: { id: 'sunday', s: t.id! } })) : openStop(t.go, t.id))}
+    />
+  );
+  return first ? <FirstGlow>{card}</FirstGlow> : card;
+}
+
+/** the one next step's look, the same every time it is drawn (core next-step.ts): on the line, and for a bigger moment above it
+    (moment-card.tsx), so what to do next always looks the same (the owner, November 15, 2026: "the next task should always be
+    ... highlighted and active") */
+export function NextCard({ m, first, onPress }: { m: BigCard; first?: boolean; onPress: () => void }) {
   const c = useTheme();
   const pill = m.btn && m.btn.length <= 14 ? m.btn : PILL[m.go || ''] || 'Start';
   /* the first lesson's card says where to start; the rest of its small line goes, so it is never cut off */
   const eb = first ? 'Start here · ' + (m.eb || '').split(' · ')[0] : m.eb;
-  const card = (
+  return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={(first ? 'Start here. ' : '') + (m.btn || pill) + ': ' + m.h}
-      onPress={() => openStop(t.go, t.id)}
+      onPress={onPress}
       style={({ pressed }) => [s.hero, { transform: [{ scale: pressed ? 0.985 : 1 }] }]}>
       <LinearGradient colors={[c.sun, c.sun2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       <View style={{ flex: 1, gap: 2 }}>
@@ -352,7 +374,6 @@ function Hero({ m, t, first }: { m: BigCard; t: StopTile; first?: boolean }) {
       </Shape>
     </Pressable>
   );
-  return first ? <FirstGlow>{card}</FirstGlow> : card;
 }
 
 /* the first lesson's card, the first time it is on Today: it pops in once and keeps a warm glow around it, so the first lesson is
@@ -365,7 +386,7 @@ function FirstGlow({ children }: { children: React.ReactNode }) {
   const glow = useRef(new Animated.Value(still ? 0.6 : 0)).current;
   useEffect(() => {
     if (still) return;
-    Animated.spring(pop, { toValue: 1, friction: 4, tension: 110, useNativeDriver: NATIVE }).start();
+    Animated.spring(pop, { toValue: 1, ...SETTLE, useNativeDriver: NATIVE }).start();
   }, [still, pop]);
   useEffect(() => {
     if (still || !focused) return;

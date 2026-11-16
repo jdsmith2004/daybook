@@ -30,24 +30,28 @@ export function NightMarks({
   /** on the hero's sky the ink is the sky's own, not the theme's */
   ink,
   dark,
+  edge,
 }: {
   marks: NightMark[];
   size?: number;
   gap?: number;
   ink?: string;
   dark?: boolean;
+  /** a thin ring around the filled marks, for a light sky where the warm fill alone would melt into it (the dawn and dusk sky's peach) */
+  edge?: string;
 }) {
   const c = useTheme();
   const night = dark ?? c.scheme === 'dark';
   const ring = ink ?? c.muted;
   const dot = { width: size, height: size, borderRadius: size / 2 };
+  const rim = edge ? { borderWidth: 1.5, borderColor: edge } : null;
   return (
     <View style={[s.row, { gap }]} accessibilityLabel={nightMarksSay(marks)}>
       {marks.map((m, i) =>
         m === 'free' ? (
-          <LinearGradient key={i} colors={RUN} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={dot} />
+          <LinearGradient key={i} colors={RUN} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[dot, rim]} />
         ) : m === 'slip' ? (
-          <View key={i} style={[dot, { backgroundColor: night ? SLIP_DARK : SLIP_LIGHT }]} />
+          <View key={i} style={[dot, rim, { backgroundColor: night ? SLIP_DARK : SLIP_LIGHT }]} />
         ) : m === 'untold' ? (
           <View key={i} style={[dot, s.untold, { borderColor: ring }]} />
         ) : (

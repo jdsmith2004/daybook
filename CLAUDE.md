@@ -77,6 +77,14 @@ need, without letting the screen turn into a list of features.
   moments of earned value (a level, a milestone, the first week), make the middle tip the obvious choice, keep paying to
   one tap, and make the free side feel generous, since generous treatment is what brings tips and good ratings. When
   building any feature, ask whether it helps the person and whether it helps Daybook earn or grow, and say so in plans.
+- **The app asks for a rating until the person says they enjoy it, and this is never dropped (the owner, November 15,
+  2026: "make a note that's extremely important it keeps asking them until they say they're enjoying the app that cannot be
+  dropped").** "Do you like Daybook so far?" comes back at good moments (a level, a milestone, the first week, an urge ridden
+  out), never in the hours after a slip or an SOS, until the person answers that they enjoy it; that yes opens Apple's own
+  rating sheet (`askStoreReview`, `apps/mobile/src/lib/review.ts`, which Apple itself limits to a few showings a year), and a
+  no opens feedback and the question returns at a later good moment. It was lost once by accident, in the setup rebuild of
+  November 12, 2026 (f01a0b6c), so any redesign of setup, Today or a celebration checks that the ask still has a live caller,
+  and a test fails when nothing calls it.
 - **The store listing never names porn (Apple rejected 1.3.3 under Guideline 1.1 for it, November 11, 2026).** No App
   Store or Play text (name, subtitle, description, promo text, What's New, keywords) and no store screenshot uses "porn",
   "pornography", "pornfree", "NoFap", "sex" or any other explicit word. Speak of quitting a habit, urges, slips, self-control
@@ -90,6 +98,13 @@ need, without letting the screen turn into a list of features.
 - **Lessons inspire hope; that is their main goal.** A lesson must be wholesome, true to its spirit, motivating and hopeful,
   written plainly and surely. The quality of the lesson matters far more than checking its sources: do not spend effort
   validating sources, and do not rewrite, flag or ask about the "Behind this" notes. That work is not wanted.
+- **The lessons are set in stone (the owner, November 14, 2026: "these lessons need to be enshrined in stone ... what i don't want
+  to happen is have the lessons lose their soul and spirit when i'm doing design changes").** Read `docs/lessons.md` before touching
+  any lesson's words or the lesson player. A lesson's words change only with the owner's yes for that change. A design change, a
+  player rewrite or a "tighten the words" pass never cuts, hides, grades or reorders them. Short plays the Short cards, and Long plays
+  every card. `packages/core/test/lesson-lock.test.ts` fails when a lesson's words change. Better ideas go to the owner as samples,
+  never as a batch rewrite. The lessons lost their quality in November 2026 through two design passes that meant no harm, so this
+  rule is not a formality.
 - **Never use one of the 15 monthly EAS builds without the owner's explicit yes (the owner, November 11, 2026, after a
   Screen Time build was started without asking).** Anything that runs on Expo's servers and counts against the free plan's 15
   iOS builds a month (`eas build` without `--local`, the App Store or Play workflow) needs the owner's yes for that exact build
@@ -146,8 +161,43 @@ need, without letting the screen turn into a list of features.
   - **Ask the real questions early,** each with the options and a recommendation, then build without stopping. When the
     owner says to use your judgment, decide and say what you chose.
   - **Build it on a feature branch, look at it on the web, and show the owner on the web** (the simulator only when the
-    part is native and the web cannot show it; see "Web first" below). Never merge it before the owner has seen it; this
-    overrides "merge when the tests pass" above.
+    part is native and the web cannot show it; see "Web first" below). Merge it when it is good, then show the owner on the
+    web (see "Merge, then show it on the web" below).
+- **Merge, then show it on the web (the owner, November 14, 2026: "just do a solid, thorough QA on the web, but we don't need
+  to use a simulator. And then all of them, I want to show me what changes they made on the web. And they're free to merge as
+  well. And then I can just tell them to make changes if they need to. But just merge it and say, here's the changes on the
+  web that I made. Take a look. And would you like to archive the chat?").** Every chat, redesigns included: a thorough QA
+  on the web (no simulator), merge to `main` without waiting for a yes, then leave the web preview open on the change in the
+  browser pane with pictures in the report ("here are the changes I made on the web, take a look"), and ask "Archive this
+  chat?" with Yes and No. The owner asks for changes after.
+  **Showing it means the owner can see and play it (the owner, November 14, 2026: "i said i want to see it and I haven't seen it
+  or had options to see it", and "our other sessions also keep not showing me previews on the web").** Pictures in the chat are
+  not enough, and a pane left on an old or blank tab is not showing it. Before the report: the browser pane is open and displayed
+  (`tabs_context` says so), its active tab is on the change, at phone size (`resize_window` mobile), with full motion (in the demo
+  build, `EXPO_PUBLIC_SHOTS=1`, load the page with `?motion=1`), and a screenshot taken just then proves it. Give the owner a way to
+  play each change themself: a button or link per moment (for celebrations, `/celebrations` in the demo build), not only a list of
+  steps. Anything that moves is checked moving on the web; a web-only bug (like a mouse release counting as a tap) is fixed, not
+  blamed on the web. If the pane is closed later, open it again on the same page.
+  **A link to press, right above "Archive this chat?" (the owner, November 14, 2026: "it needs to be a preview you give me right
+  above the archive where I can just press it and open the preview").** The browser pane alone is not enough: the owner is often in
+  another window or on the phone, where the pane cannot show (`show_pane` then says the chat is not open in any window). So the
+  closing message, the text just above the wrap-up box, ends with plain clickable links, each straight to the changed screen: the
+  live site (`SITE_URL` in core `supporter.ts`, after the `[deploy]` run has finished: check `gh run list --workflow Deploy`) for
+  the phone, and the running local preview (`http://localhost:<port>/<path>`, with the demo data when the change needs it) for the
+  Mac. Check each link answers before giving it. Never say "it is open in the pane" as the only way to see it. A question the owner was asked to decide (a choice of direction,
+  sample lessons to judge) still waits for the answer before the work it decides. The iPhone QA happens before publishing.
+  **The local link comes from `npm run preview`, and it never opens on setup (the owner, November 15, 2026: "it keeps giving me
+  these links to open on the local host, but I'm not signed in. So instead of taking me to that, it takes me right to setup, and I
+  can't get out of it without doing setup. Finally, it takes a while to load for some reason. Is there a way to speed that up, at
+  least if I'm testing?").**
+  - Local preview links come from `npm run preview -- <port>` (scripts/preview.ts): the demo build (`EXPO_PUBLIC_SHOTS=1`), the
+    made-up person in memory only, full motion, minified and served with a fallback so every deep link opens its screen. Never
+    give a link to the `expo start` dev server: it is slow, and a fresh browser has no person, so it opens on setup. Each chat
+    picks its own port, so chats never share one. `?demo=month`, `hard`, `grad` or `comeback` and `?theme=dark` pick the state.
+  - Every link is checked in a fresh browser profile with no saved data (a new Playwright context, or a private window) before it
+    is given, and it must open on the changed screen, never on setup.
+  - A screen that needs an account, a friend or a server answer gets a demo state in `src/shots` (as `/friends?demo=1` does
+    for Friends), built by the chat that builds the screen, so the link shows it filled in.
 - **Merge to main, then archive; the iPhone check is TestFlight from main (the owner, November 13, 2026: "i want the chats
   to merge to main then archive alot of these chats keep not merging to main bc it's not tested on iphone, we will test it on
   iphone by making a build from main and publishing it to testflight").** A chat whose work is done (tests pass, QA on the web
@@ -181,6 +231,7 @@ need, without letting the screen turn into a list of features.
 
 - `legacy/index.html` is the original single-file app. It is **retired**: every screen is in the new app now, so it is kept only as history. Never change it, and never treat it as the source of truth.
 - `packages/core` has every rule with no UI, and it is the source of truth. New rules and new content go here, in TypeScript, in the file for their part (lesson rules in `lessons.ts`, lessons 33 on and their sources in `lessons-more.ts`, the short words a lesson card shows first in `lesson-beats.ts`, and so on). `src/legacy/core.js` holds the rules first copied from the legacy app. It is no longer generated: leave it alone, and when one of its rules or words has to change, make the smallest change there, or move that part to TypeScript and remove it from `core.js`. `src/legacy/core.d.ts` types the parts the app uses.
+  The app imports `@daybook/core`, which is `src/rules.ts` (a new file's exports go there), and the lessons' text from `@daybook/core/lesson-content` only on screens that show a lesson, so the website's first load does not carry it; `src/index.ts` is both, for tests and scripts. See "Where they live" in docs/lessons.md for the lesson catalog.
 - `apps/mobile` is the Expo app (Expo Router, SDK 58). It runs on iOS, Android and the web. Read `apps/mobile/AGENTS.md` before touching Expo APIs: they change every SDK, so check the versioned docs, not memory.
 - `services/api` is the sync Lambda. `infra/` is Terraform (see `infra/README.md`). The device side of sync is `packages/core/src/sync.ts`, tested against the Lambda's handler in `services/api/test/client.test.ts`.
 - `docs/plan.md` is the work that is planned next. `docs/for-fable.md` records the one Fable run so far (a security review); lessons do not need one.
@@ -225,7 +276,28 @@ cd apps/mobile && npx expo start
   files. Do not hand-format against it or add a second config.
 - **Words in the app:** plain words, no contractions ("do not", "it is"), no hedging, never shame. A slip is data, not a reset. A saved setting that holds starting words (like the urge plan) is compared with them, so when starting words change, `normSettings` maps the old words to the new ones.
 - **Lessons speak with confidence and hope.** New lessons name their source in `SRC` or `OB_SRC` and write the scope ("Behind this") in a sure, hopeful voice. Existing scope notes are left as they are (see "Lessons inspire hope" above).
-- **Privacy first.** Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person makes an account. Daybook is a public app, so accounts live in the owner's AWS account: each person's records are stored under their own account id and can only be read with their sign-in; nothing is shared, sold or tracked, and "Delete my account" removes everything. Never add anything that reads people's logs on the server. **Analytics are wanted, and broad (the owner, November 9, 2026: "track as much as we can so we can improve the app"; it replaces the old rule of only the counts).** Daybook learns from an event stream (core `events.ts`) beside the daily totals (core `pulse.ts`): each phone has a random install id, never tied to a name, email or account, never synced or backed up, and never sent with a sync request or a push token. Every event name and every value is on a fixed list (`EV_NAMES`, `EV_PROPS`), checked on the phone and on the server, so the journal, notes, voice notes and any typed words can never leave the phone, nor names, email, the account id, Apple Health's nights, exact times or location. It is on for everyone, with a quiet notice and the off switch in More; it is never sold or shared, and used only to improve the app; the server keeps it 2 years. Say "anonymous" honestly (never tied to who you are, never your words), not "completely anonymous". Never join the events with accounts, payments or synced records, and never send the install id with anything that names a person. A new event or value goes on the list and on the privacy page in the same change, and the App Store label in docs/launch.md follows. The one personal detail published on purpose is the support email (`SUPPORT_EMAIL` in core `support.ts`, and the pages in `apps/mobile/public`), by the owner's choice. When what the app keeps or sends changes, `apps/mobile/public/privacy.html` changes with it.
+- **Privacy first.** Never commit a log, a backup, `.env` files, keys, Terraform state or `tfvars`, AWS account numbers, or personal details. Logs stay on the device until the person makes an account. Daybook is a public app, so accounts live in the owner's AWS account: each person's records are stored under their own account id and can only be read with their sign-in; nothing is sold or tracked, and "Delete my account" removes everything. Never add anything that reads people's logs on the server.
+  **Friends share only what the person chooses (the owner, November 15, 2026: "let's add the option to add them in the app instead ...
+  it should just get a log, like tell them your goals. And they're not going to be centered around the addiction. They'll be around
+  like using the app, or like using SOS").** Friends (beta; core `friends.ts`, services/api `friends.ts`) is the one place anything
+  is shared: with friends the person added by a code one of them sent, only their first name and their effort in Daybook (lessons,
+  check-ins, days in Daybook and the flame, shared from the start and said on screen before anything is shared, each one can be
+  turned off; the owner, November 15, 2026: "having them write out a bunch of goals is too much ... just have automated goals"),
+  and a daily report at the hour they pick; never a slip, a count that resets, times, the journal or notes. A friend reads a card
+  only through the endpoint that checks the friendship both ways. SOS never alerts a friend live, only as an opt-in weekly count
+  (the owner's answer, November 15). Remove and block are quiet, and closing the account removes every friendship on both sides.
+  A friend can hear as it happens when the person does a lesson or checks in (the owner, November 15, 2026: "we can't overwhelm them
+  with notifications ... there friend using it could replace other notificaions and be part of how they get pulled to use the app"):
+  push through Expo, at most 2 friend notes a day per person, none from 10 PM to 8 AM on their clock (core `LIVE_CAP`, `quietNow`),
+  chosen per friend (as it happens, once a day, off), and never a slip or SOS. The one thing friends send is a spark, and it must
+  do something (the owner: "Warming their flame does nothing"): it waits beside the friend's flame on Today, goes into their next
+  lesson, and the sender is told. The together streak is days in a row both opened Daybook (the owner: "a together streak and it's
+  just days they both log in"); the longest is kept, and a gap is never said. **The owner may read their own account (the owner, November 15, 2026: "I want us to build it in where you can at least see my
+  logs because I'm using that to train the data so that doesn't have to be anonymous").** `npm run mylog` (scripts/mylog.ts) signs
+  in with the owner's own email and password, typed at its prompt, and saves that one account's log through the same sync API the
+  app uses, which answers only for the account whose sign-in it checked. It writes outside the repository
+  (~/personal/daybook-private) and prints only counts. That is the whole exception: no server endpoint, role or key reads,
+  lists or exports any other account, and this never widens to other people's logs without the owner's yes. **Analytics are wanted, and broad (the owner, November 9, 2026: "track as much as we can so we can improve the app"; it replaces the old rule of only the counts).** Daybook learns from an event stream (core `events.ts`) beside the daily totals (core `pulse.ts`): each phone has a random install id, never tied to a name, email or account, never synced or backed up, and never sent with a sync request or a push token. Every event name and every value is on a fixed list (`EV_NAMES`, `EV_PROPS`), checked on the phone and on the server, so the journal, notes, voice notes and any typed words can never leave the phone, nor names, email, the account id, Apple Health's nights, exact times or location. It is on for everyone, with a quiet notice and the off switch in More; it is never sold or shared, and used only to improve the app; the server keeps it 2 years. Say "anonymous" honestly (never tied to who you are, never your words), not "completely anonymous". Never join the events with accounts, payments or synced records, and never send the install id with anything that names a person. A new event or value goes on the list and on the privacy page in the same change, and the App Store label in docs/launch.md follows. The one personal detail published on purpose is the support email (`SUPPORT_EMAIL` in core `support.ts`, and the pages in `apps/mobile/public`), by the owner's choice. When what the app keeps or sends changes, `apps/mobile/public/privacy.html` changes with it.
 - **AWS:** deploys use GitHub OpenID Connect (no stored keys). The deploy role can never make, change or take on an IAM role, and cannot invoke the sync function: any role the app needs is made in `infra/bootstrap` (run by the owner), never in `infra/app`. Keep everything pay-per-use; the budget alert is $5 a month.
 - **Git:** commit as the owner's personal GitHub noreply address (set with `git config user.email` in this repository), never a personal or work email. This computer may be signed in to a work GitHub account by default.
 - Before calling a change done: `npm run format`, `npm run typecheck`, `npm test`, and for app changes `npx expo export --platform web` and a look at the result, against docs/craft-checklist.md.

@@ -1,9 +1,10 @@
 /* The night pack's page (Settings, The night pack; core night-pack.ts). Four automations the person makes once in Shortcuts, each
    a light: the person's own flame, lit when it is set or Daybook has seen it run, grey until then. On a phone that goes grey at
-   night the flame is the one colour left, so the lights are flames. Each part says what it does and, until it is lit, how to
-   make it; Daybook cannot make an automation itself (Apple keeps them the person's own). */
-import { fmtClock, gameCompute, PACK_KINDS, packLit, packWords, tonightOf, type PackKind } from '@daybook/core';
-import { Linking, StyleSheet, View } from 'react-native';
+   night the flame is the one colour left, so the lights are flames. How to make each one is walked one step a page
+   (app/nightpack.tsx); Daybook cannot make an automation itself (Apple keeps them the person's own). */
+import { fmtClock, gameCompute, PACK_KINDS, packLit, packLitCount, packWords, tonightOf, type PackKind } from '@daybook/core';
+import { router } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 
 import { Flame } from '@/components/flame';
 import { SetGroup, SetRow, SetSwitch } from '@/components/settings-ui';
@@ -32,6 +33,8 @@ export function NightPackBody() {
   if (!st) return null;
   const level = Math.max(1, gameCompute(snap.days, st, snap.reviews, tk).level.n);
   const at = fmtClock(tonightOf(snap.days, st, tk).at);
+  const lit = packLitCount(pack);
+  const left = PACK_KINDS.length - lit;
   return (
     <>
       <View style={s.lights} accessibilityRole="summary">
@@ -53,32 +56,27 @@ export function NightPackBody() {
           );
         })}
       </View>
-      <T v="small" tone="muted" style={s.lead}>
-        Made once, in Shortcuts. They are yours: nothing on the lock screen says what they are for.
-      </T>
-      {PACK_KINDS.map((k) => {
-        const w = packWords(k, at);
-        const lit = packLit(pack, k);
-        const seen = pack.seen[k];
-        return (
-          <SetGroup
-            key={k}
-            head={w.title}
-            foot={
-              lit ? (
-                w.line
-              ) : (
-                <>
-                  {w.line}
-                  {w.steps.map((x, i) => '\n\n' + (i + 1) + '. ' + x).join('')}
-                </>
-              )
-            }>
-            {seen ? <SetRow label="Working" value={ranAt(seen)} /> : <SetSwitch label="It is set" on={!!pack.said[k]} onChange={(on) => packSay(k, on)} />}
-            {lit ? null : <SetRow label="Open Shortcuts" act="accent" onPress={() => Linking.openURL('shortcuts://').catch(() => undefined)} />}
-          </SetGroup>
-        );
-      })}
+      {/* the steps are walked one a page (app/nightpack.tsx), never listed here: this page is the lights and a way in */}
+      <SetGroup foot="Made once in Shortcuts, about two minutes each. Nothing on the lock screen says what they are for.">
+        {left ? (
+          <SetRow
+            label={lit ? 'Set up the rest (' + left + ' left)' : 'Set them up, one step at a time'}
+            act="accent"
+            onPress={() => router.push('/nightpack')}
+          />
+        ) : null}
+        {PACK_KINDS.map((k) => {
+          const seen = pack.seen[k];
+          const on = packLit(pack, k);
+          return seen ? (
+            <SetRow key={k} label={packWords(k, at).title} value={ranAt(seen)} />
+          ) : on ? (
+            <SetSwitch key={k} label={packWords(k, at).title} on onChange={(v) => packSay(k, v)} />
+          ) : (
+            <SetRow key={k} label={packWords(k, at).title} value="Not set" onPress={() => router.push({ pathname: '/nightpack', params: { k } })} />
+          );
+        })}
+      </SetGroup>
     </>
   );
 }
@@ -87,5 +85,4 @@ const s = StyleSheet.create({
   lights: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 },
   light: { alignItems: 'center', gap: 6, flex: 1 },
   unlit: { width: 60, height: 60, alignItems: 'center', justifyContent: 'center' },
-  lead: { textAlign: 'center', marginTop: -12, paddingHorizontal: 16 },
 });

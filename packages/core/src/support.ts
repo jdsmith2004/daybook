@@ -64,6 +64,8 @@ function askable(days: Days, st: Settings, tk: DayKey, hour: number, url: string
   if (hour < TIP_HOURS[0] || hour >= TIP_HOURS[1]) return false;
   if (near && tipQuiet(days, st, near)) return false;
   for (const k of [st.tipAsk, st.tipMo]) if (isKey(k) && diffDays(tk, k as DayKey) < TIP_SPACE) return false;
+  /* "Do you like Daybook so far?" came today (like.ts): one ask a day */
+  if (st.likeAt === tk) return false;
   return tipCalm(days, tk);
 }
 

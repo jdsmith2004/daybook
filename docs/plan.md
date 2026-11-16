@@ -1,5 +1,276 @@
 # What is planned next
 
+## The order of SOS: the best tools first, and the ones you pass over later (the owner, November 15, 2026; built and merged November 15)
+
+The owner: "We should have it in the optimal order of the best tools to help. And then if they skip a tool often, then we
+should move it lower in the order and suggest it later on." This part owns only the order; the breathing tool's look and
+patterns belong to the sun redesign.
+
+### How the order was chosen before
+
+The breath always opened (`RIDE_FIRST`). After it, `rideWeights` ranked the moves by `urRank` in sos.ts: what fits the hour
+and the trigger (the legacy `UR_FIT`), the urge's strength, the two strong first picks (`UR_BEST`: breathe and 5-4-3-2-1),
+the person's record of what passed, the heart and What helped most (`urLike`), and the go-to. `rideNext` then took the move
+most due (weight times how long since it was shown). Next added one to `mem.pass` (up to 6, -1.5 each), which never faded,
+and finishing a move did not ease it. A fresh person at 3 PM got: breathe, ground, thought, move, feel, stack, forward, so
+the moves that need a clear head came before the body and the shapes game.
+
+### What the research says (notes: side-session-notes `sos-order-research.md`)
+
+No study compares orders, so the order is reasoned from single-tool studies. A body in a rush first (slow breathing: small
+single-session drops; hard muscle work: the strongest craving data), then the eyes (the shapes game is the direct test of
+the picture side of a craving, sexual cravings included, Skorka-Brown and others 2015; 5-4-3-2-1 pulls attention out), then
+the mind (naming the feeling and saying the thought fast are weak on craving; the hour after needs a clear head; your own
+words can feel like pressure in a strong urge). High stress weakens the thinking brain (Arnsten), and people choose
+distraction when a feeling is intense (Sheppes and others 2011). Breathing first is supported, or at least not contradicted.
+No other app found reorders its SOS from skips; a swipe in a stream is mostly moving on, so it is a weak dislike, and menus
+that move by themselves are liked less when they say so.
+
+### What was built (core ride.ts)
+
+- `RIDE_ORDER`: breathe, move, stack, ground, feel, thought, forward, reasons. Each place is a small lift under the person's
+  own signals, so the hour, the trigger and their record still steer. 5-4-3-2-1 keeps its lift as a strong first pick (the
+  owner, October 24, 2026), so a fresh ride now runs: breathe, ground, move, stack, feel, thought, forward, reasons.
+- Passing over (`ridePassed`, `rideFinished`, `rideFade`, kept in `UrMem.rsk`, on this phone only): Next under 5 seconds
+  counts 1, later 0.5; finishing a move halves its count; every new SOS fades every count to 90%. Often is 2.2 or more,
+  about three quick passes in three rides. The count lowers the move's place, and once it is often the move comes round
+  half as often: after the others' second turn, never hidden. The old `mem.pass` no longer holds a ride move down.
+- Helped: the heart and What helped most lift a move more in the ride than in the tool list, so two of them outweigh the
+  order.
+- Silent (the owner, November 15, 2026: "Silent"): nothing on screen says a move moved. It is written keeps its own rule
+  and stays only for people with faith on. No new analytics event.
+
+### Business
+
+It helps the person (the first minute does more) and Daybook (an SOS that works is the best reason to keep the app and to
+rate it). Nothing here is locked.
+
+**Next (the owner, November 15, 2026):** "that initial order is fine though", and "the squeeze tool is kind of bad right now
+wait for the breathing design to finish and then use that as inspiration for a squeeze tool redesign". Squeeze is third in
+the order, so its redesign starts once the breathing redesign has merged.
+
+**Second pass (the owner, November 15, 2026: "the order isn't matching", and on It is written: "it's actually an extremely
+good tool ... write down that it's going to be second for those who are faith-based").**
+
+- **It is written is second for everyone with faith on**, right after the breath, for good (it was second only for the first
+  five urges ridden out). It drops back only when the person says Not really to it or passes it over often lately (the same
+  fading count as the moves). A note from a good day comes after it.
+- **If it were a thing comes after the first three moves past the breath** (it came right after the first one), so the body
+  and the eyes come first and the list above is what a person sees. A faith person now gets: Breathe, It is written,
+  5-4-3-2-1, Squeeze, Fit the shapes, If it were a thing, Name it, Say it fast, The hour after, Your words. The hour and the
+  person's own record still move things.
+- **It is written's pace:** a page goes on with a tap anywhere, and a page nobody taps stays for its words (2.5 seconds plus
+  a quarter second a word, 4 to 10), not 10 to 16 seconds for every page. The page timer also restarts cleanly when the ride
+  comes back to it (it used to count from the wrong start after the untimed Cast page).
+- **It is written, more like a lesson (the owner: "it's basically just a repeatable lesson ... use the elements and good
+  things from it"; audit in side-session-notes `written-audit.md`):** each pull is a card turned like a lesson's: first
+  the pull and the old move it is ("It calls a want a need.", "It calls the first step small.", "It promises what it has
+  never given."), then a tap answers it with the verse, and the pull is struck through. The story lines are short ("After
+  forty days without food, He answered:"). Cast it from you asks what a person can see, "What is feeding it right now?"
+  (The screen in my hand, This room, Being alone, I do not know), and gives the one step for that answer; it replaced "What
+  will you cast away right now?" (the owner: "I don't know ... It's just hard"). Subtitles that repeated the verse are
+  shorter, and the last page says "You stood." over Matthew 5:14, 16 and the flame. The Scripture is quoted exactly as before.
+- **Still open for It is written:** more of the lesson player's pictures (the Chain on the heart page, the urge Wave on
+  "Then it left", sparks round the flame for each thing done), and whether the first question stays (the audit suggests
+  "The pull uses three lines." in its place). Samples to the owner first.
+- **It is written, the design pass (the owner, November 15, 2026: "it has to be intentional ... Simplicity is key"; built in
+  `components/ride/written.tsx`, its own file now).** One living thing per page, made of the lesson player's own pieces: three
+  paper cards face down on the first page (the pulls to come); the hold opens with sparkles; the three pulls stay as they were before this pass (the owner,
+  November 15, 2026, after a flip card and then a scripture-first page were both tried and turned down: "Before ... it had
+  scriptures and a good flow. It just needed a little bit of refinement. You went way too far"): the pull and its old move, a tap
+  answers it with the verse in its sun box, and the pull is struck through. Any change to them goes to the owner as a sample first; on "Then it left" the three answered cards drift up and away and the sun comes
+  up where they were, with sparkles for the angels; the heart page is one mint heart beating slowly; on Cast, what is feeding it
+  is a shape in the middle and "I did it" throws it up off the screen; the last page is the person's flame, big, saying the verse
+  in the lesson's cream bubble. Plain on purpose: verses sit on the sky with no box, the one timer is the squiggle under pages that
+  go on by themselves, and the Cast question page has no picture (it is a choice; nothing should move while the person picks).
+  Fixed: a page timed itself from the start of the page before, so a short page after a long one skipped at once ("Then it
+  left" often never showed). Words unchanged; the open word samples are below in "Still open".
+
+## Friends (beta): add a friend inside Daybook, and a community coming soon (the owner, November 15, 2026; answers chosen November 15, each the recommended option; built on `claude/great-galileo-789c33`)
+
+The owner: "the texting doesn't work let's add the option to add them in the app instead ... it should just get a log, like tell them
+your goals ... around like using the app, or like using SOS ... it should be simple and just not pressure ... calm and relaxed and just
+help them and get a community. Also add a coming soon community". For now it is a beta row in Settings; the journal and the tabs do not move.
+
+Research (side-session notes `friends-research-apps.md`, `friends-research-evidence.md`): no study tests live SOS alerts to a friend;
+watched-feeling research (reactance, people hiding things) supports the owner's worry; regular, expected, positive contact is what the
+accountability evidence favours (Mohr 2011; Koelen 2022, a small edge for human support); autonomy-supportive help beats directive
+help (Gorin 2013, 2019); lost streaks and rankings cause shame and quitting (13,799 negative fitness-app posts). The apps that do this
+well (Finch, Apple Activity sharing, How We Feel, Locket) share by the person's own tap, invite by link or code, cap the circle, use
+ready-made encouragements instead of chat, and remove silently.
+
+The owner's answers:
+
+- **SOS:** no live alert ever. A weekly "rode out N urges" is one share item, off until the person turns it on, said as strength.
+- **Invite:** one short code (like K7Q-M2P), sent as a link through any messenger, good for several friends for 7 days; a new code
+  ends the old one.
+- **Accounts:** both people need a free account (friendships live on the server); the account sheet opens at the first tap on Add
+  a friend or I have a code, with a warm line. No tip needed: Friends is free.
+- **Waitlist:** an anonymous count (the event `community_join`, on the fixed list), never a name, email or account; the phone
+  remembers "You are on the list".
+
+What is built (effort: high for the server, medium for the page):
+
+1. **Server** (`services/api/src/friends.ts`, on the existing `/sync` routes as `?friends=`; no new route, IAM role or table, so nothing
+   for `infra/bootstrap`). Each person's card (`#card`: the name and goals they wrote for friends, which items are on, this week's
+   numbers) lives in their own partition. A friendship is two rows, one in each person's partition; a friend's card is read only when
+   both rows are there, and only the items the sharer turned on leave the server. Codes live in `#invites` with a 7-day time-to-live.
+   Remove deletes both rows and any encouragement between them, and the other person is not told. Block also stops that person from
+   using a code of yours again; Report (with Block) keeps one row in `#reports` for the owner to read in the AWS console. Closing the
+   account removes the card, every friendship on both sides, codes, encouragements, blocks and reports.
+2. **What a friend sees:** the name and up to three goals the person wrote, and any of: lessons done this week, mornings set, nights
+   said good night, urges ridden out, the flame's level. Never a slip, a count that resets, the journal, notes, or times.
+3. **Encouragement:** three ready-made ones (warm their flame, proud of you, with you today), one a day per friend. No chat.
+4. **Community, coming soon:** a card on the Friends page; pre-join records the anonymous event and shows "You are on the list".
+5. **Calm:** no ranking, no side-by-side counts, no "last seen", no badges, no push to friends. A quiet week shows just the name and goals.
+
+**Second pass, the same day (the owner: "having them write out a bunch of goals is too much. Let's just have automated goals ... this will
+tell them how often you do a lesson, how often you check up and use the app, and just a daily report you can choose when it lets them
+know ... and then it's here's the code ... it should be a very clean process").** Goals are gone. Adding a friend is one screen: what the
+friend will see, said plainly (lessons, check-ins and days in Daybook, the flame, a daily report at 9 PM), a first name the first time,
+and three ways on at the bottom: Share my invite link, Share my code, Enter a friend's code. The items are shared from the start and each
+can be turned off; urges ridden out stays off until turned on (the SOS answer stands). The daily report is a note the friend's own phone
+makes at the hour the person picked (8 AM, 12 PM, 6 PM, 9 PM or off), naming only the person; the friend can mute it per friend. No
+server push is needed, so it costs nothing.
+
+**Third pass, the same day (the owner: "most people are going to only have like one person ... Having five like this is insane ...
+it still does not meet our standards").** The page is built for one friend: your flame and theirs big and side by side in your sky
+(alone, your flame waits beside one warm empty place; two friends make three flames; more are counted, not drawn); their report as one
+card (what they did today, three big numbers for the week, zeros left out, and one tap to warm their flame); what they see of you as
+one line that opens its own sheet (your card exactly as they see it, then the switches, the report time, your name, Leave); and the
+community as a night of glowing fires on far hills, yours lit in front once you pre-join. `/friends?demo=1` shows all of it with a
+made-up friend, with no setup and no account, saving and sending nothing.
+
+Store review notes (Guideline 1.2): friends add each other only by a code one of them sends; what passes between them is a name,
+up to three short goals (links, emails and phone numbers refused, with a word filter), numbers and three fixed encouragements. Each
+friend has Remove, Block and Report; reports reach the owner, who answers within 24 hours at the support email.
+
+### Fourth pass (November 15, 2026): the spark does something, a together streak, live notes, and the page rebuilt like Today
+
+The owner: "Warming their flame does nothing ... research how Duolingo and other apps do it and make it look nice", "when they check
+in and do stuff ... notifications right away", and later "the UI needs work. It still feels not put together." Research (Duolingo
+Friend Streak and Quests, Finch's visits, Apple Fitness, Strava, Snapchat's hourglass as the trap) is in the side-session notes,
+`friends-research-duolingo.md`. The owner's answers: the spark "visits and comes back"; "a together streak and it's just days they both
+log in"; notes "can't overwhelm them ... [but] could replace other notifications and be part of how they get pulled to use the app".
+
+- **The page** opens on a sky from edge to edge, like Today and Milestones: your flame and theirs big on one land, the together
+  streak low on the left, the last seven days as dots on the right. Under it: their name, a spark of theirs waiting (with the way to
+  today's lesson), their day and week in one panel, and **Send Sam a spark**. Then one panel of quiet rows (what they see of you, notes
+  about them, add a friend) and the community, its title on its night picture. The demo note is one quiet line at the very end.
+- **The spark** (core `SPARK`, services/api `sendCheer`, `sparkUsedBy`): it flies from your flame to theirs and rests there. The friend
+  gets a note, sees it on Today's sky (`SparkTop`) and on Friends, and their next lesson ends with "Sam's spark was in this one"
+  (`LessonFinish spendSpark`). The sender is told ("Your spark was in Sam's lesson today"). One a day to each friend.
+- **The together streak** (core `togetherStep`, `togetherNow`): days in a row both opened Daybook, kept once per friendship on the
+  server (`#tg/`), from each card's days of the last two weeks (`od`, never sent to a friend). The longest is kept; a gap is never said.
+- **Live notes** (services/api `push.ts`, `notify`): when a person does a lesson or checks in, a friend who hears as it happens gets a
+  push: "Just did today's lesson. Yours is waiting." (or "Send a spark?" once the reader's own lesson is done). At most 2 friend notes a
+  day per person, one about each friend, none from 10 PM to 8 AM. Chosen when the friend is added (a switch on Add a friend and on the
+  code screen) and changed on the friend's page: as it happens, once a day (the old daily report), or off. A friend heard as it
+  happens has no daily report too: the live note replaces it.
+- **Not built:** a friend's note does not yet cancel Daybook's own lesson reminder for that day. That needs the server to send the
+  reminders (a phone cannot change its scheduled notes while the app is closed). Worth doing if live notes prove to pull people in.
+- **Needs a store build to work on a phone:** the app asks for the push token in JS that ships with the next TestFlight build from
+  main, and Expo needs the app's APNs key (set once in EAS credentials, an Apple sign-in, the owner's). Until then, friends hear by the
+  daily report, as before.
+
+## Lessons with soul again: every lesson rewritten, a Short and a Long (the owner, November 14, 2026; planned, samples first)
+
+The owner, November 14, 2026: "the lessons have dropped in quality dramatically", and "these lessons need to be enshrined in stone".
+The standard, why it slipped and the lock are in `docs/lessons.md`. The research is in the side-session notes:
+`peterson-ideas-research.md` (27 ideas, 15 tales, from lecture transcripts) and `lds-speeches-research.md` (33 talks, read whole).
+
+It helps the person: every lesson teaches something they had not thought of, from an angle they did not expect. It helps Daybook:
+lessons are the spine of every day, and a lesson worth telling a friend about is what keeps people coming back and recommending the
+app.
+
+**How it is done (high effort, Opus writes every word):** batches of about six lessons, in path order. Each batch is shown to the owner
+(the old version beside the new, Short and Long) on the web before it merges. The lock (`test/lesson-lock.test.ts`) is updated only
+for the lessons the owner said yes to. Each lesson keeps its id, its place on the path and its title unless the owner agrees to a new
+one, so nothing earned moves. The card shape changes in core (`lesson-turns.ts`): story first, an optional guess about the story,
+the turn, the line that sticks, Today, and a question only the person can answer, with no graded check. Scenes use the person's own
+hard moment from setup and the log, never a clock time for everyone.
+
+**The map (a first draft; the owner may move any of it):** the kind of each lesson, and the story that carries it.
+
+| Lesson                                                                                    | Kind                        | What carries it                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| l1 You do not need to feel ready                                                          | Study story                 | The small sign in the window (Freedman and Fraser, 1966): one small yes changed who people thought they were                                                                                                                            |
+| l2 Urges are waves                                                                        | Study story                 | The white bear and the bell (Wegner, 1987)                                                                                                                                                                                              |
+| l3 Why one slip snowballs                                                                 | Study story                 | The milkshake before the ice cream (Herman and Mack, 1975)                                                                                                                                                                              |
+| l4 Late and low (to become "When you are worn down")                                      | Study story                 | A sleepless night turns the brain's reward up (Gujar and Walker, 2011)                                                                                                                                                                  |
+| l5 Name the act, not yourself                                                             | Breakdown                   | "What is the difference between guilt and shame?" (Renlund: "it was me, but it is not me")                                                                                                                                              |
+| l6 Kindness after a slip                                                                  | Study story                 | After a failed test, the students who were kind to themselves studied longer (Breines and Chen, 2012)                                                                                                                                   |
+| l7 Secrets are heavy                                                                      | Study story                 | People keeping a big secret judged a hill steeper (Slepian, 2012)                                                                                                                                                                       |
+| l8 Wanting to be loved                                                                    | Study story                 | Strangers grew close through 36 questions, asked in turns (Aron, 1997)                                                                                                                                                                  |
+| l9 If this, then that                                                                     | Why this works              | How a plan made ahead moves the decision out of the hard moment                                                                                                                                                                         |
+| l10 Change the setting                                                                    | Study story                 | The soldiers who came home from Vietnam (Robins)                                                                                                                                                                                        |
+| l11 What to call it                                                                       | A word taken apart          | Addictus, bound for a time; decide, to cut off                                                                                                                                                                                          |
+| l12 What getting better looks like                                                        | An old tale                 | The workers hired at the last hour were paid the full day (Holland, "The Laborers in the Vineyard")                                                                                                                                     |
+| l13 Name the feeling                                                                      | Study story                 | Putting a feeling into words calmed the brain's alarm (Lieberman, 2007)                                                                                                                                                                 |
+| l14 A longer breath out                                                                   | Why this works              | The heart slows on every breath out                                                                                                                                                                                                     |
+| l15 Move your body                                                                        | Why this works              | A short walk cut cravings in trials with smokers                                                                                                                                                                                        |
+| l16 Thoughts are not orders                                                               | Study story                 | Ordinary people reported the same unwanted thoughts as patients (Rachman and de Silva, 1978)                                                                                                                                            |
+| l17 The first link in the chain                                                           | A moment from a life        | A pilot's point of safe return, and the lie of "no return" (Uchtdorf)                                                                                                                                                                   |
+| l18 Thoughts that give permission                                                         | Study story                 | People defended a face they never chose (choice blindness, Johansson and Hall, 2005)                                                                                                                                                    |
+| l19 Learn from your own log                                                               | The hard truth              | Compare yourself to who you were yesterday (Peterson)                                                                                                                                                                                   |
+| l20 Fewer fights, not more willpower                                                      | Study story                 | The beeper week (Hofmann, 2012)                                                                                                                                                                                                         |
+| l21 Missing a day                                                                         | Study story                 | Missing one day did not stop a habit from forming (Lally, 2009)                                                                                                                                                                         |
+| l22 When values and habits clash                                                          | Breakdown                   | "Does it hurt this much because I am out of control?"                                                                                                                                                                                   |
+| l23 Plan the empty hour                                                                   | The hard truth              | The mind is a stage that never stays empty (Packer), and what fills an hour nobody claims (Peterson)                                                                                                                                    |
+| l24 What therapy is like                                                                  | Why this works              | Fit between the two people is one of the best signs of how it goes                                                                                                                                                                      |
+| l25 The 12 steps in plain words                                                           | Study story                 | Helping others kept people sober (Pagano, 2004)                                                                                                                                                                                         |
+| l26 SMART Recovery (off path)                                                             | Why this works              | Very different programs got similar results                                                                                                                                                                                             |
+| l27 Mindfulness and relapse prevention                                                    | Study story                 | The year-long trial of noticing urges (Bowen, 2014)                                                                                                                                                                                     |
+| l28 Why groups help                                                                       | Study story                 | Habits spread through friends of friends (the Framingham study)                                                                                                                                                                         |
+| l29 God and a plan                                                                        | Breakdown (faith)           | Nehemiah prayed and set a guard. Pray for strength more than for the problem to vanish (Bednar)                                                                                                                                         |
+| l30 A pause for prayer or quiet                                                           | Why this works              | An emergency song for the stage of the mind (Packer)                                                                                                                                                                                    |
+| l31 Come back as you are                                                                  | An old tale                 | The father runs while the son is still far off. There is no roadblock home (Kearon)                                                                                                                                                     |
+| l32 Forgiveness and a fresh start                                                         | A word taken apart          | Repent: to turn back                                                                                                                                                                                                                    |
+| l33 Wanting is not liking                                                                 | Study story                 | Berridge set out to prove dopamine is pleasure and found it was wanting                                                                                                                                                                 |
+| l34 The cue comes first                                                                   | Study story                 | The monkeys' brains fired at the light, not the juice (Schultz)                                                                                                                                                                         |
+| l35 Catch the autopilot                                                                   | Study story                 | People ate stale popcorn in a cinema by habit (Neal and Wood, 2011)                                                                                                                                                                     |
+| l36 What the habit does for you                                                           | An old tale                 | The dragon's gold (Peterson)                                                                                                                                                                                                            |
+| l37 Who you are becoming                                                                  | A word taken apart          | Character: a mark cut by many strokes                                                                                                                                                                                                   |
+| l38 Say "I do not"                                                                        | Study story                 | "I do not" against "I cannot" (Patrick and Hagtvedt, 2012)                                                                                                                                                                              |
+| l39 A year from now (angle to change)                                                     | The hard truth              | Meaning over what is easy now (Peterson). The owner was unsure about the future-self angle                                                                                                                                              |
+| l40 Your log is your evidence                                                             | Study story                 | People chose the longer cold-water test because it ended milder (Kahneman, peak-end)                                                                                                                                                    |
+| l41 The picture and what it gives                                                         | An old tale                 | Pleasure Island, with the caps over the ears (Collodi; Peterson)                                                                                                                                                                        |
+| l42 Crowd out the picture                                                                 | Study story                 | A block game cut cravings (Skorka-Brown, 2015)                                                                                                                                                                                          |
+| l43 Come back to the room                                                                 | Why this works              | What the senses do for a mind caught in a picture                                                                                                                                                                                       |
+| l44 Play it forward                                                                       | The hard truth              | Lampwick's "nothing matters" comes right before the loss (Peterson on Pinocchio)                                                                                                                                                        |
+| l45 Words from a calm day                                                                 | An old tale                 | Odysseus tied to the mast to hear the Sirens                                                                                                                                                                                            |
+| l46 What getting free feels like                                                          | An old tale                 | The wilderness between Egypt and the promised land, and the people who missed Egypt                                                                                                                                                     |
+| l47 Your partner and the truth                                                            | Breakdown                   | "Would telling them only hurt them?"                                                                                                                                                                                                    |
+| l48 Sex after porn                                                                        | Why this works              | Watching yourself is what spooks it (Masters and Johnson's "spectatoring")                                                                                                                                                              |
+| l49 Day 30, 60, 90, and after                                                             | Study story                 | People sure of their self-control walked closest to temptation (Nordgren, 2009)                                                                                                                                                         |
+| l50 to l53 (alcohol, gambling)                                                            | Mixed                       | Kept to their habit; written after the porn path                                                                                                                                                                                        |
+| l54 The morning self and the night self (to become the rested self and the worn-out self) | Why this works              | The rested self sets up the hours that come later                                                                                                                                                                                       |
+| l55 Where the phone sleeps                                                                | Why this works              | Twenty seconds of trouble is enough to change what people do                                                                                                                                                                            |
+| l56 A wall with doors                                                                     | Why this works              | The delay a filter makes is the time an urge takes to pass                                                                                                                                                                              |
+| l57 Nobody gets free alone                                                                | A moment from a life        | Bill W. at the hotel lobby phone, Akron, 1935                                                                                                                                                                                           |
+| l58 When the habit is carrying something heavier                                          | Breakdown                   | "Is it weak to need help?"                                                                                                                                                                                                              |
+| g1 to g12 (faith)                                                                         | Faith versions of all kinds | Wilcox's piano lessons, Holland's "Be Ye Therefore Perfect, Eventually" (perfect means complete), Lot's wife (look back for embers, not ashes), Cowley (borrow faith until you have your own), Jacob wrestling and walking away changed |
+
+**How a story card looks (the owner, November 14, 2026, settled on samples):** the picture first and big, the heading under it (28
+points, 22 when long), the words at 20 points in a slightly softer white, one key phrase in bold, and the flame small at the side,
+coming back to the middle on questions and cards with no picture. The words land all at once: sentences fading in one by one felt
+"glitchy". Every card in the remap gets its one bold phrase.
+
+**A third length, Deep, about 10 minutes (the owner, November 14, 2026: "if we've got more content and we can like make it good ... we
+should also have a 10-minute lesson option ... But only suggest that if they go into the settings and enable like the 10-minute option,
+because I don't want to overwhelm them").** Short (about 2 minutes) and Long (about 5) stay as they are. Each lesson in the remap gets
+Deep cards (`deep: 1` in a story): the rest of the study, the story around it, a second study or tale, and a question to sit with. Deep
+plays every card. It is offered only in Settings, Lesson length, never on a lesson's first page or in a nudge, and once a person picks it,
+the lesson's first page shows it beside Short and Long. Settings shows the choice only once every lesson on the path has its Deep cards,
+so the label is never a promise the lesson does not keep. Medium effort for the player and settings (`learn.len` gains `d`, mapped in
+`normSettings`); the Deep words are written with each batch.
+
+**New lessons the research found, to add later with the owner's yes:** Cain and Abel (resentment, "it is not fair, so why try"),
+your conscience is information and not only punishment, Jacob's limp, borrow someone's faith until you have your own (in plain words
+for everyone), and the load that gave the truck traction (Bednar).
+
+**First batch:** l1, l2, l3, l10, l11 and l41, the three study stories and the word the owner has seen, plus Pleasure Island.
+
 ## Mithras people come to Daybook, and a journal Insights page (the owner, November 13, 2026; built and merged November 13, web-tested, the app checks with the testing chat)
 
 The owner, November 13, 2026: "push users to come use this app instead and offer to transfer all their logs and journal data over to
@@ -1353,6 +1624,46 @@ the haptics from `hero.tsx`. Never dimmed in the quiet after a slip. Only the gl
 but blocking needs an Accessibility service, which Google Play restricts; so nudges only, when Android has people. The web cannot
 see other apps: the section is hidden there.
 
+### Lists, waits you choose, adult sites all day (the owner, November 15, 2026; built the same day, on main)
+
+The owner: "all day for adult sites ... maybe like they have to wait a while for like adult sites, but for Instagram or something,
+it's like 5 or 10 seconds. Maybe we even let them decide how many seconds ... and then how long they get access after that. Like 5
+minutes, 10 minutes, 30 minutes. It's up to them. And we don't really have to limit the amount of sessions." Decided with the owner:
+pick the open time each time, up to 3 lists plus adult sites, apps 5 to 60 seconds and sites 1 to 30 minutes.
+
+- **Adult sites** (when the habit is porn): their own row, all day, not only at night. Wait 1, 5, 15 (default) or 30 minutes.
+- **Lists:** up to 3, each with its own apps from Apple's list and its own wait: 5, 10 (default), 30 or 60 seconds, or No wait
+  (the list is open). It starts with one list; "Add a list" makes another (Social, Games, Videos, or a plain name). No cap on how
+  many times a day.
+- **After the wait,** the wait screen asks how long: 5, 10 or 30 minutes, three big answers low, the person's last choice first.
+  Only that list opens; the others stay waiting. Put it down stays a quiet link under it.
+- **Kept:** loosen slowly, tighten at once (a shorter wait, No wait or fewer apps waits for 6 AM); Lift every wait now and Turn
+  Screen Time off stay instant; the night's notes at 10 and 20 minutes; the long-use note; the quiet after a slip.
+- **Native (high effort):** a ManagedSettingsStore per list (`daybook.pull.<id>`) and one for the web filter, so opening one list
+  leaves the others shut; a selection per list in the App Group; the shield action finds the list from the token and tells the app
+  which list asked; openFor takes the list and its minutes (`pull.open.<id>`). The old single pick becomes list one with its old
+  wait, so nobody's setup is lost. The shield says the list's own wait ("A 10-second wait first").
+- **Effort:** core rules and words, Settings and the wait screen are medium; the native part is high. They lock together, so the
+  whole build ran at high.
+- **Built:** core `pull.ts` (`lists`, `pullListNew`, `pullChange` per list, `pullGuard` per list, adult sites all day,
+  `shieldWebDay`, `waits`), `targets/_shared/PullShared.swift` (a store and a pick per list, `migrate`, `listOf`), the monitor's
+  `pull.open.<list>`, the shield and its button by list, the module's `pick(list, laterAt, fresh)`, `openFor(list, minutes,
+through)` and the forgetting of a removed list, Settings (Your lists, `app/settings/list.tsx`), and the wait screen's three
+  answers. Checked on the web with the stand-in; the extensions typecheck against the iOS SDK. Left for the phone: the device
+  checks in the shared notes' `screentime-nightpack-handover.md`. Known edge: an app in one list and its whole kind (Social) in
+  another stays behind the second list's shield when only the first opens; Daybook cannot tell an app's kind.
+
+**The look (the owner, November 15, 2026: "It looks like a settings page right now ... I literally said that our app has beautiful
+visuals and I wanted to match how good it is").** Settings, Screen Time is now its own page (components/screen-time.tsx): the
+flame's own sky, as on Milestones, with a ring on the ground under it for adult sites and for each list, the ring as full as the
+wait is long (one scale from 5 seconds to 30 minutes, so a longer wait is always a fuller ring), the wait inside, the name and the
+number of apps under it, and a + ring to add a list. Off, the rings are drawn empty and three short lines (pick, it waits, you
+choose) sit over Turn on Screen Time. Under the sky: tonight on a night card of its own (the hours big, Start earlier as tiles, the
+notes switch), the note after long use as tiles, then Lift every wait and the beta switch. A ring opens its own page
+(app/settings/list.tsx, `?id=a|b|c|adult`): the big ring, the wait as tiles, Call it as six named tiles with a picture each, and
+Change the apps at the bottom; adult sites has its switch, its minutes and Start the wait now. Radio lists are gone from Screen
+Time. A ring glides to its new fill when the wait changes (still with Reduce Motion).
+
 ### To a real iPhone (November 11, 2026, branch `claude/screen-time-device`)
 
 - **Apple granted Family Controls (Distribution).** Turned on in the portal for `com.jdsmith2004.daybook`; the three extension
@@ -1378,6 +1689,10 @@ see other apps: the section is hidden there.
 - **The owner's test:** `docs/screen-time/test-on-iphone.md`. **App Review notes and the recording:** `docs/screen-time/review-notes.md`.
 - **Ship:** after the owner says yes on the phone, merge to main, make `production-pull` the App Store workflow's default (or
   tick Screen Time), and submit the next version with the review notes. Not before Apple answers on 1.3.3.
+- **A beta switch, in every build (the owner, November 15, 2026: "just add them as like a beta toggle in settings").** The App
+  Store workflow's Screen Time box is ticked by default, so every store build is `production-pull`. Settings, Screen Time shows a
+  Beta switch: on runs Apple's ask and the app list, off is Turn Screen Time off. The first such build may stop before it is queued
+  if EAS cannot make the three extension profiles without a sign-in (see the entitlement steps below).
 
 ### The entitlement: what the owner does (Account Holder, signed in to developer.apple.com)
 
@@ -6804,3 +7119,26 @@ say, and what is your answer?", "Who are you becoming?", each with a one-line ex
 often than rides that do not.
 
 Pictures: `docs/future-you/` (the page on the web, a written note in SOS on the web, a recorded note in SOS on an iPhone 17 Pro simulator, release build).
+
+## Real love: ideas the owner is still weighing
+
+From a quick look at the Real love page (November 15, 2026). The owner has not chosen any of these ("none just save the ideas ... i still
+need to think about it"), so none is built. The page is labelled "Real love (beta)" in Settings meanwhile.
+
+1. **Add a one-line reason under each video.** Right now it only says the artist. A line like "Watch how they look at each other. Nobody is performing."
+   tells the person what to notice. This is the part that turns watching into remembering real love, so it would go first. The `LoveVideo` type already
+   has a `note` field, so it is one line of words per video.
+2. **Grow the list to about 8-10 videos, grouped in two sections.** The "People in love" and "Words that lift" headings are already built and only appear
+   once both kinds exist. Two videos is a poster, not a feed.
+3. **Add one question after each video, with no typing.** For example "What did you notice?" with 2-3 tap answers. It saves to the log and the person never
+   sees it as homework. It is also how this page ties to the habit change. The biggest addition here; only if liked.
+4. **Offer one video at the right moment.** After an urge is ridden out, or in the Sunday review, show "Remember what real love looks like" and open one
+   video. Nobody finds a buried Settings row on a hard night. It keeps the page buried in Settings as wanted, with a second way in. The Sunday review and
+   SOS work would need to agree to it.
+5. **Handle videos that stop playing.** YouTube videos get taken down. Today a dead id shows an error inside the player. Add a quiet "This one is gone" line
+   that skips to the next video, and hide a video whose still picture fails to load. Offline already shows a calm "No connection" message.
+6. **FLAG: check the "Cry" picture before any store build.** Its YouTube still has the song's name written on it, "Cigarettes after S\*x", with the word
+   partly starred out. The page is in Settings, not in the listing, but the store-text rule (no explicit words in anything the store might see) makes it worth
+   a look. Fix: choose a different video, or hide the still picture for that one.
+
+Not suggested: a "watch later" list. With about 10 videos it is clutter.

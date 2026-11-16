@@ -8,10 +8,10 @@
    Burning low (core flame-low.ts, `low`): the face turns sad, the fire, the body and the face sink toward ash together, the glow fades, it sputters and smokes.
    With `douse` it is first seen burning fully and then goes down, as if water were poured on it; when `low` comes back to 0 it is lit again: the
    heart catches, the fire climbs back and leaps, sparks fly and the smoke clears. Under Reduce Motion it is simply drawn as low as it burns. */
-import { emblemLayers, figAsleep, fireOf, formOfLevel, gradOf, lowXml, sadXml, type EmblemLayers, type Fire } from '@daybook/core';
+import { BIG_MID_Y as MID_Y, bigLayers, faceLooks, figAsleep, formOfLevel, gradOf, lowXml, sadXml } from '@daybook/core';
 import { memo, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
-import Reanimated, { Easing as REasing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import Reanimated, { Easing as REasing, useAnimatedStyle, useSharedValue, withDelay, withTiming, type SharedValue } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
 
 import { FireLayer } from '@/components/fire-layer';
@@ -20,15 +20,13 @@ import { GradCap } from '@/components/grad';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 
+/** the layers and their placing come from core big-layers.ts, shared with the splash picture (launchFlameSvg) */
+export { bigLayers };
+
 const RING =
   '<svg viewBox="0 0 100 100"><defs><radialGradient id="bigRing" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">' +
   '<stop offset=".5" stop-color="#FFE9A8" stop-opacity="0"/><stop offset=".78" stop-color="#FFE9A8" stop-opacity=".6"/>' +
   '<stop offset="1" stop-color="#FFE9A8" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#bigRing)"/></svg>';
-
-/** the campfire's flame, as a share of the drawing: the size every early form is brought up to */
-const FULL_K = 0.48;
-/** where the figure's middle sits in the box when it is brought in close (as a share of its height) */
-const MID_Y = 0.55;
 
 /** the douse: how long it burns fully first, and how long it takes to go down */
 export const DOUSE_WAIT = 450;
@@ -49,52 +47,6 @@ const ember = (xml: string) =>
 /** where the graduate's cap sits, as a share of the box from the top, for the forms whose head is not where the torch's is: on the head and clear of the eyes */
 const CAP_TOP: Record<number, number> = { 5: 0.4, 6: 0.31, 7: 0.175, 8: 0.08, 9: 0.13, 10: 0.155, 11: 0.13 };
 
-/** the layers without the picture's own sky and stars, and how close to draw it: [zoom, shift x, shift y] as shares of the box */
-export function bigLayers(level: number, noLand?: boolean): { layers: EmblemLayers; fire: Fire; zoom: number; dx: number; dy: number } | null {
-  const l = emblemLayers(level, true);
-  if (!l) return null;
-  /* the spark, the kindling and the campfire are drawn smaller than the rest: closer, up to the campfire's size */
-  const k = Number(/scale\(([\d.]+)\)/.exec(l.fig)?.[1] || 0);
-  const zoom = formOfLevel(level) <= 2 && k > 0 ? Math.min(3.2, Math.max(1, FULL_K / k)) : 1;
-  /* the lines of light around the figure (its rays, a ring) keep a fine line however close it is drawn; the twigs and
-     logs it stands on grow with it */
-  const fine = (x: string) =>
-    zoom > 1
-      ? x.replace(/(stroke="#FF(?:F3B0|E27A)"[^>]*?stroke-width=")([\d.]+)"/g, (_, a: string, w: string) => a + ((Number(w) / zoom) * 1.5).toFixed(2) + '"')
-      : x;
-  const clean = (x: string) =>
-    fine(
-      (noLand ? x.replace(/<path d="M-2 [^"]*V122H-2Z" fill="#[0-9A-Fa-f]{6}"\/>|<rect x="-2"[^>]*\/>|<ellipse cx="60" cy="108"[^>]*\/>/g, '') : x)
-        .replace(/<rect x="0" y="0" width="120" height="120" fill="url\(#em\w+sk\)"\/>/, '')
-        .replace(/<circle cx="[\d.]+" cy="[\d.]+" r="[\d.]+" fill="#fff" opacity="[\d.]+"\/>/g, ''),
-    );
-  /* the spark's thin rays, its ring and the little flame beside it are drawn for a small picture: this close they read as stray bars and a glitch,
-     so the big flame goes without them (the owner, October 30, 2026) */
-  const spark = formOfLevel(level) === 0;
-  const layers = {
-    ...l,
-    back: clean(spark ? l.back.replace(/<path d="[^"]*" stroke="#FFF3B0"[^>]*\/>/g, '') : l.back),
-    side: spark ? '' : clean(l.side),
-    front: spark ? '' : clean(l.front),
-  };
-  const whole = fireOf(level, !spark);
-  /* embers keep their small size however close the figure is drawn */
-  const fire = zoom > 1 ? { ...whole, embers: whole.embers.map((e) => ({ ...e, r: (e.r / zoom) * 1.5 })) } : whole;
-  /* on another sky: the glow has no frame to fade into, so it stays whole and clear of the drawing's edges, and the figure stands in the middle.
-     Brought in close, the first forms' glow would grow past the top of the card and be cut off in a straight line, so it keeps the size of the later forms' */
-  if (noLand) {
-    const cut = l.glow.indexOf('</defs>');
-    layers.glow =
-      l.glow.slice(0, cut) +
-      l.glow
-        .slice(cut)
-        .replace(/<g mask="url\(#\w+\)">/, '<g>')
-        .replace(/(<circle cx="[\d.]+" cy="([\d.]+)" r=")([\d.]+)"/, (_, a: string, y: string, r: string) => a + Math.min(+r, +y, 120 - +y, 48 / zoom) + '"');
-    return { layers, fire, zoom, dx: 0.5 - l.at.x, dy: 0.5 - l.at.y };
-  }
-  return zoom > 1 ? { layers, fire, zoom, dx: 0.5 - l.at.x, dy: MID_Y - l.at.y } : { layers, fire, zoom, dx: 0, dy: 0 };
-}
-
 export const BigFlame = memo(function BigFlame({
   level,
   size,
@@ -109,6 +61,7 @@ export const BigFlame = memo(function BigFlame({
   heart,
   relight,
   play,
+  look,
 }: {
   level: number;
   size: number;
@@ -132,6 +85,9 @@ export const BigFlame = memo(function BigFlame({
   relight?: [number, number];
   /** its life on Today: it blinks now and then, and a tap makes it squash, spring up and squeeze its eyes shut with joy */
   play?: boolean;
+  /** its face, acting, driven from outside: an index into core LOOKS (ahead, a glance left or right, a sly look, a happy squint,
+      looking down), for the end of a lesson (components/lesson-finish.tsx) */
+  look?: SharedValue<number>;
 }) {
   const still = useReducedMotion();
   const { snap } = useStore();
@@ -173,6 +129,8 @@ export const BigFlame = memo(function BigFlame({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the relight timing is read when it is lit, never a reason to light again
   }, [low, still, lv, burst]);
   const dimmed = useAnimatedStyle(() => ({ opacity: lv.value }));
+  /* acting: every face is drawn, one over another, and only the one it is making shows */
+  const faces = useMemo(() => (look && b && !asleep && !sad ? faceLooks(b.layers.still) : null), [look, b, asleep, sad]);
   const glowLow = useAnimatedStyle(() => ({ opacity: 1 - 0.8 * lv.value }));
   const lowOn = low != null;
   const lowFig = useMemo(() => (lowOn && b ? { still: ember(b.layers.still), side: ember(b.layers.side), fig: ember(b.layers.fig) } : null), [lowOn, b]);
@@ -349,7 +307,9 @@ export const BigFlame = memo(function BigFlame({
                 fine={zoom > 1 ? 1.5 / zoom : 1}
                 smoke={smoke}
               />
-              {eyes ? (
+              {faces && look ? (
+                faces.map((x, k) => <Face key={k} k={k} look={look} xml={stillIn(x, fire)} box={stillBox(fire, S / 120)} />)
+              ) : eyes ? (
                 <>
                   <Animated.View style={[StyleSheet.absoluteFill, { opacity: blink.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}>
                     <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, S / 120)} />
@@ -388,3 +348,13 @@ export const BigFlame = memo(function BigFlame({
     </View>
   );
 });
+
+/** one of the faces the flame can make, showing only while it is the one it makes */
+function Face({ k, look, xml, box }: { k: number; look: SharedValue<number>; xml: string; box: ReturnType<typeof stillBox> }) {
+  const st = useAnimatedStyle(() => ({ opacity: Math.round(look.value) === k ? 1 : 0 }));
+  return (
+    <Reanimated.View style={[StyleSheet.absoluteFill, st]} pointerEvents="none">
+      <SvgXml xml={xml} {...box} />
+    </Reanimated.View>
+  );
+}

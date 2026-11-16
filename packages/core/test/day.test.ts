@@ -187,9 +187,9 @@ describe('the night and the wind-down', () => {
     const slip = core.addEvent({}, '2026-10-15', 'slipped', '20:00', {}).days;
     expect(core.bedWords(slip, me, '2026-10-15', '').own).toBe('You came back to this tonight. That is the part that lasts.');
   });
-  it('past the screens-off time, the wind-down says Goodnight still counts', () => {
+  it('past the screens-off time, the wind-down says Good night still counts', () => {
     expect(core.windWhen(st, 43)).toContain('in 43 min');
-    expect(core.windWhen(st, -10)).toContain('Goodnight still counts');
+    expect(core.windWhen(st, -10)).toContain('Good night still counts');
     expect(core.windWhen(st, 900)).not.toContain(' in ');
   });
   it('every form can close its eyes', () => {

@@ -1,7 +1,8 @@
 /* Today, one simple page (docs/plan.md; core moment.ts). The flame in its sky fills the top of the screen, with nothing written over
    it (hero.tsx: the number, the level and the bar to the next form; CLAUDE.md, "The flame is the heart of the app"). Under it, Already happened and Walk it through (the trail, which took the place of Planning a slip; care is never locked; SOS is in the tab bar, always in reach of the thumb). Then Your day, one line down the page with the next stop as the one big bright card (your-day.tsx), so what to
-   do is plain at a glance. When a bigger moment has the next step (a pause, the day of a slip, a talk-through, days
-   away, the Sunday review, a one-time moment), its card sits above the line. Then last night's win, when an urge was ridden out in
+   do is plain at a glance. The Sunday review is a stop on that line (core next-step.ts). When a bigger moment has the next step
+   (a pause, the day of a slip, a talk-through, days away, a one-time moment), its card sits above the line in the same look,
+   and every stop on the line is a quiet row, so there is only ever one next step. Then last night's win, when an urge was ridden out in
    SOS at night (night-win.tsx), and the asks, one at a time, and none on the day the person came back or in the hours after an SOS
    or a slip (lib/quiet-asks.ts). A plan talked through waits as one quiet line at the top of the day, under the sky, until its
    moment has passed (core talkPlanNow).
@@ -10,6 +11,8 @@
    first time it is earned, and its celebration opens. */
 import {
   accountAsk,
+  accountNudge,
+  litToday,
   awayDue,
   awayStart,
   dayFeelDue,
@@ -42,11 +45,12 @@ import {
   standRow,
   sunriseDue,
   morningDue,
-  afterNightHour,
+  nightPage,
   skyPhase,
   fmtClock,
   stopTiles,
   lessonStop,
+  todayLine,
 } from '@daybook/core';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -55,6 +59,7 @@ import { AppState, Platform, StyleSheet, View, type ScrollViewInstance } from 'r
 import { Text } from '@/components/text';
 
 import { AccountCard } from '@/components/account';
+import { AccountNudge, AccountTop } from '@/components/account-top';
 import { SettingsButton } from '@/components/settings-button';
 import { FeedbackTop } from '@/components/feedback-top';
 import { TIP_URL, TipCard } from '@/components/support';
@@ -72,7 +77,7 @@ import { Welcome } from '@/components/welcome';
 import { StopCard, YourDay } from '@/components/your-day';
 import { FirstTour, tourSteps, walkSteps } from '@/components/tour';
 import { buzz } from '@/lib/feel';
-import { markTourDone, markWalkOpen, tourDue, useSpot, walkLocked } from '@/lib/tour';
+import { markTourDone, markWalkOpen, takeTour, tourDue, useSpot, walkLocked } from '@/lib/tour';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
 import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
@@ -88,6 +93,7 @@ import { useNights } from '@/lib/health';
 import { LEAD_ROOM, NOTE_ROOM, skyTrim, useTodaySize } from '@/lib/today-size';
 import { useAccount, useSync } from '@/lib/sync';
 import { SyncStrip } from '@/components/sync-strip';
+import { SparkTop } from '@/components/spark-top';
 import { font, useTheme } from '@/lib/theme';
 
 /** when this copy of the app started (the first sync after it is what lets Today mark the day opened) */
@@ -188,7 +194,12 @@ export default function Today() {
   /* a celebration sheet ends it: there is never both on one open (the owner, October 30, 2026) */
   const celebrating = useCelebrating();
   /* the first look at Today (components/tour.tsx), once, after setup: it waits for a calm, settled Today */
-  const tourWaits = tourDue(sos.mem);
+  /* or again, asked for from More ("How Daybook works"): taken as Today comes to the front */
+  const [again, setAgain] = useState(false);
+  useEffect(() => {
+    if (focused && takeTour()) setAgain(true);
+  }, [focused]);
+  const tourWaits = tourDue(sos.mem) || again;
   useEffect(() => {
     if (celebrating && askFeel) setAskFeel(false);
   }, [celebrating, askFeel]);
@@ -255,22 +266,20 @@ export default function Today() {
     );
   }, [ready, st, snap.days, tk, now, update, say, syncing]);
 
-  /* Today always opens on the flame and the next step: once it is out of sight (another tab, a lesson, a page, or the app
-     put away), it goes back to the top, so coming back never shows it jump. A sheet only covers part of it, so a sheet
-     keeps the place. */
+  /* coming back to Today keeps the place: a page opened from Today (If it gets hard tonight, Who you are becoming, a lesson)
+     returns to where it was opened (the owner, November 14, 2026: "when I go back, it starts me at the top of today instead of
+     where I opened the page"). Today goes back to the flame only after the app was put away, or after a long time away. */
   const scroll = useRef<ScrollViewInstance>(null);
   const top = useCallback(() => scroll.current?.scrollTo({ y: 0, animated: false }), []);
   const away = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const left = useRef(false);
+  const leftAt = useRef(0);
   useFocusEffect(
     useCallback(() => {
       clearTimeout(away.current);
-      /* a hidden tab cannot scroll on the web, so it also goes up as it comes back, before it is drawn */
-      if (left.current) top();
-      left.current = false;
+      if (leftAt.current && Date.now() - leftAt.current > AWAY_LONG) top();
+      leftAt.current = 0;
       return () => {
-        left.current = !sheetOnTop();
-        if (left.current) away.current = setTimeout(top, 450);
+        leftAt.current = Date.now();
       };
     }, [top]),
   );
@@ -298,8 +307,15 @@ export default function Today() {
   /* the tour: on Today in front, with nothing else opening, never in the hours after an SOS or a slip (it waits for them to pass),
      and never during an SOS or a pause. A short wait first, so a page still closing (setup's end) is gone by then. */
   const [touring, setTouring] = useState(false);
+  /* asked for again from More, it plays now: only an SOS, a pause or a sync holds it */
   const tourNow =
-    ready && !!st && tourWaits && !syncing && focused && !quiet && !backNow && !gradNow && !morningNow && !celebrating && !miNow && !sos.ur && !sos.timer;
+    ready &&
+    !!st &&
+    !syncing &&
+    focused &&
+    !sos.ur &&
+    !sos.timer &&
+    (again || (tourWaits && !quiet && !backNow && !gradNow && !morningNow && !celebrating && !miNow));
   useEffect(() => {
     if (!tourNow || touring) return;
     const t = setTimeout(() => {
@@ -366,7 +382,10 @@ export default function Today() {
   });
   /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */
   const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
-  const tip = !quiet && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: careLastAt(sos.mem) });
+  /* the button beside Ideas glows with a line every few days after a good moment, never on a day the card already asks (core accountNudge) */
+  const nudgeNow = ask ? null : accountNudge(snap.days, st, tk, !!account, quiet);
+  /* the day the flame was lit in full is that moment's, so the tip waits a day too (the account card and nudge wait in core) */
+  const tip = !quiet && !litToday(snap.days, st, tk) && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: careLastAt(sos.mem) });
   /* one quiet line under the next step: the week's goal from Sunday (today's entries are in Today so far, under it) */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name, nights)?.note;
   /* the quiet lines under the next step take their room from the sky */
@@ -379,9 +398,10 @@ export default function Today() {
   const title = fmtDate(tk, { weekday: 'long', month: 'short', day: 'numeric' });
   const ink = skyInk(g.level.n, skyPhase(snap.days, st, tk, now));
   /* after the night hour (tonight's time, core two-moments.ts), until the new day */
-  const night = afterNightHour(snap.days, st, tk, now);
+  /* the night page; not on the night setup is finished before any lesson, so lesson 1 is there (core two-moments.ts setupNight) */
+  const night = nightPage(snap.days, st, tk, now);
   /* a long day's list takes a little of the empty sky over the flame (lib/today-size.ts skyTrim; the hero keeps the flame whole) */
-  const trim = night ? 0 : skyTrim(stopTiles(snap.days, st, tk, now, snap.journal, !!account).tiles.length);
+  const trim = night ? 0 : skyTrim(todayLine(snap.days, st, snap.reviews, tk, now, snap.journal, !!account).tiles.length);
   /* the Good night stop, even on a day its row is switched off: Phone to bed is always the night's one card */
   const nightTile = night ? stopTiles(snap.days, { ...st, routine: { ...st.routine, wind: true } }, tk, now).tiles.find((x) => x.k === 'night') || null : null;
   const bedAt = snap.days[tk]?.p?.po || null;
@@ -390,6 +410,7 @@ export default function Today() {
     <>
       <WaitingPlan snap={snap} tk={tk} now={now} />
       <LogLink walk={!walkWaits} />
+      {nudgeNow ? <AccountNudge nudge={nudgeNow} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false, st)} /> : null}
       <NotifyBanner />
       <PullTroubleStrip />
       {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
@@ -440,15 +461,27 @@ export default function Today() {
               flame={size.flame}
               trim={trim}
               title={title}
-              lead={<FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />}
+              lead={
+                <View style={s.leads} pointerEvents="box-none">
+                  <FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />
+                  {account ? null : <AccountTop nudge={night ? null : nudgeNow} />}
+                  {account ? <SparkTop on={{ glass: ink.glass, ink: ink.ink }} /> : null}
+                </View>
+              }
               action={<SettingsButton on={{ glass: ink.glass, ink: ink.ink }} />}
             />
           </View>
         }>
         {night ? (
-          /* after the night hour, Today is the night page: one card, Phone to bed, and the care row; nothing else (WP5, mockup m3). On the
-             night of a slip, its own card is the one card instead (its Go to bed is the same act): bringing the person back is the job then. */
+          /* after the night hour, under the care row, Phone to bed leads (WP5, mockup m3), and the rest of Today stays under it: the person's own words, tonight's
+             reason, the hard hours and the plan (the owner, November 13, 2026: "I don't like the main screen just being empty like that").
+             What waits for the day (the line of stops, its lesson, the asks) is left for the morning. On the night of a slip, its own card
+             leads instead (its Go to bed is the same act): bringing the person back is the job then. */
           <>
+            {/* the care row always sits at the top, right under the flame, as on the day page (the owner, November 13, 2026: "already
+                hapened and walk it through are always on the top") */}
+            <WaitingPlan snap={snap} tk={tk} now={now} />
+            <LogLink walk={!walkWaits} />
             {pick.card.k === 'slip-day' ? (
               <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />
             ) : nightTile ? (
@@ -461,14 +494,19 @@ export default function Today() {
                 t={nightTile}
               />
             ) : null}
-            <WaitingPlan snap={snap} tk={tk} now={now} />
-            <LogLink walk={!walkWaits} />
+            <NotifyBanner />
             {/* Screen Time not working: said here too, since the night is when it matters (WP2) */}
             <PullTroubleStrip />
+            <TodayBelow snap={snap} tk={tk} now={now} />
+            <SyncStrip />
+            <NightWinCard snap={snap} tk={tk} />
           </>
         ) : (
           dayPage
         )}
+        {/* while a tour is open, room under the page so it can scroll a lit part up clear of the flame's words (the owner, November 13,
+            2026: "i can't see the thing ... bc it's blocked": on a short Today the page could not move, and the bubble sat on it) */}
+        {touring || walkOpen ? <View style={{ height: TOUR_ROOM }} /> : null}
       </Screen>
       {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
       {walkOpen && g && !touring ? (
@@ -490,10 +528,12 @@ export default function Today() {
             lessonDone: lessonsDone(snap.days).size > 0,
             lessonId: lessonsDone(snap.days).size ? null : (lessonStop(snap.days, st, tk).L?.id ?? null),
             walk: !walkWaits,
+            again,
           })}
           level={Math.max(1, g.level.n)}
           onEnd={() => {
-            sos.setMem(markTourDone);
+            if (!again) sos.setMem(markTourDone);
+            setAgain(false);
             setTouring(false);
           }}
           scrollBy={(dy) => {
@@ -508,7 +548,14 @@ export default function Today() {
   );
 }
 
+/** how long away from Today before it goes back to the flame */
+const AWAY_LONG = 30 * 60 * 1000;
+
+/** the room under Today while a tour is open: about the flame's panel and the tab bar */
+const TOUR_ROOM = 380;
+
 const s = StyleSheet.create({
+  leads: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   line: { fontFamily: font.bodyMedium, fontSize: 13, lineHeight: 18, paddingHorizontal: 16 },
   done: { gap: 2, paddingHorizontal: 4 },
   doneH: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },

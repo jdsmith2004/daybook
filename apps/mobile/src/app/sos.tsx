@@ -23,8 +23,11 @@ import {
   godOn,
   newUrge,
   rateUrTool,
+  RIDE_FAITH,
   RIDE_MOVES,
+  rideFinished,
   rideNext,
+  ridePassed,
   slipFeltLine,
   sosProof,
   urEntry,
@@ -114,6 +117,9 @@ export default function Sos() {
   const [better, setBetter] = useState(false);
   /* the move a feeling just named points to: it comes next */
   const lead = useRef<string | null>(null);
+  /* the move in view and when it came into view (for ridePassed) */
+  const pageSeen = useRef('');
+  const pageAt = useRef(Date.now());
 
   /* the ride only runs while SOS is in front (not under a tool) */
   const [front, setFront] = useState(true);
@@ -330,14 +336,28 @@ export default function Sos() {
   /* ---------- the ride: one move after another, until it passes ---------- */
   const at = Math.max(0, seq.length - 1 - back);
   const id = seq[at];
+  /* when the move in view came into view, for how quickly Next passed it */
+  const pageKey = at + ':' + id;
+  if (pageSeen.current !== pageKey) {
+    pageSeen.current = pageKey;
+    pageAt.current = Date.now();
+  }
   const Move = MOVES[id] || MOVES.breathe;
   const n = seq.length;
-  /* done: it counts as used; passed over with Next: it comes round a little later from now on (sos.ts urNote). Swiped back
+  /* done: it counts as used; passed over with Next: it comes round later from now on (core ride.ts ridePassed). Swiped back
      to an earlier move, Next goes forward again through the ones already shown before it asks for a new one. */
   const next = (done: boolean) => {
     const u = done ? { ...ur, used: ur.used.concat(id) } : ur;
     if (done) setUr(u);
-    else if (!practice && !back) sos.setMem((m) => urNote(m, id, null));
+    /* a ride move done eases its count of passes; Next before it was done adds to it, more for a quick pass (core ride.ts
+       ridePassed): a move passed over often comes later. The other pages (a note, It is written, If it were a thing) keep
+       their own count (sos.ts urNote); It is written counts like a move */
+    if (!practice && !back) {
+      const ms = Date.now() - pageAt.current;
+      if (done) sos.setMem((m) => rideFinished(m, id));
+      else if (RIDE_MOVES.indexOf(id) >= 0 || id === RIDE_FAITH) sos.setMem((m) => ridePassed(m, id, ms));
+      else sos.setMem((m) => urNote(m, id, null));
+    }
     buzz('tap');
     if (back) return setBack(back - 1);
     if (practice && n >= practiceN) return setSeq(seq.concat('end'));
@@ -345,16 +365,12 @@ export default function Sos() {
     lead.current = null;
     setSeq(seq.concat(nx));
   };
-  /* swiped up: the next move, and one more swipe learned (until then the page shows how, core UrMem.swiped) */
-  const swiped = Number(sos.mem.swiped) || 0;
-  const hint = swiped < 3;
-  /* landed on page i by a swipe: down to one before, or up to the next (one more swipe learned) */
+  /* landed on page i by a swipe: down to one before, or up to the next */
   const landed = (i: number) => {
     if (i < at) {
       buzz('tap');
       return setBack(n - 1 - i);
     }
-    if (swiped < 3) sos.setMem((m) => ({ ...m, swiped: Math.min(3, (Number(m.swiped) || 0) + 1) }));
     next(false);
   };
   /* the pages: every move shown so far, and the one waiting below */
@@ -413,7 +429,6 @@ export default function Sos() {
         <RidePager
           count={pages.length}
           at={at}
-          hint={hint && at >= 1}
           on={live}
           onLand={landed}
           onNear={setNear}
@@ -466,15 +481,13 @@ export default function Sos() {
               {moveName(near !== null && pages[near] && pages[near] !== 'end' ? pages[near] : id)}
             </Text>
             <View style={s.why}>
-              <Icon name={quick ? 'down' : hint ? 'up' : 'book'} size={quick ? 17 : 13} color={quick ? c.ink : c.muted} />
-              <Text style={[s.whyT, quick ? s.quickT : null, { color: quick ? c.ink : c.muted }]}>
-                {quick ? 'Now tap the arrow' : hint ? 'Swipe up for the next one' : 'Why it works'}
-              </Text>
+              <Icon name={quick ? 'down' : 'book'} size={quick ? 17 : 13} color={quick ? c.ink : c.muted} />
+              <Text style={[s.whyT, quick ? s.quickT : null, { color: quick ? c.ink : c.muted }]}>{quick ? 'Now tap the arrow' : 'Why it works'}</Text>
             </View>
           </Pressable>
           <View style={s.rail}>
             <Bare icon="heart" label={liked ? 'This one helps. Tap to undo.' : 'This one helps'} on={liked} onPress={like} />
-            <Bare icon="down" label="Next move" fill loud={hint || quick} onPress={() => next(false)} />
+            <Bare icon="down" label="Next move" fill loud={quick} onPress={() => next(false)} />
           </View>
         </View>
       </View>

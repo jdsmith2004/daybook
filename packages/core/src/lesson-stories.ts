@@ -1,0 +1,150 @@
+/* Lessons told as a story (the owner, November 14, 2026: "it needs to be more of like a story that it's telling ... very good teaching
+   and educational and like change your perception"). The standard and the kinds are in docs/lessons.md; read it first. A story here
+   replaces the turn with the same id (lesson-turns.ts turnLesson), in place: its id, its section and its place on the path stay, so
+   nothing done or earned moves.
+
+   The shape, in order:
+     tell   the story, a card at a time: a study, a tale, a word, a moment from a life, or a question broken down, each card with
+            its own picture (art: a scene, a hundred people, something to try). A card marked long is in Long only; every other card
+            is in both. A question inside the story (k: 'ask') has no right answer: what the person would do in the scene, or what
+            they have lived. Never ask a person to guess a fact they cannot know (the owner, November 14, 2026: "this is a bad
+            question bc they have no way of knowing"); k: 'guess' stays only for a guess a person can reason out. A flip (k: 'flip') turns one thought over, only where it reveals something.
+     line   the one line that sticks, on the sun card
+     mine   a true line from the person's own log, where it fits (lessonMine)
+     today  one thing to do, tied to the idea
+     you    a question only the person can answer: no right answer, no verdict
+   Short is every card without long, and Long is every card. Scenes never put a clock time or a bed on everyone. */
+import type { Art, Block, Card, Lesson } from './lessons';
+import type { Beat, LessonBeats } from './lesson-beats';
+import type { MineKind } from './lesson-turns';
+import type { OtherHabit } from './lesson-habit';
+import type { FaithVoice } from './faith';
+import { STORIES_A } from './lesson-stories-a';
+import { STORIES_B } from './lesson-stories-b';
+import { STORIES_C } from './lesson-stories-c';
+import { STORIES_D } from './lesson-stories-d';
+import { STORIES_E } from './lesson-stories-e';
+import { STORIES_F } from './lesson-stories-f';
+import { STORIES_G } from './lesson-stories-g';
+
+/** a source: [name: topic, url] */
+type Src = [string, string, string?, string?];
+/** an answer and what the flame says to it */
+type Opt = [string, string];
+
+/** what a story is: the kinds in docs/lessons.md */
+export type StoryForm = 'study' | 'breakdown' | 'meaning' | 'word' | 'life' | 'works' | 'tale';
+
+export type StoryPart =
+  | {
+      k?: 'say';
+      h: string;
+      p?: string;
+      /** what the flame says in its bubble */
+      say?: string;
+      /** a giant number that starts the sentence h finishes */
+      n?: string;
+      art?: Art;
+      fact?: { s: string; i?: number[] };
+      back?: string;
+      long?: 1;
+      /** in Deep only, the 10-minute lesson: the rest of the study, the story around it, a second study or tale */
+      deep?: 1;
+      /** in Deep, this card told in full in place of p: the study or the talk as if read through, with nothing condensed out (the
+          owner, November 14, 2026: "it should be more like going through the talk and reading it, just in a improved form") */
+      dx?: string;
+      /** rests on a porn study: left out for another habit (lesson-beats.ts lessonAs) */
+      porn?: 1;
+    }
+  | { k: 'guess'; h: string; o: Opt[]; a: number; long?: 1; deep?: 1; porn?: 1 }
+  /** a question inside the story with no right answer: what the person would do, or what they have lived */
+  | { k: 'ask'; h: string; o: Opt[]; long?: 1; deep?: 1; porn?: 1 }
+  | { k: 'flip'; think: string; see: string; long?: 1; deep?: 1; porn?: 1 };
+
+export interface Story {
+  id: string;
+  form: StoryForm;
+  title: string;
+  tag?: string;
+  ic: string;
+  ask: string;
+  /** the one line that sticks: on the sun card, and what the flame says at the end */
+  key: string;
+  np: string;
+  mins?: number;
+  tell: StoryPart[];
+  mine?: { h: string; k: MineKind };
+  today: { h: string; l?: string[] };
+  you: { h: string; o: Opt[] };
+  scope: string;
+  src: Src[];
+  /** for a lesson written for porn that another habit reads too (lesson-habit.ts PORN_ONLY and HABIT_OPEN, which stays the gate): that
+      habit's own parts, put over the story before its words are said in the habit's terms (lesson-beats.ts lessonAs). 'say' means the
+      words alone change. */
+  /** a God lesson's closing line: a short prayer to say, on its own card after the last question (as lesson-turns.ts close) */
+  close?: string;
+  /** a God lesson speaks in the Latter-day Saint voice; another Christian faith and another faith replace whole parts (faith.ts,
+      as a turn's vo in lesson-turns.ts). storyIn puts them over the story before it becomes a lesson, so each faith keeps its own
+      wording, and a habit's parts (hab) go over that voice. */
+  vo?: Partial<Record<Exclude<FaithVoice, 'lds'>, Partial<Omit<Story, 'id' | 'vo' | 'hab'>>>>;
+  hab?: Partial<Record<OtherHabit, 'say' | Partial<Pick<Story, 'tell' | 'today' | 'you' | 'key' | 'ask' | 'np' | 'mine' | 'scope' | 'src' | 'title' | 'tag'>>>>;
+}
+
+const ICON = (ic: string): Art => ['icon', { ic }];
+
+/** a story in one faith's voice: that voice's parts over the Latter-day Saint story (a turn's turnIn, lesson-turns.ts) */
+export const storyIn = (S: Story, voice: FaithVoice | null): Story => (voice && voice !== 'lds' && S.vo && S.vo[voice] ? { ...S, ...S.vo[voice] } : S);
+
+/** a story as a lesson's cards, and the words each card shows */
+export function storyLesson(S: Story, was: Lesson): { L: Lesson; beats: LessonBeats } {
+  const cards: Card[] = [];
+  const beats: Beat[] = [];
+  const add = (c: Card, b: Beat) => (cards.push(c), beats.push(b));
+  S.tell.forEach((t, i) => {
+    const q = t.long || t.deep ? undefined : (1 as const);
+    const dp = t.deep ? (1 as const) : undefined;
+    if (t.k === 'guess') return add({ k: 'choose', q, e: 'predict', el: 'Guess', h: t.h, a: t.a, c: t.o, dp }, { h: t.h, c: t.o.map((x) => x[1]) });
+    if (t.k === 'ask') return add({ k: 'choose', q, e: 'predict', el: 'You', h: t.h, c: t.o, dp }, { h: t.h, c: t.o.map((x) => x[1]) });
+    if (t.k === 'flip') return add({ k: 'flip', q, e: 'answer', el: 'Look again', h: t.think, see: t.see, dp }, { h: t.think, p: t.see });
+    add(
+      {
+        k: 'text',
+        q,
+        dp,
+        e: i === 0 ? 'hook' : 'proof',
+        el: 'The story',
+        art: t.n ? ['big', { n: t.n }] : t.art || (i === 0 ? ICON(S.ic) : undefined),
+        h: t.h,
+        fact: t.fact,
+        back: t.back,
+      },
+      { h: t.h, p: t.p, say: t.say, n: t.n, dx: t.dx },
+    );
+  });
+  add({ k: 'text', q: 1, e: 'answer', el: 'The line', h: S.key }, { h: S.key });
+  if (S.mine) add({ k: 'text', q: 1, e: 'mine', el: 'Your own log', h: S.mine.h, b: [['mine', S.mine.k]] as Block[] }, { h: S.mine.h });
+  add({ k: 'text', q: 1, e: 'move', el: 'Today', art: ICON(S.ic), h: S.today.h }, { h: S.today.h, l: S.today.l });
+  add({ k: 'choose', q: 1, e: 'check', el: 'Only you', h: S.you.h, c: S.you.o }, { h: S.you.h, c: S.you.o.map((x) => x[1]) });
+  if (S.close) add({ k: 'text', q: 1, e: 'close', el: 'A prayer to say', art: ICON(S.ic), h: S.close }, { h: S.close });
+  const L: Lesson = {
+    ...was,
+    v: 3,
+    form: S.form,
+    title: S.title,
+    tag: S.tag || was.tag,
+    ic: S.ic,
+    mins: S.mins || 5,
+    ask: S.ask,
+    key: S.key,
+    np: S.np,
+    cards,
+    rc: undefined,
+    scope: S.scope,
+    src: S.src,
+    chk: 'November 14, 2026',
+  };
+  return { L, beats: { cards: beats, key: S.key } };
+}
+
+/** every lesson told as a story, by id */
+export const STORIES: Record<string, Story> = { ...STORIES_A, ...STORIES_B, ...STORIES_C, ...STORIES_D, ...STORIES_E, ...STORIES_F, ...STORIES_G };

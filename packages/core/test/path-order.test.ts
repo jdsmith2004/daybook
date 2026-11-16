@@ -78,84 +78,67 @@ describe('the key idea', () => {
   });
 });
 
-describe('lessons read early (before this rule)', () => {
+describe('lessons finished out of order (the owner, November 15, 2026)', () => {
   /* lessons 1 and 2, then lesson 9 from a help page, then 3 and 4 */
   const L9 = path[8];
   const days = rec(ids(2), [L9.id], ids(2, 2));
-  it('are found from the order they were finished', () => {
+  it('are still found from the order they were finished', () => {
     expect([...core.lessonsEarly(days)]).toEqual([L9.id]);
   });
-  it('stay done with their points, and wait on the map like any later stone', () => {
+  it('stay done with their points and sit behind the person, in the order finished: Up next is the planned next one', () => {
     const w = core.lessonWalk(days, st0());
     expect(w.done.has(L9.id)).toBe(true);
+    expect(w.path.slice(0, 5)).toEqual([path[0], path[1], L9, path[2], path[3]]);
     expect(w.next).toBe(path[4]);
-    expect(core.lessonGate(L9, w)).toBe('key');
+    expect(w.back).toBe(false);
+    expect(core.lessonGate(L9, w)).toBe('open');
+    expect(core.lessonNo(L9, st0(), days)).toBe(3);
+    expect(core.lessonNo(path[4], st0(), days)).toBe(6);
     const m = core.lessonMap(w);
     const all = m.lands.flatMap((l) => l.stones);
-    expect(all.find((s) => s.L === L9)!.state).toBe('todo');
+    expect(all.find((s) => s.L === L9)!.state).toBe('done');
     const at = all.findIndex((s) => s.state === 'next');
     all.forEach((s, i) => expect(s.state === 'done').toBe(i < at));
+    expect(m.gold).toEqual([[0, 5]]);
   });
-  it('when the path reaches one, it is Up next as a welcome back, and Today names it as usual', () => {
+  it('when the path gets to where it was planned, it walks on past it, with no welcome back', () => {
     let d = days;
     for (let i = 4; i < 8; i++) d = finish(d, path[i], core.addDays(tk, i));
     const k = core.addDays(tk, 9);
     const w = core.lessonWalk(d, st0());
-    expect(w.next).toBe(L9);
-    expect(w.back).toBe(true);
-    expect(core.lessonGate(L9, w)).toBe('back');
-    expect(core.lessonStop(d, st0(), k)).toMatchObject({ kind: 'next', L: L9, n: 9 });
-    expect(core.lessonDue(d, st0(), k, true)).toBe(L9.id);
-    expect(core.riskLesson(d, st0(), k, true)).toMatchObject({ L: L9, again: false });
-    expect(core.nextAfter(L9, w)).toBe(path[9]);
-    const st2 = core.lessonReach(st0(), L9.id);
-    const w2 = core.lessonWalk(d, st2);
-    expect(w2.next).toBe(path[9]);
+    expect(w.next).toBe(path[9]);
+    expect(w.back).toBe(false);
+    expect(core.lessonStop(d, st0(), k)).toMatchObject({ kind: 'next', L: path[9], n: 10 });
+    expect(core.nextAfter(path[9], w)).toBe(path[10]);
   });
-  it('"Keep going" moves the path on, with no new points, no lesson day and the same level', () => {
+  it('a "Keep going" mark saved before stays in the settings and changes nothing', () => {
     let d = days;
     for (let i = 4; i < 8; i++) d = finish(d, path[i], core.addDays(tk, i));
     const k = core.addDays(tk, 9);
     const st = st0();
     const before = core.gameCompute(d, st, {}, k);
     const st2 = core.lessonReach(st, L9.id, 5);
-    expect(core.lessonReach(st2, L9.id, 6)).toBe(st2);
     const after = core.gameCompute(d, st2, {}, k);
     expect(after.rawPts).toBe(before.rawPts);
-    expect(after.pts).toBe(before.pts);
     expect(after.level.n).toBe(before.level.n);
-    expect(core.lessonDoneOn(d[k]?.p)).toBe(false);
-    const w = core.lessonWalk(d, st2);
-    expect(w.next).toBe(path[9]);
-    expect(w.walked.has(L9.id)).toBe(true);
-    expect(core.lessonGate(L9, w)).toBe('open');
-    /* the mark survives saving and loading, and an empty one is left out (so older records stay the same) */
+    expect(core.lessonWalk(d, st2).next).toBe(path[9]);
     expect(core.normSettings(JSON.parse(JSON.stringify(st2))).learn.back).toEqual({ [L9.id]: 1 });
     expect('back' in core.normSettings(JSON.parse(JSON.stringify(st))).learn).toBe(false);
   });
   it('a re-read offered without an account is never one the path has not reached', () => {
-    /* the free lessons, then lesson 20 early: the next one waits behind an account */
+    /* the free lessons, then lesson 20 out of order: the next one waits behind an account */
     const d = rec(ids(core.LEARN_FREE), [path[19].id]);
     for (let h = 0; h < 24; h++) {
       const o = core.nextUp(d, st0(), tk, new Date(2026, 9, 20, h, 30).getTime(), false);
-      /* the next one says it waits for a free account (WP11); anything else offered is a free one */
       if (o.act === 'lesson' && o.s === 'Opens with a free account') expect(o.v).toBe(path[core.LEARN_FREE].id);
-      else if (o.act === 'lesson') expect(ids(core.LEARN_FREE)).toContain(o.v);
+      else if (o.act === 'lesson') expect([...ids(core.LEARN_FREE), path[19].id]).toContain(o.v);
     }
-    const r = core.riskLesson(d, st0(), tk, false)!;
-    expect(ids(core.LEARN_FREE)).toContain(r.L.id);
   });
-  it('two read early in a row each get their welcome back, in path order', () => {
+  it('two finished out of order sit behind in the order finished', () => {
     const d = rec(ids(1), [path[2].id, path[1].id]);
-    expect([...core.lessonsEarly(d)]).toEqual([path[2].id]);
-    let st = st0();
-    let w = core.lessonWalk(d, st);
-    expect(w.next).toBe(path[2]);
-    expect(w.back).toBe(true);
-    st = core.lessonReach(st, path[2].id);
-    w = core.lessonWalk(d, st);
+    const w = core.lessonWalk(d, st0());
+    expect(w.path.slice(0, 3)).toEqual([path[0], path[2], path[1]]);
     expect(w.next).toBe(path[3]);
-    expect(w.back).toBe(false);
   });
 });
 
@@ -293,8 +276,11 @@ describe('checkpoints follow the path', () => {
         },
       }),
     ).toBe(13);
-    /* both lessons read early do not bring a checkpoint before the path reaches them */
-    expect(core.lcheckDue(rec(ids(1), ['l29', 'l30']), st)).toBe(0);
+    /* both lessons finished out of order are behind the person on their own path (the owner, November 15, 2026), so their
+       checkpoint comes, numbered by that path: the first one there */
+    const d2 = rec(ids(1), ['l29', 'l30']);
+    expect(core.lcheckDue(d2, st)).toBe(15);
+    expect(core.lcheckNo(15, st, d2)).toBe(1);
   });
   it('writing stays with the lessons it was written about, under its own record', () => {
     let st = st0();
@@ -408,7 +394,9 @@ describe('the God lessons on the path (November 2, 2026)', () => {
     const close = (L: core.Lesson) => L.cards.find((c) => c.e === 'close')!.h;
     expect(core.lessonVoiced(g7, 'lds')).toBe(g7);
     expect(close(core.lessonVoiced(g7, 'plain'))).toMatch(/^God, /);
-    expect(core.lessonVoiced(g7, 'christian').cards.find((c) => c.k === 'flip')!.see).toMatch(/new every morning/);
+    /* a God lesson told as a story keeps each voice's own words: the Latter-day Saint talk is not in the Bible-only voice */
+    expect(g7.cards.some((c) => /Uchtdorf/.test(c.h))).toBe(true);
+    expect(core.lessonVoiced(g7, 'christian').cards.some((c) => /Uchtdorf/.test(c.h))).toBe(false);
     expect(core.lessonVoiced(g7, 'plain')).toBe(core.lessonVoiced(g7, 'plain'));
     const V = core.lessonVoiced(g7, 'plain');
     expect(core.lessonBeats(V)!.cards.length).toBe(V.cards.length);

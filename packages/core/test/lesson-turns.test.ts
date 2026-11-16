@@ -6,11 +6,14 @@ import { HABIT_ONLY, HABIT_TURNS } from '../src/lesson-habit';
 import type { Days } from '../src/types';
 
 const CONTRACTION = /\b\w+(?:n['’]t|['’](?:re|ve|ll|d|m))\b|\b(?:it|that|there|here|what|who|he|she|let)['’]s\b/i;
-const turned = core.LESSONS.filter((L) => L.v === 3);
+/* a lesson told as a story has its own shape and tests (lesson-stories.ts) */
+const turned = core.LESSONS.filter((L) => L.v === 3 && !L.form);
 
 describe('turned lessons', () => {
   it('replace the old lesson in place: same id, same section, same place', () => {
-    expect(turned.length).toBe(Object.keys(core.TURNS).length + Object.keys(core.GOD).length + Object.keys(HABIT_TURNS).length);
+    expect(turned.length + core.LESSONS.filter((L) => L.form).length).toBe(
+      Object.keys(core.TURNS).length + Object.keys(core.GOD).length + Object.keys(HABIT_TURNS).length,
+    );
     Object.keys(core.TURNS).forEach((id) => {
       const L = core.lessonById(id)!;
       expect(L.v, id).toBe(3);

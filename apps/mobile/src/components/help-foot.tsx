@@ -6,6 +6,7 @@ import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
 import { useCrisis } from '@/lib/crisis';
+import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 import { copyText } from '@/lib/words';
@@ -26,7 +27,10 @@ export function HelpFoot() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={'Copy ' + line.num}
-        onPress={() => copyText(line.dial, say)}
+        onPress={() => {
+          buzz('tap');
+          copyText(line.dial, say);
+        }}
         style={({ pressed }) => [s.chip, { opacity: pressed ? 0.7 : 1 }]}>
         <Icon name="copy" size={16} color={c.accentText} />
         <Text style={{ fontFamily: font.bodySemi, fontSize: 15, color: c.accentText }}>Copy</Text>

@@ -28,6 +28,7 @@ import { Text } from '@/components/text';
 
 import { StretchRuler, WeekDots } from '@/components/step-art';
 import { Bar, Button, Card, Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
@@ -128,7 +129,10 @@ function GradRow({ snap, tk }: { snap: Snapshot; tk: string }) {
     <Pressable
       accessibilityRole="button"
       accessibilityHint="Opens Milestones"
-      onPress={() => router.push('/miles')}
+      onPress={() => {
+        buzz('tap');
+        router.push('/miles');
+      }}
       style={({ pressed }) => [s.grad, { opacity: pressed ? 0.7 : 1 }]}>
       <View style={s.gradTop}>
         {g.at ? <Icon name="crown" size={20} color={c.sunText} /> : null}
@@ -239,10 +243,22 @@ function StepCard({ snap, tk, now, size, v }: { snap: Snapshot; tk: string; now:
         <View style={s.slim}>
           <Icon name="heart" size={17} color={c.coralText} />
           <Text style={[s.slimT, { color: c.coralText }]}>Extra support helps</Text>
-          <Pressable accessibilityRole="link" hitSlop={6} onPress={() => router.push({ pathname: '/help/[id]', params: { id: 'therapy' } })}>
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={6}
+            onPress={() => {
+              buzz('tap');
+              router.push({ pathname: '/help/[id]', params: { id: 'therapy' } });
+            }}>
             <Text style={[s.slimLink, { color: c.coralText }]}>Therapy</Text>
           </Pressable>
-          <Pressable accessibilityRole="link" hitSlop={6} onPress={() => router.push({ pathname: '/help/[id]', params: { id: 'groups' } })}>
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={6}
+            onPress={() => {
+              buzz('tap');
+              router.push({ pathname: '/help/[id]', params: { id: 'groups' } });
+            }}>
             <Text style={[s.slimLink, { color: c.coralText }]}>Groups</Text>
           </Pressable>
         </View>

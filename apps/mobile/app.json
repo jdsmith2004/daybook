@@ -8,6 +8,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "daybook",
     "userInterfaceStyle": "automatic",
+    "backgroundColor": "#15123A",
     "ios": {
       "bundleIdentifier": "com.jdsmith2004.daybook",
       "supportsTablet": false,
@@ -24,6 +25,7 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png"
       },
+      "backgroundColor": "#15123A",
       "predictiveBackGestureEnabled": false,
       "permissions": ["android.permission.SCHEDULE_EXACT_ALARM"]
     },
@@ -32,12 +34,13 @@
       "favicon": "./assets/images/favicon.png",
       "name": "Daybook",
       "shortName": "Daybook",
-      "themeColor": "#FFF8EB",
-      "backgroundColor": "#FFF8EB"
+      "themeColor": "#15123A",
+      "backgroundColor": "#15123A"
     },
     "plugins": [
       "expo-router",
       "./plugins/night-pack",
+      "./plugins/sos-mark",
       "expo-apple-authentication",
       [
         "expo-audio",
@@ -58,9 +61,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FFF8EB",
+          "backgroundColor": "#15123A",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 120,
+          "imageWidth": 430,
           "dark": {
             "backgroundColor": "#15123A",
             "image": "./assets/images/splash-icon.png"

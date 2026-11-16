@@ -31,7 +31,7 @@ import { buzz } from '@/lib/feel';
 import { connectHealth } from '@/lib/health';
 import { close } from '@/lib/nav';
 import { setLockPref, setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
-import { PULL_DENIED, pullStart, setPullPrefs } from '@/lib/pull';
+import { getPullPrefs, PULL_DENIED, pullStart, setPullPrefs } from '@/lib/pull';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { useStore } from '@/lib/store';
 import { PAPER_INK } from '@/lib/lesson-look';
@@ -157,7 +157,7 @@ export default function Unlocked() {
     sunday: () => (sun ? router.replace({ pathname: '/review', params: { s: sun } }) : close()),
     routine: saveList,
     health: () => void health(),
-    night: () => router.replace('/settings/nightpack'),
+    night: () => router.replace('/nightpack'),
     lock: () => void lock(),
   };
   const choose = async () => {
@@ -168,7 +168,8 @@ export default function Unlocked() {
     if (r === 'denied') say(PULL_DENIED);
     if (r !== 'on') return;
     /* notes only arms nothing: no wait before the apps, and no wait before adult sites at night either */
-    setPullPrefs(pause ? { feeds: true } : { feeds: false, adult: false });
+    const lists = getPullPrefs().lists.map((l, i) => (i ? l : { ...l, wait: pause ? l.wait || 10 : 0 }) as typeof l);
+    setPullPrefs(pause ? { lists } : { lists, adult: false });
     buzz('save');
     say('I am watching for it now.');
     close();

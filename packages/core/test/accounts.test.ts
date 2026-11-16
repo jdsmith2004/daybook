@@ -87,7 +87,7 @@ it('without an account, Next up says the next lesson waits for one, and gives a 
     const hard = core.addEvent(rk, k, 'slipped', '21:00').days;
     const r = core.lessonStop(hard, st, tk, false);
     expect(r.kind).toBe('review');
-    expect(core.lessonOpen(r.L, done, false)).toBe(true);
+    expect(core.lessonOpen(r.L, core.lessonsDone(hard), false)).toBe(true);
     for (let h = 0; h < 24; h++) {
       const o = core.nextUp(hard, st, tk, new Date(2026, 9, 15, h, 30).getTime(), false);
       if (o.act === 'lesson') expect(o.t).toMatch(/^Read again: /);
@@ -101,4 +101,33 @@ it('a new person who keeps it on the phone at the end of setup is not asked agai
   const st = core.accountLater(st0(tk), tk, 1).st;
   expect(core.accountAsk({}, st, tk, 6, false)).toBeNull();
   expect(core.accountAsk({}, st, core.addDays(tk, core.ACCT_WAIT), 6, false)).toBe('week');
+});
+
+it('the nudge beside Ideas: only after a good moment, from day 2, every few days, never near a slip or in quiet hours', () => {
+  const st = st0(core.addDays(tk, -5));
+  const lesson = { [tk]: { d: tk, events: [], checkin: null, p: { ls: ['l1'] }, u: 0 } } as unknown as core.Days;
+  const rode = core.addEvent({}, tk, 'rode', '21:00').days;
+  /* a plain day with nothing done does not nudge */
+  expect(core.accountNudge({}, st, tk, false, false)).toBeNull();
+  expect(core.accountNudge(lesson, st, tk, false, false)).toBe('lesson');
+  expect(core.accountNudge(rode, st, tk, false, false)).toBe('rode');
+  /* a week mark, with nothing else done */
+  expect(core.accountNudge({}, st0(core.addDays(tk, -14)), tk, false, false)).toBe('week');
+  expect(core.accountNudge({}, st0(core.addDays(tk, -15)), tk, false, false)).toBeNull();
+  /* never with an account, in the quiet hours, or in the first days */
+  expect(core.accountNudge(lesson, st, tk, true, false)).toBeNull();
+  expect(core.accountNudge(lesson, st, tk, false, true)).toBeNull();
+  expect(core.accountNudge(lesson, st0(core.addDays(tk, -1)), tk, false, false)).toBeNull();
+  expect(core.accountNudge(lesson, st0(core.addDays(tk, -core.ACCT_NUDGE_FROM)), tk, false, false)).toBe('lesson');
+  /* never on a day with a slip or the day after */
+  const slip = core.addEvent(lesson, core.addDays(tk, -1), 'slipped', '21:00').days;
+  expect(core.accountNudge(slip, st, tk, false, false)).toBeNull();
+  /* once closed, it waits ACCT_NUDGE_GAP days */
+  const seen = core.accountNudged(st, core.addDays(tk, -2)).st!;
+  expect(core.accountNudge(lesson, seen, tk, false, false)).toBeNull();
+  const old = core.accountNudged(st, core.addDays(tk, -core.ACCT_NUDGE_GAP)).st!;
+  expect(core.accountNudge(lesson, old, tk, false, false)).toBe('lesson');
+  /* the line sells what a free account opens (sync needs a tip), with no contractions */
+  expect(core.nudgeWords('rode', 30)).toBe('You rode that out. A free account opens the other 30 lessons.');
+  expect(core.nudgeWords('lesson', 0)).not.toMatch(/n't|'s |'re /);
 });

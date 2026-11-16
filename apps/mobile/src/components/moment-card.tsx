@@ -1,6 +1,6 @@
 /* The one next step on Today (core pickMoment, moment.ts), under the flame in the same card (hero.tsx): whatever the
-   moment is, it is the only thing asking for a tap. Most moments are one band in the colors of their moment (the day's
-   next stop, the Sunday review, the first week, a first pattern, days away, a part unlocked), the whole band one
+   moment is, it is the only thing asking for a tap. Most moments are the same big bright card as the next stop on the line
+   (your-day.tsx NextCard: the first week, a first pattern, days away, a part unlocked), the whole card one
    button (Your day, below, names the rest of the day). The day of a slip keeps its full card, with its words of care; the
    comeback shows its three flames, one line, and leads on to the next step; the moments with their own choices (a talk-through, a counting note,
    a word about reminders, Day 1) keep their cards. Under it, one quiet line names the next moment when
@@ -19,7 +19,7 @@ import { CountNotes } from '@/components/today';
 import { Flames } from '@/components/rekindle';
 import { PauseBanner, useLogActions } from '@/components/today-log';
 import { Card, Icon, T } from '@/components/ui';
-import { lookOf, openStop } from '@/components/your-day';
+import { lookOf, NextCard, openStop } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
 import { openCare } from '@/lib/nav';
 import { useSos } from '@/lib/sos';
@@ -69,9 +69,6 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
       );
     case 'calm':
       return <Band m={m} onPress={() => openStop(m.go as StopTile['go'], m.v)} />;
-    case 'sunday':
-      if (m.go === 'unlock') return <UnlockBand m={m} id="sunday" />;
-      return <Band m={m} onPress={() => router.push({ pathname: '/review', params: { s: m.v! } })} />;
     case 'first-week':
       return <Band m={m} onPress={() => router.push('/week')} />;
     case 'first-pattern':
@@ -98,34 +95,16 @@ function UnlockBand({ m, id }: { m: Moment; id: UnlockId }) {
   return <Band m={m} onPress={() => router.push({ pathname: '/unlock', params: id === 'sunday' ? { id, s: m.v! } : { id } })} />;
 }
 
-/* the band's button stays short; the longer action is said in its label for screen readers */
-const PILL: Partial<Record<string, string>> = { review: 'Start', week: 'See it', pattern: 'See it', back: 'Fill in' };
-
-/* the one next step: its words and one button, the whole band one tap */
+/* the one next step: the same big bright card as the next stop on the line (your-day.tsx NextCard), the whole card one tap */
 function Band({ m, onPress }: { m: Moment; onPress: () => void }) {
-  const c = useTheme();
-  const pill = m.btn && m.btn.length <= 14 ? m.btn : PILL[m.go || ''] || 'Start';
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={(m.btn || pill) + ': ' + m.h}
+    <NextCard
+      m={m}
       onPress={() => {
         buzz('tap');
         onPress();
       }}
-      style={({ pressed }) => [s.band, { backgroundColor: c.surface, opacity: pressed ? 0.8 : 1 }]}>
-      <View style={{ flex: 1, gap: 1 }}>
-        <Text style={[s.eb, { color: c.muted }]} numberOfLines={1}>
-          {m.eb}
-        </Text>
-        <Text style={[s.bandT, { color: c.ink }]} numberOfLines={3}>
-          {m.h}
-        </Text>
-      </View>
-      <View style={[s.go, { backgroundColor: c.accent }]}>
-        <Text style={[s.goT, { color: c.accentInk }]}>{pill}</Text>
-      </View>
-    </Pressable>
+    />
   );
 }
 
@@ -169,7 +148,14 @@ function Tile({ m, sky, onPress, onAlt }: { m: Moment; sky: StopTile['sky']; onP
         </Pressable>
       ) : null}
       {m.alt && onAlt ? (
-        <Pressable accessibilityRole="button" onPress={onAlt} hitSlop={8} style={s.alt}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            buzz('tap');
+            onAlt();
+          }}
+          hitSlop={8}
+          style={s.alt}>
           <Text style={[s.altT, { color: soft }]}>{m.alt}</Text>
         </Pressable>
       ) : null}

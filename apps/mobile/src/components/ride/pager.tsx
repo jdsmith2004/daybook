@@ -4,19 +4,23 @@
    first page) and a trackpad scroll works too. Only the page in view and the two next to it are drawn; the parent shows its
    neighbors as still covers, so nothing in them runs, buzzes or speaks until it is landed on.
 
-   Until the person has swiped a few times (core UrMem.swiped), the page lifts twice by itself to show the next one below,
-   the way short-video apps teach it. */
+   When a move is done (the sun after its three breaths), the ride glides on to the next one by itself; nothing teaches the swipe
+   (the owner, November 14, 2026: "Once it finishes the sun part, it should auto scroll"). The glide never fights a swipe the
+   person is making: it waits for the finger to let go, then finishes the move. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollViewInstance } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useReducedMotion } from '@/lib/motion';
 
 const WEB = Platform.OS === 'web';
+/* on the web a scroll view cuts off whatever it holds at its own edges, and it sits inside the scene's 16-point margin (SceneFrame), so
+   the breathing sun's glow was cut into two hard lines down the sides. There the scroll view reaches the screen's edges and each page
+   keeps the margin inside it; the page itself is exactly where it was. A phone is left as it is. */
+const BLEED = WEB ? 16 : 0;
 
 export function RidePager({
   count,
   at,
-  hint,
   on,
   onLand,
   onNear,
@@ -26,8 +30,6 @@ export function RidePager({
   count: number;
   /** the page in view */
   at: number;
-  /** lift the page to show how to swipe */
-  hint: boolean;
   /** the ride is in front (no sheet over it) */
   on: boolean;
   /** the person swiped to page i */
@@ -44,33 +46,48 @@ export function RidePager({
   /* where the scroll starts; after that only scrollTo moves it (a changing contentOffset would jump, not glide) */
   const [first] = useState(at);
   const near = useRef(at);
+  /* the person's own scroll: a finger down (dragging), the last scroll that was not a glide of ours (userAt), and a glide that waits
+     for them to let go (wait) */
+  const dragging = useRef(false);
+  const userAt = useRef(0);
+  const ownUntil = useRef(0);
+  const wait = useRef(false);
+  const yAt = useRef(0);
+  const busy = () => dragging.current || Date.now() - userAt.current < 250;
+  const glide = (i: number) => {
+    ownUntil.current = Date.now() + 1000;
+    ref.current?.scrollTo({ y: i * h, animated: !still });
+  };
 
-  /* a move done, Next, or a tool picked: glide to the page the ride is on now */
+  /* a move done, Next, or a tool picked: glide to the page the ride is on now. While the person is scrolling, it waits for them to
+     let go (land below), so the two never pull against each other. */
   useEffect(() => {
     if (!h) return;
     /* a swipe already glides to its page itself (end below) */
     if (seen.current === at) return;
     seen.current = at;
-    ref.current?.scrollTo({ y: at * h, animated: !still });
+    if (!busy()) return glide(at);
+    wait.current = true;
+    /* a touch that never scrolls has no end event on the web: look again once it is quiet */
+    const t = setInterval(() => {
+      if (busy() || !wait.current) return;
+      wait.current = false;
+      clearInterval(t);
+      if (Math.round(yAt.current / h) !== seen.current) glide(seen.current);
+    }, 150);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, h, still]);
-
-  /* the lesson: two small lifts that show the next page waiting below */
-  useEffect(() => {
-    if (!hint || !on || !h || still) return;
-    const y = at * h;
-    const t: ReturnType<typeof setTimeout>[] = [];
-    const lift = (ms: number) => {
-      t.push(setTimeout(() => ref.current?.scrollTo({ y: y + 72, animated: true }), ms));
-      t.push(setTimeout(() => ref.current?.scrollTo({ y, animated: true }), ms + 420));
-    };
-    lift(2200);
-    lift(3300);
-    return () => t.forEach(clearTimeout);
-  }, [hint, on, h, at, still]);
 
   const land = (y: number) => {
     if (!h) return;
     const i = Math.max(0, Math.min(count - 1, Math.round(y / h)));
+    /* let go while the ride was waiting to move on: it finishes the move instead of taking this as a swipe */
+    if (wait.current) {
+      wait.current = false;
+      if (i !== seen.current) glide(seen.current);
+      return;
+    }
     if (i === seen.current) return;
     seen.current = i;
     onLand(i);
@@ -83,6 +100,8 @@ export function RidePager({
   };
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const y = e.nativeEvent.contentOffset.y;
+    yAt.current = y;
+    if (Date.now() > ownUntil.current) userAt.current = Date.now();
     if (h) {
       const n = Math.max(0, Math.min(count - 1, Math.round(y / h)));
       if (n !== near.current) {
@@ -97,7 +116,7 @@ export function RidePager({
   };
 
   return (
-    <View style={StyleSheet.absoluteFill} onLayout={(e) => setH(Math.round(e.nativeEvent.layout.height))}>
+    <View style={[StyleSheet.absoluteFill, BLEED ? { left: -BLEED, right: -BLEED } : null]} onLayout={(e) => setH(Math.round(e.nativeEvent.layout.height))}>
       {h ? (
         <ScrollView
           ref={ref}
@@ -111,11 +130,15 @@ export function RidePager({
           contentOffset={{ x: 0, y: first * h }}
           scrollEventThrottle={32}
           onScroll={onScroll}
-          onScrollEndDrag={(e) => (WEB ? undefined : end(e.nativeEvent.contentOffset.y, e.nativeEvent.velocity?.y ?? 0))}
+          onScrollBeginDrag={() => (dragging.current = true)}
+          onScrollEndDrag={(e) => {
+            dragging.current = false;
+            if (!WEB) end(e.nativeEvent.contentOffset.y, e.nativeEvent.velocity?.y ?? 0);
+          }}
           onMomentumScrollEnd={(e) => land(e.nativeEvent.contentOffset.y)}
           style={s.box}>
           {Array.from({ length: count }, (_, i) => (
-            <View key={i} style={{ height: h }}>
+            <View key={i} style={{ height: h, paddingHorizontal: BLEED }}>
               {Math.abs(i - at) <= 1 ? render(i) : null}
             </View>
           ))}

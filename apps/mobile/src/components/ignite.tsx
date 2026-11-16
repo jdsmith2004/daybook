@@ -21,11 +21,12 @@
             the new one drops in from above (Success).
       1470  Warm puffs swell over the flame and an empty bubble comes up (Light knock). Under the puffs the flame wakes; as they break
             apart it is awake and glowing.
-      1670  Its words type out (26 ms a letter, a soft tick every five), and the line under the number comes in.
+      1670  Its words type out (24 ms a letter, a soft tick every five), and the line under the number comes in.
             While the last words type, the column rises and the row of days fades in, all together.
-  row+600   The day just kept turns into a coin: it jumps, flips over to its check, and lands with a squash and sparks (a roll, then a land).
+  row+400   The day just kept turns into a coin: it jumps, flips over to its check, and lands with a squash and sparks (a roll, then a land).
             The small goal, when there is one, comes in after it.
- land+2500  Only then the button (Duolingo waits as long: two quiet seconds with the mascot alive, so nobody taps past the moment).
+ land+400  The button, right after the coin lands (the owner, November 14, 2026: "after it flips the first day or whatever, it's a huge
+            wait between that and keep going"; it used to wait two and a half seconds, as Duolingo's does).
    A tap anywhere after the swipe brings everything in at once, for someone in a hurry. Reduce Motion: it lights with a fade, everything
    comes in together, one knock. */
 import { type NightMark } from '@daybook/core';
@@ -57,7 +58,7 @@ import { Bubble } from '@/components/lesson-flame';
 import { Text } from '@/components/text';
 import { Button, Icon } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
-import { useReducedMotion } from '@/lib/motion';
+import { SETTLE, useReducedMotion } from '@/lib/motion';
 import { play } from '@/lib/sound';
 import { font, nightInk } from '@/lib/theme';
 
@@ -88,13 +89,13 @@ const AT = {
 /** how long the flame takes to catch, once it does (BigFlame relight) */
 const CATCH_MS = 260;
 /** a letter of the words, and the longest the typing may take */
-const LETTER = 26;
-const TYPE_MAX = 1800;
+const LETTER = 24;
+const TYPE_MAX = 1400;
 /** the coin: its jump and flip, then the sparks */
 const COIN_FLY = 600;
 const COIN_ALL = 1050;
-/** from the coin landing to the button */
-const QUIET = 2500;
+/** from the coin landing to the button: just long enough to see the check land */
+const QUIET = 400;
 
 export interface IgniteDay {
   k: string;
@@ -204,8 +205,12 @@ export function Ignition({
     for (const v of [comet, flare, flash, slash, wash, burst, puffs, squish]) v.value = 0;
   };
 
+  /* when it lit: the end of the swipe that lit it also lands as a tap on the web (a mouse up is a click), and must not skip the moment */
+  const litAt = useRef(0);
+  const pressAt = useRef(0);
   const light = () => {
     if (beat !== 0) return;
+    litAt.current = Date.now();
     setBeat(1);
     AccessibilityInfo.announceForAccessibility(m.to ? m.to + ' ' + m.unit + '. ' + m.line : m.line);
     if (still) {
@@ -255,7 +260,7 @@ export function Ignition({
       squish.value = withSequence(
         withTiming(1, { duration: AT.squash - AT.stretch, easing: Easing.out(Easing.quad) }),
         withTiming(-1, { duration: 50, easing: Easing.in(Easing.quad) }),
-        withSpring(0, { damping: 13, stiffness: 520 }),
+        withSpring(0, SETTLE),
       );
     });
     at(AT.squash, () => {
@@ -266,7 +271,7 @@ export function Ignition({
     at(AT.puff, () => {
       knock(Haptics.ImpactFeedbackStyle.Light);
       puffs.value = withTiming(1, { duration: 520, easing: Easing.linear });
-      words.value = withSpring(1, { damping: 13, stiffness: 260 });
+      words.value = withSpring(1, SETTLE);
     });
     at(AT.wake, () => {
       setAwake(true);
@@ -284,31 +289,31 @@ export function Ignition({
         });
     });
     /* while the last words type, the column rises and the days fade in together; then the day just kept flips over to its check */
-    const rowAt = Math.max(AT.words + 600, AT.words + n * step - 400);
-    const land = rowAt + 600 + COIN_FLY;
+    const rowAt = Math.max(AT.words + 500, AT.words + n * step - 500);
+    const land = rowAt + 400 + COIN_FLY;
     at(rowAt, () => {
       rowV.value = withTiming(1, { duration: 500, easing: Easing.inOut(Easing.cubic) });
     });
     if (m.row.length) {
-      at(rowAt + 600, () => {
+      at(rowAt + 400, () => {
         buzz('roll');
         coin.value = withTiming(1, { duration: COIN_ALL, easing: Easing.linear });
       });
       at(land, () => buzz('land'));
     }
     /* the small goal */
-    const goalAt = land + 400;
+    const goalAt = land;
     if (goal) {
       at(goalAt, () => {
         goalV.value = withTiming(1, { duration: 320, easing: Easing.out(Easing.cubic) });
       });
-      at(goalAt + 400, () => {
+      at(goalAt + 200, () => {
         knock(goal.kept ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Light);
-        segV.value = withSpring(1, { damping: 8, stiffness: 200 });
+        segV.value = withSpring(1, SETTLE);
       });
     }
-    /* the button, last, after the quiet */
-    at(Math.max(land + QUIET, goal ? goalAt + 1200 : 0), () => {
+    /* the button, right after the coin lands (the goal fills in beside it) */
+    at(land + QUIET, () => {
       setBeat(2);
       btn.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.quad) });
     });
@@ -404,8 +409,12 @@ export function Ignition({
         <Pressable
           style={StyleSheet.absoluteFill}
           accessible={false}
+          onPressIn={() => {
+            pressAt.current = Date.now();
+          }}
           onPress={() => {
-            if (beat === 1) all();
+            /* only a press that began after it lit: the swipe that lit it ends as a press too (a mouse up on the web) */
+            if (beat === 1 && pressAt.current > litAt.current) all();
           }}
         />
         <View style={[s.top, { paddingTop: inset.top + 8 }]} pointerEvents="box-none">
@@ -719,17 +728,11 @@ function FlashBit({ v, x, y, a, d, z, spin }: { v: SharedValue<number>; x: numbe
 /* the stars and bits over the whole screen at the height of the wash: [x, y as shares of the screen, size, star or bit, phase] */
 const WASH_STARS: [number, number, number, boolean, number][] = [
   [0.12, 0.14, 16, true, 0],
-  [0.86, 0.1, 12, true, 0.3],
   [0.08, 0.5, 10, true, 0.6],
-  [0.92, 0.42, 14, true, 0.15],
   [0.2, 0.78, 12, true, 0.45],
-  [0.8, 0.72, 16, true, 0.75],
   [0.5, 0.06, 10, true, 0.9],
-  [0.3, 0.3, 6, false, 0.2],
   [0.72, 0.24, 5, false, 0.5],
-  [0.16, 0.64, 6, false, 0.8],
   [0.88, 0.6, 5, false, 0.35],
-  [0.6, 0.86, 6, false, 0.65],
 ];
 function WashStars({ v, w, h }: { v: SharedValue<number>; w: number; h: number }) {
   return (
@@ -824,18 +827,10 @@ function SlashOne({ v, x, y, a, d }: { v: SharedValue<number>; x: number; y: num
   return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: w, height: h, borderRadius: w, backgroundColor: '#FFFFFF' }, st]} />;
 }
 
-/* the burst as the flame catches: big petals of fire, bits and stars thrown across the whole screen. A fixed spread, so it falls the
+/* the burst as the flame catches: a few small bits and stars close round the flame, no petals across the screen (the owner,
+   November 14, 2026: too much confetti). A fixed spread, so it falls the
    same way every time. [angle, distance as a share of the reach, width, length, spin in degrees, kind: 0 petal, 1 bit, 2 star] */
 const BURST: [number, number, number, number, number, 0 | 1 | 2][] = [
-  [-90, 1.1, 36, 104, 40, 0],
-  [-55, 1.2, 30, 90, -70, 0],
-  [-125, 1.2, 34, 98, 60, 0],
-  [-20, 1.0, 28, 82, -90, 0],
-  [-160, 1.0, 28, 78, 80, 0],
-  [20, 0.95, 25, 70, 110, 0],
-  [160, 0.95, 25, 72, -110, 0],
-  [70, 1.0, 22, 66, 70, 0],
-  [115, 1.0, 22, 64, -60, 0],
   [-72, 0.3, 9, 9, 180, 1],
   [-108, 0.28, 8, 8, -160, 1],
   [-38, 0.26, 8, 8, 200, 1],
@@ -1178,7 +1173,7 @@ export function StepUp({ from, to, unit, color }: { from: string; to: string; un
   const t = useSharedValue(still || from === to ? 1 : 0);
   useEffect(() => {
     if (still || from === to) return;
-    t.value = withDelay(160, withSpring(1, { damping: 9, stiffness: 170 }));
+    t.value = withDelay(160, withSpring(1, SETTLE));
     const id = setTimeout(() => knock(Haptics.ImpactFeedbackStyle.Medium), 220);
     return () => clearTimeout(id);
   }, [still, from, to, t]);

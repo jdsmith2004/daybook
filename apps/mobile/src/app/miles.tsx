@@ -37,6 +37,7 @@ import { PointsList } from '@/components/points-list';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Bar, Card, Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { useBackLabel, useHoldsBar, useOverModal } from '@/lib/nav';
 import { usePullDowns } from '@/lib/pull';
 import { useStore } from '@/lib/store';
@@ -98,7 +99,10 @@ export default function Miles() {
         key={b.id}
         accessibilityRole="button"
         accessibilityLabel={`${b.name}: ${d ? 'earned' : 'locked, ' + b.now + ' of ' + b.goal}`}
-        onPress={() => router.push({ pathname: '/badge/[id]', params: { id: b.id } })}
+        onPress={() => {
+          buzz('tap');
+          router.push({ pathname: '/badge/[id]', params: { id: b.id } });
+        }}
         style={({ pressed }) => [s.badge, { opacity: pressed ? 0.7 : 1 }]}>
         <Medal id={b.id} icon={b.icon} tone={b.tone} size={64} earned={d} />
         <T v="small" style={{ fontFamily: font.bodySemi, textAlign: 'center' }} numberOfLines={2}>
@@ -142,7 +146,10 @@ export default function Miles() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Level ${lvl.n} of ${LEVELS.length}. See how your flame grows.`}
-                onPress={() => router.push('/growth')}
+                onPress={() => {
+                  buzz('tap');
+                  router.push('/growth');
+                }}
                 hitSlop={12}
                 style={s.level}>
                 <T v="label" style={{ color: ink.ink }}>
@@ -249,7 +256,10 @@ export default function Miles() {
                   key={i}
                   accessibilityRole="button"
                   accessibilityLabel={`${sg.name}, levels ${a} to ${b}, ${say}`}
-                  onPress={() => router.push({ pathname: '/growth', params: { stage: String(i) } })}
+                  onPress={() => {
+                    buzz('tap');
+                    router.push({ pathname: '/growth', params: { stage: String(i) } });
+                  }}
                   style={({ pressed }) => [s.form, { opacity: pressed ? 0.7 : 1 }]}>
                   <Flame level={stageLevel(i, lvl)} size={FORM_W} locked={state === 'later'} label="" />
                   <T v="label">{sg.name}</T>

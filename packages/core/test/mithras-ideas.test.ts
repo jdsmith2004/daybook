@@ -82,16 +82,17 @@ describe('If the urge were a thing', () => {
   const mem = {};
   const ur = newUrge(Date.now(), 0);
   const can = { words: false, object: true };
-  it('comes once, after the first move that follows the breath', () => {
+  it('comes once, after the three moves that follow the breath (the body and the eyes first)', () => {
     expect(rideNext(ur, {}, st, TK, Date.now(), mem, can, [])).toBe(RIDE_FIRST);
     const two = rideNext(ur, {}, st, TK, Date.now(), mem, can, ['breathe']);
     expect(two).not.toBe(RIDE_OBJECT);
-    expect(rideNext(ur, {}, st, TK, Date.now(), mem, can, ['breathe', two])).toBe(RIDE_OBJECT);
-    expect(rideNext(ur, {}, st, TK, Date.now(), mem, can, ['breathe', two, RIDE_OBJECT, 'stack'])).not.toBe(RIDE_OBJECT);
+    expect(rideNext(ur, {}, st, TK, Date.now(), mem, can, ['breathe', 'ground', 'move'])).not.toBe(RIDE_OBJECT);
+    expect(rideNext(ur, {}, st, TK, Date.now(), mem, can, ['breathe', 'ground', 'move', 'stack'])).toBe(RIDE_OBJECT);
+    expect(rideNext(ur, {}, st, TK, Date.now(), mem, can, ['breathe', 'ground', 'move', 'stack', RIDE_OBJECT, 'feel'])).not.toBe(RIDE_OBJECT);
   });
   it('never in a practice ride, and not once passed over enough', () => {
-    expect(rideNext(ur, {}, st, TK, Date.now(), mem, { words: false }, ['breathe', 'move'])).not.toBe(RIDE_OBJECT);
-    expect(rideNext(ur, {}, st, TK, Date.now(), { pass: { object: OBJECT_PASS_MAX } }, can, ['breathe', 'move'])).not.toBe(RIDE_OBJECT);
+    expect(rideNext(ur, {}, st, TK, Date.now(), mem, { words: false }, ['breathe', 'ground', 'move', 'stack'])).not.toBe(RIDE_OBJECT);
+    expect(rideNext(ur, {}, st, TK, Date.now(), { pass: { object: OBJECT_PASS_MAX } }, can, ['breathe', 'ground', 'move', 'stack'])).not.toBe(RIDE_OBJECT);
   });
   it('is only things to tap, and its event value is on the list', () => {
     expect(URGE_OBJECTS.length).toBeGreaterThanOrEqual(4);

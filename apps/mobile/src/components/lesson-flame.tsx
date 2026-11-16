@@ -8,6 +8,7 @@ import { Animated, Pressable, StyleSheet, View, type ViewInstance, type ViewStyl
 import { BigFlame } from '@/components/big-flame';
 import { SHORT } from '@/components/fit';
 import { Text } from '@/components/text';
+import { buzz } from '@/lib/feel';
 import { BUBBLE, PAPER_INK } from '@/lib/lesson-look';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { font } from '@/lib/theme';
@@ -117,8 +118,11 @@ export function Bubble({
   more,
   onMore,
   style,
+  shown,
 }: {
   text: string;
+  /** how many letters are written so far, for words that write themselves out; the bubble is its full size from the start */
+  shown?: number;
   tail?: 'mid' | 'right';
   more?: boolean;
   onMore?: () => void;
@@ -127,7 +131,8 @@ export function Bubble({
   const body = (
     <View style={[s.bubble, { backgroundColor: BUBBLE }]}>
       <Text style={s.say} accessibilityLiveRegion="polite">
-        {text}
+        {shown == null ? text : text.slice(0, shown)}
+        {shown != null && shown < text.length ? <Text style={{ color: 'transparent' }}>{text.slice(shown)}</Text> : null}
         {more ? <Text style={s.more}>{'  More'}</Text> : null}
       </Text>
       <View style={[s.tail, { backgroundColor: BUBBLE }, tail === 'right' ? s.tailRight : s.tailMid]} />
@@ -138,7 +143,10 @@ export function Bubble({
     <Pressable
       accessibilityRole="button"
       accessibilityHint="Reads the longer words"
-      onPress={onMore}
+      onPress={() => {
+        buzz('tap');
+        onMore();
+      }}
       style={({ pressed }) => [style, pressed && { opacity: 0.85 }]}>
       {body}
     </Pressable>

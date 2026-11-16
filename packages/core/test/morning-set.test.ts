@@ -148,12 +148,13 @@ describe('what the other parts read', () => {
     expect(core.tonightOf(r2.days, r2.st, y)).toEqual({
       at: '22:30',
       r: 'Being ready for a real, honest relationship',
+      rs: ['Being ready for a real, honest relationship'],
       rAt: at(20, 7, 40),
       from: y,
       today: true,
     });
     expect(core.tonightOf(r2.days, r2.st, tk)).toMatchObject({ at: '22:30', from: y, today: false });
-    expect(core.tonightOf(r2.days, r2.st, '2026-10-30')).toEqual({ at: '22:30', r: null, rAt: null, from: null, today: false });
+    expect(core.tonightOf(r2.days, r2.st, '2026-10-30')).toEqual({ at: '22:30', r: null, rs: [], rAt: null, from: null, today: false });
   });
   it('mornings set, in a row, and free nights', () => {
     expect(core.morningsSet(r2.days, '2026-10-14', tk)).toBe(2);
@@ -203,5 +204,57 @@ describe('the words', () => {
     expect(core.tonightLine({ waits: true, habit: 'alcohol' })).toBe('Phone down at');
     expect(core.tonightLine({ waits: true, habit: 'porn' })).toBe('Adult sites wait from');
     expect(core.morningHello(at(21, 7))).toBe('Good morning · Wednesday');
+  });
+});
+
+describe("tonight's reason, chosen on Today", () => {
+  it('is tonight’s reason without setting the morning, and the morning page starts on it', () => {
+    const r: Days = core.pickTonightReason({}, tk, 'Doing my best work', at(21, 8));
+    expect(core.morningDue(r, st, tk, at(21, 9))).toBe(true);
+    expect(core.tonightOf(r, st, tk)).toMatchObject({ r: 'Doing my best work', from: tk, today: false });
+    expect(core.morningReasons(r, st, tk)[0]).toBe('Doing my best work');
+    /* set later in the morning, the morning's own choice is the one kept */
+    const set = core.setTonight(r, st, tk, { r: 'Being ready for a real, honest relationship', nt: '23:00' }, at(21, 10));
+    expect(core.tonightOf(set.days, set.st, tk)).toMatchObject({ r: 'Being ready for a real, honest relationship', today: true, at: '23:00' });
+    /* chosen again on Today after the morning was set: the new one holds, and the morning stays set */
+    const again = core.pickTonightReason(set.days, tk, 'Doing my best work', at(21, 20));
+    expect(core.tonightOf(again, set.st, tk)).toMatchObject({ r: 'Doing my best work', today: true, at: '23:00' });
+    expect(core.pickTonightReason({}, tk, '  ')).toEqual({});
+  });
+});
+
+describe('tonight chosen fresh, several reasons (the owner, November 15, 2026)', () => {
+  it('a record from before, with one reason, reads as a list of one', () => {
+    const d: Days = { [tk]: core.normDay({ d: tk, events: [], checkin: null, p: { ms: { at: 5, r: 'Doing my best work', set: 5 } }, u: 5 } as never, tk) };
+    expect(core.morningOf(d[tk])?.rs).toEqual(['Doing my best work']);
+    expect(core.tonightOf(d, st, tk).rs).toEqual(['Doing my best work']);
+  });
+  it('Set tonight keeps every reason picked, the first as r', () => {
+    const r = core.setTonight({}, st, tk, { rs: ['Doing my best work', 'My daughter', 'doing my best work'], nt: '23:15' }, at(21, 7));
+    const ms = core.morningOf(r.days[tk])!;
+    expect(ms.rs).toEqual(['Doing my best work', 'My daughter']);
+    expect(ms.r).toBe('Doing my best work');
+    expect(ms.nt).toBe('23:15');
+    expect(r.st.nightAt).toBe('23:15');
+  });
+  it('the page starts with nothing picked, so tonight is chosen that morning', () => {
+    const r1 = core.setTonight({}, st, y, { rs: ['Doing my best work'], nt: '22:00' }, at(20, 7));
+    expect(core.morningPicksStart(r1.days, tk)).toEqual([]);
+    /* last time's come first in the list, still all offered */
+    const list = core.morningReasons(r1.days, r1.st, tk);
+    expect(list[0]).toBe('Doing my best work');
+    expect(list).toContain('Being ready for a real, honest relationship');
+  });
+  it('offers every reason, and the ones the person wrote', () => {
+    const many = core.keepOwn(core.normSettings({ ...st, reasons: ['A', 'B', 'C', 'D'] }), 'reason', 'My daughter');
+    expect(core.morningReasons({}, many, tk)).toEqual(['A', 'B', 'C', 'D', 'My daughter']);
+  });
+  it('Today picks and puts down reasons, several at once', () => {
+    let d = core.toggleTonightReason({}, st, tk, 'A', 1);
+    d = core.toggleTonightReason(d, st, tk, 'B', 2);
+    expect(core.tonightOf(d, st, tk).rs).toEqual(['A', 'B']);
+    d = core.toggleTonightReason(d, st, tk, 'a', 3);
+    expect(core.tonightOf(d, st, tk).rs).toEqual(['B']);
+    expect(core.morningPicksStart(d, tk)).toEqual(['B']);
   });
 });

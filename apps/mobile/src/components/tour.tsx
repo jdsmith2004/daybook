@@ -3,7 +3,8 @@
    with Next under the words, so the whole tour is one thumb. It ends on the lesson card, glowing, so the next step is plain.
 
    Care is never locked: SOS is tappable on every step (it ends the tour and opens SOS), and on the steps that point at a part,
-   tapping the part itself opens it. The X skips the tour for good. With Reduce Motion on, the spotlight moves without gliding and
+   tapping the part itself opens it. The X skips the tour for good. A step can offer a quiet Later (Walk it through's unlock): the
+   flame answers where the part waits, and the dim lifts by itself. With Reduce Motion on, the spotlight moves without gliding and
    nothing pulses; with VoiceOver, each step is read as it comes and every part is a button. */
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -24,6 +25,7 @@ import { initialWindowMetrics, useSafeAreaInsets } from 'react-native-safe-area-
 import Svg, { Path } from 'react-native-svg';
 
 import { BigFlame } from '@/components/big-flame';
+import { Quiet } from '@/components/lesson-parts';
 import { Next } from '@/components/lx';
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
@@ -43,18 +45,32 @@ interface Step {
   btn?: string;
   /** the main button does this instead of going on (the last step's lesson) */
   go?: () => void;
+  /** a quiet Later under the main button: the flame says this over the lit part, then the tour fades out by itself */
+  later?: string;
 }
 
 /** what tapping a lit part does: it opens, as it would on Today */
 const OPEN: Partial<Record<SpotKey, { label: string; go: () => void }>> = {
-  log: { label: 'Already happened. Log what happened.', go: () => router.push('/log') },
+  log: { label: 'Log a slip.', go: () => router.push('/log') },
   trail: { label: 'Walk it through.', go: () => router.push('/trail') },
   sos: { label: 'SOS. Help with an urge.', go: () => router.push('/sos') },
   learn: { label: 'Learn. Your lessons.', go: () => router.navigate('/learn') },
 };
 
 /** the steps, from the top of the page down, then the tab bar, and last the lesson (only while lesson 1 waits on the page) */
-export function tourSteps({ lessonDone, lessonId, walk = true }: { lessonDone: boolean; lessonId: string | null; walk?: boolean }): Step[] {
+export function tourSteps({
+  lessonDone: done,
+  lessonId,
+  walk = true,
+  again = false,
+}: {
+  lessonDone: boolean;
+  lessonId: string | null;
+  walk?: boolean;
+  /** played again from More: the plain words, not the first lesson's */
+  again?: boolean;
+}): Step[] {
+  const lessonDone = done && !again;
   const steps: Step[] = [
     {
       at: ['sky'],
@@ -62,7 +78,7 @@ export function tourSteps({ lessonDone, lessonId, walk = true }: { lessonDone: b
         ? 'Lesson one, done, and your flame felt it. Each morning, tell me how the night went, and I keep growing.'
         : 'This is your flame. Each morning, tell me how the night went. Every honest answer and every lesson makes me grow.',
     },
-    { at: ['log'], say: 'Slipped? Tap Already happened and tell it straight. No shame here: a slip is something we learn from.' },
+    { at: ['log'], say: 'Slipped? Tap Log a slip and tell it straight. No shame here: a slip is something we learn from.' },
     { at: ['trail'], say: 'Planning a slip, or the urge keeps coming back? Walk it through, and we talk it down together.' },
     { at: ['sos'], say: 'When an urge hits, tap SOS. I will help you ride it out, day or night.' },
     {
@@ -76,7 +92,7 @@ export function tourSteps({ lessonDone, lessonId, walk = true }: { lessonDone: b
       steps.findIndex((x) => x.at[0] === 'trail'),
       1,
     );
-  if (!lessonDone && lessonId)
+  if (!done && lessonId)
     steps.push({
       at: ['lesson'],
       say: 'And this is your lesson for today. It takes about two minutes. Start here.',
@@ -101,6 +117,9 @@ export function walkSteps(): Step[] {
       say: 'It stays right here on Today, and in SOS. Want to try it now?',
       btn: 'Try it now',
       go: () => router.push('/trail'),
+      /* not now (the owner, November 14, 2026: "it should give me a later option"): unlike the X, Later answers, and the flame
+         shows where it waits before the dim lifts on its own */
+      later: 'Any time. It waits right here for you.',
     },
   ];
 }
@@ -173,8 +192,13 @@ export function FirstTour({
   const still = useReducedMotion();
   const [i, setI] = useState(0);
   /* the parts lit on this step, where they are */
-  const [lit, setLit] = useState<{ i: number; parts: { k: SpotKey; r: Rect }[] } | null>(null);
+  /* (follow: the same step, its parts found again where the page has moved them: the hole glides there, nothing is said again) */
+  const [lit, setLit] = useState<{ i: number; parts: { k: SpotKey; r: Rect }[]; follow?: boolean } | null>(null);
   const [panelH, setPanelH] = useState(260);
+  /* the panel's height as laid out now: a step's words change it, and the page moves by it before the state catches up */
+  const panelHRef = useRef(panelH);
+  /* Later was tapped: the flame's last words, over the lit part, before the tour fades out */
+  const [bye, setBye] = useState<string | null>(null);
   const [sosAt, setSosAt] = useState<Rect | null>(null);
   const ended = useRef(false);
   const step = steps[i];
@@ -185,10 +209,13 @@ export function FirstTour({
   holeRef.current = hole;
   const fade = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;
-  const say = useRef(new Animated.Value(1)).current;
+  /* the words wait, unseen, until the first spotlight has landed: shown at once and then started again as the part was lit, they
+     flickered in twice as setup handed over to Today (the owner, November 14, 2026: "it like glitches right before it gets to it") */
+  const say = useRef(new Animated.Value(0)).current;
 
   /* the panel: just over the tab bar */
-  const barTop = Platform.OS === 'ios' ? iosBarBottom(inset.bottom) + IOS_BAR.h + 16 : inset.bottom + 74;
+  /* off iOS, SOS rises out of the bar: a quiet Later under the main button keeps clear of it, so a thumb meant for Later never opens SOS */
+  const barTop = Platform.OS === 'ios' ? iosBarBottom(inset.bottom) + IOS_BAR.h + 16 : inset.bottom + 74 + (step?.later ? 24 : 0);
   const panelTop = H - barTop - panelH;
 
   const end = (then?: () => void) => {
@@ -198,10 +225,29 @@ export function FirstTour({
     then?.();
   };
 
+  /* Later: the flame answers, the buttons step away, and the dim lifts by itself; any tap ends it at once */
   useEffect(() => {
-    Animated.timing(fade, { toValue: 1, duration: still ? 0 : 260, useNativeDriver: false }).start();
+    if (!bye) return;
+    AccessibilityInfo.announceForAccessibility?.(bye);
+    if (!still) {
+      say.setValue(0);
+      Animated.spring(say, { toValue: 1, friction: 6, tension: 90, useNativeDriver: NATIVE }).start();
+    }
+    const t = setTimeout(() => Animated.timing(fade, { toValue: 0, duration: still ? 0 : 320, useNativeDriver: false }).start(() => end()), 2200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bye]);
+
+  useEffect(() => {
     rectOf('sos', W, H, inset.bottom).then(setSosAt);
-  }, [fade, still, W, H, inset.bottom]);
+  }, [W, H, inset.bottom]);
+  /* the dim comes in once, with its hole already on the first part and the words rising with it: one move from Today into the tour,
+     never a dark screen with nothing lit and then a jump */
+  const isLit = !!lit;
+  useEffect(() => {
+    if (isLit) Animated.timing(fade, { toValue: 1, duration: still ? 0 : 260, useNativeDriver: false }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLit]);
 
   /* each step: find its parts, move the page so they sit clear of the words, then light them */
   useEffect(() => {
@@ -212,6 +258,9 @@ export function FirstTour({
       return got.filter((x): x is { k: SpotKey; r: Rect } => !!x.r);
     };
     (async () => {
+      /* wait for this step's words to be laid out, so the page moves by the panel as it really is */
+      await new Promise((r) => setTimeout(r, 60));
+      if (!live) return;
       let parts = await find();
       if (!live) return;
       if (!parts.length) {
@@ -222,15 +271,23 @@ export function FirstTour({
       }
       const u = union(parts.map((x) => x.r));
       const onPage = step.at.every((k) => k !== 'sos' && k !== 'learn');
-      const room = panelTop - 20;
+      const room = H - barTop - panelHRef.current - 20;
       let dy = 0;
       if (onPage && u.y + u.h > room) dy = u.y + u.h - room;
       if (onPage && step.at[0] === 'sky' && u.y < 0) dy = u.y;
       if (dy && scrollBy(dy)) {
-        await new Promise((r) => setTimeout(r, 380));
-        if (!live) return;
-        parts = await find();
-        if (!live || !parts.length) return;
+        /* the page glides: measure until the part has stopped moving (a smooth scroll takes longer on some phones and browsers),
+           so the spotlight lands on the part and not where it was a moment ago */
+        let was = Infinity;
+        for (let n = 0; n < 16; n++) {
+          await new Promise((r) => setTimeout(r, n ? 90 : 240));
+          if (!live) return;
+          parts = await find();
+          if (!live || !parts.length) return;
+          const y = union(parts.map((x) => x.r)).y;
+          if (Math.abs(y - was) < 0.5) break;
+          was = y;
+        }
       }
       setLit({ i, parts });
     })();
@@ -240,9 +297,79 @@ export function FirstTour({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i, W, H]);
 
+  /* while a step is open, the lit part is found again and again: Today can still move under the tour (a card settling as it comes in, the
+     page going back to the top on return, a scroll), and the spotlight follows it rather than staying where the part was a moment ago.
+     A part that has slid out from above the flame's words is brought back into view (the owner, November 14, 2026: "if i scroll when
+     onboarding happens it just misses where i'm at and won't let me scroll to see what it should be looking at"). */
+  const litRef = useRef(lit);
+  litRef.current = lit;
+  const lastPull = useRef(0);
+  useEffect(() => {
+    if (!step || !lit || lit.i !== i) return;
+    const onPage = step.at.every((k) => k !== 'sos' && k !== 'learn');
+    if (!onPage) return;
+    let live = true;
+    const look = async () => {
+      const got = await Promise.all(step.at.map(async (k) => ({ k, r: await rectOf(k, W, H, inset.bottom) })));
+      if (!live) return;
+      const parts = got.filter((x): x is { k: SpotKey; r: Rect } => !!x.r);
+      const was = litRef.current;
+      if (!parts.length || !was || was.i !== i) return;
+      const a = union(parts.map((x) => x.r));
+      const b = union(was.parts.map((x) => x.r));
+      if (Math.abs(a.x - b.x) < 1.5 && Math.abs(a.y - b.y) < 1.5 && Math.abs(a.w - b.w) < 1.5 && Math.abs(a.h - b.h) < 1.5) return;
+      setLit({ i, parts, follow: true });
+      /* out of sight, or under the words: the page brings it back, at most once in a while so it never fights a person's own scroll */
+      const room = H - barTop - panelHRef.current - 20;
+      const top = inset.top + 56;
+      const dy = a.y + a.h > room ? a.y + a.h - room : a.y < top ? a.y - top : 0;
+      if (dy && Date.now() - lastPull.current > 1500) {
+        lastPull.current = Date.now();
+        scrollBy(dy);
+      }
+    };
+    const timer = setInterval(look, 220);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lit?.i, i, W, H, barTop]);
+
+  /* on the web, a mouse wheel or a trackpad over the dim scrolls Today under it (a phone's finger on the dim still means Next), and the
+     spotlight follows (above) */
+  const root = useRef<ViewInstance>(null);
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const el = root.current as unknown as HTMLElement | null;
+    if (!el || typeof el.addEventListener !== 'function') return;
+    let acc = 0;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const wheel = (e: WheelEvent) => {
+      e.preventDefault();
+      acc += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      if (t) return;
+      t = setTimeout(() => {
+        t = null;
+        const d = acc;
+        acc = 0;
+        /* a person's own scroll: the page is left where they put it for a moment */
+        lastPull.current = Date.now();
+        scrollBy(d);
+      }, 80);
+    };
+    el.addEventListener('wheel', wheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', wheel);
+      if (t) clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /* light the parts: the hole glides to them, and the words come in */
   useEffect(() => {
     if (!lit || lit.i !== i) return;
+    const follow = !!lit.follow;
     const u = union(lit.parts.map((x) => x.r));
     const round = lit.parts.length === 1 && lit.parts[0].k === 'sos';
     const to = { x: u.x - PAD, y: u.y - PAD, w: u.w + PAD * 2, h: u.h + PAD * 2 };
@@ -256,14 +383,17 @@ export function FirstTour({
       const t0 = Date.now();
       const ease = Easing.out(Easing.cubic);
       const tick = () => {
-        const k = ease(Math.min(1, (Date.now() - t0) / 420));
+        const k = ease(Math.min(1, (Date.now() - t0) / (follow ? 220 : 420)));
         const mix = (a: number, b: number) => a + (b - a) * k;
         setHole({ x: mix(from.x, goal.x), y: mix(from.y, goal.y), w: mix(from.w, goal.w), h: mix(from.h, goal.h), r: mix(from.r, goal.r) });
         if (k < 1) raf = requestAnimationFrame(tick);
       };
       raf = requestAnimationFrame(tick);
     }
-    if (!still) {
+    /* following the part as the page moves: the words stay as they are, and nothing is read again */
+    if (follow) return () => cancelAnimationFrame(raf);
+    if (still) say.setValue(1);
+    else {
       say.setValue(0);
       Animated.spring(say, { toValue: 1, friction: 6, tension: 90, useNativeDriver: NATIVE }).start();
     }
@@ -292,6 +422,7 @@ export function FirstTour({
   const last = i >= steps.length - 1;
   const next = () => {
     buzz('tap');
+    if (bye) return end();
     if (step?.go) return end(step.go);
     if (last) return end();
     setI(i + 1);
@@ -299,10 +430,20 @@ export function FirstTour({
   const shown = lit && lit.i === i ? lit.parts : [];
   const dots = useMemo(() => steps.map((_, j) => j), [steps]);
   if (!step) return null;
+  const words = bye ?? step.say;
+
+  /* where the panel sits: low, over the tab bar, unless the lit part is still under it (the page could not move far enough, on a
+     short phone or a short Today). Then it sits just above the lit part, so the part is never under the flame's words (the owner,
+     November 14, 2026: "walk it through get's covered up"). */
+  const litU = shown.length ? union(shown.map((x) => x.r)) : null;
+  const above =
+    litU && step.at.every((k) => k !== 'sos' && k !== 'learn') && litU.y + litU.h + PAD > panelTop - 4 && litU.y - PAD - 12 - panelH >= inset.top + 60
+      ? litU.y - PAD - 12 - panelH
+      : null;
 
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={() => end()}>
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade }]} accessibilityViewIsModal>
+      <Animated.View ref={root} style={[StyleSheet.absoluteFill, { opacity: fade }]} accessibilityViewIsModal>
         {/* the dim, with its hole; a tap on the dim goes on */}
         <Pressable accessible={false} style={StyleSheet.absoluteFill} onPress={next}>
           <Svg width={W} height={H} style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -371,35 +512,59 @@ export function FirstTour({
         </Pressable>
 
         {/* the flame and what it says, low, with Next under it */}
-        <View style={[s.panel, { bottom: barTop }]} onLayout={(e) => setPanelH(e.nativeEvent.layout.height)} pointerEvents="box-none">
+        <View
+          style={[s.panel, above != null ? { top: above } : { bottom: barTop }]}
+          onLayout={(e) => {
+            panelHRef.current = e.nativeEvent.layout.height;
+            setPanelH(e.nativeEvent.layout.height);
+          }}
+          pointerEvents="box-none">
           <Animated.View
             style={[
               s.talk,
               {
-                opacity: say,
+                /* the spring overshoots for the rise; the words only fade in, with no dip as it settles */
+                opacity: say.interpolate({ inputRange: [0, 0.7, 1], outputRange: [0, 1, 1], extrapolate: 'clamp' }),
                 transform: [{ translateY: say.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }],
               },
             ]}>
             <View style={s.flame} accessible={false} importantForAccessibility="no-hide-descendants">
               <BigFlame level={level} size={FLAME} noLand label="" />
             </View>
-            <View ref={bubble} accessible accessibilityLabel={step.say} style={[s.bubble, { backgroundColor: BUBBLE }]}>
+            <View ref={bubble} accessible accessibilityLabel={words} style={[s.bubble, { backgroundColor: BUBBLE }]}>
               <View style={[s.tail, { backgroundColor: BUBBLE }]} />
-              {step.eb ? (
+              {step.eb && !bye ? (
                 <View style={s.eb}>
                   <Icon name="sparkle" size={16} color={c.accentText} />
                   <Text style={[s.ebT, { color: c.accentText }]}>{step.eb}</Text>
                 </View>
               ) : null}
-              <Text style={s.sayT}>{step.say}</Text>
+              <Text style={s.sayT}>{words}</Text>
             </View>
           </Animated.View>
-          <View style={s.dots} accessible accessibilityLabel={'Step ' + (i + 1) + ' of ' + steps.length}>
-            {dots.map((j) => (
-              <View key={j} style={[s.dot, { backgroundColor: j <= i ? c.sun : 'rgba(255,255,255,0.28)', width: j === i ? 22 : 8 }]} />
-            ))}
+          {/* after Later the dots and buttons step away, keeping their room, so the flame's words stay where they were */}
+          <View
+            style={{ gap: 12, opacity: bye ? 0 : 1 }}
+            pointerEvents={bye ? 'none' : 'box-none'}
+            importantForAccessibility={bye ? 'no-hide-descendants' : 'auto'}>
+            <View style={s.dots} accessible accessibilityLabel={'Step ' + (i + 1) + ' of ' + steps.length}>
+              {dots.map((j) => (
+                <View key={j} style={[s.dot, { backgroundColor: j <= i ? c.sun : 'rgba(255,255,255,0.28)', width: j === i ? 22 : 8 }]} />
+              ))}
+            </View>
+            <Next label={step.btn || (last ? 'Got it' : 'Next')} noIcon={!!step.btn || last} onPress={next} />
+            {step.later ? (
+              <View style={s.later}>
+                <Quiet
+                  label="Later"
+                  onPress={() => {
+                    buzz('tap');
+                    setBye(step.later!);
+                  }}
+                />
+              </View>
+            ) : null}
           </View>
-          <Next label={step.btn || (last ? 'Got it' : 'Next')} noIcon={!!step.btn || last} onPress={next} />
         </View>
       </Animated.View>
     </Modal>
@@ -425,6 +590,7 @@ const s = StyleSheet.create({
   sayT: { fontFamily: font.bodySemi, fontSize: 17, lineHeight: 23, color: PAPER_INK },
   eb: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 },
   ebT: { fontFamily: font.bodyBold, fontSize: 15, lineHeight: 20 },
+  later: { marginTop: -8 },
   dots: { flexDirection: 'row', gap: 6, alignSelf: 'center' },
   dot: { height: 8, borderRadius: 4 },
 });

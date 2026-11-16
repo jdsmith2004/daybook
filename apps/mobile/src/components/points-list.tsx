@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 
 import { T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
 export const POINTS_LIST: [string, string][] = [
@@ -50,7 +51,10 @@ export function PointsList() {
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: all }}
-        onPress={() => setAll(!all)}
+        onPress={() => {
+          buzz('tap');
+          setAll(!all);
+        }}
         hitSlop={8}
         style={{ minHeight: 44, justifyContent: 'center' }}>
         <T v="small" style={{ fontFamily: font.bodySemi, color: c.accentText }}>

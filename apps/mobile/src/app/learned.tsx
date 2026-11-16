@@ -1,6 +1,7 @@
 /* What I have learned: each finished lesson's takeaway with my notes and picks, what I wrote at the checkpoints, and "Copy it
    all as text". It lived in My plan as the Learned part until November 2026; it sits with Learn now, where it is made. */
-import { LCHECKS, lcheckNo, lessonCount, lessonNo, lessonTo, lessonWalk, LESSONS, lessonsDone, lwriteOf, playbookText } from '@daybook/core';
+import { LCHECKS, lcheckNo, lessonCount, lessonNo, lessonWalk, LESSONS, lessonsDone, lwriteOf, playbookText } from '@daybook/core';
+import { lessonTo } from '@daybook/core/lesson-content';
 import { Redirect, router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -23,7 +24,7 @@ export default function Learned() {
   /* each checkpoint's writing under its own record, shown in the path's order and with the number the path gives it */
   const wrote = LCHECKS.map((C, k) => ({ n: k + 1, C, a: lwriteOf(st, k + 1) }))
     .filter((x) => x.a.some((t) => t.trim()))
-    .sort((a, b) => lcheckNo(a.n, st) - lcheckNo(b.n, st));
+    .sort((a, b) => lcheckNo(a.n, st, snap.days) - lcheckNo(b.n, st, snap.days));
   const toLearn = () => router.navigate('/learn');
   const copy = () => {
     const text = playbookText(
@@ -32,7 +33,7 @@ export default function Learned() {
       LESSONS,
       (id) => LESSONS.findIndex((L) => L.id === id),
       LCHECKS,
-      (n) => lcheckNo(n, st),
+      (n) => lcheckNo(n, st, snap.days),
     );
     copyText(text, say);
   };
@@ -53,7 +54,7 @@ export default function Learned() {
               {j > 0 ? <Hair /> : null}
               <View style={{ gap: 4 }}>
                 <T v="small" tone="muted" style={{ fontFamily: font.bodySemi }}>
-                  {lessonNo(L, st) ? 'Lesson ' + lessonNo(L, st) + ' · ' : ''}
+                  {lessonNo(L, st, snap.days) ? 'Lesson ' + lessonNo(L, st, snap.days) + ' · ' : ''}
                   {L.title}
                 </T>
                 <T>{L.key}</T>
@@ -72,7 +73,7 @@ export default function Learned() {
           wrote.map((x) => (
             <View key={x.n} style={{ gap: 4 }}>
               <T v="label">
-                Checkpoint {lcheckNo(x.n, st)}: {x.C.t}
+                Checkpoint {lcheckNo(x.n, st, snap.days)}: {x.C.t}
               </T>
               {x.C.q.map((q, i) => (x.a[i] && x.a[i].trim() ? <Note key={i} label={q} text={x.a[i]} /> : null))}
             </View>

@@ -5,9 +5,10 @@ import { fmtDate, fmtHour, type DayKey } from '@daybook/core';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
-import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
 import { Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { NATIVE, useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
@@ -20,7 +21,7 @@ export function useChartColors() {
 /** whether a chart has been reached yet: on Pattern's cards a chart waits off to the side and grows when its card comes in */
 export const ChartOn = createContext(true);
 /** 0 to 1, once, when the chart is reached (at once with Reduce Motion on) */
-export function useGrow(delay: number, duration = 650) {
+export function useGrow(delay: number, duration = 650, native = NATIVE) {
   const on = useContext(ChartOn);
   const reduce = useReducedMotion();
   const v = useRef(new Animated.Value(0)).current;
@@ -30,11 +31,43 @@ export function useGrow(delay: number, duration = 650) {
       return;
     }
     if (!on) return;
-    const a = Animated.timing(v, { toValue: 1, duration, delay, easing: Easing.out(Easing.cubic), useNativeDriver: NATIVE });
+    const a = Animated.timing(v, { toValue: 1, duration, delay, easing: Easing.out(Easing.cubic), useNativeDriver: native });
     a.start();
     return () => a.stop();
-  }, [on, reduce, v, delay, duration]);
+  }, [on, reduce, v, delay, duration, native]);
   return v;
+}
+
+/** a number that counts up from 0 to n as the chart is reached (n at once with Reduce Motion on), and on to a new n when it changes */
+export function useCountUp(n: number, delay = 0, duration = 900) {
+  const v = useGrow(delay, duration, false);
+  const [shown, setShown] = useState(0);
+  const from = useRef(0);
+  const to = useRef(n);
+  useEffect(() => {
+    const id = v.addListener(({ value }) => setShown(from.current + (to.current - from.current) * value));
+    return () => v.removeListener(id);
+  }, [v]);
+  useEffect(() => {
+    if (to.current === n) return;
+    /* the number changed while on screen: count from where it stands to the new one */
+    from.current = shown;
+    to.current = n;
+    v.setValue(0);
+    Animated.timing(v, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [n, v]);
+  return shown;
+}
+
+/** a column that rises from its floor when the chart is reached, its top rounded */
+export function Grow({ h, w, delay, r = 4, style, children }: { h: number; w: number; delay: number; r?: number; style?: object; children: ReactNode }) {
+  const v = useGrow(delay);
+  return (
+    <View style={[{ width: w, height: h, overflow: 'hidden', borderTopLeftRadius: r, borderTopRightRadius: r }, style]}>
+      <Animated.View style={{ flex: 1, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [h, 0] }) }] }}>{children}</Animated.View>
+    </View>
+  );
 }
 
 /** a nice top and step for an axis from 0 */
@@ -141,42 +174,34 @@ export function DayColumns({
   const bw = barW(step);
   const X = (i: number) => L + step * (i + 0.5);
   const px = ih / sc.top;
+  const base = T0 + ih;
   return (
     <View onLayout={onLayout} accessible accessibilityLabel={label + '. The numbers are in the table below.'}>
       {w ? (
-        <Svg width={w} height={height}>
-          {grid(L, L + iw, T0, ih, sc, k.grid, k.ax)}
+        <View style={{ width: w, height }}>
+          <Svg width={w} height={height}>
+            {grid(L, L + iw, T0, ih, sc, k.grid, k.ax)}
+            {xLabels(keys, X, height - 6, iw, L, tk, k.ax)}
+          </Svg>
+          {/* each column rises from the floor in turn, left to right, as the chart comes up */}
           {rows.map((r, i) => {
-            const x = X(i) - bw / 2;
-            const base = T0 + ih;
-            const out: ReactNode[] = [];
-            const segs =
-              r.b == null
-                ? [[r.a, k.acc]]
-                : [
-                    [r.a, k.rode],
-                    [r.b, k.slip],
-                  ];
-            let cum = 0;
-            const parts = segs.filter((q) => (q[0] as number) > 0);
-            parts.forEach((q, j) => {
-              const v = q[0] as number;
-              const top = base - (cum + v) * px;
-              const h = v * px - (j ? 2 : 0);
-              cum += v;
-              if (h <= 0.5) return;
-              out.push(
-                j === parts.length - 1 ? (
-                  <Path key={j} d={topPath(x, top, bw, h, 4)} fill={q[1] as string} />
-                ) : (
-                  <Rect key={j} x={x} y={top} width={bw} height={h} fill={q[1] as string} />
-                ),
-              );
-            });
-            return <G key={i}>{out}</G>;
+            const a = r.a * px;
+            const b = (r.b || 0) * px;
+            const th = a + b;
+            if (th <= 0.5) return null;
+            return (
+              <Grow key={i} h={th} w={bw} delay={40 + i * (n > 10 ? 18 : 45)} style={{ position: 'absolute', left: X(i) - bw / 2, top: base - th }}>
+                <View style={{ flex: 1 }}>
+                  {b > 0.5 ? (
+                    <View style={{ height: b - (a > 0.5 ? 2 : 0), backgroundColor: k.slip, borderTopLeftRadius: 4, borderTopRightRadius: 4 }} />
+                  ) : null}
+                  {b > 0.5 && a > 0.5 ? <View style={{ height: 2 }} /> : null}
+                  {a > 0.5 ? <View style={{ flex: 1, backgroundColor: r.b == null ? k.acc : k.rode }} /> : null}
+                </View>
+              </Grow>
+            );
           })}
-          {xLabels(keys, X, height - 6, iw, L, tk, k.ax)}
-        </Svg>
+        </View>
       ) : (
         <View style={{ height }} />
       )}
@@ -187,6 +212,7 @@ export function DayColumns({
 /** a small trend line for a stat tile: no axes, the latest day marked */
 export function Spark({ vals, label }: { vals: (number | null)[]; label: string }) {
   const k = useChartColors();
+  const v = useGrow(80, 700);
   const w = 120;
   const h = 30;
   const n = vals.length;
@@ -201,11 +227,18 @@ export function Spark({ vals, label }: { vals: (number | null)[]; label: string 
     .map((v, i) => [v, i] as [number | null, number])
     .filter((x) => x[0] != null)
     .pop();
+  /* the line is drawn left to right: a window slides over it, and the line slides the other way inside, so it stays put */
+  const slide = v.interpolate({ inputRange: [0, 1], outputRange: [-w, 0] });
+  const back = v.interpolate({ inputRange: [0, 1], outputRange: [w, 0] });
   return (
-    <Svg width={w} height={h} accessibilityLabel={label}>
-      {d ? <Path d={d} stroke={k.acc} strokeWidth={2} fill="none" strokeLinecap="round" /> : null}
-      {last ? <Circle cx={X(last[1])} cy={Y(last[0]!)} r={3.5} fill={k.acc} /> : null}
-    </Svg>
+    <Animated.View style={{ width: w, height: h, overflow: 'hidden', transform: [{ translateX: slide }] }}>
+      <Animated.View style={{ transform: [{ translateX: back }] }}>
+        <Svg width={w} height={h} accessibilityLabel={label}>
+          {d ? <Path d={d} stroke={k.acc} strokeWidth={2} fill="none" strokeLinecap="round" /> : null}
+          {last ? <Circle cx={X(last[1])} cy={Y(last[0]!)} r={3.5} fill={k.acc} /> : null}
+        </Svg>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -232,7 +265,14 @@ export function NumbersTable({ cap, head, rows }: { cap: string; head: string[];
   const [open, setOpen] = useState(false);
   return (
     <View>
-      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={s.tv}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => {
+          buzz('tap');
+          setOpen(!open);
+        }}
+        style={s.tv}>
         <Text style={{ fontFamily: font.bodySemi, fontSize: 13, color: c.accentText }}>{open ? 'Hide the numbers' : 'Show the numbers'}</Text>
         <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
           <Icon name="next" size={16} color={c.accentText} />

@@ -2,7 +2,7 @@
    morning on the line, who starts with what, faith only when it is on, and the finish line after a clean week. */
 import { describe, expect, it } from 'vitest';
 import { addDays, normSettings } from '../src/legacy/core.js';
-import { phoneAway, stopTiles } from '../src/day';
+import { openTile, phoneAway, setupNight, stopTiles } from '../src/day';
 import { dayFeelDue } from '../src/day-feel';
 import { answerNight, morningReasons, setTonight } from '../src/morning-set';
 import { addEvent } from '../src/mutate';
@@ -17,8 +17,10 @@ import {
   goodNightText,
   goodNightWords,
   morningReply,
+  nightPage,
   nightWaitLine,
   skyPhase,
+  morningKnownLine,
 } from '../src/two-moments';
 import type { Days } from '../src/types';
 
@@ -27,6 +29,20 @@ const st = normSettings({ start: '2026-10-01', day1: '2026-10-08', screensOff: '
 const at = (h: number, m = 0, k = tk) => new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10), h, m).getTime();
 
 describe('the night hour', () => {
+  it('is not the night page on the night setup is finished, until a lesson is done, so lesson 1 is on Today', () => {
+    const fresh = { ...st, start: tk };
+    expect(setupNight({}, fresh, tk)).toBe(true);
+    expect(nightPage({}, fresh, tk, at(22, 45))).toBe(false);
+    /* and lesson 1 is the open stop, so Today's big card and the tour's last step are the lesson, not Phone to bed */
+    expect(openTile({}, fresh, tk, at(22, 45))?.k).toBe('lesson');
+    /* once lesson 1 is done that night, the night page is back */
+    const read: Days = { [tk]: { d: tk, events: [], checkin: null, p: { ls: ['l1'] } } as unknown as Days[string] };
+    expect(nightPage(read, fresh, tk, at(22, 45))).toBe(true);
+    /* and the next night is an ordinary night, lesson or not */
+    expect(nightPage({}, fresh, addDays(tk, 1), at(22, 45, addDays(tk, 1)))).toBe(true);
+    /* anyone who set up on an earlier day is unchanged */
+    expect(nightPage({}, st, tk, at(22, 45))).toBe(true);
+  });
   it('starts at tonight’s time and lasts until the new day', () => {
     expect(afterNightHour({}, st, tk, at(22, 29))).toBe(false);
     expect(afterNightHour({}, st, tk, at(22, 30))).toBe(true);
@@ -137,7 +153,7 @@ describe('faith, only when it is on', () => {
   const withFaith = (faith: string) => normSettings({ ...st, reasons: ['A', 'B', 'C'], onb: { n: 1, at: 1, a: { faith }, hist: [] } });
   it('is a morning reason when faith plays a part', () => {
     expect(faithOn(withFaith('big'))).toBe(true);
-    expect(morningReasons({}, withFaith('some'), tk)).toEqual(['A', 'My faith', 'B']);
+    expect(morningReasons({}, withFaith('some'), tk)).toEqual(['A', 'My faith', 'B', 'C']);
   });
   it('is nowhere when it does not', () => {
     expect(faithOn(withFaith('no'))).toBe(false);
@@ -171,5 +187,15 @@ describe('the new setup starts fresh', () => {
     const s = obBegin({} as never, tk, 1);
     expect(s.routine.checkin).toBe(false);
     expect(s.dayFeel).toBe(false);
+  });
+});
+
+describe('last night already told: straight to tonight', () => {
+  it('says it with hope, no contractions, no blame', () => {
+    for (const n of ['free', 'slip'] as const) {
+      const w = morningKnownLine(n);
+      expect(w).not.toMatch(/n[’']t\b|[’'](re|ll|ve|m|d)\b/i);
+      expect(w).not.toMatch(/\b(fail|failed|bad|wrong|should|reset|lost|slip|slipped)\b/i);
+    }
   });
 });

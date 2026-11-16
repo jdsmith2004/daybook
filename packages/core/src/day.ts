@@ -56,7 +56,7 @@ export function windLine(st: Settings, leftToOff: number, p: Play | null | undef
 export function windWhen(st: Settings, leftToOff: number): string {
   const off = fmtClock(st.screensOff);
   if (leftToOff > 0 && leftToOff <= 600) return `Screens off at ${off} · in ${fmtLeft(leftToOff)}`;
-  if (leftToOff <= 0 && leftToOff > -300) return `Past ${off}. Goodnight still counts.`;
+  if (leftToOff <= 0 && leftToOff > -300) return `Past ${off}. Good night still counts.`;
   return `Screens off at ${off}`;
 }
 
@@ -219,6 +219,13 @@ export function stepSleep(days: Days, tk: DayKey, dd: number, now = Date.now()):
   );
   return withDay(days, tk, day);
 }
+/** the night setup is finished, before any lesson: Today stays the day page then, so lesson 1 (and the first tour's last step, "Start
+    lesson 1") is there and is the open stop; the night page is for the nights after, and for that night once a lesson is done (the owner, November 13, 2026:
+    "at nightime when i onboard it doesn't show a lesson or anything") */
+export function setupNight(days: Days, st: Settings, tk: DayKey): boolean {
+  return st.start === tk && !Object.values(days).some((d) => !!(d?.p?.ls?.length || d?.p?.lv?.length));
+}
+
 /* ---------- lessons first ---------- */
 /** the day's stops (legacy rhythm), with today's lesson the open one until it is done (docs/plan.md, "Lessons first", C1), or
     until the night opens: from then the wind-down is the open one, and an unread lesson steps aside and says "Still open" (the
@@ -236,7 +243,7 @@ export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): 
   const nowRel = (((nowLocal.getHours() * 60 + nowLocal.getMinutes() - rollMin) % 1440) + 1440) % 1440;
   if (night && night.started && nowRel - night.startRel < NIGHT_LONGEST_MIN) {
     if (sumDay(days[tk]).slipped) return { ...r, stops: r.stops.filter((x) => x.done || x.k === 'night'), cur: night.done ? null : 'night' };
-    if (!night.done) return r;
+    if (!night.done && !setupNight(days, st, tk)) return r;
   }
   const ls = r.stops.find((x) => x.k === 'lesson');
   if (!ls || ls.done || r.cur === 'lesson') return r;
@@ -253,7 +260,7 @@ export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): 
 /* ---------- the stops of Your day, as tiles ---------- */
 /* Each stop has the color of its full-screen moment (sky). The open one (cur) shows as a tile with a few words and its
    button; the others are one line each, a done one saying what was done. Every stop opens with one tap, at any time. */
-export type StopGo = 'lesson' | 'checkin' | 'wind' | 'reach' | 'journal' | 'morning';
+export type StopGo = 'lesson' | 'checkin' | 'wind' | 'reach' | 'journal' | 'morning' | 'review';
 export interface StopTile {
   k: string;
   state: RhythmStop['state'];
@@ -278,6 +285,8 @@ export interface StopTile {
   id?: string;
   /** the lesson waits behind a free account: opening it shows the sign-up */
   locked?: boolean;
+  /** the first Sunday review: its own page says what it is first (unlock.ts) */
+  intro?: boolean;
 }
 const NAME: Record<string, string> = { lesson: 'Lesson', evening: 'Evening', night: 'Good night', morning: 'Morning' };
 const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);

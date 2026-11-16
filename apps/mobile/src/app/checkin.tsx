@@ -19,6 +19,7 @@ import {
   gameCompute,
   goodnightOpens,
   healthHasNight,
+  levelOf,
   rateKeys,
   ratingOf,
   rhythm,
@@ -37,7 +38,7 @@ import { Text } from '@/components/text';
 
 import { Appear } from '@/components/appear';
 import { Field, Link } from '@/components/choices';
-import { CountUp } from '@/components/count-up';
+import { PointsInto } from '@/components/reward-kit';
 import { YesNo } from '@/components/form';
 import { Fold, GoingToBed, GoodnightButton, LoudFold, useGoodnight, WindFold, type Bed } from '@/components/goodnight';
 import { NightMiddle } from '@/components/night-flame';
@@ -53,6 +54,7 @@ import { close, closeAll } from '@/lib/nav';
 import { setReminderPrefs, useReminderPrefs } from '@/lib/prefs';
 import { allowReminders, remindersOffered } from '@/lib/reminders';
 import { useNights } from '@/lib/health';
+import { useReducedMotion } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { WORDS } from '@/lib/words';
 import { font, useTheme } from '@/lib/theme';
@@ -77,11 +79,12 @@ const HINT: Partial<Record<RateKey, string>> = {
 
 export default function Checkin() {
   const c = useTheme();
+  const reduce = useReducedMotion();
   const { snap, tk, now, update, say } = useStore();
   const prefs = useReminderPrefs();
   const goodnight = useGoodnight();
   const st = snap.settings;
-  const { k: kp } = useLocalSearchParams<{ k?: string }>();
+  const { k: kp, end: endQ } = useLocalSearchParams<{ k?: string; end?: string }>();
   const k = (kp && kp <= tk ? kp : tk) as DayKey;
   const tonight = k === tk;
   const [form, setForm] = useState<CheckinForm>(() => checkinFormOf(snap.days, k));
@@ -110,6 +113,22 @@ export default function Checkin() {
     };
   }, [k]);
 
+  /* the demo build (EXPO_PUBLIC_SHOTS=1) can open straight on the finish (?end=1), for the celebrations page. Above every early
+     return: a hook after one crashed Good night (the going-to-bed page renders fewer hooks) */
+  useEffect(() => {
+    if (process.env.EXPO_PUBLIC_SHOTS !== '1' || endQ !== '1' || !st) return;
+    const f = { ...form, md: 7, u: 3, s: 4 };
+    let text = '';
+    update((s0) => {
+      const days = saveCheckin(s0.days, k, f);
+      text = checkinSaveText(days, s0.settings!, k, tk);
+      return { ...s0, days };
+    });
+    setForm(f);
+    setMsg(text);
+    setStep('end');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   if (!st) return <Redirect href="/" />;
   /* it ends in Goodnight once that is open (core goodnightOpens). A check-in before then, or for a day before today, ends with Save. */
   const bedtime = tonight && !goodnightOpens(st, clockOf(now));
@@ -320,7 +339,6 @@ export default function Checkin() {
       <>
         {/* the day is logged, and the flame takes it in */}
         <Finish level={Math.max(1, g.level.n)} title="Day logged." text={msg} always least={0.6} cheer />
-        {gain ? <CountUp to={gain} prefix="+" suffix=" points" delay={700} style={[s.pts, { color: c.mintText }]} /> : null}
         <View style={s.tiles}>
           {rateKeys(form).map((f, j) => (
             <Appear key={f} delay={360 + j * 70} by={14} style={s.tile}>
@@ -331,6 +349,22 @@ export default function Checkin() {
             </Appear>
           ))}
         </View>
+        {/* the points rise, count up and glide down into the level line, which fills */}
+        {gain ? (
+          <View style={s.into}>
+            <PointsInto
+              gain={gain}
+              was={levelOf(pts0)}
+              now={g.level}
+              at={reduce ? 0 : 900}
+              still={reduce}
+              ink={c.ink}
+              muted={c.muted}
+              track={c.line}
+              color={c.mintText}
+            />
+          </View>
+        ) : null}
         {form.md != null && form.md <= 3 ? (
           <Appear delay={640} style={{ alignSelf: 'stretch' }}>
             <TalkDoor line="A heavy day is a state, not who you are. Walk it through before tonight." />
@@ -339,7 +373,7 @@ export default function Checkin() {
         {wind && r ? (
           <Appear delay={700}>
             <T style={s.c}>
-              <T v="label">Next: Goodnight, when the phone goes down.</T> {stopStatus(wind, r.windMin)}.
+              <T v="label">Next: Good night, when the phone goes down.</T> {stopStatus(wind, r.windMin)}.
             </T>
           </Appear>
         ) : null}
@@ -422,7 +456,7 @@ const s = StyleSheet.create({
   stage: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', gap: 14 },
   middle: { flexGrow: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', minHeight: 180 },
   tap: { fontFamily: font.bodySemi, marginTop: 4 },
-  pts: { fontFamily: font.display, fontSize: 17 },
+  into: { alignSelf: 'stretch', paddingHorizontal: 8, marginTop: 6, marginBottom: 14 },
   offer: { alignItems: 'center' },
   saveLink: { alignItems: 'center' },
   moreOpen: { alignSelf: 'stretch', gap: 12 },

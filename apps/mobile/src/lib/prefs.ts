@@ -11,6 +11,8 @@ import {
   type NotifyMem,
   type NudgeLog,
   type NudgePrefs,
+  fieldId,
+  type FieldId,
 } from '@daybook/core';
 import { useSyncExternalStore } from 'react';
 
@@ -21,7 +23,7 @@ let theme: ThemePref = 'auto';
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((f) => f());
 
-AsyncStorage.getItem(KEY)
+const themeReady = AsyncStorage.getItem(KEY)
   .then((v) => {
     if (v === 'light' || v === 'dark') {
       theme = v;
@@ -166,6 +168,9 @@ const lockReady = AsyncStorage.getItem(LKEY)
     emit();
   });
 export const whenLockKnown = () => lockReady;
+/** the theme and the lock, read: the first frame the app draws is in the right colors, and the lock's cover is not drawn a beat late
+    (the root layout waits for this before it draws anything, so nothing flashes under the splash) */
+export const whenPrefsKnown = () => Promise.all([themeReady, lockReady]).then(() => undefined);
 export const getLockPref = () => lock;
 export function setLockPref(on: boolean) {
   lock = on;
@@ -197,3 +202,25 @@ export function setBreathePref(b: BreathePref) {
   emit();
   AsyncStorage.setItem(BKEY, JSON.stringify(b)).catch(() => undefined);
 }
+
+/* the breathing pattern last chosen on the breathing figure (SOS), so it opens on it the next time; the sigh until one is chosen */
+const FKEY = 'daybook.field';
+let field: FieldId = fieldId(null);
+AsyncStorage.getItem(FKEY)
+  .then((v) => {
+    if (!v) return;
+    field = fieldId(v);
+    emit();
+  })
+  .catch(() => undefined);
+export function setFieldPref(id: FieldId) {
+  field = id;
+  emit();
+  AsyncStorage.setItem(FKEY, id).catch(() => undefined);
+}
+export const useFieldPref = () =>
+  useSyncExternalStore(
+    sub,
+    () => field,
+    () => field,
+  );

@@ -1,4 +1,4 @@
-/* The setup ("How Daybook works"): the answers, the pages, the goal it suggests, and the plan it builds. The questions, scores
+/* The setup (again from More: "Redo setup"): the answers, the pages, the goal it suggests, and the plan it builds. The questions, scores
    and goals are in the legacy core; the parts of the legacy setup that read the global Store or the clock are ported here as pure
    functions that take the settings and today. Checked against the legacy app by test/setup.test.ts. */
 import { freshSettings } from './two-moments';
@@ -38,6 +38,8 @@ import {
   type ObOpt,
 } from './legacy/core.js';
 import { changeSettings } from './actions';
+import { DEEP_READY, type LessonLen } from './lessons';
+import { levelOf } from './levels';
 import { OB_CREED } from './faith';
 import { FREE_WAIT } from './north';
 import { habitIn, habitMedical, habitOf, habitSay, normHabit, OB_HABIT, type Habit } from './habit';
@@ -155,7 +157,9 @@ export function obReasonOpts(a: SetupAnswers, st: Settings | null, redo: boolean
 }
 /** the reasons picked, with the one written in */
 export function obReasonList(a: SetupAnswers): string[] {
-  const list = (a.rs || []).slice();
+  /* a walk-through starts with the reasons kept (obPrefill): one that a "who for" pick gave is dropped when that pick is taken off */
+  const picked = Array.isArray(a.for) ? (a.for as string[]) : null;
+  const list = (a.rs || []).filter((t) => !picked || !OB_FOR.some((x) => x[3] === t && picked.indexOf(x[0]) < 0));
   obForReasons(a).forEach((t) => {
     if (!list.some((x) => sameReason(x, t))) list.push(t);
   });
@@ -189,7 +193,22 @@ export function obThenPick(a: SetupAnswers, st: Settings | null, redo: boolean, 
    week, one part a day, each set up by using it (unlock.ts). Duolingo is the model (the owner, November 12, 2026): the flame
    talks in its bubble and answers each pick, one question a page with big answers low, a bar across the top, the first win
    inside setup, and the flame lit by the person at the end. Every question can be skipped; setup itself cannot. */
-export type PageKind = 'hello' | 'how' | 'sos' | 'account' | 'tiles' | 'multi' | 'promise' | 'tonight' | 'light' | 'review' | 'done';
+export type PageKind =
+  | 'hello'
+  | 'how'
+  | 'sos'
+  | 'account'
+  | 'tiles'
+  | 'multi'
+  | 'promise'
+  | 'tonight'
+  | 'remind'
+  | 'light'
+  | 'review'
+  | 'done'
+  | 'need'
+  | 'grow'
+  | 'why';
 export interface ObPage {
   id: string;
   k: PageKind;
@@ -208,7 +227,7 @@ export interface ObEnv {
   notify?: boolean;
   /** true when this build has accounts and the person is not signed in: the account page shows once the flame is lit */
   account?: boolean;
-  /** a walk-through ("How Daybook works" in More): the same questions, then the changes to keep */
+  /** a walk-through ("Redo setup" in More): the same questions, then the changes to keep */
   redo?: boolean;
 }
 /** said most days (or more): step-down counting */
@@ -221,6 +240,28 @@ export const OB_FREQ4: ObOpt[] = [
   ['f1', 'About once a week', 'leaf'],
   ['f0', 'Less than that', 'sunrise'],
 ];
+/** how long it usually lasts, as four big answers (the owner, November 15, 2026: the "Time given back" line on Today and the hours on
+    Miles need it, and setup stopped asking it on November 12). The ids are the legacy OB_MINS ones, so obHours reads them as they are.
+    A drinking or gambling session runs longer than a porn one, so those habits get the longer four; nothing is guessed when skipped. */
+export const OB_MINS4: ObOpt[] = [
+  ['m0', 'Under 15 minutes', 'bolt'],
+  ['m1', '15 to 30 minutes', 'timer'],
+  ['m2', '30 minutes to an hour', 'moon'],
+  ['m3', 'More than an hour', 'sunrise'],
+];
+export const OB_MINS4_LONG: ObOpt[] = [
+  ['m1', 'Under half an hour', 'bolt'],
+  ['m2', '30 minutes to an hour', 'timer'],
+  ['m3', '1 to 2 hours', 'moon'],
+  ['m4', 'More than 2 hours', 'sunrise'],
+];
+/** the length question, in each habit's words: for gambling it is the time spent, for drinking the time it goes on */
+const OB_MINS_H: Record<Habit, string> = {
+  porn: 'How long does it usually last?',
+  alcohol: 'When you drink, how long does it usually go on?',
+  gambling: 'How long do you usually spend gambling at a time?',
+  other: 'How long does it usually last?',
+};
 /** who it is for: up to three, each kept as one of the person's reasons (shown in SOS and the morning) */
 export const OB_FOR: [string, string, string, string][] = [
   ['love', 'The people I love', 'heart', 'Being fully present with the people I love'],
@@ -231,6 +272,45 @@ export const OB_FOR: [string, string, string, string][] = [
   ['me', 'Who I am becoming', 'sparkle', 'Becoming someone I am proud of'],
 ];
 export const FOR_MAX = 3;
+/** how long a lesson runs (Settings learn.len): short plays a lesson's quick cards, long plays every card. A lesson the person starts
+    asks it on its first page; one the app opens goes straight in at this (the owner, November 14, 2026). Short until long is picked. */
+/* Every lesson asks its length, wherever it starts (the owner, November 14, 2026: "It should also ask them 2 or 5 minutes when they do
+   the lesson anywhere. Always."). The one marked is the length the person picks most, Short until they have picked; a tie goes to
+   the last pick. Deep is a choice only for a person who turned it on in Settings ("if they have 10 minutes checked, it should have
+   them choose 2, 5, or 10 minutes every time"). */
+export const deepOn = (st: Settings | null | undefined): boolean => DEEP_READY && !!(st && st.learn && st.learn.deep);
+export const lessonLen = (st: Settings | null | undefined): LessonLen => {
+  if (!st || !st.learn) return 'q';
+  const n = st.learn.lens || {};
+  const last = st.learn.len === 'd' && !deepOn(st) ? 'f' : st.learn.len || 'q';
+  const can: LessonLen[] = deepOn(st) ? ['q', 'f', 'd'] : ['q', 'f'];
+  const top = Math.max(...can.map((k) => n[k] || 0));
+  if (!top) return can.indexOf(last as LessonLen) >= 0 ? (last as LessonLen) : 'q';
+  const best = can.filter((k) => (n[k] || 0) === top);
+  return best.indexOf(last as LessonLen) >= 0 ? (last as LessonLen) : best[0];
+};
+/** a lesson's first page: the length picked, counted */
+export const pickLessonLen = (st: Settings, len: LessonLen, now = Date.now()): Settings =>
+  changeSettings(
+    st,
+    (s) => {
+      s.learn.len = len;
+      s.learn.lens = { ...(s.learn.lens || {}), [len]: ((s.learn.lens || {})[len] || 0) + 1 };
+    },
+    now,
+  );
+/** Settings: Deep lessons on or off */
+export const setDeep = (st: Settings, on: boolean, now = Date.now()): Settings =>
+  !!st.learn.deep === on
+    ? st
+    : changeSettings(
+        st,
+        (s) => {
+          if (on) s.learn.deep = true;
+          else delete s.learn.deep;
+        },
+        now,
+      );
 /** the reasons the "who for" picks keep */
 export const obForReasons = (a: SetupAnswers): string[] =>
   (Array.isArray(a.for) ? (a.for as string[]) : []).map((id) => (OB_FOR.find((x) => x[0] === id) || [])[3]).filter((x): x is string => !!x);
@@ -247,7 +327,12 @@ export const OB_PAGES: ObPage[] = [
   /* what the person is quitting (habit.ts): first, so every word after it is theirs */
   { id: 'habit', k: 'tiles', key: 'habit', list: OB_HABIT, h: 'What are you quitting?', keep: 1 },
   { id: 'freq', k: 'tiles', key: 'freq', list: OB_FREQ4, h: 'How often does it happen?', keep: 1 },
+  /* the time it takes, for the hours given back on Today and Miles (obHours); skipped, nothing is shown */
+  { id: 'mins', k: 'tiles', key: 'mins', list: OB_MINS4, h: OB_MINS_H.porn, keep: 1 },
   { id: 'when', k: 'multi', key: 'when', list: OB_WHEN, h: 'When does it pull hardest?', sub: 'Pick any.', cols: 2, keep: 1 },
+  /* what it takes now, as a year of marks from the person's own "how often" (the owner, November 14, 2026: setup "needs a couple
+     screens just demonstrating the extreme beneifi and need of daybook it is all business (setup) and no pleasure"). Only with an answer. */
+  { id: 'need', k: 'need', need: (a, env) => !env.redo && !!obYear(a) },
   /* the first win, inside setup: the real SOS, a short practice ride with its swipes, then SOS is unlocked (the owner, November 13,
      2026: "the sos preview should literally be sos with the swipe gestures and stuff and when theyre done press next") */
   { id: 'sos', k: 'sos', need: isNew },
@@ -260,10 +345,13 @@ export const OB_PAGES: ObPage[] = [
     list: OB_FOR.map((x) => [x[0], x[1], x[2]] as ObOpt),
     h: 'Who are you doing this for?',
     sub: 'Pick up to three.',
-    cols: 1,
+    /* two across, an even grid like "When does it pull hardest?" (the owner, November 14, 2026: "the options should be grouped") */
+    cols: 2,
     max: FOR_MAX,
     keep: 1,
   },
+  /* what grows: the flame tonight, at a week, a month and day 90, at a steady pace, ending on who they said it is for */
+  { id: 'grow', k: 'grow', need: isNew },
   { id: 'faith', k: 'tiles', key: 'faith', list: OB_FAITH, h: 'Does faith play a part in this for you?', keep: 1 },
   /* after a Yes or a Somewhat: which faith the God lessons speak from (faith.ts) */
   { id: 'creed', k: 'tiles', key: 'creed', list: OB_CREED, h: 'Which faith is yours?', keep: 1, need: (a) => a.faith === 'big' || a.faith === 'some' },
@@ -271,8 +359,14 @@ export const OB_PAGES: ObPage[] = [
      screens-off time and the phone plans are about the phone in bed, which other habits do not share (the owner, via WP3,
      November 13, 2026) */
   { id: 'tonight', k: 'tonight', need: (a, env) => !env.redo && habitIn(a) === 'porn' },
+  /* the same ask for every other habit, in its own words (the owner, November 15, 2026: "definitely do this: People quitting alcohol
+     or gambling don't get the notification ask in setup"): reminders, pictured as the two notes that come (the day's lesson, and a
+     heads-up before the hard hours), with no phone-down time. Only where the device can remind (not a web page). */
+  { id: 'remind', k: 'remind', need: (a, env) => !env.redo && !!env.notify && habitIn(a) !== 'porn' },
   /* the person lights their flame: the plan is saved, counting starts tonight (D14), and the first small goal is picked */
   { id: 'light', k: 'light', need: isNew },
+  /* why it works, once the flame is lit: a slip takes nothing away here, and keeping track works. It also shows what the account keeps. */
+  { id: 'why', k: 'why', need: isNew },
   /* a free account, asked for last (CLAUDE.md): the flame was just lit. Never required: "Keep it on this phone" goes on. */
   { id: 'account', k: 'account', need: (_a, env) => !env.redo && !!env.account },
   /* a walk-through ends on the changes to keep, then a short done */
@@ -285,6 +379,7 @@ export const obAskCount = (a: SetupAnswers, env: ObEnv = {}) => obPages(a, env).
 /** a page in the words of the habit chosen: the questions name it, and for another habit the first question carries the
     doctor line (habit.ts habitMedical) */
 function obPageIn(pg: ObPage, h: Habit): ObPage {
+  if (pg.id === 'mins') return { ...pg, h: OB_MINS_H[h], list: h === 'alcohol' || h === 'gambling' ? OB_MINS4_LONG : OB_MINS4 };
   if (h === 'porn' || !pg.h) return pg;
   const out = { ...pg, h: habitSay(pg.h, h) };
   return out;
@@ -552,6 +647,99 @@ export function obPromise(a: SetupAnswers): { h: string; rows: [string, string][
   };
 }
 
+/* ---------- the pages that show what Daybook gives (the owner, November 14, 2026) ---------- */
+/** the times a year it happens now, from "how often" (OB_FREQ4), rounded, as the person said it roughly. Null without an answer.
+    Most days is about 6 a week, a few times a week about 3, once a week 1; less than that is "fewer than 50", drawn as about 25. */
+export function obYear(a: SetupAnswers): { n: number; h: string } | null {
+  const per: Record<string, [number, string]> = {
+    f3: [300, 'About 300 times a year.'],
+    f4: [300, 'About 300 times a year.'],
+    f2: [150, 'About 150 times a year.'],
+    f1: [50, 'About 50 times a year.'],
+    f0: [25, 'Fewer than 50 times a year.'],
+  };
+  const x = a.freq ? per[a.freq] : null;
+  return x ? { n: x[0], h: x[1] } : null;
+}
+/** the 365 days of a year, true where it happens at n a year: scattered the way real life is (a fixed shuffle, the same each time) */
+export function obYearMarks(n: number): boolean[] {
+  const mix = (d: number) => {
+    let h = Math.imul((d + 1) ^ ((d + 1) >>> 16), 0x45d9f3b);
+    h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+    return (h ^ (h >>> 16)) >>> 0;
+  };
+  const order = Array.from({ length: 365 }, (_, d) => d).sort((x, y) => mix(x) - mix(y));
+  const out = new Array<boolean>(365).fill(false);
+  for (const d of order.slice(0, Math.max(0, Math.min(365, n)))) out[d] = true;
+  return out;
+}
+/** the grow page: how the habit is unlearned, stop by stop (the owner, November 15, 2026: "this app rewires your brain and the way
+    you think about your addiction and pornography and we need to hype that up", and not to start on tonight). Each stop is something
+    Daybook truly does, said with confidence and no made-up numbers: the person sees the pattern (the log), rides urges out until the
+    brain learns they pass (SOS), sees porn for what it is (a lesson a day), and the new way becomes the worn one. Day 90 is who the
+    person is, never a promise about their life (the owner turned down "more present with the people you love"). The flame takes the
+    form a steady pace reaches (about 45 points a day, levels.ts), so the picture is the ladder itself. `how` is the part of Daybook
+    that does it, with its icon. */
+export interface ObGrowStop {
+  at: string;
+  level: number;
+  line: string;
+  how: [icon: string, words: string];
+}
+export function obGrow(a: SetupAnswers = {}): ObGrowStop[] {
+  const lv = (d: number) => levelOf(d * 45).n;
+  const h = normHabit(a.habit) || 'porn';
+  const stops: ObGrowStop[] = [
+    {
+      at: 'Week 1',
+      level: lv(7),
+      line: 'Week 1: you see your pattern. An urge stops being an order and becomes a wave you can read.',
+      how: ['flame', 'Your honest mornings'],
+    },
+    {
+      at: 'Month 1',
+      level: lv(30),
+      line: 'Month 1: every urge you ride out teaches your brain that it passes. The old pull gets quieter.',
+      how: ['life', 'SOS, every time it pulls'],
+    },
+    {
+      at: 'Month 2',
+      level: lv(60),
+      line: 'Month 2: porn stops looking like relief. You see what it promised, and what it took.',
+      how: ['book', 'A lesson a day'],
+    },
+    {
+      at: 'Day 90',
+      level: lv(90),
+      line: 'Day 90: the new path is the worn one now. You are not someone fighting porn. You are someone free of it.',
+      how: ['flame', 'One honest day at a time'],
+    },
+  ];
+  return stops.map((x) => ({ ...x, line: habitSay(x.line, h) }));
+}
+/** Next on the grow page: the next stop, or -1 to leave the page, only from the last stop (the owner, November 14 and 15, 2026:
+    "they press next and it skips EVERYTHING") */
+export const obGrowNext = (at: number, n: number): number => (at >= n - 1 ? -1 : Math.max(0, at) + 1);
+/** the two lines of the "why it works" picture over eight weeks with two slips: a streak that drops to zero at each, and the free
+    days on the record here, which only ever go up (strict mode's count does drop, but the record, points and level never do) */
+export function obWhyLines(): { streak: number[]; record: number[] } {
+  const slip = new Set([17, 44]);
+  const streak: number[] = [];
+  const record: number[] = [];
+  let s = 0;
+  let r = 0;
+  for (let d = 0; d < 56; d++) {
+    if (slip.has(d)) s = 0;
+    else {
+      s++;
+      r++;
+    }
+    streak.push(s);
+    record.push(r);
+  }
+  return { streak, record };
+}
+
 /* ---------- the words on the pages that answer what was said ---------- */
 export interface ObShow {
   h: string;
@@ -743,25 +931,40 @@ export const obLast = (st: Settings | null, redo: boolean, key: string, list: Ob
     on a one-tap question it answers what was picked. Plain words, no contractions, never shame. */
 const OB_SAY: Record<string, string> = {
   hello: 'Hi. I am your flame. Answer a few quick questions, and tonight is set.',
-  how: 'Hi. I am your flame. You came here, and that is the hardest step.',
+  how: 'Hi. I am your flame. Free, private, and here for you at any hour.',
   sos: 'When an urge hits, tap SOS. Try it now, while it is calm. It takes a few seconds.',
   habit: 'Pick the closest one. I can help with each.',
   freq: 'Rough is fine. Only you see this.',
-  when: 'Pick any. I will be ready for these.',
+  mins: 'A rough guess. I will count the time you take back.',
+  when: 'I will be ready for these.',
   for: 'On a hard night, I will remind you.',
   faith: 'It changes which lessons come up.',
   tonight: 'Set it now, while it is easy.',
+  /* habitSay puts the habit's own word in place of porn (obSay) */
+  remind: 'A heads-up before your hard hours. Never a word about porn on your lock screen.',
   light: 'Swipe up. Light me.',
   account: 'Look at me now. You did that.',
+  need: 'That is the pull now. Each one you ride out, you take back.',
+  grow: 'Every honest day feeds me. This is what that looks like.',
+  why: 'Try it. Tap a slip, and watch what stays.',
   review: 'Tick what to keep. The rest stays as it is.',
 };
+/** what the flame says on the why page once the sample slip is tapped: the stakes said plainly, and what is never lost */
+export const OB_SLIP_AFTER = 'I burn a little lower for a night, and I come back when you do. Nothing you earned is gone.';
 /** a walk-through: the flame has grown, and says so */
 const OB_SAY_REDO: Record<string, string> = {
-  hello: 'Look how far I have come with you. Nothing changes until the last page.',
+  hello: 'Your log, points, level and badges stay just as they are.',
 };
 /** what the flame says first on a page, or null */
 export const obSay = (id: string, redo = false, h: Habit = 'porn'): string | null =>
-  (redo && OB_SAY_REDO[id]) || (id === 'freq' ? habitMedical(h) : null) || OB_SAY[id] || null;
+  (redo && OB_SAY_REDO[id]) || (id === 'freq' ? habitMedical(h) : null) || (id === 'remind' ? habitSay(OB_SAY.remind, h) : OB_SAY[id]) || null;
+
+/** the reminders page for a habit other than porn (the porn path asks on its tonight page) */
+export const OB_REMIND = {
+  h: 'Let me reach you when it counts.',
+  yes: 'Turn on reminders',
+  skip: 'Go on without reminders',
+};
 
 /** the flame's answer to a one-tap pick, by the question's key and the answer's id */
 export const OB_REPLY: Record<string, Record<string, string>> = {
@@ -776,6 +979,13 @@ export const OB_REPLY: Record<string, Record<string, string>> = {
     f2: 'A few times a week. Then there are already free days to build on.',
     f1: 'About once a week. You already have more free days than not.',
     f0: 'Less than that. Then we catch it before it grows.',
+  },
+  mins: {
+    m0: 'Even short ones add up. I will count every minute you take back.',
+    m1: 'Then every free day gives some of that back. I will keep the count.',
+    m2: 'That is real time. Every free day hands it back to you.',
+    m3: 'That is a lot of your life. Every free day gives it back, and I will show you how much.',
+    m4: 'That is a lot of your life. Every free day gives it back, and I will show you how much.',
   },
   faith: {
     big: 'Then your faith will be part of this. Some lessons are written for it.',

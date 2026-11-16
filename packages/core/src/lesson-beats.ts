@@ -2,11 +2,13 @@
    words stay in the lesson (legacy/core.js, lessons-more.ts), one tap away as More, and nothing here changes what a lesson teaches. A new
    lesson needs its beats here; test/lesson-beats.test.ts fails without them, and holds them to the limits and the words rules. A card is one
    of: a question, the sun card (the answer), the number card (the science, when it has a number), or the sky. */
+import './lesson-fill';
 import type { Card, Lesson } from './lessons';
 import { faithVoice, type FaithVoice } from './faith';
 import { GOD, TURNS, turnIn, turnLesson, type Turn } from './lesson-turns';
 import { habitOf, habitSay, type Habit } from './habit';
 import { HABIT_TURNS, habitOpen, habitPart, PORN_ONLY } from './lesson-habit';
+import { STORIES, storyIn, storyLesson } from './lesson-stories';
 
 export interface Beat {
   /** the big line. On a number card it finishes the sentence the number starts ("7" + "days off porn, and ...") */
@@ -15,6 +17,8 @@ export interface Beat {
   say?: string;
   /** one short sentence under the big line */
   p?: string;
+  /** in Deep, the 10-minute lesson: this card told in full, in place of p (lesson-stories.ts) */
+  dx?: string;
   /** what to do: up to three short lines */
   l?: string[];
   /** the giant number, when a card without a number picture should be a number card. It comes from the card's own words. */
@@ -50,11 +54,13 @@ const bookOf = (L: Lesson): LessonBeats | null => VOICE_BEATS.get(L) || (L.v ===
 /** a lesson as this person reads it: a God lesson in the voice of their faith (faith.ts faithVoice), any other as it is */
 export function lessonVoiced(L: Lesson, voice: FaithVoice | null): Lesson {
   const T = GOD[L.id];
-  if (!T || !voice || voice === 'lds' || !T.vo || !T.vo[voice]) return L;
+  /* a God lesson told as a story (lesson-stories.ts) carries its voices itself */
+  const S = T && STORIES[L.id];
+  if (!T || !voice || voice === 'lds' || (S ? !S.vo || !S.vo[voice] : !T.vo || !T.vo[voice])) return L;
   const k = L.id + ':' + voice;
   let v = VOICED.get(k);
   if (!v) {
-    v = turnLesson(turnIn(T, voice), L);
+    v = S ? storyLesson(storyIn(S, voice), L) : turnLesson(turnIn(T, voice), L);
     VOICED.set(k, v);
     VOICE_BEATS.set(v.L, v.beats);
   }
@@ -76,6 +82,16 @@ export function lessonAs(L: Lesson, voice: FaithVoice | null, h: Habit): Lesson 
   if (h === 'porn' || !T0 || !PORN_ONLY.has(L.id) || !habitOpen(L.id, h)) return lessonVoiced(L, voice);
   const k = L.id + ':' + (voice || '') + ':' + h;
   let out = SAID.get(k);
+  /* a lesson told as a story (lesson-stories.ts): the habit's own parts over the story, then the story in the habit's words */
+  const S0 = STORIES[L.id] && storyIn(STORIES[L.id], GOD[L.id] ? voice : null);
+  if (!out && S0) {
+    const part = S0.hab && S0.hab[h as Exclude<Habit, 'porn'>];
+    const { hab: _hab, vo: _vo, ...S } = part && part !== 'say' ? { ...S0, ...part } : S0;
+    /* a card that rests on a porn study (porn: 1) is left out, then the rest is said in the habit's words */
+    const v = storyLesson(sayAll({ ...S, tell: S.tell.filter((t) => !t.porn) }, h), L);
+    VOICE_BEATS.set(v.L, v.beats);
+    SAID.set(k, (out = v.L));
+  }
   if (!out) {
     let T: Turn = turnIn(T0, GOD[L.id] ? voice : null);
     const part = habitPart(L.id, h);

@@ -15,20 +15,14 @@ import {
   type Block,
   type Beat,
   type Card,
-  cardArt,
-  cardBeat,
-  cardLook,
-  cardNumber,
   changeSettings,
   gameCompute,
   fmtDate,
   type Go,
   guessFeedback,
   type Lesson,
-  lessonBeats,
   lessonById,
-  lessonTo,
-  lessonVoiced,
+  habitOf,
   faithVoice,
   lessonDoneOn,
   lessonGate,
@@ -37,14 +31,14 @@ import {
   lessonLog,
   lessonMine,
   lessonNo,
-  itemAdd,
-  itemHas,
-  itemUndo,
   lessonOpen,
   nextLessonOk,
-  lessonPractice,
   lessonPracticed,
   lessonReach,
+  lessonLen,
+  type LessonLen,
+  pickLessonLen,
+  deepOn,
   lessonSeq,
   lessonStats,
   lessonWalk,
@@ -58,7 +52,8 @@ import {
   deedDone,
   deedSet,
   deedWords,
-  lessonStep,
+  landOfIn,
+  lessonPathMine,
   lessonUnit,
   questionOf,
   nextAfter,
@@ -71,6 +66,21 @@ import {
   lessonDue,
   morningDue,
 } from '@daybook/core';
+import {
+  cardArt,
+  cardBeat,
+  cardLook,
+  cardNumber,
+  lessonBeats,
+  lessonAs,
+  lessonTo,
+  lessonVoiced,
+  itemAdd,
+  itemHas,
+  itemUndo,
+  lessonPractice,
+  practiceOne,
+} from '@daybook/core/lesson-content';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -85,9 +95,10 @@ import { LessonArt, useCount } from '@/components/lesson-art';
 import { Bubble, FlameSlot } from '@/components/lesson-flame';
 import { Answer, Question, Quiet, Shell } from '@/components/lesson-parts';
 import { LessonFinish } from '@/components/lesson-finish';
-import { Bar, Praise, praiseFor } from '@/components/lesson-play';
+import { Bar, Praise, praiseFor, thanksFor } from '@/components/lesson-play';
 import { FlashCard } from '@/components/lesson-flash';
 import { Next, Rich } from '@/components/lx';
+import { LISTEN_OK, ListenButton, SpokenCard } from '@/components/listen';
 import { GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -106,7 +117,7 @@ import { useAccount } from '@/lib/sync';
 import { font, MAX_WIDTH, PaletteOverride, toneOf, useTheme, type Tone } from '@/lib/theme';
 
 /** deed: a step's deed, after its last lesson (core steps.ts) */
-type Stage = 'cover' | 'run' | 'practice' | 'deed' | 'practiced';
+type Stage = 'len' | 'cover' | 'run' | 'practice' | 'deed' | 'practiced';
 /** recall questions answered on a welcome back while the app is open, by lesson id, with the day: the lesson after it does
     not ask the same question again that day */
 const ASKED: Record<string, string> = {};
@@ -123,8 +134,20 @@ interface Got {
   was?: string;
 }
 
+/* the lesson preview exists only in the demo build (EXPO_PUBLIC_SHOTS=1), whose log is a made-up person kept in memory */
+const PREVIEW_ON = process.env.EXPO_PUBLIC_SHOTS === '1';
+
 export default function LessonScreen() {
-  const { id, at } = useLocalSearchParams<{ id: string; at?: string }>();
+  const {
+    id,
+    at,
+    pick: picked,
+    len: lenQ,
+    card: cardQ,
+    vo: voQ,
+  } = useLocalSearchParams<{ id: string; at?: string; pick?: string; len?: string; card?: string; vo?: string }>();
+  /* the lesson preview (dev only, the demo build: /lesson-preview): any lesson opens at the length asked for, with nothing in the way */
+  const preview = PREVIEW_ON && at === 'preview';
   const { snap, tk, update, apply, say } = useStore();
   /* the first week's part for today (WP10, unlock.ts): it opens after the lesson, never on a care lesson */
   const part = useUnlock();
@@ -139,16 +162,21 @@ export default function LessonScreen() {
   const st = snap.settings;
   /* a God lesson speaks in the voice of this person's faith, and a lesson written for porn in the words of their habit (core lessonTo) */
   const found = lessonById(id);
-  const L = found && lessonTo(found, st);
+  /* the preview may read a God lesson in one faith's voice (vo=lds, christian or plain), to look at each one */
+  const voPick = preview && (voQ === 'lds' || voQ === 'christian' || voQ === 'plain') ? voQ : null;
+  const L = found && (voPick ? lessonAs(found, voPick, habitOf(st)) : lessonTo(found, st));
   /* back from a tool or a page the practice step sent the person to: straight to the result, nothing is replayed */
   const [stage, setStage] = useState<Stage>(at === 'practiced' ? 'practiced' : 'cover');
-  const [i, setI] = useState(0);
+  /* the preview may open on one card (card=N, counted from 1), to look at a single screen */
+  const [i, setI] = useState(preview && cardQ ? Math.max(0, Number(cardQ) - 1) : 0);
   /* what Daybook learns: when it opened, each part reached, and a lesson left before its end (lib/events.ts) */
   const opened = useRef(Date.now());
   /* how long the cards took, for the finish's time tile */
   const took = useRef(0);
   const finished = useRef(false);
   const beatAt = useRef(0);
+  /** which way the last move went, so the next card comes in from that side */
+  const dir = useRef<1 | -1 | 0>(0);
   useEffect(() => {
     beatAt.current = i;
     if (L && i > 0) track('lesson_beat', { lesson: L.id, beat: i });
@@ -160,8 +188,15 @@ export default function LessonScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [L?.id],
   );
-  /* one way in (C8): the short cards are the lesson, with More on each; a lesson with no short cut runs in full */
-  const [len] = useState<'q' | 'f'>(() => (found && lessonHasQuick(found) ? 'q' : 'f'));
+  /* the length, marked first on the lesson's first page: the one the person picks most (core lessonLen; Short until they have picked).
+     Short plays the short cards, Long every card but the deep ones, Deep every card with each one's fuller telling. Held for the whole
+     lesson. */
+  const [len, setLen] = useState<LessonLen>(() =>
+    preview ? (lenQ === 'q' ? 'q' : lenQ === 'd' ? 'd' : 'f') : found && lessonHasQuick(found) ? lessonLen(st) : 'f',
+  );
+  /* every lesson asks its length first, wherever it starts (the owner, November 14, 2026: "It should also ask them 2 or 5 minutes when
+     they do the lesson anywhere. Always."); only a lesson with no short cut, which has one length, goes straight in */
+  const [chose, setChose] = useState(() => preview || !(found && lessonHasQuick(found)));
   /* how a card without a question landed with the person (two answers, or the line they will try), by card */
   const [ans, setAns] = useState<Record<number, number>>({});
   /* a turn card's reply has landed */
@@ -187,6 +222,8 @@ export default function LessonScreen() {
   const [wrote, setWrote] = useState<string | null>(null);
   /* the flame blooms when the right answer is found */
   const [pulse, setPulse] = useState(0);
+  /* Listen (components/listen.tsx): once on, each story card is read aloud as it comes in, until it is turned off */
+  const [listen, setListen] = useState(false);
   const scroll = useRef<ScrollViewInstance>(null);
   /* the picture on a card gives up height so the card fits a short phone (components/fit) */
   const fit = useFitRoom();
@@ -229,7 +266,7 @@ export default function LessonScreen() {
   /* the morning set comes before today's lesson (core morning-set.ts): today's new lesson, opened while the morning set is
      due (from the morning note, or Learn), opens the morning set first, and the morning set opens this lesson after it */
   if (!at && morningFirst === id) return <Redirect href={{ pathname: '/morning', params: { then: id } }} />;
-  const n = lessonNo(L, st);
+  const n = lessonNo(L, st, snap.days);
   const w = lessonWalk(snap.days, st, tk, account);
   const done = w.done;
   /* one lesson opens at a time: further on, the key idea; read early and reached now, the welcome back. "Read it all
@@ -240,16 +277,16 @@ export default function LessonScreen() {
      (never after a slip). It comes back to where it was opened. */
   /* the morning after a slip, the day's lesson comes from the after-a-hard-night list (core lessonWalk hook): care, never gated */
   const care = at === 'care' || (w.hook === 'slip' && w.today === L);
-  if (gate !== 'open' && !care && !(at === 'all' && done.has(L.id))) return <PathGate L={L} w={w} gate={gate} />;
+  if (gate !== 'open' && !care && !preview && !(at === 'all' && done.has(L.id))) return <PathGate L={L} w={w} gate={gate} />;
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
-  if (!care && !lessonOpen(L, done, account, st)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
+  if (!care && !preview && !lessonOpen(L, done, account, st)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
   /* the step whose deed comes after this lesson (its last on the path), shown once the lesson is read, unless it was done already */
-  const dk = care ? -1 : deedAfter(L, st);
+  const dk = care ? -1 : deedAfter(L, st, snap.days);
   const deedNext = dk >= 0 && !deedDone(st, dk) && deedA == null;
   /* the step before this one, asked about once more as its first lesson opens (never after a slip) */
   const askK = care || askedBack ? -1 : deedAskBack(L, snap.days, st, tk);
   /* one way in: with nothing to ask before the step, the lesson opens on its first card */
-  const stg: Stage = stage === 'cover' && askK < 0 ? 'run' : stage;
+  const stg: Stage = !chose && !care ? 'len' : stage === 'cover' && askK < 0 ? 'run' : stage;
   /* the cards; the old Done card is gone: after the last card comes Put it to work, the step's deed, then one finish page */
   const seq = lessonSeq(L, len).filter((x): x is Extract<SeqItem, { t: 'card' }> => x.t === 'card');
   const pr0 = lessonPractice(L, st);
@@ -294,7 +331,7 @@ export default function LessonScreen() {
       /* a turn keeps the sky it has: the card itself turns over (a change of sky read as a flash, the owner, November 2, 2026) */
       kind = cl === 'sun' ? 'sun' : cl === 'number' || (cl === 'guess' && lockKey) ? 'violet' : 'sky';
     }
-  } else if (stg !== 'cover') p = 1;
+  } else if (stg !== 'cover' && stg !== 'len') p = 1;
   const look = lessonLook(kind, p, base.scheme);
   const c = look.c;
   const t = toneOf(c, lessonUnit(L).tone);
@@ -328,6 +365,7 @@ export default function LessonScreen() {
     const to = i + d;
     if (to < 0) return;
     if (d > 0 && !read && !answered(seq[i])) return;
+    dir.current = d > 0 ? 1 : -1;
     /* past the last card the lesson is read: it is recorded, then Put it to work, the deed, and the finish */
     if (to >= seq.length) {
       record();
@@ -341,6 +379,7 @@ export default function LessonScreen() {
     apply((cur) => ({ st: lessonPracticed(cur, L.id) }));
   };
   const toStage = (s: Stage) => {
+    dir.current = 1;
     setStage(s);
   };
   /* a deed's answer, at the end of the step or asked once more: "I did it" gives its points on today, kept for good */
@@ -431,12 +470,71 @@ export default function LessonScreen() {
   let praise: ReactNode = null;
   /* the flame grows a little as the lesson goes on */
   const want = (SHORT ? 210 : 260) + (SHORT ? 40 : 70) * p;
-  if (stg === 'cover') {
+  if (stg === 'len') {
+    /* Short or Long (and Deep, for a person who turned it on), the one picked most marked first; each pick is counted */
+    const choose = (ln: LessonLen) => {
+      setLen(ln);
+      if (st) apply((cur) => ({ st: pickLessonLen(cur, ln) }));
+      dir.current = 1;
+      setChose(true);
+    };
+    const cur = lessonLen(st);
+    body = (
+      <>
+        <T v="small" tone="muted">
+          {lessonUnit(L).name}
+        </T>
+        <T style={[s.h, L.title.length > 30 && s.hsm]} accessibilityRole="header">
+          {L.title}
+        </T>
+        <T style={s.p}>{L.ask || L.tag}</T>
+        <FlameSlot size={SHORT ? 240 : 310} min={120} />
+        <Dock>
+          <View style={{ gap: 12 }} accessibilityLabel="Pick a length">
+            <LenBtn
+              on={cur === 'q'}
+              title="Short"
+              mins="about 2 min"
+              sub={
+                L.form
+                  ? 'The story, the line that sticks, what to do'
+                  : L.v === 3
+                    ? 'The turn, what to do, one check'
+                    : L.v === 2
+                      ? 'The answer, what to do, one check'
+                      : 'The main idea, then one question'
+              }
+              onPress={() => choose('q')}
+            />
+            <LenBtn
+              on={cur === 'f'}
+              title="Long"
+              mins="about 5 min"
+              sub={
+                L.form
+                  ? 'More of the story, and why it works'
+                  : L.v === 3
+                    ? 'Adds a question and what is behind the turn'
+                    : L.v === 2
+                      ? 'Adds a guess and the science behind it'
+                      : 'Adds the evidence and why it works'
+              }
+              onPress={() => choose('f')}
+            />
+            {/* Deep, the 10-minute lesson, shows here only for a person who turned it on in Settings */}
+            {deepOn(st) ? (
+              <LenBtn on={cur === 'd'} title="Deep" mins="about 10 min" sub="Adds the rest of the story and a second look" onPress={() => choose('d')} />
+            ) : null}
+          </View>
+        </Dock>
+      </>
+    );
+  } else if (stg === 'cover') {
     /* the one ask back, before the next step starts: two answers, and either way it is never asked again */
     body = (
       <>
         <T v="small" tone="muted">
-          Before step {lessonStep(L) + 1}
+          Before step {landOfIn(lessonPathMine(snap.days, st), L) + 1}
         </T>
         <T style={s.h} accessibilityRole="header">
           You were going to {PATH_STEPS[askK].back}. Did you get to?
@@ -474,7 +572,7 @@ export default function LessonScreen() {
         <Praise
           key={'p' + ci}
           show
-          word={praiseFor(ci + L.id.length, run)}
+          word={card.k === 'choose' && card.a == null ? thanksFor(ci + L.id.length) : praiseFor(ci + L.id.length, run)}
           say={say}
           label="Continue"
           onMore={moreOn ? more : undefined}
@@ -599,12 +697,30 @@ export default function LessonScreen() {
       body = num ? (
         <>
           {head}
-          <NumberCard n={cardNumber(card, b)} h={b.h || card.h} p={b.p} st={st} fact={card.fact?.s} onSrc={() => setSheet({ t: 'src', i: ci })} />
+          <NumberCard
+            n={cardNumber(card, b)}
+            h={b.h || card.h}
+            p={len === 'd' && b.dx ? b.dx : b.p}
+            st={st}
+            fact={card.fact?.s}
+            onSrc={() => setSheet({ t: 'src', i: ci })}
+          />
         </>
       ) : (
         <>
           {head}
-          <TextCard L={L} card={card} beat={b} look={look} st={st} want={want} onSrc={() => setSheet({ t: 'src', i: ci })} />
+          <TextCard
+            L={L}
+            card={card}
+            beat={b}
+            look={look}
+            st={st}
+            want={want}
+            deep={len === 'd'}
+            listen={listen}
+            onListen={() => setListen((x) => !x)}
+            onSrc={() => setSheet({ t: 'src', i: ci })}
+          />
         </>
       );
       /* a card that asks nothing is read and passed with Continue: no made-up answers and no pick over lines that are steps
@@ -630,9 +746,16 @@ export default function LessonScreen() {
       );
   } else if (stg === 'practice') {
     const a = lessonPractice(L, st)!;
-    const items = a.items || [];
+    /* one invitation per lesson, never two (the owner, November 15, 2026: "it should just be like one invitation per page, not or per
+       lesson, not two. Never two like that"), chosen by hand for each lesson in core practice.ts ONE */
+    const o = practiceOne(L, st);
+    const items = o && 'item' in o ? [o.item] : [];
+    const goes = o && 'go' in o ? [o.go] : [];
+    const wr = o && 'write' in o ? o.write : null;
     const note = wrote ?? ((st.learn.notes && st.learn.notes[L.id]) || '');
     const ed = editing != null ? items[editing] : null;
+    const writing = !!wr;
+    const later = false;
     prog = bar;
     body = ed ? (
       /* changing a line's words: the box and its button at the top, above the keyboard */
@@ -640,40 +763,47 @@ export default function LessonScreen() {
     ) : (
       <>
         {/* no words above the flame (the owner, November 13, 2026): the lines to add say it themselves */}
-        {a.write ? (
-          <WriteBox label={L.np} value={note} examples={a.write} t={t} onChange={write} />
-        ) : !items.length && !(a.go || []).length ? (
+        {wr && !later ? (
+          <WriteBox label={L.np} value={note} examples={wr} t={t} onChange={write} />
+        ) : !wr && !items.length && !goes.length ? (
           <NoteField L={L} note={note} />
         ) : null}
-        <Blocks bs={a.b} L={L} t={t} st={st} />
-        {heavy ? <Help988 /> : null}
-        <FlameSlot size={SHORT ? 200 : 260} min={110} />
-        <Dock>
-          {items.map((it, k) => {
-            const g = got[k];
-            const on = it.k === 'copy' ? (copied[k] ? 'added' : null) : g && itemHas(st, g.it) ? 'added' : itemHas(st, it) ? 'had' : null;
-            const old = it.k === 'be' ? st.becoming : it.k === 'note' ? st.note : '';
-            return (
-              <PLine
-                key={k}
-                it={g && on === 'added' ? g.it : it}
-                t={t}
-                state={on}
-                replaces={old && old.trim() && !itemHas(st, it) ? old.trim() : undefined}
-                onAdd={() => add(k, it)}
-                onUndo={() => undo(k)}
-                onEdit={() => {
-                  setEditing(k);
-                  top();
-                }}
-                onCopy={() => copyLine(k, it.text)}
-              />
-            );
-          })}
-          {(a.go || []).map((g, k) => (
-            <GoRow key={'g' + k} label={g.t} ic={g.ic} went={!!went[k]} onPress={() => open(k, g)} />
-          ))}
-        </Dock>
+        {writing ? null : <Blocks bs={a.b} L={L} t={t} st={st} />}
+        {later ? <FlameSlot size={84} min={76} side style={s.storyFlame} /> : <FlameSlot size={SHORT ? 200 : 260} min={110} />}
+        {writing ? null : (
+          <Dock>
+            {items.map((it, k) => {
+              const g = got[k];
+              const on = it.k === 'copy' ? (copied[k] ? 'added' : null) : g && itemHas(st, g.it) ? 'added' : itemHas(st, it) ? 'had' : null;
+              const old = it.k === 'be' ? st.becoming : it.k === 'note' ? st.note : '';
+              return (
+                <PLine
+                  key={k}
+                  it={g && on === 'added' ? g.it : it}
+                  t={t}
+                  state={on}
+                  replaces={old && old.trim() && !itemHas(st, it) ? old.trim() : undefined}
+                  onAdd={() => add(k, it)}
+                  onUndo={() => undo(k)}
+                  onEdit={() => {
+                    setEditing(k);
+                    top();
+                  }}
+                  onCopy={() => copyLine(k, it.text)}
+                />
+              );
+            })}
+            {goes.map((g, k) => (
+              <GoRow key={'g' + k} label={g.t} ic={g.ic} went={!!went[k]} onPress={() => open(k, g)} />
+            ))}
+          </Dock>
+        )}
+        {/* the free line stays, quietly, at the foot of the last page */}
+        {heavy ? (
+          <View style={s.quiet988}>
+            <Help988 />
+          </View>
+        ) : null}
       </>
     );
     const acted = Object.keys(got).length > 0 || Object.keys(went).length > 0 || Object.keys(copied).length > 0 || !!(wrote && wrote.trim());
@@ -718,6 +848,7 @@ export default function LessonScreen() {
     const nx = care ? null : nextLessonOk(L, w, snap.days, st, tk, account);
     return (
       <LessonFinish
+        spendSpark
         lessonId={L.id}
         title={L.title}
         n={n || 0}
@@ -744,6 +875,7 @@ export default function LessonScreen() {
       scroll={scroll}
       fit={fit}
       bodyKey={stg + ':' + i + (lockKey ? ':lock' : '')}
+      dir={lockKey ? 0 : dir.current}
       praise={praise}
       floatFoot
       foot={foot}
@@ -779,7 +911,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
   const [went, setWent] = useState<Record<number, boolean>>({});
   const scroll = useRef<ScrollViewInstance>(null);
   const fit = useFitRoom();
-  const n = lessonNo(L, st);
+  const n = lessonNo(L, st, snap.days);
   const k = lessonKeyIdea(L);
   const first = lessonStats(snap.days).first[L.id];
   const read = first
@@ -831,7 +963,7 @@ function PathGate({ L, w, gate }: { L: Lesson; w: LessonWalk; gate: 'key' | 'bac
         {read ? (
           <Quiet label="Read it all again" onPress={again} />
         ) : nx ? (
-          <Quiet label={'Up next: lesson ' + lessonNo(nx, st)} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } })} />
+          <Quiet label={'Up next: lesson ' + lessonNo(nx, st, snap.days)} onPress={() => router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } })} />
         ) : null}
       </View>
     );
@@ -891,6 +1023,18 @@ function Help988() {
   );
 }
 /** one answer to a step's deed: a plain choice on paper, like a question's answers, neither one marked as the right one */
+/** a length to pick, on paper like every answer in a lesson; the saved one shows picked */
+function LenBtn({ on, title, sub, mins, onPress }: { on: boolean; title: string; sub: string; mins: string; onPress: () => void }) {
+  return (
+    <Answer sel={on} right={false} onPress={onPress} label={title + ', ' + mins + '. ' + sub} style={{ gap: 2 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+        <Text style={{ fontFamily: font.display, fontSize: 17, lineHeight: 22, color: PAPER_INK }}>{title}</Text>
+        <Text style={{ fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: PAPER_INK }}>{mins}</Text>
+      </View>
+      <Text style={{ fontFamily: font.body, fontSize: 13, lineHeight: 18, color: PAPER_INK }}>{sub}</Text>
+    </Answer>
+  );
+}
 function DeedBtn({ title, sub, onPress }: { title: string; sub: string; onPress: () => void }) {
   return (
     <Answer sel={false} right={false} onPress={onPress} style={{ gap: 2 }}>
@@ -1035,7 +1179,30 @@ function Blocks({ bs, t, st }: { bs?: Block[]; L: Lesson; t: Tone; st: Settings 
 }
 
 /** the words of a card: one thought, with a real picture when it has one, and room left for the flame */
-function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: Card; beat: Beat; look: Look; st: Settings; want: number; onSrc: () => void }) {
+function TextCard({
+  L,
+  card,
+  beat,
+  look,
+  st,
+  want,
+  deep,
+  listen,
+  onListen,
+  onSrc,
+}: {
+  L: Lesson;
+  card: Card;
+  beat: Beat;
+  look: Look;
+  st: Settings;
+  want: number;
+  deep?: boolean;
+  listen?: boolean;
+  onListen?: () => void;
+  onSrc: () => void;
+}) {
+  const days = useStore().snap.days;
   const art = cardArt(card);
   const h = beat.h || card.h;
   /* what is the person's own stays on the card; the rest of the original words are in More */
@@ -1043,7 +1210,52 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
   const tone = look.art as Tone;
   /* a card that builds on an earlier lesson names it, as part of the thought, not as a review */
   const B = card.back ? lessonById(card.back) : null;
-  const bn = B ? lessonNo(B, st) : null;
+  const bn = B ? lessonNo(B, st, days) : null;
+  /* a lesson told as a story leads with its picture, big, and the words under it; the flame steps to the side and waits, and comes
+     back to the middle on a card with no picture (the owner, November 14, 2026: "the visual should be like the main part ... the
+     flame's kind of off to the side and then it can come in every once in a while") */
+  /* something to try is touched, so it sits low, under its heading, where the thumb reaches */
+  if (L.form && art && art[0] === 'try')
+    return (
+      <>
+        <T style={[s.h, s.hsm]} accessibilityRole="header">
+          {h}
+        </T>
+        <View style={s.storyFoot}>
+          <LessonArt key={L.id + card.h} art={art} ic={L.ic} t={tone} st={st} />
+        </View>
+      </>
+    );
+  if (L.form && art && card.e !== 'move' && !own.length)
+    return (
+      <>
+        {/* in Deep the reading is long, so the card scrolls and the picture keeps its full size */}
+        <FitArt style={s.storyArt} min={deep ? 1 : undefined} drop={deep ? undefined : 0.4} stretch={art[0] === 'research' || art[0] === 'wave'}>
+          <LessonArt key={L.id + card.h} art={art} ic={L.ic} t={tone} st={st} />
+        </FitArt>
+        {B ? (
+          <T v="small" tone="muted">
+            {(bn ? 'From lesson ' + bn : 'From') + ', ' + B.title}
+          </T>
+        ) : null}
+        <SpokenCard
+          key={L.id + card.h}
+          h={h}
+          body={deep && beat.dx ? beat.dx : beat.p}
+          st={st}
+          on={!!listen}
+          hStyle={[s.h, h.length > 64 && s.hsm]}
+          pStyle={s.storyP}
+        />
+        {card.fact ? <Fact text={card.fact.s} onPress={onSrc} /> : null}
+        <View style={s.storyFoot}>
+          <View style={s.storyRow}>
+            {LISTEN_OK && onListen ? <ListenButton on={!!listen} onPress={onListen} ink={look.dashOn} /> : null}
+            <FlameSlot size={92} min={84} side style={s.storyFlame} />
+          </View>
+        </View>
+      </>
+    );
   return (
     <>
       {B ? (
@@ -1062,7 +1274,7 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
       <T style={[s.h, SHORT && h.length > 40 && s.hsm]} accessibilityRole="header">
         {h}
       </T>
-      {beat.p ? <Rich text={beat.p} st={st} style={s.p} /> : null}
+      {deep && beat.dx ? <Rich text={beat.dx} st={st} style={s.p} /> : beat.p ? <Rich text={beat.p} st={st} style={s.p} /> : null}
       {beat.l ? (
         /* steps, not buttons: a number and the words, nothing that looks tappable */
         <View style={{ gap: 14, marginTop: 10 }} accessibilityRole="list">
@@ -1086,6 +1298,9 @@ function TextCard({ L, card, beat, look, st, want, onSrc }: { L: Lesson; card: C
     </>
   );
 }
+/* a story card's words are a little larger and a little softer than the heading, which is easier on the eye in light on a dark sky
+   (the owner, November 14, 2026: "ways that we could make the words or text easier to read or bigger", and on the sample: "it looks
+   great with the bigger words"). They land all at once: sentences coming in one by one felt glitchy (the owner, the same day). */
 /** the solid violet card: a giant number that starts a sentence, one line of what it means, and where it comes from. No sky, no flame. */
 function NumberCard({ n, h, lead, p, st, fact, onSrc }: { n: string; h: string; lead?: string; p?: string; st: Settings; fact?: string; onSrc: () => void }) {
   const c = useTheme();
@@ -1257,6 +1472,12 @@ const s = StyleSheet.create({
   x: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   guessMid: { alignItems: 'center', justifyContent: 'center', minHeight: 110 },
   art: { alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+  storyP: { fontSize: 20, lineHeight: 28, opacity: 0.92 },
+  quiet988: { opacity: 0.75, marginTop: 8 },
+  storyFoot: { flexGrow: 1, justifyContent: 'flex-end' },
+  storyFlame: { flexGrow: 1, height: 84 },
+  storyRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
+  storyArt: { alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   eye2: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   h: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
   hsm: { fontSize: 22, lineHeight: 28 },

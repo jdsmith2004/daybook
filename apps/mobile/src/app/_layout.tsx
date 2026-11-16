@@ -5,6 +5,7 @@ import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
+import { Newsreader_600SemiBold_Italic } from '@expo-google-fonts/newsreader/600SemiBold_Italic';
 import {
   nudgeAt,
   nudgeCounts,
@@ -44,15 +45,18 @@ import { AppState, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { CelebrateHost } from '@/components/celebrate';
+import { LaunchScene } from '@/components/launch';
+import { dropWebShell } from '@/lib/web-shell';
 import { LockGate } from '@/components/lock';
 import { Oops } from '@/components/oops';
 import { Toast } from '@/components/toast';
+import '@/lib/lesson-text';
 import { useWatchOpens } from '@/lib/day-open';
 import { forgetDrafts } from '@/lib/drafts';
 import { useFlameWidget } from '@/lib/flame-widget';
 import { keepRootState, SHEETS, type NavState } from '@/lib/nav';
 import { NoteCopy } from '@/lib/notes';
-import { setNudgeLog, useNudgeLog, useReminderPrefs } from '@/lib/prefs';
+import { setNudgeLog, useNudgeLog, useReminderPrefs, whenPrefsKnown } from '@/lib/prefs';
 import { listenForTaps, onPermission, remindersAllowed, remindersOffered, scheduleNudges, scheduleTrail } from '@/lib/reminders';
 import { SosProvider, useSos } from '@/lib/sos';
 import '@/lib/setup-keep';
@@ -62,12 +66,17 @@ import { DayEvents, FlameEvents } from '@/lib/events-day';
 import { NightPackKeeper } from '@/lib/night-pack';
 import { PullKeeper } from '@/lib/pull';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
+import { FriendsKeeper } from '@/lib/friends';
+import { friendsDemo } from '@/lib/friends-demo';
 import { SyncProvider, useAccount } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 import { useWhatsNew } from '@/lib/whats-new';
 
+/* the splash stays up until the app's first frame, which is the same picture (components/launch.tsx), and goes with no fade of its own:
+   the scene carries on from it */
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
+SplashScreen.setOptions({ fade: false });
 
 /* the phone's notifications (core nudges.ts): each time the app opens, what was delivered is judged (helped or missed) and the
    plan for today and tomorrow, with the come-back notes, is made again; the phone's schedule changes only when the plan does.
@@ -246,7 +255,9 @@ const OPEN_BEFORE_SETUP = new Set([
 function SetupGate() {
   const { ready, snap } = useStore();
   const top = useSegments()[0] as string | undefined;
-  const shut = ready && !snap.settings && !!top && !OPEN_BEFORE_SETUP.has(top);
+  /* the Friends demo (lib/friends-demo.ts) is for looking, with no setup: its pages stay open */
+  const demo = friendsDemo() && !!top && top.startsWith('friend');
+  const shut = ready && !snap.settings && !!top && !OPEN_BEFORE_SETUP.has(top) && !demo;
   useEffect(() => {
     if (shut) router.replace('/');
   }, [shut, top]);
@@ -313,11 +324,21 @@ function Shell() {
     InstrumentSans_600SemiBold,
     InstrumentSans_700Bold,
     Newsreader_400Regular,
+    Newsreader_600SemiBold_Italic,
   });
-  const go = ready && (fonts || !!fontError);
+  /* the device's own choices (the theme, the lock) are read before the first frame, so nothing is drawn in one look and redrawn in another */
+  const [prefs, setPrefs] = useState(false);
   useEffect(() => {
-    if (go) SplashScreen.hideAsync().catch(() => undefined);
-  }, [go]);
+    whenPrefsKnown().then(() => setPrefs(true));
+  }, []);
+  const go = ready && prefs && (fonts || !!fontError);
+  /* the first frame lets the splash go (the opening scene, components/launch.tsx, once it has drawn the same picture); when the log
+     could not be opened there is no scene, so the splash goes here */
+  useEffect(() => {
+    if (go && loadFailed) SplashScreen.hideAsync().catch(() => undefined);
+    /* on the web, the page's own first picture (lib/web-shell.ts) goes once the app has drawn */
+    if (go) dropWebShell();
+  }, [go, loadFailed]);
   const base = c.scheme === 'dark' ? DarkTheme : DefaultTheme;
   const nav = { ...base, colors: { ...base.colors, background: c.bg, card: c.surface, text: c.ink, primary: c.accent, border: c.line } };
   if (!go) return null;
@@ -346,6 +367,7 @@ function Shell() {
       <NavKeeper />
       <HealthKeeper rollover={snap.settings?.rollover ?? 4} />
       <PullKeeper />
+      <FriendsKeeper />
       <NightPackKeeper />
       <SetupGate />
       <LockGate>
@@ -369,7 +391,6 @@ function Shell() {
             'week',
             'back',
             'whats-new',
-            'feedback',
             'future',
             'pause',
             'morning',
@@ -378,6 +399,8 @@ function Shell() {
             'ignite',
             'becoming',
             'import/mithras',
+            'love-play',
+            'nightpack',
           ].map((name) => (
             <Stack.Screen key={name} name={name} options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', gestureEnabled: false }} />
           ))}
@@ -392,6 +415,8 @@ function Shell() {
         <WhatsNewGate />
         <Toast />
       </LockGate>
+      {/* over everything, the lock's cover included: the opening, from the splash's picture to Today */}
+      <LaunchScene />
     </ThemeProvider>
   );
 }

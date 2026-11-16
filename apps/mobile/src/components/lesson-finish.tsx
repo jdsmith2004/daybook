@@ -1,25 +1,25 @@
-/* The end of a lesson (the owner, November 12, 2026: "i want the celebrations to be better and to show them getting points just like
-   duolingo", then "it just doesn't look as good", "it should just be one button underneath back to wherever they started the
-   lesson from" and "the +40 points it should go into the bar and move it up"). One page, after the last card (app/lesson/[id].tsx
-   hands over here). Built from Duolingo's lesson end, beat by beat, with the flame as the one living thing:
-   1. the opener: a tilted band sweeps in across a flat night, the flame huge inside it, "Lesson 4 done!" pops in sun yellow and
-      confetti bursts (a chime when sound is on, a heavy knock);
-   2. the band slides away and the flame settles into its place, gold stars twinkling around it, and the title rises;
-   3. the points pop in low (a star first, then the count), then the points themselves fly into the level bar and are gone into
-      it, gold stars trailing, a tick as each lands, and the bar fills with them; a new level pops and the flame blooms;
-   4. then the lessons line: how many lessons are done, and one more star flies in for this one (the owner, November 13, 2026:
-      "then you see total lessons done as a line and experience goes to it");
-   5. the flame says the one line to keep, in its cream bubble;
-   6. only then the one button, Continue, back to wherever the lesson was opened.
-   About five seconds; a tap anywhere brings it all in at once. Reduce Motion: no opener, everything in, settled, one buzz.
-   In the hours after a slip (core ptsQuiet) the points are not shown or flown, as everywhere else: the lesson itself is the win.
-   A lesson read again earns no points, so nothing flies.
-   The look (the owner, November 13, 2026: "i want them to look better"; every beat keeps its time): in the opener a sunburst of rays
-   turns behind the flame and a white flash blooms as it bursts up (`Rays`, `Flash`), the shout glows warm; at rest the flame stands in
-   a breathing gold halo (`Halo`); the points glow, and as they land the level bar lights up and a sheen runs along its fill (`Sheen`);
-   a new level sends a ring out from the bar and throws the confetti again; the confetti has gold stars in it. */
-import { gameCompute, lessonCount, lessonWalk, levelOf, ptsQuiet } from '@daybook/core';
-import * as Haptics from 'expo-haptics';
+/* The end of a lesson: the earned moment after the last card (app/lesson/[id].tsx hands over here).
+   Redone calm (the owner, November 14, 2026: "take a look at the perfect lesson from the duolingo and how smooth the transition is
+   theres no bouncing and it's very clean", and "the app has too much confetti it needs more subtelty"). Built from the timing of
+   Duolingo's perfect-lesson end, studied frame by frame: the band glides in once, holds while it drifts a little, the mascot
+   settles into its place in one continuous move, and each thing after it arrives once, by fading and rising a few points, and
+   stays. Nothing springs, overshoots, pops or shakes; every move is a timing curve that ends at rest.
+   1. the opener: a tilted band glides in across the night with the flame big inside it, "Lesson 4 done" rises under it, and a
+      few gold glints drift away from the words (a chime when sound is on, one success buzz);
+   2. the band fades as the flame travels and shrinks into its place, in one move, and the title, its warm halo and a few faint
+      stars come in around it;
+   3. the points rise in low and count up, then glide into the level line and are gone into it as it fills; a new level turns
+      the label over and the flame blooms once;
+   4. the lessons line fills by this one;
+   Each line runs to its next milestone, a round mark at its end (the next level; the end of this step of the path), and never
+   says what it is out of (the owner, November 14, 2026: "show it in perspective to the next milestone ... don't say what it's
+   out of");
+   5. the flame says the one line to keep, and the one button, Continue, back to wherever the lesson was opened.
+   About four seconds; a tap anywhere brings it all in at once. Reduce Motion: no opener, everything in and settled, one buzz.
+   In the hours after a slip (core ptsQuiet) the points and the level line are not shown, as everywhere else: the lesson itself
+   is the win. A lesson read again earns no points, so nothing glides. */
+import { gameCompute, lessonCount, lessonWalk, levelOf, LOOKS, ptsQuiet, sparkUsed, stepProgress, type Look } from '@daybook/core';
+import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View, type ViewInstance } from 'react-native';
@@ -31,7 +31,6 @@ import Reanimated, {
   withDelay,
   withRepeat,
   withSequence,
-  withSpring,
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
@@ -41,26 +40,34 @@ import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg'
 import { BigFlame } from '@/components/big-flame';
 import { SHORT } from '@/components/fit';
 import { Bubble } from '@/components/lesson-flame';
-import { Meter, meterTime, type MeterSpec } from '@/components/reward-kit';
 import { Text } from '@/components/text';
-import { buzz, knock } from '@/lib/feel';
+import { Spark } from '@/components/friends-art';
+import { useSpendSpark } from '@/lib/friends';
+import { buzz } from '@/lib/feel';
+import { pulseOffered } from '@/lib/pulse';
 import { useReducedMotion } from '@/lib/motion';
 import { play } from '@/lib/sound';
 import { useStore } from '@/lib/store';
 import { font, nightInk } from '@/lib/theme';
 
 const GOLD = '#FFD25A';
+/** each face's place in core LOOKS */
+const LOOK = Object.fromEntries(LOOKS.map((k, i) => [k, i])) as Record<(typeof LOOKS)[number], number>;
 const NIGHT = '#16113A';
-const BAND = '#3A2C8F';
+const BAND = '#2E2477';
 const LIP = '#D99A12';
 const ORANGE = '#FF9A2E';
-const CONFETTI = [GOLD, '#FF8A5B', '#FFFFFF', '#A898FF', '#7FE0B5', GOLD];
-/** the warm glow behind the words that shout */
-const WARM = { textShadowColor: 'rgba(255,154,46,0.6)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 18 } as const;
+/** the lessons line, apart from the gold of the points and the level */
+const MINT = '#5EE0B5';
 /** a four-point star, in a 24 box */
 const STAR = 'M12 0C13 8 16 11 24 12C16 13 13 16 12 24C11 16 8 13 0 12C8 11 11 8 12 0Z';
+/* the curves: things arrive decelerating, travel easing both ways, and nothing passes its mark */
+const OUT = Easing.out(Easing.cubic);
+const BOTH = Easing.inOut(Easing.cubic);
 
 export interface LessonFinishProps {
+  /** a real lesson finished: a spark a friend sent goes into it (Friends, lib/friends.ts), and the finish says so */
+  spendSpark?: boolean;
   lessonId: string;
   title: string;
   /** the lesson's number on the path */
@@ -73,21 +80,69 @@ export interface LessonFinishProps {
   stats: { cards: number; combo: number; secs: number };
   /** the one line to keep */
   keep: string;
-  /** kept for the lesson player; the page has one button now, back to where the lesson was opened (onDone) */
+  /** kept for the lesson player; the page has one button, back to where the lesson was opened (onDone) */
   next: { id: string; title: string } | null;
   onNext: () => void;
   onDone: () => void;
+  /** the same moment for another win (the Sunday review): its words in place of "Lesson 4 done" */
+  head?: string;
+  /** its second line in place of the lessons line: a label, a word on the right, and where it fills from and to (0 to 1) */
+  line?: { label: string; right?: string; from: number; to: number } | null;
+  /** the button's word (Continue) */
+  button?: string;
+  /** the quiet "Feedback on this lesson" link, on for a lesson */
+  feedback?: boolean;
+  /** the opener: the band (a lesson), or dawn (the Sunday review): no band, the flame rises from below like a sun into a warm
+      horizon, and a row of marks (the goal's nights or days) lights one by one under the title */
+  look?: 'band' | 'dawn';
+  marks?: number;
 }
 
-/* when each beat of the opener starts, in ms; the rest starts at T0 */
-const OPEN = { title: 260, confetti: 300, out: 1700 };
-const T0 = OPEN.out + 300;
-/* how long the points take to fly into the bar */
-const FLY = 650;
+/* when each beat starts, in ms */
+const T = {
+  /** the band and the flame glide in */
+  inMs: 420,
+  /** the band opens from a line across the middle, and the flame slides in once it is open */
+  slitMs: 260,
+  slideAt: 160,
+  /** the opener holds, then the flame travels to its place */
+  settle: 1350,
+  settleMs: 560,
+  /** the title, the halo and the two lines come in as the flame arrives */
+  rest: 1650,
+  /** the points rise in and count up */
+  pts: 2000,
+  /** the points glide into the level line */
+  glide: 2700,
+  glideMs: 600,
+  /** the level line fills */
+  fillMs: 700,
+};
 
 type Line = { x0: number; y0: number; x1: number; y1: number };
+/* name: the step the lesson is in, the milestone the line runs to; null when the line is the whole path */
+type Lessons = { name: string | null; from: number; to: number };
 
-export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFinishProps) {
+export function LessonFinish({
+  lessonId,
+  title,
+  n,
+  gain,
+  again,
+  keep,
+  onDone,
+  head,
+  line,
+  button = 'Continue',
+  feedback = true,
+  look: kind = 'band',
+  marks = 0,
+  spendSpark,
+}: LessonFinishProps) {
+  const dawn = kind === 'dawn';
+  /* a friend's spark waiting for this lesson goes into it, once; its sender is told */
+  const spark = useSpendSpark(!!spendSpark && !again);
+  const done = head ?? 'Lesson ' + n + ' done';
   const { snap, tk, now } = useStore();
   const st = snap.settings;
   const win = useWindowDimensions();
@@ -101,73 +156,77 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
     const shown = quiet || again ? 0 : gain;
     return { pts, before: levelOf(Math.max(0, pts - shown)), after: g?.level ?? levelOf(pts), shown, quiet };
   });
-  const dots = Math.min(8, Math.max(3, Math.round(m.shown / 5)));
   const up = m.after.n > m.before.n;
-  /* with the level bar hidden (the hours after a slip) nothing is shown; with it, the points end up inside it */
+  /* with the level line hidden (the hours after a slip) nothing is shown; with it, the points end up inside it */
   const flying = m.shown > 0 && !m.quiet;
-  /* the lessons line: done of the path, this one included (it is recorded before this page); a read again adds nothing */
-  const [lessons] = useState<MeterSpec | null>(() => {
+  /* the lessons line runs to the next milestone, the end of this step (the owner, November 14, 2026: "show it in perspective to
+     the next milestone ... don't say what it's out of"), this one included (it is recorded before this page); a read again adds
+     nothing. A lesson off the path runs along the whole path. */
+  const [lessons] = useState<Lessons | null>(() => {
+    if (line !== undefined) return line ? { name: line.right ?? null, from: line.from, to: line.to } : null;
     if (!st) return null;
-    const c = lessonCount(lessonWalk(snap.days, st));
+    const w = lessonWalk(snap.days, st);
+    const p = stepProgress(w, lessonId);
+    const c = p ?? lessonCount(w);
     if (!c.of) return null;
     const before = again ? c.done : Math.max(0, c.done - 1);
-    return {
-      label: 'Lessons',
-      right: c.done + ' of ' + c.of,
-      from: before / c.of,
-      to: c.done / c.of,
-      stars: again ? 1 : 3,
-      a11y: c.done + ' of ' + c.of + ' lessons done',
-    };
+    return { name: p ? p.name : null, from: before / c.of, to: c.done / c.of };
   });
-  const [lessonsAt, setLessonsAt] = useState<number | null>(still ? 0 : null);
 
-  const [beat, setBeat] = useState(0);
+  const [beat, setBeat] = useState(still ? 2 : 0);
   const [pulse, setPulse] = useState(0);
-  const [lvl, setLvl] = useState(m.before.n);
+  const [lvl, setLvl] = useState(still ? m.after.n : m.before.n);
   const [count, setCount] = useState(still ? m.shown : 0);
+  /* the points to the next level, as they stand before the points land and after */
+  const [landed, setLanded] = useState(still || !flying);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const at = (ms: number, f: () => void) => timers.current.push(setTimeout(f, ms));
 
-  /* the opener: open 1 = the flame huge in the band, 0 = settled in its place; band 0 off left, 1 across, 2 off right */
+  /* the opener: enter 0 = not yet, 1 = in; open 1 = the flame big in the band, 0 = settled in its place */
+  const enter = useSharedValue(still ? 1 : 0);
   const open = useSharedValue(still ? 0 : 1);
-  const band = useSharedValue(still ? 2 : 0);
-  const grow = useSharedValue(still ? 1 : 0);
+  const drift = useSharedValue(0);
+  /* the band opening, from a line to its full height */
+  const slit = useSharedValue(still ? 1 : 0);
   const shout = useSharedValue(0);
-  const conf = useSharedValue(0);
-  const twinkle = useSharedValue(still ? 1 : 0);
-  /* the look: the white flash as the flame bursts up, the bar lighting up as the points land, the sheen along its fill, the ring a
-     new level sends out */
-  const flash = useSharedValue(0);
-  const lit = useSharedValue(0);
-  const sheen = useSharedValue(0);
-  const ring = useSharedValue(0);
-  const [trackW, setTrackW] = useState(0);
-
-  const head = useSharedValue(still ? 1 : 0);
-  const star = useSharedValue(0);
-  const ptsV = useSharedValue(0);
-  /* 0 = the points where they popped, 1 = gone into the bar */
+  const glint = useSharedValue(0);
+  /* the page at rest */
+  const rest = useSharedValue(still ? 1 : 0);
+  const ptsV = useSharedValue(still ? 1 : 0);
+  /* 0 = the points where they rose, 1 = gone into the level line */
   const go = useSharedValue(still ? 1 : 0);
-  const fly = useSharedValue(0);
   const bar = useSharedValue(still ? m.after.frac : m.before.frac);
-  const gulp = useSharedValue(1);
+  const lvFade = useSharedValue(1);
+  const lessonsV = useSharedValue(still ? 1 : 0);
+  const lessonsFill = useSharedValue(still || !lessons ? (lessons?.to ?? 0) : lessons.from);
   const say = useSharedValue(still ? 1 : 0);
-  const lvPop = useSharedValue(1);
   const btn = useSharedValue(still ? 1 : 0);
+  /* dawn: the marks lit so far, one by one */
+  const lit = useSharedValue(still ? marks : 0);
+  /* the flame acting, as Duolingo's owl does on its finish (the owner, November 14, 2026: "the owl has like clever movements"):
+     its eyes (0 open, 1 shut), a slow sway on its feet once it is home, and a nod toward the level line as the points land */
+  const look = useSharedValue(0);
+  const sway = useSharedValue(0);
+  const nod = useSharedValue(0);
+  /* the flame settling its weight as it lands home: a soft squash that eases out, never past its shape */
+  const land = useSharedValue(0);
+  /* the head going a little way with a glance, in degrees */
+  const lean = useSharedValue(0);
+  /* the line to keep writes itself out, letter by letter, once the flame says it */
+  const [typed, setTyped] = useState(still ? keep.length : 0);
 
-  /* the flame, the points and the level bar, measured in the window: the flame starts in the middle of the screen, and the points
-     fly from where they popped into the bar (to where it will end, or to its end when it fills to a new level) */
+  /* the flame, the points and the level line, measured in the window: the flame starts in the middle of the screen, and the
+     points glide from where they rose into the line (to where it will end, or to its end when it fills to a new level) */
   const root = useRef<ViewInstance>(null);
   const flameRef = useRef<ViewInstance>(null);
   const ptsRef = useRef<ViewInstance>(null);
   const trackRef = useRef<ViewInstance>(null);
   const [path, setPath] = useState<Line | null>(null);
-  const [rest, setRest] = useState<{ x: number; y: number } | null>(null);
+  const [spot, setSpot] = useState<{ x: number; y: number } | null>(null);
   const measure = () => {
     root.current?.measureInWindow((rx, ry) => {
-      flameRef.current?.measureInWindow((fx, fy, fw, fh) => setRest({ x: fx - rx + fw / 2, y: fy - ry + fh / 2 }));
+      flameRef.current?.measureInWindow((fx, fy, fw, fh) => setSpot({ x: fx - rx + fw / 2, y: fy - ry + fh / 2 }));
       ptsRef.current?.measureInWindow((px, py, pw, ph) =>
         trackRef.current?.measureInWindow((tx, ty, tw, th) =>
           setPath({ x0: px - rx + pw / 2, y0: py - ry + ph / 2, x1: tx - rx + tw * Math.max(0.04, up ? 1 : m.after.frac), y1: ty - ry + th / 2 }),
@@ -177,343 +236,459 @@ export function LessonFinish({ title, n, gain, again, keep, onDone }: LessonFini
   };
 
   const big = Math.min(win.width - 120, win.height * (SHORT ? 0.22 : 0.27), 240);
-  /* how big the flame is in the opener, and where: the middle of the band */
-  const K = Math.min(1.7, (win.width * 0.78) / big);
+  /* how big the flame is in the opener, and where: a little above the middle, the words under it */
+  const K = Math.min(1.6, (win.width * 0.9) / big);
+  const B = Math.round(big * K);
   const midY = win.height * 0.4;
-  const dy = rest ? midY - rest.y : 0;
+  const dy = spot ? midY - spot.y : 0;
+  const shoutY = midY + B * 0.42;
+  const bandTop = midY - B * 0.4;
+  const bandH = B * 0.82 + 96;
 
+  /* a tap during the opener brings everything in at once, settled */
   const all = () => {
-    setLessonsAt(-1);
     timers.current.forEach(clearTimeout);
     timers.current = [];
-    const q = { duration: still ? 0 : 200 };
+    const q = { duration: 220, easing: OUT };
+    enter.value = withTiming(1, q);
     open.value = withTiming(0, q);
-    band.value = withTiming(2, q);
-    grow.value = withTiming(1, q);
     shout.value = withTiming(0, q);
-    conf.value = 1;
-    twinkle.value = withTiming(1, q);
-    for (const v of [head, say, btn, go]) v.value = withTiming(1, q);
-    for (const v of [flash, lit, sheen, ring]) v.value = 0;
-    fly.value = 0;
+    glint.value = 1;
+    for (const v of [rest, ptsV, go, lessonsV, say, btn]) v.value = withTiming(1, q);
+    lvFade.value = 1;
     bar.value = withTiming(m.after.frac, q);
+    if (lessons) lessonsFill.value = withTiming(lessons.to, q);
     setLvl(m.after.n);
     setCount(m.shown);
+    setTyped(keep.length);
+    slit.value = 1;
+    lit.value = marks;
+    look.value = 0;
+    lean.value = 0;
+    nod.value = withTiming(0, q);
+    setLanded(true);
     setBeat(2);
   };
 
   useEffect(() => {
-    AccessibilityInfo.announceForAccessibility(`Lesson ${n} done. ${flying ? m.shown + ' points. ' : ''}${keep}`);
+    AccessibilityInfo.announceForAccessibility(`${done}. ${flying ? m.shown + ' points. ' : ''}${keep}`);
     if (still) {
       buzz('lit');
-      setBeat(2);
       return;
     }
     setBeat(1);
-    /* 1. the band sweeps in and the flame bursts up inside it */
-    band.value = withSpring(1, { damping: 16, stiffness: 140 });
-    grow.value = withDelay(80, withSpring(1, { damping: 9, stiffness: 160 }));
-    flash.value = withDelay(80, withTiming(1, { duration: 460, easing: Easing.out(Easing.cubic) }));
-    knock(Haptics.ImpactFeedbackStyle.Heavy);
-    at(OPEN.title, () => {
-      play('chime');
-      shout.value = withSpring(1, { damping: 8, stiffness: 220 });
+    /* 1. the band and the flame glide in, the words rise under them, a few glints drift off */
+    play('chime');
+    buzz('lit');
+    slit.value = withTiming(1, { duration: T.slitMs, easing: OUT });
+    enter.value = withDelay(T.slideAt, withTiming(1, { duration: dawn ? 1000 : T.inMs, easing: OUT }));
+    drift.value = withTiming(1, { duration: T.settle + T.settleMs, easing: Easing.linear });
+    shout.value = withDelay(T.slideAt + 260, withTiming(1, { duration: 420, easing: OUT }));
+    glint.value = withDelay(T.slideAt + 300, withTiming(1, { duration: 1700, easing: Easing.linear }));
+    /* the flame comes home pleased with itself: a happy squint, then it sways a little on its feet and acts, at no exact beat, for
+       as long as the page is open: a glance one way and the other, a sly look, a quick squint (the faces are core LOOKS) */
+    const home = T.settle + T.settleMs;
+    /* a move plays a few poses in a row, holds, and plays them back, so the eyes turn and the lids slide (core LOOKS); a glance takes the
+       head a little way with it */
+    const MOVES: Record<string, { go: Look[]; back: Look[]; ms: number; lean?: number }> = {
+      blink: { go: ['b1', 'b2'], back: ['b1', 'ahead'], ms: 34 },
+      glance: { go: ['l1', 'l2', 'l3'], back: ['l2', 'l1', 'ahead'], ms: 32, lean: -2.6 },
+      sly: { go: ['s1', 's2', 's3'], back: ['s2', 's1', 'ahead'], ms: 46 },
+      slyLeft: { go: ['l1', 'l2', 'l3', 'sl1', 'sl2', 'sl3'], back: ['sl2', 'sl1', 'l2', 'l1', 'ahead'], ms: 38, lean: -2 },
+      down: { go: ['d1', 'd2'], back: ['d1', 'ahead'], ms: 40 },
+      happy: { go: ['b1', 'happy'], back: ['b1', 'ahead'], ms: 40 },
+    };
+    const move = (name: keyof typeof MOVES, hold: number) => {
+      const m = MOVES[name];
+      m.go.forEach((k, i) => at(i * m.ms, () => (look.value = LOOK[k])));
+      const back = m.go.length * m.ms + hold;
+      m.back.forEach((k, i) => at(back + i * m.ms, () => (look.value = LOOK[k])));
+      if (m.lean) {
+        lean.value = withTiming(m.lean, { duration: 280, easing: BOTH });
+        at(back, () => (lean.value = withTiming(0, { duration: 340, easing: BOTH })));
+      }
+    };
+    const face = move;
+    at(home - 80, () => {
+      face('happy', 680);
+      buzz('land');
+      land.value = withSequence(withTiming(1, { duration: 110, easing: OUT }), withTiming(0, { duration: 420, easing: OUT }));
     });
-    at(OPEN.confetti, () => {
-      buzz('lit');
-      setPulse((p) => p + 1);
-      conf.value = withTiming(1, { duration: 1600, easing: Easing.linear });
-    });
-    /* 2. the band slides off and the flame settles into its place */
-    at(OPEN.out, () => {
-      band.value = withTiming(2, { duration: 420, easing: Easing.in(Easing.cubic) });
-      shout.value = withTiming(0, { duration: 220 });
-      open.value = withSpring(0, { damping: 14, stiffness: 120 });
-      knock(Haptics.ImpactFeedbackStyle.Light);
-    });
-    at(OPEN.out + 250, () => {
-      head.value = withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) });
-      twinkle.value = withTiming(1, { duration: 400 });
-    });
-    let next = T0 + 500;
+    sway.value = withDelay(home + 300, withRepeat(withTiming(1, { duration: 1700, easing: Easing.inOut(Easing.sin) }), -1, true));
+    /* [the move, how long it holds, the pause before it]: blinks between the looks, at no exact beat, the way a face rests */
+    const acts: [keyof typeof MOVES, number, number][] = [
+      ['blink', 60, 1300],
+      ['glance', 760, 1500],
+      ['blink', 60, 500],
+      ['sly', 1200, 2100],
+      ['blink', 60, 2400],
+      ['slyLeft', 1000, 1700],
+      ['blink', 60, 2900],
+      ['happy', 520, 1900],
+    ];
+    /* after the points have gone in and any new level has turned over */
+    let t = home + 2000;
+    for (let round = 0; round < 4; round++)
+      for (const [k, hold, gap] of acts) {
+        t += gap;
+        const at0 = t;
+        at(at0, () => face(k, hold));
+        t += hold + 400;
+      }
+    /* 2. one continuous move: the band fades as the flame travels to its place */
+    open.value = withDelay(T.settle, withTiming(0, { duration: T.settleMs, easing: BOTH }));
+    rest.value = withDelay(T.rest, withTiming(1, { duration: 480, easing: OUT }));
+    if (dawn && marks) {
+      lit.value = withDelay(T.rest + 200, withTiming(marks, { duration: marks * 160, easing: Easing.linear }));
+      for (let k = 1; k <= marks; k++) at(T.rest + 200 + k * 160, () => buzz('tick'));
+    }
+    lessonsV.value = withDelay(T.rest + 120, withTiming(1, { duration: 480, easing: OUT }));
+    let next = T.rest + 450;
     if (flying) {
-      /* 3. a star pops, then the points, which count up */
-      at(T0 + 300, () => {
-        knock(Haptics.ImpactFeedbackStyle.Light);
-        star.value = withSpring(1, { damping: 7, stiffness: 220 });
-      });
-      at(T0 + 450, () => {
-        ptsV.value = withSpring(1, { damping: 10, stiffness: 200 });
-      });
-      for (let k = 1; k <= 12; k++) at(T0 + 500 + k * 30, () => setCount(Math.round((m.shown * k) / 12)));
-      /* then the points themselves fly into the bar, stars trailing them, a tick as each lands, and the bar fills */
-      const flyAt = T0 + 1250;
-      at(flyAt, () => {
-        go.value = withTiming(1, { duration: FLY, easing: Easing.in(Easing.cubic) });
-        fly.value = withTiming(1, { duration: FLY + dots * 60, easing: Easing.linear });
-      });
-      const into = flyAt + FLY - 40;
-      for (let i = 0; i < dots; i++) at(into + i * 60, () => buzz('tick'));
-      at(into, () => {
-        gulp.value = withSequence(withTiming(1.25, { duration: 110 }), withSpring(1, { damping: 6, stiffness: 260 }));
-        /* the bar lights up while the stars land, then the light fades and a sheen runs along the fill */
-        lit.value = withSequence(withTiming(1, { duration: 160 }), withDelay(dots * 60, withTiming(0, { duration: 700 })));
-        sheen.value = withDelay(dots * 60 + 80, withTiming(1, { duration: 520, easing: Easing.inOut(Easing.cubic) }));
-      });
-      const landed = into + dots * 60 + 60;
-      if (up) {
-        bar.value = withDelay(into, withTiming(1, { duration: dots * 60 }));
-        at(landed, () => {
-          setLvl(m.after.n);
-          buzz('lit');
-          lvPop.value = 1.5;
-          lvPop.value = withSpring(1, { damping: 7, stiffness: 180 });
-          setPulse((p) => p + 1);
-          /* a ring goes out from the bar, and the confetti is thrown once more */
-          ring.value = 0;
-          ring.value = withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) });
-          conf.value = 0;
-          conf.value = withTiming(1, { duration: 1600, easing: Easing.linear });
-          bar.value = 0;
-          bar.value = withTiming(m.after.frac, { duration: 450, easing: Easing.out(Easing.cubic) });
+      /* 3. the points rise in and count up, then glide into the level line, which fills */
+      ptsV.value = withDelay(T.pts, withTiming(1, { duration: 360, easing: OUT }));
+      const steps = 16;
+      for (let k = 1; k <= steps; k++) {
+        const e = 1 - Math.pow(1 - k / steps, 2);
+        at(T.pts + e * 520, () => {
+          setCount(Math.round((m.shown * k) / steps));
+          /* a faint click as the number climbs, as Duolingo's does, every few steps so it never buzzes */
+          if (k % 4 === 0) buzz('tick');
         });
-      } else bar.value = withDelay(into, withTiming(m.after.frac, { duration: dots * 60 + 160, easing: Easing.out(Easing.cubic) }));
-      next = landed + 350;
+      }
+      go.value = withDelay(T.glide, withTiming(1, { duration: T.glideMs, easing: BOTH }));
+      const into = T.glide + T.glideMs - 120;
+      /* the flame looks down at the line as the points go in, and back up */
+      at(T.glide, () => face('down', T.glideMs + 260));
+      nod.value = withDelay(
+        T.glide,
+        withSequence(withTiming(1, { duration: T.glideMs, easing: BOTH }), withDelay(260, withTiming(0, { duration: 520, easing: BOTH }))),
+      );
+      at(into, () => {
+        buzz('land');
+        if (!up) setLanded(true);
+      });
+      if (up) {
+        /* to the end, the label turns over (a soft dip, never a pop), and it fills again from nothing */
+        bar.value = withDelay(into, withTiming(1, { duration: 480, easing: Easing.in(Easing.quad) }));
+        const turn = into + 480;
+        lvFade.value = withDelay(turn - 160, withSequence(withTiming(0, { duration: 160 }), withTiming(1, { duration: 300, easing: OUT })));
+        at(turn, () => {
+          setLvl(m.after.n);
+          setLanded(true);
+          buzz('lit');
+          setPulse((p) => p + 1);
+          face('happy', 600);
+          bar.value = 0;
+          bar.value = withTiming(m.after.frac, { duration: 520, easing: OUT });
+        });
+        next = turn + 560;
+      } else {
+        bar.value = withDelay(into, withTiming(m.after.frac, { duration: T.fillMs, easing: OUT }));
+        next = into + T.fillMs - 100;
+      }
     }
-    /* 4. the lessons line fills, 5. the line to keep, 6. the button */
+    /* 4. the lessons line fills by this one, 5. as it does, the line to keep and the button come in */
     if (lessons) {
-      setLessonsAt(next);
-      next += meterTime(lessons) - 200;
+      lessonsFill.value = withDelay(next, withTiming(lessons.to, { duration: 600, easing: OUT }));
+      at(next + 560, () => buzz(lessons.to >= 1 ? 'land' : 'tick'));
+      next += 200;
     }
-    at(next, () => {
-      say.value = withTiming(1, { duration: 300 });
-    });
-    at(next + 450, () => {
-      setBeat(2);
-      btn.value = withTiming(1, { duration: 320, easing: Easing.out(Easing.cubic) });
-    });
+    say.value = withDelay(next, withTiming(1, { duration: 300, easing: OUT }));
+    for (let k = 1; k <= keep.length; k++) at(next + 160 + k * 26, () => setTyped(k));
+    btn.value = withDelay(next + 200, withTiming(1, { duration: 420, easing: OUT }));
+    at(next + 200, () => setBeat(2));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const flameIn = useAnimatedStyle(() => ({
-    opacity: rest ? 1 : 0,
-    /* the flame is drawn at its opener size and scaled down to rest, never up past 1: iOS scales the drawn picture, so scaling
-       up made it soft (the owner, November 13, 2026: "super low resolution") */
-    transform: [{ translateY: dy * open.value }, { scale: ((1 + (K - 1) * open.value) / K) * interpolate(grow.value, [0, 1], [0.3, 1]) }],
-  }));
-  const B = Math.round(big * K);
+  /* the flame is drawn at its opener size and scaled down to rest, never up past 1: iOS scales the drawn picture, so scaling
+     up made it soft (the owner, November 13, 2026: "super low resolution") */
+  const flameIn = useAnimatedStyle(() =>
+    dawn
+      ? {
+          /* dawn: up from below the horizon, slowly, then home */
+          opacity: still || spot ? Math.min(1, enter.value * 1.6) : 0,
+          transform: [
+            { translateY: win.height * 0.42 * (1 - enter.value) + dy * open.value },
+            { scale: ((1 + (K - 1) * open.value) / K) * (1 + 0.06 * drift.value * open.value) },
+          ],
+        }
+      : {
+          opacity: still || spot ? Math.min(1, enter.value * 1.4) : 0,
+          transform: [
+            { translateX: -win.width * 0.75 * (1 - enter.value) },
+            { translateY: dy * open.value },
+            /* the camera pushes in slowly while the opener holds, as Duolingo's does */
+            { scale: ((1 + (K - 1) * open.value) / K) * (0.92 + 0.08 * enter.value) * (1 + 0.1 * drift.value * open.value) },
+          ],
+        },
+  );
+  /* the band opens from a line across the middle (the owner, November 14, 2026: "the lightning starts in the middle and opens
+     vertically"), drifts a little while it holds, and as the flame leaves it, it rises away and fades */
   const bandIn = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(band.value, [0, 1, 2], [-win.width * 1.8, 0, win.width * 1.8]) }, { rotate: '-10deg' }],
+    opacity: Math.min(1, slit.value * 3) * interpolate(open.value, [0.2, 0.9], [0, 1], 'clamp'),
+    transform: [
+      { translateY: -win.height * 0.22 * (1 - open.value) },
+      { translateX: 16 * drift.value },
+      { rotate: '-8deg' },
+      { scaleY: Math.max(0.02, slit.value) },
+      { scale: 1 + 0.08 * drift.value },
+    ],
   }));
   const shoutIn = useAnimatedStyle(() => ({
-    opacity: Math.min(1, shout.value * 1.5),
-    transform: [{ scale: interpolate(shout.value, [0, 1], [0.4, 1]) }],
+    opacity: shout.value * interpolate(open.value, [0.55, 1], [0, 1], 'clamp'),
+    transform: [{ translateY: 10 * (1 - shout.value) }, { scale: 0.9 + 0.1 * shout.value }],
   }));
-  /* the points on their way into the bar: a curve down to it, shrinking, gone as they arrive */
-  const ptsGo = useAnimatedStyle(() => {
+  const actIn = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: 4 * nod.value },
+      { rotate: `${(sway.value * 2 - 1) * 2.2 * rest.value + 4 * nod.value + lean.value}deg` },
+      { scaleX: 1 + 0.05 * land.value },
+      { scaleY: 1 - 0.07 * land.value },
+    ],
+  }));
+  const restIn = useAnimatedStyle(() => ({ opacity: rest.value, transform: [{ translateY: 8 * (1 - rest.value) }] }));
+  const ptsIn = useAnimatedStyle(() => {
     const e = go.value;
     const p = path;
-    const dx = p ? p.x1 - p.x0 : 0;
-    const dyp = p ? p.y1 - p.y0 : 0;
     return {
-      opacity: e >= 1 ? 0 : 1 - Math.max(0, (e - 0.75) * 4),
-      transform: [{ translateX: dx * e }, { translateY: dyp * e - 40 * Math.sin(Math.PI * e) }, { scale: 1 - 0.75 * e }],
+      opacity: ptsV.value * (1 - interpolate(e, [0.55, 0.95], [0, 1], 'clamp')),
+      transform: [{ translateX: p ? (p.x1 - p.x0) * e : 0 }, { translateY: (p ? (p.y1 - p.y0) * e : 0) + 8 * (1 - ptsV.value) }, { scale: 1 - 0.55 * e }],
     };
   });
-  const lvIn = useAnimatedStyle(() => ({ transform: [{ scale: lvPop.value }] }));
-  const headIn = useAnimatedStyle(() => ({ opacity: head.value, transform: [{ translateY: 12 * (1 - head.value) }] }));
-  const starIn = useAnimatedStyle(() => ({
-    opacity: Math.min(1, star.value * 2),
-    transform: [{ scale: star.value }, { rotate: `${(1 - star.value) * -90}deg` }],
-  }));
-  const ptsIn = useAnimatedStyle(() => ({ opacity: Math.min(1, ptsV.value * 2), transform: [{ scale: interpolate(ptsV.value, [0, 1], [0.6, 1]) }] }));
-  const sayIn = useAnimatedStyle(() => ({ opacity: say.value, transform: [{ translateY: 8 * (1 - say.value) }] }));
-  const btnIn = useAnimatedStyle(() => ({ opacity: btn.value, transform: [{ translateY: 16 * (1 - btn.value) }] }));
+  const lvIn = useAnimatedStyle(() => ({ opacity: lvFade.value }));
   const barIn = useAnimatedStyle(() => ({ width: `${Math.max(0.04, Math.min(1, bar.value)) * 100}%` }));
-  const trackIn = useAnimatedStyle(() => ({ transform: [{ scaleY: gulp.value }] }));
-  /* the flash lives in the opener, with the rays: in with the flame, gone with the band */
-  const flashIn = useAnimatedStyle(() => ({
-    opacity: 0.95 * (1 - flash.value) * grow.value,
-    transform: [{ scale: 0.35 + 1.25 * flash.value }],
-  }));
-  const litIn = useAnimatedStyle(() => ({ opacity: 0.45 * lit.value }));
-  const sheenIn = useAnimatedStyle(() => ({
-    opacity: sheen.value <= 0 || sheen.value >= 1 ? 0 : 0.7,
-    transform: [{ translateX: -60 + (trackW + 120) * sheen.value }, { skewX: '-20deg' }],
-  }));
-  const ringIn = useAnimatedStyle(() => ({
-    opacity: ring.value <= 0 ? 0 : 0.9 * (1 - ring.value),
-    transform: [{ scaleX: 1 + 0.1 * ring.value }, { scaleY: 1 + 0.9 * ring.value }],
-  }));
-  const ptsLeft = m.after.next == null ? null : m.after.toNext;
-  const bandH = win.height * 0.56;
+  const lessonsIn = useAnimatedStyle(() => ({ opacity: lessonsV.value, transform: [{ translateY: 8 * (1 - lessonsV.value) }] }));
+  const lessonsBar = useAnimatedStyle(() => ({ width: `${Math.max(0.04, Math.min(1, lessonsFill.value)) * 100}%` }));
+  const sayIn = useAnimatedStyle(() => ({ opacity: say.value, transform: [{ translateY: 8 * (1 - say.value) }] }));
+  const btnIn = useAnimatedStyle(() => ({ opacity: btn.value, transform: [{ translateY: 12 * (1 - btn.value) }] }));
+  const lv = landed ? m.after : m.before;
+  const ptsLeft = lv.next == null ? null : lv.toNext;
+  const stepDone = !!lessons && lessons.to >= 1;
 
   return (
     <View ref={root} style={s.page} onLayout={measure}>
       <StatusBar style="light" />
-      {!still ? (
-        <Reanimated.View
-          pointerEvents="none"
-          style={[s.band, { width: win.width * 1.8, height: bandH, left: -win.width * 0.4, top: midY - bandH / 2 + 40 }, bandIn]}
-        />
-      ) : null}
-      {!still ? <Rays x={win.width / 2} y={midY} r={win.width * 0.8} grow={grow} band={band} /> : null}
-      {!still ? (
-        <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', width: B, height: B, left: win.width / 2 - B / 2, top: midY - B / 2 }, flashIn]}>
-          <Svg width={B} height={B} viewBox="0 0 100 100">
-            <Defs>
-              <RadialGradient id="flash" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
-                <Stop offset="0" stopColor="#FFF9EE" stopOpacity={1} />
-                <Stop offset="0.4" stopColor="#FFF9EE" stopOpacity={0.55} />
-                <Stop offset="1" stopColor="#FFF9EE" stopOpacity={0} />
-              </RadialGradient>
-            </Defs>
-            <Circle cx={50} cy={50} r={50} fill="url(#flash)" />
-          </Svg>
-        </Reanimated.View>
+      {dawn ? <Dawn v={enter} open={open} w={win.width} h={win.height} /> : null}
+      {!still && !dawn ? (
+        <Reanimated.View pointerEvents="none" style={[s.band, { width: win.width * 1.6, height: bandH, left: -win.width * 0.3, top: bandTop }, bandIn]} />
       ) : null}
       <Pressable style={StyleSheet.absoluteFill} accessible={false} onPress={() => beat === 1 && all()} />
       <View style={[s.col, { paddingTop: inset.top + (SHORT ? 12 : 28) }]} pointerEvents="box-none">
         <Reanimated.View style={[s.bubble, sayIn]} pointerEvents="none">
-          <Bubble text={keep} />
+          <Bubble text={keep} shown={typed} />
         </Reanimated.View>
         <View ref={flameRef} onLayout={measure} style={{ width: big, height: big, marginVertical: 14 }} pointerEvents="none">
-          <Halo v={twinkle} size={big} still={still} />
-          <Sparkles v={twinkle} size={big} />
+          <Halo v={rest} size={big} still={still} />
+          <Sparkles v={rest} size={big} still={still} />
           <Reanimated.View style={[{ position: 'absolute', width: B, height: B, left: (big - B) / 2, top: (big - B) / 2 }, flameIn]}>
-            <BigFlame level={lvl} size={B} pulse={pulse} noLand />
+            <Reanimated.View style={[{ transformOrigin: '50% 88%' }, actIn]}>
+              <BigFlame level={lvl} size={B} pulse={pulse} noLand look={still ? undefined : look} />
+            </Reanimated.View>
           </Reanimated.View>
         </View>
-        <Reanimated.View style={headIn}>
+        <Reanimated.View style={restIn}>
           <Text style={s.title} accessibilityRole="header">
-            Lesson {n} done
+            {done}
           </Text>
           <Text style={s.sub} numberOfLines={1}>
             {title}
           </Text>
+          {dawn && marks ? <Marks v={lit} n={marks} /> : null}
+          {spark ? (
+            <View style={s.spark} accessible accessibilityLabel={sparkUsed(spark)}>
+              <Spark size={28} />
+              <Text style={s.sparkT}>{sparkUsed(spark)}</Text>
+            </View>
+          ) : null}
         </Reanimated.View>
       </View>
 
       <View style={[s.dock, { paddingBottom: inset.bottom + (SHORT ? 12 : 20) }]} pointerEvents="box-none">
         {flying ? (
-          <Reanimated.View ref={ptsRef} onLayout={measure} style={[s.pts, ptsGo]} accessible accessibilityLabel={m.shown + ' points'}>
-            <Reanimated.View style={starIn}>
-              <Svg width={36} height={36} viewBox="0 0 24 24">
-                <Path d={STAR} fill={GOLD} />
-              </Svg>
-            </Reanimated.View>
-            <Reanimated.View style={[s.ptsRow, ptsIn]}>
-              <Text style={s.ptsNum}>+{count}</Text>
-              <Text style={s.ptsWord}>points</Text>
-            </Reanimated.View>
+          <Reanimated.View ref={ptsRef} onLayout={measure} style={[s.pts, ptsIn]} accessible accessibilityLabel={m.shown + ' points'}>
+            <Svg width={30} height={30} viewBox="0 0 24 24">
+              <Path d={STAR} fill={GOLD} />
+            </Svg>
+            <Text style={s.ptsNum}>+{count}</Text>
+            <Text style={s.ptsWord}>points</Text>
           </Reanimated.View>
         ) : null}
         {!m.quiet ? (
-          <View style={s.levelBox} accessible accessibilityLabel={`Level ${lvl}${ptsLeft != null ? ', ' + ptsLeft + ' points to the next' : ''}`}>
-            <View style={s.levelHead}>
-              <Reanimated.Text style={[s.levelText, lvIn]}>Level {lvl}</Reanimated.Text>
-              {ptsLeft != null ? <Text style={s.levelLeft}>{ptsLeft} to the next</Text> : null}
-            </View>
-            <View>
-              {!still ? <Reanimated.View pointerEvents="none" style={[s.lit, litIn]} /> : null}
-              {!still ? <Reanimated.View pointerEvents="none" style={[s.ring, ringIn]} /> : null}
-              <Reanimated.View
-                ref={trackRef}
-                onLayout={(e) => {
-                  setTrackW(e.nativeEvent.layout.width);
-                  measure();
-                }}
-                style={[s.track, trackIn]}>
+          <Reanimated.View
+            style={[s.lineBox, restIn]}
+            accessible
+            accessibilityLabel={`Level ${lvl}${ptsLeft != null ? ', ' + ptsLeft + ' points to the next' : ''}`}>
+            <Reanimated.Text style={[s.lineLabel, lvIn]}>Level {lvl}</Reanimated.Text>
+            <View style={s.lineRow}>
+              <View ref={trackRef} onLayout={measure} style={s.track}>
                 <Reanimated.View style={[s.fill, barIn]}>
                   <View style={s.shine} />
                 </Reanimated.View>
-                {!still ? <Reanimated.View pointerEvents="none" style={[s.sheen, sheenIn]} /> : null}
-              </Reanimated.View>
+              </View>
+              {/* the milestone at the end of the line: the next level, lit when the line reaches it */}
+              {ptsLeft != null ? (
+                <Reanimated.View style={[s.goal, lvIn]}>
+                  <Text style={s.goalNum}>{lvl + 1}</Text>
+                </Reanimated.View>
+              ) : null}
             </View>
-          </View>
+          </Reanimated.View>
         ) : null}
-        {lessons && lessonsAt != null ? (
-          <View style={s.levelBox}>
-            <Meter key={lessonsAt < 0 ? 'still' : 'live'} m={lessons} at={Math.max(0, lessonsAt)} still={still || lessonsAt < 0} />
-          </View>
-        ) : (
-          <View style={s.meterSpot} />
-        )}
+        {lessons ? (
+          <Reanimated.View
+            style={[s.lineBox, lessonsIn]}
+            accessible
+            accessibilityLabel={`${line ? line.label : 'Lesson ' + n}${lessons.name ? (line ? ', ' : ', on the way to the end of ') + lessons.name : ''}`}>
+            <View style={s.lineHead}>
+              <Text style={s.lineLabel}>{line ? line.label : 'Lesson ' + n}</Text>
+              {lessons.name ? (
+                <Text style={s.lineRight} numberOfLines={1}>
+                  {lessons.name}
+                </Text>
+              ) : null}
+            </View>
+            <View style={s.lineRow}>
+              <View style={s.track}>
+                <Reanimated.View style={[s.fill, s.fillLessons, lessonsBar]}>
+                  <View style={s.shine} />
+                </Reanimated.View>
+              </View>
+              {/* the milestone: the end of the step, a star that is full once the step is done */}
+              <View style={[s.goal, s.goalLessons, stepDone && s.goalLessonsOn]}>
+                <Svg width={14} height={14} viewBox="0 0 24 24">
+                  <Path d={STAR} fill={stepDone ? NIGHT : MINT} />
+                </Svg>
+              </View>
+            </View>
+          </Reanimated.View>
+        ) : null}
         <Reanimated.View style={btnIn} pointerEvents={beat === 2 ? 'auto' : 'none'}>
           <Pressable accessibilityRole="button" onPress={onDone}>
             {({ pressed }) => (
               <View style={[s.btn, pressed && s.btnDown]}>
-                <Text style={s.btnText}>Continue</Text>
+                <Text style={s.btnText}>{button}</Text>
               </View>
             )}
           </Pressable>
+          {/* a quiet way to tell the owner what this lesson did (the owner, November 14, 2026): the feedback sheet, about this lesson; hidden, like Ideas, in a build with no place to send to */}
+          {pulseOffered && feedback ? (
+            <Pressable
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={() => router.push({ pathname: '/feedback', params: { n: String(n), title } })}
+              style={s.quiet}>
+              {({ pressed }) => <Text style={[s.quietText, pressed && { opacity: 0.6 }]}>Feedback on this lesson</Text>}
+            </Pressable>
+          ) : null}
         </Reanimated.View>
       </View>
 
-      {!still ? (
-        <Reanimated.View pointerEvents="none" style={[s.shout, { top: midY + (big * K) / 2 - 6 }, shoutIn]}>
-          <Text style={s.shoutText} numberOfLines={2}>
-            {'Lesson ' + n + '\ndone!'}
+      {!still && !dawn ? (
+        <Reanimated.View pointerEvents="none" style={[s.shout, { top: shoutY }, shoutIn]}>
+          <Text style={s.shoutText} numberOfLines={1}>
+            {done}
           </Text>
         </Reanimated.View>
       ) : null}
-      {!still ? <Confetti v={conf} x={win.width / 2} y={midY} w={win.width} /> : null}
-      {path && flying && !still ? <Fly v={fly} path={path} dots={dots} /> : null}
+      {!still && !dawn ? <Glints v={glint} open={open} x={win.width / 2} y={shoutY + 26} /> : null}
     </View>
   );
 }
 
-/** the sunburst behind the flame in the opener: twelve sun-yellow rays turning slowly, like Duolingo's */
-const RAYS = Array.from({ length: 12 }, (_, i) => {
-  const a = (i * 30 * Math.PI) / 180;
-  const h = (7 * Math.PI) / 180;
-  const p = (t: number) => `${50 + 60 * Math.cos(t)} ${50 + 60 * Math.sin(t)}`;
-  return `M50 50 L${p(a - h)} L${p(a + h)} Z`;
-}).join(' ');
-function Rays({ x, y, r, grow, band }: { x: number; y: number; r: number; grow: SharedValue<number>; band: SharedValue<number> }) {
-  const turn = useSharedValue(0);
-  /* in with the flame, gone with the band */
-  const style = useAnimatedStyle(() => ({ opacity: 0.6 * grow.value * interpolate(band.value, [1, 1.25], [1, 0], 'clamp') }));
-  useEffect(() => {
-    turn.value = withRepeat(withTiming(1, { duration: 16000, easing: Easing.linear }), -1);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const spin = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.value * 360}deg` }] }));
+/** a few gold bits round the words in the opener, the only confetti the moment has: like the gold squares on Duolingo's banner, each
+    drifts slowly down, turning over as it goes, and fades before the opener ends */
+const GLINTS = [
+  { x: -150, y: -30, dx: -10, dy: 34, s: 8, r: 160 },
+  { x: -128, y: 22, dx: -6, dy: 40, s: 6, r: -120 },
+  { x: -92, y: -62, dx: -4, dy: 30, s: 6, r: 200 },
+  { x: -40, y: 54, dx: 2, dy: 36, s: 5, r: -90 },
+  { x: 52, y: -70, dx: 4, dy: 32, s: 6, r: 140 },
+  { x: 100, y: -36, dx: 8, dy: 38, s: 7, r: -180 },
+  { x: 138, y: -4, dx: 10, dy: 30, s: 8, r: 120 },
+  { x: 120, y: 44, dx: 6, dy: 40, s: 5, r: -150 },
+];
+function Glints({ v, open, x, y }: { v: SharedValue<number>; open: SharedValue<number>; x: number; y: number }) {
   return (
-    <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', width: r * 2, height: r * 2, left: x - r, top: y - r }, style]}>
-      <Reanimated.View style={[StyleSheet.absoluteFill, spin]}>
-        <Svg width={r * 2} height={r * 2} viewBox="0 0 100 100">
-          <Defs>
-            <RadialGradient id="rays" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
-              <Stop offset="0" stopColor={GOLD} stopOpacity={0.5} />
-              <Stop offset="0.45" stopColor={GOLD} stopOpacity={0.14} />
-              <Stop offset="0.85" stopColor={GOLD} stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Path d={RAYS} fill="url(#rays)" />
-        </Svg>
-      </Reanimated.View>
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {GLINTS.map((g, i) => (
+        <Glint key={i} v={v} open={open} x={x + g.x} y={y + g.y} g={g} i={i} />
+      ))}
+    </View>
+  );
+}
+function Glint({ v, open, x, y, g, i }: { v: SharedValue<number>; open: SharedValue<number>; x: number; y: number; g: (typeof GLINTS)[number]; i: number }) {
+  const st = useAnimatedStyle(() => {
+    /* each comes in a little after the one before, drifts outward and fades before the opener ends */
+    const t = Math.max(0, Math.min(1, (v.value - i * 0.04) / 0.8));
+    const a = interpolate(t, [0, 0.15, 0.7, 1], [0, 1, 1, 0], 'clamp') * interpolate(open.value, [0.5, 1], [0, 1], 'clamp');
+    const e = 1 - (1 - t) * (1 - t);
+    return {
+      opacity: a,
+      transform: [
+        { translateX: x - g.s / 2 + g.dx * e },
+        { translateY: y - g.s / 2 + g.dy * t },
+        { rotate: `${45 + g.r * t}deg` },
+        /* turning over: it narrows and widens as it falls, like a flat square catching the light */
+        { scaleX: 0.35 + 0.65 * Math.abs(Math.cos(t * Math.PI * 1.5 + i)) },
+      ],
+    };
+  });
+  return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: g.s, height: g.s, borderRadius: 1, backgroundColor: GOLD }, st]} />;
+}
+
+/** the warm halo the resting flame stands in: a soft light that breathes slowly */
+/** dawn: a warm sky rising from the horizon as the flame comes up, settling to a low glow once it is home */
+function Dawn({ v, open, w, h }: { v: SharedValue<number>; open: SharedValue<number>; w: number; h: number }) {
+  const st = useAnimatedStyle(() => ({ opacity: v.value * (0.45 + 0.55 * open.value) }));
+  return (
+    <Reanimated.View pointerEvents="none" style={[StyleSheet.absoluteFill, st]}>
+      <Svg width={w} height={h}>
+        <Defs>
+          <RadialGradient id="dawn" cx={w / 2} cy={h} r={h * 0.75} gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={ORANGE} stopOpacity="0.85" />
+            <Stop offset="0.45" stopColor="#C2417A" stopOpacity="0.45" />
+            <Stop offset="1" stopColor={NIGHT} stopOpacity="0" />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={w / 2} cy={h} r={h * 0.75} fill="url(#dawn)" />
+      </Svg>
     </Reanimated.View>
   );
 }
 
-/** the warm halo the resting flame stands in: a soft gold light that breathes, in with the twinkling stars */
+/** dawn: the goal's nights or days, a row of open marks that come in one by one: the week ahead, to be filled */
+function Marks({ v, n }: { v: SharedValue<number>; n: number }) {
+  return (
+    <View style={s.marks} accessible accessibilityLabel={n + ' to come'}>
+      {Array.from({ length: n }, (_, i) => (
+        <Mark key={i} v={v} i={i} />
+      ))}
+    </View>
+  );
+}
+function Mark({ v, i }: { v: SharedValue<number>; i: number }) {
+  const st = useAnimatedStyle(() => {
+    const e = interpolate(v.value, [i, i + 1], [0, 1], 'clamp');
+    return { opacity: e, transform: [{ scale: 0.6 + 0.4 * e }] };
+  });
+  return <Reanimated.View style={[s.mark, st]} />;
+}
+
 function Halo({ v, size, still }: { v: SharedValue<number>; size: number; still: boolean }) {
   const breath = useSharedValue(0);
   useEffect(() => {
     if (still) return;
-    breath.value = withRepeat(
-      withSequence(withTiming(1, { duration: 1900, easing: Easing.inOut(Easing.sin) }), withTiming(0, { duration: 1900, easing: Easing.inOut(Easing.sin) })),
-      -1,
-    );
+    breath.value = withRepeat(withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.sin) }), -1, true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const st = useAnimatedStyle(() => ({ opacity: v.value * (0.8 + 0.2 * breath.value), transform: [{ scale: 1 + 0.06 * breath.value }] }));
+  const st = useAnimatedStyle(() => ({ opacity: v.value * (0.75 + 0.25 * breath.value) }));
   const R = Math.round(size * 1.5);
   return (
     <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', width: R, height: R, left: (size - R) / 2, top: (size - R) / 2 + size * 0.06 }, st]}>
       <Svg width={R} height={R} viewBox="0 0 100 100">
         <Defs>
           <RadialGradient id="halo" cx="50" cy="50" r="50" gradientUnits="userSpaceOnUse">
-            <Stop offset="0" stopColor={ORANGE} stopOpacity={0.5} />
-            <Stop offset="0.4" stopColor={ORANGE} stopOpacity={0.16} />
+            <Stop offset="0" stopColor={ORANGE} stopOpacity={0.42} />
+            <Stop offset="0.4" stopColor={ORANGE} stopOpacity={0.13} />
             <Stop offset="1" stopColor={ORANGE} stopOpacity={0} />
           </RadialGradient>
         </Defs>
@@ -523,39 +698,29 @@ function Halo({ v, size, still }: { v: SharedValue<number>; size: number; still:
   );
 }
 
-/** gold four-point stars that twinkle around the resting flame, one after another */
+/** four faint gold stars around the resting flame, each glowing slowly brighter and dimmer on its own beat; they never pop */
 const SPOTS = [
-  { x: -0.08, y: 0.18, r: 22, d: 0 },
-  { x: 1.02, y: 0.1, r: 16, d: 500 },
-  { x: 0.95, y: 0.62, r: 24, d: 1000 },
-  { x: -0.02, y: 0.7, r: 14, d: 1400 },
-  { x: 0.5, y: -0.1, r: 12, d: 800 },
+  { x: -0.06, y: 0.2, r: 16, d: 0 },
+  { x: 1.02, y: 0.12, r: 12, d: 900 },
+  { x: 0.96, y: 0.66, r: 18, d: 1700 },
+  { x: 0.0, y: 0.72, r: 11, d: 500 },
 ];
-function Sparkles({ v, size }: { v: SharedValue<number>; size: number }) {
+function Sparkles({ v, size, still }: { v: SharedValue<number>; size: number; still: boolean }) {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       {SPOTS.map((p, i) => (
-        <Twinkle key={i} v={v} left={p.x * size - p.r / 2} top={p.y * size - p.r / 2} r={p.r} delay={p.d} />
+        <Twinkle key={i} v={v} left={p.x * size - p.r / 2} top={p.y * size - p.r / 2} r={p.r} delay={p.d} still={still} />
       ))}
     </View>
   );
 }
-function Twinkle({ v, left, top, r, delay }: { v: SharedValue<number>; left: number; top: number; r: number; delay: number }) {
-  const t = useSharedValue(0);
+function Twinkle({ v, left, top, r, delay, still }: { v: SharedValue<number>; left: number; top: number; r: number; delay: number; still: boolean }) {
+  const t = useSharedValue(still ? 1 : 0);
   useEffect(() => {
-    t.value = withDelay(
-      delay,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) }),
-          withTiming(0, { duration: 520, easing: Easing.in(Easing.cubic) }),
-          withTiming(0, { duration: 900 }),
-        ),
-        -1,
-      ),
-    );
+    if (still) return;
+    t.value = withDelay(delay, withRepeat(withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.sin) }), -1, true));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const st = useAnimatedStyle(() => ({ opacity: v.value * t.value, transform: [{ scale: 0.3 + 0.7 * t.value }, { rotate: `${t.value * 45}deg` }] }));
+  const st = useAnimatedStyle(() => ({ opacity: v.value * (0.3 + 0.6 * t.value), transform: [{ scale: 0.8 + 0.2 * t.value }] }));
   return (
     <Reanimated.View style={[{ position: 'absolute', left, top, width: r, height: r }, st]}>
       <Svg width={r} height={r} viewBox="0 0 24 24">
@@ -565,132 +730,36 @@ function Twinkle({ v, left, top, r, delay }: { v: SharedValue<number>; left: num
   );
 }
 
-type Piece = { vx: number; vy: number; spin: number; c: string; s: number; star: boolean };
-/** confetti: small squares and a few gold stars thrown up from the flame, tumbling as they fall */
-function Confetti({ v, x, y, w }: { v: SharedValue<number>; x: number; y: number; w: number }) {
-  const [bits] = useState<Piece[]>(() =>
-    Array.from({ length: 34 }, (_, i) => {
-      const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.3;
-      const sp = 0.45 + Math.random() * 0.6;
-      return {
-        vx: Math.cos(a) * sp * w * 0.75,
-        vy: Math.sin(a) * sp * w * 1.1,
-        spin: (Math.random() - 0.5) * 900,
-        c: CONFETTI[i % CONFETTI.length],
-        s: 7 + Math.random() * 6,
-        star: i % 5 === 0,
-      };
-    }),
-  );
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {bits.map((b, i) => (
-        <Bit key={i} v={v} x={x} y={y} b={b} />
-      ))}
-    </View>
-  );
-}
-function Bit({ v, x, y, b }: { v: SharedValue<number>; x: number; y: number; b: Piece }) {
-  const st = useAnimatedStyle(() => {
-    const t = v.value;
-    return {
-      opacity: t <= 0 || t >= 1 ? 0 : t > 0.75 ? (1 - t) * 4 : 1,
-      transform: [
-        { translateX: x + b.vx * t - b.s / 2 },
-        { translateY: y + b.vy * t + 900 * t * t - b.s / 2 },
-        { rotate: `${b.spin * t}deg` },
-        { scaleY: b.star ? 1 : 0.5 + 0.5 * Math.abs(Math.cos(t * 12 + b.spin)) },
-      ],
-    };
-  });
-  if (b.star)
-    return (
-      <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: b.s + 8, height: b.s + 8 }, st]}>
-        <Svg width={b.s + 8} height={b.s + 8} viewBox="0 0 24 24">
-          <Path d={STAR} fill={GOLD} />
-        </Svg>
-      </Reanimated.View>
-    );
-  return <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, width: b.s, height: b.s, borderRadius: 2, backgroundColor: b.c }, st]} />;
-}
-
-/** gold stars trailing the points into the bar, one after another */
-function Fly({ v, path, dots }: { v: SharedValue<number>; path: Line; dots: number }) {
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {Array.from({ length: dots }, (_, i) => (
-        <Spark key={i} v={v} path={path} i={i} n={dots} />
-      ))}
-    </View>
-  );
-}
-function Spark({ v, path, i, n }: { v: SharedValue<number>; path: Line; i: number; n: number }) {
-  const st = useAnimatedStyle(() => {
-    /* each star has its own slice of the run: it starts a little after the one before */
-    const span = 0.6;
-    const start = (i / Math.max(1, n - 1)) * (1 - span);
-    const t = Math.max(0, Math.min(1, (v.value - start) / span));
-    const e = t * t * t;
-    /* a curve that bows out to one side, alternating, like Duolingo's gems */
-    const side = i % 2 ? 1 : -1;
-    const cx = (path.x0 + path.x1) / 2 + side * 60;
-    const cy = Math.min(path.y0, path.y1) - 30;
-    const x = (1 - e) * (1 - e) * path.x0 + 2 * (1 - e) * e * cx + e * e * path.x1;
-    const y = (1 - e) * (1 - e) * path.y0 + 2 * (1 - e) * e * cy + e * e * path.y1;
-    return {
-      opacity: t <= 0 || t >= 1 ? 0 : 1,
-      transform: [{ translateX: x - 9 }, { translateY: y - 9 }, { scale: 1 - 0.4 * e }, { rotate: `${e * 180}deg` }],
-    };
-  });
-  return (
-    <Reanimated.View style={[s.spark, st]}>
-      <Svg width={18} height={18} viewBox="0 0 24 24">
-        <Path d={STAR} fill={GOLD} />
-      </Svg>
-    </Reanimated.View>
-  );
-}
-
 const s = StyleSheet.create({
   page: { flex: 1, backgroundColor: NIGHT, overflow: 'hidden' },
-  band: { position: 'absolute', backgroundColor: BAND, borderRadius: 28 },
+  band: { position: 'absolute', backgroundColor: BAND, borderRadius: 24 },
   col: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 10 },
   bubble: { alignSelf: 'stretch', maxWidth: 340, marginHorizontal: 'auto' },
   shout: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
-  shoutText: { fontFamily: font.display, fontSize: 46, lineHeight: 50, color: GOLD, textAlign: 'center', ...WARM },
+  shoutText: { fontFamily: font.display, fontSize: 40, color: GOLD, textAlign: 'center' },
   title: { fontFamily: font.display, fontSize: 34, color: nightInk.ink, textAlign: 'center' },
   sub: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted, textAlign: 'center', marginTop: 2 },
+  marks: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 14 },
+  spark: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 10 },
+  sparkT: { fontFamily: font.bodySemi, fontSize: 15, color: GOLD },
+  mark: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: GOLD, backgroundColor: 'rgba(255,210,90,0.18)' },
   dock: { paddingHorizontal: 16, gap: 18 },
   pts: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, alignSelf: 'center' },
-  ptsRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  ptsNum: { fontFamily: font.display, fontSize: 52, color: GOLD, ...WARM },
+  ptsNum: { fontFamily: font.display, fontSize: 40, color: GOLD },
   ptsWord: { fontFamily: font.bodyBold, fontSize: 20, color: GOLD },
-  levelBox: { alignSelf: 'center', width: '100%', maxWidth: 360, gap: 8 },
-  /* the lessons line's place, held so nothing moves when it comes in */
-  meterSpot: { height: 48 },
-  levelHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  levelText: { fontFamily: font.display, fontSize: 17, color: nightInk.ink },
-  levelLeft: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted },
-  track: { height: 20, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
-  /* the light the bar gives off as the points land: a gold glow behind the track */
-  lit: {
-    position: 'absolute',
-    left: -4,
-    right: -4,
-    top: -4,
-    bottom: -4,
-    borderRadius: 14,
-    backgroundColor: GOLD,
-    shadowColor: GOLD,
-    shadowOpacity: 1,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  /* the ring a new level sends out from the bar */
-  ring: { position: 'absolute', left: -6, right: -6, top: -6, bottom: -6, borderRadius: 16, borderWidth: 2, borderColor: GOLD },
-  /* the sheen that runs along the fill once the points are in */
-  sheen: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 36, backgroundColor: '#FFFFFF' },
-  fill: { height: 20, borderRadius: 10, backgroundColor: GOLD, paddingTop: 4, paddingHorizontal: 8 },
+  lineBox: { alignSelf: 'center', width: '100%', maxWidth: 360, gap: 8 },
+  lineHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 },
+  lineRow: { flexDirection: 'row', alignItems: 'center' },
+  lineLabel: { fontFamily: font.display, fontSize: 17, color: nightInk.ink },
+  lineRight: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted, flexShrink: 1 },
+  track: { flex: 1, height: 18, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden', marginRight: -14 },
+  fill: { height: 18, borderRadius: 9, backgroundColor: GOLD, paddingTop: 4, paddingHorizontal: 8 },
+  fillLessons: { backgroundColor: MINT },
+  /* the round milestone the line runs into, sitting over its end */
+  goal: { width: 34, height: 34, borderRadius: 17, borderWidth: 3, borderColor: GOLD, backgroundColor: NIGHT, alignItems: 'center', justifyContent: 'center' },
+  goalNum: { fontFamily: font.display, fontSize: 13, color: GOLD },
+  goalLessons: { borderColor: MINT },
+  goalLessonsOn: { backgroundColor: MINT },
   shine: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.45)' },
   btn: {
     minHeight: 56,
@@ -701,7 +770,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  quiet: { alignSelf: 'center', paddingTop: 14, paddingHorizontal: 12 },
+  quietText: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted },
   btnDown: { borderBottomWidth: 0, marginTop: 5 },
   btnText: { fontFamily: font.display, fontSize: 20, color: '#3A2A00' },
-  spark: { position: 'absolute', left: 0, top: 0, width: 18, height: 18 },
 });

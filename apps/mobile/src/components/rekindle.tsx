@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { Animated, Platform, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { useReducedMotion } from '@/lib/motion';
+import { SETTLE, useReducedMotion } from '@/lib/motion';
 import { useTheme } from '@/lib/theme';
 
 const NATIVE = Platform.OS !== 'web';
@@ -30,7 +30,7 @@ function OneFlame({ lit, w }: { lit: boolean; w: number }) {
     if (lit === was.current) return;
     was.current = lit;
     if (reduce || !lit) v.setValue(lit ? 1 : 0);
-    else Animated.spring(v, { toValue: 1, friction: 4, tension: 120, useNativeDriver: NATIVE }).start();
+    else Animated.spring(v, { toValue: 1, ...SETTLE, useNativeDriver: NATIVE }).start();
   }, [lit, reduce, v]);
   return (
     <View style={{ width: w, height: w * 1.25, alignItems: 'center', justifyContent: 'center' }}>

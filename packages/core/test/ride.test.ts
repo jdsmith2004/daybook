@@ -20,7 +20,7 @@ function rodeLog(list: { key: string; tr?: [string, 'p' | 's' | 'x'][]; m?: numb
 }
 
 /** the moves of a ride n long, each one picked after the ones before */
-function ride(n: number, days: Days = {}, s: Settings = st, c = can): string[] {
+function ride(n: number, days: Days = {}, s: Settings = st, c: core.RideCan = can): string[] {
   const sc = core.newUrge(now, 0);
   const out: string[] = [];
   for (let i = 0; i < n; i++) out.push(core.rideNext(sc, days, s, tk, now, {}, c, out));
@@ -127,9 +127,27 @@ describe('It is written', () => {
     expect(r[1]).toBe('written');
     expect(r.filter((x) => x === 'written').length).toBeGreaterThan(1);
   });
-  it('waits its turn once Next has passed it twice', () => {
+  it('waits its turn once it is passed over often lately, and is second again once that fades', () => {
     const sc = core.newUrge(now, 0);
-    expect(core.rideNext(sc, {}, st, tk, now, { pass: { written: 2 } }, faith, ['breathe'])).not.toBe('written');
+    let m: core.UrMem = {};
+    for (let i = 0; i < 3; i++) m = core.ridePassed(core.rideFade(m), 'written', 1000);
+    expect(core.rideNext(sc, {}, st, tk, now, m, faith, ['breathe'])).not.toBe('written');
+    for (let i = 0; i < 6; i++) m = core.rideFade(m);
+    expect(core.rideNext(sc, {}, st, tk, now, m, faith, ['breathe'])).toBe('written');
+    /* the old count of Next taps, which never faded, no longer holds it back */
+    expect(core.rideNext(sc, {}, st, tk, now, { pass: { written: 6 } }, faith, ['breathe'])).toBe('written');
+  });
+  it('stays second after many urges ridden out (the owner, November 15, 2026), and a note from a good day comes after it', () => {
+    const many = rodeLog(Array.from({ length: 8 }, (_, i) => ({ key: '2026-10-' + String(10 + i), m: 6 })));
+    const sc = core.newUrge(now, 0);
+    expect(core.rideNext(sc, many, st, tk, now, {}, faith, ['breathe'])).toBe('written');
+    const fut = { ...faith, future: true };
+    expect(core.rideNext(sc, {}, st, tk, now, {}, fut, ['breathe'])).toBe('written');
+    expect(core.rideNext(sc, {}, st, tk, now, {}, fut, ['breathe', 'written'])).toBe('future');
+  });
+  it('Not really to it lets it take its turn', () => {
+    const sc = core.newUrge(now, 0);
+    expect(core.rideNext(sc, {}, core.rateUrTool(st, 'written', -1), tk, now, {}, faith, ['breathe'])).not.toBe('written');
   });
   it('the heart counts for it', () => {
     expect(core.urLikeOf(core.rateUrTool(st, 'written', 1), 'written')).toBe(1);
@@ -149,5 +167,99 @@ describe('It is written', () => {
     expect(plain.pulls.every((p) => p.ref === null) && plain.stand.ref === null && plain.end.ref === null).toBe(true);
     expect([plain.heart, plain.cast, plain.light].every((x) => x.ref === null)).toBe(true);
     [lds, chr, plain].forEach((w) => expect(JSON.stringify(w)).not.toMatch(/n't|'re|'ll|'ve|can't/i));
+  });
+  it('names the old move under each pull, and Cast it asks what a person can see, with one step for each answer', () => {
+    [core.writtenWords('lds'), core.writtenWords('plain')].forEach((w) => {
+      expect(w.pulls.map((p) => p.trick)).toEqual(['It calls a want a need.', 'It calls the first step small.', 'It promises what it has never given.']);
+      expect(w.cast.ask).toBe('What is feeding it right now?');
+    });
+    core.WRITTEN_CAST.forEach(([id]) => expect(core.WRITTEN_CAST_DO[id]).toBeTruthy());
+    expect(core.WRITTEN_CAST.map((x) => x[1])).toContain('I do not know');
+    /* the Scripture is quoted exactly */
+    expect(core.writtenWords('lds').pulls[0].rest).toBe('Man shall not live by bread alone, but by every word that proceedeth out of the mouth of God.');
+  });
+});
+
+describe('the order of SOS', () => {
+  /** a ride n long with this memory */
+  const rideMem = (n: number, mem: core.UrMem, days: Days = {}) => {
+    const sc = core.newUrge(now, 0);
+    const out: string[] = [];
+    for (let i = 0; i < n; i++) out.push(core.rideNext(sc, days, st, tk, now, mem, can, out));
+    return out;
+  };
+  /** three SOS rides, each passing `id` over quickly once */
+  const skipped = (id: string, times = 3) => {
+    let m: core.UrMem = {};
+    for (let i = 0; i < times; i++) m = core.ridePassed(core.rideFade(m), id, 1000);
+    return m;
+  };
+
+  it('opens with the breath, then the body, before the moves that need a clear head', () => {
+    const r = rideMem(12, {});
+    /* the breath, then 5-4-3-2-1 (one of the two strong first picks, the owner, October 24, 2026), then the body and the eyes */
+    expect(r.slice(0, 4)).toEqual(['breathe', 'ground', 'move', 'stack']);
+    expect(r.indexOf('move')).toBeLessThan(r.indexOf('forward'));
+    expect(r.indexOf('stack')).toBeLessThan(r.indexOf('reasons'));
+    expect(core.RIDE_ORDER.slice().sort()).toEqual(core.RIDE_MOVES.slice().sort());
+  });
+
+  it('a quick pass counts more than a late one, finishing halves it, and each SOS fades it', () => {
+    expect(core.rideSkipOf(core.ridePassed({}, 'move', 1000), 'move')).toBe(1);
+    expect(core.rideSkipOf(core.ridePassed({}, 'move', 20000), 'move')).toBe(0.5);
+    expect(core.rideSkipOf(core.rideFinished({ rsk: { move: 2 } }, 'move'), 'move')).toBe(1);
+    expect(core.rideSkipOf(core.rideFade({ rsk: { move: 2 } }), 'move')).toBeCloseTo(1.8);
+    /* only the ride's moves are counted here; the other pages keep their own count */
+    expect(core.ridePassed({}, 'object', 1000)).toEqual({});
+  });
+
+  it('three quick passes in three rides is often; two is not', () => {
+    expect(core.rideOften(skipped('move', 2), 'move')).toBe(false);
+    expect(core.rideOften(skipped('move', 3), 'move')).toBe(true);
+  });
+
+  it('a move passed over often comes later in a ride, but still comes', () => {
+    const fresh = rideMem(14, {});
+    const after = rideMem(14, skipped('move'));
+    expect(fresh[2]).toBe('move');
+    expect(after.indexOf('move')).toBeGreaterThan(fresh.indexOf('move') + 2);
+    expect(after).toContain('move');
+    /* and the others are not all pushed aside: every move still comes round */
+    core.RIDE_MOVES.forEach((id) => expect(after).toContain(id));
+  });
+
+  it('it comes back by itself: a run of SOS rides without passing it fades the count', () => {
+    let m = skipped('move');
+    for (let i = 0; i < 10; i++) m = core.rideFade(m);
+    expect(core.rideOften(m, 'move')).toBe(false);
+    expect(rideMem(4, m).indexOf('move')).toBeGreaterThan(0);
+  });
+
+  it('a move you said helped comes up', () => {
+    const liked = core.rateUrTool(core.rateUrTool(st, 'reasons', 1), 'reasons', 1);
+    const sc = core.newUrge(now, 0);
+    const out: string[] = [];
+    for (let i = 0; i < 4; i++) out.push(core.rideNext(sc, {}, liked, tk, now, {}, can, out));
+    expect(out.indexOf('reasons')).toBeGreaterThan(0);
+    expect(out.indexOf('reasons')).toBeLessThanOrEqual(2);
+  });
+
+  it('the old count of Next taps no longer holds a ride move down for good', () => {
+    expect(rideMem(4, { pass: { move: 6 } })[2]).toBe('move');
+  });
+
+  it('It is written stays only for people with faith on, even when moves are passed over', () => {
+    const r = rideMem(14, skipped('stack'));
+    expect(r).not.toContain('written');
+  });
+});
+
+describe('If it were a thing', () => {
+  it('comes once, after the breath and three moves for the body and the eyes', () => {
+    const r = ride(12, {}, st, { words: true, object: true });
+    const at = r.indexOf('object');
+    expect(at).toBeGreaterThan(3);
+    expect(r.slice(1, at).filter((x) => core.RIDE_MOVES.includes(x)).length).toBe(3);
+    expect(r.filter((x) => x === 'object').length).toBe(1);
   });
 });

@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LxCheck } from '@/components/lesson-art';
 import { Button, Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { close, closeAll } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -38,7 +39,9 @@ export default function Lwrite() {
       <View style={{ flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', gap: 12 }}>
         <View style={s.top}>
           <T v="eyebrow" tone="muted">
-            {C && A && B ? 'Checkpoint ' + lcheckNo(n, st) + (lessonNo(B, st) ? ' · ' + lcheckAbout(pair!, st) : '') : 'Checkpoint'}
+            {C && A && B
+              ? 'Checkpoint ' + lcheckNo(n, st, snap.days) + (lessonNo(B, st, snap.days) ? ' · ' + lcheckAbout(pair!, st, snap.days) : '')
+              : 'Checkpoint'}
           </T>
           <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={close} style={[s.x, { backgroundColor: c.scBtn }]}>
             <Icon name="x" color={c.ink} />
@@ -139,7 +142,13 @@ export default function Lwrite() {
 function Route({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [s.soft, { backgroundColor: c.accentSoft, opacity: pressed ? 0.7 : 1 }]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      style={({ pressed }) => [s.soft, { backgroundColor: c.accentSoft, opacity: pressed ? 0.7 : 1 }]}>
       <T v="label" tone="accentText" style={{ flex: 1 }}>
         {label}
       </T>

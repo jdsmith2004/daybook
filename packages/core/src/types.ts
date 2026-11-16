@@ -68,8 +68,12 @@ export interface MorningSet {
   ev2?: string;
   /** "And this morning?": 1 Low, 2 Okay, 3 Good */
   f?: 1 | 2 | 3;
-  /** "Who are you doing tonight for?": the reason picked, in the person's own words, as it was shown */
+  /** "What is tonight for?": the first reason picked, in the person's own words, as it was shown (kept for the readers from
+      before several could be picked; always rs[0] when rs is there) */
   r?: string;
+  /** every reason picked for tonight, in the order picked (November 15, 2026: several can be chosen). A record from before
+      has only r, and is read as [r] (morning-norm.ts). */
+  rs?: string[];
   /** when tonight's wait starts, 'HH:MM' */
   nt?: Clock;
   /** when Set tonight was pressed (ms): this morning was set */
@@ -181,7 +185,11 @@ export interface Settings {
     notes: Record<string, string>;
     faith: 'mix' | 'first' | 'after';
     faithSet: boolean;
-    len: '' | 'q' | 'f';
+    len: '' | 'q' | 'f' | 'd';
+    /** Deep lessons (about 10 minutes) turned on in Settings: every lesson then offers Deep beside Short and Long */
+    deep?: boolean;
+    /** how many times each length was picked; the one picked most is marked first (setup.ts lessonLen) */
+    lens?: Partial<Record<'q' | 'f' | 'd', number>>;
     prac: Record<string, 1>;
     picks: Record<string, string>;
     wr: Record<string, { a: string[]; u: number }>;
@@ -222,6 +230,9 @@ export interface Settings {
   /** my line: what counts as a slip for me and what counts as a clean day, in the person's own words (plan.ts myLineOf). Shown
       where a slip is logged, so "does that count?" is settled by their own words. Synced with the plan; never in an event. */
   myLine?: string;
+  /** saved answers (saved-answers.ts): the options the person wrote with "Write my own", one list per kind, kept for good and
+      offered again everywhere that kind is asked. Joined, never chosen, when two copies meet (keepEarned). Left out when empty. */
+  own?: Partial<Record<import('./saved-answers').OwnKind, string[]>>;
   /** false: no buzz under the finger anywhere in the app (Settings, Appearance). Left out means on, so older records need no change. */
   haptics?: false;
   /** SOS: the tools not to suggest ("Not for me"), and what was said after using each ("Would you use this again?", -3 to 3).
@@ -243,6 +254,8 @@ export interface Settings {
   gradAt?: DayKey | null;
   /** the last "Not now" on the account card (see accounts.ts) */
   acctNo?: DayKey | null;
+  /** the last day the account button's nudge was closed or tapped (see accounts.ts accountNudge) */
+  acctNudge?: DayKey | null;
   /** the first day the app marked the days it was opened (away.ts); the quiet-day rule counts from here. Set once. */
   awayFrom?: DayKey | null;
   /** the first day of the true record (truth.ts): from here a night counts as free only when the person said so. Set once on the
@@ -264,8 +277,10 @@ export interface Settings {
   sup?: Supporter | null;
   /** Daybook Pattern on this device (supporter.ts). Optional, so older records need no change. */
   pat?: PatRec | null;
-  /** the answer to "Do you like Daybook so far?" at the end of setup, and the day (see like.ts). Optional. */
+  /** the last answer to "Do you like Daybook so far?", and its day (see like.ts). Only Yes ends the question. Optional. */
   likeAsk?: { a: 'yes' | 'no'; d: DayKey } | null;
+  /** the day "Do you like Daybook so far?" last came (see like.ts). Optional, so older records need no change. */
+  likeAt?: DayKey | null;
   /** "How much do you see yourself as someone free of this?", 0 to 10, once a month, oldest first (north.ts). Synced with the
       rest. Optional, so older records need no change. */
   free?: { d: DayKey; s: number }[];

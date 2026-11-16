@@ -14,10 +14,10 @@ const ids = (L: core.Lesson[]) => L.map((x) => x.id);
 const NIGHT = ['l54', 'l55', 'l34', 'l20', 'l10', 'l9', 'l4'];
 
 describe('the front track', () => {
-  it('Sam gets four lessons about his night first, seven in all, with no repeats after', () => {
+  it('Sam gets the first lesson, then four lessons about his night, seven in all, with no repeats after', () => {
     const path = core.lessonPathFor(sam);
-    expect(ids(path.slice(0, 7))).toEqual(['l54', 'l34', 'l55', 'l9', 'l4', 'l1', 'l3']);
-    path.slice(0, 4).forEach((L) => expect(NIGHT).toContain(L.id));
+    expect(ids(path.slice(0, 7))).toEqual(['l1', 'l54', 'l34', 'l55', 'l9', 'l4', 'l3']);
+    path.slice(1, 5).forEach((L) => expect(NIGHT).toContain(L.id));
     expect(new Set(ids(path)).size).toBe(path.length);
     expect(ids(path).sort()).toEqual(ids(core.lessonPathBase(sam)).sort());
     expect(ids(core.frontTrack(sam))).toEqual(ids(path.slice(0, 7)));
@@ -48,7 +48,7 @@ describe('the front track', () => {
     const w = core.lessonWalk({}, sam);
     const m = core.lessonMap(w);
     expect(ids(m.lands[0].stones.slice(0, 7).map((s) => s.L))).toEqual(ids(core.frontTrack(sam)));
-    expect(m.next!.L.id).toBe('l54');
+    expect(m.next!.L.id).toBe('l1');
     expect(m.lands.map((l) => l.u)).toEqual(core.PATH_STEPS.map((_, k) => k));
   });
 });

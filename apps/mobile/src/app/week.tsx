@@ -9,9 +9,11 @@ import { Text } from '@/components/text';
 import { FitArt } from '@/components/fit';
 import { FlameMedallion } from '@/components/flame-medallion';
 import { Dock, SceneFrame } from '@/components/scene';
+import { LikeAsk, useLikeAsk } from '@/components/like-ask';
 import { MomentAsk, useTipMoment } from '@/components/support';
 import { Button, T } from '@/components/ui';
 import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
+import { buzz } from '@/lib/feel';
 import { close } from '@/lib/nav';
 import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
@@ -22,6 +24,8 @@ export default function Week() {
   const st = snap.settings;
   /* finishing the first week is a moment of earned value: it can carry a short tip ask (core tipMoment) */
   const ask = useTipMoment('week');
+  /* with no tip ask on it, the week can ask "Do you like Daybook so far?" (core like.ts), in place of Keep going */
+  const like = useLikeAsk(ask);
   useEffect(() => {
     if (st && firstWeekDue(st, tk)) apply({ st: firstWeekSeen(st, tk) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -30,7 +34,7 @@ export default function Week() {
   const w = firstWeek(snap.days, st, tk);
   const level = gameCompute(snap.days, st, snap.reviews, tk).level.n;
   return (
-    <SceneFrame title="Your first week" sky="mint" onClose={close} pin={<Button label="Keep going" onPress={close} />}>
+    <SceneFrame title="Your first week" sky="mint" onClose={close} pin={like ? undefined : <Button label="Keep going" onPress={close} />}>
       <T v="title" style={s.c} accessibilityRole="header">
         {w.h}
       </T>
@@ -38,7 +42,7 @@ export default function Week() {
       {/* the flame, big: this week is what fed it */}
       <View style={s.mid}>
         <FitArt min={0.55}>
-          <Spring delay={120} from={0.6}>
+          <Spring delay={120} from={0.6} beat="lit">
             <FlameMedallion level={level} size={196} />
           </Spring>
         </FitArt>
@@ -48,6 +52,7 @@ export default function Week() {
               <Spring
                 key={f.one}
                 delay={520 + i * 260}
+                beat="land"
                 style={[s.fact, { width: w.facts.length === 4 ? '22%' : '29%' }]}
                 accessible
                 accessibilityLabel={f.n + ' ' + (f.n === 1 ? f.one : f.many)}>
@@ -67,7 +72,7 @@ export default function Week() {
       {w.be ? <T style={[s.c, { fontFamily: font.bodySemi }]}>{w.be}</T> : null}
       <Dock>
         <T style={s.c}>{w.next}</T>
-        {ask ? <MomentAsk why="week" onGo={close} center /> : null}
+        {ask ? <MomentAsk why="week" onGo={close} center /> : like ? <LikeAsk onClose={close} /> : null}
       </Dock>
     </SceneFrame>
   );
@@ -75,13 +80,27 @@ export default function Week() {
 
 /* Duolingo's stat reveal, in Daybook's night: the flame springs in first, then each thing the week held lands one after
    another with a small overshoot while its number counts up to what was done. Reduce Motion shows it all at once. */
-function Spring({ delay, from = 0.4, children, ...rest }: { delay: number; from?: number; children: React.ReactNode } & React.ComponentProps<typeof View>) {
+/* The beats are felt as they land: the flame with a success, each fact with a soft knock. Reduce Motion: one success, at once. */
+function Spring({
+  delay,
+  from = 0.4,
+  beat,
+  children,
+  ...rest
+}: { delay: number; from?: number; beat?: 'lit' | 'land'; children: React.ReactNode } & React.ComponentProps<typeof View>) {
   const reduce = useReducedMotion();
   const v = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (reduce) return v.setValue(1);
-    const t = setTimeout(() => Animated.spring(v, { toValue: 1, ...SPRING.fast, useNativeDriver: NATIVE }).start(), delay);
+    if (reduce) {
+      if (beat === 'lit') buzz('lit');
+      return v.setValue(1);
+    }
+    const t = setTimeout(() => {
+      if (beat) buzz(beat);
+      Animated.spring(v, { toValue: 1, ...SPRING.fast, useNativeDriver: NATIVE }).start();
+    }, delay);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduce, delay, v]);
   const scale = v.interpolate({ inputRange: [0, 1], outputRange: [from, 1] });
   const opacity = v.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1], extrapolate: 'clamp' });

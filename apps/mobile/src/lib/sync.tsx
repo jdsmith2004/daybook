@@ -39,7 +39,7 @@ import { APPLE_WORDS, CognitoError } from '@daybook/core';
 
 import { track } from '@/lib/events';
 import { apple, appleOffered, appleRevoked, askApple } from './apple';
-import { accessToken, forgetSession, keepApple, loadSession, SignInExpired, signOut, type Session } from './auth';
+import { accessToken, forgetSession, keepApple, loadSession, saveSignInLater, SignInExpired, signOut, type Session } from './auth';
 import { SYNC_URL, syncOffered } from './config';
 import { here } from './here';
 import { useStore } from './store';
@@ -67,7 +67,9 @@ export type SyncStatus =
   | { k: 'on'; note?: string } // note: what the last round could not save, said plainly
   | { k: 'need' } // signed in, but sync opens with a tip (supporter.ts); the log stays here
   | { k: 'expired' }
-  | { k: 'error'; msg: string };
+  /* short: what is wrong, in a few words, for Today's strip. code: what failed, for help and for fixing it (the answer's
+     status, 'net', 'odd', or 'app' with the first words of the error inside Daybook); never a record, never a token */
+  | { k: 'error'; msg: string; short?: string; code?: string };
 
 interface SyncValue {
   status: SyncStatus;
@@ -106,6 +108,8 @@ interface SyncValue {
   restoreErased: () => Promise<boolean>;
   /** the kept sign-in has been looked at (so a new person's setup can tell whether someone is signed in) */
   loaded: boolean;
+  /** a call to the sync API as the signed-in person (Friends, lib/friends.ts): null when signed out or unreachable */
+  api: (method: 'GET' | 'POST', query: string, body?: unknown) => Promise<{ status: number; body: Record<string, unknown> } | null>;
 }
 
 const Ctx = createContext<SyncValue | null>(null);
@@ -175,6 +179,21 @@ function syncWordsAt(e: HttpError): string {
   if (e.status === 413) return 'That change is too large to sync. It is kept on this phone.';
   if (e.status >= 500) return 'Your account did not answer this time. Your changes are kept on this phone and will sync later.';
   return 'Sync did not work this time. Your changes are kept on this phone, and Daybook tries again each time it opens.';
+}
+
+/** the few words Today's strip says for an answer that turned a round down */
+function syncShort(e: HttpError): string {
+  if (e.status === 429) return 'Today’s syncing allowance is used up.';
+  if (e.status === 413) return 'A change is too large to send.';
+  if (e.status >= 500) return 'Your account did not answer.';
+  return 'Your account turned the changes down.';
+}
+
+/** the first words of an error inside Daybook, for the code a person can send with "Get help" (never a record: errors in the
+    sync round carry their own message only) */
+export function errWords(e: unknown): string {
+  const m = e instanceof Error ? e.name + ': ' + e.message : String(e);
+  return m.replace(/\s+/g, ' ').slice(0, 80);
 }
 
 class HttpError extends Error {
@@ -296,13 +315,32 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       }
       /* too much today, or too large: stop trying until the app is opened again */
       if (what === 'pause') paused.current = true;
-      setStatus({ k: 'error', msg: syncWords(e) });
+      setStatus({ k: 'error', msg: syncWords(e), short: syncShort(e), code: String(e.status) });
       track('error', { err: 'sync' });
     } else if (e instanceof NoLink) {
-      setStatus({ k: 'error', msg: here('Could not reach your account. Check the connection. Your changes are kept on this phone and will sync later.') });
+      setStatus({
+        k: 'error',
+        msg: here('Could not reach your account. Check the connection. Your changes are kept on this phone and will sync later.'),
+        short: 'Your account could not be reached.',
+        code: 'net',
+      });
       track('error', { err: 'net' });
+    } else if (e instanceof CognitoError) {
+      /* the sign-in service turned a renewal down for a reason that is not an ended sign-in (busy, or down for a moment) */
+      setStatus({
+        k: 'error',
+        msg: here('Your account’s sign-in did not answer this time. Your changes are kept on this phone and will sync later.'),
+        short: 'Your account’s sign-in did not answer.',
+        code: 'auth ' + e.code,
+      });
+      track('error', { err: 'sync' });
     } else if (e instanceof OddAnswer) {
-      setStatus({ k: 'error', msg: here('The answer from your account did not come through whole. Your changes are kept on this phone and will sync later.') });
+      setStatus({
+        k: 'error',
+        msg: here('The answer from your account did not come through whole. Your changes are kept on this phone and will sync later.'),
+        short: 'The answer from your account came through broken.',
+        code: 'odd',
+      });
       track('error', { err: 'sync' });
     } else {
       /* something in Daybook itself stopped the round: said as that, never blamed on the connection */
@@ -311,6 +349,8 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         msg: here(
           'Sync stopped on a problem inside Daybook, not your connection. Your changes are kept on this phone, and Daybook tries again in a few minutes.',
         ),
+        short: 'A problem inside Daybook stopped it, not your connection.',
+        code: 'app ' + errWords(e),
       });
       track('error', { err: 'other' });
     }
@@ -511,6 +551,8 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     const sub = AppState.addEventListener('change', (st) => {
       if (st === 'active') {
         paused.current = false;
+        /* a renewed sign-in that could not be saved while the phone locked is saved now (core renew.ts) */
+        saveSignInLater();
         retryRef.current();
       }
     });
@@ -809,6 +851,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       checkErased,
       restoreErased,
       loaded,
+      api: callApi,
     }),
     [
       status,
@@ -827,6 +870,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       checkErased,
       restoreErased,
       loaded,
+      callApi,
     ],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

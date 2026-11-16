@@ -6,11 +6,10 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Confetti } from '@/components/celebrate';
 import { Ghost, Next } from '@/components/lx';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { NATIVE, useReducedMotion } from '@/lib/motion';
+import { NATIVE, SETTLE, SETTLE_SLOW, useReducedMotion } from '@/lib/motion';
 import { font, useTheme } from '@/lib/theme';
 
 export interface UnlockSheetProps {
@@ -36,14 +35,13 @@ export function UnlockSheet({ eb = 'Unlocked', name, line, art, go, other }: Unl
     buzz('lit');
     if (still) return;
     Animated.sequence([
-      Animated.spring(up, { toValue: 1, friction: 7, tension: 70, useNativeDriver: NATIVE }),
-      Animated.spring(pop, { toValue: 1, friction: 4, tension: 120, useNativeDriver: NATIVE }),
+      Animated.spring(up, { toValue: 1, ...SETTLE_SLOW, useNativeDriver: NATIVE }),
+      Animated.spring(pop, { toValue: 1, ...SETTLE, useNativeDriver: NATIVE }),
     ]).start();
   }, [still, up, pop]);
   return (
     <View style={StyleSheet.absoluteFill} accessibilityViewIsModal>
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(8,6,24,0.5)', opacity: up }]} />
-      {still ? null : <Confetti big={false} />}
       <Animated.View
         style={[
           s.sheet,

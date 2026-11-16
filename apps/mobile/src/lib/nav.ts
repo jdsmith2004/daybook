@@ -15,6 +15,7 @@ export function keepRootState(get: () => State | undefined) {
 
 /** the sheets: one thing, over everything (on iOS a card that slides up below the status bar) */
 export const SHEETS = [
+  'feedback',
   'points',
   'lessons-week',
   'mode',
@@ -32,6 +33,11 @@ export const SHEETS = [
   'notes',
   'scripture-note',
   'insights',
+  'friend-me',
+  'friend-add',
+  'friend-code',
+  'friend/[fid]',
+  'friend-share',
 ];
 
 /** from iOS 26 a sheet is a card below the status bar with the page it opened from still whole behind the clock. Older iPhones shrink that page
@@ -59,7 +65,7 @@ export function useHoldsBar(): boolean {
 
 /** the full-screen moments: the X closes one, Done (closeAll) closes every one on top at once */
 const SCENE =
-  /^(sos|tool\/\[id\]|log|checkin|talk|review|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated|week|back|whats-new|feedback|morning|becoming|import\/mithras)$/;
+  /^(sos|tool\/\[id\]|log|checkin|talk|review|wind|night|lesson\/\[id\]|lwrite\/\[n\]|setup|graduated|week|back|whats-new|morning|becoming|import\/mithras)$/;
 
 /** the routes open now, bottom to top (Expo Router keeps the app's stack inside one "__root" route) */
 function openRoutes(from: State | undefined = rootState()): Route[] {

@@ -120,9 +120,23 @@ describe('the goal it suggests', () => {
 
 describe('setup in two minutes (WP10)', () => {
   it('asks a new person a few things, sets tonight, lights the flame, then asks for the account', () => {
-    expect(core.obPages({}).map((p) => p.id)).toEqual(['how', 'habit', 'freq', 'when', 'sos', 'promise', 'for', 'faith', 'tonight', 'light']);
-    expect(core.obPages({ faith: 'big' }, { account: true }).map((p) => p.id)).toEqual(
-      'how habit freq when sos promise for faith creed tonight light account'.split(' '),
+    expect(core.obPages({}).map((p) => p.id)).toEqual([
+      'how',
+      'habit',
+      'freq',
+      'mins',
+      'when',
+      'sos',
+      'promise',
+      'for',
+      'grow',
+      'faith',
+      'tonight',
+      'light',
+      'why',
+    ]);
+    expect(core.obPages({ faith: 'big', freq: 'f2' }, { account: true }).map((p) => p.id)).toEqual(
+      'how habit freq mins when need sos promise for grow faith creed tonight light why account'.split(' '),
     );
     expect(core.obPages({}, { redo: true })[0].id).toBe('hello');
   });
@@ -135,8 +149,99 @@ describe('setup in two minutes (WP10)', () => {
     }
     expect(core.obPages({ habit: 'porn' }).map((p) => p.id)).toContain('tonight');
   });
+  it('asks every other habit about reminders too, in its own words (the owner, November 15, 2026)', () => {
+    for (const habit of ['alcohol', 'gambling', 'other']) {
+      const ids = core.obPages({ habit }, { notify: true }).map((p) => p.id);
+      expect(ids, habit).toContain('remind');
+      expect(ids.indexOf('light')).toBe(ids.indexOf('remind') + 1);
+      expect(core.obPages({ habit }, { notify: false }).map((p) => p.id)).not.toContain('remind');
+      expect(core.obPages({ habit }, { notify: true, redo: true }).map((p) => p.id)).not.toContain('remind');
+      const say = core.obSay('remind', false, core.habitIn({ habit }));
+      expect(say).toBeTruthy();
+      expect(say).not.toMatch(/porn/i);
+    }
+    expect(core.obSay('remind', false, 'alcohol')).toMatch(/drinking/);
+    expect(core.obSay('remind', false, 'gambling')).toMatch(/gambling/);
+    /* porn asks on its tonight page, so it never gets a second ask */
+    expect(core.obPages({ habit: 'porn' }, { notify: true }).map((p) => p.id)).not.toContain('remind');
+  });
+  it('marks the length picked most, Short until one is picked, and offers Deep only when turned on (the owner, November 14, 2026)', () => {
+    const tk = '2026-11-12' as core.DayKey;
+    const st = core.obBegin({}, tk, 0);
+    expect(core.obPages({}).map((p) => p.id)).not.toContain('len');
+    expect(core.lessonLen(st)).toBe('q');
+    let x = core.pickLessonLen(st, 'f', 0);
+    expect(core.lessonLen(x)).toBe('f');
+    x = core.pickLessonLen(core.pickLessonLen(x, 'f', 0), 'q', 0);
+    expect(core.lessonLen(x), 'two Longs and one Short: Long is picked most').toBe('f');
+    expect(core.lessonLen(core.normSettings(JSON.parse(JSON.stringify(x)))), 'the count survives a save').toBe('f');
+    x = core.pickLessonLen(core.pickLessonLen(x, 'q', 0), 'q', 0);
+    expect(core.lessonLen(x)).toBe('q');
+    /* Deep is a choice only once every lesson has it, and only for a person who turned it on */
+    expect(core.deepOn(core.setDeep(x, true, 0))).toBe(core.DEEP_READY);
+    expect(core.deepOn(x)).toBe(false);
+  });
+  it('shows what Daybook gives: a year at their pace, the flame growing, and why it works (the owner, November 14, 2026)', () => {
+    /* the year: only with an answer, rounded the way it was said, and its marks add up */
+    expect(core.obYear({})).toBe(null);
+    expect(core.obYear({ freq: 'f3' })!.n).toBe(300);
+    expect(core.obYear({ freq: 'f0' })!.h).toMatch(/Fewer than 50/);
+    for (const f of ['f0', 'f1', 'f2', 'f3']) {
+      const y = core.obYear({ freq: f })!;
+      expect(core.obYearMarks(y.n).filter(Boolean).length).toBe(y.n);
+    }
+    /* the flame grows at every stop, from the first week, not tonight (the owner, November 15, 2026), and Day 90 is who the person
+       is, never a promise about their life */
+    const g = core.obGrow({ for: ['health', 'love'] });
+    expect(g.map((x) => x.at)).toEqual(['Week 1', 'Month 1', 'Month 2', 'Day 90']);
+    for (let i = 1; i < g.length; i++) expect(core.formOfLevel(g[i].level)).toBeGreaterThan(core.formOfLevel(g[i - 1].level));
+    expect(g.map((x) => x.line).join(' ')).not.toMatch(/people you love|Tonight/);
+    expect(g[3].line).toMatch(/free of it/);
+    expect(
+      core
+        .obGrow({ habit: 'alcohol' })
+        .map((x) => x.line)
+        .join(' '),
+    ).not.toMatch(/porn/);
+    /* Next visits every stop in turn and leaves only from the last (the owner: "they press next and it skips EVERYTHING") */
+    const seen: number[] = [];
+    let at = 0;
+    for (let k = 0; k < 10 && at >= 0; k++) {
+      seen.push(at);
+      at = core.obGrowNext(at, g.length);
+    }
+    expect(seen).toEqual([0, 1, 2, 3]);
+    /* the record never drops at a slip; the streak does */
+    const w = core.obWhyLines();
+    for (let d = 1; d < w.record.length; d++) expect(w.record[d]).toBeGreaterThanOrEqual(w.record[d - 1]);
+    expect(w.streak.filter((v, d) => d > 0 && v === 0).length).toBe(2);
+    /* none of it on a walk-through */
+    expect(core.obPages({ freq: 'f3' }, { redo: true }).some((p) => ['need', 'grow', 'why'].includes(p.id))).toBe(false);
+  });
   it('asks the same questions on a walk-through, then the changes to keep', () => {
-    expect(core.obPages({}, { redo: true, account: true }).map((p) => p.id)).toEqual(['hello', 'habit', 'freq', 'when', 'for', 'faith', 'review', 'done']);
+    expect(core.obPages({}, { redo: true, account: true }).map((p) => p.id)).toEqual([
+      'hello',
+      'habit',
+      'freq',
+      'mins',
+      'when',
+      'for',
+      'faith',
+      'review',
+      'done',
+    ]);
+  });
+  it('on a walk-through, taking off a "who for" pick takes its reason off, and leaves the rest in their order', () => {
+    const tk = '2026-11-14' as core.DayKey;
+    const st = core.obBegin({ freq: 'f2', for: ['love', 'partner', 'health'] }, '2026-09-15' as core.DayKey, 0);
+    const pre = core.obPrefill(st);
+    expect(pre.for).toEqual(['love', 'partner', 'health']);
+    expect(core.obChanges(pre, st, tk).some((c) => c.k === 'rs')).toBe(false);
+    const a = { ...pre, for: ['partner', 'health', 'faith'] };
+    expect(core.obReasonList(a)).toEqual(['Being ready for a real, honest relationship', 'Clear mornings and steady energy', 'Living by my faith']);
+    expect(core.obChanges(a, st, tk).find((c) => c.k === 'rs')?.to).toBe(
+      'Being ready for a real, honest relationship · Clear mornings and steady energy · Living by my faith',
+    );
   });
   it('starts counting tonight, counts how often says, and keeps who it is for as reasons', () => {
     const tk = '2026-11-12' as core.DayKey;

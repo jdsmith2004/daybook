@@ -6,6 +6,7 @@ import { Shape, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 
 import { Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { font, useTheme, type Palette } from '@/lib/theme';
 
 /** a tool's soft color and its ink */
@@ -94,7 +95,10 @@ export function ToolGrid({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={lead.name + '. ' + lead.desc}
-            onPress={() => onLead?.(lead.id)}
+            onPress={() => {
+              buzz('tap');
+              onLead?.(lead.id);
+            }}
             style={({ pressed }) => [s.tool, { backgroundColor: c.surface, shadowColor: c.lip, transform: [{ translateY: pressed ? 3 : 0 }] }]}>
             <ToolShape id={lead.id} ic={lead.ic} size={46} iconSize={22} color={lSoft} ink={lInk} />
             <View style={{ flex: 1 }}>
@@ -122,7 +126,10 @@ export function ToolGrid({
                     key={t.id}
                     accessibilityRole="button"
                     accessibilityLabel={`${t.name}. ${t.desc}${tag ? '. ' + tag : isNew ? '. New for you' : ''}`}
-                    onPress={() => onPick(t.id)}
+                    onPress={() => {
+                      buzz('tap');
+                      onPick(t.id);
+                    }}
                     style={({ pressed }) => [
                       s.tool,
                       narrow && { flexBasis: '100%' },

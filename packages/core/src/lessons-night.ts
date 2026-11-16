@@ -10,66 +10,16 @@
    the filter lesson has no meaning for alcohol, and the alcohol version of l58 names that medicines exist. The others hold for
    every habit as written.
 
-   Nothing here imports a value, so lesson-turns.ts, lesson-habit.ts, lessons-more.ts and practice.ts can all read it. */
+   Nothing here imports a value but its sources (lesson-sources.ts), so lesson-turns.ts, lesson-habit.ts, lessons-more.ts and
+   practice.ts can all read it. */
 import type { Go, Lesson } from './lessons';
 import type { Turn } from './lesson-turns';
 import type { OtherHabit, Part } from './lesson-habit';
 import type { PItem, PStep } from './practice';
+import { SRC_NIGHT } from './lesson-sources';
 
-type Src = [string, string];
-/** the sources, added to SRC (lessons-more.ts SRC_MORE) */
-export const SRC_NIGHT = {
-  nordgren09: [
-    'Nordgren, van Harreveld & van der Pligt (2009): the restraint bias, how the illusion of self-restraint promotes impulsive behavior, Psychological Science',
-    'https://doi.org/10.1111/j.1467-9280.2009.02468.x',
-  ],
-  pilcher15: [
-    'Pilcher, Morris, Donnelly & Feigl (2015): interactions between sleep habits and self-control, Frontiers in Human Neuroscience',
-    'https://doi.org/10.3389/fnhum.2015.00284',
-  ],
-  gollwitzer06: [
-    'Gollwitzer & Sheeran (2006): implementation intentions and goal achievement, a meta-analysis of effects and processes, Advances in Experimental Social Psychology',
-    'https://doi.org/10.1016/S0065-2601(06)38002-1',
-  ],
-  exelmans16: [
-    'Exelmans & Van den Bulck (2016): bedtime mobile phone use and sleep in adults, Social Science & Medicine',
-    'https://doi.org/10.1016/j.socscimed.2015.11.037',
-  ],
-  ward17: [
-    'Ward, Duke, Gneezy & Bos (2017): brain drain, the mere presence of one’s own smartphone reduces available cognitive capacity, Journal of the Association for Consumer Research',
-    'https://doi.org/10.1086/691462',
-  ],
-  hofmann12: [
-    'Hofmann, Baumeister, Förster & Vohs (2012): everyday temptations, an experience sampling study of desire, conflict, and self-control, Journal of Personality and Social Psychology',
-    'https://doi.org/10.1037/a0026545',
-  ],
-  duckworth16: [
-    'Duckworth, Gendler & Gross (2016): situational strategies for self-control, Perspectives on Psychological Science',
-    'https://doi.org/10.1177/1745691615623247',
-  ],
-  gainsbury14: [
-    'Gainsbury (2014): review of self-exclusion from gambling venues as an intervention for problem gambling, Journal of Gambling Studies',
-    'https://doi.org/10.1007/s10899-013-9362-0',
-  ],
-  screentime: ['Apple: use a Screen Time passcode on iPhone', 'https://support.apple.com/en-us/126533'],
-  harkin16: [
-    'Harkin et al. (2016): does monitoring goal progress promote goal attainment? A meta-analysis of the experimental evidence, Psychological Bulletin',
-    'https://doi.org/10.1037/bul0000025',
-  ],
-  litt09: [
-    'Litt, Kadden, Kabela-Cormier & Petry (2009): changing network support for drinking, network support project 2-year follow-up, Journal of Consulting and Clinical Psychology',
-    'https://doi.org/10.1037/a0015252',
-  ],
-  freeman17: [
-    'Freeman et al. (2017): the effects of improving sleep on mental health (OASIS), a randomised controlled trial with mediation analysis, The Lancet Psychiatry',
-    'https://doi.org/10.1016/S2215-0366(17)30328-0',
-  ],
-  nice22: ['NICE (2022): depression in adults, treatment and management (guideline NG222)', 'https://www.nice.org.uk/guidance/ng222'],
-  niaaa: [
-    'NIAAA: treatment for alcohol problems, finding and getting help (the medicines approved for alcohol use disorder)',
-    'https://www.niaaa.nih.gov/publications/brochures-and-fact-sheets/treatment-alcohol-problems-finding-and-getting-help',
-  ],
-} satisfies Record<string, Src>;
+export { SRC_NIGHT };
+
 const S = SRC_NIGHT;
 
 /** each lesson's section (lessons.ts LUNITS) and care: true for the one that shows the 988 line */
@@ -470,22 +420,22 @@ const help = (t: string, v: string, sub = '', ic = 'life'): Go => ({ t, a: 'help
 
 export const NIGHT_PRACTICE: Record<string, PStep> = {
   l54: {
-    h: 'Let the morning decide for tonight.',
-    p: 'Add the line that fits your nights while your head is clear. Tonight only has to follow it.',
+    h: 'Let your rested self set up the worn-out hours.',
+    p: 'Add the line that fits your hardest hours while you still have energy. The worn-out you only has to follow it.',
     mins: 1,
     items: [
-      plan('it is 10 p.m.', 'Put the phone on its charger outside my room, and get ready for bed.'),
-      plan('I am in bed and want my phone', 'Leave it where it is. Read, or lie still until sleep comes.'),
+      plan('I am worn out and the pull starts', 'Do the one thing I set up while I was rested, before anything else.'),
+      plan('the hour that usually wears me down comes', 'Move what I reach for out of reach first, then eat, rest or call someone.'),
     ],
-    go: [{ t: 'Set my screens-off time', a: 'tab', v: 'settings', open: 's-sched', ic: 'moon' }],
-    ok: 'Tonight is set up already.',
+    go: [{ t: 'Open my plan', a: 'tab', v: 'plan', ic: 'calendar' }],
+    ok: 'Your worn-out hours have a plan now.',
   },
   l55: {
-    h: 'Give your phone its own bed.',
-    p: 'Pick where it charges tonight, and add the line, so the plan is there when the night comes.',
+    h: 'Give your phone its own place to sleep.',
+    p: 'Pick where it charges, and add the line, so the plan is there before your hard hours come.',
     mins: 1,
     items: [
-      plan('it is time for bed', 'Plug the phone in outside my room, and use my alarm clock to wake up.'),
+      plan('I am going to sleep', 'Plug the phone in outside my room, and use my alarm clock to wake up.'),
       line('wind', 'Phone on its charger in the kitchen'),
     ],
     go: [help('Phone and night setup', 'phone', 'night', 'phone')],
@@ -497,7 +447,7 @@ export const NIGHT_PRACTICE: Record<string, PStep> = {
     mins: 2,
     items: [
       copy('To someone I trust', 'Could you set a passcode on my phone limits for me, and keep it to yourself? It helps me stay on track.'),
-      plan('I find a way around my block', 'Put the phone down for ten minutes, and close that door in the morning.'),
+      plan('I find a way around my block', 'Put the phone down for ten minutes, and close that door in my next calm hour.'),
     ],
     go: [help('Block it on my phone', 'phone', '', 'shield')],
     ok: 'You know your doors now.',

@@ -9,6 +9,7 @@ import { TextInput } from '@/components/text';
 import { Appear } from '@/components/appear';
 import { KeepAbove } from '@/components/keyboard';
 import { Card, Icon, T } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { font, useTheme } from '@/lib/theme';
 
 export type PageTone = 'accent' | 'mint' | 'sky' | 'sun' | 'coral' | 'violet';
@@ -73,7 +74,10 @@ export function PageLink({ icon, label, onPress, disabled }: { icon?: string; la
       accessibilityRole="button"
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
-      onPress={onPress}
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
       style={({ pressed }) => [s.link, { opacity: disabled ? 0.4 : pressed ? 0.6 : 1 }]}>
       {icon ? <Icon name={icon} size={18} color={c.accentText} /> : null}
       <T v="label" tone="accentText">
@@ -135,7 +139,10 @@ export function Editable({
           />
           <Pressable
             accessibilityRole="button"
-            onPress={done}
+            onPress={() => {
+              buzz('save');
+              done();
+            }}
             hitSlop={8}
             style={({ pressed }) => [s.done, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}>
             <Icon name="check" size={16} color={c.accentInk} />
@@ -152,7 +159,10 @@ export function Editable({
       accessibilityRole="button"
       accessibilityLabel={(label ? label + ': ' : '') + (empty ? prompt : value)}
       accessibilityHint="Opens it to change"
-      onPress={() => setEditing(true)}
+      onPress={() => {
+        buzz('tap');
+        setEditing(true);
+      }}
       style={({ pressed }) => [s.row, { opacity: pressed ? 0.8 : 1 }]}>
       <View style={{ flex: 1, gap: 2 }}>
         {label ? (

@@ -2,8 +2,8 @@
    low), the progress line, a quiet link, and a question the flame answers. Moved here from the lesson player so setup is built from the
    same parts (docs/design-standards.md, "A lesson"). */
 import { StatusBar } from 'expo-status-bar';
-import { createContext, useContext, useState, type ReactNode, type RefObject } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance, type ViewStyle } from 'react-native';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Animated, Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance, type ViewStyle } from 'react-native';
 
 import { Appear } from '@/components/appear';
 import { FitProvider, SHORT, useFitRoom } from '@/components/fit';
@@ -16,7 +16,11 @@ import { Icon, T } from '@/components/ui';
 import { PAPER, PAPER_INK, PAPER_LIP, RIGHT, RIGHT_LIP, type Look } from '@/lib/lesson-look';
 import { useHoldsBar } from '@/lib/nav';
 import { buzz } from '@/lib/feel';
+import { NATIVE, SPRING, useReducedMotion } from '@/lib/motion';
 import { font, PaletteOverride } from '@/lib/theme';
+
+/** how far a card travels sideways as it comes in */
+const SLIDE = 36;
 
 /** the color of quiet words low on the screen, where the sky is brightest */
 export const LowInk = createContext('#FFFFFF');
@@ -25,7 +29,14 @@ export const LowInk = createContext('#FFFFFF');
 export function Quiet({ label, onPress, half }: { label: string; onPress: () => void; half?: boolean }) {
   const low = useContext(LowInk);
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={4} style={({ pressed }) => [half ? s.quietHalf : s.quiet, { opacity: pressed ? 0.6 : 1 }]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => {
+        buzz('tap');
+        onPress();
+      }}
+      hitSlop={4}
+      style={({ pressed }) => [half ? s.quietHalf : s.quiet, { opacity: pressed ? 0.6 : 1 }]}>
       <Text style={[s.quietT, { color: low }]}>{label}</Text>
     </Pressable>
   );
@@ -45,6 +56,7 @@ export function Shell({
   scroll,
   fit,
   bodyKey,
+  dir = 0,
   foot,
   over,
   praise,
@@ -65,6 +77,8 @@ export function Shell({
   scroll: RefObject<ScrollViewInstance | null>;
   fit: ReturnType<typeof useFitRoom>;
   bodyKey: string;
+  /** which way the body came: 1 slides the new card in from the right (forward), -1 from the left (back), 0 settles in place */
+  dir?: 1 | -1 | 0;
   foot: ReactNode;
   /** something over the whole screen, like the sources sheet (outside the padded column, so it reaches the edges) */
   over?: ReactNode;
@@ -111,7 +125,8 @@ export function Shell({
               <FitProvider value={fit.ctx}>
                 <KeyboardRoom scroll={scroll}>
                   <FlameStage level={level} on={flameOn} pulse={pulse}>
-                    <Appear key={bodyKey} by={0} style={s.cardBody}>
+                    {/* the next card comes from the side it belongs to, quick and settling, as a Duolingo card does */}
+                    <Appear key={bodyKey} by={0} x={dir * SLIDE} duration={dir ? 320 : 260} style={s.cardBody}>
                       {children}
                     </Appear>
                   </FlameStage>
@@ -254,43 +269,93 @@ export function Answer({
   onPress,
   label,
   style,
+  corner,
   children,
 }: {
   sel: boolean;
   right: boolean;
   quiet?: boolean;
+  /** a tile in a grid, its words centered: the check sits in the top corner, clear of the words */
+  corner?: boolean;
   onPress: () => void;
   label?: string;
   style?: ViewStyle;
   children: ReactNode;
 }) {
+  /* the right answer lands: it dips and springs back to size the moment it turns green, once (Duolingo's answers do the same) */
+  const still = useReducedMotion();
+  const land = useRef(new Animated.Value(1)).current;
+  const wasRight = useRef(right);
+  useEffect(() => {
+    if (right && !wasRight.current && !still) {
+      land.setValue(0.94);
+      Animated.spring(land, { toValue: 1, ...SPRING.fast, useNativeDriver: NATIVE }).start();
+    }
+    wasRight.current = right;
+  }, [right, still, land]);
+  /* the bounce wraps the answer, so the wrapper is what sits in the row: where the answer goes and how wide it is (a two-across
+     grid's flexBasis) belong to it, and the answer fills it. Put on the answer inside, a grid came out ragged and one-across
+     rows shrank to their words (November 14, 2026). */
+  const { outer, inner } = splitPlace(style);
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: sel }}
-      accessibilityLabel={label}
-      onPress={() => {
-        buzz('tap');
-        onPress();
-      }}
-      style={({ pressed }) => [
-        s.opt,
-        right
-          ? { backgroundColor: RIGHT, shadowColor: RIGHT_LIP, shadowOpacity: 1 }
-          : quiet
-            ? { backgroundColor: sel ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.62)', shadowOpacity: 0 }
-            : { backgroundColor: PAPER, shadowColor: PAPER_LIP, shadowOpacity: 1 },
-        { borderColor: sel && !right ? PAPER_INK : 'transparent', transform: [{ translateY: pressed && !quiet ? 2 : 0 }] },
-        style,
-      ]}>
-      {children}
-      {right ? (
-        <View style={s.optTick}>
-          <Icon name="check" size={18} color="#FFFFFF" />
-        </View>
-      ) : null}
-    </Pressable>
+    <Animated.View style={[outer, { transform: [{ scale: land }] }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ selected: sel }}
+        accessibilityLabel={label}
+        onPress={() => {
+          buzz('tap');
+          onPress();
+        }}
+        style={({ pressed }) => [
+          s.opt,
+          right
+            ? { backgroundColor: RIGHT, shadowColor: RIGHT_LIP, shadowOpacity: 1 }
+            : quiet
+              ? { backgroundColor: sel ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.62)', shadowOpacity: 0 }
+              : { backgroundColor: PAPER, shadowColor: PAPER_LIP, shadowOpacity: 1 },
+          { borderColor: sel && !right ? PAPER_INK : 'transparent', transform: [{ translateY: pressed && !quiet ? 2 : 0 }] },
+          inner,
+        ]}>
+        {children}
+        {right ? (
+          <View style={corner ? s.optCorner : s.optTick}>
+            <Icon name="check" size={18} color="#FFFFFF" />
+          </View>
+        ) : null}
+      </Pressable>
+    </Animated.View>
   );
+}
+/** an answer's style, split: what places it in its row goes on the bounce wrapper, the rest on the answer, which fills the wrapper */
+const PLACE = [
+  'flex',
+  'flexBasis',
+  'flexGrow',
+  'flexShrink',
+  'width',
+  'minWidth',
+  'maxWidth',
+  'alignSelf',
+  'margin',
+  'marginTop',
+  'marginBottom',
+  'marginLeft',
+  'marginRight',
+  'marginHorizontal',
+  'marginVertical',
+] as const;
+function splitPlace(style?: ViewStyle): { outer: ViewStyle; inner: ViewStyle } {
+  const flat = { ...(style || {}) } as Record<string, unknown>;
+  const outer: Record<string, unknown> = {};
+  const inner: Record<string, unknown> = {};
+  for (const k in flat) {
+    if ((PLACE as readonly string[]).includes(k)) outer[k] = flat[k];
+    else inner[k] = flat[k];
+  }
+  /* a placed answer fills its wrapper, down to the height of the tallest in its row */
+  if (Object.keys(outer).length) inner.flexGrow = 1;
+  return { outer: outer as ViewStyle, inner: inner as ViewStyle };
 }
 /** the words on an answer, in its ink */
 export function AnswerText({ right, quiet, sel, children, center }: { right: boolean; quiet?: boolean; sel?: boolean; children: ReactNode; center?: boolean }) {
@@ -321,12 +386,15 @@ export function Opts({
         const sel = pk === j;
         const right = best == null ? sel : found && j === best;
         const quiet = !right && (found || (best != null && tried.indexOf(j) >= 0));
+        /* the answers arrive one after another, a beat apart, once; a pick redraws them in place */
         return (
-          <Answer key={j} sel={sel} right={right} quiet={quiet} onPress={() => onPick(j)}>
-            <AnswerText right={right} quiet={quiet} sel={sel}>
-              {o}
-            </AnswerText>
-          </Answer>
+          <Appear key={j} by={14} delay={90 + j * 55} duration={300}>
+            <Answer sel={sel} right={right} quiet={quiet} onPress={() => onPick(j)}>
+              <AnswerText right={right} quiet={quiet} sel={sel}>
+                {o}
+              </AnswerText>
+            </Answer>
+          </Appear>
         );
       })}
     </View>
@@ -370,4 +438,5 @@ const s = StyleSheet.create({
   },
   optT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20 },
   optTick: { position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' },
+  optCorner: { position: 'absolute', right: 10, top: 8 },
 });

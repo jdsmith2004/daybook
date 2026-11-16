@@ -9,6 +9,9 @@
    - Mosaic: a block for each thing, sized by how often it comes up, with its words inside
    - Pairs: days with no slip beside slip days, a pair for each answer
    - Moons: sleep before days with no slip beside sleep before slip days, each moon as big as the night
+   - NightMoons: each night of the range as a moon, a week to a row: full and warm for a night told free, a thin crescent for a slip
+   - LessonDays: a column for each stretch of days, as tall as the days a lesson was done in it
+   - HeldEmbers: the day from 6 AM as a line, with an ember standing at each hard hour held
    - Ghost: any of these drawn empty, with no words, while the log has nothing for it yet
    Nothing stands in an empty track, except in a ghost, where the empty track is the point. They come in once, and with Reduce Motion on they are simply there. */
 import {
@@ -22,6 +25,8 @@ import {
   type PatRideCol,
   type PatRidge,
   type PatWhen,
+  type PatWorkCol,
+  type NightTold,
 } from '@daybook/core';
 import { LinearGradient as Fade } from 'expo-linear-gradient';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -30,7 +35,7 @@ import { Text } from '@/components/text';
 import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { BigFlame } from '@/components/big-flame';
-import { useChartColors, useGrow } from '@/components/charts';
+import { useChartColors, useCountUp, useGrow } from '@/components/charts';
 import { SVG_HIDE, type ShapeKind } from '@/components/shapes';
 import { FEEL_COLORS, feelKind } from '@/components/tools/feel';
 import { shapePath, type AnyShape } from '@/lib/m3-shapes';
@@ -63,6 +68,9 @@ export const CARD_SKY: Record<string, [string, string]> = {
   what: ['#120E30', '#120E30'],
   days: ['#120E30', '#17123A'],
   helps: ['#0B1530', '#0E1C36'],
+  nights: ['#070A22', '#121436'],
+  learn: ['#0A1630', '#10243A'],
+  held: ['#140A26', '#26102A'],
 };
 
 /** the room left for a chart in a card, as a size to draw at. The chart floats inside it: on a phone a card with no set height takes its size from
@@ -990,10 +998,12 @@ function PairBar({ d, which, delay, H, w }: { d: PatDiff; which: 'clean' | 'slip
   const top = Math.max(d.clean, d.slip) || 1;
   const v = which === 'clean' ? d.clean : d.slip;
   const bar = Math.max(w, (v / top) * (H - 40));
+  /* the number counts up with its bar */
+  const shown = useCountUp(v, delay, 650);
   return (
     <View style={{ width: w, height: H, justifyContent: 'flex-end', alignItems: 'center' }}>
-      <Text numberOfLines={1} style={{ fontFamily: font.display, fontSize: w < 56 ? 17 : 22, lineHeight: 30, color: k.c.ink }}>
-        {fmtDiff(d, v)}
+      <Text numberOfLines={1} style={{ fontFamily: font.display, fontSize: w < 56 ? 17 : 22, lineHeight: 30, color: k.c.ink, fontVariant: ['tabular-nums'] }}>
+        {fmtDiff(d, shown)}
       </Text>
       <Rise h={bar} w={w} delay={delay}>
         <Svg width={w} height={bar} {...SVG_HIDE}>
@@ -1105,6 +1115,204 @@ export function Moons({ d, w, h }: { d: PatDiff; w: number; h: number }) {
   );
 }
 
+/* ---------- the work: nights, lessons, hard hours held ---------- */
+const MOON = '#FFE08A';
+/** each night of the range as a moon, a week to a row from the top, the newest last, where tonight is still to come: a full warm moon for a night told free, a thin
+    crescent for a slip, and a faint ring for a night not told, the grid in the middle of the card. Lots of light at a glance is lots of free nights. */
+export function NightMoons({ nights, w, h, label }: { nights: { k: string; n: NightTold }[]; w: number; h: number; label: string }) {
+  const rows = Math.max(1, Math.ceil(nights.length / 7));
+  const cell = Math.min(w / 7, (h - 8) / rows, 64);
+  const r = cell * 0.34;
+  const x0 = (w - cell * 7) / 2;
+  const y0 = Math.max(0, (h - cell * rows) / 2);
+  return (
+    <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+      {nights.map((x, i) => {
+        const at = i;
+        const cx = x0 + (at % 7) * cell + cell / 2;
+        const cy = y0 + Math.floor(at / 7) * cell + cell / 2;
+        return (
+          <Pop
+            key={x.k}
+            delay={80 + Math.min(i * 22, 900)}
+            style={{ position: 'absolute', left: cx - cell / 2, top: cy - cell / 2, width: cell, height: cell }}>
+            <Svg width={cell} height={cell} {...SVG_HIDE}>
+              <Defs>
+                <RadialGradient id={'mn' + i} cx="0.4" cy="0.35" r="0.7">
+                  <Stop offset="0" stopColor="#FFF6D6" />
+                  <Stop offset="1" stopColor={MOON} />
+                </RadialGradient>
+              </Defs>
+              {x.n === 'free' ? (
+                <>
+                  <Circle cx={cell / 2} cy={cell / 2} r={r * 1.5} fill={MOON} fillOpacity={0.12} />
+                  <Circle cx={cell / 2} cy={cell / 2} r={r} fill={'url(#mn' + i + ')'} />
+                </>
+              ) : x.n === 'slip' ? (
+                <Path
+                  d={`M${cell / 2} ${cell / 2 - r} A${r} ${r} 0 1 0 ${cell / 2} ${cell / 2 + r} A${r * 0.75} ${r} 0 1 1 ${cell / 2} ${cell / 2 - r} Z`}
+                  fill="rgba(189,181,230,0.55)"
+                />
+              ) : (
+                <Circle cx={cell / 2} cy={cell / 2} r={r * 0.8} fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth={1.5} />
+              )}
+            </Svg>
+          </Pop>
+        );
+      })}
+    </View>
+  );
+}
+
+/** a column for each stretch of days, a block for each day stacked from the ground: lit in the cool of a clear morning for a day a lesson
+    was done, quiet for one without. A wall of light at a glance is a lesson most days. */
+export function LessonDays({ cols, w, h, label }: { cols: PatWorkCol[]; w: number; h: number; label: string }) {
+  const k = useInk();
+  const n = Math.max(cols.length, 1);
+  const colW = w / n;
+  const ground = h - COUNT_FOOT;
+  const most = Math.max(1, ...cols.map((c) => c.on.length));
+  const gap = most > 1 ? 4 : 0;
+  const block = Math.min(56, (ground - 12 - gap * (most - 1)) / most);
+  const bw = Math.min(colW * 0.62, 44);
+  const every = n > 7 ? 3 : 1;
+  return (
+    <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+      {cols.map((c, i) => {
+        /* the days with a lesson at the bottom, so how high the light reaches is how many */
+        const lit = c.on.filter(Boolean).length;
+        const H = c.on.length * block + (c.on.length - 1) * gap;
+        return (
+          <View key={c.from} style={[s.abs, { left: colW * (i + 0.5) - bw / 2, top: ground - H }]}>
+            <Rise h={H} w={bw} delay={200 + i * 70}>
+              <Svg width={bw} height={H} {...SVG_HIDE}>
+                <Defs>
+                  <LinearGradient id={'learn' + i} x1="0" y1="0" x2="0" y2={H} gradientUnits="userSpaceOnUse">
+                    <Stop offset="0" stopColor="#C8F7E4" />
+                    <Stop offset="1" stopColor="#4CA6E0" />
+                  </LinearGradient>
+                </Defs>
+                {c.on.map((_, j) => {
+                  const y = H - (j + 1) * block - j * gap;
+                  return (
+                    <Rect
+                      key={j}
+                      y={y}
+                      width={bw}
+                      height={block}
+                      rx={Math.min(8, block / 3)}
+                      fill={j < lit ? 'url(#learn' + i + ')' : 'rgba(255,255,255,0.08)'}
+                    />
+                  );
+                })}
+              </Svg>
+            </Rise>
+          </View>
+        );
+      })}
+      {cols.map((c, i) =>
+        (n - 1 - i) % every === 0 ? (
+          <Text
+            key={c.from}
+            numberOfLines={1}
+            style={[
+              s.ax,
+              s.countDate,
+              { color: i === n - 1 ? k.c.ink : k.c.muted, left: Math.max(2, Math.min(w - 62, colW * (i + 0.5) - 30)), top: ground + 8 },
+            ]}>
+            {c.label}
+          </Text>
+        ) : null,
+      )}
+    </View>
+  );
+}
+
+/** where an hour sits on a day that starts at 6 AM, so a night stays in one piece */
+const dayHour = (hr: number) => (hr - 6 + 24) % 24;
+/** the stretch of the day the hard hours held fall in, with room on each side, at least eight hours wide: the embers stand big where they were */
+function emberSpan(hours: number[]): [number, number] {
+  const at = hours.map(dayHour);
+  let a = Math.max(0, Math.min(...at) - 2);
+  let b = Math.min(24, Math.max(...at) + 3);
+  while (b - a < 8) {
+    if (a > 0) a--;
+    if (b - a < 8 && b < 24) b++;
+  }
+  return [a, b];
+}
+/** the hours of the day where hard hours were held, each held hour an ember standing at its hour, stacked when an hour came up again,
+    under the sky of that time of day */
+export function HeldEmbers({ hours, w, h, label }: { hours: { k: string; h: number }[]; w: number; h: number; label: string }) {
+  const k = useInk();
+  const ground = h - 30;
+  const pad = 16;
+  const span = w - pad * 2;
+  const [a, b] = emberSpan(hours.map((x) => x.h));
+  const per = span / (b - a);
+  const xOf = (hr: number) => pad + (dayHour(hr) - a + 0.5) * per;
+  const stack = new Map<number, number>();
+  const placed = hours.map((x) => {
+    const n = stack.get(x.h) || 0;
+    stack.set(x.h, n + 1);
+    return { ...x, up: n };
+  });
+  const tallest = Math.max(1, ...stack.values());
+  const size = Math.max(16, Math.min(per * 0.95, 52, (ground - 24) / (tallest * 0.85 + 0.15)));
+  const step = size * 0.85;
+  /* the sky across the stretch shown, its colors from the day's sky (DaySky) */
+  const stop = (x: number) => SKY_STOPS.reduce((c, [o, col]) => (o <= x ? col : c), SKY_STOPS[0][1]);
+  const marks = Array.from({ length: Math.floor((b - a) / 2) + 1 }, (_, i) => a + i * 2).filter((x) => x < b);
+  return (
+    <View style={{ width: w, height: h }} accessible accessibilityRole="image" accessibilityLabel={label}>
+      <Svg width={w} height={h} style={s.abs} {...SVG_HIDE}>
+        <Defs>
+          <LinearGradient id="heldsky" x1="0" y1="0" x2={w} y2="0" gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={stop(a / 24)} />
+            <Stop offset="1" stopColor={stop(Math.min(1, b / 24))} />
+          </LinearGradient>
+          <LinearGradient id="heldfade" x1="0" y1="0" x2="0" y2={ground} gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor={CARD_SKY.held[0]} stopOpacity={1} />
+            <Stop offset="1" stopColor={CARD_SKY.held[0]} stopOpacity={0.35} />
+          </LinearGradient>
+        </Defs>
+        <Rect width={w} height={ground} fill="url(#heldsky)" opacity={0.5} />
+        <Rect width={w} height={ground} fill="url(#heldfade)" />
+        <Path d={'M' + pad + ' ' + (ground + 0.5) + 'H' + (w - pad)} stroke="#FFD9A8" strokeOpacity={0.35} strokeWidth={1} />
+      </Svg>
+      {placed.map((x, i) => (
+        <Pop
+          key={x.k}
+          delay={120 + i * 90}
+          style={{ position: 'absolute', left: xOf(x.h) - size / 2, top: ground - size - x.up * step, width: size, height: size }}>
+          <Svg width={size} height={size} viewBox="0 0 24 24" {...SVG_HIDE}>
+            <Defs>
+              <RadialGradient id={'em' + i} cx="0.5" cy="0.66" r="0.62">
+                <Stop offset="0" stopColor="#FFF1B8" />
+                <Stop offset="0.5" stopColor="#FFB347" />
+                <Stop offset="1" stopColor="#F2704F" />
+              </RadialGradient>
+            </Defs>
+            <Circle cx={12} cy={14} r={11.5} fill="#FFB347" fillOpacity={0.16} />
+            <Path
+              d="M12 1.5c1.3 3.8 6.5 6.4 6.5 11.9a6.5 6.5 0 0 1-13 0c0-3.4 2.4-4.9 3.6-7 .7 1.7 1.5 2.5 2.6 3C11.9 7 12 4.3 12 1.5z"
+              fill={'url(#em' + i + ')'}
+            />
+          </Svg>
+        </Pop>
+      ))}
+      {marks.map((m) => (
+        <Text
+          key={m}
+          numberOfLines={1}
+          style={[s.ax, s.countDate, { color: k.c.muted, left: Math.max(0, Math.min(w - 60, pad + (m - a) * per - 30)), top: ground + 8 }]}>
+          {ampmOf((m + 6) % 24)}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 /* ---------- a card with nothing in it yet ---------- */
 /** the quiet of a shape still to be filled: white through the night, never a gray that sits on the sky like a stain */
 const GHOST = 'rgba(255,255,255,0.07)';
@@ -1128,6 +1336,36 @@ export function Ghost({ id, w, h }: { id: string; w: number; h: number }) {
   );
 }
 function GhostShape({ id, w, h }: { id: string; w: number; h: number }) {
+  if (id === 'nights') {
+    /* a week of rings, the moons still to come */
+    const cell = Math.min(w / 7, 56);
+    const x0 = (w - cell * 7) / 2;
+    return (
+      <Svg width={w} height={h} {...SVG_HIDE}>
+        {Array.from({ length: 14 }, (_, i) => (
+          <Circle key={i} cx={x0 + (i % 7) * cell + cell / 2} cy={h - 24 - cell * (1.5 - Math.floor(i / 7))} r={cell * 0.3} fill={i % 3 ? GHOST : GHOST_HI} />
+        ))}
+      </Svg>
+    );
+  }
+  if (id === 'learn' || id === 'held') {
+    /* the ground, with quiet places where the columns or the embers will stand */
+    const ground = h - 30;
+    const n = id === 'learn' ? 5 : 8;
+    const slot = (w - 32) / n;
+    return (
+      <Svg width={w} height={h} {...SVG_HIDE}>
+        <Path d={'M16 ' + (ground + 0.5) + 'H' + (w - 16)} stroke={GHOST_HI} strokeWidth={1} />
+        {Array.from({ length: n }, (_, i) =>
+          id === 'learn' ? (
+            <Rect key={i} x={16 + slot * (i + 0.5) - 16} y={ground - 40 - i * 18} width={32} height={40 + i * 18} rx={8} fill={GHOST} />
+          ) : (
+            <Circle key={i} cx={16 + slot * (i + 0.5)} cy={ground - 14} r={9} fill={i % 2 ? GHOST : GHOST_HI} />
+          ),
+        )}
+      </Svg>
+    );
+  }
   if (id === 'apart') {
     /* the hill with no days on it yet, and a row of quiet stars over where the days will be */
     const base = h - 24;

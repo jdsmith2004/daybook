@@ -25,6 +25,9 @@
                   with no code, an account joined to Apple answers 409 { code: 'NeedApple' } and nothing is deleted, so the app
                   asks Apple; { apple: { skip: true } } is a device that cannot ask Apple (Android), and closes it anyway
 
+   Friends (beta; friends.ts says what each does): GET ?friends=1 and ?friends=look, POST ?friends=card, invite, accept, cheer, used, hear, push,
+   remove, block and leave. Free for every signed-in person, like reading one's own log.
+
    Saving records (POST /sync) needs a supporter or Daybook Pattern, or an account from before tips (grandfathered); otherwise it answers
    402 { need: 'support' } and saves nothing. Everything else stays open to every signed-in person, so nobody is ever cut
    off from their own log: reading it (a new phone, a lapsed supporter getting their log back), bringing back an erased
@@ -39,6 +42,21 @@ import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyStructured
 import type { CheckApple, RevokeApple } from './apple-id';
 import { AppleError, appleLink, appleSignIn, type AppleUsers } from './apple-sign-in';
 import { BadCursor, type Store, type StoredRecord } from './store';
+import {
+  acceptCode,
+  blockFriend,
+  FriendError,
+  friendsGone,
+  friendsView,
+  lookCode,
+  makeInvite,
+  removeFriend,
+  saveCard,
+  savePush,
+  sendCheer,
+  setHear,
+  sparkUsedBy,
+} from './friends';
 import { claimApple, claimStripe, heldBy, maySync, PayError, type Held, type Pay } from './supporter';
 
 export const PAGE = 500;
@@ -244,6 +262,47 @@ export function makeHandler(
       return signedIn(async () => ({ apple: await appleLink(users, check, username, b) }));
     }
 
+    if (q.friends) {
+      const now = clock();
+      try {
+        if (method === 'GET' && q.friends === '1') return json(200, await friendsView(store, user, now));
+        if (method === 'GET' && q.friends === 'look') return json(200, await lookCode(store, user, q.code, now));
+        if (method !== 'POST') return json(405, { error: 'Use POST.' });
+        const b = claimBody(event) || {};
+        switch (q.friends) {
+          case 'card':
+            await saveCard(store, user, b.card, now);
+            return json(200, await friendsView(store, user, now));
+          case 'invite':
+            return json(200, await makeInvite(store, user, b.fresh === true, now));
+          case 'accept':
+            return json(200, await acceptCode(store, user, b.code, now, b.hear));
+          case 'cheer':
+            return json(200, await sendCheer(store, user, b.fid, b.k, now));
+          case 'used':
+            return json(200, await sparkUsedBy(store, user, b.fid, now));
+          case 'hear':
+            return json(200, await setHear(store, user, b.fid, b.hear));
+          case 'push':
+            await savePush(store, user, b.token ?? null, b.tz, now);
+            return json(200, { ok: true });
+          case 'remove':
+            await removeFriend(store, user, b.fid);
+            return json(200, { ok: true });
+          case 'block':
+            await blockFriend(store, user, b.fid, b.why ?? null, now);
+            return json(200, { ok: true });
+          case 'leave':
+            await friendsGone(store, user, false);
+            return json(200, { ok: true });
+        }
+        return json(400, { error: 'Not a Friends action.' });
+      } catch (e) {
+        if (e instanceof FriendError) return json(e.status, { error: e.message });
+        throw e;
+      }
+    }
+
     if (method === 'GET' && q.erased === '1') return json(200, await store.erased(user, clock()));
 
     if (method === 'GET' && q.sup === '1') return json(200, await heldBy(store, user, username, pay, clock()));
@@ -358,6 +417,8 @@ export function makeHandler(
       }
       /* closing the account: the tips linked to it are let go first, so nothing is left that points to it */
       if (all) await store.dropClaims(user);
+      /* and every friendship, on both sides, with the card, code, encouragements, blocks and reports (friends.ts) */
+      if (all) await friendsGone(store, user, true);
       const n = await store.erase(user, clock(), all);
       if (all) {
         /* the log first (it can be done again), then the sign-in; if that fails, the app asks again and only it is left */

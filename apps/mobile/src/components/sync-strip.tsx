@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
+import { buzz } from '@/lib/feel';
 import { here } from '@/lib/here';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
@@ -20,16 +21,21 @@ export function SyncStrip() {
   const k = sync.status.k;
   if (k !== 'error' && k !== 'expired') return null;
   if (sync.at && now - sync.at < QUIET_MS) return null;
-  const text = here(
-    k === 'expired' ? 'Sign in again to keep syncing. Your log is safe on this phone.' : 'Not syncing right now. Your log is safe on this phone.',
-  );
+  /* what is wrong, when Daybook knows (the owner, November 15, 2026: a bare "Not syncing right now" left them trying Wi-Fi
+     and cellular with no idea why) */
+  const why = sync.status.k === 'error' && sync.status.short ? 'Not syncing. ' + sync.status.short : 'Not syncing right now.';
+  const text = here(k === 'expired' ? 'Sign in again to keep syncing. Your log is safe on this phone.' : why + ' Your log is safe on this phone.');
   return (
     <View style={[s.wrap, { backgroundColor: c.surface2 }]} accessibilityRole="summary" accessibilityLiveRegion="polite">
       <Icon name="up" size={20} color={c.ink} />
       <Text style={[s.text, { color: c.ink }]}>{text}</Text>
       <Pressable
         accessibilityRole="button"
-        onPress={() => (k === 'expired' ? sync.signInNow({ why: 'in', email: sync.email }) : sync.syncNow())}
+        onPress={() => {
+          buzz('tap');
+          if (k === 'expired') sync.signInNow({ why: 'in', email: sync.email });
+          else sync.syncNow();
+        }}
         hitSlop={6}
         style={({ pressed }) => [s.btn, { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 }]}>
         <Text style={[s.btnT, { color: c.accentInk }]}>{k === 'expired' ? 'Sign in' : 'Try again'}</Text>

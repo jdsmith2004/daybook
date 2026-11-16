@@ -22,14 +22,24 @@
 
       <main>
         <h1>Privacy policy</h1>
-        <p class="date">In effect from October 24, 2026. Apple Health, and What Daybook learns, added November 9, 2026.</p>
+        <p class="date">
+          In effect from October 24, 2026. Apple Health, and What Daybook learns, added November 9, 2026. Videos, and Listen, added November 14, 2026. Friends
+          (beta) added November 15, 2026.
+        </p>
 
         <div class="card short">
           <h3>The short version</h3>
           <ul>
             <li>Without an account, your log never leaves your phone.</li>
             <li>With an account, your records are kept under your account and sent only to you, when you are signed in.</li>
-            <li>No ads, and nothing is ever sold or shared. What the app counts about its own use is below, and it is never tied to your name.</li>
+            <li>
+              No ads, and nothing is ever sold. Nothing is shared with anyone unless you choose to share it with a friend you added. What the app counts about
+              its own use is below, and it is never tied to your name.
+            </li>
+            <li>
+              If you add friends in Friends (beta), they see only your first name and your effort in Daybook, such as lessons done and days you checked in,
+              which the screen shows before you share. Never a slip, your journal or your notes.
+            </li>
             <li>
               Daybook learns how the app is used, to make it better: what you open, finish and choose, and how many urges and slips you log. It is anonymous:
               never tied to your name, email or account, and never your journal, your notes or anything you write. It is never sold or shared, and you can turn
@@ -78,7 +88,7 @@
         </ul>
         <p>
           Your records are used for one thing: sending them back to you, on your devices, when you are signed in. They are not viewed, analyzed, sold, shared,
-          used for ads, or used to train anything.
+          used for ads, or used to train anything. The one exception is what you choose to share with friends you added in Friends (below).
         </p>
 
         <h2>What Daybook never collects</h2>
@@ -157,6 +167,66 @@
           makes a second copy.
         </p>
 
+        <h2 id="videos">Videos</h2>
+        <p>
+          Settings has a short list of videos, under Real love. Opening that page loads each video's still picture from YouTube (i.ytimg.com), and tapping a
+          video plays it from YouTube's privacy-enhanced player (youtube-nocookie.com), inside Daybook. Nothing from YouTube loads until you open the page.
+          YouTube, which is part of Google, then sees what any website that shows its videos gives it: your internet address, your device's kind of browser, and
+          which videos were shown or played, under <a href="https://policies.google.com/privacy">Google's privacy policy</a>. Daybook sends YouTube nothing
+          about you: not your log, your account or anything you write. Daybook does not count which videos you open.
+        </p>
+
+        <h2 id="listen">Listen</h2>
+        <p>
+          A lesson card can be read aloud. The voice is a recording made ahead of time, kept on Daybook's own website (Amazon CloudFront, under /voice/). The
+          first time you listen to a card, your phone or browser fetches that card's recording, like any file from a website. The request carries no account, no
+          install id and nothing you wrote. Its name is a code made from the card's words, so the website can tell which lesson card was played, and, like every
+          website, it sees your internet address. Daybook does not count or keep these requests, and they are never joined with anything else. After that, the
+          recording stays on your phone, so the card plays again with no network. When a card has no recording, or there is no network, your phone's own voice
+          reads it on the device. Your choice of voice and speed stays on this device.
+        </p>
+
+        <h2 id="friends">Friends (beta)</h2>
+        <p>
+          Friends is off until you use it, and it needs a free account. You add a friend with a short code that one of you sends the other; both of you choose
+          it, and there is no search, no contact upload and no list of who uses Daybook. Before you share anything, the screen says what your friends will see.
+          Your account then keeps, beside your records:
+        </p>
+        <ul>
+          <li>
+            <strong>Your card:</strong> the first name you give for friends; which items you share (shared from the start: how many lessons you did, the days
+            you checked in, the days you opened Daybook, and your flame's level; urges ridden out only if you turn it on); this week's numbers for those items
+            and today's (lessons done today, and whether you checked in); and the hour your daily report reaches your friends, or none. You can turn any item
+            off. Only these numbers leave your phone: never a slip, the time of anything, your journal, your notes, your voice notes or your plan. While you
+            share days in Daybook, your card also keeps which days of the last two weeks you opened Daybook; it is never sent to a friend, and is used only to
+            count your together streak with each friend (days in a row you both opened Daybook) and the days of the last week you were both in.
+          </li>
+          <li>
+            <strong>Your friendships:</strong> who you are friends with (by account, never shown as an email), how you chose to hear about each (as it happens,
+            once a day, or not at all), your together streak with each, and the last spark each friend sent you and when it went into your lesson (a spark is
+            the one thing friends send each other; there is no chat).
+          </li>
+          <li>
+            <strong>For notes as they happen:</strong> while you hear about a friend as it happens, your phone's push token (an address Apple or Google gives
+            your phone for notes) and your clock's offset from UTC, so no note comes at night, and how many friend notes reached you today. The push token is
+            never sent with the anonymous events below. Notes go through Expo's push service (expo.dev) to Apple or Google; a note carries only your friend's
+            first name and a line like "Just did today's lesson".
+          </li>
+          <li><strong>Your code,</strong> for 7 days, and anyone you blocked, so they cannot use your code again.</li>
+        </ul>
+        <p>
+          A friend sees your card only while you are both friends, and only the items you share; numbers more than a week old are not shown. When you do a
+          lesson or check in, a friend who chose to hear as it happens gets a note (at most 2 friend notes reach anyone in a day, none from 10 PM to 8 AM on
+          their clock); the daily report is a note your friend's own phone makes at the hour you picked (it names only you). Your friend can change either on
+          their friend page. Removing a friend, blocking them or leaving Friends ends it on both sides at once, and they are not told. If you report a friend,
+          Daybook keeps who reported whom, why, and the name they had shared then, so it can be looked at; a note that a report came in (only the reason)
+          reaches the owner's feedback inbox.
+        </p>
+        <p>
+          <strong>Community, coming soon:</strong> pre-joining keeps no name, email or account. It sends one anonymous event, <code>community_join</code>,
+          counted with what Daybook learns (below), and your phone remembers that you joined, so it can tell you there when the community opens.
+        </p>
+
         <h2 id="learns">What Daybook learns</h2>
         <p>
           Daybook is built by one person, who needs to know which parts help people quit and which do not, so they can make it better. So Daybook learns how the
@@ -206,11 +276,11 @@
             <code>urge</code>, <code>slip</code>, <code>happened</code>, <code>planning</code>, <code>rekindle</code>, <code>comeback</code>: an urge was logged
             (its strength, which of Daybook's own triggers was picked, a trigger you wrote yourself only as "other", and how it ended), a slip was logged (which
             trigger, about how long since the one before, and, if a reminder came in the hour before it, that reminder's kind and the hour it came, never the
-            minute), Already happened or Planning a slip was used, a Rekindle step was done, all three flames were lit after a slip.
+            minute), Log a slip was used or a plan for tonight was made, a Rekindle step was done, all three flames were lit after a slip.
           </li>
           <li>
             <code>checkin</code>, <code>recheck</code>, <code>sunday</code>, <code>wind</code>: a check-in was saved (the mood, sleep and urge numbers picked),
-            the five questions were answered (the five scores), the Sunday review was finished, Goodnight was said.
+            the five questions were answered (the five scores), the Sunday review was finished, Good night was said.
           </li>
           <li>
             <code>free</code>: once a month, and once at the end of setup, "How much do you see yourself as someone free of this?" was answered: the number
@@ -238,6 +308,12 @@
             <code>import</code>: bringing a Mithras journal over, and how far it got (the link opened, signed in, read, landed, closed or failed), whether the
             sign-in was Apple or email, and how many entries and Mithras days came, only in bands (none, under 10, under 50, under 200, 200 or more). Never your
             Mithras account, email or anything you wrote.
+          </li>
+          <li>
+            <code>friend_added</code>, <code>friend_cheer</code>, <code>friend_spark_used</code>, <code>friend_hear</code>, <code>community_join</code>: became
+            friends with someone in Friends (never who), sent a friend a spark or an older ready-made encouragement (which one: spark, warm, proud or with), a
+            friend's spark went into a lesson, chose how to hear about a friend (live, daily or off), pre-joined the community that is coming. Never a name, a
+            goal or a friend.
           </li>
           <li>
             <code>ab</code>: Daybook tries two wordings of a line to learn which helps more, and this says which one was shown: the line's name (rk_first,
@@ -289,7 +365,7 @@
           <li>
             <code>sos</code>, <code>talk_done</code>, <code>lesson_done</code>, <code>checkin</code>, <code>sunrise</code>, <code>rk_small</code>,
             <code>rk_phone</code>, <code>goodnight</code>, <code>feedback</code>: SOS was opened, Talk it through finished, a lesson finished, a check-in saved,
-            the sunrise check done, a Rekindle step done, Goodnight said in the wind-down, feedback sent.
+            the sunrise check done, a Rekindle step done, Good night said in the wind-down, feedback sent.
           </li>
           <li><code>sos_rode</code>, <code>sos_slip</code>: SOS ended with It passed, or with I slipped.</li>
           <li>
@@ -313,19 +389,20 @@
             reasons): that tool was used. With <code>_open</code> after it, the tool was opened.
           </li>
           <li>
-            <code>setup_</code> and a setup page's name (hello, how, habit, freq, when, sos, promise, for, faith, creed, tonight, light, account, review), and
-            <code>setup_done</code>: how far setup got, sent once for each page.
+            <code>setup_</code> and a setup page's name (hello, how, habit, freq, mins, when, need, sos, promise, for, grow, faith, creed, tonight, remind,
+            light, why, account, review), and <code>setup_done</code>: how far setup got, sent once for each page.
           </li>
         </ul>
         <p>Never sent: anything you write, what led to an urge or slip, any time of day, your log, check-ins or plan, your name, email or account.</p>
 
         <h2 id="feedback">Feedback</h2>
         <p>
-          If you send an idea or feedback (Ideas on Today, or Settings), Daybook keeps your words, whether you were on an iPhone, Android or the web, the app's
-          version, and when it arrived. No name and no email are sent, unless you type an address to get a reply. The same words, and that address if you gave
-          one, are emailed to the person who builds Daybook through Amazon's notification service, so they reach a real inbox. Nothing else goes with them: not
-          your log, not your account and not anything about your phone. Feedback is read only by the person who builds Daybook, is deleted from Daybook's store
-          after 180 days, and stays in that inbox until it is deleted there.
+          If you send an idea or feedback (Ideas on Today, Settings, or Feedback on this lesson when a lesson ends), Daybook keeps your words (with the lesson's
+          number and name at the start, for a lesson), whether you were on an iPhone, Android or the web, the app's version, and when it arrived. No name and no
+          email are sent, unless you type an address to get a reply. The same words, and that address if you gave one, are emailed to the person who builds
+          Daybook through Amazon's notification service, so they reach a real inbox. Nothing else goes with them: not your log, not your account and not
+          anything about your phone. Feedback is read only by the person who builds Daybook, is deleted from Daybook's store after 180 days, and stays in that
+          inbox until it is deleted there.
         </p>
 
         <h2>Where it is kept, and how it is protected</h2>
@@ -378,8 +455,9 @@
         <p>
           Amazon Web Services hosts the website and the account service. Apple and Google distribute the app. Apple and Stripe handle tip payments, and Apple
           handles Sign in with Apple if you use it. If you bring a Mithras journal, your phone signs in to Mithras's service (Supabase) and reads your own
-          records from it, as Mithras itself does. If you have chosen in your phone's settings to share crash reports with app developers, Apple or Google may
-          send Daybook anonymous crash reports. No one else receives anything.
+          records from it, as Mithras itself does. If you open Real love, its pictures and videos come from YouTube (Google), as above. If you have chosen in
+          your phone's settings to share crash reports with app developers, Apple or Google may send Daybook anonymous crash reports. No one else receives
+          anything.
         </p>
 
         <h2>Ratings</h2>
@@ -425,6 +503,10 @@
           <li>
             <strong>Delete my account</strong> (in Settings, under Sync between devices) removes your sign-in, your records and that copy. The database's own
             protective backups roll over and are fully gone within 35 days.
+          </li>
+          <li>
+            <strong>Friends:</strong> Leave Friends (on the Friends page) removes your card, your code and every friendship, on both sides. Delete my account
+            also removes them, the encouragements, anyone you blocked and any report you made or that was made about you.
           </li>
           <li>You can also write to us and we will delete your account.</li>
         </ul>

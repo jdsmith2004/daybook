@@ -170,6 +170,8 @@ jobs:
       - run: npm ci
       - working-directory: apps/mobile
         run: npx expo export --platform web --output-dir dist
+      # the page's own first picture, the fonts asked for at once, and the other screens fetched when idle (scripts/web-shell.ts)
+      - run: node --no-warnings --import ./scripts/ts-resolve.mjs scripts/web-shell.ts apps/mobile/dist
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: web

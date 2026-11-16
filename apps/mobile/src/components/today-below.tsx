@@ -2,18 +2,40 @@
    becoming (the sentence from the end of setup, big in the flame's gold, with the newest proof from the log under it: core rodeProof,
    or the first line of who you are in numbers; moved up to sit right under the flame and the next step, "Becoming free", the owner,
    November 11, 2026), then Today so far (each entry logged today, with a shape like a badge: mint for an urge ridden out), and
-   Tonight (the hard hours and the two lines of the urge plan that fit them, components/tonight-card.tsx). Nothing here is an ask,
-   so it shows on every day. */
-import { eventRow, identityLines, planBlank, planTonight, rodeProof, sortedEvents, type DayKey, type Snapshot } from '@daybook/core';
+   Tonight I stay free for (every reason the night is for, several at once, with Write my own: core tonightOf, toggleTonightReason) and Tonight (the hard hours and the
+   two lines of the urge plan that fit them, components/tonight-card.tsx). Nothing here is an ask, so it shows on every day and at
+   night. What the person has not filled in yet is a blank to tap (components/blank.tsx), never a hidden part and never a nag (the
+   owner, November 13, 2026: "maybe like blanks that they need to press to add"). */
+import {
+  eventRow,
+  identityLines,
+  morningReasons,
+  ownChoices,
+  toggleTonightReason,
+  planBlank,
+  planTonight,
+  rodeProof,
+  sortedEvents,
+  timeBack,
+  tonightOf,
+  type DayKey,
+  type Snapshot,
+} from '@daybook/core';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { AnswerChip, ChipWrap } from '@/components/answer';
+import { Blank } from '@/components/blank';
+import { OwnChip, OwnField } from '@/components/own';
 import { Shape } from '@/components/shapes';
 import { Text } from '@/components/text';
+import { TimeBackRow } from '@/components/time-back';
 import { TonightCard } from '@/components/tonight-card';
-import { Button, Icon, T } from '@/components/ui';
+import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { usePullDowns } from '@/lib/pull';
+import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 
 export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now: number }) {
@@ -24,6 +46,8 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
   const lines = planTonight(snap.days, st, tk);
   const all = (st.plan || []).filter((p) => !planBlank(p) && String(p.then || '').trim()).length;
   const be = String(st.becoming || '').trim();
+  /* the time given back, under the sentence: what becoming free has already bought (core time-back.ts) */
+  const back = timeBack(snap.days, st, tk);
   const proof = rodeProof(snap.days, st, tk) || newest(snap, tk, downs);
   const openBe = () => {
     buzz('tap');
@@ -57,14 +81,29 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
           ) : null}
         </Pressable>
       ) : (
-        <View style={s.be}>
-          <T v="h2">Who are you becoming?</T>
-          <T tone="muted">One sentence about who you are growing into. The flame holds on to it for the hard days.</T>
-          <View style={s.beBtn}>
-            <Button label="Write my sentence" icon="pencil" onPress={openBe} />
+        /* unwritten: the sentence's start and a blank where the rest goes, with Write it beside the name */
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Who you are becoming. Not written yet. Write it."
+          onPress={openBe}
+          style={({ pressed }) => [s.be, { opacity: pressed ? 0.85 : 1 }]}>
+          <View style={s.beTop}>
+            <T v="small" tone="muted">
+              Who you are becoming
+            </T>
+            <View style={s.change}>
+              <Icon name="pencil" size={16} color={c.accentText} />
+              <Text style={[s.changeT, { color: c.accentText }]}>Write it</Text>
+            </View>
           </View>
-        </View>
+          <View style={s.blankLine}>
+            <Text style={[s.beT, { color: c.sunText }]}>I am becoming</Text>
+            <Blank color={c.sunText} h={34} />
+          </View>
+        </Pressable>
       )}
+
+      {back ? <TimeBackRow t={back} tk={tk} /> : null}
 
       {evs.length ? (
         <View style={s.sec}>
@@ -99,7 +138,89 @@ export function TodayBelow({ snap, tk, now }: { snap: Snapshot; tk: DayKey; now:
         </View>
       ) : null}
 
+      <TonightFor snap={snap} tk={tk} />
+
       <TonightCard snap={snap} tk={tk} now={now} lines={lines} more={all > lines.length} />
+    </View>
+  );
+}
+
+/* "Tonight I stay free for": the reason tonight is for, in the person's own words, as the morning set it (or chosen here). A tap opens the
+   person's reasons in place, one tap each, and My reasons to write a new one. With none chosen yet, a blank. */
+function TonightFor({ snap, tk }: { snap: Snapshot; tk: DayKey }) {
+  const c = useTheme();
+  const { update } = useStore();
+  const [open, setOpen] = useState(false);
+  const [writing, setWriting] = useState(false);
+  const st = snap.settings!;
+  /* every reason tonight is for (several since November 15, 2026), and every reason the person has or wrote, to pick or put down */
+  const rs = tonightOf(snap.days, st, tk).rs;
+  const base = morningReasons(snap.days, st, tk);
+  const choices = ownChoices(st, 'reason', base, rs);
+  const flip = (t: string) => {
+    buzz('tap');
+    update((s0) => (s0.settings ? { ...s0, days: toggleTonightReason(s0.days, s0.settings, tk, t) } : s0));
+  };
+  const said = rs.join(' · ');
+  return (
+    <View style={s.sec}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={
+          rs.length ? 'Tonight I stay free for ' + rs.join(', ') + '. Change' : 'Tonight I stay free for. Nothing chosen yet. Choose who or what'
+        }
+        onPress={() => {
+          buzz('tap');
+          setOpen((x) => !x);
+          setWriting(false);
+        }}
+        style={({ pressed }) => [s.for, { opacity: pressed ? 0.85 : 1 }]}>
+        <View style={s.beTop}>
+          <T v="small" tone="muted">
+            Tonight I stay free for
+          </T>
+          <View style={s.change}>
+            <Text style={[s.changeT, { color: c.accentText }]}>{open ? 'Done' : rs.length ? 'Change' : 'Choose'}</Text>
+            <Icon name={open ? 'up' : 'down'} size={16} color={c.accentText} />
+          </View>
+        </View>
+        {rs.length ? (
+          <View style={{ gap: 2 }}>
+            {rs.map((t) => (
+              <Text key={t} style={[s.forT, { color: c.ink }]}>
+                {t}
+              </Text>
+            ))}
+          </View>
+        ) : (
+          <Blank color={c.muted} h={28} />
+        )}
+      </Pressable>
+      {open ? (
+        writing ? (
+          <OwnField
+            kind="reason"
+            builtIn={base}
+            placeholder="Like: my daughter"
+            max={120}
+            onSave={(t) => {
+              if (!rs.some((x) => x.toLowerCase() === t.toLowerCase())) flip(t);
+              setWriting(false);
+            }}
+            onCancel={() => setWriting(false)}
+          />
+        ) : (
+          <View accessibilityRole="list" accessibilityLabel={'What is tonight for? ' + (said ? 'Picked: ' + said : '')} style={{ paddingTop: 10 }}>
+            <ChipWrap last={1}>
+              {choices.map((t) => (
+                <AnswerChip key={t} label={t} on={rs.some((x) => x.toLowerCase() === t.toLowerCase())} onPress={() => flip(t)} />
+              ))}
+              <OwnChip onPress={() => setWriting(true)} />
+            </ChipWrap>
+          </View>
+        )
+      ) : null}
     </View>
   );
 }
@@ -120,6 +241,8 @@ const s = StyleSheet.create({
   beTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   change: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 32 },
   changeT: { fontFamily: font.bodySemi, fontSize: 15 },
-  beBtn: { marginTop: 4 },
+  blankLine: { flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
+  for: { gap: 4 },
+  forT: { fontFamily: font.display, fontSize: 22, lineHeight: 27 },
   proof: { fontFamily: font.body, fontSize: 15, lineHeight: 21, marginTop: 4 },
 });

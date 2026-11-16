@@ -63,6 +63,16 @@ tap away as More. Colors come from `lessonLook` through `PaletteOverride`, so wh
 - **Smooth, never ticking.** Anything that moves with time (a dot, a ring, a crawl) reads its position from a smooth clock
   (`useClock`, about 30 times a second), never from a once-a-second count. A number of seconds left can tick; the motion
   cannot.
+- **Opening the app is one motion (the owner, November 15, 2026, after filming Daybook beside How We Feel).** The native splash is the
+  flame asleep, big in the middle (about two fifths of the screen across), on the launch color (core `LAUNCH_BG`, the dark theme's page;
+  `app.json`, both light and dark); the root view behind React is that color too, so nothing white or cream can ever show. The app's
+  first frame is the same picture (core `launchFlameSvg`, one drawing for the splash image and the first frame), drawn over everything
+  by `components/launch.tsx`, and only then does the native splash go, with no fade of its own. Then, timed against theirs: the flame
+  comes alive and wakes (eyes open, one breath) over about 1.2 s, flies to its home on Today's sky in about 0.5 s while Today's sky and
+  then the page show under it, and lands where Today's own flame takes over (the hero reports its place, `lib/launch.ts`). Under Reduce
+  Motion, with the lock on, before setup, or on a link to another page, the same first picture simply cross-fades to the app. A warm
+  launch has no scene. On the web, `?launch=1` plays it again (`&slow=N` stretches it, to look at it frame by frame); the celebrations
+  page in the demo build has a row for it. Never put the badge or a ring back on the splash, and never let the first frame differ from it.
 - **Something still must not look alive.** Do not reuse a moving pattern (the breath dots, a beat) standing still: if it
   is not moving, it looks broken. Either it moves, or it is a plain shape.
 - **The flame moves as fire, never as a whole figure (the owner, October 31, 2026).** The face and the body hold still; the tips lick, a sun's rays lick out
@@ -78,6 +88,23 @@ tap away as More. Colors come from `lessonLook` through `PaletteOverride`, so wh
   when the shape cannot.
 - **Text does not jump.** A choice on a screen (like how strong an urge is) must not swap the words above it or move the
   layout. Lines picked at random are picked once per visit and kept.
+
+## Celebrations: calm, rare confetti (the owner, November 14, 2026)
+
+"The app has too much confetti, it needs more subtlety", and the celebrations were "too bouncy". The feel to match is Duolingo's
+perfect-lesson screen: smooth and clean, things slide and settle into place, nothing wobbles.
+
+- **Confetti is rare.** Only the biggest moments throw it: a new form of the flame (`Earned`, kind `form`) and graduation. Even
+  then it is light, short and soft: under twenty pieces close round the flame (`Burst` with a small `n`), or one soft fall for
+  graduation, gone in under two seconds. Never a shower across the whole screen, never two layers of it.
+- **Everyday moments get no confetti.** The morning, the check-in, a plain level, a badge, an urge ridden out, the comeback, Good
+  night, a feature unlocking and the streak lighting carry themselves with the flame's own bloom, a quiet glow or ring, and at most
+  a few twinkling stars (`Sparkles`). If a moment seems flat without confetti, make the flame and the words land better instead.
+- **Settle, never bounce.** Anything that comes in on a celebration settles with `SETTLE` (or `SETTLE_SLOW` for a flame or a
+  medal) from `lib/motion.ts`: springs with a damping ratio of 1, which land on the mark with no overshoot. No `Easing.back`, no
+  low-friction springs, no squash that springs back past its rest, no wobbling rotation on a shout. A scale-in starts close to
+  full size (0.8 or more), so it reads as arriving, not popping.
+- **The lesson finish** follows the same rule; it is its own component (`components/lesson-finish.tsx`).
 
 ## Timers
 
@@ -116,7 +143,7 @@ tap away as More. Colors come from `lessonLook` through `PaletteOverride`, so wh
 
 - **One ending for each kind of moment.** An urge ridden out ends on the same celebration wherever it is logged: the
   ride's It passed, the 10-minute pause's It passed (from SOS or on its own) and Already happened, I rode it out all use
-  `RodeOut` (`components/rode-out.tsx`): the flame with its burst, confetti, how long it took, how many have been ridden
+  `RodeOut` (`components/rode-out.tsx`): the flame with a few twinkling stars (no confetti), how long it took, how many have been ridden
   out, what helped (the moves of an SOS, or what you did) and what set it off, each one tap or none.
 - **A slip always reaches the comeback, from its first page.** Every way in starts at the hold: I slipped in SOS, the pause, Already
   happened, the entry sheet (a new slip, or an entry changed to Slipped) and "I went ahead" in Talk it through's look back. The hold

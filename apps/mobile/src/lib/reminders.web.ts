@@ -31,3 +31,7 @@ export async function scheduleTrail(_notes: TrailNote[]): Promise<void> {}
 export function listenForTaps(_onTap?: (id: string) => void, _onTrail?: (a: TrailAnswer) => void): () => void {
   return () => undefined;
 }
+export async function scheduleFriendReports(_list: { fid: string; name: string; rt: string }[]): Promise<void> {}
+export async function pushToken(_ask: boolean, _projectId?: string): Promise<string | null> {
+  return null;
+}

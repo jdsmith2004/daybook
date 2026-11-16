@@ -19,6 +19,7 @@ import { useCountFocus } from '@/lib/pulse';
 import { useScripture } from '@/lib/scripture';
 import { buzz } from '@/lib/feel';
 import { useStore } from '@/lib/store';
+import { askTour } from '@/lib/tour';
 
 export default function Settings() {
   /* the count keeps its old name, so the days before and after the move read as one line */
@@ -73,6 +74,8 @@ export default function Settings() {
             <SetGroup>
               <SetRow icon="shield" label="My plan" onPress={() => router.push('/plan')} />
               <SetRow icon="flag" label="Where I am" value={phaseLabel(tk, st)} onPress={() => router.push('/mode')} />
+              {/* setup again, by its honest name (the owner, November 14, 2026); its first page says what changes and what stays */}
+              <SetRow icon="pencil" label="Redo setup" onPress={() => router.push('/setup')} />
               {lib.on ? <SetRow icon="book" label="Scriptures" onPress={() => router.push('/scripture')} /> : null}
             </SetGroup>
             <SetGroup>
@@ -80,13 +83,31 @@ export default function Settings() {
             </SetGroup>
             <SetGroup head="Help">
               <SetRow icon="life" label="Get help" onPress={() => router.push('/help')} />
-              <SetRow icon="sparkle" label="How Daybook works" onPress={() => router.push('/setup')} />
+              {/* the Today tour again, on Today itself (lib/tour.ts) */}
+              <SetRow
+                icon="sparkle"
+                label="How Daybook works"
+                onPress={() => {
+                  askTour();
+                  router.navigate('/');
+                }}
+              />
               <SetRow icon="ask" label="Questions and support" onPress={() => Linking.openURL(SITE_PAGES.support).catch(() => undefined)} />
               <PulseRows />
             </SetGroup>
           </>
         }
-        foot={<HelpFoot />}
+        foot={
+          <>
+            {/* a test feature, kept quiet and low on purpose (the owner, November 14, 2026; app/love.tsx) */}
+            <SetGroup>
+              <SetRow icon="heart" tone="coral" label="Real love (beta)" onPress={() => router.push('/love')} />
+              {/* add a friend inside Daybook, and the community that is coming (the owner, November 15, 2026; app/friends.tsx) */}
+              <SetRow icon="flame" tone="coral" label="Friends (beta)" onPress={() => router.push('/friends')} />
+            </SetGroup>
+            <HelpFoot />
+          </>
+        }
       />
     </Screen>
   );

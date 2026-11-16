@@ -81,6 +81,7 @@ export function CheckinBlock({
             accessibilityRole="button"
             hitSlop={8}
             onPress={() => {
+              buzz('tap');
               if (scene) return router.push({ pathname: '/checkin', params: { k: dkey } });
               setForm(checkinFormOf(snap.days, dkey));
               setEditing(true);
@@ -103,7 +104,7 @@ export function CheckinBlock({
     return (
       <View style={{ gap: 10 }}>
         <T v="small" tone="muted">
-          Three quick numbers about today and your sleep, then Goodnight when the phone goes down. Under a minute.
+          Three quick numbers about today and your sleep, then Good night when the phone goes down. Under a minute.
         </T>
         <Button label={drafted ? 'Finish my check-in' : 'Check in'} icon="pencil" onPress={() => router.push({ pathname: '/checkin', params: { k: dkey } })} />
       </View>

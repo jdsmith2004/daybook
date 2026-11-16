@@ -12,6 +12,7 @@
    2007); and each urge outlasted is the proof that builds the confidence for the next (Marlatt; Bandura). */
 import { eventsOf } from './legacy/core.js';
 import { lessonById, lessonFor } from './lessons';
+import { PROOFS } from './lesson-catalog';
 import { urEvidence, urLikeOf, urRank, urTool, type UrMem, type UrState } from './sos';
 import type { DayEvent, DayKey, Days, Settings } from './types';
 
@@ -39,7 +40,7 @@ export const RIDE_FUTURE = 'future';
 /** If it were a thing: one quick, optional question, "If the urge were an object, what would it be?", with things to tap
     (never typing). Seeing the urge as a thing out there helps a person step back from it: watching an urge from a little way
     off, instead of being it, lowers craving (Westbrook and others 2013), and naming a thing gives the mind something to hold apart from itself. Shown once a ride, after
-    the first move that follows the breath, and never in a practice ride. Next passes it like any move; passed over three
+    the three moves that follow the breath (the body and the eyes first), and never in a practice ride. Next passes it like any move; passed over three
     times (sos.ts urNote) it stops coming, since it is optional. Not in RIDE_MOVES. */
 export const RIDE_OBJECT = 'object';
 /** passes before If it were a thing stops coming */
@@ -56,6 +57,60 @@ export const URGE_OBJECTS: [string, string][] = [
 /** the first move of every SOS */
 export const RIDE_FIRST = 'breathe';
 
+/** the order a ride tries its moves in when nothing about the person says otherwise, best first (docs/plan.md, "The order
+    of SOS"): the body first, then the eyes, then the mind. A slow breath and hard muscle work calm a body in a rush; a
+    shapes game takes the room in the head the pictures of an urge need (Skorka-Brown and others 2015, sexual cravings too);
+    finding things in the room pulls attention out. Naming the feeling and saying the thought fast come once the peak eases,
+    then the hour after (it needs a clear head: Kober and others 2010) and your own words last, since in a strong urge they
+    can feel like pressure. No study compares orders, so this is a starting place: what helps you, what you pass over and
+    what fits the hour move it (rideWeights). The ride passes over moves silently: nothing on screen says one moved (the
+    owner, November 15, 2026). */
+export const RIDE_ORDER = ['breathe', 'move', 'stack', 'ground', 'feel', 'thought', 'forward', 'reasons'];
+/** how much each place in RIDE_ORDER is worth against what the person's own record says (sos.ts urRank) */
+const RIDE_LIFT = 1;
+
+/* Passing a move over. Next on a move before it is done counts against it, a quick pass (under RIDE_QUICK_MS, a flick on
+   sight) a whole one and a later pass half; finishing it halves what it had. Each new SOS fades every count to RIDE_FADE of
+   itself, so a pass weighs half as much seven rides later. "Often" is RIDE_OFTEN or more at the start of an SOS:
+   three quick passes in three rides in a row. The count lowers the move's place and, once it is often, makes it come round
+   half as often, so it comes later in a ride but still comes: nothing is hidden for good. Kept on this phone only (UrMem). */
+export const RIDE_QUICK_MS = 5000;
+export const RIDE_FADE = 0.9;
+export const RIDE_OFTEN = 2.2;
+const RIDE_SKIP_COST = 2;
+const RIDE_SKIP_MAX = 8;
+const skipMap = (mem: UrMem): Record<string, number> => (mem.rsk && typeof mem.rsk === 'object' ? (mem.rsk as Record<string, number>) : {});
+/** how much a move has been passed over lately (0 when never) */
+export const rideSkipOf = (mem: UrMem, id: string): number => {
+  const v = skipMap(mem)[id];
+  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : 0;
+};
+/** passed over often lately: it comes later in a ride */
+export const rideOften = (mem: UrMem, id: string): boolean => rideSkipOf(mem, id) >= RIDE_OFTEN;
+const withSkip = (mem: UrMem, id: string, v: number): UrMem => {
+  const rsk = { ...skipMap(mem) };
+  if (v >= 0.05) rsk[id] = Math.round(Math.min(10, v) * 100) / 100;
+  else delete rsk[id];
+  return { ...mem, rsk };
+};
+/** Next on a ride move before it was done, `ms` after it came into view */
+export function ridePassed(mem: UrMem, id: string, ms: number): UrMem {
+  if (RIDE_MOVES.indexOf(id) < 0 && id !== RIDE_FAITH) return mem;
+  return withSkip(mem, id, rideSkipOf(mem, id) + (ms < RIDE_QUICK_MS ? 1 : 0.5));
+}
+/** a ride move done to its end */
+export function rideFinished(mem: UrMem, id: string): UrMem {
+  const v = rideSkipOf(mem, id);
+  return v ? withSkip(mem, id, v / 2) : mem;
+}
+/** a new SOS: every pass count fades a little */
+export function rideFade(mem: UrMem): UrMem {
+  const m = skipMap(mem);
+  const ids = Object.keys(m);
+  if (!ids.length) return mem;
+  return ids.reduce((acc, id) => withSkip(acc, id, rideSkipOf(mem, id) * RIDE_FADE), { ...mem, rsk: {} } as UrMem);
+}
+
 /** what the ride can use: Your words only when there are words of your own to show */
 export interface RideCan {
   words: boolean;
@@ -70,25 +125,39 @@ export interface RideCan {
 /** the moves this person can be shown, best for them first, each with how often it should come round (the best about
     three times as often as the last). A move you asked not to see is left out, unless it is your go-to. */
 export function rideWeights(sc: UrState, days: Days, st: Settings | null, tk: DayKey, now: number, mem: UrMem, can: RideCan): { id: string; w: number }[] {
-  const rank = urRank({ ...sc, used: [] }, days, st, tk, now, mem);
+  /* the old count of Next taps (sos.ts urNote) never fades, so the ride leaves it for its own (rideSkipOf), which does */
+  const pass = mem.pass && typeof mem.pass === 'object' ? { ...mem.pass } : {};
+  RIDE_MOVES.forEach((id) => delete pass[id]);
+  const rank = urRank({ ...sc, used: [] }, days, st, tk, now, { ...mem, pass });
+  /* the evidence order lifts each move by its place; what you said helps (the heart, What helped most) lifts it more in the
+     ride than in the tool list, so two of those outweigh the order; passing it over often lowers it */
+  const score = (id: string, s: number) =>
+    s +
+    RIDE_LIFT * (RIDE_ORDER.length - 1 - RIDE_ORDER.indexOf(id)) +
+    Math.max(0, urLikeOf(st, id)) * 1.5 -
+    Math.min(RIDE_SKIP_MAX, rideSkipOf(mem, id) * RIDE_SKIP_COST);
   const list = RIDE_MOVES.filter((id) => urTool(id) && (id !== 'reasons' || can.words))
     .map((id) => ({ id, r: rank.find((x) => x.id === id) }))
     .filter((x) => x.r && (!x.r.off || x.r.pin))
-    .sort((a, b) => b.r!.score - a.r!.score || RIDE_MOVES.indexOf(a.id) - RIDE_MOVES.indexOf(b.id));
+    .map((x) => ({ ...x, s: score(x.id, x.r!.score) }))
+    .sort((a, b) => b.s - a.s || RIDE_ORDER.indexOf(a.id) - RIDE_ORDER.indexOf(b.id));
   const n = list.length;
-  const out = list.map((x, i) => ({ id: x.id, w: x.r!.pin ? 4 : n > 1 ? 3 - (2 * i) / (n - 1) : 3 }));
+  /* a move you often pass over comes round half as often: after the others have had a second turn, never gone */
+  const out = list.map((x, i) => ({
+    id: x.id,
+    w: (x.r!.pin ? 4 : n > 1 ? 3 - (2 * i) / (n - 1) : 3) * (!x.r!.pin && rideOften(mem, x.id) ? 0.5 : 1),
+  }));
   if (can.faith) out.push({ id: RIDE_FAITH, w: writtenWeight(st, mem) });
   return out;
 }
 /** how often It is written comes round: in the middle to start, sooner with the heart, later each time Next passes it */
 function writtenWeight(st: Settings | null, mem: UrMem): number {
-  const pass = mem.pass && typeof mem.pass === 'object' ? mem.pass[RIDE_FAITH] | 0 : 0;
-  return Math.max(0.5, Math.min(4, 2 + urLikeOf(st, RIDE_FAITH) * 0.5 - pass * 0.3));
+  return Math.max(0.5, Math.min(4, 2 + urLikeOf(st, RIDE_FAITH) * 0.5 - rideSkipOf(mem, RIDE_FAITH) * 0.4));
 }
-/** It is written comes right after the breath for faith people in their first rides (fewer than five ridden out), unless
-    they have passed it over twice */
-const writtenEarly = (days: Days, st: Settings | null, mem: UrMem) =>
-  urEvidence(days).n < 5 && urLikeOf(st, RIDE_FAITH) >= 0 && (mem.pass && typeof mem.pass === 'object' ? mem.pass[RIDE_FAITH] | 0 : 0) < 2;
+/** It is written is second, right after the breath, for everyone with faith on (the owner, November 15, 2026: "I don't mind
+    it being above or second for people who are highly faith-based. I like it there ... it's actually an extremely good
+    tool"), unless they have said Not really to it or pass it over often lately (rideOften, which fades with each SOS) */
+const writtenEarly = (st: Settings | null, mem: UrMem) => urLikeOf(st, RIDE_FAITH) >= 0 && !rideOften(mem, RIDE_FAITH);
 
 /** the next move, after the ones already shown in this SOS (oldest first). The breath opens; then each move is due by
     how long ago it was shown, times how well it works for you, so every move comes round and the best come round
@@ -106,12 +175,21 @@ export function rideNext(
   lead?: string | null,
 ): string {
   if (!shown.length) return RIDE_FIRST;
-  /* a note from a good day comes right after the breath, before the urge peaks: early is when calm words still land */
-  if (can.future && shown.length === 1) return RIDE_FUTURE;
-  if (can.faith && shown.length === (can.future ? 2 : 1) && writtenEarly(days, st, mem)) return RIDE_FAITH;
+  /* It is written second for faith people; then a note from a good day, before the urge peaks: early is when calm words
+     still land */
+  const faithFirst = !!can.faith && writtenEarly(st, mem);
+  if (faithFirst && shown.length === 1) return RIDE_FAITH;
+  if (can.future && shown.length === (faithFirst ? 2 : 1)) return RIDE_FUTURE;
   const last = shown[shown.length - 1];
-  /* If it were a thing: once, right after the first real move (after the breath and any note or It is written) */
-  if (can.object && shown.indexOf(RIDE_OBJECT) < 0 && RIDE_MOVES.indexOf(last) >= 0 && last !== RIDE_FIRST && objectPass(mem) < OBJECT_PASS_MAX)
+  /* If it were a thing: once, after the first three moves past the breath (the body and the eyes first: stepping back from
+     the urge is a move for the mind, which works better once the peak eases) */
+  if (
+    can.object &&
+    shown.indexOf(RIDE_OBJECT) < 0 &&
+    shown.filter((x) => RIDE_MOVES.indexOf(x) >= 0 && x !== RIDE_FIRST).length >= 3 &&
+    RIDE_MOVES.indexOf(last) >= 0 &&
+    objectPass(mem) < OBJECT_PASS_MAX
+  )
     return RIDE_OBJECT;
   const ws = rideWeights(sc, days, st, tk, now, mem, can);
   const due = (id: string, w: number) => {
@@ -133,7 +211,10 @@ const objectPass = (mem: UrMem) => (mem.pass && typeof mem.pass === 'object' ? m
 /** why a move works, in one line, and the lesson that says more (read later, when it is calm) */
 export const RIDE_WHY: Record<string, { t: string; l?: string }> = {
   breathe: { t: 'A long breath out slows the heart. A calmer body makes the pull easier to wait out.', l: 'l14' },
-  move: { t: 'Hard muscle work, even for a minute, lowers cravings in study after study. Your body burned off what the urge was building.', l: 'l15' },
+  move: {
+    t: 'Hard muscle work, even for a minute, eases cravings in study after study. Letting go after a squeeze leaves the body calmer than it was.',
+    l: 'l15',
+  },
   stack: { t: 'Fitting shapes takes the same room in your head as the pictures an urge runs on, so the pictures fade.', l: 'l42' },
   ground: { t: 'Finding things around you pulls your attention out of the urge and back into the room.', l: 'l43' },
   feel: { t: 'Putting a word on a feeling turns its volume down, and the word points at what you really need.', l: 'l13' },
@@ -170,7 +251,8 @@ export function rideScience(
   return {
     t: w.t,
     lesson: L ? { id: L.id, title: L.title, mins: L.mins || 3, ask: L.ask || '', key: L.key } : null,
-    proofs: L ? L.cards.filter((c) => c.e === 'proof' && c.fact).map((c) => ({ h: c.h, s: c.fact!.s })) : [],
+    /* the lesson's proof cards, from the catalog, so SOS loads without the lesson text (lesson-catalog.ts) */
+    proofs: L ? PROOFS[L.id] || [] : [],
   };
 }
 

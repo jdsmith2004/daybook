@@ -75,11 +75,10 @@ good tool ... write down that it's going to be second for those who are faith-ba
   "The pull uses three lines." in its place). Samples to the owner first.
 - **It is written, the design pass (the owner, November 15, 2026: "it has to be intentional ... Simplicity is key"; built in
   `components/ride/written.tsx`, its own file now).** One living thing per page, made of the lesson player's own pieces: three
-  paper cards face down on the first page (the pulls to come); the hold opens with sparkles; each pull is taught like a lesson card, with the
-  scripture at its heart (the owner, November 15, 2026, after a flip-card try: "scrap the flashcards ... focus heavily on the
-  scriptures and how it applies to them right then"): the pull big at the top, its hot shape cooling into the sun as the verse comes
-  in, the verse big, then the old move named and one line on what the verse means right now (`now` in written.ts, Bible voices; the
-  plain voice's answers are already the person's own words); on "Then it left" the three answered cards drift up and away and the sun comes
+  paper cards face down on the first page (the pulls to come); the hold opens with sparkles; the three pulls stay as they were before this pass (the owner,
+  November 15, 2026, after a flip card and then a scripture-first page were both tried and turned down: "Before ... it had
+  scriptures and a good flow. It just needed a little bit of refinement. You went way too far"): the pull and its old move, a tap
+  answers it with the verse in its sun box, and the pull is struck through. Any change to them goes to the owner as a sample first; on "Then it left" the three answered cards drift up and away and the sun comes
   up where they were, with sparkles for the angels; the heart page is one mint heart beating slowly; on Cast, what is feeding it
   is a shape in the middle and "I did it" throws it up off the screen; the last page is the person's flame, big, saying the verse
   in the lesson's cream bubble. Plain on purpose: verses sit on the sky with no box, the one timer is the squiggle under pages that

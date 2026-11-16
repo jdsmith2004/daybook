@@ -5,9 +5,9 @@
    mint for Matthew 5.
      0 the question: three paper cards lie face down, the three pulls still to come.
      1 the hold: press the sun down until the ring fills; it opens and sparkles, and the line that stands firm comes up.
-     2-4 the pulls, taught the way a lesson card teaches: what the pull says, then the scripture He answered it with, big, then what
-       it means right now. The pull's hot shape cools into the sun as the verse is read. No flip card (the owner, November 15,
-       2026: "scrap the flashcards ... focus heavily on the scriptures and how it applies to them right then").
+     2-4 the pulls, as they were before the design pass (the owner, November 15, 2026, after two tries at changing them: "Before
+       ... it had scriptures and a good flow"): what the pull says and the old move it is, then a tap answers it with the verse in
+       its sun box, and the pull is struck through.
      5 then it left: the three cards drift up and away, and the sun comes up where they were, with the sparkles for the angels.
      6 the heart: one mint heart, beating slowly.
      7 cast it: what is feeding it (one tap), then the one thing to do, shown as a shape; "I did it" throws the shape off the screen.
@@ -25,7 +25,7 @@ import { BigFlame } from '@/components/big-flame';
 import { BigOption, Link, Tiles } from '@/components/choices';
 import { Bubble } from '@/components/lesson-flame';
 import { Sparkles } from '@/components/reward-kit';
-import { MorphShape, SQUIGGLE, useClock, WavyLine, WavyRing, type ShapeKind } from '@/components/shapes';
+import { MorphShape, SQUIGGLE, useClock, WavyLine, WavyRing } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -77,10 +77,15 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
   const timed = WR_TIMED.indexOf(pg) >= 0;
   const pull = pg >= 2 && pg <= 4 ? w.pulls[pg - 2] : null;
   const page = pg === 5 ? w.end : pg === 6 ? w.heart : pg === 7 ? w.cast : pg === 8 ? w.light : null;
-  const stage = String(pg);
-  /* a pull page holds the most words (the pull, the verse, what it means now), so it may stay a little longer */
+  /* a pull is answered as it was before the design pass (the owner, November 15, 2026: "Before ... it had scriptures and a good
+     flow"): first what the pull says and the old move it is, then a tap answers it with the verse, and the pull is struck through */
+  const [turned, setTurned] = useState(false);
+  const front = !!pull && !turned;
+  const stage = pg + (front ? 'f' : 'b');
   const stageSec = pull
-    ? Math.min(14, wrSec([pull.pull, pull.faced, pull.lead, pull.rest, pull.trick, pull.now || ''].join(' ')) + 2)
+    ? front
+      ? Math.max(3, Math.min(6, 1.5 + (pull.pull + ' ' + pull.trick).split(/\s+/).length * 0.25))
+      : wrSec([pull.faced, pull.lead, pull.rest].join(' '))
     : page
       ? wrSec([page.head, page.sub, page.lead, page.rest].join(' '))
       : 0;
@@ -94,6 +99,11 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
   const read = timed && stageSec && on ? Math.min(1, (Date.now() - startAt.current.at) / 1000 / stageSec) : 0;
   void tick;
   const onward = () => {
+    if (front) {
+      buzz('save');
+      return setTurned(true);
+    }
+    setTurned(false);
     if (pg < 8) go(pg + 1);
     else onDone();
   };
@@ -151,9 +161,47 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
     <Pressable style={s.move} accessible={false} onPress={timed ? onward : undefined}>
       <Steps n={3} now={now} done={done} color={tone} track={tone + '33'} />
       {pull ? (
-        <View style={s.mid}>
-          <PullPage key={pg} p={pull} n={pg - 2} still={still} />
-        </View>
+        <>
+          <View style={s.words} accessibilityLiveRegion="polite" aria-live="polite">
+            <Appear key={pg} by={6} duration={220}>
+              <Text
+                style={[s.pullT, turned ? s.pullDone : null, { color: turned ? c.muted : c.ink }]}
+                accessibilityRole="header"
+                accessibilityLabel={'The pull says: ' + head}>
+                {pull.pull}
+              </Text>
+            </Appear>
+            <Text style={[s.trickT, { color: c.sunText }]}>{pull.trick}</Text>
+          </View>
+          <View style={s.mid}>
+            {front ? (
+              /* the pull, before it is answered: a hard shape that the answer replaces */
+              <Appear key={'f' + pg} by={10} duration={420}>
+                <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                  <MorphShape kind="softBurst" size={170} color={c.muted + '2E'}>
+                    <Text style={[s.big, { color: c.muted }]}>“</Text>
+                  </MorphShape>
+                </View>
+              </Appear>
+            ) : (
+              <Appear key={'v' + pg} by={10} duration={420}>
+                <View style={[s.note, { backgroundColor: c.sunSoft }]}>
+                  <T v="small" tone="muted">
+                    {pull.faced}
+                  </T>
+                  <Text style={[s.noteVerse, { color: c.ink }]}>
+                    <Text style={{ color: c.sunText }}>{pull.lead}</Text> {pull.rest}
+                  </Text>
+                  {pull.ref ? (
+                    <T v="small" tone="sunText">
+                      {pull.ref}
+                    </T>
+                  ) : null}
+                </View>
+              </Appear>
+            )}
+          </View>
+        </>
       ) : (
         <>
           <Words key={pg} head={page!.head} sub={page!.sub} />
@@ -240,72 +288,15 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
         </View>
       ) : pg === 5 || pg === 8 ? null : (
         <View style={[s.line, { gap: 8 }]}>
-          {pg === 2 ? (
+          {pull ? (
             <T v="label" style={s.c}>
-              {pull && pull.ref ? 'Read it out loud.' : 'Say it out loud.'}
+              {front ? 'Tap to answer it.' : (pull.ref ? 'Read it out loud.' : 'Say it out loud.') + ' Tap to go on.'}
             </T>
           ) : null}
           <WavyLine width={220} p={read} color={tone} track={tone + '33'} />
         </View>
       )}
     </Pressable>
-  );
-}
-
-/** the shape of each pull while it is hot: a want dressed as a need, a small first step, a promise of everything */
-const PULL_HOT: ShapeKind[] = ['softBoom', 'boom', 'puffy'];
-
-/** a pull, taught like a lesson card: what it says, then the scripture He answered it with, then what that means right now. The pull's
-    hot shape cools into the sun as the verse comes in: the answer takes the heat out of it. */
-function PullPage({ p, n, still }: { p: WrittenPull; n: number; still: boolean }) {
-  const c = useTheme();
-  const [cool, setCool] = useState(still);
-  useEffect(() => {
-    if (still) return;
-    const t = setTimeout(() => {
-      setCool(true);
-      buzz('save');
-    }, 1300);
-    return () => clearTimeout(t);
-  }, [still]);
-  return (
-    <View
-      style={s.pull}
-      accessible
-      accessibilityLiveRegion="polite"
-      accessibilityLabel={[bare(p.pull), p.faced, p.lead, p.rest, p.ref, p.trick, p.now].filter(Boolean).join(' ')}>
-      <Appear by={6} duration={260}>
-        <Text style={[s.pullT, { color: c.ink }]}>{bare(p.pull)}</Text>
-      </Appear>
-      <MorphShape kind={cool ? 'sunny' : PULL_HOT[n] || 'softBoom'} size={120} color={cool ? c.sun : c.coral + '55'}>
-        {cool ? (
-          <View>
-            <Icon name="shield" size={46} color={c.onSun} />
-          </View>
-        ) : (
-          <Text style={[s.pullMark, { color: c.coral }]}>“</Text>
-        )}
-      </MorphShape>
-      <Appear by={8} delay={still ? 0 : 500} duration={420} style={s.verse}>
-        <T v="small" tone="muted" style={s.c}>
-          {p.faced}
-        </T>
-        <Text style={[s.verseT, { color: c.ink }]}>
-          <Text style={[s.verseLead, { color: c.sunText }]}>{p.lead}</Text> {p.rest}
-        </Text>
-        {p.ref ? (
-          <T v="small" tone="sunText" style={s.c}>
-            {p.ref}
-          </T>
-        ) : null}
-      </Appear>
-      <Appear by={8} delay={still ? 0 : 1400} duration={420} style={s.verse}>
-        <Text style={[s.nowT, { color: c.ink }]}>
-          <Text style={[s.trickT, { color: c.sunText }]}>{p.trick}</Text>
-          {p.now ? ' ' + p.now : ''}
-        </Text>
-      </Appear>
-    </View>
   );
 }
 
@@ -560,11 +551,11 @@ const s = StyleSheet.create({
     gap: 12,
     backfaceVisibility: 'hidden',
   },
-  pull: { alignSelf: 'stretch', alignItems: 'center', gap: 16 },
-  pullT: { fontFamily: font.displayBold, fontSize: 28, lineHeight: 34, textAlign: 'center', paddingHorizontal: 8 },
-  pullMark: { fontFamily: font.display, fontSize: 64, lineHeight: 72, marginTop: 22 },
-  nowT: { fontFamily: font.display, fontSize: 17, lineHeight: 24, textAlign: 'center' },
-  trickT: { fontFamily: font.displayBold },
+  pullT: { fontFamily: font.display, fontSize: 22, lineHeight: 28, textAlign: 'center' },
+  pullDone: { textDecorationLine: 'line-through' },
+  trickT: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 23, textAlign: 'center' },
+  note: { alignSelf: 'stretch', gap: 8, padding: 24, borderRadius: 20 },
+  noteVerse: { fontFamily: font.display, fontSize: 22, lineHeight: 30 },
   /* the three face-down cards, and the answered ones leaving */
   fan: { width: 250, height: 190 },
   mini: {

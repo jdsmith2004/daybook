@@ -1,5 +1,50 @@
 # What is planned next
 
+## The order of SOS: the best tools first, and the ones you pass over later (the owner, November 15, 2026; built and merged November 15)
+
+The owner: "We should have it in the optimal order of the best tools to help. And then if they skip a tool often, then we
+should move it lower in the order and suggest it later on." This part owns only the order; the breathing tool's look and
+patterns belong to the sun redesign.
+
+### How the order was chosen before
+
+The breath always opened (`RIDE_FIRST`). After it, `rideWeights` ranked the moves by `urRank` in sos.ts: what fits the hour
+and the trigger (the legacy `UR_FIT`), the urge's strength, the two strong first picks (`UR_BEST`: breathe and 5-4-3-2-1),
+the person's record of what passed, the heart and What helped most (`urLike`), and the go-to. `rideNext` then took the move
+most due (weight times how long since it was shown). Next added one to `mem.pass` (up to 6, -1.5 each), which never faded,
+and finishing a move did not ease it. A fresh person at 3 PM got: breathe, ground, thought, move, feel, stack, forward, so
+the moves that need a clear head came before the body and the shapes game.
+
+### What the research says (notes: side-session-notes `sos-order-research.md`)
+
+No study compares orders, so the order is reasoned from single-tool studies. A body in a rush first (slow breathing: small
+single-session drops; hard muscle work: the strongest craving data), then the eyes (the shapes game is the direct test of
+the picture side of a craving, sexual cravings included, Skorka-Brown and others 2015; 5-4-3-2-1 pulls attention out), then
+the mind (naming the feeling and saying the thought fast are weak on craving; the hour after needs a clear head; your own
+words can feel like pressure in a strong urge). High stress weakens the thinking brain (Arnsten), and people choose
+distraction when a feeling is intense (Sheppes and others 2011). Breathing first is supported, or at least not contradicted.
+No other app found reorders its SOS from skips; a swipe in a stream is mostly moving on, so it is a weak dislike, and menus
+that move by themselves are liked less when they say so.
+
+### What was built (core ride.ts)
+
+- `RIDE_ORDER`: breathe, move, stack, ground, feel, thought, forward, reasons. Each place is a small lift under the person's
+  own signals, so the hour, the trigger and their record still steer. 5-4-3-2-1 keeps its lift as a strong first pick (the
+  owner, October 24, 2026), so a fresh ride now runs: breathe, ground, move, stack, feel, thought, forward, reasons.
+- Passing over (`ridePassed`, `rideFinished`, `rideFade`, kept in `UrMem.rsk`, on this phone only): Next under 5 seconds
+  counts 1, later 0.5; finishing a move halves its count; every new SOS fades every count to 90%. Often is 2.5 or more,
+  about three quick passes in three rides. The count lowers the move's place, and once it is often the move comes round
+  half as often: after the others' second turn, never hidden. The old `mem.pass` no longer holds a ride move down.
+- Helped: the heart and What helped most lift a move more in the ride than in the tool list, so two of them outweigh the
+  order.
+- Silent (the owner, November 15, 2026: "Silent"): nothing on screen says a move moved. It is written keeps its own rule
+  and stays only for people with faith on. No new analytics event.
+
+### Business
+
+It helps the person (the first minute does more) and Daybook (an SOS that works is the best reason to keep the app and to
+rate it). Nothing here is locked.
+
 ## Lessons with soul again: every lesson rewritten, a Short and a Long (the owner, November 14, 2026; planned, samples first)
 
 The owner, November 14, 2026: "the lessons have dropped in quality dramatically", and "these lessons need to be enshrined in stone".

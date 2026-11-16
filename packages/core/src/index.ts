@@ -11,6 +11,8 @@ export * from './sos';
 export * from './breath-field';
 export * from './breath-touch';
 export * from './ride';
+export * from './replay';
+export * from './self-talk';
 export * from './future';
 export * from './trail';
 export * from './talk';

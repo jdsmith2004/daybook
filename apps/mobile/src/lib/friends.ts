@@ -36,6 +36,9 @@ let state: State = { data: null, loading: false, error: null };
 const subs = new Set<() => void>();
 const set = (p: Partial<State>) => {
   state = { ...state, ...p };
+  /* the person's own first name, kept on this phone so Self Talk can speak to them by it with no network (components/ride/self-talk) */
+  const nm = p.data && p.data.me && p.data.me.name;
+  if (nm && nm !== local.me) keepLocal({ me: nm });
   subs.forEach((f) => f());
 };
 const sub = (f: () => void) => {
@@ -45,7 +48,17 @@ const sub = (f: () => void) => {
 
 /* ---------- what this phone keeps ---------- */
 const KEY = 'daybook.friends';
-type Local = { in?: boolean; sentAt?: number; sentVals?: string; seen?: number; community?: number; pending?: string; next?: 'add' | 'code'; mute?: string[] };
+type Local = {
+  me?: string;
+  in?: boolean;
+  sentAt?: number;
+  sentVals?: string;
+  seen?: number;
+  community?: number;
+  pending?: string;
+  next?: 'add' | 'code';
+  mute?: string[];
+};
 let local: Local = {};
 const localSubs = new Set<() => void>();
 AsyncStorage.getItem(KEY)
@@ -67,6 +80,9 @@ export const useFriendsLocal = () =>
     },
     () => local,
   );
+
+/** the person's own first name, from their Friends card, when they have one (never asked for anywhere else) */
+export const useMyName = (): string | null => useFriendsLocal().me || null;
 
 /* A friend's link opened by someone new to Daybook: setup comes first and the link's page is left behind, so the code is kept here
    and the Friends page opens with it once setup is done (FriendsKeeper) */

@@ -7,7 +7,7 @@ import type { Days, Settings } from '../src/types';
 const st: Settings = core.normSettings({});
 const tk = '2026-10-21';
 const now = new Date('2026-10-21T15:00:00').getTime();
-const can = { words: true };
+const can: core.RideCan = { words: true, replay: true, fresh: true };
 
 /** a log with urges ridden out, each with its tools and minutes */
 function rodeLog(list: { key: string; tr?: [string, 'p' | 's' | 'x'][]; m?: number }[]): Days {
@@ -196,8 +196,9 @@ describe('the order of SOS', () => {
     expect(fresh[2]).toBe('move');
     expect(after.indexOf('move')).toBeGreaterThan(fresh.indexOf('move') + 2);
     expect(after).toContain('move');
-    /* and the others are not all pushed aside: every move still comes round */
-    core.RIDE_MOVES.forEach((id) => expect(after).toContain(id));
+    /* and the others are not all pushed aside: every move still comes round (Self Talk, last in the order, within a longer ride) */
+    const long = rideMem(18, skipped('move'));
+    core.RIDE_MOVES.forEach((id) => expect(long).toContain(id));
   });
 
   it('it comes back by itself: a run of SOS rides without passing it fades the count', () => {

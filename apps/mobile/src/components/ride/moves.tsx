@@ -46,6 +46,8 @@ import { MorphShape, SQUIGGLE, useClock, WavyLine, WavyRing, type ShapeKind } fr
 import { Text } from '@/components/text';
 import { FastWords, Fork } from '@/components/tools/ride';
 import { FeelMove } from './feel-move';
+import { ReplayMove } from './replay';
+import { SelfTalkMove } from './self-talk';
 import { StackMove } from './stack';
 import { BigFlame } from '@/components/big-flame';
 import { Button, Icon, T } from '@/components/ui';
@@ -73,6 +75,9 @@ export interface MoveProps {
   felt?: string | null;
   /** the person's level, for the flame (It is written's last page) */
   level?: number;
+  /** a preview of the move (app/sos-preview.tsx, or /sos?practice=1&try=): a move that needs the person's own record to show (From your
+      lessons) uses sample lessons when the record has none */
+  demo?: boolean;
 }
 
 /** say a line to a screen reader on iOS (which has no live regions); Android and the web read the live region */
@@ -770,6 +775,8 @@ export const MOVES: Record<string, (p: MoveProps) => React.ReactElement> = {
   written: WrittenMove,
   future: FutureMove,
   object: ObjectMove,
+  replay: ReplayMove,
+  selftalk: SelfTalkMove,
 };
 
 /** the short name of a move, as the ride shows it */
@@ -785,6 +792,8 @@ export const MOVE_NAME: Record<string, string> = {
   written: 'It is written',
   future: 'Your note',
   object: 'If it were a thing',
+  replay: 'From your lessons',
+  selftalk: 'Self Talk',
 };
 
 /** the icon for a move */
@@ -800,6 +809,8 @@ export const MOVE_ICON: Record<string, string> = {
   written: 'shield',
   future: 'mic',
   object: 'sparkle',
+  replay: 'book',
+  selftalk: 'chat',
 };
 
 export const moveTint = (c: Palette, id: string) =>
@@ -815,6 +826,8 @@ export const moveTint = (c: Palette, id: string) =>
     written: c.sun2,
     future: c.sun2,
     object: c.coral,
+    replay: c.violet,
+    selftalk: c.sun2,
   })[id] || c.accent;
 
 const s = StyleSheet.create({

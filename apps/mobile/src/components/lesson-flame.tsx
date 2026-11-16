@@ -119,8 +119,11 @@ export function Bubble({
   onMore,
   style,
   shown,
+  big,
 }: {
   text: string;
+  /** the words are the whole point of the screen (SOS's Self Talk): larger, in the display face */
+  big?: boolean;
   /** how many letters are written so far, for words that write themselves out; the bubble is its full size from the start */
   shown?: number;
   tail?: 'mid' | 'right';
@@ -129,8 +132,8 @@ export function Bubble({
   style?: ViewStyle;
 }) {
   const body = (
-    <View style={[s.bubble, { backgroundColor: BUBBLE }]}>
-      <Text style={s.say} accessibilityLiveRegion="polite">
+    <View style={[s.bubble, big && s.bubbleBig, { backgroundColor: BUBBLE }]}>
+      <Text style={[s.say, big && s.sayBig]} accessibilityLiveRegion="polite">
         {shown == null ? text : text.slice(0, shown)}
         {shown != null && shown < text.length ? <Text style={{ color: 'transparent' }}>{text.slice(shown)}</Text> : null}
         {more ? <Text style={s.more}>{'  More'}</Text> : null}
@@ -159,6 +162,8 @@ const s = StyleSheet.create({
   slot: { flexGrow: 1, alignSelf: 'stretch' },
   bubble: { borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16 },
   say: { fontFamily: font.bodySemi, fontSize: SHORT ? 15 : 17, lineHeight: SHORT ? 20 : 23, color: PAPER_INK },
+  bubbleBig: { paddingVertical: 16, paddingHorizontal: 20, borderRadius: 24 },
+  sayBig: { fontFamily: font.display, fontSize: 22, lineHeight: 29 },
   more: { fontFamily: font.bodyBold, fontSize: 15, color: PAPER_INK, textDecorationLine: 'underline' },
   tail: { position: 'absolute', bottom: -7, width: 18, height: 18, borderRadius: 4, transform: [{ rotate: '45deg' }] },
   tailMid: { alignSelf: 'center' },

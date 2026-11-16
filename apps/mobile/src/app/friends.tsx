@@ -2,12 +2,13 @@
    "Friends (beta)"). Opened from Settings for now; the journal and the tabs stay where they are.
 
    Made for the usual case, one friend (the owner, the same day: "most people are going to only have like one person"), and built
-   like Today: the page opens on a sky from edge to edge, your flame and theirs standing on one land, your together streak low on
-   the left (days in a row you were both in Daybook; the owner: "a together streak and it's just days they both log in"), the last
-   seven days on the right. Under it, their day and week, and the one thing to do: send a spark. It flies from your flame to theirs,
-   waits beside their flame for their next lesson, and that lesson tells them it was in it; you are told it was used (the owner: the
-   spark "visits and comes back"). A spark they sent you glows beside your flame, with the way to your lesson right there. Calm on
-   purpose: no "last seen", no badges, no red, and a quiet day never reads as missing. */
+   like Today (the owner, later: "Feel free to use the rest of the app as inspiration ... try again and do better"): three masses
+   only. The sky (friends-art.tsx): your flame and theirs big on their hills, the together streak between you (the owner: "a
+   together streak and it's just days they both log in"). Then Today's own bright card for the one thing to do: start the lesson
+   their spark is waiting in, or send them a spark (it flies to their flame, waits for their next lesson, and you are told when it
+   was in it; the owner: the spark "visits and comes back"). Then their week as marks, and one quiet list (what they see of you,
+   notes about them, another friend, the community that is coming). Calm on purpose: no "last seen", no badges, no red, and a
+   quiet day never reads as missing. */
 import { gameCompute, lessonToday, reportAt, sparkBack, sparkGot, friendToday, type DayKey, type ShareKey } from '@daybook/core';
 import { StatusBar } from 'expo-status-bar';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -15,7 +16,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CommunityScene, FriendsSky, FriendWeek, Spark } from '@/components/friends-art';
+import { FriendsSky, FriendWeek, skyFor, Spark } from '@/components/friends-art';
+import { NextCard } from '@/components/your-day';
 import { Screen } from '@/components/screen';
 import { LinkText } from '@/components/today';
 import { Button, Icon, T } from '@/components/ui';
@@ -45,11 +47,9 @@ export default function Friends() {
   const over = useOverModal();
   const top = Platform.OS === 'ios' && over ? 0 : inset.top;
   const backLabel = useBackLabel('Settings');
-  /* the page's column (for the community picture), and the sky's size */
-  const col = Math.min(win, MAX_WIDTH) - 32;
-  /* the sky is as tall as the two flames need: the frame at the top, the flames as big as the width lets them be, the foot */
-  const big = Math.round(Math.min(win * 0.47, 230, winH * 0.3));
-  const sky = top + 92 + big + 104;
+  /* the flames as big as the width lets two of them be, and the sky as tall as they need */
+  const big = Math.round(Math.min(Math.min(win, MAX_WIDTH + 80) * 0.5, 240, winH * 0.32));
+  const sky = skyFor(top, big);
   const st = snap.settings;
   const level = st ? gameCompute(snap.days, st, snap.reviews, tk).level.n : 1;
   const ink = skyInk(level);
@@ -156,7 +156,6 @@ export default function Friends() {
           level={level}
           friends={friends}
           width={win}
-          height={sky}
           big={big}
           top={top}
           tk={tk}
@@ -179,16 +178,7 @@ export default function Friends() {
       {friends.length ? (
         <>
           {friends.map((f) => (
-            <FriendBlock
-              key={f.fid}
-              f={f}
-              tk={tk}
-              many={friends.length > 1}
-              busy={sparking === f.fid}
-              onOpen={() => open(f.fid)}
-              onSpark={() => spark(f.fid)}
-              toLesson={toLesson}
-            />
+            <FriendBlock key={f.fid} f={f} tk={tk} busy={sparking === f.fid} onSpark={() => spark(f.fid)} toLesson={toLesson} />
           ))}
           {err ? (
             <T v="small" tone="muted" style={{ textAlign: 'center' }}>
@@ -208,14 +198,16 @@ export default function Friends() {
               <Row icon="phone" label={'Notes about ' + friends[0].name} sub={HEAR_WORDS[friends[0].hear || 'live']} onPress={() => open(friends[0].fid)} />
             ) : null}
             <Row icon="plus" label={friends.length === 1 ? 'Add another friend' : 'Add a friend'} onPress={add} />
+            <CommunityRow joined={!!lo.community} />
           </Rows>
         </>
       ) : (
-        <View style={{ gap: 20 }}>
+        <>
           <View style={{ gap: 6 }}>
             <T v="h2">Walk it with a friend</T>
             <T tone="muted">
-              They see how often you do a lesson and check in, and your flame. Never a slip. You send each other sparks that go into the next lesson.
+              They see how often you do a lesson and check in, and your flame. Never a slip. You keep a streak together, and send each other sparks that go into
+              the next lesson.
             </T>
           </View>
           <View style={{ gap: 4 }}>
@@ -226,15 +218,16 @@ export default function Friends() {
               </View>
             )}
           </View>
-        </View>
+          <Rows>
+            <CommunityRow joined={!!lo.community} />
+          </Rows>
+        </>
       )}
       {fr.error && fr.signedIn ? (
         <T v="small" tone="muted" style={{ textAlign: 'center' }}>
           {fr.error}
         </T>
       ) : null}
-
-      <Community joined={!!lo.community} width={col} />
       {fr.demo ? (
         <T v="small" tone="muted" style={{ textAlign: 'center' }}>
           A demo with a made-up friend. Tap anything: nothing is real, and nothing is sent.
@@ -252,96 +245,55 @@ function seeLine(on: Partial<Record<ShareKey, boolean>>, rt: string | null): str
   return list + (rt ? ', and a daily report at ' + reportAt(rt) : '');
 }
 
-/** one friend: their name and flame's level, a spark of theirs waiting for your lesson, their day and week, and the spark to send */
-function FriendBlock({
-  f,
-  tk,
-  many,
-  busy,
-  onOpen,
-  onSpark,
-  toLesson,
-}: {
-  f: FriendView;
-  tk: DayKey;
-  many: boolean;
-  busy: boolean;
-  onOpen: () => void;
-  onSpark: () => void;
-  toLesson: (() => void) | null;
-}) {
+/** one friend: the one thing to do (Today's bright card), what passed between you, and their week */
+function FriendBlock({ f, tk, busy, onSpark, toLesson }: { f: FriendView; tk: DayKey; busy: boolean; onSpark: () => void; toLesson: (() => void) | null }) {
   const c = useTheme();
   const now = Date.now();
   const today = friendToday(f.vals, tk);
   const got = f.cheer?.k === 'spark' ? f.cheer : null;
   const gotWaits = !!got && !got.used;
   const gotUsedToday = !!got?.used && now - got.used < 20 * 3600_000;
-  /* what you sent: still waiting for their lesson, or used there (said for a day) */
+  /* what you sent: still waiting for their lesson, or used there (said for a day and a half) */
   const sentRecent = !!f.sent && now - f.sent < 20 * 3600_000;
   const sentWaits = !!f.sent && !f.sentUsed && now - f.sent < 7 * 86400_000;
   const sentUsed = !!f.sentUsed && now - f.sentUsed < 36 * 3600_000;
-  const tg = f.together;
+  const canSend = !sentRecent;
+  const lead = gotWaits && toLesson ? 'lesson' : canSend ? 'send' : null;
+  const send = () => !busy && onSpark();
+  /* the quiet lines: what passed between you, newest news first */
+  const lines: { t: string; warm?: boolean }[] = [];
+  if (sentUsed) lines.push({ t: sparkBack(f.name) + '.', warm: true });
+  else if (sentWaits && sentRecent) lines.push({ t: 'Your spark is with ' + f.name + '. You will hear when it goes into their lesson.' });
+  if (gotWaits && !toLesson) lines.push({ t: sparkGot(f.name) + '. It waits for your next lesson.' });
+  else if (gotUsedToday) lines.push({ t: f.name + '\u2019s spark was in your lesson today.' });
   return (
     <View style={{ gap: 12 }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={'Open ' + f.name}
-        onPress={() => {
-          buzz('tap');
-          onOpen();
-        }}
-        style={({ pressed }) => [s.head, pressed && { opacity: 0.7 }]}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <T v="h2">{f.name}</T>
-          <T v="small" tone="muted">
-            {[f.vals.level ? 'Level ' + f.vals.level + (f.vals.lname ? ', ' + f.vals.lname : '') : '', many && tg?.n ? tg.n + ' days together' : '']
-              .filter(Boolean)
-              .join(' · ') || 'Friends since ' + new Date(f.since).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-          </T>
-        </View>
-        <Icon name="next" size={18} color={c.muted} />
-      </Pressable>
-
-      {gotWaits ? (
-        <View style={[s.spark, { backgroundColor: c.surface2 }]} accessibilityLiveRegion="polite">
-          <View style={s.line}>
-            <Spark size={44} />
-            <View style={{ flex: 1, gap: 2 }}>
-              <T v="label">{sparkGot(f.name)}</T>
-              <T v="small" tone="muted">
-                It goes into your next lesson.
-              </T>
-            </View>
-          </View>
-          {toLesson ? <Button label="Do today's lesson" kind="warm" onPress={toLesson} /> : null}
-        </View>
-      ) : gotUsedToday ? (
-        <View style={s.line}>
-          <Spark size={28} still />
-          <T tone="muted" style={{ flex: 1 }}>
-            {f.name}&apos;s spark was in your lesson today.
-          </T>
-        </View>
+      {lead === 'lesson' ? (
+        <NextCard m={{ eb: sparkGot(f.name), h: 'It goes into today\u2019s lesson', btn: 'Start' } as never} onPress={toLesson!} />
+      ) : lead === 'send' ? (
+        <NextCard
+          m={{ eb: 'One a day · it goes into their next lesson', h: 'Send ' + f.name + ' a spark', btn: busy ? '...' : 'Send' } as never}
+          onPress={send}
+        />
       ) : null}
-
-      <FriendWeek vals={f.vals} today={today} />
-
-      {sentUsed ? (
-        <View style={s.line} accessibilityLiveRegion="polite">
-          <Spark size={28} still />
-          <T v="label" style={{ flex: 1, color: c.sunText }}>
-            {sparkBack(f.name)}.
-          </T>
-        </View>
-      ) : sentWaits && sentRecent ? (
-        <View style={s.line} accessibilityLiveRegion="polite">
-          <Spark size={28} still />
-          <T tone="muted" style={{ flex: 1 }}>
-            Your spark is with {f.name}. It goes into their next lesson, and you will hear when it does.
-          </T>
-        </View>
+      {lead === 'lesson' && canSend ? (
+        <Rows>
+          <Row icon="sparkle" label={'Send ' + f.name + ' a spark'} sub="One a day. It goes into their next lesson." onPress={send} />
+        </Rows>
       ) : null}
-      {sentRecent ? null : <Button label={busy ? 'One moment' : 'Send ' + f.name + ' a spark'} icon="sparkle" disabled={busy} onPress={onSpark} />}
+      {lines.map((l) => (
+        <View key={l.t} style={s.line} accessibilityLiveRegion="polite">
+          <Spark size={30} still />
+          <T v={l.warm ? 'label' : 'body'} tone={l.warm ? undefined : 'muted'} style={[{ flex: 1 }, l.warm ? { color: c.sunText } : null]}>
+            {l.t}
+          </T>
+        </View>
+      ))}
+
+      <View style={s.section}>
+        <T v="h2">{f.name}&apos;s week</T>
+        <FriendWeek vals={f.vals} today={today} />
+      </View>
     </View>
   );
 }
@@ -351,7 +303,7 @@ function Rows({ children }: { children: React.ReactNode }) {
   const c = useTheme();
   return <View style={[s.rows, { backgroundColor: c.surface }]}>{children}</View>;
 }
-function Row({ icon, label, sub, onPress }: { icon: string; label: string; sub?: string; onPress: () => void }) {
+function Row({ icon, label, sub, right, onPress }: { icon: string; label: string; sub?: string; right?: React.ReactNode; onPress: () => void }) {
   const c = useTheme();
   return (
     <Pressable
@@ -370,58 +322,46 @@ function Row({ icon, label, sub, onPress }: { icon: string; label: string; sub?:
           </T>
         ) : null}
       </View>
-      <Icon name="next" size={16} color={c.muted} />
+      {right ?? <Icon name="next" size={16} color={c.muted} />}
     </Pressable>
   );
 }
 
-/** the community that is coming: its night of far fires with the words on it, and a way to pre-join */
-function Community({ joined, width }: { joined: boolean; width: number }) {
+/** the community that is coming, as one row: Pre-join on the right, then a quiet mark that you are on the list */
+function CommunityRow({ joined }: { joined: boolean }) {
   const c = useTheme();
   return (
-    <View style={[s.community, { backgroundColor: c.surface }]}>
-      <View>
-        <CommunityScene joined={joined} width={width} />
-        <View style={s.commHead} pointerEvents="none">
-          <T v="h2" style={{ color: '#FFFFFF' }}>
-            Community
-          </T>
-          <View style={s.soon}>
-            <T v="small" style={{ color: '#FFE7A8' }}>
-              Coming soon
-            </T>
-          </View>
-        </View>
-      </View>
-      <View style={{ padding: 16, gap: 12 }}>
-        <T tone="muted">A calm place to walk this with others. It is being built now, and it opens once enough people have joined.</T>
-        {joined ? (
+    <Row
+      icon="flame"
+      label="Community"
+      sub="Coming soon. A calm place to walk this with others."
+      right={
+        joined ? (
           <View style={s.joined} accessibilityLiveRegion="polite">
-            <Icon name="check" size={18} color={c.mintText} />
-            <T v="label" style={{ color: c.mintText }}>
-              You are on the list
+            <Icon name="check" size={16} color={c.mintText} />
+            <T v="small" style={{ color: c.mintText }}>
+              On the list
             </T>
           </View>
         ) : (
-          <Button
-            label="Pre-join"
-            kind="ghost"
-            onPress={() => {
-              joinCommunity();
-              buzz('save');
-            }}
-          />
-        )}
-      </View>
-    </View>
+          <T v="label" style={{ color: c.accentText }}>
+            Pre-join
+          </T>
+        )
+      }
+      onPress={() => {
+        if (joined) return;
+        joinCommunity();
+        buzz('save');
+      }}
+    />
   );
 }
 
 const s = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
-  spark: { gap: 12, borderRadius: 20, padding: 14 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  rows: { borderRadius: 20, overflow: 'hidden', marginTop: 8 },
+  section: { gap: 12, marginTop: 20 },
+  rows: { borderRadius: 20, overflow: 'hidden', marginTop: 20 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -432,8 +372,5 @@ const s = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     marginTop: -StyleSheet.hairlineWidth,
   },
-  community: { borderRadius: 20, overflow: 'hidden', marginTop: 8 },
-  commHead: { position: 'absolute', left: 16, top: 14, right: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  soon: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, backgroundColor: 'rgba(255,255,255,0.14)' },
-  joined: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44 },
+  joined: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 });

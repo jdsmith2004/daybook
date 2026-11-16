@@ -2,7 +2,7 @@
    done (onDone), so the ride flows on to the next without a button. Every move is short (about half a minute to a
    minute) and has one living thing in the middle to follow.
    - Breathe: the sun and its dots, three breaths in the pattern the person chose (components/breath-ride).
-   - Squeeze: four body parts, each squeezed hard for seven seconds and let go for eight, in a seat or on your feet. A disc
+   - Squeeze: four body parts, each squeezed hard for seven seconds and let go for eight, small enough for a seat. A disc
      of dots pulls into a hot knot with you and opens from the middle when you let go (core squeeze.ts).
    - Fit the shapes: a small block puzzle for the eyes and hands (stack.tsx).
    - 5-4-3-2-1: find things around you, one tap each.

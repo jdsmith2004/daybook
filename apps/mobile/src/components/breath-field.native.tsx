@@ -2,7 +2,7 @@
    drawn by Skia on the UI thread, so it stays smooth while the JS thread is busy. The words are real text over it, in the
    step's color. The timing is core breath-field.ts. */
 import { FIELD_SETTLE, fieldAt, type FieldId } from '@daybook/core';
-import { Canvas, createPicture, PaintStyle, Picture, Skia, StrokeCap, StrokeJoin, TileMode } from '@shopify/react-native-skia';
+import { Canvas, createPicture, PaintStyle, Picture, Skia, StrokeCap, StrokeJoin } from '@shopify/react-native-skia';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, StyleSheet, View } from 'react-native';
 import Reanimated, { useAnimatedStyle, useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
@@ -26,17 +26,6 @@ export type BreathFieldProps = {
   /** on a light sky (SOS by day): deeper dots and words */
   light?: boolean;
 };
-
-/* the sun's disc, from white hot in the middle to a feathered edge (the same stops the web uses) */
-const DISC_AT = [0, 0.3, 0.6, 0.8, 0.88, 1];
-const DISC = [
-  [255, 253, 240, 1],
-  [255, 241, 182, 1],
-  [255, 217, 108, 1],
-  [255, 192, 74, 1],
-  [255, 178, 62, 0.86],
-  [255, 160, 52, 0],
-];
 
 function col(r: number, g: number, b: number, a: number) {
   'worklet';
@@ -72,40 +61,7 @@ export function BreathField({ id = 'sigh', on = true, start, settle = FIELD_SETT
       const paint = Skia.Paint();
       paint.setAntiAlias(true);
       const dots = sc.dots;
-      for (let i = 0; i < sc.over; i += 7) {
-        if (dots[i + 6] <= 0.01) continue;
-        paint.setColor(col(dots[i + 3], dots[i + 4], dots[i + 5], dots[i + 6]));
-        c.drawCircle(dots[i], dots[i + 1], dots[i + 2], paint);
-      }
-      /* the sun: a wide faint halo, a bloom, and the disc */
-      const x = sc.sun[0];
-      const y = sc.sun[1];
-      const r = sc.sun[2];
-      const v = sc.sun[3];
-      if (r > 0.5) {
-        const sun = Skia.Paint();
-        sun.setAntiAlias(true);
-        const far = sc.sun[4];
-        const a = 0.1 + 0.07 * v;
-        const from = Math.min(0.9, (r * 0.8) / far);
-        sun.setShader(
-          Skia.Shader.MakeRadialGradient(
-            { x, y },
-            far,
-            [col(255, 170, 84, a), col(255, 170, 84, a * 0.36), col(255, 170, 84, a * 0.06), col(255, 170, 84, 0)],
-            [from, from + (1 - from) * 0.45, from + (1 - from) * 0.8, 1],
-            TileMode.Clamp,
-          ),
-        );
-        c.drawCircle(x, y, far, sun);
-        sun.setShader(Skia.Shader.MakeRadialGradient({ x, y }, r * 2, [col(255, 204, 96, 0.4 + 0.2 * v), col(255, 204, 96, 0)], [0.35, 1], TileMode.Clamp));
-        c.drawCircle(x, y, r * 2, sun);
-        const stops: Float32Array[] = [];
-        for (let i = 0; i < DISC.length; i++) stops.push(col(DISC[i][0], DISC[i][1], DISC[i][2], DISC[i][3]));
-        sun.setShader(Skia.Shader.MakeRadialGradient({ x, y }, r * 1.14, stops, DISC_AT, TileMode.Clamp));
-        c.drawCircle(x, y, r * 1.14, sun);
-      }
-      for (let i = sc.over; i < dots.length; i += 7) {
+      for (let i = 0; i < dots.length; i += 7) {
         if (dots[i + 6] <= 0.01) continue;
         paint.setColor(col(dots[i + 3], dots[i + 4], dots[i + 5], dots[i + 6]));
         c.drawCircle(dots[i], dots[i + 1], dots[i + 2], paint);

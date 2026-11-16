@@ -1,4 +1,4 @@
-/* The breathing figure on the web: the sun, its dots, the words for each step in a quiet italic, and a tiny nose or lips
+/* The breathing figure on the web: its dots, the words for each step in a quiet italic, and a tiny nose or lips
    with the air moving through. Nothing else. What it looks like at each moment is lib/breath-scene.ts, which a phone draws
    too (breath-field.native.tsx); the timing is core breath-field.ts.
 
@@ -30,42 +30,6 @@ export type BreathFieldProps = {
   light?: boolean;
 };
 
-/** the sun: a wide faint halo, a bloom, and a disc that is white hot in the middle and feathers away at its edge */
-export function drawSun(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, v: number, far: number) {
-  if (r <= 0.5) return;
-  const halo = ctx.createRadialGradient(x, y, Math.min(r * 0.8, far * 0.9), x, y, far);
-  const a = 0.1 + 0.07 * v;
-  halo.addColorStop(0, `rgba(255,170,84,${a.toFixed(3)})`);
-  halo.addColorStop(0.45, `rgba(255,170,84,${(a * 0.36).toFixed(3)})`);
-  halo.addColorStop(0.8, `rgba(255,170,84,${(a * 0.06).toFixed(3)})`);
-  halo.addColorStop(1, 'rgba(255,170,84,0)');
-  ctx.fillStyle = halo;
-  ctx.beginPath();
-  ctx.arc(x, y, far, 0, TAU);
-  ctx.fill();
-  const bloom = ctx.createRadialGradient(x, y, r * 0.7, x, y, r * 2);
-  bloom.addColorStop(0, `rgba(255,204,96,${(0.4 + 0.2 * v).toFixed(3)})`);
-  bloom.addColorStop(1, 'rgba(255,204,96,0)');
-  ctx.fillStyle = bloom;
-  ctx.beginPath();
-  ctx.arc(x, y, r * 2, 0, TAU);
-  ctx.fill();
-  const disc = ctx.createRadialGradient(x, y, 0, x, y, r * 1.14);
-  for (const [o, c] of SUN_STOPS) disc.addColorStop(o, c);
-  ctx.fillStyle = disc;
-  ctx.beginPath();
-  ctx.arc(x, y, r * 1.14, 0, TAU);
-  ctx.fill();
-}
-const SUN_STOPS: [number, string][] = [
-  [0, 'rgba(255,253,240,1)'],
-  [0.3, 'rgba(255,241,182,1)'],
-  [0.6, 'rgba(255,217,108,1)'],
-  [0.8, 'rgba(255,192,74,1)'],
-  [0.88, 'rgba(255,178,62,0.86)'],
-  [1, 'rgba(255,160,52,0)'],
-];
-
 function draw(ctx: CanvasRenderingContext2D, box: Box, id: FieldId, t: number, settle: number, still: boolean, light: boolean) {
   const sc = sceneAt(id, t, box.w, box.h, settle, still, light);
   ctx.clearRect(0, 0, box.w, box.h);
@@ -77,9 +41,7 @@ function draw(ctx: CanvasRenderingContext2D, box: Box, id: FieldId, t: number, s
     ctx.arc(sc.dots[i], sc.dots[i + 1], sc.dots[i + 2], 0, TAU);
     ctx.fill();
   };
-  for (let i = 0; i < sc.over; i += 7) dot(i);
-  drawSun(ctx, sc.sun[0], sc.sun[1], sc.sun[2], sc.sun[3], sc.sun[4]);
-  for (let i = sc.over; i < sc.dots.length; i += 7) dot(i);
+  for (let i = 0; i < sc.dots.length; i += 7) dot(i);
   /* the words */
   const ink = `rgba(${Math.round(sc.ink[0])},${Math.round(sc.ink[1])},${Math.round(sc.ink[2])},${sc.ink[3].toFixed(3)})`;
   ctx.fillStyle = ink;

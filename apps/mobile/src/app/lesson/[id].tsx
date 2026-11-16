@@ -101,7 +101,7 @@ import { LessonFinish } from '@/components/lesson-finish';
 import { Bar, Praise, praiseFor, thanksFor } from '@/components/lesson-play';
 import { FlashCard } from '@/components/lesson-flash';
 import { Next, Rich } from '@/components/lx';
-import { LISTEN_OK, ListenButton, SpokenCard } from '@/components/listen';
+import { LISTEN_OK, ListenButton, SpokenCard, useListenAhead } from '@/components/listen';
 import { DeedWrite, GoRow, LineEditor, PLine, WriteBox } from '@/components/practice';
 import { Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
@@ -235,6 +235,7 @@ export default function LessonScreen() {
   const [pulse, setPulse] = useState(0);
   /* Listen (components/listen.tsx): once on, each story card is read aloud as it comes in, until it is turned off */
   const [listen, setListen] = useState(false);
+  useListenAhead(L, st, len === 'd', listen);
   const scroll = useRef<ScrollViewInstance>(null);
   /* the picture on a card gives up height so the card fits a short phone (components/fit) */
   const fit = useFitRoom();

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { VOICES, voiceAt, voiceKey, voiceSaid, voiceUrl } from '../src/voice';
-import { voiceLines } from '../src/voice-lines';
+import { lessonAs } from '../src/lesson-beats';
+import { lessonSaid, voiceLines } from '../src/voice-lines';
+import { lessonById } from '../src/lessons';
+import { STORIES } from '../src/lesson-stories';
 
 describe('Listen recordings (voice.ts)', () => {
   it('names a recording by its voice and words, the same every time', () => {
@@ -37,5 +40,15 @@ describe('Listen recordings (voice.ts)', () => {
   it('keeps the recordings under /voice/ on the site', () => {
     expect(voiceUrl('https://x.net', 'af_heart-abc', 'm4a')).toBe('https://x.net/voice/af_heart-abc.m4a');
     expect(voiceUrl('', 'af_heart-abc', 'json')).toBe('/voice/af_heart-abc.json');
+  });
+
+  it('fetches ahead exactly the cards that are recorded, in Short, Long and Deep, for both voices', () => {
+    for (const v of VOICES) {
+      const have = new Set(voiceLines(v.id).map((x) => x.key));
+      for (const id of Object.keys(STORIES)) {
+        const L = lessonAs(lessonById(id)!, null, 'porn');
+        for (const deep of [false, true]) for (const said of lessonSaid(L, null, deep)) expect(have.has(voiceKey(said, v.id))).toBe(true);
+      }
+    }
   });
 });

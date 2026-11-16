@@ -4,7 +4,8 @@
    heard and kept on the phone after (lib/voice-clip.ts). A card with no recording yet, or no network for one not heard before, is read
    by the phone's own voice instead (expo-speech), the best English voice installed. Once on, it stays on for the lesson: each card is
    read as it comes in, until the person turns it off or leaves. */
-import { lfmt, voiceAt, voiceKey, voiceSaid, VOICES, type Settings } from '@daybook/core';
+import { lfmt, voiceAt, voiceKey, voiceSaid, VOICES, type Lesson, type Settings } from '@daybook/core';
+import { lessonSaid } from '@daybook/core/lesson-content';
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import * as Speech from 'expo-speech';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -14,7 +15,7 @@ import { Text } from '@/components/text';
 import { Icon, InkContext, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { getListen, RATES, setListen, useListen } from '@/lib/listen-prefs';
-import { getClip } from '@/lib/voice-clip';
+import { forgetClip, getClip } from '@/lib/voice-clip';
 import { font, useTheme } from '@/lib/theme';
 
 /* whether a color is light: the filled speed takes dark words on it */
@@ -64,12 +65,37 @@ async function bestVoice(): Promise<string | null> {
 }
 
 /* one player for every card: on the web a browser lets a sound play without a fresh tap only on an element it has already seen a tap
-   play, so the next card reuses it */
+   play, so the next card reuses it.
+   On the phone it keeps the sound session open while Listen is on (the owner, November 16, 2026: "it'll like not keep playing when I
+   go to the next tab"). Without that, each pause, and the old card's stop as the next card comes in, closed the session a tenth of a
+   second later unless a sound was already playing; the next card's recording was still loading then, so it lost its session and
+   stayed silent, and after five seconds the phone's own voice took over (the "super AI voice"). */
 let player: AudioPlayer | null = null;
 function thePlayer(uri: string): AudioPlayer {
-  if (!player) player = createAudioPlayer({ uri }, { updateInterval: 100 });
+  if (!player) player = createAudioPlayer({ uri }, { updateInterval: 100, keepAudioSessionActive: true });
   else player.replace({ uri });
   return player;
+}
+/* leaving the lesson, or turning Listen off: a moment after the last card lets go and no new card takes the voice, the sound guide's
+   own way comes back and, on the phone, the player is let go, which closes the sound session so other apps may play again */
+let leaving: ReturnType<typeof setTimeout> | null = null;
+function stay() {
+  if (leaving) clearTimeout(leaving);
+  leaving = null;
+}
+function leaveSoon() {
+  stay();
+  leaving = setTimeout(() => {
+    leaving = null;
+    void quiet();
+    if (Platform.OS === 'web' || !player) return;
+    try {
+      player.remove();
+    } catch {
+      /* already let go */
+    }
+    player = null;
+  }, 900);
 }
 function hush() {
   try {
@@ -204,6 +230,26 @@ export function ListenButton({ on, onPress, ink }: { on: boolean; onPress: () =>
   );
 }
 
+/** while Listen is on, the lesson's other recordings are fetched one after another, so the next card plays the moment it comes in */
+export function useListenAhead(L: Lesson | null | undefined, st: Settings | null, deep: boolean, on: boolean) {
+  const { voice } = useListen();
+  const keys = useMemo(() => (on && L ? lessonSaid(L, st, deep).map((x) => voiceKey(x, voice)) : []), [on, L, st, deep, voice]);
+  const sig = keys.join(' ');
+  useEffect(() => {
+    if (!sig) return;
+    let alive = true;
+    void (async () => {
+      for (const k of sig.split(' ')) {
+        if (!alive) return;
+        await getClip(k);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [sig]);
+}
+
 /** a story card's heading and words. When on, the phone reads them aloud and the word being said is lit. */
 export function SpokenCard({
   h,
@@ -278,9 +324,11 @@ export function SpokenCard({
       });
     };
     setListen({ done: false });
+    stay();
+    const key = voiceKey(said, voice);
     void (async () => {
       hush();
-      const clip = await getClip(voiceKey(said, voice));
+      let clip = await getClip(key);
       if (!still()) return;
       if (!clip) {
         me.speak = speakNow;
@@ -298,26 +346,44 @@ export function SpokenCard({
         if (!still()) return;
       }
       if (!settings.current.paused) p.play();
-      const began = Date.now();
+      /* asked to play and nothing came: the recording is loaded again, then fetched afresh, and only after both does the phone's own
+         voice read the card. The next card tries its recording again from the start. */
+      let since = Date.now();
+      let tries = 0;
+      let mending = false;
+      const mend = async () => {
+        mending = true;
+        tries++;
+        if (tries === 2) {
+          forgetClip(key);
+          const again = await getClip(key);
+          if (!still()) return;
+          if (again) clip = again;
+        }
+        if (!still() || !clip) return;
+        p.replace({ uri: clip.uri });
+        p.setPlaybackRate(settings.current.rate, 'high');
+        if (!settings.current.paused) p.play();
+        since = Date.now();
+        mending = false;
+      };
       tick = setInterval(() => {
-        if (!still()) return;
+        if (!still() || mending || !clip) return;
         const ms = p.currentTime * 1000;
         if (ms >= clip.timing.ms - 40) {
           setNow(said.length);
           if (!getListen().done) setListen({ done: true });
           return;
         }
-        /* asked to play and nothing came (the file would not load): the phone's own voice reads it instead */
-        if (ms === 0 && !p.playing && !settings.current.paused && Date.now() - began > 5000) {
+        /* judged by the sound moving, not by the player's word: on the web it says playing as soon as it is asked to */
+        if (settings.current.paused || ms > 0) since = Date.now();
+        else if (Date.now() - since > 3000) {
+          if (tries < 2) return void mend();
           if (tick) clearInterval(tick);
+          p.pause();
           me.p = null;
-          me.speak = null;
-          void Speech.stop();
-          void bestVoice().then(() => {
-            if (!still()) return;
-            Speech.speak(said, { rate: settings.current.rate, language: 'en-US', useApplicationAudioSession: false });
-          });
-          return;
+          me.speak = speakNow;
+          return speakNow();
         }
         if (ms > 0) setNow(voiceAt(clip.timing, ms));
       }, 60);
@@ -326,6 +392,7 @@ export function SpokenCard({
       alive = false;
       if (tick) clearInterval(tick);
       hush();
+      leaveSoon();
     };
   }, [on, said, voice]);
   /* pause and play, the speed, and Play again, without loading the card again */
@@ -345,8 +412,6 @@ export function SpokenCard({
       else if (restart || !getListen().done) speak();
     }
   }, [on, paused, rate, again]);
-  /* leaving the lesson, or turning Listen off: the sound guide's own way again */
-  useEffect(() => (on ? () => void quiet() : undefined), [on]);
   /* the scripture reader's way, like Apple Music (the owner, November 15, 2026: "it like has a beautiful karaoke view. I'd like to copy
      the play view from that"): once the voice starts, the words still to come are faint, and each word comes up to full ink as it is
      said, so the eye rides just behind the voice. Only the color changes, so no line ever moves. */

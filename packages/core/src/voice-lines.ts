@@ -4,6 +4,7 @@ import { cardArt, lessonAs, lessonBeats } from './lesson-beats';
 import type { Habit } from './habit';
 import type { FaithVoice } from './faith';
 import { lessonById, type Lesson } from './lessons';
+import type { Settings } from './types';
 import { STORIES } from './lesson-stories';
 import { VOICE_ID, voiceKey, voiceSaid } from './voice';
 
@@ -15,6 +16,19 @@ const spoken = (L: Lesson, ci: number): boolean => {
   if (!art || art[0] === 'try') return false;
   return !(card.b || []).some((x) => x[0] === 'mylog' || x[0] === 'plan' || x[0] === 'words' || x[0] === 'mine');
 };
+
+/** what Listen says on each card of this lesson that is read aloud, in order: the lesson screen fetches these ahead, so the next
+    card's recording is on the phone before the person gets there */
+export function lessonSaid(L: Lesson, st: Settings | null, deep: boolean): string[] {
+  const beats = lessonBeats(L);
+  const out: string[] = [];
+  L.cards.forEach((card, ci) => {
+    if (!spoken(L, ci)) return;
+    const b = beats?.cards[ci] || {};
+    out.push(voiceSaid(b.h || card.h, deep && b.dx ? b.dx : b.p, st));
+  });
+  return out;
+}
 
 /** a card to record: its name, what is said, where its heading ends, and which lesson and card it is */
 export interface VoiceLine {

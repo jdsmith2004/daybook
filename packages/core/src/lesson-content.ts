@@ -9,4 +9,4 @@ export * from './lesson-beats';
 export * from './lesson-turns';
 export { STORIES, storyLesson, type StoryForm, type StoryPart } from './lesson-stories';
 export * from './practice';
-export { voiceLines, type VoiceLine } from './voice-lines';
+export { lessonSaid, voiceLines, type VoiceLine } from './voice-lines';

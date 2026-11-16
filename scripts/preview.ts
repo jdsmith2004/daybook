@@ -13,6 +13,8 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
+import { SITE_URL } from '../packages/core/src/supporter.ts';
+
 const root = fileURLToPath(new URL('..', import.meta.url));
 const app = join(root, 'apps/mobile');
 const build = join(app, 'dist-preview');
@@ -67,8 +69,20 @@ function find(path: string) {
   return join(build, 'index.html');
 }
 
-createServer((q, r) => {
-  const file = find(decodeURIComponent((q.url || '/').split('?')[0]));
+createServer(async (q, r) => {
+  const path = decodeURIComponent((q.url || '/').split('?')[0]);
+  /* Listen's recordings live only on the website (the Voice workflow), so they are fetched from there: Listen plays Kokoro here too */
+  if (/^\/voice\/[\w-]+\.(m4a|json)$/.test(path) && !existsSync(join(build, path))) {
+    try {
+      const up = await fetch(SITE_URL + path);
+      r.writeHead(up.status, { 'content-type': up.headers.get('content-type') || 'application/octet-stream', 'cache-control': 'public, max-age=86400' });
+      r.end(Buffer.from(await up.arrayBuffer()));
+    } catch {
+      r.writeHead(502).end();
+    }
+    return;
+  }
+  const file = find(path);
   const ext = extname(file);
   const headers: Record<string, string> = {
     'content-type': TYPES[ext] || 'application/octet-stream',

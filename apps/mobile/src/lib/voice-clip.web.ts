@@ -10,18 +10,46 @@ export interface Clip {
 
 const WAIT = 6000;
 
-/** the recording of a card, from this site, or null when there is none to be had */
-export async function getClip(key: string): Promise<Clip | null> {
+async function fetchClip(key: string): Promise<Clip | null> {
+  const ctl = new AbortController();
+  const id = setTimeout(() => ctl.abort(), WAIT);
   try {
-    const ctl = new AbortController();
-    const id = setTimeout(() => ctl.abort(), WAIT);
     const res = await fetch(voiceUrl('', key, 'json'), { signal: ctl.signal });
-    clearTimeout(id);
     if (!res.ok || !/json/.test(res.headers.get('content-type') || '')) return null;
     const timing = (await res.json()) as VoiceTiming;
     if (timing.key !== key || !Array.isArray(timing.w)) return null;
     return { uri: voiceUrl('', key, 'm4a'), timing };
-  } catch {
-    return null;
+  } finally {
+    clearTimeout(id);
   }
+}
+
+const got = new Map<string, Promise<Clip | null>>();
+
+/** the recording of a card, from this site, or null when there is none to be had; a failed answer is asked once more */
+export function getClip(key: string): Promise<Clip | null> {
+  const was = got.get(key);
+  if (was) return was;
+  const p = (async () => {
+    for (let n = 0; n < 2; n++) {
+      try {
+        const c = await fetchClip(key);
+        if (c) return c;
+      } catch {
+        /* tried again below */
+      }
+    }
+    return null;
+  })().then((c) => {
+    /* a card with no recording is asked again next time; one found is kept for the visit */
+    if (!c) got.delete(key);
+    return c;
+  });
+  got.set(key, p);
+  return p;
+}
+
+/** a recording that would not play: asked of the site afresh next time */
+export function forgetClip(key: string) {
+  got.delete(key);
 }

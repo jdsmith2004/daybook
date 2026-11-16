@@ -5,8 +5,9 @@
    mint for Matthew 5.
      0 the question: three paper cards lie face down, the three pulls still to come.
      1 the hold: press the sun down until the ring fills; it opens and sparkles, and the line that stands firm comes up.
-     2-4 the pulls: each one a lesson flip card. The front is what the pull says and the old move it is; a tap turns it over to the
-       sun side, the answer, as He answered it. The mark at the top fills as it lands.
+     2-4 the pulls, taught the way a lesson card teaches: what the pull says, then the scripture He answered it with, big, then what
+       it means right now. The pull's hot shape cools into the sun as the verse is read. No flip card (the owner, November 15,
+       2026: "scrap the flashcards ... focus heavily on the scriptures and how it applies to them right then").
      5 then it left: the three cards drift up and away, and the sun comes up where they were, with the sparkles for the angels.
      6 the heart: one mint heart, beating slowly.
      7 cast it: what is feeding it (one tap), then the one thing to do, shown as a shape; "I did it" throws the shape off the screen.
@@ -24,11 +25,11 @@ import { BigFlame } from '@/components/big-flame';
 import { BigOption, Link, Tiles } from '@/components/choices';
 import { Bubble } from '@/components/lesson-flame';
 import { Sparkles } from '@/components/reward-kit';
-import { MorphShape, SQUIGGLE, useClock, WavyLine, WavyRing } from '@/components/shapes';
+import { MorphShape, SQUIGGLE, useClock, WavyLine, WavyRing, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { Button, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { PAPER, PAPER_INK, PAPER_LIP, SUN_CARD, SUN_INK } from '@/lib/lesson-look';
+import { PAPER, PAPER_LIP, SUN_CARD } from '@/lib/lesson-look';
 import { NATIVE, SETTLE, useReducedMotion } from '@/lib/motion';
 import { useScripture } from '@/lib/scripture';
 import { useCareSettings } from '@/lib/store';
@@ -53,9 +54,8 @@ const WR_TIMED = [2, 3, 4, 5, 6, 8];
 export const wrSec = (text: string) => Math.max(4, Math.min(10, 2.5 + text.split(/\s+/).filter(Boolean).length * 0.25));
 /** the pull's own words, without the quote marks round them (the card draws one big mark of its own, as a lesson's card does) */
 const bare = (p: string) => p.replace(/^“|”$/g, '');
-/** the red of the card's big quote mark, the same as the lesson's turn card; the old move under the pull is in the same red */
+/** the red of the paper cards' big quote mark, the same as the lesson's turn card */
 const MARK = '#E8665A';
-const TRICK = '#C2412F';
 /** what each answer to "What is feeding it?" looks like in the middle, before it is thrown off */
 const CAST_ICON: Record<string, string> = { screen: 'phone', room: 'compass', alone: 'chat', unsure: 'wind' };
 
@@ -77,14 +77,10 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
   const timed = WR_TIMED.indexOf(pg) >= 0;
   const pull = pg >= 2 && pg <= 4 ? w.pulls[pg - 2] : null;
   const page = pg === 5 ? w.end : pg === 6 ? w.heart : pg === 7 ? w.cast : pg === 8 ? w.light : null;
-  /* a pull is a card turned like a lesson's: first what the pull says and the old move it is, then a tap answers it */
-  const [turned, setTurned] = useState(false);
-  const front = !!pull && !turned;
-  const stage = pg + (front ? 'f' : 'b');
+  const stage = String(pg);
+  /* a pull page holds the most words (the pull, the verse, what it means now), so it may stay a little longer */
   const stageSec = pull
-    ? front
-      ? Math.max(3, Math.min(6, 1.5 + (pull.pull + ' ' + pull.trick).split(/\s+/).length * 0.25))
-      : wrSec([pull.faced, pull.lead, pull.rest].join(' '))
+    ? Math.min(14, wrSec([pull.pull, pull.faced, pull.lead, pull.rest, pull.trick, pull.now || ''].join(' ')) + 2)
     : page
       ? wrSec([page.head, page.sub, page.lead, page.rest].join(' '))
       : 0;
@@ -98,11 +94,6 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
   const read = timed && stageSec && on ? Math.min(1, (Date.now() - startAt.current.at) / 1000 / stageSec) : 0;
   void tick;
   const onward = () => {
-    if (front) {
-      buzz('save');
-      return setTurned(true);
-    }
-    setTurned(false);
     if (pg < 8) go(pg + 1);
     else onDone();
   };
@@ -139,9 +130,9 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
   const tone = four ? c.sun2 : c.mint;
   const toneText = four ? c.sunText : c.mintText;
   const castDo = cast ? WRITTEN_CAST_DO[cast] : null;
-  /* the marks: the one now is wide, and a pull's mark fills once its card has turned */
+  /* the marks: the one now is wide and filled */
   const now = pull ? pg - 2 : four ? 2 : pg - 6;
-  const done = pull ? (turned ? pg - 1 : pg - 2) : four ? 3 : pg - 5;
+  const done = pull ? pg - 1 : four ? 3 : pg - 5;
   const verse = (
     <View style={s.verse} accessible accessibilityLabel={[card.lead, card.rest, card.ref].filter(Boolean).join(' ')}>
       <Text style={[s.verseT, { color: c.ink }]}>
@@ -161,7 +152,7 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
       <Steps n={3} now={now} done={done} color={tone} track={tone + '33'} />
       {pull ? (
         <View style={s.mid}>
-          <PullCard key={pg} p={pull} turned={turned} first={pg === 2} still={still} onPress={onward} />
+          <PullPage key={pg} p={pull} n={pg - 2} still={still} />
         </View>
       ) : (
         <>
@@ -248,7 +239,12 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
           />
         </View>
       ) : pg === 5 || pg === 8 ? null : (
-        <View style={s.line}>
+        <View style={[s.line, { gap: 8 }]}>
+          {pg === 2 ? (
+            <T v="label" style={s.c}>
+              {pull && pull.ref ? 'Read it out loud.' : 'Say it out loud.'}
+            </T>
+          ) : null}
           <WavyLine width={220} p={read} color={tone} track={tone + '33'} />
         </View>
       )}
@@ -256,55 +252,60 @@ export function WrittenMove({ on, onDone, level }: MoveProps) {
   );
 }
 
-/** a pull, as the lesson's flip card: warm paper and a little crooked with what the pull says, then turned over and landed straight,
-    sun yellow, with the answer. The card turns when the page tells it to (a tap anywhere, or its own time), so it has no state. */
-function PullCard({ p, turned, first, still, onPress }: { p: WrittenPull; turned: boolean; first: boolean; still: boolean; onPress: () => void }) {
-  const a = useRef(new Animated.Value(turned ? 1 : 0)).current;
-  const come = useRef(new Animated.Value(still ? 1 : 0)).current;
+/** the shape of each pull while it is hot: a want dressed as a need, a small first step, a promise of everything */
+const PULL_HOT: ShapeKind[] = ['softBoom', 'boom', 'puffy'];
+
+/** a pull, taught like a lesson card: what it says, then the scripture He answered it with, then what that means right now. The pull's
+    hot shape cools into the sun as the verse comes in: the answer takes the heat out of it. */
+function PullPage({ p, n, still }: { p: WrittenPull; n: number; still: boolean }) {
+  const c = useTheme();
+  const [cool, setCool] = useState(still);
   useEffect(() => {
     if (still) return;
-    Animated.spring(come, { toValue: 1, ...SETTLE, useNativeDriver: NATIVE }).start();
-  }, [come, still]);
-  useEffect(() => {
-    if (still) return a.setValue(turned ? 1 : 0);
-    Animated.timing(a, { toValue: turned ? 1 : 0, duration: 560, easing: Easing.inOut(Easing.cubic), useNativeDriver: NATIVE }).start();
-  }, [turned, a, still]);
-  const frontY = a.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
-  const backY = a.interpolate({ inputRange: [0, 1], outputRange: ['-180deg', '0deg'] });
-  /* the faces trade places at the edge, for Android, which does not hide a card's back side */
-  const frontOn = a.interpolate({ inputRange: [0, 0.5, 0.501, 1], outputRange: [1, 1, 0, 0] });
-  const backOn = a.interpolate({ inputRange: [0, 0.5, 0.501, 1], outputRange: [0, 0, 1, 1] });
-  /* it dips as it turns and lands straight, the lesson card's own move */
-  const lift = a.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0.94, 1] });
-  const tilt = a.interpolate({ inputRange: [0, 1], outputRange: ['-2.5deg', '0deg'] });
-  /* a new pull comes in from the right and settles, as the next lesson card does */
-  const inX = come.interpolate({ inputRange: [0, 1], outputRange: [60, 0] });
-  const said = !p.ref ? 'Say it out loud.' : 'Read it out loud.';
+    const t = setTimeout(() => {
+      setCool(true);
+      buzz('save');
+    }, 1300);
+    return () => clearTimeout(t);
+  }, [still]);
   return (
-    <Animated.View style={[s.cardRoom, { opacity: come, transform: [{ translateX: inX }] }]}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={turned ? [p.faced, p.lead, p.rest, p.ref].filter(Boolean).join(' ') : 'The pull says: ' + bare(p.pull) + ' ' + p.trick}
-        accessibilityHint={turned ? 'Goes on' : 'Answers it'}
-        accessibilityLiveRegion="polite"
-        onPress={onPress}>
-        <Animated.View style={{ transform: [{ scale: lift }, { rotate: tilt }] }}>
-          <Animated.View style={[s.card, s.front, { opacity: frontOn, transform: [{ perspective: 1000 }, { rotateY: frontY }] }]}>
-            <Text style={s.mark}>“</Text>
-            <Text style={s.pullT}>{bare(p.pull)}</Text>
-            <Text style={s.trickT}>{p.trick}</Text>
-            <Text style={s.hint}>Tap to answer it</Text>
-          </Animated.View>
-          <Animated.View style={[s.card, s.back, { opacity: backOn, transform: [{ perspective: 1000 }, { rotateY: backY }] }]}>
-            <Text style={s.facedT}>{p.faced}</Text>
-            <Text style={s.answerLead}>{p.lead}</Text>
-            <Text style={s.answerT}>{p.rest}</Text>
-            {p.ref ? <Text style={s.refT}>{p.ref}</Text> : null}
-            {first ? <Text style={[s.hint, { color: SUN_INK }]}>{said}</Text> : null}
-          </Animated.View>
-        </Animated.View>
-      </Pressable>
-    </Animated.View>
+    <View
+      style={s.pull}
+      accessible
+      accessibilityLiveRegion="polite"
+      accessibilityLabel={[bare(p.pull), p.faced, p.lead, p.rest, p.ref, p.trick, p.now].filter(Boolean).join(' ')}>
+      <Appear by={6} duration={260}>
+        <Text style={[s.pullT, { color: c.ink }]}>{bare(p.pull)}</Text>
+      </Appear>
+      <MorphShape kind={cool ? 'sunny' : PULL_HOT[n] || 'softBoom'} size={120} color={cool ? c.sun : c.coral + '55'}>
+        {cool ? (
+          <View>
+            <Icon name="shield" size={46} color={c.onSun} />
+          </View>
+        ) : (
+          <Text style={[s.pullMark, { color: c.coral }]}>“</Text>
+        )}
+      </MorphShape>
+      <Appear by={8} delay={still ? 0 : 500} duration={420} style={s.verse}>
+        <T v="small" tone="muted" style={s.c}>
+          {p.faced}
+        </T>
+        <Text style={[s.verseT, { color: c.ink }]}>
+          <Text style={[s.verseLead, { color: c.sunText }]}>{p.lead}</Text> {p.rest}
+        </Text>
+        {p.ref ? (
+          <T v="small" tone="sunText" style={s.c}>
+            {p.ref}
+          </T>
+        ) : null}
+      </Appear>
+      <Appear by={8} delay={still ? 0 : 1400} duration={420} style={s.verse}>
+        <Text style={[s.nowT, { color: c.ink }]}>
+          <Text style={[s.trickT, { color: c.sunText }]}>{p.trick}</Text>
+          {p.now ? ' ' + p.now : ''}
+        </Text>
+      </Appear>
+    </View>
   );
 }
 
@@ -549,8 +550,6 @@ const s = StyleSheet.create({
   line: { alignItems: 'center', minHeight: 36, justifyContent: 'center' },
   quiet: { alignSelf: 'center', minHeight: 36, justifyContent: 'center' },
   center: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
-  /* the flip card, the lesson's own (lesson-flash.tsx) */
-  cardRoom: { alignSelf: 'stretch', paddingHorizontal: 4 },
   card: {
     borderRadius: 20,
     paddingHorizontal: 24,
@@ -561,16 +560,11 @@ const s = StyleSheet.create({
     gap: 12,
     backfaceVisibility: 'hidden',
   },
-  front: { backgroundColor: PAPER, shadowColor: PAPER_LIP, shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 6 } },
-  back: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: SUN_CARD },
-  mark: { fontFamily: font.display, fontSize: 64, lineHeight: 72, marginTop: -8, marginBottom: -36, color: MARK },
-  pullT: { fontFamily: font.display, fontSize: 28, lineHeight: 34, color: PAPER_INK },
-  trickT: { fontFamily: font.bodyBold, fontSize: 17, lineHeight: 23, color: TRICK },
-  hint: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: '#8A7FB0', textAlign: 'center', marginTop: 6 },
-  facedT: { fontFamily: font.bodySemi, fontSize: 15, lineHeight: 20, color: SUN_INK, opacity: 0.75 },
-  answerT: { fontFamily: font.display, fontSize: 22, lineHeight: 30, color: SUN_INK, marginTop: -6 },
-  answerLead: { fontFamily: font.displayBold, fontSize: 28, lineHeight: 34, color: SUN_INK },
-  refT: { fontFamily: font.bodyBold, fontSize: 13, lineHeight: 18, color: SUN_INK, opacity: 0.75 },
+  pull: { alignSelf: 'stretch', alignItems: 'center', gap: 16 },
+  pullT: { fontFamily: font.displayBold, fontSize: 28, lineHeight: 34, textAlign: 'center', paddingHorizontal: 8 },
+  pullMark: { fontFamily: font.display, fontSize: 64, lineHeight: 72, marginTop: 22 },
+  nowT: { fontFamily: font.display, fontSize: 17, lineHeight: 24, textAlign: 'center' },
+  trickT: { fontFamily: font.displayBold },
   /* the three face-down cards, and the answered ones leaving */
   fan: { width: 250, height: 190 },
   mini: {

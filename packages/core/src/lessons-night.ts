@@ -10,66 +10,16 @@
    the filter lesson has no meaning for alcohol, and the alcohol version of l58 names that medicines exist. The others hold for
    every habit as written.
 
-   Nothing here imports a value, so lesson-turns.ts, lesson-habit.ts, lessons-more.ts and practice.ts can all read it. */
+   Nothing here imports a value but its sources (lesson-sources.ts), so lesson-turns.ts, lesson-habit.ts, lessons-more.ts and
+   practice.ts can all read it. */
 import type { Go, Lesson } from './lessons';
 import type { Turn } from './lesson-turns';
 import type { OtherHabit, Part } from './lesson-habit';
 import type { PItem, PStep } from './practice';
+import { SRC_NIGHT } from './lesson-sources';
 
-type Src = [string, string];
-/** the sources, added to SRC (lessons-more.ts SRC_MORE) */
-export const SRC_NIGHT = {
-  nordgren09: [
-    'Nordgren, van Harreveld & van der Pligt (2009): the restraint bias, how the illusion of self-restraint promotes impulsive behavior, Psychological Science',
-    'https://doi.org/10.1111/j.1467-9280.2009.02468.x',
-  ],
-  pilcher15: [
-    'Pilcher, Morris, Donnelly & Feigl (2015): interactions between sleep habits and self-control, Frontiers in Human Neuroscience',
-    'https://doi.org/10.3389/fnhum.2015.00284',
-  ],
-  gollwitzer06: [
-    'Gollwitzer & Sheeran (2006): implementation intentions and goal achievement, a meta-analysis of effects and processes, Advances in Experimental Social Psychology',
-    'https://doi.org/10.1016/S0065-2601(06)38002-1',
-  ],
-  exelmans16: [
-    'Exelmans & Van den Bulck (2016): bedtime mobile phone use and sleep in adults, Social Science & Medicine',
-    'https://doi.org/10.1016/j.socscimed.2015.11.037',
-  ],
-  ward17: [
-    'Ward, Duke, Gneezy & Bos (2017): brain drain, the mere presence of one’s own smartphone reduces available cognitive capacity, Journal of the Association for Consumer Research',
-    'https://doi.org/10.1086/691462',
-  ],
-  hofmann12: [
-    'Hofmann, Baumeister, Förster & Vohs (2012): everyday temptations, an experience sampling study of desire, conflict, and self-control, Journal of Personality and Social Psychology',
-    'https://doi.org/10.1037/a0026545',
-  ],
-  duckworth16: [
-    'Duckworth, Gendler & Gross (2016): situational strategies for self-control, Perspectives on Psychological Science',
-    'https://doi.org/10.1177/1745691615623247',
-  ],
-  gainsbury14: [
-    'Gainsbury (2014): review of self-exclusion from gambling venues as an intervention for problem gambling, Journal of Gambling Studies',
-    'https://doi.org/10.1007/s10899-013-9362-0',
-  ],
-  screentime: ['Apple: use a Screen Time passcode on iPhone', 'https://support.apple.com/en-us/126533'],
-  harkin16: [
-    'Harkin et al. (2016): does monitoring goal progress promote goal attainment? A meta-analysis of the experimental evidence, Psychological Bulletin',
-    'https://doi.org/10.1037/bul0000025',
-  ],
-  litt09: [
-    'Litt, Kadden, Kabela-Cormier & Petry (2009): changing network support for drinking, network support project 2-year follow-up, Journal of Consulting and Clinical Psychology',
-    'https://doi.org/10.1037/a0015252',
-  ],
-  freeman17: [
-    'Freeman et al. (2017): the effects of improving sleep on mental health (OASIS), a randomised controlled trial with mediation analysis, The Lancet Psychiatry',
-    'https://doi.org/10.1016/S2215-0366(17)30328-0',
-  ],
-  nice22: ['NICE (2022): depression in adults, treatment and management (guideline NG222)', 'https://www.nice.org.uk/guidance/ng222'],
-  niaaa: [
-    'NIAAA: treatment for alcohol problems, finding and getting help (the medicines approved for alcohol use disorder)',
-    'https://www.niaaa.nih.gov/publications/brochures-and-fact-sheets/treatment-alcohol-problems-finding-and-getting-help',
-  ],
-} satisfies Record<string, Src>;
+export { SRC_NIGHT };
+
 const S = SRC_NIGHT;
 
 /** each lesson's section (lessons.ts LUNITS) and care: true for the one that shows the 988 line */

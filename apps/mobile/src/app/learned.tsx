@@ -1,6 +1,7 @@
 /* What I have learned: each finished lesson's takeaway with my notes and picks, what I wrote at the checkpoints, and "Copy it
    all as text". It lived in My plan as the Learned part until November 2026; it sits with Learn now, where it is made. */
-import { LCHECKS, lcheckNo, lessonCount, lessonNo, lessonTo, lessonWalk, LESSONS, lessonsDone, lwriteOf, playbookText } from '@daybook/core';
+import { LCHECKS, lcheckNo, lessonCount, lessonNo, lessonWalk, LESSONS, lessonsDone, lwriteOf, playbookText } from '@daybook/core';
+import { lessonTo } from '@daybook/core/lesson-content';
 import { Redirect, router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 

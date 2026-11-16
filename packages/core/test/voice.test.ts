@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { VOICES, voiceAt, voiceKey, voiceLines, voiceSaid, voiceUrl } from '../src/voice';
+import { VOICES, voiceAt, voiceKey, voiceSaid, voiceUrl } from '../src/voice';
+import { voiceLines } from '../src/voice-lines';
 
 describe('Listen recordings (voice.ts)', () => {
   it('names a recording by its voice and words, the same every time', () => {

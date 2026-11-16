@@ -37,8 +37,8 @@ import {
   urTags,
   urTried,
   weekGame,
-  lessonTo,
 } from '@daybook/core';
+import { lessonTo } from '@daybook/core/lesson-content';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View, type ScrollViewInstance } from 'react-native';

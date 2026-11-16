@@ -6,7 +6,7 @@
    half: tense for a few seconds and release for longer, the rhythm of progressive muscle relaxation (Bernstein and Borkovec),
    so the body notices the difference and the move ends calm, not wound up.
 
-   The rhythm: a moment to get ready, then for each part a hold of seven seconds (the last three counted out loud, so the end
+   The rhythm: a breath in to get ready, then for each part a hold of seven seconds (the last three counted out loud, so the end
    is never a surprise) and a release of eight. It goes from small to big and ends on the whole body, the biggest letting go.
    In a seat it is small enough that no one has to notice; on your feet it is bigger (a wall push, a low squat). The choice
    is kept on the phone (sos.ts moveSit) and shared with the Move tool. */
@@ -67,7 +67,7 @@ export type SqueezeNow = {
 export function squeezeAt(t: number): SqueezeNow {
   'worklet';
   const x = Math.max(0, t);
-  if (x < SQZ_READY) return { kind: 'ready', i: 0, s: x, dur: SQZ_READY, left: 0, words: 'Get ready', ws: x };
+  if (x < SQZ_READY) return { kind: 'ready', i: 0, s: x, dur: SQZ_READY, left: 0, words: 'Breathe in', ws: x };
   let at = SQZ_READY;
   for (let i = 0; i < 4; i++) {
     if (x < at + SQZ_HOLD) {

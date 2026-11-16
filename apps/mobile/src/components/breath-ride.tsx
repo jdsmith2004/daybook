@@ -20,12 +20,12 @@ import { setFieldPref, useFieldPref } from '@/lib/prefs';
 import { font, useTheme } from '@/lib/theme';
 
 /** seconds to settle when the pattern has just been changed */
-const SETTLE_AGAIN = 2;
+const SETTLE_AGAIN = 3;
 
 export function BreathRide({
   on = true,
   onDone,
-  settle = 3,
+  settle = 7,
   endless,
   pattern,
   freeze,

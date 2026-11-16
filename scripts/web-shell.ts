@@ -30,18 +30,31 @@ const all = files(dir).map((f) => '/' + relative(dir, f).split(sep).join('/'));
 const layout = readFileSync(join(import.meta.dirname, '../apps/mobile/src/app/_layout.tsx'), 'utf8');
 const wanted = new Set([...layout.matchAll(/^import \{ (\w+) \} from '@expo-google-fonts\//gm)].map((m) => m[1]));
 const fonts = all.filter((f) => f.startsWith('/assets/') && f.endsWith('.ttf') && wanted.has(f.split('/').pop()!.split('.')[0]));
-/* the code every screen needs: the root layout's own chunk and everything it needs, as listed in the entry's map of chunks (Expo's
-   granular chunks). Without this the page asks for them only once the entry (about 1.3 MB) has arrived and run, one wait after
-   another; asked for here, they come down together with it. The root layout is the chunk holding its error page's title. */
+/* The code a screen needs, read from the entry: Expo Router's table of routes names each screen's module ("./(tabs)/index.tsx":
+   ...d[N]...), and the entry's map of chunks (d.paths, Expo's granular chunks) lists the files each module needs. Without these the
+   page asks for a screen's files only once the entry (about 1.3 MB) has arrived and run, one wait after another. */
 const named = [...html.matchAll(/src="([^"]+\.js)"/g)].map((m) => m[1]);
 const entry = named.find((f) => /\/index-[0-9a-f]+\.js$/.test(f));
-const web = join(dir, '_expo/static/js/web');
-const MARK = 'Your log could not be opened';
-const rootChunk = readdirSync(web).find((f) => /^_layout-[0-9a-f]+\.js$/.test(f) && readFileSync(join(web, f), 'utf8').includes(MARK));
-const map = entry ? readFileSync(join(dir, entry), 'utf8').match(/"paths":\{(.*?)\}\}/s)?.[1] : undefined;
-const lists = map ? [...map.matchAll(/"\d+":\[([^\]]*)\]/g)].map((m) => [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1])) : [];
-const early = (rootChunk && lists.find((l) => l[0]?.endsWith('/' + rootChunk))) || [];
-if (!early.length) console.warn("web-shell: the root layout's chunks were not found, so they are not asked for early (the page still works)");
+const code = entry ? readFileSync(join(dir, entry), 'utf8') : '';
+function routeFiles(route: string): string[] {
+  const at = code.indexOf(JSON.stringify(route) + ':{');
+  if (at < 0) return [];
+  const n = code.slice(at, at + 200).match(/d\[(\d+)\],d\.paths/)?.[1];
+  /* the module's dependency map, which holds both its numbered dependencies and the paths, comes after the route table */
+  const deps = code.slice(at).match(/\{"0":\d+(?:,"\d+":\d+)*,"paths":\{.*?\}\}/s)?.[0];
+  if (!n || !deps) return [];
+  const id = deps.match(new RegExp(`"${n}":(\\d+)`))?.[1];
+  const list = id && deps.match(new RegExp(`"${id}":\\[([^\\]]*)\\]`))?.[1];
+  return list ? [...list.matchAll(/"([^"]+)"/g)].map((x) => x[1]) : [];
+}
+/* every screen needs the root layout */
+const early = routeFiles('./_layout.tsx');
+if (!early.length) console.warn("web-shell: the root layout's files were not found, so they are not asked for early (the page still works)");
+/* Today needs its tabs and its own page too, asked for only when the page opens on Today: the opening scene flies the flame to its
+   place on Today's sky, and when Today's code comes late the scene gives up and only fades (the owner, November 15, 2026: "the logo
+   never like moves or does the thing") */
+const today = [...new Set([...routeFiles('./(tabs)/_layout.tsx'), ...routeFiles('./(tabs)/index.tsx')])].filter((f) => !early.includes(f));
+if (!today.length) console.warn("web-shell: Today's files were not found, so they are not asked for early on Today");
 /* every other chunk is fetched later, once the app has drawn and the phone is idle */
 const now = new Set([...named, ...early]);
 const later = all.filter((f) => f.startsWith('/_expo/static/js/web/') && f.endsWith('.js') && !now.has(f));
@@ -49,6 +62,7 @@ const later = all.filter((f) => f.startsWith('/_expo/static/js/web/') && f.endsW
 const half = LAUNCH_W / 2;
 const head = [
   ...early.map((f) => `<link rel="preload" href="${f}" as="script">`),
+  `<script>if(location.pathname.replace(/\\/+$/,'')===''){${JSON.stringify(today)}.forEach(function(u){var l=document.createElement('link');l.rel='preload';l.as='script';l.href=u;document.head.appendChild(l)})}</script>`,
   ...fonts.map((f) => `<link rel="preload" href="${f}" as="font" type="font/ttf" crossorigin>`),
   `<style>#shell{position:fixed;inset:0;background:${LAUNCH_BG};z-index:1}` +
     `#shell svg{position:absolute;left:50%;top:50%;width:${LAUNCH_W}px;height:${LAUNCH_W}px;margin:-${half}px 0 0 -${half}px}` +
@@ -68,5 +82,5 @@ if (!/<div id="root"><\/div>/.test(html)) throw new Error('web-shell: no empty #
 html = html.replace('<div id="root"></div>', '<div id="root"></div>' + shell + fetchLater);
 writeFileSync(page, html);
 console.log(
-  `web-shell: the first picture, ${early.length} chunks every screen needs asked for at once, ${fonts.length} fonts, ${later.length} files fetched once drawn`,
+  `web-shell: the first picture, ${early.length} files every screen needs and ${today.length} more on Today asked for at once, ${fonts.length} fonts, ${later.length} files fetched once drawn`,
 );

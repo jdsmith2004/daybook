@@ -34,7 +34,7 @@ export default function BreathePreview() {
           <Icon name="back" size={22} color={nightInk.muted} />
         </Pressable>
         <NightContext.Provider value>
-          <BreathRide key={run} endless settle={5} pattern={p ? fieldId(p) : undefined} freeze={freeze} />
+          <BreathRide key={run} endless pattern={p ? fieldId(p) : undefined} freeze={freeze} />
         </NightContext.Provider>
         <Pressable
           onPress={() => setRun((n) => n + 1)}

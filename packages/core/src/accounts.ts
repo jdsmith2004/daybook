@@ -26,6 +26,8 @@ export function accountAsk(days: Days, st: Settings, tk: DayKey, _level: number,
   const no = isKey(st.acctNo) ? (st.acctNo as DayKey) : null;
   if (no && diffDays(tk, no) < ACCT_WAIT) return null;
   if (slipNear(days, tk)) return null;
+  /* "How long does it usually last?" came today (lasts-ask.ts): one ask a day */
+  if (st.lastsAt === tk) return null;
   /* the day the flame was lit in full is that moment's: the card waits a day (core ignite.ts litToday) */
   if (litToday(days, st, tk)) return null;
   return diffDays(tk, st.start) >= ACCT_DAYS ? 'week' : null;

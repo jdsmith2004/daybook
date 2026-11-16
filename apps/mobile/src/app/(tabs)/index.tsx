@@ -11,6 +11,9 @@
    first time it is earned, and its celebration opens. */
 import {
   accountAsk,
+  lastsAskDue,
+  lastsAskFor,
+  lastsShown,
   accountNudge,
   litToday,
   awayDue,
@@ -80,6 +83,8 @@ import { buzz } from '@/lib/feel';
 import { markTourDone, markWalkOpen, takeTour, tourDue, useSpot, walkLocked } from '@/lib/tour';
 import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
+import { whatsNewPending } from '@/lib/whats-new';
+import { track } from '@/lib/events';
 import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
 import { DayFeelPop } from '@/components/day-feel-pop';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
@@ -101,6 +106,8 @@ const LAUNCH = Date.now();
 
 /** the day the morning set was last opened from Today in this run of the app */
 let morningOpened = '';
+/** the one-time asks wait this long after a sheet or What's new opened, so one open never carries two */
+const LASTS_AFTER_SHEET = 30 * 60_000;
 
 export default function Today() {
   const c = useTheme();
@@ -358,6 +365,44 @@ export default function Today() {
     }, 900);
     return () => clearTimeout(t);
   }, [walkNow, walkOpen]);
+  /* "How long does it usually last?" (core lasts-ask.ts, app/lasts.tsx): once, for a person who set up before setup asked it, so Time
+     given back can count for them. Over Today only, after a settle, when nothing else is opening or waiting (What's new first, then
+     Welcome back, graduation, the morning, the tour, Walk it through, a celebration), never in the quiet hours, and never on an open
+     whose Today already shows the account card or the tip card: one ask at a time. Marked as it opens, so it comes only once. */
+  const lastsNow =
+    ready &&
+    !!st &&
+    !!g &&
+    !syncing &&
+    focused &&
+    !quiet &&
+    !backNow &&
+    !gradNow &&
+    !morningNow &&
+    !celebrating &&
+    !miNow &&
+    !tourWaits &&
+    !touring &&
+    !walkNow &&
+    !walkOpen &&
+    !sos.ur &&
+    !sos.timer &&
+    !accountAsk(snap.days, st, tk, g.level.n, account) &&
+    !tipAsk(snap.days, st, tk, new Date(now).getHours(), null, TIP_URL, { now, sos: careLastAt(sos.mem) }) &&
+    lastsAskDue(snap.days, st, tk, { now, sos: careLastAt(sos.mem) });
+  useEffect(() => {
+    if (!lastsNow) return;
+    const t = setTimeout(() => {
+      if (!focusRef.current || sheetOnTop() || whatsNewPending() || Date.now() - celebrationSheetAt() < LASTS_AFTER_SHEET) return;
+      const cur = snap.settings;
+      if (!cur || !lastsAskFor(cur)) return;
+      apply(lastsShown(cur, tk));
+      track('ask', { what: 'lasts' });
+      router.push('/lasts');
+    }, 1200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastsNow, tk]);
   /* the sky runs under the clock: the clock takes the sky's ink until the page has scrolled past it */
   const [past, setPast] = useState(false);
   /* the line under Your day sits behind the iPhone's glass tab bar until the page moves, so it waits until then */

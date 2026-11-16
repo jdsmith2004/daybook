@@ -378,6 +378,8 @@ export const obPages = (a: SetupAnswers, env: ObEnv = {}) => OB_PAGES.filter((pg
 export const obAskCount = (a: SetupAnswers, env: ObEnv = {}) => obPages(a, env).filter((p) => p.k === 'tiles' || p.k === 'multi').length;
 /** a page in the words of the habit chosen: the questions name it, and for another habit the first question carries the
     doctor line (habit.ts habitMedical) */
+/** the length question in a habit's words, as setup asks it (for the one-time ask of people who set up without it, lasts-ask.ts) */
+export const obMinsPage = (h: Habit): ObPage => obPageIn(OB_PAGES.find((pg) => pg.id === 'mins')!, h);
 function obPageIn(pg: ObPage, h: Habit): ObPage {
   if (pg.id === 'mins') return { ...pg, h: OB_MINS_H[h], list: h === 'alcohol' || h === 'gambling' ? OB_MINS4_LONG : OB_MINS4 };
   if (h === 'porn' || !pg.h) return pg;

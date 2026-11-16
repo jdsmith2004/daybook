@@ -159,7 +159,7 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   >
   > Opening Daybook is one smooth motion: your flame wakes and flies to Today, and there it blinks and hops when you tap it.
   >
-  > Also: setup asks how long an urge usually lasts, so Time given back shows from the first week; reminders for every habit
+  > Also: setup asks how long it usually lasts, and people who set up before ask it once, so Time given back shows for everyone who answers; reminders for every habit
   > you set up; and the website opens much faster.
 
 - **What's New** for 1.3.4 (as submitted; 1.3.3 never went live, so it covered both):

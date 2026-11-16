@@ -24,6 +24,11 @@ const SETTLE = 400;
 
 export const appVersion = () => String(Constants.expoConfig?.version || '');
 
+/** What's new is still to come on this run of the app (due, or waiting for a calmer open): the one-time asks on Today wait for it,
+    so they never land on the same open (core lasts-ask.ts) */
+let pending = true;
+export const whatsNewPending = () => pending;
+
 /** what the page shows: kept here while it is open */
 let showing: NewItem[] = [];
 export const whatsNewItems = () => showing;
@@ -63,6 +68,7 @@ export function useWhatsNew() {
     !ready || seen === undefined
       ? null
       : whatsNew(seen, ver, { st, days: snap.days, now, sos: careLastAt(sos.mem) ?? null, back, busy, ios: Platform.OS === 'ios' });
+  pending = step == null || step.k === 'show' || step.k === 'wait';
   const late = useRef<() => boolean>(() => false);
   late.current = () => Date.now() - openAt > WINDOW || celebrating || sheetOnTop();
 

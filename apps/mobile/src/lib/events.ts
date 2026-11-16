@@ -188,7 +188,7 @@ export function routeOf(path: string): string {
       .split('?')[0]
       .split('/')
       .filter((x) => x && !x.startsWith('('))[0] || 'today';
-  const name = first === 'sos-door' ? 'sos' : first === 'lwrite' ? 'lesson' : first;
+  const name = first === 'sos-door' ? 'sos' : first === 'lwrite' ? 'lesson' : first.startsWith('friend-') ? 'friend' : first;
   return (EV_ROUTES as readonly string[]).includes(name) ? name : 'other';
 }
 /** in the root layout: each screen opened, and the one before it left with how long it was on */

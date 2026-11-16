@@ -697,6 +697,7 @@ const ONCE = [
   'toldStart',
   'likeAsk',
   'likeAt',
+  'lastsAt',
   'acctNo',
   'acctNudge',
   'tipAsk',

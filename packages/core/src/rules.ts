@@ -73,6 +73,7 @@ export * from './support';
 export * from './supporter';
 export * from './friends';
 export * from './like';
+export * from './lasts-ask';
 export * from './nudges';
 export * from './notify';
 export * from './cognito';

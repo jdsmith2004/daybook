@@ -281,6 +281,8 @@ export interface Settings {
   likeAsk?: { a: 'yes' | 'no'; d: DayKey } | null;
   /** the day "Do you like Daybook so far?" last came (see like.ts). Optional, so older records need no change. */
   likeAt?: DayKey | null;
+  /** the day "How long does it usually last?" was asked of someone who set up without it (lasts-ask.ts): asked once. Optional. */
+  lastsAt?: DayKey | null;
   /** "How much do you see yourself as someone free of this?", 0 to 10, once a month, oldest first (north.ts). Synced with the
       rest. Optional, so older records need no change. */
   free?: { d: DayKey; s: number }[];

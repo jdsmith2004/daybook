@@ -48,7 +48,7 @@ export function likeLast(st: Settings): DayKey | null {
 }
 
 /** another ask came today: the tip card or a tip on a moment, or the account card was answered */
-const askedToday = (st: Settings, tk: DayKey): boolean => st.tipAsk === tk || st.tipMo === tk || st.acctNo === tk || st.acctNudge === tk;
+const askedToday = (st: Settings, tk: DayKey): boolean => st.tipAsk === tk || st.tipMo === tk || st.acctNo === tk || st.acctNudge === tk || st.lastsAt === tk;
 
 /** whether this good moment asks "Do you like Daybook so far?" */
 export function likeAskDue(days: Days, st: Settings | null, tk: DayKey, near: LikeNear): boolean {

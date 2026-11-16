@@ -394,6 +394,7 @@ function Shell() {
             'future',
             'pause',
             'morning',
+            'lasts',
             'unlock',
             'day-list',
             'ignite',

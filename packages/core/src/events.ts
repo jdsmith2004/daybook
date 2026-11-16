@@ -144,6 +144,9 @@ export const EV_ROUTES = [
   'privacy',
   'help',
   'whats-new',
+  'lasts',
+  'friends',
+  'friend',
   'setup',
   'pause',
   'trail',
@@ -227,6 +230,8 @@ export const EV_PROPS: Record<string, Prop> = {
     'spark',
     'warm',
     'proud',
+    /* "How long does it usually last?", asked once of people who set up without it (lasts-ask.ts) */
+    'lasts',
     'with',
     'live',
     'daily',

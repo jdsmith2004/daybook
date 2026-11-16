@@ -166,6 +166,12 @@ log in"; notes "can't overwhelm them ... [but] could replace other notifications
   day per person, one about each friend, none from 10 PM to 8 AM. Chosen when the friend is added (a switch on Add a friend and on the
   code screen) and changed on the friend's page: as it happens, once a day (the old daily report), or off. A friend heard as it
   happens has no daily report too: the live note replaces it.
+- **Fifth pass, the look (the owner: "Close. Keep working on it ... my main issue is just design"):** a Sonnet critic held the page
+  against Today and Milestones, and a Sonnet research pass looked at Duolingo, Strava, Apple Fitness and How We Feel
+  (`friends-research-visual.md` in the side-session notes). Now three masses: the sky (both flames big on their own hills, one warm
+  glow, the streak big between "You" and "Sam" with its seven marks, the flames leaning together on a day both were in), Today's own
+  bright card for the one thing to do, then the week as marks and one quiet list (the community is a row with Pre-join). The friend
+  page is settings only.
 - **Not built:** a friend's note does not yet cancel Daybook's own lesson reminder for that day. That needs the server to send the
   reminders (a phone cannot change its scheduled notes while the app is closed). Worth doing if live notes prove to pull people in.
 - **Needs a store build to work on a phone:** the app asks for the push token in JS that ships with the next TestFlight build from

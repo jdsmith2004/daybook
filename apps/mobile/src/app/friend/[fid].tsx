@@ -2,7 +2,7 @@
    at most two notes a day; once a day at the hour they picked; or not at all: the owner, November 15, 2026: "we can't overwhelm them
    with notifications"), the spark to send them (one a day; no chat), and at the bottom, quietly, Remove and Block and report (Apple
    Guideline 1.2). Removing is quiet both ways: the other person is not told. */
-import { friendToday, reportAt, REPORT_WHY, togetherNow, type Hear, type ReportWhy } from '@daybook/core';
+import { reportAt, REPORT_WHY, togetherNow, type Hear, type ReportWhy } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -14,7 +14,7 @@ import { LinkText } from '@/components/today';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
-import { FriendWeek, Spark } from '@/components/friends-art';
+import { Spark } from '@/components/friends-art';
 import { registerPush, useFriendsReady } from '@/lib/friends';
 import { useStore } from '@/lib/store';
 import { sendFeedback } from '@/lib/pulse';
@@ -43,7 +43,6 @@ export default function Friend() {
     );
 
   const sentToday = !!f.sent && Date.now() - f.sent < 20 * 3600_000;
-  const today = friendToday(f.vals, tk);
   const tg = togetherNow(f.together, tk);
   const hear: Hear = hearing || f.hear || 'live';
   const send = async () => {
@@ -97,8 +96,6 @@ export default function Friend() {
           </T>
         </View>
 
-        <FriendWeek vals={f.vals} today={today} />
-
         <View style={{ gap: 8 }}>
           <T v="label">Notes about {f.name}</T>
           <View style={{ gap: 8 }} accessibilityRole="radiogroup">
@@ -114,11 +111,7 @@ export default function Friend() {
                 accessibilityRole="radio"
                 accessibilityState={{ checked: hear === k }}
                 onPress={() => pickHear(k)}
-                style={({ pressed }) => [
-                  s.opt,
-                  { backgroundColor: hear === k ? c.sunSoft : c.surface, borderColor: hear === k ? c.sun2 : 'transparent' },
-                  pressed && { opacity: 0.85 },
-                ]}>
+                style={({ pressed }) => [s.opt, { backgroundColor: hear === k ? c.sunSoft : c.surface }, pressed && { opacity: 0.85 }]}>
                 <View style={{ flex: 1, gap: 2 }}>
                   <T v="label" style={{ color: hear === k ? c.sunText : c.ink }}>
                     {label}
@@ -194,7 +187,7 @@ export default function Friend() {
 
 const s = StyleSheet.create({
   top: { alignItems: 'center', gap: 4 },
-  opt: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12, borderWidth: 1.5 },
+  opt: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12 },
   sent: { flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'center' },
   cheer: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, borderRadius: 20, paddingHorizontal: 16, borderWidth: 1.5 },
   quiet: { alignItems: 'center', gap: 4, paddingTop: 8 },

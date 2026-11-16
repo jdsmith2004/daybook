@@ -1,20 +1,19 @@
 /* Squeeze, the SOS move (core ride.ts id 'move'; the rules and words are core squeeze.ts): four parts of the body, each
-   squeezed hard for seven seconds and let go for eight, in a seat or on your feet. The words say what to squeeze at the top,
+   squeezed hard for seven seconds and let go for eight, small enough for a seat. The words say what to squeeze at the top,
    the figure in the middle (components/squeeze-field) pulls into a hot knot with you and opens from the middle when you let
-   go, and one quiet switch low on the screen picks seat or feet. It is its own file so the moves can be redesigned apart
+   go. It is its own file so the moves can be redesigned apart
    (moves.tsx keeps the list of moves). */
-import { SQZ_HOLD, SQZ_LAST_REST, SQZ_READY, SQZ_REST, squeezeAt, sqzParts } from '@daybook/core';
+import { SQZ_HOLD, SQZ_LAST_REST, SQZ_READY, SQZ_REST, squeezeAt, SQZ_PARTS } from '@daybook/core';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef } from 'react';
-import { AccessibilityInfo, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Platform, StyleSheet, View } from 'react-native';
 
 import { Appear } from '@/components/appear';
 import { useSeconds, useStartWhen } from '@/components/orb';
 import { SqueezeField } from '@/components/squeeze-field';
 import { Text } from '@/components/text';
-import { Icon, T } from '@/components/ui';
+import { T } from '@/components/ui';
 import { buzz, knock } from '@/lib/feel';
-import { useSos } from '@/lib/sos';
 import { font, useTheme } from '@/lib/theme';
 import type { MoveProps } from './moves';
 
@@ -42,11 +41,7 @@ function useSqueezeTouch(start: number | null, on: boolean) {
 
 export function SqueezeMove({ on, onDone }: MoveProps) {
   const c = useTheme();
-  const sos = useSos();
-  /* in a seat (at work, in a car) or free to get up; kept on this phone and shared with the Move tool. A seat is the start,
-     because it works anywhere. */
-  const sit = sos.mem.moveSit !== false;
-  const parts = sqzParts(sit);
+  const parts = SQZ_PARTS;
   const t0 = useStartWhen(on);
   const sec = useSeconds(t0, on);
   const n = squeezeAt(sec);
@@ -103,24 +98,11 @@ export function SqueezeMove({ on, onDone }: MoveProps) {
           return <View key={j} style={[s.step, { backgroundColor: j <= now ? c.coral : c.coral + '33', flexGrow: j === now ? 2 : 1 }]} />;
         })}
       </View>
-      {/* the one quiet switch, low: the moves for where you are */}
-      <Pressable
-        onPress={() => {
-          buzz('tick');
-          sos.setMem((x) => ({ ...x, moveSit: !sit }));
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={(sit ? 'In my seat' : 'On my feet') + '. Change'}
-        hitSlop={6}
-        style={({ pressed }) => [s.pick, { opacity: pressed ? 0.6 : 1 }]}>
-        <Icon name="swap" size={16} color={c.muted} />
-        <Text style={[s.pickT, { color: c.muted }]}>{sit ? 'In my seat' : 'On my feet'}</Text>
-      </Pressable>
     </View>
   );
 }
 
-/* the same look as the other moves (moves.tsx): the words, the steps and the quiet switch */
+/* the same look as the other moves (moves.tsx): the words and the steps */
 const s = StyleSheet.create({
   move: { flexGrow: 1, alignSelf: 'stretch', gap: 12 },
   words: { minHeight: 92, alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 8 },
@@ -128,6 +110,4 @@ const s = StyleSheet.create({
   c: { textAlign: 'center' },
   steps: { flexDirection: 'row', gap: 6, alignSelf: 'center', width: 160 },
   step: { flex: 1, height: 6, borderRadius: 3 },
-  pick: { alignSelf: 'center', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16 },
-  pickT: { fontFamily: font.bodySemi, fontSize: 15 },
 });

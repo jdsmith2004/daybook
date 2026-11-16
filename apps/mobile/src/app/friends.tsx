@@ -17,13 +17,15 @@ import { LinkText } from '@/components/today';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
 import { joinCommunity, keepCode, keepNext, markSeen, takeNext, useFriends, useFriendsLocal, type FriendView } from '@/lib/friends';
+import { startFriendsDemo } from '@/lib/friends-demo';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 import { useTheme } from '@/lib/theme';
 
 export default function Friends() {
   const c = useTheme();
-  const p = useLocalSearchParams<{ code?: string }>();
+  const p = useLocalSearchParams<{ code?: string; demo?: string }>();
+  if (p.demo === '1') startFriendsDemo();
   const { snap, tk } = useStore();
   const sync = useSync();
   const fr = useFriends();
@@ -95,6 +97,7 @@ export default function Friends() {
   const SKY = Math.min(300, Math.round(width * 0.72));
   return (
     <Screen title="Friends" back="Settings" sub={<T tone="muted">Beta</T>}>
+      {fr.demo ? <DemoNote /> : null}
       {lo.pending && needAccount ? (
         <Card tone="note">
           <T v="label" style={{ color: c.sunText }}>
@@ -149,6 +152,43 @@ export default function Friends() {
         </View>
       ) : null}
     </Screen>
+  );
+}
+
+/** the demo says what it is, and shows the daily report as it arrives on a friend's phone (a picture: the web has no notes) */
+function DemoNote() {
+  const c = useTheme();
+  return (
+    <View style={{ gap: 12 }}>
+      <Card tone="note">
+        <T v="label" style={{ color: c.sunText }}>
+          A demo with made-up friends. Tap anything: nothing is real, and nothing is sent.
+        </T>
+      </Card>
+      <View style={{ gap: 6 }}>
+        <T v="small" tone="muted">
+          Sam&apos;s daily report, as it arrives on your phone at 9 PM:
+        </T>
+        <View
+          style={[s.note, { backgroundColor: c.surface2 }]}
+          accessibilityLabel="A notification from Daybook: Sam. How Sam’s day went. Warm their flame if you like.">
+          <View style={[s.noteIcon, { backgroundColor: c.bg }]}>
+            <BigFlame level={4} size={30} noLand />
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <View style={s.cardHead}>
+              <T v="label" style={{ flex: 1 }}>
+                Sam
+              </T>
+              <T v="small" tone="muted">
+                9:00 PM
+              </T>
+            </View>
+            <T v="small">How Sam’s day went. Warm their flame if you like.</T>
+          </View>
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -432,5 +472,7 @@ const s = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingHorizontal: 12, minHeight: 36 },
   actions: { gap: 4 },
   crowd: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 2, paddingTop: 4 },
+  note: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20, padding: 12 },
+  noteIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   joined: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44 },
 });

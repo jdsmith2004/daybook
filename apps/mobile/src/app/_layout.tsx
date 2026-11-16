@@ -64,6 +64,7 @@ import { DayEvents, FlameEvents } from '@/lib/events-day';
 import { NightPackKeeper } from '@/lib/night-pack';
 import { PullKeeper } from '@/lib/pull';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
+import { FriendsKeeper } from '@/lib/friends';
 import { SyncProvider, useAccount } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
@@ -359,6 +360,7 @@ function Shell() {
       <NavKeeper />
       <HealthKeeper rollover={snap.settings?.rollover ?? 4} />
       <PullKeeper />
+      <FriendsKeeper />
       <NightPackKeeper />
       <SetupGate />
       <LockGate>

@@ -64,6 +64,7 @@ export * from './accounts';
 export * from './resources';
 export * from './support';
 export * from './supporter';
+export * from './friends';
 export * from './like';
 export * from './nudges';
 export * from './notify';

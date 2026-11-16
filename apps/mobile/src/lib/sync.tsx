@@ -108,6 +108,8 @@ interface SyncValue {
   restoreErased: () => Promise<boolean>;
   /** the kept sign-in has been looked at (so a new person's setup can tell whether someone is signed in) */
   loaded: boolean;
+  /** a call to the sync API as the signed-in person (Friends, lib/friends.ts): null when signed out or unreachable */
+  api: (method: 'GET' | 'POST', query: string, body?: unknown) => Promise<{ status: number; body: Record<string, unknown> } | null>;
 }
 
 const Ctx = createContext<SyncValue | null>(null);
@@ -849,6 +851,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       checkErased,
       restoreErased,
       loaded,
+      api: callApi,
     }),
     [
       status,
@@ -867,6 +870,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
       checkErased,
       restoreErased,
       loaded,
+      callApi,
     ],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

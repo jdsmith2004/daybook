@@ -121,6 +121,14 @@ can be turned off; urges ridden out stays off until turned on (the SOS answer st
 makes at the hour the person picked (8 AM, 12 PM, 6 PM, 9 PM or off), naming only the person; the friend can mute it per friend. No
 server push is needed, so it costs nothing.
 
+**Third pass, the same day (the owner: "most people are going to only have like one person ... Having five like this is insane ...
+it still does not meet our standards").** The page is built for one friend: your flame and theirs big and side by side in your sky
+(alone, your flame waits beside one warm empty place; two friends make three flames; more are counted, not drawn); their report as one
+card (what they did today, three big numbers for the week, zeros left out, and one tap to warm their flame); what they see of you as
+one line that opens its own sheet (your card exactly as they see it, then the switches, the report time, your name, Leave); and the
+community as a night of glowing fires on far hills, yours lit in front once you pre-join. `/friends?demo=1` shows all of it with a
+made-up friend, with no setup and no account, saving and sending nothing.
+
 Store review notes (Guideline 1.2): friends add each other only by a code one of them sends; what passes between them is a name,
 up to three short goals (links, emails and phone numbers refused, with a word filter), numbers and three fixed encouragements. Each
 friend has Remove, Block and Report; reports reach the owner, who answers within 24 hours at the support email.

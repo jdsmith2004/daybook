@@ -210,7 +210,10 @@ const objectPass = (mem: UrMem) => (mem.pass && typeof mem.pass === 'object' ? m
 /** why a move works, in one line, and the lesson that says more (read later, when it is calm) */
 export const RIDE_WHY: Record<string, { t: string; l?: string }> = {
   breathe: { t: 'A long breath out slows the heart. A calmer body makes the pull easier to wait out.', l: 'l14' },
-  move: { t: 'Hard muscle work, even for a minute, lowers cravings in study after study. Your body burned off what the urge was building.', l: 'l15' },
+  move: {
+    t: 'Hard muscle work, even for a minute, eases cravings in study after study. Letting go after a squeeze leaves the body calmer than it was.',
+    l: 'l15',
+  },
   stack: { t: 'Fitting shapes takes the same room in your head as the pictures an urge runs on, so the pictures fade.', l: 'l42' },
   ground: { t: 'Finding things around you pulls your attention out of the urge and back into the room.', l: 'l43' },
   feel: { t: 'Putting a word on a feeling turns its volume down, and the word points at what you really need.', l: 'l13' },

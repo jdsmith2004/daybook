@@ -133,10 +133,20 @@ export async function scheduleFriendReports(list: { fid: string; name: string; r
     const [hour, minute] = f.rt.split(':').map(Number);
     await Notifications.scheduleNotificationAsync({
       identifier: id,
-      content: { title: f.name, body: 'How ' + f.name + '’s day went. Warm their flame if you like.', data: { url: '/friends', id } },
+      content: { title: f.name, body: 'How ' + f.name + '’s day went. Send a spark if you like.', data: { url: '/friends', id } },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: FRIEND_CHANNEL },
     });
   }
+}
+
+/** this phone's Expo push token, for a friend's live notes (services/api push.ts), asking for notes first when ask is set and they
+    were never asked. Null when not allowed or not to be had (a simulator, no network). */
+export async function pushToken(ask: boolean, projectId?: string): Promise<string | null> {
+  const p = await Notifications.getPermissionsAsync();
+  if (!p.granted && !(ask && (await allowReminders()))) return null;
+  if (Platform.OS === 'android')
+    await Notifications.setNotificationChannelAsync(FRIEND_CHANNEL, { name: 'Friends', importance: Notifications.AndroidImportance.DEFAULT });
+  return (await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)).data;
 }
 
 const TALK = 'talk';

@@ -23,7 +23,19 @@ const dayKey = (ms: number) => {
   const d = new Date(ms);
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 };
-type Friend = { fid: string; since: number; name: string; vals: ShareVals; rt: string | null; cheer?: { k: string; at: number }; sent?: number };
+type Friend = {
+  fid: string;
+  since: number;
+  name: string;
+  vals: ShareVals;
+  rt: string | null;
+  hear: 'live' | 'daily' | 'off';
+  together: { n: number; last: string | null; best: number };
+  week: string[];
+  cheer?: { k: string; at: number; used?: number };
+  sent?: number;
+  sentUsed?: number;
+};
 type World = { me: { name: string; on: typeof SHARE_DEFAULT; rt: string | null } | null; invite: { code: string; exp: number } | null; friends: Friend[] };
 let world: World | null = null;
 
@@ -40,7 +52,12 @@ function fresh(): World {
         name: 'Sam',
         vals: { lessons: 5, checkins: 4, days: 6, level: 6, lname: 'Steady', dk, dl: 1, dc: 1 },
         rt: '21:00',
-        cheer: { k: 'warm', at: now - H },
+        hear: 'live',
+        /* six days in a row together, today among them */
+        together: { n: 6, last: dk, best: 9 },
+        week: [0, 1, 2, 3, 4, 5].map((i) => dayKey(now - i * 24 * H)).reverse(),
+        /* Sam's spark came an hour ago, and waits for your next lesson */
+        cheer: { k: 'spark', at: now - H },
       },
     ],
   };
@@ -78,14 +95,31 @@ export async function demoApi(method: 'GET' | 'POST', query: string, body?: unkn
           name: 'Riley',
           vals: { lessons: 2, checkins: 2, days: 3, level: 4, lname: 'Ember' },
           rt: '21:00',
+          hear: 'live',
+          together: { n: 0, last: null, best: 0 },
+          week: [],
         });
       return ok({ fid: 'demo-riley', name: 'Riley' });
     case 'cheer': {
       const f = w.friends.find((x) => x.fid === fid);
       if (!f) return { status: 404, body: { error: 'That friend is not here any more.' } };
+      if (f.sent && Date.now() - f.sent < 20 * H) return { status: 429, body: { error: 'You already sent one today. It is waiting for them.' } };
       f.sent = Date.now();
+      f.sentUsed = undefined;
       return ok({ at: f.sent });
     }
+    case 'used': {
+      const f = w.friends.find((x) => x.fid === fid);
+      if (f?.cheer && !f.cheer.used) f.cheer.used = Date.now();
+      return ok({ ok: true });
+    }
+    case 'hear': {
+      const f = w.friends.find((x) => x.fid === fid);
+      if (f && (b.hear === 'live' || b.hear === 'daily' || b.hear === 'off')) f.hear = b.hear;
+      return ok({ hear: f?.hear || 'live' });
+    }
+    case 'push':
+      return ok({ ok: true });
     case 'remove':
     case 'block':
       w.friends = w.friends.filter((x) => x.fid !== fid);

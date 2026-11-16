@@ -1,6 +1,8 @@
-/* Friends: one friend. Their flame, today and this week in Daybook, their daily report (which this phone can mute), then a ready-made encouragement (one a day; no chat), and at
-   the bottom, quietly, Remove and Block and report (Apple Guideline 1.2). Removing is quiet both ways: the other person is not told. */
-import { FRIEND_CHEERS, friendLines, friendToday, reportAt, REPORT_WHY, type CheerKind, type ReportWhy } from '@daybook/core';
+/* Friends: one friend. Their flame and your together streak, their day and week in Daybook, how you hear about them (as it happens,
+   at most two notes a day; once a day at the hour they picked; or not at all: the owner, November 15, 2026: "we can't overwhelm them
+   with notifications"), the spark to send them (one a day; no chat), and at the bottom, quietly, Remove and Block and report (Apple
+   Guideline 1.2). Removing is quiet both ways: the other person is not told. */
+import { friendToday, reportAt, REPORT_WHY, togetherNow, type Hear, type ReportWhy } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -12,9 +14,9 @@ import { LinkText } from '@/components/today';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
-import { muteReport, useFriendsLocal, useFriendsReady } from '@/lib/friends';
+import { FriendWeek, Spark } from '@/components/friends-art';
+import { registerPush, useFriendsReady } from '@/lib/friends';
 import { useStore } from '@/lib/store';
-import { Toggle } from '@/components/settings-ui';
 import { sendFeedback } from '@/lib/pulse';
 import { useTheme } from '@/lib/theme';
 
@@ -22,11 +24,10 @@ export default function Friend() {
   const c = useTheme();
   const { fid } = useLocalSearchParams<{ fid: string }>();
   const fr = useFriendsReady();
-  const lo = useFriendsLocal();
   const { tk } = useStore();
   const { height } = useWindowDimensions();
   const f = fr.data?.friends.find((x) => x.fid === fid);
-  const [pick, setPick] = useState<CheerKind | null>(null);
+  const [hearing, setHearing] = useState<Hear | null>(null);
   const [pulse, setPulse] = useState(0);
   const [msg, setMsg] = useState('');
   const [end, setEnd] = useState<null | 'remove' | 'block'>(null);
@@ -42,19 +43,31 @@ export default function Friend() {
     );
 
   const sentToday = !!f.sent && Date.now() - f.sent < 20 * 3600_000;
-  const lines = friendLines(f.vals);
   const today = friendToday(f.vals, tk);
-  const muted = (lo.mute || []).includes(f.fid);
+  const tg = togetherNow(f.together, tk);
+  const hear: Hear = hearing || f.hear || 'live';
   const send = async () => {
-    if (!pick) return;
     setBusy(true);
-    const r = await fr.call('cheer', { fid: f.fid, k: pick });
+    const r = await fr.call('cheer', { fid: f.fid, k: 'spark' });
     setBusy(false);
     if (!r.ok) return setMsg(r.msg);
     buzz('lit');
     setPulse((n) => n + 1);
-    if (!fr.demo) track('friend_cheer', { what: pick });
-    setMsg('Sent. ' + f.name + ' sees it next time they open Friends.');
+    if (!fr.demo) track('friend_cheer', { what: 'spark' });
+    setMsg('Your spark is with ' + f.name + '. It goes into their next lesson.');
+  };
+  const pickHear = async (h: Hear) => {
+    if (h === hear) return;
+    buzz('tick');
+    setHearing(h);
+    const r = await fr.call('hear', { fid: f.fid, hear: h });
+    if (!r.ok) {
+      setHearing(null);
+      return setMsg(r.msg);
+    }
+    if (!fr.demo) track('friend_hear', { what: h });
+    /* as it happens needs this phone's push token; asking for notes if they were never asked */
+    if (h === 'live') registerPush(fr.api, true).catch(() => undefined);
   };
   const finish = async () => {
     setBusy(true);
@@ -72,77 +85,67 @@ export default function Friend() {
     <SheetFrame title={f.name}>
       <View style={{ gap: 24, minHeight: Math.max(480, height - 150) }}>
         <View style={s.top}>
-          <BigFlame level={f.vals.level || 1} size={170} noLand pulse={pulse} />
-          {f.vals.level ? (
-            <T v="small" tone="muted">
-              Level {f.vals.level}
-              {f.vals.lname ? ' · ' + f.vals.lname : ''}
-            </T>
-          ) : null}
+          <BigFlame level={f.vals.level || 1} size={150} noLand pulse={pulse} />
+          <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+            {[
+              f.vals.level ? 'Level ' + f.vals.level + (f.vals.lname ? ', ' + f.vals.lname : '') : '',
+              tg.n ? tg.n + (tg.n === 1 ? ' day' : ' days') + ' together' : '',
+              tg.best > tg.n ? 'longest ' + tg.best : '',
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </T>
         </View>
 
-        <Card style={{ gap: 8 }}>
-          {today ? <T v="label">Today: {today}</T> : null}
-          {lines.length ? (
-            <T v="small" tone="muted">
-              This week: {lines.join(' · ')}
-            </T>
-          ) : null}
-          {!today && !lines.length ? (
-            <T v="small" tone="muted">
-              Nothing to show yet this week.
-            </T>
-          ) : null}
-          {f.rt ? (
-            <View style={s.report}>
-              <T v="small" style={{ flex: 1 }}>
-                Daily report at {reportAt(f.rt)}
-              </T>
-              <Toggle on={!muted} label={'Daily report from ' + f.name} onChange={(v) => muteReport(f.fid, !v)} />
-            </View>
-          ) : null}
-        </Card>
+        <FriendWeek vals={f.vals} today={today} />
+
+        <View style={{ gap: 8 }}>
+          <T v="label">Notes about {f.name}</T>
+          <View style={{ gap: 8 }} accessibilityRole="radiogroup">
+            {(
+              [
+                ['live', 'As it happens', 'When ' + f.name + ' does a lesson or checks in, and their sparks. At most 2 notes a day, none at night.'],
+                ['daily', 'Once a day', f.rt ? 'One note at ' + reportAt(f.rt) + ', the hour ' + f.name + ' picked.' : 'One note a day.'],
+                ['off', 'Off', 'No notes. You see it all here.'],
+              ] as [Hear, string, string][]
+            ).map(([k, label, sub]) => (
+              <Pressable
+                key={k}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: hear === k }}
+                onPress={() => pickHear(k)}
+                style={({ pressed }) => [
+                  s.opt,
+                  { backgroundColor: hear === k ? c.sunSoft : c.surface, borderColor: hear === k ? c.sun2 : 'transparent' },
+                  pressed && { opacity: 0.85 },
+                ]}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <T v="label" style={{ color: hear === k ? c.sunText : c.ink }}>
+                    {label}
+                  </T>
+                  <T v="small" tone="muted">
+                    {sub}
+                  </T>
+                </View>
+                {hear === k ? <Icon name="check" size={20} color={c.sunText} /> : null}
+              </Pressable>
+            ))}
+          </View>
+        </View>
 
         <Dock>
           {!end ? (
             <View style={{ gap: 8 }}>
-              {sentToday && !msg ? (
-                <T tone="muted" style={{ textAlign: 'center' }}>
-                  You cheered {f.name} on today.
-                </T>
+              {msg || sentToday ? (
+                <View style={s.sent} accessibilityLiveRegion="polite">
+                  <Spark size={30} still />
+                  <T tone="muted" style={{ flex: 1 }}>
+                    {msg ||
+                      (f.sentUsed ? 'Your spark was in ' + f.name + '\u2019s lesson.' : 'Your spark is with ' + f.name + '. It goes into their next lesson.')}
+                  </T>
+                </View>
               ) : (
-                <>
-                  <View style={s.cheers} accessibilityRole="radiogroup">
-                    {FRIEND_CHEERS.map((x) => (
-                      <Pressable
-                        key={x.k}
-                        accessibilityRole="radio"
-                        accessibilityState={{ checked: pick === x.k }}
-                        disabled={!!msg}
-                        onPress={() => {
-                          buzz('tick');
-                          setPick(x.k);
-                        }}
-                        style={({ pressed }) => [
-                          s.cheer,
-                          { backgroundColor: pick === x.k ? c.sunSoft : c.surface, borderColor: pick === x.k ? c.sun2 : 'transparent' },
-                          pressed && { opacity: 0.8 },
-                        ]}>
-                        <Icon name={x.k === 'warm' ? 'flame' : x.k === 'proud' ? 'star' : 'heart'} size={20} color={pick === x.k ? c.sunText : c.muted} />
-                        <T v="label" style={{ color: pick === x.k ? c.sunText : c.ink }}>
-                          {x.send}
-                        </T>
-                      </Pressable>
-                    ))}
-                  </View>
-                  {msg ? (
-                    <T tone="muted" style={{ textAlign: 'center' }} accessibilityLiveRegion="polite">
-                      {msg}
-                    </T>
-                  ) : (
-                    <Button label={busy ? 'Sending' : 'Send'} disabled={!pick || busy} onPress={send} />
-                  )}
-                </>
+                <Button label={busy ? 'One moment' : 'Send ' + f.name + ' a spark'} icon="sparkle" disabled={busy} onPress={send} />
               )}
             </View>
           ) : (
@@ -191,8 +194,8 @@ export default function Friend() {
 
 const s = StyleSheet.create({
   top: { alignItems: 'center', gap: 4 },
-  cheers: { gap: 8 },
+  opt: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12, borderWidth: 1.5 },
+  sent: { flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'center' },
   cheer: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, borderRadius: 20, paddingHorizontal: 16, borderWidth: 1.5 },
   quiet: { alignItems: 'center', gap: 4, paddingTop: 8 },
-  report: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 4 },
 });

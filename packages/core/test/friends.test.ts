@@ -3,6 +3,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   cardForFriend,
+  liveWords,
+  quietNow,
+  TOGETHER_NONE,
+  togetherNow,
+  togetherStep,
   friendLines,
   friendToday,
   codeText,
@@ -72,5 +77,30 @@ describe('codes', () => {
   it('the invite never names the habit', () => {
     expect(inviteText('Sam', 'https://x/friends?code=K7QM2P', 'K7QM2P')).not.toMatch(/porn|addict|habit|quit|slip|urge/i);
     expect(codeText('Sam', 'K7QM2P')).not.toMatch(/porn|addict|habit|quit|slip|urge/i);
+  });
+});
+
+describe('the together streak', () => {
+  it('grows on days in a row both were in, starts again after a gap, and keeps the longest', () => {
+    let t = togetherStep(TOGETHER_NONE, ['2026-11-01', '2026-11-02', '2026-11-03'], ['2026-11-02', '2026-11-03']);
+    expect(t).toEqual({ n: 2, last: '2026-11-03', best: 2 });
+    /* the same days again count nothing twice */
+    expect(togetherStep(t, ['2026-11-02', '2026-11-03'], ['2026-11-02', '2026-11-03'])).toEqual(t);
+    t = togetherStep(t, ['2026-11-04'], ['2026-11-04']);
+    expect(t.n).toBe(3);
+    t = togetherStep(t, ['2026-11-06'], ['2026-11-06']);
+    expect(t).toEqual({ n: 1, last: '2026-11-06', best: 3 });
+  });
+  it('is alive through yesterday and says nothing of a gap', () => {
+    const t = { n: 4, last: '2026-11-14', best: 6 };
+    expect(togetherNow(t, '2026-11-15')).toEqual({ n: 4, today: false, best: 6 });
+    expect(togetherNow(t, '2026-11-14')).toEqual({ n: 4, today: true, best: 6 });
+    expect(togetherNow(t, '2026-11-16')).toEqual({ n: 0, today: false, best: 6 });
+  });
+  it('live notes never name the habit and offer a spark once the reader is done', () => {
+    expect(liveWords('lesson', 'Sam', false)).toEqual({ title: 'Sam', body: 'Just did today’s lesson. Yours is waiting.' });
+    expect(liveWords('checkin', 'Sam', true).body).toBe('Just checked in. Send a spark?');
+    expect(quietNow(Date.parse('2026-11-15T23:00:00Z'), 0)).toBe(true);
+    expect(quietNow(Date.parse('2026-11-15T23:00:00Z'), -6 * 60)).toBe(false);
   });
 });

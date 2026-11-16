@@ -133,6 +133,34 @@ Store review notes (Guideline 1.2): friends add each other only by a code one of
 up to three short goals (links, emails and phone numbers refused, with a word filter), numbers and three fixed encouragements. Each
 friend has Remove, Block and Report; reports reach the owner, who answers within 24 hours at the support email.
 
+### Fourth pass (November 15, 2026): the spark does something, a together streak, live notes, and the page rebuilt like Today
+
+The owner: "Warming their flame does nothing ... research how Duolingo and other apps do it and make it look nice", "when they check
+in and do stuff ... notifications right away", and later "the UI needs work. It still feels not put together." Research (Duolingo
+Friend Streak and Quests, Finch's visits, Apple Fitness, Strava, Snapchat's hourglass as the trap) is in the side-session notes,
+`friends-research-duolingo.md`. The owner's answers: the spark "visits and comes back"; "a together streak and it's just days they both
+log in"; notes "can't overwhelm them ... [but] could replace other notifications and be part of how they get pulled to use the app".
+
+- **The page** opens on a sky from edge to edge, like Today and Milestones: your flame and theirs big on one land, the together
+  streak low on the left, the last seven days as dots on the right. Under it: their name, a spark of theirs waiting (with the way to
+  today's lesson), their day and week in one panel, and **Send Sam a spark**. Then one panel of quiet rows (what they see of you, notes
+  about them, add a friend) and the community, its title on its night picture. The demo note is one quiet line at the very end.
+- **The spark** (core `SPARK`, services/api `sendCheer`, `sparkUsedBy`): it flies from your flame to theirs and rests there. The friend
+  gets a note, sees it on Today's sky (`SparkTop`) and on Friends, and their next lesson ends with "Sam's spark was in this one"
+  (`LessonFinish spendSpark`). The sender is told ("Your spark was in Sam's lesson today"). One a day to each friend.
+- **The together streak** (core `togetherStep`, `togetherNow`): days in a row both opened Daybook, kept once per friendship on the
+  server (`#tg/`), from each card's days of the last two weeks (`od`, never sent to a friend). The longest is kept; a gap is never said.
+- **Live notes** (services/api `push.ts`, `notify`): when a person does a lesson or checks in, a friend who hears as it happens gets a
+  push: "Just did today's lesson. Yours is waiting." (or "Send a spark?" once the reader's own lesson is done). At most 2 friend notes a
+  day per person, one about each friend, none from 10 PM to 8 AM. Chosen when the friend is added (a switch on Add a friend and on the
+  code screen) and changed on the friend's page: as it happens, once a day (the old daily report), or off. A friend heard as it
+  happens has no daily report too: the live note replaces it.
+- **Not built:** a friend's note does not yet cancel Daybook's own lesson reminder for that day. That needs the server to send the
+  reminders (a phone cannot change its scheduled notes while the app is closed). Worth doing if live notes prove to pull people in.
+- **Needs a store build to work on a phone:** the app asks for the push token in JS that ships with the next TestFlight build from
+  main, and Expo needs the app's APNs key (set once in EAS credentials, an Apple sign-in, the owner's). Until then, friends hear by the
+  daily report, as before.
+
 ## Lessons with soul again: every lesson rewritten, a Short and a Long (the owner, November 14, 2026; planned, samples first)
 
 The owner, November 14, 2026: "the lessons have dropped in quality dramatically", and "these lessons need to be enshrined in stone".

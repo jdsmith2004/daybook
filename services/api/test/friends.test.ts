@@ -1,9 +1,10 @@
 /* Friends (beta): a friend reads only what the sharer turned on, only while both sides hold the friendship, and never another
    account; removing, blocking and closing an account leave nothing behind (src/friends.ts). */
 import type { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { BLOCK, BLOCKED_BY, CARD, CHEER, FR, INVITES, LOOKS_A_DAY, MYINV, REPORTS } from '../src/friends';
+import { BLOCK, BLOCKED_BY, CARD, CHEER, FR, INVITES, LOOKS_A_DAY, MYINV, PUSH, PUSHDAY, REPORTS, TG } from '../src/friends';
+import { setPushSend, type PushMsg } from '../src/push';
 import { MemoryStore } from '../src/store';
 import { makeHandler } from '../src/sync';
 
@@ -225,5 +226,132 @@ describe('ending it', () => {
     expect(await store.auxList(INVITES, '')).toEqual([]);
     expect((await view('bob')).friends).toEqual([]);
     for (const p of [FR, CHEER, BLOCK, BLOCKED_BY, MYINV]) expect(await store.auxList('bob', p)).toEqual([]);
+  });
+});
+
+describe('the together streak, the spark and live notes', () => {
+  const ON = { lessons: true, checkins: true, days: true, level: true };
+  const T1 = 'ExponentPushToken[aaaaaaaaaaaaaaaa]';
+  const T2 = 'ExponentPushToken[bbbbbbbbbbbbbbbb]';
+  let sent: PushMsg[];
+  let gone: Set<string>;
+  beforeEach(() => {
+    /* 6 PM in UTC: not quiet hours for a phone on UTC */
+    now = Date.parse('2026-11-15T18:00:00Z');
+    sent = [];
+    gone = new Set();
+    setPushSend(async (m) => {
+      sent.push(...m);
+      return m.map((x) => (gone.has(x.to) ? 'gone' : 'ok'));
+    });
+  });
+  afterEach(() => setPushSend(null));
+
+  const day = (vals: Record<string, unknown>, od: string[]) => ({ vals: { ...VALS, ...vals }, od });
+
+  it('counts days both were in, in a row, keeps the longest, and never sends a friend the days themselves', async () => {
+    await setCard('alice', 'Alice', ON, day({}, ['2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15']));
+    await setCard('bob', 'Bob', ON, day({}, ['2026-11-10', '2026-11-13', '2026-11-14', '2026-11-15']));
+    await befriend('alice', 'bob');
+    const f = (await view('bob')).friends[0];
+    expect(f.together).toEqual({ n: 3, last: '2026-11-15', best: 3 });
+    expect(f.week).toEqual(['2026-11-13', '2026-11-14', '2026-11-15']);
+    expect(JSON.stringify(f)).not.toContain('2026-11-12');
+    expect(JSON.stringify(f)).not.toContain('2026-11-10');
+    expect(f.vals.od).toBeUndefined();
+    /* kept once for the pair, the same for both */
+    expect((await view('alice')).friends[0].together.n).toBe(3);
+    /* a gap starts a new run, and the longest stays */
+    await setCard('alice', 'Alice', ON, day({ dk: '2026-11-17' }, ['2026-11-17']));
+    await setCard('bob', 'Bob', ON, day({ dk: '2026-11-17' }, ['2026-11-17']));
+    expect((await view('bob')).friends[0].together).toEqual({ n: 1, last: '2026-11-17', best: 3 });
+    /* days in Daybook turned off: no days kept at all */
+    await setCard('alice', 'Alice', { lessons: true }, day({}, ['2026-11-18']));
+    expect(((await store.auxGet('alice', CARD)) as { od?: string[] }).od).toBeUndefined();
+  });
+
+  it('a spark waits for the next lesson, then the sender is told it was used', async () => {
+    await setCard('alice', 'Alice', ON);
+    await setCard('bob', 'Bob', ON);
+    const { fid: aliceFid } = await befriend('alice', 'bob');
+    await call('bob', 'POST', 'push', { token: T2, tz: 0 });
+    await call('alice', 'POST', 'push', { token: T1, tz: 0 });
+    const bobFidForAlice = (await view('alice')).friends[0].fid;
+    expect((await call('alice', 'POST', 'cheer', { fid: bobFidForAlice, k: 'spark' })).status).toBe(200);
+    expect(sent.map((m) => [m.to, m.title, m.body])).toEqual([[T2, 'Alice', 'Sent you a spark. It goes into your next lesson.']]);
+    let b = (await view('bob')).friends[0];
+    expect(b.cheer).toMatchObject({ k: 'spark', at: now });
+    expect(b.cheer.used).toBeUndefined();
+    /* Bob's lesson takes it */
+    now += 3600_000;
+    await call('bob', 'POST', 'used', { fid: aliceFid });
+    b = (await view('bob')).friends[0];
+    expect(b.cheer.used).toBe(now);
+    const a = (await view('alice')).friends[0];
+    expect(a.sentUsed).toBe(now);
+    expect(sent.at(-1)).toMatchObject({ to: T1, title: 'Bob', body: 'Your spark was in Bob’s lesson today.' });
+    /* used once only */
+    await call('bob', 'POST', 'used', { fid: aliceFid });
+    expect(sent).toHaveLength(2);
+  });
+
+  it('a friend hears as it happens, within the caps, never in quiet hours, and not when they chose otherwise', async () => {
+    await setCard('alice', 'Alice', ON, { vals: { ...VALS, dl: 0, dc: 0 } });
+    await setCard('bob', 'Bob', ON, { vals: { ...VALS, dl: 0, dc: 0 } });
+    await setCard('carol', 'Carol', ON, { vals: { ...VALS, dl: 0, dc: 0 } });
+    await befriend('alice', 'bob');
+    await befriend('carol', 'bob');
+    await call('bob', 'POST', 'push', { token: T2, tz: 0 });
+    /* Alice checks in, then does a lesson: one note about her today, not two */
+    await setCard('alice', 'Alice', ON, { vals: { ...VALS, dl: 0, dc: 1 } });
+    await setCard('alice', 'Alice', ON, { vals: { ...VALS, dl: 1, dc: 1 } });
+    expect(sent.map((m) => m.body)).toEqual(['Just checked in. Yours is waiting.']);
+    /* Carol's lesson: the second and last note today */
+    await setCard('carol', 'Carol', ON, { vals: { ...VALS, dl: 1, dc: 0 } });
+    expect(sent).toHaveLength(2);
+    expect(sent[1]).toMatchObject({ title: 'Carol', body: 'Just did today’s lesson. Yours is waiting.' });
+    /* the cap: a third reaches nobody, even a spark */
+    const carolFid = (await view('carol')).friends[0].fid;
+    await call('carol', 'POST', 'cheer', { fid: carolFid, k: 'spark' });
+    expect(sent).toHaveLength(2);
+    /* the next day, in quiet hours (11 PM): nothing */
+    now = Date.parse('2026-11-16T23:00:00Z');
+    await setCard('alice', 'Alice', ON, { vals: { ...VALS, dk: '2026-11-16', dl: 1, dc: 0 } });
+    expect(sent).toHaveLength(2);
+    /* the next morning, Bob chose the daily report for Alice: no live note about her */
+    now = Date.parse('2026-11-17T12:00:00Z');
+    const aliceFid = (await view('bob')).friends.find((f: { name: string }) => f.name === 'Alice').fid;
+    expect((await call('bob', 'POST', 'hear', { fid: aliceFid, hear: 'daily' })).body).toEqual({ hear: 'daily' });
+    await setCard('alice', 'Alice', ON, { vals: { ...VALS, dk: '2026-11-17', dl: 1, dc: 0 } });
+    expect(sent).toHaveLength(2);
+    expect((await view('bob')).friends.find((f: { name: string }) => f.name === 'Alice').hear).toBe('daily');
+    /* Bob already did his lesson: Carol's note offers a spark instead */
+    await setCard('bob', 'Bob', ON, { vals: { ...VALS, dk: '2026-11-17', dl: 1, dc: 0 } });
+    await setCard('carol', 'Carol', ON, { vals: { ...VALS, dk: '2026-11-17', dl: 1, dc: 0 } });
+    expect(sent.at(-1)).toMatchObject({ title: 'Carol', body: 'Just did today’s lesson. Send a spark?' });
+  });
+
+  it('a dead token is dropped, and closing the account leaves no token, count or streak', async () => {
+    await setCard('alice', 'Alice', ON, { vals: { ...VALS, dl: 0, dc: 0 }, od: ['2026-11-15'] });
+    await setCard('bob', 'Bob', ON, { od: ['2026-11-15'] });
+    await befriend('alice', 'bob');
+    expect((await call('bob', 'POST', 'push', { token: 'not a token', tz: 0 })).status).toBe(400);
+    await call('bob', 'POST', 'push', { token: T2, tz: 0 });
+    gone.add(T2);
+    await setCard('alice', 'Alice', ON, { vals: { ...VALS, dl: 1, dc: 0 }, od: ['2026-11-15'] });
+    expect(await store.auxGet('bob', PUSH)).toBeNull();
+    gone.clear();
+    await call('bob', 'POST', 'push', { token: T2, tz: 0 });
+    await view('bob');
+    expect(await store.auxGet('alice', TG + 'bob')).not.toBeNull();
+    const del = await handler({
+      requestContext: { http: { method: 'DELETE' }, authorizer: { jwt: { claims: { sub: 'bob' }, scopes: [] } } },
+      queryStringParameters: { all: '1' },
+      isBase64Encoded: false,
+    } as unknown as APIGatewayProxyEventV2WithJWTAuthorizer);
+    expect(del.statusCode).toBe(200);
+    expect(await store.auxGet('bob', PUSH)).toBeNull();
+    expect(await store.auxGet('bob', PUSHDAY)).toBeNull();
+    expect(await store.auxGet('alice', TG + 'bob')).toBeNull();
   });
 });

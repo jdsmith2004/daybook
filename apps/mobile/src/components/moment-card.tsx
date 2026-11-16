@@ -1,11 +1,10 @@
 /* The one next step on Today (core pickMoment, moment.ts), under the flame in the same card (hero.tsx): whatever the
    moment is, it is the only thing asking for a tap. Most moments are the same big bright card as the next stop on the line
    (your-day.tsx NextCard: the first week, a first pattern, days away, a part unlocked), the whole card one
-   button (Your day, below, names the rest of the day). The day of a slip keeps its full card, with its words of care; the
-   comeback shows its three flames, one line, and leads on to the next step; the moments with their own choices (a talk-through, a counting note,
+   button (Your day, below, names the rest of the day). The day of a slip keeps its full card, with its words of care; the moments with their own choices (a talk-through, a counting note,
    a word about reminders, Day 1) keep their cards. Under it, one quiet line names the next moment when
    two overlap. */
-import { comebackNow, type Moment, type UnlockId, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
+import { type Moment, type UnlockId, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
@@ -16,7 +15,6 @@ import { TalkCard } from '@/components/talk-card';
 import { TellStartCard } from '@/components/tell-start';
 import { Text } from '@/components/text';
 import { CountNotes } from '@/components/today';
-import { Flames } from '@/components/rekindle';
 import { PauseBanner, useLogActions } from '@/components/today-log';
 import { Card, Icon, T } from '@/components/ui';
 import { lookOf, NextCard, openStop } from '@/components/your-day';
@@ -46,8 +44,6 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
       return <PauseBanner />;
     case 'talk':
       return <TalkCard snap={snap} now={now} />;
-    case 'comeback':
-      return <Comeback m={m} snap={snap} tk={tk} />;
     case 'tell-start':
       return <TellStartCard snap={snap} tk={tk} />;
     case 'count-note':
@@ -160,47 +156,6 @@ function Tile({ m, sky, onPress, onAlt }: { m: Moment; sky: StopTile['sky']; onP
         </Pressable>
       ) : null}
     </View>
-  );
-}
-
-/* all three flames lit after a slip: the comeback, celebrated once (core comebackNow), and then it leads on. Its button
-   is the day's next step ("Next: Wanting is not liking"), or "Nice" when the day is done; either puts it away. */
-function Comeback({ m, snap, tk }: { m: Moment; snap: Snapshot; tk: string }) {
-  const c = useTheme();
-  const sos = useSos();
-  const cb = comebackNow(snap.days, snap.settings!, tk);
-  if (!cb) return null;
-  const go = () => {
-    sos.setMem((x) => ({ ...x, cbSeen: cb.k }));
-    if (m.go === 'lesson' || m.go === 'checkin' || m.go === 'wind') openStop(m.go, m.v);
-    else buzz('tap');
-  };
-  return (
-    <Card tone="note">
-      <View style={{ alignItems: 'center', gap: 6 }}>
-        <Flames on={cb.flames.map((f) => f.on)} />
-        <T v="h2" accessibilityRole="header" style={{ textAlign: 'center' }}>
-          {m.h}
-        </T>
-      </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={m.nx ? m.btn + ': ' + m.nx : m.btn || 'Nice'}
-        onPress={go}
-        style={({ pressed }) => [
-          s.btn,
-          {
-            backgroundColor: c.sun,
-            shadowColor: 'rgba(0,0,0,0.28)',
-            transform: [{ translateY: pressed ? 3 : 0 }],
-            shadowOffset: { width: 0, height: pressed ? 1 : 4 },
-          },
-        ]}>
-        <Text style={[s.btnT, { color: c.onSun }]} numberOfLines={1}>
-          {m.nx ? 'Next: ' + m.nx + ' ›' : m.btn || 'Nice'}
-        </Text>
-      </Pressable>
-    </Card>
   );
 }
 

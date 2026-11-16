@@ -10,8 +10,7 @@
     5. a talk-through due: decide now, it passed, look back
     7. days away not known: fill them in
     8. the Sunday review, Sunday and Monday, is a step on the line (next-step.ts), so it is the calm day's card
-    9. one-time moments: first week done, Day 1 tell the safe person, a counting note, the comeback noticed (all
-       three flames lit: it celebrates, and its button is the day's next step), a paused reminder, the first pattern
+    9. one-time moments: first week done, Day 1 tell the safe person, a counting note, a paused reminder, the first pattern
    10. a calm day: the day's next stop; everything done: "All done. Rest well." ("Rest well." alone on the night of a slip)
    11. the five questions again, every 30 days (recheck.ts), with the north star after them (north.ts; alone, as "One question", when
        the five are not due or not for this habit): low on purpose, so they wait behind the day's next stop as "and one
@@ -28,7 +27,7 @@ import { heroNumber } from './hero';
 import { formWord } from './levels';
 import { type StopGo } from './day';
 import { todayLine } from './next-step';
-import { comebackNow, rkComebackSay, safeName, tellStartDue } from './rekindle';
+import { safeName, tellStartDue } from './rekindle';
 import { firstPattern } from './risk';
 import { slipNext } from './slip';
 import { urNight } from './sos';
@@ -45,7 +44,6 @@ export type MomentKind =
   | 'pause'
   | 'slip-day'
   | 'talk'
-  | 'comeback'
   | 'away'
   | 'sunday'
   | 'first-week'
@@ -73,8 +71,6 @@ export interface Moment {
   go: MomentGo | null;
   /** what the button opens: the lesson id, the Sunday, the talk-through id */
   v?: string;
-  /** a moment that celebrates and then leads on: the step its button opens ("Wanting is not liking") */
-  nx?: string;
   /** the name used in "and one more", when this moment waits behind another */
   one: string;
   /** the day of a slip: what the main button opens, and the quiet way to say something else was done */
@@ -100,8 +96,6 @@ export interface MomentDev {
   patternDay?: DayKey | null;
   /** signed in: lessons after the first LEARN_FREE are open (nextUp) */
   account?: boolean;
-  /** the slip whose comeback was celebrated and put away (its button pressed): it is not the card again */
-  comebackSeen?: DayKey | null;
   /** the five questions are due again (core bpsDue, kept on this device) */
   recheck?: boolean;
   /** the north star is due (core freeDue): with the five when they are due, or on its own card when they are not */
@@ -113,8 +107,8 @@ export interface MomentDev {
 /** every moment that applies now, in order. The calm day (or done) comes last, but for the five questions. */
 export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, dev: MomentDev = {}): Moment[] {
   const out: Moment[] = [];
-  const m = (k: MomentKind, eb: string, h: string, p: string, btn: string | null, go: MomentGo | null, one: string, v?: string, nx?: string) =>
-    out.push({ k, eb, h, p, btn, go, one, ...(v ? { v } : {}), ...(nx ? { nx } : {}) });
+  const m = (k: MomentKind, eb: string, h: string, p: string, btn: string | null, go: MomentGo | null, one: string, v?: string) =>
+    out.push({ k, eb, h, p, btn, go, one, ...(v ? { v } : {}) });
 
   /* 1. a pause in progress */
   if (dev.pause) m('pause', 'A pause', 'Your pause', 'One tap back to it.', 'Resume', 'pause', 'your pause');
@@ -177,23 +171,6 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
     );
   if (st.cleanNote) m('count-note', 'How days count', 'A note about counting', '', null, null, 'a note about counting');
   else if (stepOffer(days, st, tk)) m('step-offer', 'How days count', 'Slips on most days lately?', '', null, null, 'a gentler plan');
-  /* the comeback celebrates, then leads on (the owner, October 25, 2026: a finish always has an action, never a card that
-     only takes room): its button is the day's next step, or "Nice" once the day is done, and either puts it away */
-  const cb = comebackNow(days, st, tk);
-  if (cb && dev.comebackSeen !== cb.k) {
-    const nx = todayLine(days, st, reviews, tk, now, undefined, dev.account !== false).next;
-    m(
-      'comeback',
-      'Your comeback',
-      rkComebackSay(cb.n),
-      '',
-      nx ? nx.btn : 'Nice',
-      nx ? nx.go : null,
-      'your comeback',
-      nx ? nx.id : undefined,
-      nx ? nx.head : undefined,
-    );
-  }
   if (dev.nudge && dev.nudge.k === 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
   const pat = firstPattern(days, st, tk);
   if (pat && (!dev.patternDay || dev.patternDay === tk))

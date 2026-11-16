@@ -424,7 +424,6 @@ export default function Today() {
     nudge,
     patternDay: patDay || (pat ? tk : null),
     account: !!account,
-    comebackSeen: typeof sos.mem.cbSeen === 'string' ? (sos.mem.cbSeen as string) : null,
     recheck: bpsDue(snap.days, st, tk, sos.mem, { now, sos: careLastAt(sos.mem) }),
     free: freeDue(snap.days, st, tk, { now, sos: careLastAt(sos.mem) }),
     unlock,

@@ -104,35 +104,17 @@ describe('the three flames, and the comeback count', () => {
     const l0 = core.rkLights(withEv(base(K), K, {}), st, K, K);
     expect(l0.flames.map((f) => f.on)).toEqual([true, false, false]);
   });
-  it('the comeback is noticed once, on the day the last flame lights', () => {
-    const d = slipAndSunrise(addDays(K, 3));
-    expect(pickMoment(d, st, {}, addDays(K, 1), at(addDays(K, 1), 20)).card.k).not.toBe('comeback');
-    const p = pickMoment(d, st, {}, addDays(K, 2), at(addDays(K, 2), 9));
-    expect([p.card.k, p.more?.k]).toContain('comeback');
-    const c = core.comebackNow(d, st, addDays(K, 2))!;
-    expect(c).toMatchObject({ k: K, n: 1 });
-    expect(moments(d, st, {}, addDays(K, 2), at(addDays(K, 2), 9)).find((m) => m.k === 'comeback')!.h).toBe('You came back: 1 comeback.');
-    expect(core.comebackNow(d, st, addDays(K, 3))).toBeNull();
-  });
-  it("the comeback always has a button: the day's next step, or Nice once the day is done; pressed, it is put away", () => {
+  it('Today shows no comeback card: the count and the flames live elsewhere', () => {
     const d = slipAndSunrise(addDays(K, 3));
     const day = addDays(K, 2);
-    const all = core.moments(d, st, {}, day, at(day, 9));
-    const cb = all.find((x) => x.k === 'comeback')!;
-    /* the comeback leads on to Today's one next step (next-step.ts) */
-    const next = core.todayLine(d, st, {}, day, at(day, 9)).next;
-    expect(cb.btn).toBe(next ? next.btn : 'Nice');
-    if (next) expect([cb.go, cb.nx]).toEqual([next.go, next.head]);
-    expect(core.moments(d, st, {}, day, at(day, 9), { comebackSeen: K }).some((x) => x.k === 'comeback')).toBe(false);
-    /* no moment that only takes room: everything but the ones with their own choices has a button */
-    for (const x of all) if (x.k === 'comeback' || x.k === 'calm') expect(x.btn).toBeTruthy();
+    expect(core.rkComebackCount(d, st, day)).toBe(1);
+    expect(core.moments(d, st, {}, day, at(day, 9)).map((x) => x.k)).not.toContain('comeback');
+    for (const x of core.moments(d, st, {}, day, at(day, 9))) if (x.k === 'calm') expect(x.btn).toBeTruthy();
   });
   it('the count only goes up', () => {
     let d = slipAndSunrise('2026-11-20');
     const one = core.rkComebackCount(d, st, '2026-11-20');
     d = withEv(d, '2026-11-15', { id: 's2', rk: { at: '2026-11-16', pl: '' } });
     expect(core.rkComebackCount(d, st, '2026-11-20')).toBe(one + 1);
-    expect(core.rkComebackSay(1)).toBe('You came back: 1 comeback.');
-    expect(core.rkComebackSay(3)).toBe('You came back: 3 comebacks.');
   });
 });

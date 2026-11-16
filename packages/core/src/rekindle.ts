@@ -191,8 +191,6 @@ export function rkComebackCount(days: Days, st: Settings, tk: DayKey): number {
     }
   return n;
 }
-/** "You came back: 3 comebacks." */
-export const rkComebackSay = (n: number) => 'You came back: ' + n + (n === 1 ? ' comeback.' : ' comebacks.');
 
 /** the slip whose sunrise check is still to mark: the latest slip before today, the day after it (any slip, any mode), or
     later while a run the old rule covers still waits (runLedger, slips up to countFrom). Coming back is the check: Today
@@ -206,23 +204,6 @@ export function sunriseDue(days: Days, st: Settings | null, tk: DayKey): Rekindl
     if (!r || r.m3) return null;
     if (i === 1) return r;
     return runLedger(days, st, tk).open?.k === k ? r : null;
-  }
-  return null;
-}
-
-/** the day all three flames lit for the latest slip, said once on that day: the comeback, noticed. null on any other day. */
-export function comebackNow(days: Days, st: Settings, tk: DayKey) {
-  for (let i = 1; i <= BACK_DAYS + 1; i++) {
-    const k = addDays(tk, -i);
-    if (!sumDay(days[k]).slipped) continue;
-    const r = rkOf(days, k, st);
-    const l = rkLights(days, st, tk, k);
-    if (!r || !r.m3 || !l.third || !isKey(r.ev.rk && r.ev.rk.at)) return null;
-    /* a day with no slip is known the morning after it */
-    const thirdDay = l.third.rode ? l.third.k : addDays(l.third.k, 1);
-    const litDay = (r.ev.rk!.at as DayKey) > thirdDay ? (r.ev.rk!.at as DayKey) : thirdDay;
-    if (litDay !== tk) return null;
-    return { k, flames: l.flames, n: rkComebackCount(days, st, tk) };
   }
   return null;
 }

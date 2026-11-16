@@ -4,14 +4,16 @@
 
    It is made of small, flat, crisp dots and nothing else: no glow, no halo, no sun (the owner, November 15, 2026, of the
    glowing sun and the pictures round it: "scrap it ... make it look more like How We Feel"). Each pattern is one figure:
-   - the sigh: rings of dots round one dot. They fall in on the breath in and pack into a tight circle; they leave it,
-     unhurried, on the breath out, the inner rings first.
-   - long breath out: a globe of dots. A light crosses it as you breathe in and goes back as you breathe out.
-   - box: a square grid of dots, lit from one corner. The light goes round the square, a side for each count of four, and
-     one dot walks the edge with it. The grid swells on the breath in and flattens on the breath out.
-   - 4-7-8: a ball of scattered dots that turns. It grows on the breath in, a ripple crosses it once a second through the
-     hold of seven, and it draws in on the long breath out.
-   Every figure starts as one small dot while the words say to get settled, and its dots drift out of that dot slowly, so
+   - the sigh: rings of dots round one small circle. They go all the way into it on the breath in, every ring but the
+     last, and it rests; "a little more" takes the last ring. They leave it, unhurried, on the breath out.
+   - long breath out: a globe of dots. It fills from the top down and a light crosses it as you breathe in, and both go
+     back as you breathe out.
+   - box: a square grid of dots and one dot that walks round its edge, a side for each count of four. The grid leans
+     toward the walking dot, swells on the breath in and flattens on the breath out.
+   - 4-7-8: a ball of scattered dots that turns. It fills dot by dot on the breath in, is whole and quiet through the
+     hold of seven, and lets go dot by dot on the long breath out.
+   Every figure starts as one small dot while the words say to get settled, and its dots drift out of that dot from the
+   first moment, so
    the figure is there before the first breath (the owner: "it should start shooting out while it's like get settled").
    The whole figure is one color at a time, and the color tells the step: rose, coral and gold on the way in, cooling to
    teal on the way out. With Reduce Motion nothing moves, and only the color and the words change. */
@@ -75,9 +77,7 @@ const NEAR = 0.34;
 const FALL = 0.38;
 const FLY = 0.7;
 /** [how far out it rests, its angle, when it arrives on a breath in, when it leaves on a breath out, when it drifts out in the settle, how fast its ring turns,
-    how far out it sits in the packed circle (0 to 1)] */
-const RING_ALL = RINGS * 10 + (7 * RINGS * (RINGS - 1)) / 2;
-let ringSoFar = 0;
+    its ring (0 is the inmost), a steady random number] */
 const RING_DOTS: number[][] = [];
 for (let r = 0; r < RINGS; r++) {
   const rr = NEAR + ((1 - NEAR) * r) / (RINGS - 1);
@@ -91,10 +91,10 @@ for (let r = 0; r < RINGS; r++) {
       ((RINGS - 1 - r) / (RINGS - 1)) * 0.2 + rnd(k + 4) * 0.08,
       (r / (RINGS - 1)) * 0.6 + rnd(k + 6) * 0.4,
       (r % 2 ? 1 : -0.7) * (0.05 - r * 0.004),
-      Math.sqrt((ringSoFar + n * 0.6) / RING_ALL),
+      r,
+      rnd(k + 8),
     ]);
   }
-  ringSoFar += n;
 }
 
 /* ---- long breath out: a globe, dots along its lines ---- */
@@ -231,9 +231,9 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
   const full = smooth(v);
   /* the settle: one dot that grows, and from a third of the way in the figure's dots drift out of it, slowly */
   const settling = b < 0 && !still;
-  const from = settle * 0.34;
+  const from = 0;
   const span = Math.max(0.01, settle - from);
-  const born = settling ? smooth(clamp(t / Math.max(0.01, from * 1.2))) : 1;
+  const born = settling ? smooth(clamp(t / 0.5)) : 1;
   /** how far a dot has come out of the middle (0 to 1); `late` (0 to 1) is its place in the line */
   const come = (late: number) => {
     'worklet';
@@ -245,46 +245,44 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
   const seed = R * 0.055;
 
   if (id === 'sigh') {
-    /* the circle in the middle is the dots themselves, packed tight round one dot */
-    const pack = R * 0.2;
-    const mid = seed * 0.62 * born;
+    /* one small circle in the middle. Every dot goes all the way into it and is gone, and it grows a little for each one
+       it holds. The first breath in takes every ring but the last and comes to rest; "a little more" takes the last ring. */
+    const small = Math.max(d * 1.5, R * 0.024);
+    const big = R * 0.085;
+    const a1 = step === 0 ? clamp(at / (dur * 0.8)) : 1;
+    const a2 = step === 1 ? clamp((at - 0.15) / Math.max(0.1, dur - 0.45)) : step === 0 ? 0 : 1;
+    const o = step === 2 ? at / dur : 0;
+    let inside = 0;
     for (let i = 0; i < RING_DOTS.length; i++) {
       const l = RING_DOTS[i];
       const rest = R * l[0];
-      const home = pack * l[6];
-      let rad = rest;
-      let ang = l[1] + (still ? 0 : l[5] * t);
-      let seen = 1;
-      let size = 1;
+      /* how far in it is (0 on its ring, 1 in the circle) */
+      let pos = 0;
       if (still) {
         /* nothing moves */
       } else if (b < 0) {
-        const e = come(l[4]);
-        rad = mid + (rest - mid) * e;
-        seen = clamp(e * 6);
-        size = 0.6 + 0.4 * e;
-      } else if (!out) {
-        /* a breath in: it falls into the circle, curling a little, the inner rings first */
-        const e = smooth(clamp((v - (l[2] - FALL)) / FALL));
-        rad = rest + (home - rest) * e * e;
-        ang += 0.55 * e;
-        size = 1 - 0.3 * e;
+        /* out of the circle from the first moment, quick at first and slowing to its ring */
+        const f = clamp((t - l[4] * settle * 0.4) / (settle * 0.6));
+        pos = (1 - f) * (1 - f);
+      } else if (step < 2) {
+        const e = l[6] === RINGS - 1 ? smooth(clamp((a2 - l[7] * 0.25) / 0.75)) : smooth(clamp((a1 - (l[6] / (RINGS - 2)) * 0.45 - l[7] * 0.08) / 0.47));
+        pos = e * e;
       } else {
-        /* a breath out: it leaves the circle and eases out to its ring, the inner rings first */
-        const f = clamp((1 - v - l[3]) / FLY);
-        const fe = f * f * (3 - 2 * f);
-        rad = home + (rest - home) * fe;
-        ang += 0.55 * (1 - fe);
-        size = 0.7 + 0.3 * fe;
+        pos = 1 - smooth(clamp((o - l[3]) / FLY));
       }
+      inside += pos > 0.9 ? 1 : 0;
+      const seen = 1 - clamp((pos - 0.9) / 0.1);
       if (seen <= 0.01) continue;
-      dots.push(cx + rad * Math.cos(ang), cy + rad * Math.sin(ang), d * size, sky[0], sky[1], sky[2], seen);
+      const rad = rest + (small * 0.4 - rest) * pos;
+      const ang = l[1] + (still ? 0 : l[5] * t) + 0.55 * pos;
+      dots.push(cx + rad * Math.cos(ang), cy + rad * Math.sin(ang), d * (1 - 0.35 * pos), sky[0], sky[1], sky[2], seen);
     }
-    dots.push(cx, cy, Math.max(mid, still ? d : 0), sky[0], sky[1], sky[2], 1);
+    const mid = still ? small : (small + (big - small) * Math.sqrt(inside / RING_DOTS.length)) * born;
+    dots.push(cx, cy, mid, sky[0], sky[1], sky[2], 1);
   } else {
     if (id === 'long') {
-      /* a globe: it turns slowly, and a light crosses it from one side to the other with the breath */
-      const rad = R * (0.72 + 0.2 * full);
+      /* a globe: it turns slowly, and a light crosses it from one side to the other with the breath. It fills from the top
+         down, dot by dot, so it swells like a chest and is never one ball pushed in and out */
       const turn = still ? 0.4 : 0.1 * t;
       const ct = Math.cos(turn);
       const sn = Math.sin(turn);
@@ -303,63 +301,66 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
         const y = g[1] * cq - z0 * sq;
         const z = g[1] * sq + z0 * cq;
         const e = come((g[1] + 1) / 2);
-        const lit = clamp(((x * lx + y * ly + z * lz) / ll) * 0.75 + 0.3);
-        const near = z < 0 ? 0.3 : 1;
+        const fill = smooth(clamp(v * 1.45 - ((g[1] + 1) / 2) * 0.45));
+        const rad = R * (0.52 + 0.44 * fill);
+        const lit = clamp(((x * lx + y * ly + z * lz) / ll) * 0.7 + 0.42);
+        const near = z < 0 ? 0.42 : 1;
         const k = (1 + 0.16 * z) * e;
         dots.push(
           cx + x * rad * k,
           cy + y * rad * k,
-          d * (0.34 + 1.15 * lit * lit) * (0.85 + 0.15 * z),
+          d * (0.5 + 1.15 * lit * lit) * (0.85 + 0.15 * z),
           sky[0],
           sky[1],
           sky[2],
-          e * near * (0.1 + 0.9 * lit * Math.sqrt(lit)),
+          e * near * (0.18 + 0.82 * lit * Math.sqrt(lit)),
         );
       }
     } else if (id === 'box') {
-      /* a square grid lit from one corner; the light goes round, a side to a step, and one dot walks the edge with it */
+      /* a square grid and one dot that walks round it: along the top on the breath in, down the side on the hold, back along
+         the bottom on the breath out, up on the hold. The grid leans toward the walking dot (the near corner opens and
+         brightens, the far one closes and fades), so the whole figure goes round with it. */
       const q = still || b < 0 ? 0 : (step + smooth(at / dur)) / 4;
-      const phi = (-3 * Math.PI) / 4 + q * TAU;
-      const cl = Math.cos(phi);
-      const sl = Math.sin(phi);
-      const bulge = still ? 0.07 : 0.17 * full;
-      const half = R * (0.66 + 0.08 * full);
+      const side = Math.floor(q * 4) % 4;
+      const f = q * 4 - Math.floor(q * 4);
+      const wx = side === 0 ? -1 + 2 * f : side === 1 ? 1 : side === 2 ? 1 - 2 * f : -1;
+      const wy = side === 0 ? -1 : side === 1 ? -1 + 2 * f : side === 2 ? 1 : 1 - 2 * f;
+      const wl = Math.sqrt(wx * wx + wy * wy);
+      const cl = wx / wl;
+      const sl = wy / wl;
+      const lean = still ? 0 : 0.16;
+      const bulge = still ? 0.07 : 0.16 * full;
+      const half = R * (0.6 + 0.08 * full);
+      /** where a point of the grid is on the screen, and how near it is (about -1 to 1) */
+      const put = (gx: number, gy: number) => {
+        'worklet';
+        const z = (gx * cl + gy * sl) / 1.42;
+        const k = 1 / (1 - lean * z);
+        return [cx + (gx * (1 + bulge * (1 - gy * gy)) * k - cl * lean * 0.5) * half, cy + (gy * (1 + bulge * (1 - gx * gx)) * k - sl * lean * 0.5) * half, z];
+      };
       for (let iy2 = 0; iy2 < GRID; iy2++)
         for (let ix2 = 0; ix2 < GRID; ix2++) {
           const gx = (ix2 / (GRID - 1)) * 2 - 1;
           const gy = (iy2 / (GRID - 1)) * 2 - 1;
           const e = come(Math.max(Math.abs(gx), Math.abs(gy)));
+          const at2 = put(gx * e, gy * e);
           /* it comes out evenly lit, and the light finds its corner as it opens */
-          const lit = 0.45 + (clamp(0.5 + (gx * cl + gy * sl) / 2.3) - 0.45) * e;
-          dots.push(
-            cx + gx * (1 + bulge * (1 - gy * gy)) * half * e,
-            cy + gy * (1 + bulge * (1 - gx * gx)) * half * e,
-            d * (0.26 + 1.3 * lit * lit),
-            sky[0],
-            sky[1],
-            sky[2],
-            e * (0.05 + 0.95 * lit * Math.sqrt(lit)),
-          );
+          const lit = 0.45 + (clamp(0.5 + at2[2] * 0.62) - 0.45) * e;
+          dots.push(at2[0], at2[1], d * (0.26 + 1.35 * lit * lit), sky[0], sky[1], sky[2], e * (0.05 + 0.95 * lit * Math.sqrt(lit)));
         }
-      /* the walker: along the top on the breath in, down the side on the hold, back along the bottom on the breath out, up on the hold */
-      const side = Math.floor(q * 4) % 4;
-      const f = q * 4 - Math.floor(q * 4);
-      const m = half * (1.12 + bulge * 0.4);
-      const wx = side === 0 ? -1 + 2 * f : side === 1 ? 1 : side === 2 ? 1 - 2 * f : -1;
-      const wy = side === 0 ? -1 : side === 1 ? -1 + 2 * f : side === 2 ? 1 : 1 - 2 * f;
+      /* the walker keeps just outside the grid's edge, along its curve */
       const e = come(1);
-      dots.push(cx + wx * m * e, cy + wy * m * e, d * 1.5, sky[0], sky[1], sky[2], clamp(e * 5));
+      const wk = put(wx * 1.13 * e, wy * 1.13 * e);
+      dots.push(wk[0], wk[1], d * 1.9, sky[0], sky[1], sky[2], clamp(e * 3));
     } else {
-      /* a ball of dots: it turns, grows on the breath in and draws in on the breath out; through a hold a ripple crosses it each second */
-      const rad = R * (0.42 + 0.5 * full);
+      /* a ball of scattered dots that turns. It fills dot by dot on the breath in, is whole and quiet through the hold, and
+         lets go dot by dot on the long breath out */
       const turn = still ? 0.4 : 0.16 * t;
       const ct = Math.cos(turn);
       const sn = Math.sin(turn);
       const tilt = 0.4;
       const cq = Math.cos(tilt);
       const sq = Math.sin(tilt);
-      const holding = !still && b >= 0 && p.kind[step] === 1;
-      const beat = fract(at);
       for (let i = 0; i < BALL.length; i++) {
         const g = BALL[i];
         const x = g[0] * ct + g[2] * sn;
@@ -367,17 +368,18 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
         const y = g[1] * cq - z0 * sq;
         const z = g[1] * sq + z0 * cq;
         const e = come(g[3]);
-        const wave = holding ? Math.exp(-Math.pow((y - (1.3 - 2.6 * beat)) / 0.3, 2)) : 0;
+        const fill = smooth(clamp(v * 1.5 - g[3] * 0.5));
+        const rad = R * (0.3 + 0.64 * fill);
         const near = (z + 1) / 2;
         const k = (1 + 0.18 * z) * e;
         dots.push(
           cx + x * rad * k,
           cy + y * rad * k,
-          d * (0.42 + 0.75 * near) * (1 + 0.6 * wave),
+          d * (0.5 + 0.75 * near),
           sky[0],
           sky[1],
           sky[2],
-          e * Math.min(1, 0.14 + 0.86 * near * Math.sqrt(near) + 0.4 * wave),
+          e * Math.min(1, 0.2 + 0.8 * near * Math.sqrt(near)) * (0.7 + 0.3 * fill),
         );
       }
     }

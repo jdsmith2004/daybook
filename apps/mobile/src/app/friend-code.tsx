@@ -8,7 +8,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Field } from '@/components/choices';
 import { BigFlame } from '@/components/big-flame';
 import { Dock } from '@/components/scene';
-import { closeSheet, SheetFrame } from '@/components/sheet';
+import { SheetFrame } from '@/components/sheet';
 import { Button, T } from '@/components/ui';
 import { track } from '@/lib/events';
 import { allowReminders } from '@/lib/reminders';
@@ -49,6 +49,9 @@ export default function FriendCode() {
     else if (p.code && normCode(p.code)) find(p.code).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fr.ready]);
+
+  /* closing goes back to where the person came from, or to Friends when this sheet was opened on its own (a link) */
+  const done_ = () => (router.canGoBack() ? router.back() : router.replace('/friends'));
 
   const accept = async () => {
     setErr('');
@@ -93,7 +96,7 @@ export default function FriendCode() {
             </T>
           </View>
           <Dock>
-            <Button label="Done" onPress={closeSheet} />
+            <Button label="Done" onPress={done_} />
           </Dock>
         </View>
       </SheetFrame>
@@ -137,7 +140,7 @@ export default function FriendCode() {
             </View>
             <Dock>
               {found.self || found.already ? (
-                <Button label="Done" onPress={closeSheet} />
+                <Button label="Done" onPress={done_} />
               ) : (
                 <>
                   {!me ? (

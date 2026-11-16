@@ -11,6 +11,7 @@ import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 
 import { track } from './events';
+import { demoApi, friendsDemo } from './friends-demo';
 import { scheduleFriendReports } from './reminders';
 import { useStore } from './store';
 import { useSync } from './sync';
@@ -57,6 +58,8 @@ AsyncStorage.getItem(KEY)
 function keepLocal(p: Partial<Local>) {
   local = { ...local, ...p };
   localSubs.forEach((f) => f());
+  /* the demo keeps nothing: it is gone on reload */
+  if (friendsDemo()) return;
   AsyncStorage.setItem(KEY, JSON.stringify(local)).catch(() => undefined);
 }
 export const useFriendsLocal = () =>
@@ -85,7 +88,8 @@ else Linking.getInitialURL().then(noteLink, () => undefined);
 /** pre-joins the community: one anonymous count (the event community_join) and a mark on this phone. No name, email or account. */
 export function joinCommunity() {
   if (local.community) return;
-  track('community_join');
+  /* the demo is not a real pre-join, so it is never counted */
+  if (!friendsDemo()) track('community_join');
   keepLocal({ community: Date.now() });
 }
 
@@ -108,13 +112,14 @@ export function muteReport(fid: string, mute: boolean) {
 }
 /** each friend's daily report as a note on this phone (none on the web), from what the server last said */
 function planReports() {
+  if (friendsDemo()) return;
   const friends = state.data?.friends || [];
   const mute = new Set(local.mute || []);
   scheduleFriendReports(friends.filter((f) => f.rt && !mute.has(f.fid)).map((f) => ({ fid: f.fid, name: f.name, rt: f.rt! }))).catch(() => undefined);
 }
 
 /** the encouragements seen up to now */
-export const markSeen = (at: number) => keepLocal({ seen: Math.max(local.seen || 0, at) });
+export const markSeen = (at: number) => !friendsDemo() && keepLocal({ seen: Math.max(local.seen || 0, at) });
 
 /** what the server answers, said for a person: its own words when it wrote them for people, a calm line otherwise */
 export function friendWords(r: { status: number; body: Record<string, unknown> } | null): string {
@@ -128,42 +133,45 @@ export function useFriends() {
   const sync = useSync();
   const { snap, tk } = useStore();
   const s = useSyncExternalStore(sub, () => state);
-  const signedIn = sync.status.k !== 'out' && sync.status.k !== 'off' && sync.loaded;
+  /* the demo (friends-demo.ts) answers in place of the account, and counts as signed in */
+  const demo = friendsDemo();
+  const signedIn = demo || (sync.status.k !== 'out' && sync.status.k !== 'off' && sync.loaded);
+  const api = demo ? demoApi : sync.api;
 
   const load = useCallback(async () => {
     if (!signedIn) return;
     set({ loading: true });
-    const r = await sync.api('GET', '?friends=1');
+    const r = await api('GET', '?friends=1');
     if (r?.status === 200) {
       const data = r.body as unknown as FriendsData;
       set({ data, loading: false, error: null });
-      if (!!data.me !== !!local.in) keepLocal({ in: !!data.me });
+      if (!demo && !!data.me !== !!local.in) keepLocal({ in: !!data.me });
       planReports();
     } else set({ loading: false, error: friendWords(r) });
-  }, [signedIn, sync]);
+  }, [signedIn, api]);
 
   /** saves the card: the name, what is on, the daily report's hour, and this week's numbers */
   const saveCard = useCallback(
     async (c: { name: string; on: Partial<Record<ShareKey, boolean>>; rt: string | null }): Promise<string | null> => {
-      if (!snap.settings) return 'Finish setup first.';
-      const vals = weekShare(snap.days, snap.settings, snap.reviews, tk);
-      const r = await sync.api('POST', '?friends=card', { card: { ...c, vals, at: Date.now() } });
+      if (!snap.settings && !demo) return 'Finish setup first.';
+      const vals = snap.settings ? weekShare(snap.days, snap.settings, snap.reviews, tk) : {};
+      const r = await api('POST', '?friends=card', { card: { ...c, vals, at: Date.now() } });
       if (r?.status !== 200) return friendWords(r);
       set({ data: r.body as unknown as FriendsData, error: null });
-      keepLocal({ in: true, sentAt: Date.now(), sentVals: JSON.stringify(vals) });
+      if (!demo) keepLocal({ in: true, sentAt: Date.now(), sentVals: JSON.stringify(vals) });
       return null;
     },
-    [snap, tk, sync],
+    [snap, tk, api, demo],
   );
 
   const call = useCallback(
     async (what: string, body: Record<string, unknown> = {}): Promise<{ ok: boolean; msg: string; body: Record<string, unknown> }> => {
-      const r = await sync.api('POST', '?friends=' + what, body);
+      const r = await api('POST', '?friends=' + what, body);
       const ok = r?.status === 200;
       if (ok && what !== 'invite') load().catch(() => undefined);
       return { ok, msg: ok ? '' : friendWords(r), body: r?.body || {} };
     },
-    [sync, load],
+    [api, load],
   );
 
   /** the card with everything automatic (what is shared, the report at 9 PM), made the first time with just a name */
@@ -178,15 +186,15 @@ export function useFriends() {
 
   const look = useCallback(
     async (code: string) => {
-      const r = await sync.api('GET', '?friends=look&code=' + encodeURIComponent(code));
+      const r = await api('GET', '?friends=look&code=' + encodeURIComponent(code));
       return r?.status === 200
         ? { ok: true as const, name: String(r.body.name || ''), self: !!r.body.self, already: !!r.body.already }
         : { ok: false as const, msg: friendWords(r) };
     },
-    [sync],
+    [api],
   );
 
-  return { ...s, signedIn, load, saveCard, ensureCard, call, look };
+  return { ...s, signedIn, demo, load, saveCard, ensureCard, call, look };
 }
 
 /** for a sheet opened on its own (a link, a reload): the friends data, loaded if it is not here yet. ready: it is known (or there is no
@@ -215,7 +223,7 @@ export function FriendsKeeper() {
     keepLocal({ pending: undefined });
     router.push({ pathname: '/friends', params: { code } });
   }, [lo.pending, snap.settings, top]);
-  const on = !!lo.in && sync.status.k !== 'out' && sync.status.k !== 'off' && sync.loaded;
+  const on = !friendsDemo() && !!lo.in && sync.status.k !== 'out' && sync.status.k !== 'off' && sync.loaded;
   useEffect(() => {
     if (!on || !snap.settings) return;
     const st = snap.settings;

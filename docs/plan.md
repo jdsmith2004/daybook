@@ -49,6 +49,31 @@ rate it). Nothing here is locked.
 wait for the breathing design to finish and then use that as inspiration for a squeeze tool redesign". Squeeze is third in
 the order, so its redesign starts once the breathing redesign has merged.
 
+**Second pass (the owner, November 15, 2026: "the order isn't matching", and on It is written: "it's actually an extremely
+good tool ... write down that it's going to be second for those who are faith-based").**
+
+- **It is written is second for everyone with faith on**, right after the breath, for good (it was second only for the first
+  five urges ridden out). It drops back only when the person says Not really to it or passes it over often lately (the same
+  fading count as the moves). A note from a good day comes after it.
+- **If it were a thing comes after the first three moves past the breath** (it came right after the first one), so the body
+  and the eyes come first and the list above is what a person sees. A faith person now gets: Breathe, It is written,
+  5-4-3-2-1, Squeeze, Fit the shapes, If it were a thing, Name it, Say it fast, The hour after, Your words. The hour and the
+  person's own record still move things.
+- **It is written's pace:** a page goes on with a tap anywhere, and a page nobody taps stays for its words (2.5 seconds plus
+  a quarter second a word, 4 to 10), not 10 to 16 seconds for every page. The page timer also restarts cleanly when the ride
+  comes back to it (it used to count from the wrong start after the untimed Cast page).
+- **It is written, more like a lesson (the owner: "it's basically just a repeatable lesson ... use the elements and good
+  things from it"; audit in side-session-notes `written-audit.md`):** each pull is a card turned like a lesson's: first
+  the pull and the old move it is ("It calls a want a need.", "It calls the first step small.", "It promises what it has
+  never given."), then a tap answers it with the verse, and the pull is struck through. The story lines are short ("After
+  forty days without food, He answered:"). Cast it from you asks what a person can see, "What is feeding it right now?"
+  (The screen in my hand, This room, Being alone, I do not know), and gives the one step for that answer; it replaced "What
+  will you cast away right now?" (the owner: "I don't know ... It's just hard"). Subtitles that repeated the verse are
+  shorter, and the last page says "You stood." over Matthew 5:14, 16 and the flame. The Scripture is quoted exactly as before.
+- **Still open for It is written:** more of the lesson player's pictures (the Chain on the heart page, the urge Wave on
+  "Then it left", sparks round the flame for each thing done), and whether the first question stays (the audit suggests
+  "The pull uses three lines." in its place). Samples to the owner first.
+
 ## Friends (beta): add a friend inside Daybook, and a community coming soon (the owner, November 15, 2026; answers chosen November 15, each the recommended option; built on `claude/great-galileo-789c33`)
 
 The owner: "the texting doesn't work let's add the option to add them in the app instead ... it should just get a log, like tell them
@@ -95,6 +120,14 @@ and three ways on at the bottom: Share my invite link, Share my code, Enter a fr
 can be turned off; urges ridden out stays off until turned on (the SOS answer stands). The daily report is a note the friend's own phone
 makes at the hour the person picked (8 AM, 12 PM, 6 PM, 9 PM or off), naming only the person; the friend can mute it per friend. No
 server push is needed, so it costs nothing.
+
+**Third pass, the same day (the owner: "most people are going to only have like one person ... Having five like this is insane ...
+it still does not meet our standards").** The page is built for one friend: your flame and theirs big and side by side in your sky
+(alone, your flame waits beside one warm empty place; two friends make three flames; more are counted, not drawn); their report as one
+card (what they did today, three big numbers for the week, zeros left out, and one tap to warm their flame); what they see of you as
+one line that opens its own sheet (your card exactly as they see it, then the switches, the report time, your name, Leave); and the
+community as a night of glowing fires on far hills, yours lit in front once you pre-join. `/friends?demo=1` shows all of it with a
+made-up friend, with no setup and no account, saving and sending nothing.
 
 Store review notes (Guideline 1.2): friends add each other only by a code one of them sends; what passes between them is a name,
 up to three short goals (links, emails and phone numbers refused, with a word filter), numbers and three fixed encouragements. Each

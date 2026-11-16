@@ -65,6 +65,7 @@ import { NightPackKeeper } from '@/lib/night-pack';
 import { PullKeeper } from '@/lib/pull';
 import { count, countOnce, useKeepPulse } from '@/lib/pulse';
 import { FriendsKeeper } from '@/lib/friends';
+import { friendsDemo } from '@/lib/friends-demo';
 import { SyncProvider, useAccount } from '@/lib/sync';
 import { StoreProvider, useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
@@ -252,7 +253,9 @@ const OPEN_BEFORE_SETUP = new Set([
 function SetupGate() {
   const { ready, snap } = useStore();
   const top = useSegments()[0] as string | undefined;
-  const shut = ready && !snap.settings && !!top && !OPEN_BEFORE_SETUP.has(top);
+  /* the Friends demo (lib/friends-demo.ts) is for looking, with no setup: its pages stay open */
+  const demo = friendsDemo() && !!top && top.startsWith('friend');
+  const shut = ready && !snap.settings && !!top && !OPEN_BEFORE_SETUP.has(top) && !demo;
   useEffect(() => {
     if (shut) router.replace('/');
   }, [shut, top]);

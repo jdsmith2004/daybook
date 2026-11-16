@@ -8,7 +8,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Field } from '@/components/choices';
 import { BigFlame } from '@/components/big-flame';
 import { Dock } from '@/components/scene';
-import { closeSheet, SheetFrame } from '@/components/sheet';
+import { SheetFrame } from '@/components/sheet';
 import { Button, T } from '@/components/ui';
 import { track } from '@/lib/events';
 import { allowReminders } from '@/lib/reminders';
@@ -50,6 +50,9 @@ export default function FriendCode() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fr.ready]);
 
+  /* closing goes back to where the person came from, or to Friends when this sheet was opened on its own (a link) */
+  const done_ = () => (router.canGoBack() ? router.back() : router.replace('/friends'));
+
   const accept = async () => {
     setErr('');
     /* someone new to Friends writes one thing, their first name, right here; the rest is automatic */
@@ -70,9 +73,9 @@ export default function FriendCode() {
     setBusy(false);
     if (!r.ok) return setErr(r.msg);
     buzz('lit');
-    track('friend_added');
+    if (!fr.demo) track('friend_added');
     /* their daily report comes as a note on a phone: ask for notes now, once, when it was never asked (it never asks again) */
-    allowReminders().catch(() => false);
+    if (!fr.demo) allowReminders().catch(() => false);
     setDone(String(r.body.name || found?.name || ''));
   };
 
@@ -93,7 +96,7 @@ export default function FriendCode() {
             </T>
           </View>
           <Dock>
-            <Button label="Done" onPress={closeSheet} />
+            <Button label="Done" onPress={done_} />
           </Dock>
         </View>
       </SheetFrame>
@@ -137,7 +140,7 @@ export default function FriendCode() {
             </View>
             <Dock>
               {found.self || found.already ? (
-                <Button label="Done" onPress={closeSheet} />
+                <Button label="Done" onPress={done_} />
               ) : (
                 <>
                   {!me ? (

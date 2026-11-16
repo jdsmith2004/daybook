@@ -18,6 +18,7 @@ on:
     paths:
       - 'packages/core/src/lesson*'
       - 'packages/core/src/voice.ts'
+      - 'packages/core/src/voice-lines.ts'
       - 'packages/core/src/habit.ts'
       - 'packages/core/src/faith.ts'
       - 'scripts/voice*'

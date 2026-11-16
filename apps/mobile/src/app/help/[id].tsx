@@ -20,6 +20,8 @@ import {
   toggleTherapist,
   type HelpPage,
 } from '@daybook/core';
+/* the sources page lists every lesson's sources, which come with the lessons' text */
+import '@daybook/core/lesson-content';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';

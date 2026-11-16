@@ -49,6 +49,7 @@ import { LaunchScene } from '@/components/launch';
 import { LockGate } from '@/components/lock';
 import { Oops } from '@/components/oops';
 import { Toast } from '@/components/toast';
+import '@/lib/lesson-text';
 import { useWatchOpens } from '@/lib/day-open';
 import { forgetDrafts } from '@/lib/drafts';
 import { useFlameWidget } from '@/lib/flame-widget';

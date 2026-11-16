@@ -5,6 +5,7 @@ packages/core/test/fixtures/
 packages/core/test/upgrade/
 
 # Made by tools, not by hand.
+packages/core/src/lesson-catalog.ts
 package-lock.json
 **/dist/
 **/.expo/

@@ -18,7 +18,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { SITE_URL } from '../packages/core/src/supporter.ts';
-import { VOICE_SPEED, VOICES, voiceLines, voiceUrl, type VoiceLine } from '../packages/core/src/voice.ts';
+import { VOICE_SPEED, VOICES, voiceUrl } from '../packages/core/src/voice.ts';
+import { voiceLines, type VoiceLine } from '../packages/core/src/voice-lines.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const arg = (k: string) => {

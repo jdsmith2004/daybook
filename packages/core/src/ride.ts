@@ -12,6 +12,7 @@
    2007); and each urge outlasted is the proof that builds the confidence for the next (Marlatt; Bandura). */
 import { eventsOf } from './legacy/core.js';
 import { lessonById, lessonFor } from './lessons';
+import { PROOFS } from './lesson-catalog';
 import { urEvidence, urLikeOf, urRank, urTool, type UrMem, type UrState } from './sos';
 import type { DayEvent, DayKey, Days, Settings } from './types';
 
@@ -247,7 +248,8 @@ export function rideScience(
   return {
     t: w.t,
     lesson: L ? { id: L.id, title: L.title, mins: L.mins || 3, ask: L.ask || '', key: L.key } : null,
-    proofs: L ? L.cards.filter((c) => c.e === 'proof' && c.fact).map((c) => ({ h: c.h, s: c.fact!.s })) : [],
+    /* the lesson's proof cards, from the catalog, so SOS loads without the lesson text (lesson-catalog.ts) */
+    proofs: L ? PROOFS[L.id] || [] : [],
   };
 }
 

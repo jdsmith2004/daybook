@@ -4,10 +4,11 @@
   "private": true,
   "description": "Every rule in Daybook, with no UI: the data model, counting, run saves, step down, points, levels, badges, quests, the flame, lessons and setup answers.",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "src/rules.ts",
+  "types": "src/rules.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/rules.ts",
+    "./lesson-content": "./src/lesson-content.ts"
   },
   "scripts": {
     "test": "TZ=America/Chicago vitest run",

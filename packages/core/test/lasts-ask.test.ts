@@ -70,3 +70,8 @@ it('"lasts" is an ask on the fixed list, and its screen has a name', () => {
   expect(core.evProps({ what: 'lasts' })).toEqual({ what: 'lasts' });
   expect((core.EV_ROUTES as readonly string[]).includes('lasts')).toBe(true);
 });
+
+it('the tip card waits on the day it was asked', () => {
+  const shown = core.lastsShown(old, tk, now).st;
+  expect(core.tipAsk({}, shown, tk, 12, null, 'https://tip.example', calm)).toBe(false);
+});

@@ -85,7 +85,7 @@ import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
 import { whatsNewPending } from '@/lib/whats-new';
 import { track } from '@/lib/events';
-import { celebrationSheetAt, useCelebrating } from '@/components/celebrate';
+import { celebrationSheetAt, noteSheet, useCelebrating } from '@/components/celebrate';
 import { DayFeelPop } from '@/components/day-feel-pop';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
@@ -245,6 +245,8 @@ export default function Today() {
     const t = setTimeout(() => {
       if (!focusRef.current || sheetOnTop()) return;
       spendFirstOpen();
+      /* the one-time asks wait for a later open (they read this like a sheet) */
+      noteSheet();
       setAskFeel(true);
     }, 700);
     return () => clearTimeout(t);
@@ -367,8 +369,9 @@ export default function Today() {
   }, [walkNow, walkOpen]);
   /* "How long does it usually last?" (core lasts-ask.ts, app/lasts.tsx): once, for a person who set up before setup asked it, so Time
      given back can count for them. Over Today only, after a settle, when nothing else is opening or waiting (What's new first, then
-     Welcome back, graduation, the morning, the tour, Walk it through, a celebration), never in the quiet hours, and never on an open
-     whose Today already shows the account card or the tip card: one ask at a time. Marked as it opens, so it comes only once. */
+     Welcome back, graduation, the morning, the tour, Walk it through, "How are you feeling today?", a celebration), never in the quiet
+     hours, and never on a day another ask was shown (core lastsAskDue: the tip card marks its day as it shows, so it wins today and
+     this waits). Marked as it opens, so it comes only once. */
   const lastsNow =
     ready &&
     !!st &&
@@ -385,10 +388,9 @@ export default function Today() {
     !touring &&
     !walkNow &&
     !walkOpen &&
+    !askFeel &&
     !sos.ur &&
     !sos.timer &&
-    !accountAsk(snap.days, st, tk, g.level.n, account) &&
-    !tipAsk(snap.days, st, tk, new Date(now).getHours(), null, TIP_URL, { now, sos: careLastAt(sos.mem) }) &&
     lastsAskDue(snap.days, st, tk, { now, sos: careLastAt(sos.mem) });
   useEffect(() => {
     if (!lastsNow) return;
@@ -397,6 +399,8 @@ export default function Today() {
       const cur = snap.settings;
       if (!cur || !lastsAskFor(cur)) return;
       apply(lastsShown(cur, tk));
+      /* "How are you feeling today?" never comes on the same open (it treats this like a sheet) */
+      noteSheet();
       track('ask', { what: 'lasts' });
       router.push('/lasts');
     }, 1200);
@@ -426,11 +430,14 @@ export default function Today() {
     unlock,
   });
   /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */
-  const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
+  /* "How long does it usually last?" is due (core lasts-ask.ts): it is this open's one ask, so the account and tip cards wait for it */
+  const lastsDue = lastsAskDue(snap.days, st, tk, { now, sos: careLastAt(sos.mem) });
+  const ask = quiet || lastsDue ? null : accountAsk(snap.days, st, tk, g.level.n, account);
   /* the button beside Ideas glows with a line every few days after a good moment, never on a day the card already asks (core accountNudge) */
   const nudgeNow = ask ? null : accountNudge(snap.days, st, tk, !!account, quiet);
   /* the day the flame was lit in full is that moment's, so the tip waits a day too (the account card and nudge wait in core) */
-  const tip = !quiet && !litToday(snap.days, st, tk) && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: careLastAt(sos.mem) });
+  const tip =
+    !quiet && !lastsDue && !litToday(snap.days, st, tk) && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: careLastAt(sos.mem) });
   /* one quiet line under the next step: the week's goal from Sunday (today's entries are in Today so far, under it) */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name, nights)?.note;
   /* the quiet lines under the next step take their room from the sky */

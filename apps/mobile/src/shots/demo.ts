@@ -28,6 +28,10 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   /* ?demo=month: a full month of what people really do, for the Pattern cards: urges at their own hours with what set them off, two
      slips, a lesson on most days, mornings that tell the night, and hard hours held (no feelings named, as most people name none) */
   const month = q === 'month';
+  /* ?demo=update: a person updating from 1.3.4, to walk the update as they meet it: set up in September, when setup asked how often and
+     not how long (so "How long does it usually last?" is still to ask, core lasts-ask.ts), never asked whether they like Daybook, last
+     saw What's new at 1.3.4 (mode.ts), and Squeeze set to "In my seat" from before that switch was taken out */
+  const update = q === 'update';
   const MONTH_SLIPS = [day(DEMO.day, -17), day(DEMO.day, -9)];
   const URGE_AT = ['21:40', '22:15', '14:30', '23:05', '10:20', '22:50'];
   const URGE_WHY = ['late', 'stress', 'bored', 'tired', 'scroll', 'late'];
@@ -43,6 +47,9 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     u: 1792194562327,
     ...(hard ? { cleanMode: 'step', stepAt: start } : {}),
     ...(grad ? { gradAt: '2026-10-04' } : {}),
+    ...(update
+      ? { onb: { n: 1, at: new Date('2026-09-08T20:00:00').getTime(), a: { habit: 'porn', freq: 'f2', when: ['late'], for: ['love'] }, hist: [] } }
+      : {}),
   };
   const o: Record<string, unknown> = { 'daybook:settings': st };
   const lessons = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l13', 'l14'];
@@ -134,7 +141,10 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
       out['daybook:journal/' + id] = JSON.stringify({ id, d, at, w, t, u: at });
     });
   if (theme !== 'auto') out['daybook.theme'] = theme;
-  /* the app was already opened today, so "How are you feeling today?" does not cover the shot (lib/day-open.ts) */
-  out['daybook.dayOpen'] = tk;
+  /* the app was already opened today, so "How are you feeling today?" does not cover the shot (lib/day-open.ts); an updating person
+     opens it fresh, as they would, unless ?seen= stands for a later open */
+  const later = typeof window !== 'undefined' && !!window.location && new URLSearchParams(window.location.search).has('seen');
+  if (!update || later) out['daybook.dayOpen'] = tk;
+  else out['daybook.ur.v1'] = JSON.stringify({ moveSit: false });
   return out;
 }

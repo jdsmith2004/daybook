@@ -53,7 +53,11 @@ if (typeof window !== 'undefined') {
     st.onb = { ...(st.onb || {}), a: { ...((st.onb && st.onb.a) || {}), faith: 'big', creed: faith === 'plain' ? 'other' : faith } };
     demo['daybook:settings'] = JSON.stringify(st);
   }
-  Object.defineProperty(window, 'localStorage', { value: new Mem({ ...demo, 'daybook.seenVersion': '99.0.0' }), configurable: true });
+  /* ?demo=update last saw What's new at 1.3.4, so the update's page opens as it will for people updating */
+  /* ?seen=1.3.5 instead: What's new was already seen on an earlier open, to walk what comes on the next one */
+  const seenQ = q.get('seen');
+  const seen = seenQ && /^\d+\.\d+\.\d+$/.test(seenQ) ? seenQ : q.get('demo') === 'update' ? '1.3.4' : '99.0.0';
+  Object.defineProperty(window, 'localStorage', { value: new Mem({ ...demo, 'daybook.seenVersion': seen }), configurable: true });
   Object.defineProperty(window, 'sessionStorage', { value: new Mem({}), configurable: true });
 
   /* the clock: the demo moment, moving on from there as the page runs (so animations and timers still work) */

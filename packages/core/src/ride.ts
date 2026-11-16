@@ -70,12 +70,12 @@ const RIDE_LIFT = 1;
 
 /* Passing a move over. Next on a move before it is done counts against it, a quick pass (under RIDE_QUICK_MS, a flick on
    sight) a whole one and a later pass half; finishing it halves what it had. Each new SOS fades every count to RIDE_FADE of
-   itself, so a pass weighs half as much seven rides later. "Often" is RIDE_OFTEN or more:
+   itself, so a pass weighs half as much seven rides later. "Often" is RIDE_OFTEN or more at the start of an SOS:
    three quick passes in three rides in a row. The count lowers the move's place and, once it is often, makes it come round
    half as often, so it comes later in a ride but still comes: nothing is hidden for good. Kept on this phone only (UrMem). */
 export const RIDE_QUICK_MS = 5000;
 export const RIDE_FADE = 0.9;
-export const RIDE_OFTEN = 2.5;
+export const RIDE_OFTEN = 2.2;
 const RIDE_SKIP_COST = 2;
 const RIDE_SKIP_MAX = 8;
 const skipMap = (mem: UrMem): Record<string, number> => (mem.rsk && typeof mem.rsk === 'object' ? (mem.rsk as Record<string, number>) : {});

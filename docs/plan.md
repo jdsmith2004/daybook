@@ -32,7 +32,7 @@ that move by themselves are liked less when they say so.
   own signals, so the hour, the trigger and their record still steer. 5-4-3-2-1 keeps its lift as a strong first pick (the
   owner, October 24, 2026), so a fresh ride now runs: breathe, ground, move, stack, feel, thought, forward, reasons.
 - Passing over (`ridePassed`, `rideFinished`, `rideFade`, kept in `UrMem.rsk`, on this phone only): Next under 5 seconds
-  counts 1, later 0.5; finishing a move halves its count; every new SOS fades every count to 90%. Often is 2.5 or more,
+  counts 1, later 0.5; finishing a move halves its count; every new SOS fades every count to 90%. Often is 2.2 or more,
   about three quick passes in three rides. The count lowers the move's place, and once it is often the move comes round
   half as often: after the others' second turn, never hidden. The old `mem.pass` no longer holds a ride move down.
 - Helped: the heart and What helped most lift a move more in the ride than in the tool list, so two of them outweigh the

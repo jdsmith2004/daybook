@@ -1,22 +1,27 @@
 /* Friends: entering a friend's code (or opening their link, which fills it in). It shows whose code it is first, then one tap makes
    you friends. Both people chose this: one sent the code, the other entered it; and nothing is shared until each turns it on. */
-import { normCode, showCode } from '@daybook/core';
+import { gameCompute, normCode, showCode } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Field } from '@/components/choices';
-import { Flame } from '@/components/flame';
+import { BigFlame } from '@/components/big-flame';
 import { Dock } from '@/components/scene';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Button, T } from '@/components/ui';
 import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
-import { useFriends } from '@/lib/friends';
+import { useFriendsReady } from '@/lib/friends';
+import { useStore } from '@/lib/store';
 
 export default function FriendCode() {
   const p = useLocalSearchParams<{ code?: string }>();
-  const fr = useFriends();
+  const fr = useFriendsReady();
+  const { snap, tk } = useStore();
+  const level = snap.settings ? gameCompute(snap.days, snap.settings, snap.reviews, tk).level.n : 1;
+  const { height } = useWindowDimensions();
+  const tall = { minHeight: Math.max(440, height - 150) };
   const [code, setCode] = useState(p.code ? showCode(normCode(p.code) || '') : '');
   const [found, setFound] = useState<{ name: string; self: boolean; already: boolean } | null>(null);
   const [done, setDone] = useState('');
@@ -33,11 +38,15 @@ export default function FriendCode() {
     if (r.ok) setFound({ name: r.name, self: r.self, already: r.already });
     else setErr(r.msg);
   };
+  const started = useRef(false);
   useEffect(() => {
-    if (!fr.data?.me) router.replace({ pathname: '/friend-me', params: { next: 'code', ...(p.code ? { code: p.code } : {}) } });
+    if (!fr.ready || started.current) return;
+    started.current = true;
+    if (!fr.signedIn) router.replace({ pathname: '/friends', params: p.code ? { code: p.code } : {} });
+    else if (!fr.data?.me) router.replace({ pathname: '/friend-me', params: { next: 'code', ...(p.code ? { code: p.code } : {}) } });
     else if (p.code && normCode(p.code)) find(p.code).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fr.ready]);
 
   const accept = async () => {
     setBusy(true);
@@ -52,11 +61,11 @@ export default function FriendCode() {
   if (done)
     return (
       <SheetFrame title="Friends">
-        <View style={s.wrap}>
-          <View style={s.middle}>
+        <View style={[s.wrap, tall]}>
+          <View style={[s.middle, s.grow]}>
             <View style={s.pair}>
-              <Flame level={3} size={96} alive />
-              <Flame level={3} size={96} alive />
+              <BigFlame level={level} size={150} noLand />
+              <BigFlame level={3} size={150} noLand />
             </View>
             <T v="h2" style={{ textAlign: 'center' }}>
               You and {done} are friends
@@ -74,7 +83,7 @@ export default function FriendCode() {
 
   return (
     <SheetFrame title="I have a code">
-      <View style={s.wrap}>
+      <View style={[s.wrap, tall]}>
         {!found ? (
           <View style={{ gap: 12 }}>
             <Field
@@ -96,8 +105,8 @@ export default function FriendCode() {
           </View>
         ) : (
           <>
-            <View style={s.middle}>
-              <Flame level={2} size={120} alive />
+            <View style={[s.middle, s.grow]}>
+              <BigFlame level={3} size={190} noLand />
               <T v="h2" style={{ textAlign: 'center' }}>
                 {found.self ? 'That is your own code' : found.already ? `You and ${found.name} are already friends` : `${found.name} invited you`}
               </T>
@@ -125,5 +134,6 @@ export default function FriendCode() {
 const s = StyleSheet.create({
   wrap: { gap: 16, minHeight: 440 },
   middle: { alignItems: 'center', gap: 12, paddingVertical: 24 },
-  pair: { flexDirection: 'row', gap: 8 },
+  pair: { flexDirection: 'row', marginBottom: 8 },
+  grow: { flex: 1, justifyContent: 'center' },
 });

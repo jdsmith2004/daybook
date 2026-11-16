@@ -9,14 +9,14 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { Flame } from '@/components/flame';
+import { BigFlame } from '@/components/big-flame';
 import { FlameSky } from '@/components/flame-sky';
 import { skyInk } from '@/components/hero';
 import { Screen } from '@/components/screen';
 import { LinkText } from '@/components/today';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { joinCommunity, markSeen, useFriends, useFriendsLocal, type FriendView } from '@/lib/friends';
+import { joinCommunity, keepCode, keepNext, markSeen, takeNext, useFriends, useFriendsLocal, type FriendView } from '@/lib/friends';
 import { useStore } from '@/lib/store';
 import { useSync } from '@/lib/sync';
 import { useTheme } from '@/lib/theme';
@@ -38,10 +38,24 @@ export default function Friends() {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fr.signedIn]),
   );
-  /* a link with a code (…/friends?code=K7QM2P) opens the code sheet with it filled in */
+  /* a link with a code (…/friends?code=K7QM2P) is kept, so it survives setup and the account sheet */
   useEffect(() => {
-    if (p.code) router.push({ pathname: '/friend-code', params: { code: p.code } });
+    if (p.code) keepCode(p.code);
   }, [p.code]);
+  /* once signed in and the card is known, carry on with what the person set out to do: the code they were sent, or adding a friend */
+  const ready = fr.signedIn && !fr.loading && !!fr.data;
+  useFocusEffect(
+    useCallback(() => {
+      if (!ready) return;
+      const t = takeNext();
+      const hasCard = !!fr.data?.me;
+      if (t.code)
+        router.push(hasCard ? { pathname: '/friend-code', params: { code: t.code } } : { pathname: '/friend-me', params: { next: 'code', code: t.code } });
+      else if (t.next === 'add') router.push(hasCard ? '/friend-add' : { pathname: '/friend-me', params: { next: 'add' } });
+      else if (t.next === 'code') router.push(hasCard ? '/friend-code' : { pathname: '/friend-me', params: { next: 'code' } });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ready]),
+  );
 
   const data = fr.signedIn ? fr.data : null;
   const friends = data?.friends || [];
@@ -66,17 +80,30 @@ export default function Friends() {
   /* the first tap asks for the free account; the account sheet comes back here */
   const needAccount = !fr.signedIn && sync.status.k !== 'off';
   const add = () => {
-    if (needAccount) return sync.signInNow({ why: 'friends' });
+    if (needAccount) {
+      keepNext('add');
+      return sync.signInNow({ why: 'friends' });
+    }
     router.push(me ? '/friend-add' : { pathname: '/friend-me', params: { next: 'add' } });
   };
   const haveCode = () => {
-    if (needAccount) return sync.signInNow({ why: 'friends' });
+    if (needAccount) {
+      if (!lo.pending) keepNext('code');
+      return sync.signInNow({ why: 'friends' });
+    }
     router.push(me ? '/friend-code' : { pathname: '/friend-me', params: { next: 'code' } });
   };
 
   const SKY = Math.min(300, Math.round(width * 0.72));
   return (
     <Screen title="Friends" back="Settings" sub={<T tone="muted">Beta</T>}>
+      {lo.pending && needAccount ? (
+        <Card tone="note">
+          <T v="label" style={{ color: c.sunText }}>
+            A friend sent you a code. Make a free account, and it is waiting for you.
+          </T>
+        </Card>
+      ) : null}
       <Circle level={level} friends={friends} height={SKY} pulse={pulse} onAdd={add} />
 
       {fresh.length ? (
@@ -107,10 +134,8 @@ export default function Friends() {
       {me ? <YourCard /> : null}
 
       <View style={s.actions}>
-        <Button label="Add a friend" icon="plus" onPress={add} />
-        <View style={{ alignItems: 'center' }}>
-          <LinkText label="I have a code" onPress={haveCode} />
-        </View>
+        {lo.pending && needAccount ? <Button label="Make a free account" onPress={haveCode} /> : <Button label="Add a friend" icon="plus" onPress={add} />}
+        <View style={{ alignItems: 'center' }}>{lo.pending && needAccount ? null : <LinkText label="I have a code" onPress={haveCode} />}</View>
         {fr.error && fr.signedIn ? (
           <T v="small" tone="muted" style={{ textAlign: 'center' }}>
             {fr.error}
@@ -157,7 +182,7 @@ function Circle({ level, friends, height, pulse, onAdd }: { level: number; frien
                 router.push({ pathname: '/friend/[fid]', params: { fid: f.fid } });
               }}
               style={{ alignItems: 'center' }}>
-              <Flame level={f.vals.level || 1} size={SMALL} alive />
+              <BigFlame level={f.vals.level || 1} size={SMALL} noLand />
               <T v="small" numberOfLines={1} style={{ color: ink.ink, maxWidth: SMALL + 24, textAlign: 'center' }}>
                 {f.name}
               </T>
@@ -199,12 +224,13 @@ function FriendRow({ f, last }: { f: FriendView; last: boolean }) {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={f.name + (line ? '. ' + line : '')}
       onPress={() => {
         buzz('tap');
         router.push({ pathname: '/friend/[fid]', params: { fid: f.fid } });
       }}
       style={({ pressed }) => [s.row, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderColor: c.line }, pressed && { opacity: 0.7 }]}>
-      <Flame level={f.vals.level || 1} size={44} />
+      <BigFlame level={f.vals.level || 1} size={44} noLand />
       <View style={{ flex: 1, gap: 2 }}>
         <T v="label">{f.name}</T>
         {line ? (
@@ -305,9 +331,9 @@ function Community({ joined }: { joined: boolean }) {
     <View style={s.section}>
       <Card style={{ gap: 12, overflow: 'hidden' }}>
         <View style={s.crowd} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          {[1, 3, 2, 5, 4, 2, 6, 3, 1].map((l, i) => (
-            <View key={i} style={{ opacity: joined && i === 4 ? 1 : 0.35, marginTop: i % 2 ? 10 : 0 }}>
-              <Flame level={l} size={i === 4 ? 40 : 30} />
+          {[3, 6, 2, 9, 4, 7, 2].map((l, i) => (
+            <View key={i} style={{ opacity: joined && i === 3 ? 1 : 0.4, marginTop: i % 2 ? 12 : 0 }}>
+              <BigFlame level={l} size={i === 3 ? 64 : 46} noLand />
             </View>
           ))}
         </View>

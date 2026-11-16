@@ -3,25 +3,33 @@
    because the keyboard covers the bottom. next: the sheet to open after saving (add: your code; code: entering one). */
 import { GOAL_MAX, GOALS_MAX, NAME_MAX, wordsTrouble } from '@daybook/core';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { Field } from '@/components/choices';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { useFriends } from '@/lib/friends';
+import { useFriendsReady } from '@/lib/friends';
 
 const EXAMPLES = ['A lesson every morning', 'Phone out of the bedroom at night', 'More time outside with people I love'];
 
 export default function FriendMe() {
   const p = useLocalSearchParams<{ next?: string; code?: string }>();
-  const fr = useFriends();
+  const fr = useFriendsReady();
   const me = fr.data?.me;
   const [name, setName] = useState(me?.name || '');
   const [goals, setGoals] = useState<string[]>(() => [...(me?.goals || []), '', '', ''].slice(0, GOALS_MAX));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  /* opened on its own, the card comes in a moment later: fill the boxes with it once */
+  const filled = useRef(!!me);
+  useEffect(() => {
+    if (filled.current || !me) return;
+    filled.current = true;
+    setName(me.name);
+    setGoals([...me.goals, '', '', ''].slice(0, GOALS_MAX));
+  }, [me]);
   const trouble = wordsTrouble(name) || goals.map(wordsTrouble).find(Boolean) || null;
 
   const save = async () => {

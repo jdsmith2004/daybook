@@ -18,7 +18,7 @@ export const SHARE_WORDS: Record<ShareKey, { label: string; hint: string; friend
   lessons: {
     label: 'Lessons done',
     hint: 'How many lessons you finished this week',
-    friend: (n) => (n === 1 ? '1 lesson this week' : n + ' lessons this week'),
+    friend: (n) => (n === 1 ? '1 lesson' : n + ' lessons'),
   },
   mornings: { label: 'Mornings set', hint: 'Mornings you set up the day ahead', friend: (n) => (n === 1 ? '1 morning set' : n + ' mornings set') },
   nights: { label: 'Good nights', hint: 'Nights you said good night in Daybook', friend: (n) => (n === 1 ? '1 good night' : n + ' good nights') },

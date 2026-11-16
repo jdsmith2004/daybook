@@ -3,9 +3,11 @@
    while the person has a card. What this phone remembers on its own (never synced): that it is in Friends, when the numbers were
    last sent, the last encouragement seen, and that the person pre-joined the community. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { weekShare, type FriendCard, type ShareKey, type ShareVals } from '@daybook/core';
+import { normCode, weekShare, type FriendCard, type ShareKey, type ShareVals } from '@daybook/core';
+import { router, useSegments } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { track } from './events';
 import { useStore } from './store';
@@ -40,7 +42,7 @@ const sub = (f: () => void) => {
 
 /* ---------- what this phone keeps ---------- */
 const KEY = 'daybook.friends';
-type Local = { in?: boolean; sentAt?: number; sentVals?: string; seen?: number; community?: number };
+type Local = { in?: boolean; sentAt?: number; sentVals?: string; seen?: number; community?: number; pending?: string; next?: 'add' | 'code' };
 let local: Local = {};
 const localSubs = new Set<() => void>();
 AsyncStorage.getItem(KEY)
@@ -63,11 +65,34 @@ export const useFriendsLocal = () =>
     () => local,
   );
 
+/* A friend's link opened by someone new to Daybook: setup comes first and the link's page is left behind, so the code is kept here
+   and the Friends page opens with it once setup is done (FriendsKeeper) */
+function noteLink(url: string | null) {
+  if (!url || !/\/friends\b/.test(url)) return;
+  keepCode(url);
+}
+/** keeps a code (or a link holding one) to accept once the person can */
+export function keepCode(raw: string) {
+  const code = normCode(raw);
+  if (code && code !== local.pending) keepLocal({ pending: code });
+}
+if (Platform.OS === 'web' && typeof window !== 'undefined') noteLink(window.location.href);
+else Linking.getInitialURL().then(noteLink, () => undefined);
+
 /** pre-joins the community: one anonymous count (the event community_join) and a mark on this phone. No name, email or account. */
 export function joinCommunity() {
   if (local.community) return;
   track('community_join');
   keepLocal({ community: Date.now() });
+}
+
+/** what the person set out to do before the account sheet (add a friend, or enter a code), to carry on with after it */
+export const keepNext = (next: 'add' | 'code' | undefined) => keepLocal({ next });
+/** the kept code and next step, taken once */
+export function takeNext(): { code?: string; next?: 'add' | 'code' } {
+  const out = { code: local.pending, next: local.next };
+  if (out.code || out.next) keepLocal({ pending: undefined, next: undefined });
+  return out;
 }
 
 /** the encouragements seen up to now */
@@ -135,11 +160,32 @@ export function useFriends() {
   return { ...s, signedIn, load, saveCard, call, look };
 }
 
+/** for a sheet opened on its own (a link, a reload): the friends data, loaded if it is not here yet. ready: it is known (or there is no
+    account to know it from, which the sheet sends back to the Friends page) */
+export function useFriendsReady() {
+  const fr = useFriends();
+  const { loaded } = useSync();
+  useEffect(() => {
+    if (fr.signedIn && !fr.data && !fr.loading) fr.load().catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fr.signedIn]);
+  const ready = (fr.signedIn && !!fr.data) || (loaded && !fr.signedIn) || (!!fr.error && !fr.loading);
+  return { ...fr, ready };
+}
+
 /** sends the week's numbers when they changed, at most every few hours, while the person is in Friends and the app is open */
 export function FriendsKeeper() {
   const sync = useSync();
   const { snap, tk } = useStore();
   const lo = useFriendsLocal();
+  const top = useSegments()[0] as string | undefined;
+  /* a code kept from a link: once setup is done and the person is on the tabs, open Friends with it */
+  useEffect(() => {
+    if (!lo.pending || !snap.settings || top !== '(tabs)') return;
+    const code = lo.pending;
+    keepLocal({ pending: undefined });
+    router.push({ pathname: '/friends', params: { code } });
+  }, [lo.pending, snap.settings, top]);
   const on = !!lo.in && sync.status.k !== 'out' && sync.status.k !== 'off' && sync.loaded;
   useEffect(() => {
     if (!on || !snap.settings) return;

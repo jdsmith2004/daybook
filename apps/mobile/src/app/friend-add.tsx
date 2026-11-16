@@ -1,18 +1,18 @@
 /* Friends: your code, big, and one tap to send it as a link through any messenger. The code works for a week, for as many friends
    as you send it to; a new one ends the old (the owner's answer, November 15, 2026). The message never names the habit. */
-import { INVITE_DAYS, inviteLink, inviteText, showCode, SITE_URL } from '@daybook/core';
+import { gameCompute, INVITE_DAYS, inviteLink, inviteText, showCode, SITE_URL } from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, Share, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Platform, Share, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { Flame } from '@/components/flame';
+import { BigFlame } from '@/components/big-flame';
 import { Dock } from '@/components/scene';
 import { SheetFrame } from '@/components/sheet';
 import { LinkText } from '@/components/today';
 import { Button, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { useFriends } from '@/lib/friends';
+import { useFriendsReady } from '@/lib/friends';
 import { useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
@@ -21,8 +21,10 @@ const site = () => (Platform.OS === 'web' && typeof window !== 'undefined' ? win
 
 export default function FriendAdd() {
   const c = useTheme();
-  const { say } = useStore();
-  const fr = useFriends();
+  const fr = useFriendsReady();
+  const { snap, tk, say } = useStore();
+  const level = snap.settings ? gameCompute(snap.days, snap.settings, snap.reviews, tk).level.n : 1;
+  const { height } = useWindowDimensions();
   const [inv, setInv] = useState<{ code: string; exp: number } | null>(fr.data?.invite || null);
   const [err, setErr] = useState('');
 
@@ -32,11 +34,15 @@ export default function FriendAdd() {
     if (r.ok) setInv({ code: String(r.body.code), exp: Number(r.body.exp) });
     else setErr(r.msg);
   };
+  const started = useRef(false);
   useEffect(() => {
-    if (!fr.data?.me) router.replace({ pathname: '/friend-me', params: { next: 'add' } });
+    if (!fr.ready || started.current) return;
+    started.current = true;
+    if (!fr.signedIn) router.replace('/friends');
+    else if (!fr.data?.me) router.replace({ pathname: '/friend-me', params: { next: 'add' } });
     else if (!inv) get(false).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fr.ready]);
 
   const send = async () => {
     if (!inv || !fr.data?.me) return;
@@ -58,10 +64,10 @@ export default function FriendAdd() {
   const days = inv ? Math.max(1, Math.ceil((inv.exp - Date.now()) / 86400_000)) : INVITE_DAYS;
   return (
     <SheetFrame title="Add a friend">
-      <View style={s.wrap}>
+      <View style={[s.wrap, { minHeight: Math.max(440, height - 150) }]}>
         <T tone="muted">Send this to someone on your side. When they enter it, you are friends, and nothing is shared until you each turn it on.</T>
         <View style={s.middle}>
-          <Flame level={2} size={88} alive />
+          <BigFlame level={level} size={160} noLand />
           {inv ? (
             <T v="big" selectable accessibilityLabel={'Your code: ' + inv.code.split('').join(' ')} style={{ color: c.ink }}>
               {showCode(inv.code)}

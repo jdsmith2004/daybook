@@ -1,7 +1,7 @@
 /* The moves of the ride (core ride.ts): each one fills the middle of the SOS screen, runs by itself, and says when it is
    done (onDone), so the ride flows on to the next without a button. Every move is short (about half a minute to a
    minute) and has one living thing in the middle to follow.
-   - Breathe: the sun, three slow breaths (components/orb BreathSun).
+   - Breathe: the sun and its dots, three breaths in the pattern the person chose (components/breath-ride).
    - Squeeze: four body parts, each squeezed hard for five seconds and let go for four. The shape clenches with you.
    - Fit the shapes: a small block puzzle for the eyes and hands (stack.tsx).
    - 5-4-3-2-1: find things around you, one tap each.
@@ -40,7 +40,8 @@ import Reanimated, { useAnimatedStyle, useSharedValue, withSequence, withSpring,
 
 import { Appear } from '@/components/appear';
 import { BigOption, Link, Tiles } from '@/components/choices';
-import { BreathSun, useSeconds, useStartWhen } from '@/components/orb';
+import { BreathRide } from '@/components/breath-ride';
+import { useSeconds, useStartWhen } from '@/components/orb';
 import { MorphShape, SQUIGGLE, useClock, WavyLine, WavyRing, type ShapeKind } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { FastWords, Fork } from '@/components/tools/ride';
@@ -97,9 +98,7 @@ function useDoneAfter(when: boolean, ms: number, onDone: () => void) {
 
 /* ---------- breathe ---------- */
 export function BreatheMove({ on, onDone }: MoveProps) {
-  const [n, setN] = useState(0);
-  useDoneAfter(n >= 3, 1400, onDone);
-  return <BreathSun on={on} breaths={3} onBreaths={setN} />;
+  return <BreathRide on={on} onDone={onDone} />;
 }
 
 /* ---------- squeeze ---------- */

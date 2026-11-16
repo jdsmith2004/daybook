@@ -11,6 +11,8 @@ import {
   type NotifyMem,
   type NudgeLog,
   type NudgePrefs,
+  fieldId,
+  type FieldId,
 } from '@daybook/core';
 import { useSyncExternalStore } from 'react';
 
@@ -200,3 +202,25 @@ export function setBreathePref(b: BreathePref) {
   emit();
   AsyncStorage.setItem(BKEY, JSON.stringify(b)).catch(() => undefined);
 }
+
+/* the breathing pattern last chosen on the breathing figure (SOS), so it opens on it the next time; the sigh until one is chosen */
+const FKEY = 'daybook.field';
+let field: FieldId = fieldId(null);
+AsyncStorage.getItem(FKEY)
+  .then((v) => {
+    if (!v) return;
+    field = fieldId(v);
+    emit();
+  })
+  .catch(() => undefined);
+export function setFieldPref(id: FieldId) {
+  field = id;
+  emit();
+  AsyncStorage.setItem(FKEY, id).catch(() => undefined);
+}
+export const useFieldPref = () =>
+  useSyncExternalStore(
+    sub,
+    () => field,
+    () => field,
+  );

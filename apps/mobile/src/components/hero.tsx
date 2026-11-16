@@ -390,7 +390,7 @@ function Sky({
               accessibilityRole="button"
               accessibilityLabel={`${title}. Your flame, level ${lvl.n}.${words ? ' ' + words.h + '.' : ''} Tap to say hi.`}
               onPress={hello}>
-              <BigFlame level={lvl.n} size={FLAME} pulse={pulse} low={shown} douse={douse} smoke={light ? '#C9C2DA' : '#6B6577'} />
+              <BigFlame level={lvl.n} size={FLAME} pulse={pulse} play low={shown} douse={douse} smoke={light ? '#C9C2DA' : '#6B6577'} />
             </Pressable>
           </View>
         </Animated.View>

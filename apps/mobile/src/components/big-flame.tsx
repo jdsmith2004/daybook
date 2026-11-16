@@ -108,6 +108,7 @@ export const BigFlame = memo(function BigFlame({
   asleep,
   heart,
   relight,
+  play,
 }: {
   level: number;
   size: number;
@@ -129,6 +130,8 @@ export const BigFlame = memo(function BigFlame({
   heart?: ReactNode;
   /** lit again faster than the usual catch and climb: [when it catches, how long it climbs] in ms (the lighting, components/ignite.tsx) */
   relight?: [number, number];
+  /** its life on Today: it blinks now and then, and a tap makes it squash, spring up and squeeze its eyes shut with joy */
+  play?: boolean;
 }) {
   const still = useReducedMotion();
   const { snap } = useStore();
@@ -146,6 +149,9 @@ export const BigFlame = memo(function BigFlame({
   const breath = useRef(new Animated.Value(0)).current;
   const bloom = useRef(new Animated.Value(0)).current;
   const ring = useRef(new Animated.Value(0)).current;
+  /* 0 eyes open, 1 shut; and the tap's squash (-1) and stretch (+1) */
+  const blink = useRef(new Animated.Value(0)).current;
+  const pop = useRef(new Animated.Value(0)).current;
   const [ms, dim] = GLOW[glowKind(formOfLevel(level))];
   /* how low it burns, shared by the fire (on the UI thread) and the layers around it */
   const lv = useSharedValue(douse && !still ? 0 : (low ?? 0));
@@ -184,6 +190,60 @@ export const BigFlame = memo(function BigFlame({
     loop.start();
     return () => loop.stop();
   }, [breath, ms, still]);
+  /* the eyes, open and shut: drawn once each and crossed in an instant, so a blink costs no drawing */
+  const blinks = !!play && !still && !sad && !asleep && !!b;
+  const shut = useMemo(() => (blinks && b ? figAsleep(b.layers.still) : ''), [blinks, b]);
+  const eyes = blinks && !!shut && shut !== b?.layers.still;
+  /* now and then, at no fixed beat, it blinks; once in a while twice */
+  useEffect(() => {
+    if (!eyes) return;
+    let t: ReturnType<typeof setTimeout>;
+    let a: Animated.CompositeAnimation | null = null;
+    const one = () =>
+      Animated.sequence([
+        Animated.timing(blink, { toValue: 1, duration: 55, easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }),
+        Animated.delay(70),
+        Animated.timing(blink, { toValue: 0, duration: 90, easing: Easing.in(Easing.quad), useNativeDriver: NATIVE }),
+      ]);
+    const next = () => {
+      t = setTimeout(
+        () => {
+          a = Math.random() < 0.25 ? Animated.sequence([one(), Animated.delay(110), one()]) : one();
+          a.start(next);
+        },
+        2600 + Math.random() * 3400,
+      );
+    };
+    next();
+    return () => {
+      clearTimeout(t);
+      a?.stop();
+      blink.setValue(0);
+    };
+  }, [eyes, blink]);
+  /* a tap on Today: it squashes down, springs up tall with a little hop and wobbles back, eyes squeezed shut with joy */
+  useEffect(() => {
+    if (!pulse || still || !play) return;
+    pop.setValue(0);
+    const a = Animated.parallel([
+      Animated.sequence([
+        Animated.timing(pop, { toValue: -1, duration: 110, easing: Easing.out(Easing.quad), useNativeDriver: NATIVE }),
+        Animated.spring(pop, { toValue: 0, velocity: 9, tension: 170, friction: 6, useNativeDriver: NATIVE }),
+      ]),
+      ...(eyes
+        ? [
+            Animated.sequence([
+              Animated.timing(blink, { toValue: 1, duration: 70, useNativeDriver: NATIVE }),
+              Animated.delay(330),
+              Animated.timing(blink, { toValue: 0, duration: 110, useNativeDriver: NATIVE }),
+            ]),
+          ]
+        : []),
+    ]);
+    a.start();
+    return () => a.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only a tap starts it
+  }, [pulse]);
   useEffect(() => {
     if (!pulse || still) return;
     bloom.setValue(0);
@@ -217,6 +277,17 @@ export const BigFlame = memo(function BigFlame({
     transformOrigin: origin,
     transform: [{ scale: bloom.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }) }],
   };
+  /* the squash and stretch, from the figure's feet, so it pushes off the ground */
+  const hop = play
+    ? {
+        transformOrigin: `${(layers.at.x * 100).toFixed(1)}% ${(Math.min(0.95, layers.at.y + 0.24) * 100).toFixed(1)}%`,
+        transform: [
+          { translateY: pop.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 0, -S * 0.05] }) },
+          { scaleX: pop.interpolate({ inputRange: [-1, 0, 1], outputRange: [1.1, 1, 0.93] }) },
+          { scaleY: pop.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.88, 1, 1.08] }) },
+        ],
+      }
+    : null;
   const glow = {
     transformOrigin: origin,
     opacity: Animated.add(
@@ -267,22 +338,35 @@ export const BigFlame = memo(function BigFlame({
             ) : null}
           </>
         ) : (
-          <Animated.View style={[StyleSheet.absoluteFill, fig]}>
-            <FireLayer
-              fire={fire}
-              unit={S / 120}
-              leap={pulse}
-              low={low != null ? lv : undefined}
-              burst={low != null ? burst : undefined}
-              fine={zoom > 1 ? 1.5 / zoom : 1}
-              smoke={smoke}
-            />
-            <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, S / 120)} />
-            {lowFig ? (
-              <Reanimated.View style={[StyleSheet.absoluteFill, dimmed]} pointerEvents="none">
-                <SvgXml xml={stillIn(lowFig.still, fire)} {...stillBox(fire, S / 120)} />
-              </Reanimated.View>
-            ) : null}
+          <Animated.View style={[StyleSheet.absoluteFill, hop]}>
+            <Animated.View style={[StyleSheet.absoluteFill, fig]}>
+              <FireLayer
+                fire={fire}
+                unit={S / 120}
+                leap={pulse}
+                low={low != null ? lv : undefined}
+                burst={low != null ? burst : undefined}
+                fine={zoom > 1 ? 1.5 / zoom : 1}
+                smoke={smoke}
+              />
+              {eyes ? (
+                <>
+                  <Animated.View style={[StyleSheet.absoluteFill, { opacity: blink.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}>
+                    <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, S / 120)} />
+                  </Animated.View>
+                  <Animated.View style={[StyleSheet.absoluteFill, { opacity: blink }]}>
+                    <SvgXml xml={stillIn(shut, fire)} {...stillBox(fire, S / 120)} />
+                  </Animated.View>
+                </>
+              ) : (
+                <SvgXml xml={stillIn(layers.still, fire)} {...stillBox(fire, S / 120)} />
+              )}
+              {lowFig ? (
+                <Reanimated.View style={[StyleSheet.absoluteFill, dimmed]} pointerEvents="none">
+                  <SvgXml xml={stillIn(lowFig.still, fire)} {...stillBox(fire, S / 120)} />
+                </Reanimated.View>
+              ) : null}
+            </Animated.View>
           </Animated.View>
         )}
         {layers.front ? <SvgXml xml={layers.front} width={S} height={S} style={StyleSheet.absoluteFill} /> : null}

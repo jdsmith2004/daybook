@@ -135,11 +135,12 @@ describe('future you: in the ride', () => {
     expect(later).not.toBe(RIDE_FUTURE);
   });
 
-  it('has its why, and the faith page moves one later', () => {
+  it('has its why, and comes after It is written for faith people (It is written is second, the owner, November 15, 2026)', () => {
     expect(RIDE_WHY[RIDE_FUTURE]).toBeTruthy();
     const st = core.normSettings({});
-    const third = rideNext(ur, {}, st, '2026-11-11', T0, {}, { words: false, faith: true, future: true }, [RIDE_FIRST, RIDE_FUTURE]);
-    expect(third).toBe(RIDE_FAITH);
+    const can = { words: false, faith: true, future: true };
+    expect(rideNext(ur, {}, st, '2026-11-11', T0, {}, can, [RIDE_FIRST])).toBe(RIDE_FAITH);
+    expect(rideNext(ur, {}, st, '2026-11-11', T0, {}, can, [RIDE_FIRST, RIDE_FAITH])).toBe(RIDE_FUTURE);
   });
 });
 

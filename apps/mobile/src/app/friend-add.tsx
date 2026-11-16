@@ -2,12 +2,26 @@
    effort, it's very easy"). At the top, what the friend will see, said plainly and automatic (only a first name to write, the first
    time); at the bottom, under the thumb, three ways on: share the invite link, share the code, or enter a friend's code. The code
    is made on the first share, works for a week, for as many friends as the person sends it to. The message never names the habit. */
-import { codeText, inviteLink, inviteText, NAME_MAX, REPORT_DEFAULT, reportAt, SHARE_DEFAULT, SITE_URL, wordsTrouble, type ShareKey } from '@daybook/core';
+import {
+  codeText,
+  gameCompute,
+  showCode,
+  inviteLink,
+  inviteText,
+  NAME_MAX,
+  REPORT_DEFAULT,
+  reportAt,
+  SHARE_DEFAULT,
+  SITE_URL,
+  wordsTrouble,
+  type ShareKey,
+} from '@daybook/core';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Share, StyleSheet, useWindowDimensions, View } from 'react-native';
 
+import { BigFlame } from '@/components/big-flame';
 import { Field } from '@/components/choices';
 import { Dock } from '@/components/scene';
 import { SheetFrame } from '@/components/sheet';
@@ -34,13 +48,17 @@ function seeLines(on: Partial<Record<ShareKey, boolean>>, rt: string | null): st
 
 export default function FriendAdd() {
   const c = useTheme();
-  const { say } = useStore();
   const fr = useFriendsReady();
   const { height } = useWindowDimensions();
   const me = fr.data?.me || null;
   const [name, setName] = useState('');
   const [busy, setBusy] = useState<'link' | 'code' | null>(null);
   const [err, setErr] = useState('');
+  /* the code, once there is one, shown big in the middle under the flame */
+  const [shown, setShown] = useState<string | null>(null);
+  const code = shown || (fr.data?.invite && fr.data.invite.exp > Date.now() ? fr.data.invite.code : null);
+  const { snap, tk, say } = useStore();
+  const level = snap.settings ? gameCompute(snap.days, snap.settings, snap.reviews, tk).level.n : 1;
   /* opened with no account (a reload, an old link): the Friends page asks for one */
   const started = useRef(false);
   useEffect(() => {
@@ -68,6 +86,7 @@ export default function FriendAdd() {
     setBusy(null);
     if (!r.ok) return setErr(r.msg);
     const code = String(r.body.code);
+    setShown(code);
     const text = how === 'link' ? inviteText(nm, inviteLink(site(), code), code) : codeText(nm, code);
     buzz('tap');
     try {
@@ -115,6 +134,19 @@ export default function FriendAdd() {
             Never a slip, your journal or your notes. You can change what they see on the Friends page.
           </T>
         </Card>
+        <View style={s.middle}>
+          <BigFlame level={level} size={code ? 120 : 160} noLand />
+          {code ? (
+            <>
+              <T v="title" selectable accessibilityLabel={'Your code: ' + code.split('').join(' ')}>
+                {showCode(code)}
+              </T>
+              <T v="small" tone="muted">
+                Your code, for a week
+              </T>
+            </>
+          ) : null}
+        </View>
         {err ? <T tone="danger">{err}</T> : null}
         <Dock>
           <Button label={busy === 'link' ? 'One moment' : 'Share my invite link'} icon="ext" disabled={!!busy} onPress={() => share('link')} />
@@ -131,4 +163,5 @@ export default function FriendAdd() {
 const s = StyleSheet.create({
   wrap: { gap: 16 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  middle: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
 });

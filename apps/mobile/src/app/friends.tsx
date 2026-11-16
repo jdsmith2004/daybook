@@ -125,7 +125,7 @@ export default function Friends() {
       ) : (
         <View style={s.lead}>
           <T v="h2">Walk it with a friend</T>
-          <T tone="muted">Add one or two people who are on your side. They see your goals and the effort you choose to share. Never a slip.</T>
+          <T tone="muted">Add one or two people who are on your side. They see how often you do a lesson and check in, and your flame. Never a slip.</T>
         </View>
       )}
 

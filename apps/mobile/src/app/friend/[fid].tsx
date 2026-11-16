@@ -1,4 +1,4 @@
-/* Friends: one friend. Their flame, their goals and the effort they share, then a ready-made encouragement (one a day; no chat), and at
+/* Friends: one friend. Their flame, today and this week in Daybook, their daily report (which this phone can mute), then a ready-made encouragement (one a day; no chat), and at
    the bottom, quietly, Remove and Block and report (Apple Guideline 1.2). Removing is quiet both ways: the other person is not told. */
 import { FRIEND_CHEERS, friendLines, friendToday, reportAt, REPORT_WHY, type CheerKind, type ReportWhy } from '@daybook/core';
 import { useLocalSearchParams } from 'expo-router';

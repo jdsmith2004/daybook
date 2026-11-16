@@ -8,8 +8,8 @@
 
    The rhythm: a breath in to get ready, then for each part a hold of seven seconds (the last three counted out loud, so the end
    is never a surprise) and a release of eight. It goes from small to big and ends on the whole body, the biggest letting go.
-   In a seat it is small enough that no one has to notice; on your feet it is bigger (a wall push, a low squat). The choice
-   is kept on the phone (sos.ts moveSit) and shared with the Move tool. */
+   One set of parts, small enough to do in a seat with no one noticing, and just as good standing (the owner, November 15,
+   2026, of a seat or feet switch: "I don't think we need that option"). */
 
 export type SqueezePart = {
   /** what to squeeze, big */
@@ -27,21 +27,12 @@ export const SQZ_REST = 8;
 /** the last letting go is a little longer: the whole body settles */
 export const SQZ_LAST_REST = 10;
 
-export const SQZ_SIT: SqueezePart[] = [
+export const SQZ_PARTS: SqueezePart[] = [
   { head: 'Squeeze your fists', sub: 'As hard as you can.' },
   { head: 'Shoulders up to your ears', sub: 'Pull them up tight.' },
   { head: 'Press your feet down', sub: 'Into the floor. Tense your legs.' },
   { head: 'Everything at once', sub: 'Fists, arms, shoulders, legs. All of it.' },
 ];
-
-export const SQZ_STAND: SqueezePart[] = [
-  { head: 'Squeeze your fists', sub: 'Arms straight down. As hard as you can.' },
-  { head: 'Push against a wall', sub: 'Hands flat. Push like you could move it.' },
-  { head: 'Sink into a squat', sub: 'Halfway down. Hold it there.' },
-  { head: 'Everything at once', sub: 'Stand tall and tense all of it.' },
-];
-
-export const sqzParts = (sit: boolean) => (sit ? SQZ_SIT : SQZ_STAND);
 
 /** how long the whole move takes, in seconds */
 export const SQZ_TOTAL = SQZ_READY + 4 * SQZ_HOLD + 3 * SQZ_REST + SQZ_LAST_REST;

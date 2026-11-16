@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SQZ_HOLD, SQZ_LAST_REST, SQZ_READY, SQZ_REST, SQZ_SIT, SQZ_STAND, SQZ_TOTAL, squeezeAt, sqzParts } from '../src/squeeze';
+import { SQZ_HOLD, SQZ_LAST_REST, SQZ_READY, SQZ_REST, SQZ_PARTS, SQZ_TOTAL, squeezeAt } from '../src/squeeze';
 
 describe('squeeze', () => {
   it('gets ready, then holds and lets go four times, about a minute in all', () => {
@@ -21,14 +21,10 @@ describe('squeeze', () => {
   it('the words fade in from each change, never from the past', () => {
     for (let t = 0; t < SQZ_TOTAL + 2; t += 0.05) expect(squeezeAt(t).ws).toBeGreaterThanOrEqual(-1e-9);
   });
-  it('has four parts for a seat and four for standing, ending on the whole body', () => {
-    expect(sqzParts(true)).toBe(SQZ_SIT);
-    expect(sqzParts(false)).toBe(SQZ_STAND);
-    for (const p of [SQZ_SIT, SQZ_STAND]) {
-      expect(p).toHaveLength(4);
-      expect(p[3].head).toBe('Everything at once');
-      /* plain words: no contractions */
-      for (const x of p) expect(x.head + x.sub).not.toMatch(/'/);
-    }
+  it('has four parts, small to big, ending on the whole body', () => {
+    expect(SQZ_PARTS).toHaveLength(4);
+    expect(SQZ_PARTS[3].head).toBe('Everything at once');
+    /* plain words: no contractions */
+    for (const p of SQZ_PARTS) expect(p.head + p.sub).not.toMatch(/'/);
   });
 });

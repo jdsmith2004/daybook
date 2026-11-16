@@ -25,7 +25,7 @@
                   with no code, an account joined to Apple answers 409 { code: 'NeedApple' } and nothing is deleted, so the app
                   asks Apple; { apple: { skip: true } } is a device that cannot ask Apple (Android), and closes it anyway
 
-   Friends (beta; friends.ts says what each does): GET ?friends=1 and ?friends=look, POST ?friends=card, invite, accept, cheer,
+   Friends (beta; friends.ts says what each does): GET ?friends=1 and ?friends=look, POST ?friends=card, invite, accept, cheer, used, hear, push,
    remove, block and leave. Free for every signed-in person, like reading one's own log.
 
    Saving records (POST /sync) needs a supporter or Daybook Pattern, or an account from before tips (grandfathered); otherwise it answers
@@ -42,7 +42,21 @@ import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyStructured
 import type { CheckApple, RevokeApple } from './apple-id';
 import { AppleError, appleLink, appleSignIn, type AppleUsers } from './apple-sign-in';
 import { BadCursor, type Store, type StoredRecord } from './store';
-import { acceptCode, blockFriend, FriendError, friendsGone, friendsView, lookCode, makeInvite, removeFriend, saveCard, sendCheer } from './friends';
+import {
+  acceptCode,
+  blockFriend,
+  FriendError,
+  friendsGone,
+  friendsView,
+  lookCode,
+  makeInvite,
+  removeFriend,
+  saveCard,
+  savePush,
+  sendCheer,
+  setHear,
+  sparkUsedBy,
+} from './friends';
 import { claimApple, claimStripe, heldBy, maySync, PayError, type Held, type Pay } from './supporter';
 
 export const PAGE = 500;
@@ -262,9 +276,16 @@ export function makeHandler(
           case 'invite':
             return json(200, await makeInvite(store, user, b.fresh === true, now));
           case 'accept':
-            return json(200, await acceptCode(store, user, b.code, now));
+            return json(200, await acceptCode(store, user, b.code, now, b.hear));
           case 'cheer':
             return json(200, await sendCheer(store, user, b.fid, b.k, now));
+          case 'used':
+            return json(200, await sparkUsedBy(store, user, b.fid, now));
+          case 'hear':
+            return json(200, await setHear(store, user, b.fid, b.hear));
+          case 'push':
+            await savePush(store, user, b.token ?? null, b.tz, now);
+            return json(200, { ok: true });
           case 'remove':
             await removeFriend(store, user, b.fid);
             return json(200, { ok: true });

@@ -44,6 +44,7 @@ export const BACKGROUNDS: Record<string, Bg> = {
   /* one sunrise, in the set's order: it starts in the night and ends in full sun, as the person does */
   night: { sky: ['#0C0A33', '#1E1766', '#3D2A9E'], hill: ['#2E2384', '#1B1558'], ink: '#FFFFFF', sub: '#D9D2FF', stars: true },
   dusk: { sky: ['#14104A', '#34208A', '#6E35B8'], hill: ['#4A2AA0', '#2A1A72'], ink: '#FFFFFF', sub: '#E0D8FF', stars: true },
+  twilight: { sky: ['#1E1258', '#4C239A', '#9A3FAE'], hill: ['#6A2A9E', '#3E1C7E'], ink: '#FFFFFF', sub: '#EADCFF', stars: true },
   plum: { sky: ['#2A1468', '#6A2AA8', '#C4479A'], hill: ['#8A2F98', '#55208A'], ink: '#FFFFFF', sub: '#F6DDF2', stars: false },
   rose: { sky: ['#551E8A', '#B0358F', '#F06A7A'], hill: ['#C23F80', '#8A2A86'], ink: '#FFFFFF', sub: '#FFE3E6', stars: false },
   coral: { sky: ['#9A2A80', '#E5507A', '#FF9A5C'], hill: ['#E0566E', '#B83A78'], ink: '#FFFFFF', sub: '#FFEBDD', stars: false },

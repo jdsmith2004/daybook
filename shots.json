@@ -35,46 +35,40 @@
       }
     },
     {
-      "name": "slip",
-      "screen": "/log?date=2026-09-12&evId=slip&outcome=slipped&step=slPlan",
-      "caption": "A slip is\nnot a reset",
-      "bg": "plum",
+      "name": "lesson",
+      "screen": "/lesson/l38?at=preview&card=1&len=q",
+      "caption": "A lesson a day,\nbuilt on research",
+      "bg": "twilight",
       "theme": "light",
-      "below": true,
-      "top": -0.075,
+      "zoom": 0.98,
+      "top": 0.165,
       "playTop": 0.2,
       "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
       "duo": {
-        "caption": "A slip is not a reset",
-        "head": 0.078,
-        "below": false,
-        "top": 0.17,
-        "zoom": 0.66
+        "top": 0.25,
+        "zoom": 0.76
       }
     },
     {
-      "name": "grow",
-      "screen": "/growth",
-      "caption": "Watch your flame grow",
-      "forms": "3,13,23,33,48",
-      "bg": "rose",
-      "theme": "dark",
-      "top": 0.36,
-      "playTop": 0.42,
+      "name": "friends",
+      "screen": "/friends?demo=1",
+      "caption": "Keep each other\ngoing",
+      "bg": "plum",
+      "theme": "light",
+      "zoom": 0.98,
+      "top": 0.165,
+      "playTop": 0.2,
       "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
-      "zoom": 0.84,
       "duo": {
-        "head": 0.078,
-        "lines": 1,
-        "top": 0.5,
-        "zoom": 0.72
+        "top": 0.25,
+        "zoom": 0.76
       }
     },
     {
       "name": "pattern",
       "screen": "/pattern?pane=patterns",
       "caption": "Learn your pattern",
-      "bg": "coral",
+      "bg": "rose",
       "theme": "light",
       "zoom": 0.98,
       "tilt": -3,
@@ -87,17 +81,36 @@
       }
     },
     {
-      "name": "learn",
-      "screen": "/learn",
-      "caption": "A lesson every day",
-      "bg": "amber",
+      "name": "morning",
+      "screen": "/morning",
+      "caption": "Plan tonight\nin the morning",
+      "bg": "coral",
       "theme": "light",
+      "zoom": 0.98,
       "top": 0.165,
       "playTop": 0.2,
       "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
       "duo": {
         "top": 0.25,
         "zoom": 0.76
+      }
+    },
+    {
+      "name": "slip",
+      "screen": "/log?date=2026-09-12&evId=slip&outcome=slipped&step=slPlan",
+      "caption": "A slip is\nnot a reset",
+      "bg": "amber",
+      "theme": "light",
+      "below": true,
+      "top": -0.075,
+      "playTop": 0.2,
+      "sizes": ["ios69", "ios63", "play-phone", "duo-outer", "duo-inner"],
+      "duo": {
+        "caption": "A slip is not a reset",
+        "head": 0.078,
+        "below": false,
+        "top": 0.17,
+        "zoom": 0.66
       }
     },
     {

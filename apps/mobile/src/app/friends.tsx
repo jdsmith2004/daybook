@@ -228,7 +228,7 @@ export default function Friends() {
           {fr.error}
         </T>
       ) : null}
-      {fr.demo ? (
+      {fr.demo && process.env.EXPO_PUBLIC_SHOTS !== '1' ? (
         <T v="small" tone="muted" style={{ textAlign: 'center' }}>
           A demo with a made-up friend. Tap anything: nothing is real, and nothing is sent.
         </T>

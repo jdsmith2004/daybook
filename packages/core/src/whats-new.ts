@@ -25,6 +25,27 @@ export interface NewItem {
     live before it, so it leads with what 1.3.0 changed (the owner, November 2, 2026). */
 export const WHATS_NEW: { v: string; items: NewItem[] }[] = [
   {
+    /* 1.3.5 (November 15, 2026): the new breathing in SOS, Friends (beta), and the flame waking up */
+    v: '1.3.5',
+    items: [
+      {
+        t: 'A new way to breathe',
+        line: 'SOS breathes with you through a living figure, with four patterns to pick from, and puts the tools that help most first.',
+        art: 'plan',
+      },
+      {
+        t: 'Friends, in beta',
+        line: 'Add a friend with a code and keep each other going: a streak of days you both show up, and a spark for their next lesson.',
+        art: 'flame',
+      },
+      {
+        t: 'Your flame wakes up',
+        line: 'Opening Daybook, your flame wakes and flies to Today. Tap it there and it blinks and hops.',
+        art: 'flame',
+      },
+    ],
+  },
+  {
     /* 1.3.4 (November 13, 2026): the journal's Insights. The Mithras import stays out of it by the owner's choice: it is for people
        coming from Mithras, who reach it by Mithras's link, not news for everyone. 1.3.3 never went live (Apple turned it down for the
        listing), so people updating from 1.3.1 see this first and then 1.3.3's news. */

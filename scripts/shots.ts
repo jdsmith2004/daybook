@@ -187,10 +187,9 @@ for (const sc of scenes) {
 const WEB: Record<string, string> = {
   '01-today': '01-today',
   '02-sos': '02-sos',
-  '04-grow': '03-grow',
   '05-pattern': '04-pattern',
-  '06-learn': '05-learn',
-  '07-private': '06-private',
+  '03-lesson': '05-learn',
+  '08-private': '06-private',
 };
 const webPage = await browser.newPage();
 for (const [from, to] of Object.entries(WEB)) {

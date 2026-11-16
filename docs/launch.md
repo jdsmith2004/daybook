@@ -101,7 +101,15 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 
 ## 6. The listing (Claude drafts, you or Claude in Chrome paste)
 
-> **1.3.4 is next (listing ready November 14, 2026).** Apple turned down 1.3.3 on November 11, 2026 under Guideline 1.1 for
+> **1.3.5 is next (listing ready November 15, 2026).** What changes from 1.3.4 in App Store Connect: the version number; What's New;
+> the promotional text; one new line in the description (Friends); `accountability` in the Spanish (Mexico) keywords in place of
+> `reset,days`; all eight screenshots in both slots (`ios69`, `ios63`; the Duo pair if used); two new paragraphs in the review notes
+> (Friends, and how to see it); a second test account befriended with the review account; and the privacy label (Contact Info,
+> Name; Usage Data, Product Interaction now linked; below). The name, subtitle, English keywords, URLs, age rating and the tips
+> stay as they are. Every field and every picture was checked for porn, pornography, pornfree, NoFap, sex, nude, xxx, explicit,
+> adult and erotic: none (the review notes say "adult" only where 1.3.4's did).
+
+> **1.3.4 (listing ready November 14, 2026).** Apple turned down 1.3.3 on November 11, 2026 under Guideline 1.1 for
 > the old subtitle ("Quit porn, live your potential") and `pornfree` in the keywords; the build itself was not the problem. Every
 > field below is clean of the banned words (CLAUDE.md, the store listing rule), and so are the screenshots, checked by eye. The
 > subtitle and keywords are the owner's pick of November 12, 2026 (option 1 in `docs/listing-update.md` in the daybook-shorts
@@ -136,9 +144,25 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 - **Keywords:** `urges,surfing,sos,dopamine,detox,relapse,recovery,sobriety,streak,tracker,gambling,craving,clean`
   (no other app's name or trademark, by the store's rules)
 - **Spanish (Mexico) locale** (the US storefront reads it too, for 100 more keyword letters): the same name and description,
-  subtitle `Willpower for hard nights`, keywords `christian,lds,scripture,prayer,grace,purity,temptation,bible,reset,days,breathe,resist,control`.
-- **Promotional text:** Free, with no ads and nothing sold. A slip is data, not a reset.
-- **What's New in This Version** (1.3.4; 1.3.3 never went live, so this covers both):
+  subtitle `Willpower for hard nights`, keywords `christian,lds,scripture,prayer,grace,purity,temptation,bible,accountability,breathe,resist,control` (98 letters; from 1.3.5,
+  `accountability` for Friends in place of `reset,days`).
+- **Promotional text:** New: Friends, in beta. Add a friend with a code and keep each other going. Free, with no ads and nothing
+  sold. A slip is data, not a reset.
+- **What's New in This Version** (1.3.5):
+
+  > SOS breathes with you through a new living figure, with four patterns to pick from, and it puts the tools that help most
+  > first. Self Talk is new, and Squeeze is rebuilt.
+  >
+  > Friends, in beta (Settings, Friends): add a friend with a code one of you sends, keep a streak of the days you both show up,
+  > and send a spark that goes into their next lesson. Only your first name and your effort in Daybook are shared, and you
+  > choose what.
+  >
+  > Opening Daybook is one smooth motion: your flame wakes and flies to Today, and there it blinks and hops when you tap it.
+  >
+  > Also: setup asks how long an urge usually lasts, so Time given back shows from the first week; reminders for every habit
+  > you set up; and the website opens much faster.
+
+- **What's New** for 1.3.4 (as submitted; 1.3.3 never went live, so it covered both):
 
   > Lessons are now stories, with pictures on the first lessons and a Short or a Long way through each one. Finishing a lesson
   > or a check-in is a calmer moment, and a new flame form, badge or level gets a celebration of its own.
@@ -165,6 +189,7 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   > • Lessons built on good research, written plainly.
   > • Your own plan: why you are doing this, and what you will do when an urge comes.
   > • An evening check-in and wind-down, and a weekly review.
+  > • Friends (beta): add a friend with a code, share only your effort, and keep each other going.
   > • Graduation: a permanent award at 90 days with no slip.
   >
   > Private by design
@@ -188,10 +213,11 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
 - **Copyright:** 2026 Jeff Smith
 - The three public pages (support, privacy, terms) are plain HTML in `apps/mobile/public`, published with every deploy
   (and on GitHub Pages under /daybook/). The app links to them from More (Help and support) and the privacy sheet.
-- **Screenshots:** the seven in `store-assets/ios69/` (1290 × 2796, iPhone 6.9-inch), in order, made by `npm run shots`
-  (README, "Store screenshots"). If App Store Connect asks for the 6.1-inch or 6.3-inch slot, use the same seven from
-  `store-assets/ios63/` (1206 × 2622) there. Download them from GitHub on whichever computer you are using.
-- **iPhone Duo** (optional until April 2027, and only then for builds on the iOS 27.1 SDK or later): the same seven in
+- **Screenshots:** the eight in `store-assets/ios69/` (1290 × 2796, iPhone 6.9-inch), in order, made by `npm run shots:ios`
+  then `npm run shots` (README, "Store screenshots"). If App Store Connect asks for the 6.1-inch or 6.3-inch slot, use the same
+  eight from `store-assets/ios63/` (1206 × 2622) there. From 1.3.5: Today, SOS (the new breathing), a lesson card, Friends,
+  Pattern, the morning plan, a slip, privacy. Download them from GitHub on whichever computer you are using.
+- **iPhone Duo** (optional until April 2027, and only then for builds on the iOS 27.1 SDK or later): the same eight in
   `store-assets/duo-outer/` (1398 × 2034) and `store-assets/duo-inner/` (2007 × 2853). Sending them puts a badge on the listing
   saying the app is optimized for iPhone Duo, and the pictures show the iPhone screen, not a real Duo capture, since that takes
   Xcode 27.1.
@@ -242,12 +268,27 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
     - Sensitive Info (already there for accounts): add **Analytics**; linked stays **Yes**; tracking **No**. (Faith, the habit.)
     - Purchases, **Purchase History** (already there): add **Analytics**; linked stays **Yes**; tracking **No**.
     - Then Publish. Nothing here is Apple Health data, and the label says nothing about HealthKit.
+  - **Friends (beta), from 1.3.5** (core `friends.ts`, privacy page "Friends (beta)"). Friends needs an account, and what it keeps
+    is kept under that account and shown to the friends the person added, so it is linked. Make these answers in App Store
+    Connect, App Privacy, Edit, before 1.3.5 goes to review:
+    - Contact Info, **Name** (new): purposes App Functionality; linked: **Yes**; tracking: **No**. (The first name a person gives
+      for friends.)
+    - Usage Data, **Product Interaction** (already there for Analytics, not linked): add the purpose **App Functionality** and set
+      linked to **Yes**; tracking **No**. (The card's counts: lessons done, check-ins, days in Daybook, urges ridden out, the flame's
+      level, and which days of the last two weeks Daybook was opened, kept under the account for the together streak. Apple asks
+      "linked" once per type, so the whole type now says linked; the anonymous events stay as they are.)
+    - User Content, **Other User Content** (already there): no new answer. (Friendships, how a person hears about each friend, the
+      last spark, and a report's reason.)
+    - Identifiers, **Device ID**: no new answer. The push token for friend notes is the address a note goes to, not an identifier
+      collected for a purpose Apple lists; if the form asks, it is App Functionality, linked **Yes**, tracking **No**.
+    - New events (`friend_added`, `friend_cheer`, `friend_spark_used`, `friend_hear`): Product Interaction, already on the label.
   - Tracking: **no**. Data used to track you: **none**.
   - Apple Health (November 9, 2026): **no change to the label.** Daybook reads only sleep, read only, and the nights stay on
     the phone, outside the log: never synced, backed up, counted or sent. Apple's label lists only data that leaves the
     device. The App ID needs the HealthKit capability (EAS turns it on from the entitlement on the next build; if the
     build says it is missing, tick HealthKit for `com.jdsmith2004.daybook` under Identifiers in the developer account).
-- **Notes for App Review** (as submitted with 1.3.4, November 15, 2026):
+- **Notes for App Review** (for 1.3.5: 1.3.4's notes as submitted on November 15, 2026, with the two Friends paragraphs added after
+  "Journal Insights"):
 
   > Daybook is a private companion for changing a habit. A person logs urges and slips honestly, uses short guided tools to ride out an urge (SOS), learns their own pattern, and reads one short lesson a day. It has no explicit or adult content of any kind: no such images, media, links or descriptions, no web browsing, no user chat, and nothing in it can be used to make or find such content.
   >
@@ -263,10 +304,18 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
   >
   > Journal Insights (new): open the journal and tap the chart at the top.
   >
+  > Friends (new in 1.3.5, a beta; Settings, the gear at the top of Today, then Friends; it needs a free account): a person can add a few friends to keep each other going. Two people connect only by a short code one of them sends the other; there is no search, no contact upload and no list of who uses Daybook. Only a first name, a few numbers (lessons done, check-ins, days in Daybook, the flame's level) and a fixed spark pass between them: there is no chat and no free text beyond the first name, and that name is checked on the phone and on the server, which refuse links, email addresses, phone numbers and crude words. Each friend's page has Remove and Block or report; a block also stops that person from using the code again, and a report sends us the reason and the name they shared. Removing, blocking or deleting the account ends the friendship on both sides. A slip, an SOS, the journal and notes are never shared.
+  >
+  > To see Friends: sign in with the demo account below and open Settings, Friends. It is already friends with a second test account (Riley), so the friend's flame, the together streak, the spark and Remove, Block or report all show. Add a friend makes a code; entering a code works the same way from the other side.
+  >
   > Bringing a Mithras journal (new): Mithras is our other app, from the same developer. From More, Save a copy, Bring a Mithras journal, a person signs in to their own Mithras account to copy their own journal and streak onto the phone once; no Mithras sign-in is kept. Without a Mithras account the page stops at the sign-in.
   >
   > The app has no ads. Reminders are local notifications made on the device, with plain words that do not say what the app is for. Support: https://d3c9g6kent5bsr.cloudfront.net/support.html
 
+- **Second test account, for Friends (from 1.3.5):** in the TestFlight app on another phone, or on the web app, make a second
+  test account (a new email you control; never put its password in a chat, a commit or this repository), open Settings, Friends,
+  give the first name **Riley**, and add the review account by its code (on the review account: Settings, Friends, Add a friend).
+  Do one lesson on Riley so the review account sees numbers. Review never signs in to Riley; only the friendship is needed.
 - **Sign-in for App Review:** make a test account in the TestFlight app first (More, then Sync between devices), with a
   new email address you control, and type its email and password into App Review Information yourself. Never put that
   password in a chat, a commit or this repository. Make it new (after October 24, 2026) and do not tip with it: then

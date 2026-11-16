@@ -12,21 +12,16 @@
    2007); and each urge outlasted is the proof that builds the confidence for the next (Marlatt; Bandura). */
 import { eventsOf } from './legacy/core.js';
 import { lessonById, lessonFor } from './lessons';
+import { PROOFS } from './lesson-catalog';
 import { urEvidence, urLikeOf, urRank, urTool, type UrMem, type UrState } from './sos';
 import type { DayEvent, DayKey, Days, Settings } from './types';
 
 /** every move the ride can show, in the order they are tried when nothing else says which */
-export const RIDE_MOVES = ['breathe', 'move', 'stack', 'ground', 'feel', 'forward', 'thought', 'reasons', 'replay', 'selftalk'];
-/** Replay (replay.ts): one card from a lesson the person has finished, its picture and its line that sticks. Only when there are two
-    lessons or more to replay (RideCan.replay). */
-export const RIDE_REPLAY = 'replay';
+export const RIDE_MOVES = ['breathe', 'move', 'stack', 'ground', 'feel', 'forward', 'thought', 'reasons', 'selftalk'];
 /** Self Talk (self-talk.ts): the flame helps the person speak to themself by name, as a friend would */
 export const RIDE_SELF = 'selftalk';
 /** the moves that are not tools in the tool list (sos.ts TOOLS): they live only in the ride */
-const RIDE_ONLY = [RIDE_REPLAY, RIDE_SELF];
-/** From your lessons and Self Talk come in SOS for everyone once the owner has seen them and said yes (November 15, 2026: "I'd like
-    to preview it"). Until then they show only in the preview (app/sos-preview.tsx) and a practice ride that asks for one. */
-export const RIDE_FRESH = false;
+const RIDE_ONLY = [RIDE_SELF];
 /** the kind of each move: two of a kind are not shown one after the other */
 export const RIDE_KIND: Record<string, 'calm' | 'body' | 'eyes' | 'mind'> = {
   breathe: 'calm',
@@ -37,7 +32,6 @@ export const RIDE_KIND: Record<string, 'calm' | 'body' | 'eyes' | 'mind'> = {
   forward: 'mind',
   thought: 'mind',
   reasons: 'mind',
-  replay: 'mind',
   selftalk: 'mind',
   written: 'mind',
   future: 'mind',
@@ -75,9 +69,9 @@ export const RIDE_FIRST = 'breathe';
     then the hour after (it needs a clear head: Kober and others 2010) and your own words last, since in a strong urge they
     can feel like pressure. No study compares orders, so this is a starting place: what helps you, what you pass over and
     what fits the hour move it (rideWeights). The ride passes over moves silently: nothing on screen says one moved (the
-    owner, November 15, 2026). Replay (a card from a finished lesson) comes with the mind moves, once the peak eases; Self Talk is last,
+    owner, November 15, 2026). Self Talk is last,
    since its evidence is for stress, not craving (self-talk.ts), and the skip rule moves it later still if people pass it over. */
-export const RIDE_ORDER = ['breathe', 'move', 'stack', 'ground', 'feel', 'thought', 'forward', 'reasons', 'replay', 'selftalk'];
+export const RIDE_ORDER = ['breathe', 'move', 'stack', 'ground', 'feel', 'thought', 'forward', 'reasons', 'selftalk'];
 /** how much each place in RIDE_ORDER is worth against what the person's own record says (sos.ts urRank) */
 const RIDE_LIFT = 1;
 
@@ -132,10 +126,6 @@ export interface RideCan {
   future?: boolean;
   /** If it were a thing (RIDE_OBJECT): a real SOS, not a practice ride */
   object?: boolean;
-  /** Replay: two finished lessons or more with a card to replay (replay.ts replayCan) */
-  replay?: boolean;
-  /** Replay and Self Talk are in the ride at all (RIDE_FRESH) */
-  fresh?: boolean;
 }
 
 /** the moves this person can be shown, best for them first, each with how often it should come round (the best about
@@ -152,13 +142,11 @@ export function rideWeights(sc: UrState, days: Days, st: Settings | null, tk: Da
     RIDE_LIFT * (RIDE_ORDER.length - 1 - RIDE_ORDER.indexOf(id)) +
     Math.max(0, urLikeOf(st, id)) * 1.5 -
     Math.min(RIDE_SKIP_MAX, rideSkipOf(mem, id) * RIDE_SKIP_COST);
-  /* a move that is not a tool (Replay, Self Talk) starts from the lowest score the tools have here, so its place in RIDE_ORDER, what
+  /* a move that is not a tool (Self Talk) starts from the lowest score the tools have here, so its place in RIDE_ORDER, what
      the person says helps and what they pass over decide where it lands */
   const floor = Math.min(0, ...rank.filter((x) => RIDE_MOVES.indexOf(x.id) >= 0).map((x) => x.score));
   const own = (id: string) => ({ id, score: floor, r: null, rt: null, ra: null, tk: '', pin: false, off: false });
-  const list = RIDE_MOVES.filter(
-    (id) => (urTool(id) || (RIDE_ONLY.indexOf(id) >= 0 && can.fresh)) && (id !== 'reasons' || can.words) && (id !== RIDE_REPLAY || can.replay),
-  )
+  const list = RIDE_MOVES.filter((id) => (urTool(id) || RIDE_ONLY.indexOf(id) >= 0) && (id !== 'reasons' || can.words))
     .map((id) => ({ id, r: rank.find((x) => x.id === id) || (RIDE_ONLY.indexOf(id) >= 0 ? own(id) : undefined) }))
     .filter((x) => x.r && (!x.r.off || x.r.pin))
     .map((x) => ({ ...x, s: score(x.id, x.r!.score) }))
@@ -233,17 +221,16 @@ const objectPass = (mem: UrMem) => (mem.pass && typeof mem.pass === 'object' ? m
 /** why a move works, in one line, and the lesson that says more (read later, when it is calm) */
 export const RIDE_WHY: Record<string, { t: string; l?: string }> = {
   breathe: { t: 'A long breath out slows the heart. A calmer body makes the pull easier to wait out.', l: 'l14' },
-  move: { t: 'Hard muscle work, even for a minute, lowers cravings in study after study. Your body burned off what the urge was building.', l: 'l15' },
+  move: {
+    t: 'Hard muscle work, even for a minute, eases cravings in study after study. Letting go after a squeeze leaves the body calmer than it was.',
+    l: 'l15',
+  },
   stack: { t: 'Fitting shapes takes the same room in your head as the pictures an urge runs on, so the pictures fade.', l: 'l42' },
   ground: { t: 'Finding things around you pulls your attention out of the urge and back into the room.', l: 'l43' },
   feel: { t: 'Putting a word on a feeling turns its volume down, and the word points at what you really need.', l: 'l13' },
   forward: { t: 'Picturing the hour after makes later weigh more than right now. That is the skill: you looked past the urge.', l: 'l44' },
   thought: { t: 'A thought said fast, over and over, turns into sounds. It is still there, but it stops giving orders.', l: 'l16' },
   reasons: { t: 'Your own words, from a calm day, speak for the part of you that wants this.', l: 'l45' },
-  replay: {
-    t: 'A lesson you already know comes back in seconds, when a new idea could not. Seen again in the moment it is for, it becomes yours.',
-    l: 'l9',
-  },
   selftalk: {
     t: 'Speaking to yourself by name, the way a friend would, puts a step between you and the feeling, and a calmer mind chooses better. Said out loud, who you are becoming gets more true.',
     l: 'l38',
@@ -278,7 +265,8 @@ export function rideScience(
   return {
     t: w.t,
     lesson: L ? { id: L.id, title: L.title, mins: L.mins || 3, ask: L.ask || '', key: L.key } : null,
-    proofs: L ? L.cards.filter((c) => c.e === 'proof' && c.fact).map((c) => ({ h: c.h, s: c.fact!.s })) : [],
+    /* the lesson's proof cards, from the catalog, so SOS loads without the lesson text (lesson-catalog.ts) */
+    proofs: L ? PROOFS[L.id] || [] : [],
   };
 }
 

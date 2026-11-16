@@ -4,15 +4,29 @@
    phone remembers on its own (never synced): that it is in Friends, when the numbers were last sent, the last encouragement seen,
    the friends whose daily report is muted here, and that the person pre-joined the community. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { normCode, REPORT_DEFAULT, SHARE_DEFAULT, weekShare, type FriendCard, type ShareKey, type ShareVals } from '@daybook/core';
+import {
+  normCode,
+  openDays,
+  REPORT_DEFAULT,
+  SHARE_DEFAULT,
+  SPARK,
+  SPARK_KEEP,
+  weekShare,
+  type FriendCard,
+  type Hear,
+  type ShareKey,
+  type ShareVals,
+  type Together,
+} from '@daybook/core';
+import Constants from 'expo-constants';
 import { router, useSegments } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 
 import { track } from './events';
 import { demoApi, friendsDemo } from './friends-demo';
-import { scheduleFriendReports } from './reminders';
+import { pushToken, scheduleFriendReports } from './reminders';
 import { useStore } from './store';
 import { useSync } from './sync';
 
@@ -23,11 +37,19 @@ export interface FriendView {
   vals: ShareVals;
   /** when their daily report comes ('HH:MM'), or null */
   rt: string | null;
-  cheer?: { k: string; at: number };
+  /** how I hear about them: as it happens (capped), once a day, or not at all */
+  hear?: Hear;
+  /** our together streak, and the days of the last week we were both in */
+  together?: Together;
+  week?: string[];
+  /** the last spark they sent me, and when it went into my lesson */
+  cheer?: { k: string; at: number; used?: number };
+  /** when I last sent them one, and when it went into their lesson */
   sent?: number;
+  sentUsed?: number;
 }
 export interface FriendsData {
-  me: { name: string; on: FriendCard['on']; rt: string | null } | null;
+  me: { name: string; on: FriendCard['on']; rt: string | null; hn?: Hear } | null;
   invite: { code: string; exp: number } | null;
   friends: FriendView[];
 }
@@ -59,6 +81,8 @@ type Local = {
   pending?: string;
   next?: 'add' | 'code';
   mute?: string[];
+  /** this phone's push token as last sent, so it is sent again only when it changes */
+  push?: string;
 };
 let local: Local = {};
 const localSubs = new Set<() => void>();
@@ -131,7 +155,66 @@ function planReports() {
   if (friendsDemo()) return;
   const friends = state.data?.friends || [];
   const mute = new Set(local.mute || []);
-  scheduleFriendReports(friends.filter((f) => f.rt && !mute.has(f.fid)).map((f) => ({ fid: f.fid, name: f.name, rt: f.rt! }))).catch(() => undefined);
+  /* a friend heard as it happens needs no daily report too: the live note replaces it. Without push on this phone (no permission,
+     or a phone the server cannot reach), the daily report stays, so the person still hears. */
+  const daily = (f: FriendView) => (f.hear === 'off' ? false : f.hear === 'daily' || !local.push);
+  scheduleFriendReports(friends.filter((f) => f.rt && daily(f) && !mute.has(f.fid)).map((f) => ({ fid: f.fid, name: f.name, rt: f.rt! }))).catch(
+    () => undefined,
+  );
+}
+
+/* ---------- live notes: this phone's push token ---------- */
+
+/** asks for notes (only if never asked) and sends this phone's push token, so a friend's note can reach it. Never on the web or in
+    the demo. True when the phone can hear as it happens. */
+export async function registerPush(
+  api: (m: 'GET' | 'POST', q: string, b?: unknown) => Promise<{ status: number; body: Record<string, unknown> } | null>,
+  ask: boolean,
+): Promise<boolean> {
+  if (Platform.OS === 'web' || friendsDemo()) return false;
+  try {
+    const projectId = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId;
+    const token = await pushToken(ask, projectId);
+    if (!token) return false;
+    if (token === local.push) return true;
+    const r = await api('POST', '?friends=push', { token, tz: -new Date().getTimezoneOffset() });
+    if (r?.status !== 200) return false;
+    keepLocal({ push: token });
+    planReports();
+    return true;
+  } catch {
+    /* a phone that cannot get a token (a simulator, no network): the daily report stays */
+    return false;
+  }
+}
+
+/* ---------- the spark that waits for the next lesson ---------- */
+
+/** the sparks waiting for this person's next lesson, oldest first */
+export function sparksWaiting(data: FriendsData | null, now = Date.now()): FriendView[] {
+  return (data?.friends || []).filter((f) => f.cheer?.k === SPARK && !f.cheer.used && now - f.cheer.at < SPARK_KEEP).sort((a, b) => a.cheer!.at - b.cheer!.at);
+}
+/** the friend whose spark is waiting, for Today */
+export function useSparkWaiting(): FriendView | null {
+  const s = useSyncExternalStore(sub, () => state);
+  return sparksWaiting(s.data)[0] || null;
+}
+/** at the end of a lesson: the waiting spark goes into it, once. Its sender's name, or null. The sender is told by the server. */
+export function useSpendSpark(on: boolean): string | null {
+  const { api } = useFriends();
+  const [name] = useState(() => {
+    if (!on) return null;
+    const f = sparksWaiting(state.data)[0];
+    if (!f) return null;
+    const at = Date.now();
+    set({ data: state.data && { ...state.data, friends: state.data.friends.map((x) => (x.fid === f.fid ? { ...x, cheer: { ...x.cheer!, used: at } } : x)) } });
+    if (!friendsDemo()) {
+      api('POST', '?friends=used', { fid: f.fid }).catch(() => undefined);
+      track('friend_spark_used');
+    }
+    return f.name;
+  });
+  return name;
 }
 
 /** the encouragements seen up to now */
@@ -168,10 +251,10 @@ export function useFriends() {
 
   /** saves the card: the name, what is on, the daily report's hour, and this week's numbers */
   const saveCard = useCallback(
-    async (c: { name: string; on: Partial<Record<ShareKey, boolean>>; rt: string | null }): Promise<string | null> => {
+    async (c: { name: string; on: Partial<Record<ShareKey, boolean>>; rt: string | null; hn?: Hear }): Promise<string | null> => {
       if (!snap.settings && !demo) return 'Finish setup first.';
       const vals = snap.settings ? weekShare(snap.days, snap.settings, snap.reviews, tk) : {};
-      const r = await api('POST', '?friends=card', { card: { ...c, vals, at: Date.now() } });
+      const r = await api('POST', '?friends=card', { card: { ...c, vals, od: openDays(snap.days, tk), at: Date.now() } });
       if (r?.status !== 200) return friendWords(r);
       set({ data: r.body as unknown as FriendsData, error: null });
       if (!demo) keepLocal({ in: true, sentAt: Date.now(), sentVals: JSON.stringify(vals) });
@@ -190,12 +273,13 @@ export function useFriends() {
     [api, load],
   );
 
-  /** the card with everything automatic (what is shared, the report at 9 PM), made the first time with just a name */
+  /** the card with everything automatic (what is shared, the report at 9 PM), made the first time with just a name; hn, how this
+      person hears about a friend who joins by their code */
   const ensureCard = useCallback(
-    async (name: string): Promise<string | null> => {
+    async (name: string, hn?: Hear): Promise<string | null> => {
       const me = state.data?.me;
-      if (me && me.name === name.trim()) return null;
-      return saveCard({ name: name.trim(), on: me?.on || SHARE_DEFAULT, rt: me ? me.rt : REPORT_DEFAULT });
+      if (me && me.name === name.trim() && (!hn || (me.hn || 'live') === hn)) return null;
+      return saveCard({ name: name.trim(), on: me?.on || SHARE_DEFAULT, rt: me ? me.rt : REPORT_DEFAULT, hn: hn || me?.hn });
     },
     [saveCard],
   );
@@ -210,7 +294,7 @@ export function useFriends() {
     [api],
   );
 
-  return { ...s, signedIn, demo, load, saveCard, ensureCard, call, look };
+  return { ...s, signedIn, demo, api, load, saveCard, ensureCard, call, look };
 }
 
 /** for a sheet opened on its own (a link, a reload): the friends data, loaded if it is not here yet. ready: it is known (or there is no
@@ -248,30 +332,39 @@ export function FriendsKeeper() {
       const vals = weekShare(snap.days, st, snap.reviews, tk);
       const text = JSON.stringify(vals);
       const since = Date.now() - (local.sentAt || 0);
-      /* today's numbers move through the day, so a change goes out after 20 minutes; the same numbers once a day, to stay fresh */
-      if (text === local.sentVals ? since < 24 * 3600_000 : since < 20 * 60_000) return;
+      /* a lesson or the check-in done today goes out at once, so a friend who hears as it happens hears now; other numbers move
+         through the day, so a change goes out after 20 minutes; the same numbers once a day, to stay fresh */
+      const was = local.sentVals ? (JSON.parse(local.sentVals) as ShareVals) : {};
+      const did = vals.dk === was.dk ? (vals.dl || 0) > (was.dl || 0) || (!!vals.dc && !was.dc) : !!(vals.dl || vals.dc);
+      if (!did && (text === local.sentVals ? since < 24 * 3600_000 : since < 20 * 60_000)) return;
       const cur = state.data?.me ?? ((await sync.api('GET', '?friends=1'))?.body?.me as FriendsData['me'] | undefined);
       if (!cur) {
         keepLocal({ in: false });
         return;
       }
-      const r = await sync.api('POST', '?friends=card', { card: { ...cur, vals, at: Date.now() } });
+      const r = await sync.api('POST', '?friends=card', { card: { ...cur, vals, od: openDays(snap.days, tk), at: Date.now() } });
       if (r?.status === 200) {
         set({ data: r.body as unknown as FriendsData });
         keepLocal({ sentAt: Date.now(), sentVals: text });
       }
     };
-    /* the friends list and their report hours, once an open, so the daily notes stay right */
+    /* the friends list and their report hours, once an open, so the daily notes stay right; and this phone's push token, while a
+       friend is heard as it happens (never asking: the ask is made when the friend is added) */
+    const live = () => {
+      if ((state.data?.friends || []).some((f) => (f.hear || 'live') === 'live')) registerPush(sync.api, false).catch(() => undefined);
+    };
     if (!state.data)
       sync.api('GET', '?friends=1').then(
         (r) => {
           if (r?.status === 200) {
             set({ data: r.body as unknown as FriendsData });
             planReports();
+            live();
           }
         },
         () => undefined,
       );
+    else live();
     const t = setTimeout(() => push().catch(() => undefined), 4000);
     const a = AppState.addEventListener('change', (x) => x === 'active' && push().catch(() => undefined));
     return () => {

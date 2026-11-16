@@ -13,7 +13,8 @@ import { Button, T } from '@/components/ui';
 import { track } from '@/lib/events';
 import { allowReminders } from '@/lib/reminders';
 import { buzz } from '@/lib/feel';
-import { useFriendsReady } from '@/lib/friends';
+import { Toggle } from '@/components/settings-ui';
+import { registerPush, useFriendsReady } from '@/lib/friends';
 import { useStore } from '@/lib/store';
 
 export default function FriendCode() {
@@ -30,6 +31,7 @@ export default function FriendCode() {
   const [err, setErr] = useState('');
   const me = fr.data?.me || null;
   const [name, setName] = useState('');
+  const [live, setLive] = useState(true);
 
   const find = async (raw = code) => {
     const c = normCode(raw);
@@ -69,13 +71,14 @@ export default function FriendCode() {
       }
     }
     setBusy(true);
-    const r = await fr.call('accept', { code: normCode(code) });
+    const r = await fr.call('accept', { code: normCode(code), hear: live ? 'live' : 'daily' });
     setBusy(false);
     if (!r.ok) return setErr(r.msg);
     buzz('lit');
     if (!fr.demo) track('friend_added');
-    /* their daily report comes as a note on a phone: ask for notes now, once, when it was never asked (it never asks again) */
-    if (!fr.demo) allowReminders().catch(() => false);
+    /* their notes come to a phone: ask for notes now, once, when it was never asked (it never asks again); hearing as it happens
+       also sends this phone's push token */
+    if (!fr.demo) (live ? registerPush(fr.api, true) : allowReminders()).catch(() => false);
     setDone(String(r.body.name || found?.name || ''));
   };
 
@@ -92,7 +95,7 @@ export default function FriendCode() {
               You and {done} are friends
             </T>
             <T tone="muted" style={{ textAlign: 'center' }}>
-              They see your lessons, check-ins and flame. Change it any time on the Friends page.
+              They see your lessons, check-ins and flame, and you can send each other sparks. Change it any time on the Friends page.
             </T>
           </View>
           <Dock>
@@ -157,6 +160,15 @@ export default function FriendCode() {
                       returnKeyType="done"
                     />
                   ) : null}
+                  <View style={s.hear}>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <T v="label">Hear when {found.name} does a lesson</T>
+                      <T v="small" tone="muted">
+                        And their sparks. At most 2 notes a day, none at night.
+                      </T>
+                    </View>
+                    <Toggle on={live} label={'Hear when ' + found.name + ' does a lesson'} onChange={setLive} />
+                  </View>
                   <Button label={busy ? 'One moment' : 'Become friends'} disabled={busy} onPress={accept} />
                 </>
               )}
@@ -173,4 +185,5 @@ const s = StyleSheet.create({
   middle: { alignItems: 'center', gap: 12, paddingVertical: 24 },
   pair: { flexDirection: 'row', marginBottom: 8 },
   grow: { flex: 1, justifyContent: 'center' },
+  hear: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4, paddingBottom: 4 },
 });

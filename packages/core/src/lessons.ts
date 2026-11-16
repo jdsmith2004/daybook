@@ -6,7 +6,7 @@
 import { addDays, diffDays, fmtDate, LESSON_IDS, LESSONS, LUNITS, eventsOf, topTrigger, busiestWindow, LCHECK_N, SLIP_STEPS } from './legacy/core.js';
 import { PATH_STEPS, stepAt } from './steps';
 import { habitOf, type Habit } from './habit';
-import { habitOpen, habitOwn, PORN_ONLY } from './lesson-habit';
+import { HABIT_OPENS, HABIT_OWN, PORN_ONLY_IDS } from './lesson-catalog';
 import { changeDay, withDay } from './mutate';
 import { changeSettings } from './actions';
 import { morningOf } from './morning-set';
@@ -199,9 +199,14 @@ export const isGod = (L: Lesson) => /^g\d+$/.test(L.id);
     (faithOut), unless lesson-habit.ts HABIT_OPEN opens one for that habit, in its words. A lesson of one habit only
     (HABIT_ONLY) is off every other path, porn's too. One finished before the habit changed stays finished and counted
     (lessonCount), with its points. A new lesson is for porn only until it is checked and left off this list. */
-export { PORN_ONLY };
+/** the lessons written for porn that open to another habit only in their own way (lesson-habit.ts PORN_ONLY, from the catalog) */
+export const PORN_ONLY = new Set(PORN_ONLY_IDS);
+/** a lesson opens to this habit (lesson-habit.ts habitOpen, from the catalog, so the rules need no lesson text) */
+export const lessonOpenTo = (id: string, h: Habit): boolean => h === 'porn' || !!(HABIT_OPENS[id] && HABIT_OPENS[id].includes(h));
+/** a lesson of one habit only is for that habit alone (lesson-habit.ts habitOwn, from the catalog) */
+export const lessonOwnTo = (id: string, h: Habit): boolean => !HABIT_OWN[id] || HABIT_OWN[id] === h;
 /** this lesson is for this habit */
-const habitFits = (id: string, h: Habit) => (!PORN_ONLY.has(id) || habitOpen(id, h)) && habitOwn(id, h);
+const habitFits = (id: string, h: Habit) => (!PORN_ONLY.has(id) || lessonOpenTo(id, h)) && lessonOwnTo(id, h);
 /** this lesson is not for this person's habit */
 export const habitOff = (L: Lesson | null | undefined, st: Settings | null | undefined) => !!L && !habitFits(L.id, habitOf(st));
 /** a lesson to link to, or null when it is not for this person's habit: every link to a lesson goes through this */

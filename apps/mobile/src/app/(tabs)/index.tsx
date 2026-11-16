@@ -93,6 +93,7 @@ import { useNights } from '@/lib/health';
 import { LEAD_ROOM, NOTE_ROOM, skyTrim, useTodaySize } from '@/lib/today-size';
 import { useAccount, useSync } from '@/lib/sync';
 import { SyncStrip } from '@/components/sync-strip';
+import { SparkTop } from '@/components/spark-top';
 import { font, useTheme } from '@/lib/theme';
 
 /** when this copy of the app started (the first sync after it is what lets Today mark the day opened) */
@@ -464,6 +465,7 @@ export default function Today() {
                 <View style={s.leads} pointerEvents="box-none">
                   <FeedbackTop on={{ glass: ink.glass, ink: ink.ink }} />
                   {account ? null : <AccountTop nudge={night ? null : nudgeNow} />}
+                  {account ? <SparkTop on={{ glass: ink.glass, ink: ink.ink }} /> : null}
                 </View>
               }
               action={<SettingsButton on={{ glass: ink.glass, ink: ink.ink }} />}

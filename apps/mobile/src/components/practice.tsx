@@ -1,7 +1,8 @@
 /* The pieces of "Put it to work" at the end of a lesson (core practice.ts): a ready-made line with one button that puts it on
    the plan (and Undo), a line to copy and send, the box for the lesson's own line with examples to tap, the editor that
    changes a line's words before it is added (it sits at the top, above the keyboard), and a tool or page to open. */
-import { ITEM_WHEN_LEN, ITEM_WHERE, itemButton, itemDone, itemLen, type PItem } from '@daybook/core';
+import { type PItem } from '@daybook/core';
+import { ITEM_WHEN_LEN, ITEM_WHERE, itemButton, itemDone, itemLen } from '@daybook/core/lesson-content';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { KeepAbove } from '@/components/keyboard';

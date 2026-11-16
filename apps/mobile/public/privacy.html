@@ -197,20 +197,30 @@
             <strong>Your card:</strong> the first name you give for friends; which items you share (shared from the start: how many lessons you did, the days
             you checked in, the days you opened Daybook, and your flame's level; urges ridden out only if you turn it on); this week's numbers for those items
             and today's (lessons done today, and whether you checked in); and the hour your daily report reaches your friends, or none. You can turn any item
-            off. Only these numbers leave your phone: never a slip, a count that resets, the time of anything, your journal, your notes, your voice notes or
-            your plan.
+            off. Only these numbers leave your phone: never a slip, the time of anything, your journal, your notes, your voice notes or your plan. While you
+            share days in Daybook, your card also keeps which days of the last two weeks you opened Daybook; it is never sent to a friend, and is used only to
+            count your together streak with each friend (days in a row you both opened Daybook) and the days of the last week you were both in.
           </li>
           <li>
-            <strong>Your friendships:</strong> who you are friends with (by account, never shown as an email), and the last ready-made encouragement each friend
-            sent you (warm your flame, proud of you, with you today). There is no chat.
+            <strong>Your friendships:</strong> who you are friends with (by account, never shown as an email), how you chose to hear about each (as it happens,
+            once a day, or not at all), your together streak with each, and the last spark each friend sent you and when it went into your lesson (a spark is
+            the one thing friends send each other; there is no chat).
+          </li>
+          <li>
+            <strong>For notes as they happen:</strong> while you hear about a friend as it happens, your phone's push token (an address Apple or Google gives
+            your phone for notes) and your clock's offset from UTC, so no note comes at night, and how many friend notes reached you today. The push token is
+            never sent with the anonymous events below. Notes go through Expo's push service (expo.dev) to Apple or Google; a note carries only your friend's
+            first name and a line like "Just did today's lesson".
           </li>
           <li><strong>Your code,</strong> for 7 days, and anyone you blocked, so they cannot use your code again.</li>
         </ul>
         <p>
-          A friend sees your card only while you are both friends, and only the items you share; numbers more than a week old are not shown. The daily report is
-          a note your friend's own phone makes at the hour you picked (it names only you); your friend can turn it off on their phone. Removing a friend,
-          blocking them or leaving Friends ends it on both sides at once, and they are not told. If you report a friend, Daybook keeps who reported whom, why,
-          and the name they had shared then, so it can be looked at; a note that a report came in (only the reason) reaches the owner's feedback inbox.
+          A friend sees your card only while you are both friends, and only the items you share; numbers more than a week old are not shown. When you do a
+          lesson or check in, a friend who chose to hear as it happens gets a note (at most 2 friend notes reach anyone in a day, none from 10 PM to 8 AM on
+          their clock); the daily report is a note your friend's own phone makes at the hour you picked (it names only you). Your friend can change either on
+          their friend page. Removing a friend, blocking them or leaving Friends ends it on both sides at once, and they are not told. If you report a friend,
+          Daybook keeps who reported whom, why, and the name they had shared then, so it can be looked at; a note that a report came in (only the reason)
+          reaches the owner's feedback inbox.
         </p>
         <p>
           <strong>Community, coming soon:</strong> pre-joining keeps no name, email or account. It sends one anonymous event, <code>community_join</code>,
@@ -259,9 +269,8 @@
           <li>
             <code>sos_open</code>, <code>sos_end</code>, <code>sos_tool</code>, <code>tool_open</code>, <code>tool_done</code>, <code>talk_done</code>: SOS was
             opened (and from where), ended (how, how long, and how strong the urge was), a tool was tried in SOS (which, and whether the urge passed after it;
-            <code>object</code> is the question “If the urge were a thing”, never which thing was picked; <code>replay</code> is a card from a lesson you
-            finished, never which one; <code>selftalk</code> is Self Talk, never your name or anything you said), a tool was opened or finished, Talk it through
-            was finished (never what was said).
+            <code>object</code> is the question “If the urge were a thing”, never which thing was picked; <code>selftalk</code> is Self Talk, never your name or
+            anything you said), a tool was opened or finished, Talk it through was finished (never what was said).
           </li>
           <li>
             <code>urge</code>, <code>slip</code>, <code>happened</code>, <code>planning</code>, <code>rekindle</code>, <code>comeback</code>: an urge was logged
@@ -301,8 +310,10 @@
             Mithras account, email or anything you wrote.
           </li>
           <li>
-            <code>friend_added</code>, <code>friend_cheer</code>, <code>community_join</code>: became friends with someone in Friends (never who), sent a friend
-            a ready-made encouragement (which one: warm, proud or with), pre-joined the community that is coming. Never a name, a goal or a friend.
+            <code>friend_added</code>, <code>friend_cheer</code>, <code>friend_spark_used</code>, <code>friend_hear</code>, <code>community_join</code>: became
+            friends with someone in Friends (never who), sent a friend a spark or an older ready-made encouragement (which one: spark, warm, proud or with), a
+            friend's spark went into a lesson, chose how to hear about a friend (live, daily or off), pre-joined the community that is coming. Never a name, a
+            goal or a friend.
           </li>
           <li>
             <code>ab</code>: Daybook tries two wordings of a line to learn which helps more, and this says which one was shown: the line's name (rk_first,

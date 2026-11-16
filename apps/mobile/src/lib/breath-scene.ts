@@ -231,7 +231,8 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
   const full = smooth(v);
   /* the settle: one dot that grows, and from a third of the way in the figure's dots drift out of it, slowly */
   const settling = b < 0 && !still;
-  const from = 0;
+  /* the sigh lets its dots go from the first moment; the others grow their one dot first, then burst and gather */
+  const from = id === 'sigh' ? 0 : settle * 0.42;
   const span = Math.max(0.01, settle - from);
   const born = settling ? smooth(clamp(t / 0.5)) : 1;
   /** how far a dot has come out of the middle (0 to 1); `late` (0 to 1) is its place in the line */
@@ -242,7 +243,16 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
     return f * f * (3 - 2 * f);
   };
   const d = Math.max(1.8, Math.min(2.5, R / 70));
-  const seed = R * 0.055;
+  /* the one dot: it grows the whole time it is alone, breathing a little, like a breath being drawn */
+  const seed = R * (0.03 + 0.05 * smooth(clamp(t / Math.max(0.01, from)))) * (still ? 1 : 1 + 0.06 * Math.sin(t * 2.4));
+  /** how far a dot is thrown off its path as the figure bursts out of the one dot and gathers: [x, y] */
+  const toss = (i: number, e: number) => {
+    'worklet';
+    if (!settling) return [0, 0];
+    const m = Math.sin(Math.PI * e) * R * (0.12 + 0.3 * rnd(i + 0.3));
+    const a = rnd(i + 0.7) * TAU;
+    return [m * Math.cos(a), m * Math.sin(a)];
+  };
 
   if (id === 'sigh') {
     /* one small circle in the middle. Every dot goes all the way into it and is gone, and it grows a little for each one
@@ -307,8 +317,8 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
         const near = z < 0 ? 0.42 : 1;
         const k = (1 + 0.16 * z) * e;
         dots.push(
-          cx + x * rad * k,
-          cy + y * rad * k,
+          cx + x * rad * k + toss(i, e)[0],
+          cy + y * rad * k + toss(i, e)[1],
           d * (0.5 + 1.15 * lit * lit) * (0.85 + 0.15 * z),
           sky[0],
           sky[1],
@@ -346,7 +356,15 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
           const at2 = put(gx * e, gy * e);
           /* it comes out evenly lit, and the light finds its corner as it opens */
           const lit = 0.45 + (clamp(0.5 + at2[2] * 0.62) - 0.45) * e;
-          dots.push(at2[0], at2[1], d * (0.26 + 1.35 * lit * lit), sky[0], sky[1], sky[2], e * (0.05 + 0.95 * lit * Math.sqrt(lit)));
+          dots.push(
+            at2[0] + toss(iy2 * GRID + ix2, e)[0],
+            at2[1] + toss(iy2 * GRID + ix2, e)[1],
+            d * (0.26 + 1.35 * lit * lit),
+            sky[0],
+            sky[1],
+            sky[2],
+            e * (0.05 + 0.95 * lit * Math.sqrt(lit)),
+          );
         }
       /* the walker keeps just outside the grid's edge, along its curve */
       const e = come(1);
@@ -373,8 +391,8 @@ export function sceneAt(id: FieldId, t: number, w: number, h: number, settle: nu
         const near = (z + 1) / 2;
         const k = (1 + 0.18 * z) * e;
         dots.push(
-          cx + x * rad * k,
-          cy + y * rad * k,
+          cx + x * rad * k + toss(i, e)[0],
+          cy + y * rad * k + toss(i, e)[1],
           d * (0.5 + 0.75 * near),
           sky[0],
           sky[1],

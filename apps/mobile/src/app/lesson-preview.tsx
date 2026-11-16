@@ -2,7 +2,8 @@
    build, whose log is a made-up person kept in memory; in every other build this address goes to Today). The owner, November 14,
    2026: "i couldn't get the other lessons to load for me ... make some lessons and i'll preview before we do them all". A lesson
    opened from here plays with nothing in the way: no path, no account, no morning first (lesson/[id].tsx, at=preview). */
-import { lessonById, STORIES } from '@daybook/core';
+import { lessonById } from '@daybook/core';
+import { STORIES } from '@daybook/core/lesson-content';
 import { Redirect, router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

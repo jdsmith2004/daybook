@@ -57,11 +57,12 @@ export function SelfTalkMove({ on, onDone, level, name: nameIn, days: daysIn }: 
     if (p >= 1) said();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p >= 1]);
-  /* a tick as the fill passes each third, so the hand feels it filling */
-  const third = Math.floor(p * 3);
+  /* haptics, as It is written's hold has them: a tap when the hold starts, a tick at each sixth of the fill so the hand feels it
+     filling, a firmer one when a line is said, and the win when all three are said */
+  const step = Math.floor(p * 6);
   useEffect(() => {
-    if (third > 0 && third < 3) buzz('tick');
-  }, [third]);
+    if (step > 0 && step < 6) buzz('tick');
+  }, [step]);
   /* left before it was held: nothing runs */
   useEffect(() => {
     if (!on) setT0(null);

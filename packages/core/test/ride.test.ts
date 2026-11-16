@@ -7,7 +7,7 @@ import type { Days, Settings } from '../src/types';
 const st: Settings = core.normSettings({});
 const tk = '2026-10-21';
 const now = new Date('2026-10-21T15:00:00').getTime();
-const can: core.RideCan = { words: true, replay: true, fresh: true };
+const can: core.RideCan = { words: true };
 
 /** a log with urges ridden out, each with its tools and minutes */
 function rodeLog(list: { key: string; tr?: [string, 'p' | 's' | 'x'][]; m?: number }[]): Days {

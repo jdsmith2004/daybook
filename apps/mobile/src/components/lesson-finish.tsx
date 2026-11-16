@@ -18,7 +18,7 @@
    About four seconds; a tap anywhere brings it all in at once. Reduce Motion: no opener, everything in and settled, one buzz.
    In the hours after a slip (core ptsQuiet) the points and the level line are not shown, as everywhere else: the lesson itself
    is the win. A lesson read again earns no points, so nothing glides. */
-import { gameCompute, lessonCount, lessonWalk, levelOf, LOOKS, ptsQuiet, stepProgress, type Look } from '@daybook/core';
+import { gameCompute, lessonCount, lessonWalk, levelOf, LOOKS, ptsQuiet, sparkUsed, stepProgress, type Look } from '@daybook/core';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
@@ -41,6 +41,8 @@ import { BigFlame } from '@/components/big-flame';
 import { SHORT } from '@/components/fit';
 import { Bubble } from '@/components/lesson-flame';
 import { Text } from '@/components/text';
+import { Spark } from '@/components/friends-art';
+import { useSpendSpark } from '@/lib/friends';
 import { buzz } from '@/lib/feel';
 import { pulseOffered } from '@/lib/pulse';
 import { useReducedMotion } from '@/lib/motion';
@@ -64,6 +66,8 @@ const OUT = Easing.out(Easing.cubic);
 const BOTH = Easing.inOut(Easing.cubic);
 
 export interface LessonFinishProps {
+  /** a real lesson finished: a spark a friend sent goes into it (Friends, lib/friends.ts), and the finish says so */
+  spendSpark?: boolean;
   lessonId: string;
   title: string;
   /** the lesson's number on the path */
@@ -133,8 +137,11 @@ export function LessonFinish({
   feedback = true,
   look: kind = 'band',
   marks = 0,
+  spendSpark,
 }: LessonFinishProps) {
   const dawn = kind === 'dawn';
+  /* a friend's spark waiting for this lesson goes into it, once; its sender is told */
+  const spark = useSpendSpark(!!spendSpark && !again);
   const done = head ?? 'Lesson ' + n + ' done';
   const { snap, tk, now } = useStore();
   const st = snap.settings;
@@ -487,6 +494,12 @@ export function LessonFinish({
             {title}
           </Text>
           {dawn && marks ? <Marks v={lit} n={marks} /> : null}
+          {spark ? (
+            <View style={s.spark} accessible accessibilityLabel={sparkUsed(spark)}>
+              <Spark size={28} />
+              <Text style={s.sparkT}>{sparkUsed(spark)}</Text>
+            </View>
+          ) : null}
         </Reanimated.View>
       </View>
 
@@ -727,6 +740,8 @@ const s = StyleSheet.create({
   title: { fontFamily: font.display, fontSize: 34, color: nightInk.ink, textAlign: 'center' },
   sub: { fontFamily: font.bodySemi, fontSize: 15, color: nightInk.muted, textAlign: 'center', marginTop: 2 },
   marks: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 14 },
+  spark: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 10 },
+  sparkT: { fontFamily: font.bodySemi, fontSize: 15, color: GOLD },
   mark: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: GOLD, backgroundColor: 'rgba(255,210,90,0.18)' },
   dock: { paddingHorizontal: 16, gap: 18 },
   pts: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, alignSelf: 'center' },

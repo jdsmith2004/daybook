@@ -1,12 +1,13 @@
 /* Friends: what your friends see of you. At the top, your card exactly as a friend sees it (show it, do not say it); below, a switch for
    each item, when the daily report reaches them, your name, and leaving Friends. Kept off the Friends page, which is about your friend
    (the owner, November 15, 2026: the page "still does not meet our standards"). */
-import { REPORT_TIMES, reportAt, SHARE_KEYS, SHARE_WORDS, weekShare, type ShareKey, type ShareVals } from '@daybook/core';
+import { friendToday, REPORT_TIMES, reportAt, SHARE_KEYS, SHARE_WORDS, weekShare, type ShareKey, type ShareVals } from '@daybook/core';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { FriendReport } from '@/components/friends-art';
+import { BigFlame } from '@/components/big-flame';
+import { FriendWeek } from '@/components/friends-art';
 import { SetGroup, SetRow, SetSwitch } from '@/components/settings-ui';
 import { closeSheet, SheetFrame } from '@/components/sheet';
 import { LinkText } from '@/components/today';
@@ -49,15 +50,22 @@ export default function FriendShare() {
   return (
     <SheetFrame title="What they see">
       <View style={{ gap: 24 }}>
-        <FriendReport
-          f={{ fid: 'me', since: 0, name: me.name, vals, rt: me.rt }}
-          tk={tk}
-          fresh={false}
-          busy={false}
-          onOpen={() => undefined}
-          onWarm={() => undefined}
-          preview
-        />
+        {/* your card, as a friend sees it */}
+        <View style={{ gap: 12 }}>
+          <View style={s.me}>
+            <BigFlame level={vals.level || 1} size={72} noLand />
+            <View style={{ flex: 1, gap: 2 }}>
+              <T v="h2">{me.name}</T>
+              {vals.level ? (
+                <T v="small" tone="muted">
+                  Level {vals.level}
+                  {vals.lname ? ', ' + vals.lname : ''}
+                </T>
+              ) : null}
+            </View>
+          </View>
+          <FriendWeek vals={vals} today={friendToday(vals, tk)} />
+        </View>
 
         <SetGroup head="Shared with your friends">
           {SHARE_KEYS.map((k: ShareKey) => (
@@ -134,5 +142,6 @@ export default function FriendShare() {
 
 const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  me: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   chip: { borderRadius: 999, paddingHorizontal: 16, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
 });

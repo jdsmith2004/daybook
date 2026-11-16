@@ -23,8 +23,8 @@ import {
   type LessonMap,
   type MapLand,
   type MapStone,
-  lessonTo,
 } from '@daybook/core';
+import { lessonTo } from '@daybook/core/lesson-content';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from 'expo-router';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';

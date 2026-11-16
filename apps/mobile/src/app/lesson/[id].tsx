@@ -15,22 +15,14 @@ import {
   type Block,
   type Beat,
   type Card,
-  cardArt,
-  cardBeat,
-  cardLook,
-  cardNumber,
   changeSettings,
   gameCompute,
   fmtDate,
   type Go,
   guessFeedback,
   type Lesson,
-  lessonBeats,
   lessonById,
-  lessonAs,
-  lessonTo,
   habitOf,
-  lessonVoiced,
   faithVoice,
   lessonDoneOn,
   lessonGate,
@@ -39,13 +31,8 @@ import {
   lessonLog,
   lessonMine,
   lessonNo,
-  itemAdd,
-  itemHas,
-  itemUndo,
   lessonOpen,
   nextLessonOk,
-  lessonPractice,
-  practiceOne,
   lessonPracticed,
   lessonReach,
   lessonLen,
@@ -79,6 +66,21 @@ import {
   lessonDue,
   morningDue,
 } from '@daybook/core';
+import {
+  cardArt,
+  cardBeat,
+  cardLook,
+  cardNumber,
+  lessonBeats,
+  lessonAs,
+  lessonTo,
+  lessonVoiced,
+  itemAdd,
+  itemHas,
+  itemUndo,
+  lessonPractice,
+  practiceOne,
+} from '@daybook/core/lesson-content';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from 'react-native';
@@ -846,6 +848,7 @@ export default function LessonScreen() {
     const nx = care ? null : nextLessonOk(L, w, snap.days, st, tk, account);
     return (
       <LessonFinish
+        spendSpark
         lessonId={L.id}
         title={L.title}
         n={n || 0}

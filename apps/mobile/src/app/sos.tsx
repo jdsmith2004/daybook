@@ -24,11 +24,8 @@ import {
   newUrge,
   rateUrTool,
   RIDE_FAITH,
-  RIDE_FRESH,
   RIDE_MOVES,
-  RIDE_REPLAY,
   RIDE_SELF,
-  replayCan,
   rideFinished,
   rideNext,
   ridePassed,
@@ -91,8 +88,8 @@ export default function Sos() {
   const { practice: pq, won: wq, setup: sq, try: tq } = useLocalSearchParams<{ practice?: string; won?: string; setup?: string; try?: string }>();
   const [practice] = useState(() => pq === '1');
   /* a practice ride can try one of the newest moves right after the breath, for the owner to see it in a real ride before it goes in
-     for everyone (/sos?practice=1&try=replay or try=selftalk; app/sos-preview.tsx links here). Never in a real SOS. */
-  const [tryMove] = useState(() => (practice && (tq === RIDE_REPLAY || tq === RIDE_SELF) ? tq : null));
+     for everyone (/sos?practice=1&try=selftalk; app/sos-preview.tsx links here). Never in a real SOS. */
+  const [tryMove] = useState(() => (practice && tq === RIDE_SELF ? tq : null));
   /* from setup, the practice is one move and one press of the arrow, then back (the owner, November 13, 2026: "it takes to long
      just make it more obvious they have to press the down button and only make them press it once") */
   const quick = practice && sq === '1';
@@ -165,9 +162,7 @@ export default function Sos() {
   const hasFuture = !practice && future.notes.length > 0;
   /* It is written, for people who said faith plays a part (core written.ts) */
   const faith = godOn(st);
-  /* From your lessons: a card from a lesson finished, once there are two or more to choose from (core replay.ts) */
-  const replay = useMemo(() => replayCan(snap.days, st), [snap.days, st]);
-  const can = useMemo(() => ({ words, faith, future: hasFuture, object: !practice, replay, fresh: RIDE_FRESH }), [words, faith, hasFuture, practice, replay]);
+  const can = useMemo(() => ({ words, faith, future: hasFuture, object: !practice }), [words, faith, hasFuture, practice]);
   const moveName = (x: string) => (x === 'written' ? writtenWords(faithVoice(st) || 'plain').name : MOVE_NAME[x] || urTool(x)?.name || x);
   /* the first move, once there is an urge: always the sun */
   useEffect(() => {

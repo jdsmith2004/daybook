@@ -19,7 +19,7 @@ import { usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Reanimated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { SvgXml } from 'react-native-svg';
 
@@ -38,8 +38,14 @@ const FLY = 1150 * Z;
 const FLY_MS = 560 * Z;
 const LAND = FLY + FLY_MS - 90 * Z;
 const GONE = LAND + 140 * Z;
-/** how long the flame waits for Today to say where its home is before the scene gives up and fades instead */
-const SPOT_WAIT = 1900 * Z;
+/* On the web each screen's code arrives on its own (lib/web-shell.ts), so Today may still be loading when the scene's first frame
+   is up. There the still picture holds, as the native splash does, until Today has said where its flame lives, and only then does
+   the whole opening play, wake and flight together; begun earlier, Today loading under it stalled the wake and the flight gave
+   up (the owner, November 15, 2026: "the logo never like moves or does the thing"). Native plays from the first frame, as before. */
+const HOLD = Platform.OS === 'web';
+/** how long the flame waits for Today to say where its home is before the scene gives up and fades instead (on the web, the
+    wait for Today's code to arrive, which a slow phone needs) */
+const SPOT_WAIT = (HOLD ? 8000 : 1900) * Z;
 /* the cross-fade */
 const FADE_AT = 420 * Z;
 const FADE_MS = 360 * Z;
@@ -113,7 +119,12 @@ function Scene({ onDone }: { onDone: () => void }) {
   };
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  /* whether the opening has begun: at once, or on the web once Today knows where its flame is (HOLD) */
+  const begunRef = useRef(false);
+  if (!HOLD || kind.current !== 'morph' || spot) begunRef.current = true;
+  const begun = begunRef.current;
   useEffect(() => {
+    if (!begun) return;
     if (kind.current !== 'morph') {
       const t = fadeOut(FADE_AT);
       return () => clearTimeout(t);
@@ -131,7 +142,7 @@ function Scene({ onDone }: { onDone: () => void }) {
     );
     return () => ts.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [begun]);
 
   /* the flight, once Today has said where the flame's home is (and the wake has had its moment) */
   const flown = useRef(false);

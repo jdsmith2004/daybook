@@ -28,7 +28,8 @@ import { SheetFrame } from '@/components/sheet';
 import { LinkText } from '@/components/today';
 import { Button, Card, Icon, T } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { useFriendsReady } from '@/lib/friends';
+import { Toggle } from '@/components/settings-ui';
+import { registerPush, useFriendsReady } from '@/lib/friends';
 import { useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
@@ -54,6 +55,8 @@ export default function FriendAdd() {
   const [name, setName] = useState('');
   const [busy, setBusy] = useState<'link' | 'code' | null>(null);
   const [err, setErr] = useState('');
+  /* how you hear about the friend who joins by this code: as it happens (capped) unless turned off here */
+  const [live, setLive] = useState((me?.hn || 'live') === 'live');
   /* the code, once there is one, shown big in the middle under the flame */
   const [shown, setShown] = useState<string | null>(null);
   const code = shown || (fr.data?.invite && fr.data.invite.exp > Date.now() ? fr.data.invite.code : null);
@@ -74,13 +77,16 @@ export default function FriendAdd() {
     const t = wordsTrouble(nm);
     if (t) return setErr(t);
     setBusy(how);
-    if (!me) {
-      const e = await fr.ensureCard(nm);
+    const hn = live ? 'live' : 'daily';
+    if (!me || (me.hn || 'live') !== hn) {
+      const e = await fr.ensureCard(nm, hn);
       if (e) {
         setBusy(null);
         return setErr(e);
       }
     }
+    /* hearing as it happens needs this phone's push token: notes are asked for now, once, if they never were */
+    if (live) registerPush(fr.api, true).catch(() => undefined);
     const kept = fr.data?.invite && fr.data.invite.exp > Date.now() + 3600_000 ? fr.data.invite : null;
     const r = kept ? { ok: true, msg: '', body: { code: kept.code } as Record<string, unknown> } : await fr.call('invite', {});
     setBusy(null);
@@ -134,6 +140,15 @@ export default function FriendAdd() {
             Never a slip, your journal or your notes. You can change what they see on the Friends page.
           </T>
         </Card>
+        <View style={s.hear}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <T v="label">Hear when they do a lesson</T>
+            <T v="small" tone="muted">
+              And when they send you a spark. At most 2 notes a day, none at night.
+            </T>
+          </View>
+          <Toggle on={live} label="Hear when they do a lesson" onChange={setLive} />
+        </View>
         <View style={s.middle}>
           <BigFlame level={level} size={code ? 120 : 160} noLand />
           {code ? (
@@ -163,5 +178,6 @@ export default function FriendAdd() {
 const s = StyleSheet.create({
   wrap: { gap: 16 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  hear: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4 },
   middle: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
 });

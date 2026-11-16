@@ -2,6 +2,7 @@
    words stay in the lesson (legacy/core.js, lessons-more.ts), one tap away as More, and nothing here changes what a lesson teaches. A new
    lesson needs its beats here; test/lesson-beats.test.ts fails without them, and holds them to the limits and the words rules. A card is one
    of: a question, the sun card (the answer), the number card (the science, when it has a number), or the sky. */
+import './lesson-fill';
 import type { Card, Lesson } from './lessons';
 import { faithVoice, type FaithVoice } from './faith';
 import { GOD, TURNS, turnIn, turnLesson, type Turn } from './lesson-turns';

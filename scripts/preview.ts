@@ -32,6 +32,8 @@ if (!args.includes('--no-build') || !existsSync(join(build, 'index.html'))) {
     stdio: ['ignore', 'ignore', 'inherit'],
     env: { ...process.env, EXPO_PUBLIC_SHOTS: '1', EXPO_PUBLIC_PREVIEW: '1', EXPO_BASE_URL: '' },
   });
+  /* the page's own first picture, the fonts asked for at once, and the other screens fetched when idle, as the live site has */
+  execFileSync('node', ['--no-warnings', '--import', './scripts/ts-resolve.mjs', 'scripts/web-shell.ts', build], { cwd: root, stdio: 'inherit' });
   console.log(`Built in ${Math.round((Date.now() - t0) / 1000)} s.`);
 }
 

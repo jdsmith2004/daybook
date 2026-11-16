@@ -231,6 +231,7 @@ need, without letting the screen turn into a list of features.
 
 - `legacy/index.html` is the original single-file app. It is **retired**: every screen is in the new app now, so it is kept only as history. Never change it, and never treat it as the source of truth.
 - `packages/core` has every rule with no UI, and it is the source of truth. New rules and new content go here, in TypeScript, in the file for their part (lesson rules in `lessons.ts`, lessons 33 on and their sources in `lessons-more.ts`, the short words a lesson card shows first in `lesson-beats.ts`, and so on). `src/legacy/core.js` holds the rules first copied from the legacy app. It is no longer generated: leave it alone, and when one of its rules or words has to change, make the smallest change there, or move that part to TypeScript and remove it from `core.js`. `src/legacy/core.d.ts` types the parts the app uses.
+  The app imports `@daybook/core`, which is `src/rules.ts` (a new file's exports go there), and the lessons' text from `@daybook/core/lesson-content` only on screens that show a lesson, so the website's first load does not carry it; `src/index.ts` is both, for tests and scripts. See "Where they live" in docs/lessons.md for the lesson catalog.
 - `apps/mobile` is the Expo app (Expo Router, SDK 58). It runs on iOS, Android and the web. Read `apps/mobile/AGENTS.md` before touching Expo APIs: they change every SDK, so check the versioned docs, not memory.
 - `services/api` is the sync Lambda. `infra/` is Terraform (see `infra/README.md`). The device side of sync is `packages/core/src/sync.ts`, tested against the Lambda's handler in `services/api/test/client.test.ts`.
 - `docs/plan.md` is the work that is planned next. `docs/for-fable.md` records the one Fable run so far (a security review); lessons do not need one.
@@ -284,7 +285,14 @@ cd apps/mobile && npx expo start
   turned off; the owner, November 15, 2026: "having them write out a bunch of goals is too much ... just have automated goals"),
   and a daily report at the hour they pick; never a slip, a count that resets, times, the journal or notes. A friend reads a card
   only through the endpoint that checks the friendship both ways. SOS never alerts a friend live, only as an opt-in weekly count
-  (the owner's answer, November 15). Remove and block are quiet, and closing the account removes every friendship on both sides. **The owner may read their own account (the owner, November 15, 2026: "I want us to build it in where you can at least see my
+  (the owner's answer, November 15). Remove and block are quiet, and closing the account removes every friendship on both sides.
+  A friend can hear as it happens when the person does a lesson or checks in (the owner, November 15, 2026: "we can't overwhelm them
+  with notifications ... there friend using it could replace other notificaions and be part of how they get pulled to use the app"):
+  push through Expo, at most 2 friend notes a day per person, none from 10 PM to 8 AM on their clock (core `LIVE_CAP`, `quietNow`),
+  chosen per friend (as it happens, once a day, off), and never a slip or SOS. The one thing friends send is a spark, and it must
+  do something (the owner: "Warming their flame does nothing"): it waits beside the friend's flame on Today, goes into their next
+  lesson, and the sender is told. The together streak is days in a row both opened Daybook (the owner: "a together streak and it's
+  just days they both log in"); the longest is kept, and a gap is never said. **The owner may read their own account (the owner, November 15, 2026: "I want us to build it in where you can at least see my
   logs because I'm using that to train the data so that doesn't have to be anonymous").** `npm run mylog` (scripts/mylog.ts) signs
   in with the owner's own email and password, typed at its prompt, and saves that one account's log through the same sync API the
   app uses, which answers only for the account whose sign-in it checked. It writes outside the repository

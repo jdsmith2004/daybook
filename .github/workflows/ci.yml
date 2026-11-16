@@ -37,6 +37,8 @@ jobs:
       - name: Build the web app
         working-directory: apps/mobile
         run: npx expo export --platform web --output-dir dist
+      - name: The page's first picture
+        run: node --no-warnings --import ./scripts/ts-resolve.mjs scripts/web-shell.ts apps/mobile/dist
 
   terraform:
     name: Terraform

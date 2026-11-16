@@ -186,6 +186,18 @@ need, without letting the screen turn into a list of features.
   the phone, and the running local preview (`http://localhost:<port>/<path>`, with the demo data when the change needs it) for the
   Mac. Check each link answers before giving it. Never say "it is open in the pane" as the only way to see it. A question the owner was asked to decide (a choice of direction,
   sample lessons to judge) still waits for the answer before the work it decides. The iPhone QA happens before publishing.
+  **The local link comes from `npm run preview`, and it never opens on setup (the owner, November 15, 2026: "it keeps giving me
+  these links to open on the local host, but I'm not signed in. So instead of taking me to that, it takes me right to setup, and I
+  can't get out of it without doing setup. Finally, it takes a while to load for some reason. Is there a way to speed that up, at
+  least if I'm testing?").**
+  - Local preview links come from `npm run preview -- <port>` (scripts/preview.ts): the demo build (`EXPO_PUBLIC_SHOTS=1`), the
+    made-up person in memory only, full motion, minified and served with a fallback so every deep link opens its screen. Never
+    give a link to the `expo start` dev server: it is slow, and a fresh browser has no person, so it opens on setup. Each chat
+    picks its own port, so chats never share one. `?demo=month`, `hard`, `grad` or `comeback` and `?theme=dark` pick the state.
+  - Every link is checked in a fresh browser profile with no saved data (a new Playwright context, or a private window) before it
+    is given, and it must open on the changed screen, never on setup.
+  - A screen that needs an account, a friend or a server answer gets a demo state in `src/shots` (as `/friends?demo=1` does
+    for Friends), built by the chat that builds the screen, so the link shows it filled in.
 - **Merge to main, then archive; the iPhone check is TestFlight from main (the owner, November 13, 2026: "i want the chats
   to merge to main then archive alot of these chats keep not merging to main bc it's not tested on iphone, we will test it on
   iphone by making a build from main and publishing it to testflight").** A chat whose work is done (tests pass, QA on the web

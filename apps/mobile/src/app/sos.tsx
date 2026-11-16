@@ -24,7 +24,9 @@ import {
   newUrge,
   rateUrTool,
   RIDE_MOVES,
+  rideFinished,
   rideNext,
+  ridePassed,
   slipFeltLine,
   sosProof,
   urEntry,
@@ -114,6 +116,9 @@ export default function Sos() {
   const [better, setBetter] = useState(false);
   /* the move a feeling just named points to: it comes next */
   const lead = useRef<string | null>(null);
+  /* the move in view and when it came into view (for ridePassed) */
+  const pageSeen = useRef('');
+  const pageAt = useRef(Date.now());
 
   /* the ride only runs while SOS is in front (not under a tool) */
   const [front, setFront] = useState(true);
@@ -330,14 +335,28 @@ export default function Sos() {
   /* ---------- the ride: one move after another, until it passes ---------- */
   const at = Math.max(0, seq.length - 1 - back);
   const id = seq[at];
+  /* when the move in view came into view, for how quickly Next passed it */
+  const pageKey = at + ':' + id;
+  if (pageSeen.current !== pageKey) {
+    pageSeen.current = pageKey;
+    pageAt.current = Date.now();
+  }
   const Move = MOVES[id] || MOVES.breathe;
   const n = seq.length;
-  /* done: it counts as used; passed over with Next: it comes round a little later from now on (sos.ts urNote). Swiped back
+  /* done: it counts as used; passed over with Next: it comes round later from now on (core ride.ts ridePassed). Swiped back
      to an earlier move, Next goes forward again through the ones already shown before it asks for a new one. */
   const next = (done: boolean) => {
     const u = done ? { ...ur, used: ur.used.concat(id) } : ur;
     if (done) setUr(u);
-    else if (!practice && !back) sos.setMem((m) => urNote(m, id, null));
+    /* a ride move done eases its count of passes; Next before it was done adds to it, more for a quick pass (core ride.ts
+       ridePassed): a move passed over often comes later. The other pages (a note, It is written, If it were a thing) keep
+       their own count (sos.ts urNote) */
+    if (!practice && !back) {
+      const ms = Date.now() - pageAt.current;
+      if (done) sos.setMem((m) => rideFinished(m, id));
+      else if (RIDE_MOVES.indexOf(id) >= 0) sos.setMem((m) => ridePassed(m, id, ms));
+      else sos.setMem((m) => urNote(m, id, null));
+    }
     buzz('tap');
     if (back) return setBack(back - 1);
     if (practice && n >= practiceN) return setSeq(seq.concat('end'));

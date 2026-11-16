@@ -62,6 +62,8 @@ export interface UrMem {
   sosAt?: number;
   /** when Talk it through or Walk it through was last open on this device: the asks wait after them as after an SOS */
   careAt?: number;
+  /** the ride's moves passed over with Next lately, fading with each SOS (ride.ts ridePassed, rideFade): on this phone only */
+  rsk?: Record<string, number>;
   [bucket: string]: unknown;
 }
 

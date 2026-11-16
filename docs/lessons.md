@@ -76,6 +76,12 @@ holds each one to the rules below. Batch A (November 14, 2026): l1, l2, l3, l10,
 out"): l4 to l9. Each story card carries a picture (`apps/mobile/src/components/story-art.tsx` and `story-scenes-*.tsx`), and no
 card asks a person to guess a fact they cannot know.
 
+The lessons' text loads apart from the rules (November 15, 2026), so the website's first page is lighter: the app imports
+`@daybook/core/lesson-content` only where a lesson is shown, and until then each lesson holds just its head from
+`packages/core/src/lesson-catalog.ts` (title, section, key line). The catalog is made from the lessons, never written by hand: when a
+lesson is added or its title, tag, key line or section changes, `test/lesson-catalog.test.ts` fails, and
+`cd packages/core && UPDATE_LESSON_CATALOG=1 npx vitest run test/lesson-catalog.test.ts` makes it again. This moved files, not words.
+
 ## Every lesson
 
 - **It turns something over.** By the end, the person sees something differently. A card that says what they already believed is cut.

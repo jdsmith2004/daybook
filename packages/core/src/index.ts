@@ -8,6 +8,7 @@ export * from './actions';
 export * from './mutate';
 export * from './rekindle';
 export * from './sos';
+export * from './breath-field';
 export * from './breath-touch';
 export * from './ride';
 export * from './future';

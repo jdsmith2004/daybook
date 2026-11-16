@@ -5,6 +5,7 @@ import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500
 import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
 import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { Newsreader_400Regular } from '@expo-google-fonts/newsreader/400Regular';
+import { Newsreader_600SemiBold_Italic } from '@expo-google-fonts/newsreader/600SemiBold_Italic';
 import {
   nudgeAt,
   nudgeCounts,
@@ -317,6 +318,7 @@ function Shell() {
     InstrumentSans_600SemiBold,
     InstrumentSans_700Bold,
     Newsreader_400Regular,
+    Newsreader_600SemiBold_Italic,
   });
   /* the device's own choices (the theme, the lock) are read before the first frame, so nothing is drawn in one look and redrawn in another */
   const [prefs, setPrefs] = useState(false);

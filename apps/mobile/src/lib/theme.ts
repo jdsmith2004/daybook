@@ -180,6 +180,7 @@ export const font = {
   display: 'Fredoka_600SemiBold',
   displayBold: 'Fredoka_700Bold',
   serif: 'Newsreader_400Regular',
+  serifItalic: 'Newsreader_600SemiBold_Italic',
 };
 
 export const MAX_WIDTH = 560;

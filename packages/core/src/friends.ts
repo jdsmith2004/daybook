@@ -15,11 +15,19 @@ export type ShareKey = (typeof SHARE_KEYS)[number];
 
 /** the words for each item: the switch on the person's own page, and how a friend reads it */
 export const SHARE_WORDS: Record<ShareKey, { label: string; hint: string; friend: (n: number) => string }> = {
-  lessons: { label: 'Lessons done', hint: 'How many lessons you finished this week', friend: (n) => (n === 1 ? '1 lesson this week' : n + ' lessons this week') },
+  lessons: {
+    label: 'Lessons done',
+    hint: 'How many lessons you finished this week',
+    friend: (n) => (n === 1 ? '1 lesson this week' : n + ' lessons this week'),
+  },
   mornings: { label: 'Mornings set', hint: 'Mornings you set up the day ahead', friend: (n) => (n === 1 ? '1 morning set' : n + ' mornings set') },
   nights: { label: 'Good nights', hint: 'Nights you said good night in Daybook', friend: (n) => (n === 1 ? '1 good night' : n + ' good nights') },
   /* SOS reaches a friend only as this weekly count, said as strength, never as a live alert (the owner's answer, November 15) */
-  rode: { label: 'Urges ridden out', hint: 'A weekly count of urges you rode out. Never a live alert.', friend: (n) => (n === 1 ? 'Rode out 1 urge' : 'Rode out ' + n + ' urges') },
+  rode: {
+    label: 'Urges ridden out',
+    hint: 'A weekly count of urges you rode out. Never a live alert.',
+    friend: (n) => (n === 1 ? 'Rode out 1 urge' : 'Rode out ' + n + ' urges'),
+  },
   level: { label: 'Your flame', hint: 'Its level and name', friend: (n) => 'Level ' + n },
 };
 

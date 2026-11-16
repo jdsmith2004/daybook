@@ -177,7 +177,8 @@ export async function acceptCode(store: Store, user: string, raw: unknown, now: 
   if (!theirs) throw new FriendError(404, NO_CODE);
   const mine = asFr(await store.auxGet(user, FR + owner));
   if (mine) return { fid: mine.fid, name: theirs.name };
-  if ((await store.auxList(user, FR)).length >= FRIENDS_MAX) throw new FriendError(409, `You have ${FRIENDS_MAX} friends here, the most Daybook keeps. Remove one first.`);
+  if ((await store.auxList(user, FR)).length >= FRIENDS_MAX)
+    throw new FriendError(409, `You have ${FRIENDS_MAX} friends here, the most Daybook keeps. Remove one first.`);
   if ((await store.auxList(owner, FR)).length >= FRIENDS_MAX) throw new FriendError(409, 'Their circle is full right now.');
   const fid = randomBytes(9).toString('base64url');
   await store.auxPut(owner, FR + user, { fid, at: now });

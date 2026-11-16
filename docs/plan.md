@@ -14,6 +14,7 @@ well (Finch, Apple Activity sharing, How We Feel, Locket) share by the person's 
 ready-made encouragements instead of chat, and remove silently.
 
 The owner's answers:
+
 - **SOS:** no live alert ever. A weekly "rode out N urges" is one share item, off until the person turns it on, said as strength.
 - **Invite:** one short code (like K7Q-M2P), sent as a link through any messenger, good for several friends for 7 days; a new code
   ends the old one.
@@ -23,6 +24,7 @@ The owner's answers:
   remembers "You are on the list".
 
 What is built (effort: high for the server, medium for the page):
+
 1. **Server** (`services/api/src/friends.ts`, on the existing `/sync` routes as `?friends=`; no new route, IAM role or table, so nothing
    for `infra/bootstrap`). Each person's card (`#card`: the name and goals they wrote for friends, which items are on, this week's
    numbers) lives in their own partition. A friendship is two rows, one in each person's partition; a friend's card is read only when

@@ -23,7 +23,8 @@
       <main>
         <h1>Privacy policy</h1>
         <p class="date">
-          In effect from October 24, 2026. Apple Health, and What Daybook learns, added November 9, 2026. Videos, and Listen, added November 14, 2026.
+          In effect from October 24, 2026. Apple Health, and What Daybook learns, added November 9, 2026. Videos, and Listen, added November 14, 2026. Friends
+          (beta) added November 15, 2026.
         </p>
 
         <div class="card short">
@@ -31,7 +32,14 @@
           <ul>
             <li>Without an account, your log never leaves your phone.</li>
             <li>With an account, your records are kept under your account and sent only to you, when you are signed in.</li>
-            <li>No ads, and nothing is ever sold or shared. What the app counts about its own use is below, and it is never tied to your name.</li>
+            <li>
+              No ads, and nothing is ever sold. Nothing is shared with anyone unless you choose to share it with a friend you added. What the app counts about
+              its own use is below, and it is never tied to your name.
+            </li>
+            <li>
+              If you add friends in Friends (beta), they see only the name and goals you write for them and the effort you turn on, such as lessons done this
+              week. Never a slip, your journal or your notes.
+            </li>
             <li>
               Daybook learns how the app is used, to make it better: what you open, finish and choose, and how many urges and slips you log. It is anonymous:
               never tied to your name, email or account, and never your journal, your notes or anything you write. It is never sold or shared, and you can turn
@@ -80,7 +88,7 @@
         </ul>
         <p>
           Your records are used for one thing: sending them back to you, on your devices, when you are signed in. They are not viewed, analyzed, sold, shared,
-          used for ads, or used to train anything.
+          used for ads, or used to train anything. The one exception is what you choose to share with friends you added in Friends (below).
         </p>
 
         <h2>What Daybook never collects</h2>
@@ -178,6 +186,35 @@
           reads it on the device. Your choice of voice and speed stays on this device.
         </p>
 
+        <h2 id="friends">Friends (beta)</h2>
+        <p>
+          Friends is off until you use it, and it needs a free account. You add a friend with a short code that one of you sends the other; both of you choose
+          it, and there is no search, no contact upload and no list of who uses Daybook. Your account then keeps, beside your records:
+        </p>
+        <ul>
+          <li>
+            <strong>Your card:</strong> the name and up to three goals you write for friends, which items you share, and this week's numbers for the items you
+            turned on: lessons done, mornings set, nights you said good night, urges ridden out, and your flame's level. Each item is off until you turn it on.
+            Only these numbers leave your phone: never a slip, a count that resets, the times of anything, your journal, your notes, your voice notes or your
+            plan.
+          </li>
+          <li>
+            <strong>Your friendships:</strong> who you are friends with (by account, never shown as an email), and the last ready-made encouragement each friend
+            sent you (warm your flame, proud of you, with you today). There is no chat.
+          </li>
+          <li><strong>Your code,</strong> for 7 days, and anyone you blocked, so they cannot use your code again.</li>
+        </ul>
+        <p>
+          A friend sees your card only while you are both friends, and only the items you turned on; numbers more than a week old are not shown. Removing a
+          friend, blocking them or leaving Friends ends it on both sides at once, and they are not told. If you report a friend, Daybook keeps who reported
+          whom, why, and the name and goals they had shared then, so it can be looked at; a note that a report came in (only the reason) reaches the owner's
+          feedback inbox.
+        </p>
+        <p>
+          <strong>Community, coming soon:</strong> pre-joining keeps no name, email or account. It sends one anonymous event, <code>community_join</code>,
+          counted with what Daybook learns (below), and your phone remembers that you joined, so it can tell you there when the community opens.
+        </p>
+
         <h2 id="learns">What Daybook learns</h2>
         <p>
           Daybook is built by one person, who needs to know which parts help people quit and which do not, so they can make it better. So Daybook learns how the
@@ -259,6 +296,10 @@
             <code>import</code>: bringing a Mithras journal over, and how far it got (the link opened, signed in, read, landed, closed or failed), whether the
             sign-in was Apple or email, and how many entries and Mithras days came, only in bands (none, under 10, under 50, under 200, 200 or more). Never your
             Mithras account, email or anything you wrote.
+          </li>
+          <li>
+            <code>friend_added</code>, <code>friend_cheer</code>, <code>community_join</code>: became friends with someone in Friends (never who), sent a friend
+            a ready-made encouragement (which one: warm, proud or with), pre-joined the community that is coming. Never a name, a goal or a friend.
           </li>
           <li>
             <code>ab</code>: Daybook tries two wordings of a line to learn which helps more, and this says which one was shown: the line's name (rk_first,
@@ -448,6 +489,10 @@
           <li>
             <strong>Delete my account</strong> (in Settings, under Sync between devices) removes your sign-in, your records and that copy. The database's own
             protective backups roll over and are fully gone within 35 days.
+          </li>
+          <li>
+            <strong>Friends:</strong> Leave Friends (on the Friends page) removes your card, your code and every friendship, on both sides. Delete my account
+            also removes them, the encouragements, anyone you blocked and any report you made or that was made about you.
           </li>
           <li>You can also write to us and we will delete your account.</li>
         </ul>

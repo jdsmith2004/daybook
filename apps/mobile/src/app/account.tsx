@@ -190,9 +190,11 @@ export default function Account() {
       ? 'Sign in to bring your log, your plan and your progress to this device.'
       : p.why === 'lesson'
         ? 'The first ' + LEARN_FREE + ' lessons are open to everyone. A free account opens all of them.'
-        : p.why === 'setup'
-          ? 'Your plan is built. A free account opens every lesson, and for supporters it keeps your plan and your log safe on every device. It is private to you.'
-          : 'A free account opens every lesson, and for supporters it keeps your log safe on every device. It is private to you.';
+        : p.why === 'friends'
+          ? 'Friends live in a free account, so the two of you can find each other. Your log stays private to you.'
+          : p.why === 'setup'
+            ? 'Your plan is built. A free account opens every lesson, and for supporters it keeps your plan and your log safe on every device. It is private to you.'
+            : 'A free account opens every lesson, and for supporters it keeps your log safe on every device. It is private to you.';
 
   let body;
   const failed = sync.status.k === 'error' || sync.status.k === 'expired';

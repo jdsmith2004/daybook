@@ -465,7 +465,13 @@ export class DynamoStore implements Store {
         new PutCommand({
           TableName: this.table,
           Item: { pk, sk, x: JSON.stringify(v), ...(o.ttl ? { ttl: o.ttl } : {}) },
-          ...(o.fresh ? { ConditionExpression: 'attribute_not_exists(pk) OR #t < :now', ExpressionAttributeNames: { '#t': 'ttl' }, ExpressionAttributeValues: { ':now': Math.floor(Date.now() / 1000) } } : {}),
+          ...(o.fresh
+            ? {
+                ConditionExpression: 'attribute_not_exists(pk) OR #t < :now',
+                ExpressionAttributeNames: { '#t': 'ttl' },
+                ExpressionAttributeValues: { ':now': Math.floor(Date.now() / 1000) },
+              }
+            : {}),
         }),
       );
       return true;

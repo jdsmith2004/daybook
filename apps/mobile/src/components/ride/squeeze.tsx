@@ -61,11 +61,21 @@ export function SqueezeMove({ on, onDone }: MoveProps) {
     const t = setTimeout(() => done.current(), 1400);
     return () => clearTimeout(t);
   }, [all]);
-  /* halfway through letting go, the next part shows, so there is time to get into place (a wall, a squat) */
-  const ahead = n.kind === 'rest' && n.s >= 3 && n.i < parts.length - 1 ? 1 : 0;
-  const part = parts[Math.min(parts.length - 1, n.i + ahead)];
-  const head = all ? 'Shake it out' : part.head;
-  const sub = all ? 'Notice how your body feels now.' : part.sub;
+  /* the heading is always what to do right now (the owner, November 15, 2026: "it's just hard to tell like when I'm actually
+     supposed to squeeze ... because it tells me like the thing while it's telling me to relax"). The squeeze itself is named
+     only while you squeeze; getting ready and letting go say so, and the next part waits underneath, small, so there is time
+     to get into place (a wall, a squat) without reading it as the thing to do. */
+  const now = parts[Math.min(parts.length - 1, n.i)];
+  const next = n.kind === 'ready' ? parts[0] : n.kind === 'rest' && n.i < parts.length - 1 ? parts[n.i + 1] : null;
+  const small = (h: string) => h.charAt(0).toLowerCase() + h.slice(1);
+  const head = all ? 'Shake it out' : n.kind === 'ready' ? 'Get ready' : n.kind === 'rest' ? 'Let it all go' : now.head;
+  const sub = all
+    ? 'Notice how your body feels now.'
+    : n.kind === 'hold'
+      ? now.sub
+      : next && (n.kind === 'ready' || n.s >= 3)
+        ? (n.kind === 'ready' ? 'First: ' : 'Next: ') + small(next.head) + '.'
+        : 'Loose and heavy.';
   /* iOS has no live regions, so a screen reader is told each new part */
   useEffect(() => {
     if (Platform.OS !== 'ios' || !on) return;

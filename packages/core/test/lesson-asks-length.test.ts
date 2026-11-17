@@ -17,6 +17,10 @@ describe('the lesson length ask', () => {
   it('restarts the screen for each lesson, so a length chosen before never carries over', () => {
     expect(text).toMatch(/export default function LessonRoute\(\)[\s\S]*<LessonScreen key=\{String\(id\)/);
   });
+  it('a care lesson, which skips the ask, offers the other length on its first card', () => {
+    expect(text).toMatch(/const swap = care && ix === 0 && lessonHasQuick\(L\)/);
+    expect(text).toMatch(/'Make it 5 minutes'/);
+  });
   it('has a short cut for most lessons, so the ask shows', () => {
     expect(LESSONS.filter(lessonHasQuick).length).toBeGreaterThan(LESSONS.length / 2);
   });

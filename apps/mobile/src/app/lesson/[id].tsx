@@ -601,11 +601,17 @@ function LessonScreen() {
     /* the first card says which lesson this is: there is no cover any more */
     /* a lesson that can stir up something heavy says where help is, on its last card */
     const help = ix === seq.length - 1 && !pr0 && heavy ? <Help988 /> : null;
+    /* a care lesson (the day after a slip, Rekindle) goes straight in without the length ask, at the length picked most; its first
+       card offers the other one (the owner, November 17, 2026: "just guess and maybe include an option to switch to 5 minutes") */
+    const swap = care && ix === 0 && lessonHasQuick(L) ? (len === 'q' ? 'f' : 'q') : null;
     const head =
       ix === 0 ? (
-        <T v="small" tone="muted">
-          {(n ? 'Lesson ' + n + ' · ' : '') + L.title}
-        </T>
+        <>
+          <T v="small" tone="muted">
+            {(n ? 'Lesson ' + n + ' · ' : '') + L.title}
+          </T>
+          {swap ? <Quiet label={swap === 'f' ? 'Make it 5 minutes' : 'Make it 2 minutes'} onPress={() => setLen(swap)} /> : null}
+        </>
       ) : null;
     /* once the card is answered, the bar slides up with a word of praise and the way on */
     const ok = (say?: string, moreOn = true) =>

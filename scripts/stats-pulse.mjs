@@ -100,23 +100,26 @@ if (big(fresh)) {
 /* ---------- setup ---------- */
 const setupKeys = Object.keys(sum).filter((k) => k.startsWith('setup_') && k !== 'setup_done');
 if (setupKeys.length) {
-  head('Setup: how many phones reached each page');
+  head('Setup: how many phones reached each page or a later one (the usage report above counts each page itself: use that one)');
   const order = PAGES.length
     ? PAGES.filter((p) => sum['setup_' + p] != null)
     : setupKeys.map((k) => k.slice(6)).sort((a, b) => g('setup_' + b) - g('setup_' + a));
   const top = g('setup_' + order[0]) || 1;
   let worst = null;
   let prev = null;
+  let prevP = null;
   for (const p of order) {
     const n = g('setup_' + p);
     const drop = prev != null ? prev - n : 0;
-    if (prev != null && (!worst || drop > worst.drop)) worst = { p, drop, from: prev };
+    /* the page people stopped ON is the one before the drop (the events report names it the same way) */
+    if (prev != null && (!worst || drop > worst.drop)) worst = { p: prevP, drop, from: prev };
+    prevP = p;
     line(`  ${pad(p, 10)} ${pad(n, 4)} ${'#'.repeat(Math.round((20 * n) / top))}${drop > 0 ? '  -' + drop : ''}`);
     prev = n;
   }
   line(`  finished   ${g('setup_done')}  (${pct(g('setup_done'), top)} of those who started)`);
   if (big(top) && worst && worst.drop / worst.from >= 0.15)
-    say.push(`Setup loses the most people at "${worst.p}" (${worst.drop} of ${worst.from}): look at that page first.`);
+    say.push(`Setup loses the most people on "${worst.p}" (${worst.drop} of ${worst.from} left it): look at that page first.`);
 }
 
 /* ---------- reminders ---------- */
@@ -181,7 +184,9 @@ head('Slips and comebacks');
 const back = ['back_1', 'back_2_3', 'back_4_7', 'back_8'];
 const backs = back.reduce((t, k) => t + g(k), 0);
 line(`  Slips logged ${g('slip_logged')}, urges logged ${g('urge_logged')}`);
-line(`  Came back after a slip: next day ${g('back_1')}, 2-3 days ${g('back_2_3')}, 4-7 days ${g('back_4_7')}, 8+ days ${g('back_8')}`);
+line(
+  `  Phones that opened again after their latest slip (any slip in the log: journal, sync, import too, so it can pass the slips logged here): next day ${g('back_1')}, 2-3 days ${g('back_2_3')}, 4-7 days ${g('back_4_7')}, 8+ days ${g('back_8')}`,
+);
 if (big(backs)) say.push(`${pct(g('back_1'), backs)} of comebacks after a slip are the next day.`);
 
 head('Used (each counted once a day for the tabs)');

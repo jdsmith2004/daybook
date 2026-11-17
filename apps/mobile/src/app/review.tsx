@@ -57,6 +57,7 @@ import { useLocked } from '@/components/support';
 import { useQuietAsks } from '@/lib/quiet-asks';
 import { Text } from '@/components/text';
 import { Button, Chip, Icon, T } from '@/components/ui';
+import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
 import { useNights } from '@/lib/health';
 import { close, closeAll } from '@/lib/nav';
@@ -180,6 +181,7 @@ export default function Review() {
       if (ok) setReminderPrefs({ ...prefs, [remindKey]: true });
       else say(WORDS.notifyOff);
     }
+    if (!saved) track('sunday');
     buzz('lit');
     play('chime');
     setDone(true);

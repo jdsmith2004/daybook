@@ -92,6 +92,17 @@ describe('the server check', () => {
     expect(eventsClean({ i: HEX, p: 'ios', v: '1', e: [{ k: 0, n: 'zzz', d: 0, h: 1 }] })).toBeNull();
   });
 
+  it('keeps a well-formed account key and the tester mark, and drops anything else in their place', () => {
+    const e = [{ k: 0, n: 'open', d: 0, h: 1 }];
+    const AK = 'fedcba9876543210fedcba9876543210';
+    expect(eventsClean({ i: HEX, p: 'ios', v: '1', e, a: AK, t: true })).toMatchObject({ a: AK, t: true });
+    const bad = eventsClean({ i: HEX, p: 'ios', v: '1', e, a: 'someone@example.com', t: 'yes' })!;
+    expect('a' in bad || 't' in bad).toBe(false);
+    const s = evAdd(evNew('2026-11-17', HEX), 'open', '2026-11-17', 9);
+    expect(evBatch(s, 'ios', '1', { a: AK, t: true })!.b).toMatchObject({ a: AK, t: true });
+    expect(Object.keys(evBatch(s, 'ios', '1', { a: null, t: false })!.b)).toEqual(['i', 'p', 'v', 'e']);
+  });
+
   it('takes at most one batch of events', () => {
     const e = Array.from({ length: EV_BATCH + 50 }, (_, k) => ({ k, n: 'open', d: 0, h: 1 }));
     expect(eventsClean({ i: HEX, p: 'ios', v: '1', e })!.e.length).toBe(EV_BATCH);

@@ -3,6 +3,8 @@
 # It also runs by itself every Monday (the weekly report, #19 in docs/plan.md): What Daybook learns leads with the week, the two
 # north-star numbers first, and is printed in the log too, so the newest run reads with:
 #   gh run view $(gh run list --workflow Stats --limit 1 --json databaseId -q '.[0].databaseId') --log
+# Since November 17, 2026 it leads with Daybook usage (scripts/stats-report.mjs): accounts first, then phones with no account,
+# testers left out, every number with its window and denominator, and a cross-check against Athena at the end.
 # A scheduled run uses the defaults below, runs only on main, and costs a few cents of Athena at most.
 #
 # Safe by design:
@@ -44,16 +46,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Apple
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          ASC_KEY: ${{ secrets.ASC_KEY }}
-          ASC_VENDOR: ${{ secrets.ASC_VENDOR }}
-        run: |
-          node scripts/stats-apple.mjs "$DAYS" | tee apple.txt
-          { echo '## Apple'; echo '```'; cat apple.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-
       - id: aws
         name: Daybook's own counts set up?
         env:
@@ -69,13 +61,36 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       - if: steps.aws.outputs.go == 'true'
+        name: Daybook usage
+        env:
+          LEARN_DAYS: ${{ inputs.learn_days || '90' }}
+          # account keys or install ids of the owner's test phones and accounts (Settings, Variables); a phone marked as a
+          # tester in More (a long press on the version) is left out without being listed
+          TESTERS: ${{ vars.STATS_TESTERS }}
+        run: |
+          # one Athena query for the rows (stopped at 1 GB like every query), the report built from them, then a cross-check in Athena
+          node scripts/stats-report.mjs "$LEARN_DAYS" > usage.md || true
+          cat usage.md
+          cat usage.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apple
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY: ${{ secrets.ASC_KEY }}
+          ASC_VENDOR: ${{ secrets.ASC_VENDOR }}
+        run: |
+          node scripts/stats-apple.mjs "$DAYS" | tee apple.txt
+          { echo '## Apple (downloads and purchases)'; echo '```'; cat apple.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - if: steps.aws.outputs.go == 'true'
         name: Daybook's own counts
         run: |
           FROM=$(date -u -d "$DAYS days ago" +%F)
           aws dynamodb query --table-name daybook-pulse --key-condition-expression 'pk = :c AND sk >= :f' \
             --expression-attribute-values "{\":c\":{\"S\":\"c\"},\":f\":{\"S\":\"$FROM\"}}" --output json > pulse.json
           node scripts/stats-pulse.mjs pulse.json | tee pulse.txt
-          { echo "## Daybook's own counts"; echo '```'; cat pulse.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "## Daily totals (every phone, testers included, counted once a day and sent a day or more late)"; echo '<details><summary>Open</summary>'; echo; echo '```'; cat pulse.txt; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
 
       - if: steps.aws.outputs.go == 'true'
         name: What Daybook learns
@@ -86,4 +101,4 @@ jobs:
           # printed here in the log too, so it can be read without a browser (gh run view --log)
           node scripts/stats-events.mjs "$LEARN_DAYS" > learns.md || echo 'What Daybook learns: the report did not run (see this step in the log).' >> learns.md
           cat learns.md
-          cat learns.md >> "$GITHUB_STEP_SUMMARY"
+          { echo '## More detail (every phone, testers included)'; echo '<details><summary>Open</summary>'; echo; cat learns.md; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"

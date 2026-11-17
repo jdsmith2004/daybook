@@ -6,6 +6,8 @@
 import * as StoreReview from 'expo-store-review';
 import { Platform } from 'react-native';
 
+import { track } from '@/lib/events';
+
 /** asks for the rating sheet; true when the phone can show one (it may still choose not to) */
 export async function askStoreReview(): Promise<boolean> {
   if (Platform.OS === 'web') {
@@ -16,6 +18,7 @@ export async function askStoreReview(): Promise<boolean> {
     if (!(await StoreReview.isAvailableAsync())) return false;
     if (!(await StoreReview.hasAction())) return false;
     await StoreReview.requestReview();
+    track('ask_tap', { what: 'store' });
     return true;
   } catch {
     return false;

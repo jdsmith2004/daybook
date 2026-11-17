@@ -51,6 +51,54 @@ let loading: Promise<void> | null = null;
 let gen = 0;
 let lastSend = 0;
 
+/* ---------- who: the account key and the tester mark (core events.ts, EvWho) ----------
+   Kept under their own keys, apart from the log: never synced, never in a backup. The account key is asked of the sync API
+   after sign-in (lib/sync.tsx) and forgotten on sign-out or Delete my account. The tester mark is set by a long press on
+   the version in More, and leaves this phone (and its account) out of the Stats report. */
+const AK_KEY = 'events:ak';
+const TESTER_KEY = 'events:tester';
+let ak: { s: string; a: string } | null = null;
+let tester = false;
+let whoRead: Promise<void> | null = null;
+const readWho = () =>
+  (whoRead ||= Promise.all([AsyncStorage.getItem(AK_KEY), AsyncStorage.getItem(TESTER_KEY)])
+    .then(([a, t]) => {
+      try {
+        const x = a ? (JSON.parse(a) as { s?: unknown; a?: unknown }) : null;
+        if (x && typeof x.s === 'string' && typeof x.a === 'string' && /^[0-9a-f]{32}$/.test(x.a)) ak = { s: x.s, a: x.a };
+      } catch {
+        ak = null;
+      }
+      tester = t === '1';
+    })
+    .catch(() => undefined));
+/** the account key this phone holds for the account signed in as sub, if any */
+export async function acctKeyFor(sub: string): Promise<string | null> {
+  await readWho();
+  return ak && ak.s === sub ? ak.a : null;
+}
+/** keep the account key for the account signed in as sub (the sync API's answer to GET ?ak=1) */
+export function keepAcctKey(sub: string, a: unknown) {
+  if (typeof a !== 'string' || !/^[0-9a-f]{32}$/.test(a)) return;
+  ak = { s: sub, a };
+  AsyncStorage.setItem(AK_KEY, JSON.stringify(ak)).catch(() => undefined);
+}
+/** signed out, or the account closed: events go without a key from now on */
+export function forgetAcctKey() {
+  ak = null;
+  AsyncStorage.removeItem(AK_KEY).catch(() => undefined);
+}
+/** whether this phone is marked as a tester's */
+export async function isTester(): Promise<boolean> {
+  await readWho();
+  return tester;
+}
+/** mark this phone as a tester's (or not): from now on its batches say so, and the report leaves it out */
+export function setTester(v: boolean) {
+  tester = v;
+  AsyncStorage.setItem(TESTER_KEY, v ? '1' : '0').catch(() => undefined);
+}
+
 function load(): Promise<void> {
   const g = gen;
   if (!loading)
@@ -132,9 +180,10 @@ export async function sendEvents() {
   sending = true;
   try {
     await load();
+    await readWho();
     for (let i = 0; i < 5 && state && off === false; i++) {
       const g = gen;
-      const out = evBatch(state, platform(), version());
+      const out = evBatch(state, platform(), version(), { a: ak?.a, t: tester });
       if (!out) break;
       const r = await fetch(EVENTS_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(out.b) });
       /* only the events API answers with ok: a page that is not it (it is off) is not a send */

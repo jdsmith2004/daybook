@@ -102,4 +102,18 @@ describe('events', () => {
     for (let i = 0; i < 5; i++) expect((await h(post(batch))).statusCode).toBe(429);
     expect(calls).toBe(1);
   });
+
+  it('puts the account key and the tester mark inside the props, and only on batches that carry them', async () => {
+    const { h, lines } = make();
+    const AK = 'fedcba9876543210fedcba9876543210';
+    await h(post({ i: HEX, p: 'ios', v: '1.4.0', e: [{ k: 0, n: 'open', d: 0, h: 9 }], a: AK, t: true }));
+    await h(post({ i: HEX, p: 'ios', v: '1.4.0', e: [{ k: 1, n: 'open', d: 0, h: 9 }] }));
+    const [a, b] = lines
+      .join('')
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    expect(JSON.parse(a.p)).toEqual({ ak: AK, tst: true });
+    expect(JSON.parse(b.p)).toEqual({});
+  });
 });

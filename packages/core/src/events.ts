@@ -9,8 +9,14 @@
      props whose keys are fixed (EV_PROPS) and whose values are a whole number in the key's range, yes or no, or a string
      from the key's own list. A string is never free: a custom trigger goes as "other", and anything typed by the person
      never fits any list. So no word the person wrote can leave, by construction.
+   - With an account, each batch also carries the account key (the owner, November 17, 2026: "i don't know a single id
+     tagged to every account actions ... that seems like common sense to have that"): 32 hex characters the sync API makes
+     from the account id with a secret only the server holds (services/api acct-key.ts), so the Stats report can count
+     accounts and follow one across phones. It cannot be turned back into the account id or the email. It is sent only while
+     signed in, and signing out or closing the account forgets it. A phone the owner marked as a tester (a long press on the
+     version in More) says so on each batch, so the report leaves it out.
    - Never sent: the journal, notes, voice notes, the plan's words, Talk it through, reasons, any typed text, names, email,
-     the account id, Apple's id, a push token, Apple Health's nights, exact times, location, the device model.
+     the account id itself, Apple's id, a push token, Apple Health's nights, exact times, location, the device model.
    - Every event and value is on the privacy page (apps/mobile/public/privacy.html). A new one goes on both in the same change.
    - The server checks each batch with eventsClean, the same rules (services/api/src/events.ts), and keeps it for 2 years. */
 import { AB_ARMS, AB_TEST_IDS } from './ab';
@@ -32,15 +38,15 @@ export const EV_NAMES = {
   error: 'Something went wrong (err: which part)',
   day: 'Once a day, where things stand (mode, count, no-slip days, urges ridden out and slips in the last 30 days, level, points, badges, flame form, burning low, reminders, account, sync, supporter, Apple Health connected, faith, habit, language, OS version)',
   /* setup */
-  setup_page: 'Reached a setup page (page)',
+  setup_page: 'Reached a setup page (page; secs: how long the setup page before it was open)',
   setup_pick: 'Picked a choice on a setup page (page, ix: which choice)',
   setup_skip: 'Skipped a setup question (page)',
-  setup_done: 'Finished setup',
+  setup_done: 'Finished setup (secs: how long the last page was open)',
   /* lessons */
   lesson_open: 'Opened a lesson (lesson)',
   lesson_beat: 'Reached a part of a lesson (lesson, beat)',
   lesson_pick: 'Picked an answer in a lesson (lesson, beat, ix)',
-  lesson_done: 'Finished a lesson (lesson, secs)',
+  lesson_done: 'Finished a lesson (lesson, secs, len: the length picked: short, long or deep)',
   lesson_left: 'Left a lesson before the end (lesson, beat)',
   /* SOS and the tools */
   sos_open: 'Opened SOS (from: where)',
@@ -75,12 +81,13 @@ export const EV_NAMES = {
   nudge_did: 'Did what a reminder was for, that day (kind)',
   /* money and accounts */
   ask: 'Was shown an ask (what)',
-  ask_tap: 'Tapped an ask (what)',
+  ask_tap: 'Tapped an ask (what; what is store when the phone was asked to show its own rating sheet)',
   bought: 'Bought a tip or Daybook Pattern (tier)',
   account: 'Made an account (how)',
   sync_on: 'Turned sync on',
   feedback: 'Sent feedback (never the words here)',
   /* Friends (beta; friends.ts): that it happened, never who, never a name or a goal */
+  friend_invite: 'Shared an invite to Friends (what: a link or a code; never who it went to)',
   friend_added: 'Became friends with someone in Daybook (never who)',
   friend_cheer: 'Sent a friend a spark or a ready-made encouragement (what: which one)',
   friend_spark_used: 'A spark from a friend went into a lesson (never who)',
@@ -232,15 +239,22 @@ export const EV_PROPS: Record<string, Prop> = {
     'proud',
     /* "How long does it usually last?", asked once of people who set up without it (lasts-ask.ts) */
     'lasts',
+    /* the phone was asked for its own rating sheet, after a Yes to "Do you like Daybook so far?" (review.ts) */
+    'store',
     'with',
     'live',
     'daily',
     'off',
+    /* a Friends invite: sent as a link or as a code */
+    'link',
+    'code',
     'other',
   ]),
   note: one(() => ['voice', 'text']),
   chart: one(() => EV_CHARTS),
   locked: bool,
+  /* a lesson's length: q short, f long, d deep (core LessonLen) */
+  len: one(() => ['q', 'f', 'd']),
   tier: one(() => [...TIP_TIER_IDS, 'pattern_month', 'pattern_life', 'pattern_life_more', 'web', 'other']),
   how: one(() => ['apple', 'email', 'other']),
   /* the Mithras import: how far it got, and its size in bands only (evBand), never a count of one person's records */
@@ -335,6 +349,15 @@ export interface EvBatch {
   p: 'ios' | 'android' | 'web';
   v: string;
   e: Ev[];
+  /** the account key (32 hex), only while signed in */
+  a?: string;
+  /** a tester's phone: left out of the report */
+  t?: true;
+}
+/** what goes with a batch beyond the events: the account key while signed in, and whether this is a tester's phone */
+export interface EvWho {
+  a?: string | null;
+  t?: boolean;
 }
 /** events that wait on the phone at most (a phone offline for weeks keeps the newest) */
 export const EV_KEEP = 3000;
@@ -381,10 +404,13 @@ export function evAdd(s: EvState, n: EvName, today: DayKey, hour: number, p?: Re
 }
 
 /** what to send now, oldest first, and where it ends in the stream (for evSent); null when nothing waits */
-export function evBatch(s: EvState, p: EvBatch['p'], v: string): { b: EvBatch; upTo: number } | null {
+export function evBatch(s: EvState, p: EvBatch['p'], v: string, who: EvWho = {}): { b: EvBatch; upTo: number } | null {
   if (!s.q.length) return null;
   const e = s.q.slice(0, EV_BATCH);
-  return { b: { i: s.id, p, v: VER.test(v) ? v : '0', e }, upTo: s.at + e.length };
+  const b: EvBatch = { i: s.id, p, v: VER.test(v) ? v : '0', e };
+  if (who.a && ID.test(who.a)) b.a = who.a;
+  if (who.t) b.t = true;
+  return { b, upTo: s.at + e.length };
 }
 
 /** a batch went: what it carried comes off (anything added while it was on its way stays, even if older ones were let go) */
@@ -407,7 +433,11 @@ export function eventsClean(x: unknown): EvBatch | null {
     .slice(0, EV_BATCH)
     .map(evOne)
     .filter((x): x is Ev => !!x);
-  return e.length ? { i: b.i, p, v, e } : null;
+  if (!e.length) return null;
+  const out: EvBatch = { i: b.i, p, v, e };
+  if (typeof b.a === 'string' && ID.test(b.a)) out.a = b.a;
+  if (b.t === true) out.t = true;
+  return out;
 }
 
 /** every value a prop may take, in words, for the privacy page */

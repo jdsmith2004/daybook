@@ -39,6 +39,7 @@
 import { keepEarned, mergeDay, normRecord, SUP_SYNC_WORDS, tombDay, WHY_FUTURE, WHY_LARGE, type Day, type Settings } from '@daybook/core';
 import type { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
+import { akOf, akSecret } from './acct-key';
 import type { CheckApple, RevokeApple } from './apple-id';
 import { AppleError, appleLink, appleSignIn, type AppleUsers } from './apple-sign-in';
 import { BadCursor, type Store, type StoredRecord } from './store';
@@ -302,6 +303,9 @@ export function makeHandler(
         throw e;
       }
     }
+
+    /* the account key for the Stats report (acct-key.ts): the same for every sign-in of this account, never its id */
+    if (method === 'GET' && q.ak === '1') return json(200, { ak: akOf(await akSecret(store), user) });
 
     if (method === 'GET' && q.erased === '1') return json(200, await store.erased(user, clock()));
 

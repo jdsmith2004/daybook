@@ -125,6 +125,8 @@ export default function Setup() {
   const askedToday = () => setNotifyMem((m) => ({ ...m, quiet: tk }));
   const env = { notify: remindersOffered, account: !f.redo && sync.status.k === 'out', redo: f.redo };
   const until = useRef(0);
+  /* when the setup page on screen appeared (for setup_page secs) */
+  const pageSince = useRef(0);
   /** which way the last move went, so the next page comes in from that side */
   const dir = useRef<1 | -1 | 0>(0);
   const asking = useRef(false);
@@ -176,7 +178,10 @@ export default function Setup() {
       OB_PAGES.findIndex((x) => x.id === pg.id),
       false,
     );
-    track('setup_page', { page: pg.id });
+    /* how long the page before was open, so the report can say where people linger */
+    const now = Date.now();
+    track('setup_page', { page: pg.id, secs: pageSince.current ? Math.round((now - pageSince.current) / 1000) : undefined });
+    pageSince.current = now;
   }, [f.redo, pg.id]);
 
   const busy = () => Date.now() < until.current;
@@ -246,7 +251,7 @@ export default function Setup() {
       OB_PAGES.findIndex((x) => x.id === 'light'),
       true,
     );
-    track('setup_done', { page: 'light' });
+    track('setup_done', { page: 'light', secs: pageSince.current ? Math.round((Date.now() - pageSince.current) / 1000) : undefined });
     await replace({ ...snap, settings: obBegin(a, tk) }, ['settings']);
   };
   const saveRedo = async () => {

@@ -53,7 +53,7 @@ import {
 import Constants from 'expo-constants';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { BigFlame } from '@/components/big-flame';
 import { OwnAnswers } from '@/components/own-answers';
@@ -70,6 +70,7 @@ import { SyncBody } from '@/components/sync-card';
 import { B } from '@/components/help-bits';
 import { Icon, T } from '@/components/ui';
 import { pickBackupText, saveBackupFile } from '@/lib/backup';
+import { isTester, setTester } from '@/lib/events';
 import { useNotes } from '@/lib/notes';
 import { BACKUP_FILES } from '@/lib/backup-files';
 import { forgetDrafts } from '@/lib/drafts';
@@ -841,12 +842,41 @@ export function SettingsSections({ lead, foot }: { lead?: ReactNode; foot?: Reac
         <View style={{ height: 44, justifyContent: 'flex-end' }}>
           <BigFlame level={gameCompute(snap.days, snap.settings, snap.reviews, tk).level.n} size={40} noLand />
         </View>
-        <T v="small" tone="muted" style={{ textAlign: 'center' }}>
-          Daybook {Constants.expoConfig?.version ?? ''} · a self-tracking tool, not medical care
-          {signedIn && unsynced ? `\n${unsynced} change${unsynced === 1 ? '' : 's'} not synced yet` : ''}
-        </T>
+        <TesterHold>
+          <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+            Daybook {Constants.expoConfig?.version ?? ''} · a self-tracking tool, not medical care
+            {signedIn && unsynced ? `\n${unsynced} change${unsynced === 1 ? '' : 's'} not synced yet` : ''}
+          </T>
+        </TesterHold>
       </View>
     </View>
+  );
+}
+
+/** the owner's hidden switch (November 17, 2026): a long press on the version marks this phone as a tester's, so the Stats
+    report leaves it (and the account on it) out of every number. Nothing shows until it is on. */
+function TesterHold({ children }: { children: ReactNode }) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    isTester().then(setOn);
+  }, []);
+  return (
+    <Pressable
+      delayLongPress={1500}
+      onLongPress={() => {
+        const v = !on;
+        setTester(v);
+        setOn(v);
+        buzz('tap');
+      }}
+      accessible={false}>
+      {children}
+      {on ? (
+        <T v="small" tone="muted" style={{ textAlign: 'center' }}>
+          Tester phone: left out of the stats
+        </T>
+      ) : null}
+    </Pressable>
   );
 }
 

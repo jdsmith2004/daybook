@@ -37,7 +37,7 @@ import { router } from 'expo-router';
 
 import { APPLE_WORDS, CognitoError } from '@daybook/core';
 
-import { track } from '@/lib/events';
+import { acctKeyFor, forgetAcctKey, keepAcctKey, track } from '@/lib/events';
 import { apple, appleOffered, appleRevoked, askApple } from './apple';
 import { accessToken, forgetSession, keepApple, loadSession, saveSignInLater, SignInExpired, signOut, type Session } from './auth';
 import { SYNC_URL, syncOffered } from './config';
@@ -637,6 +637,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
         await erase();
         await onErased();
       }
+      forgetAcctKey();
       await signOut(s);
       return { waiting: 0 };
     },
@@ -665,6 +666,21 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
     }
     return null;
   }, []);
+
+  /* the account key for the Stats report (lib/events.ts): asked once per account on this phone, after sign-in */
+  useEffect(() => {
+    const s = session;
+    if (!s?.sub) return;
+    let live = true;
+    acctKeyFor(s.sub).then(async (have) => {
+      if (have || !live) return;
+      const r = await callApi('GET', '?ak=1').catch(() => null);
+      if (live && r?.status === 200) keepAcctKey(s.sub, r.body.ak);
+    });
+    return () => {
+      live = false;
+    };
+  }, [session, callApi]);
 
   const checkErased = useCallback(async () => {
     const r = await callApi('GET', '?erased=1');
@@ -740,6 +756,7 @@ export function SyncProvider({ children, onErased }: { children: ReactNode; onEr
             : here('Your account did not answer, so the delete may not have finished. Nothing on this phone changed. Try again.'),
       };
     await saveKept(null);
+    forgetAcctKey();
     await forgetSession();
     sessionRef.current = null;
     setSession(null);

@@ -24,7 +24,7 @@
         <h1>Privacy policy</h1>
         <p class="date">
           In effect from October 24, 2026. Apple Health, and What Daybook learns, added November 9, 2026. Videos, and Listen, added November 14, 2026. Friends
-          (beta) added November 15, 2026.
+          (beta) added November 15, 2026. The account code in What Daybook learns added November 17, 2026.
         </p>
 
         <div class="card short">
@@ -41,9 +41,9 @@
               which the screen shows before you share. Never a slip, your journal or your notes.
             </li>
             <li>
-              Daybook learns how the app is used, to make it better: what you open, finish and choose, and how many urges and slips you log. It is anonymous:
-              never tied to your name, email or account, and never your journal, your notes or anything you write. It is never sold or shared, and you can turn
-              it off.
+              Daybook learns how the app is used, to make it better: what you open, finish and choose, and how many urges and slips you log. It never carries
+              your name or email, and never your journal, your notes or anything you write; with an account it carries a code for the account (below), so
+              Daybook can count accounts. It is never sold or shared, and you can turn it off.
             </li>
             <li>If you connect Apple Health, Daybook reads only how long you slept, and it stays on your phone. It is never sent, even with an account.</li>
             <li>If you leave a tip, Apple or Stripe handles the payment. Daybook keeps only a small supporter record, never your card details.</li>
@@ -95,8 +95,8 @@
         <ul>
           <li>Your location, contacts, photos, browsing, or any advertising identifier.</li>
           <li>
-            Tracking across other apps or websites, and no ad or tracking code from anyone else. What Daybook learns (below) stays with Daybook, is never tied
-            to who you are, and is used only to make the app better.
+            Tracking across other apps or websites, and no ad or tracking code from anyone else. What Daybook learns (below) stays with Daybook, never carries
+            your name or email, and is used only to make the app better.
           </li>
           <li>
             Voice notes, and the notes you leave for the next hard moment. They stay on your phone, with or without an account: not synced, not in the safe
@@ -230,19 +230,22 @@
         <h2 id="learns">What Daybook learns</h2>
         <p>
           Daybook is built by one person, who needs to know which parts help people quit and which do not, so they can make it better. So Daybook learns how the
-          app is used, for everyone, from the day it is installed. It is anonymous: it is never tied to your name, your email, your account or your Apple ID,
-          and it never includes your journal, your notes, your voice notes, your plan's words or anything else you type. It is never sold, never shared with
-          anyone, never used for ads, and used only to improve Daybook. Settings, Anonymous data, turns it off, and Delete everything clears what is waiting on
-          your phone.
+          app is used, for everyone, from the day it is installed. It never carries your name, your email or your Apple ID, and it never includes your journal,
+          your notes, your voice notes, your plan's words or anything else you type. It is never sold, never shared with anyone, never used for ads, and used
+          only to improve Daybook. Settings, Anonymous data, turns it off, and Delete everything clears what is waiting on your phone.
         </p>
         <p>
           How it works: every few hours, and as you leave the app, your phone sends a short list of what happened, each as a fixed name with fixed values, the
           number of days since Daybook was installed on this phone, and the hour of the day (never the minute). The server adds the date the list arrived. The
           phone keeps a random number for this install, so the list from one phone can be read together and in order (for example, whether an urge passed after
           a tool, or whether people who finish a lesson slip less the next week). That number is made on your phone, is never part of your log or your account
-          and never sent with them, and a new one is made when you turn this off and on again or use Delete everything. Daybook never joins these lists with
-          accounts, payments or anything else that says who you are. Your internet address is never kept. The lists are stored with Amazon Web Services in the
-          United States, encrypted, readable only by the person who builds Daybook, and deleted after 2 years.
+          and never sent with them, and a new one is made when you turn this off and on again or use Delete everything. While you are signed in to an account,
+          the list also carries the account's code: 32 characters the server makes from the account with a secret only it holds, the same on each of your
+          phones, so Daybook can count accounts rather than phones and see how people with an account use it. The code cannot be turned back into your email or
+          the account itself, it is forgotten on your phone when you sign out or delete the account, and Daybook never joins these lists with your log,
+          payments, your email or anything else that says who you are. A phone the person who builds Daybook uses for testing says so on its list, so it is left
+          out of the numbers. Your internet address is never kept. The lists are stored with Amazon Web Services in the United States, encrypted, readable only
+          by the person who builds Daybook, and deleted after 2 years.
         </p>
         <p>Every name that can be sent, and what it means:</p>
         <ul>
@@ -258,13 +261,13 @@
             the phone's language and its system version.
           </li>
           <li>
-            <code>setup_page</code>, <code>setup_pick</code>, <code>setup_skip</code>, <code>setup_done</code>: a setup page was reached, a choice picked on it
-            (which one, never typed words), a question skipped, setup finished.
+            <code>setup_page</code>, <code>setup_pick</code>, <code>setup_skip</code>, <code>setup_done</code>: a setup page was reached (and how long the page
+            before it was open), a choice picked on it (which one, never typed words), a question skipped, setup finished.
           </li>
           <li>
             <code>lesson_open</code>, <code>lesson_beat</code>, <code>lesson_pick</code>, <code>lesson_done</code>, <code>lesson_left</code>: a lesson (l1 to
-            l49, and the faith lessons g1 to g12) was opened, a part of it reached, an answer picked (which one), finished (and how long it took), or left
-            before the end.
+            l49, and the faith lessons g1 to g12) was opened, a part of it reached, an answer picked (which one), finished (how long it took, and the length
+            picked: short, long or deep), or left before the end.
           </li>
           <li>
             <code>sos_open</code>, <code>sos_end</code>, <code>sos_tool</code>, <code>tool_open</code>, <code>tool_done</code>, <code>talk_done</code>: SOS was
@@ -301,9 +304,10 @@
           </li>
           <li>
             <code>ask</code>, <code>ask_tap</code>, <code>bought</code>, <code>account</code>, <code>sync_on</code>, <code>feedback</code>: an ask (for a tip,
-            Daybook Pattern, an account, a rating, a note for the next hard moment, or setup's question of how long it usually lasts, asked once of people who
-            set up before setup asked it) was shown or tapped, a tip or Daybook Pattern was bought (which one, never a card or a receipt), an account was made
-            (with Apple or email, never the account), sync was turned on, feedback was sent (never its words here).
+            Daybook Pattern, an account, a rating (and whether the phone was asked for its own rating sheet), a note for the next hard moment, or setup's
+            question of how long it usually lasts, asked once of people who set up before setup asked it) was shown or tapped, a tip or Daybook Pattern was
+            bought (which one, never a card or a receipt), an account was made (with Apple or email, never the account), sync was turned on, feedback was sent
+            (never its words here).
           </li>
           <li>
             <code>import</code>: bringing a Mithras journal over, and how far it got (the link opened, signed in, read, landed, closed or failed), whether the
@@ -311,10 +315,10 @@
             Mithras account, email or anything you wrote.
           </li>
           <li>
-            <code>friend_added</code>, <code>friend_cheer</code>, <code>friend_spark_used</code>, <code>friend_hear</code>, <code>community_join</code>: became
-            friends with someone in Friends (never who), sent a friend a spark or an older ready-made encouragement (which one: spark, warm, proud or with), a
-            friend's spark went into a lesson, chose how to hear about a friend (live, daily or off), pre-joined the community that is coming. Never a name, a
-            goal or a friend.
+            <code>friend_invite</code>, <code>friend_added</code>, <code>friend_cheer</code>, <code>friend_spark_used</code>, <code>friend_hear</code>,
+            <code>community_join</code>: shared an invite (as a link or a code, never who it went to), became friends with someone in Friends (never who), sent
+            a friend a spark or an older ready-made encouragement (which one: spark, warm, proud or with), a friend's spark went into a lesson, chose how to
+            hear about a friend (live, daily or off), pre-joined the community that is coming. Never a name, a goal or a friend.
           </li>
           <li>
             <code>ab</code>: Daybook tries two wordings of a line to learn which helps more, and this says which one was shown: the line's name (rk_first,
@@ -325,13 +329,13 @@
         <p>
           The values are only numbers, yes or no, or names from Daybook's own lists: <code>cold</code>, <code>secs</code>, <code>route</code>, <code>err</code>,
           <code>page</code>, <code>ix</code>, <code>lesson</code>, <code>beat</code>, <code>from</code>, <code>outcome</code>, <code>str</code>,
-          <code>tool</code>, <code>chart</code>, <code>locked</code>, <code>trigger</code>, <code>hrs</code>, <code>step</code>, <code>mood</code>,
-          <code>sleep</code>, <code>q1</code> to <code>q5</code>, <code>free</code>, <code>rode30</code>, <code>slips30</code>, <code>lvl</code>,
-          <code>kind</code>, <code>nh</code>, <code>after</code>, <code>test</code>, <code>arm</code>, <code>what</code>, <code>note</code>, <code>tier</code>,
-          <code>how</code>, <code>mode</code>, <code>count</code>, <code>ns28</code>, <code>pts</code>, <code>badges</code>, <code>low</code>, <code>rem</code>,
-          <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>, <code>faith</code>, <code>habit</code>, <code>lang</code>,
-          <code>os</code>, <code>stage</code>, <code>ents</code>, <code>days</code>. Anything that is not on those lists is dropped on your phone, and refused
-          by the server.
+          <code>tool</code>, <code>chart</code>, <code>locked</code>, <code>len</code>, <code>trigger</code>, <code>hrs</code>, <code>step</code>,
+          <code>mood</code>, <code>sleep</code>, <code>q1</code> to <code>q5</code>, <code>free</code>, <code>rode30</code>, <code>slips30</code>,
+          <code>lvl</code>, <code>kind</code>, <code>nh</code>, <code>after</code>, <code>test</code>, <code>arm</code>, <code>what</code>, <code>note</code>,
+          <code>tier</code>, <code>how</code>, <code>mode</code>, <code>count</code>, <code>ns28</code>, <code>pts</code>, <code>badges</code>,
+          <code>low</code>, <code>rem</code>, <code>acct</code>, <code>sync</code>, <code>sup</code>, <code>health</code>, <code>faith</code>,
+          <code>habit</code>, <code>lang</code>, <code>os</code>, <code>stage</code>, <code>ents</code>, <code>days</code>. Anything that is not on those lists
+          is dropped on your phone, and refused by the server.
         </p>
         <p>
           Never sent: your journal, notes, voice notes, Obsidian folder, plan, reasons, Talk it through, or anything else you write; your name, email, account
@@ -465,8 +469,9 @@
         <p>
           At a few good moments (a new level, a new form of the flame, a badge, your first week), Daybook asks whether you like it so far, until you say yes.
           Your answer and the day it was asked are kept with your settings, only so it is not asked too often or again after a yes; that it was shown and which
-          answer was tapped are anonymous events (above), never tied to you. If you say yes, the phone may show Apple's or Google's own rating sheet. A rating
-          you leave there goes to the App Store or Google Play under their privacy policies; Daybook sees only what the store shows publicly.
+          answer was tapped are events in What Daybook learns (above), never with your name or email. If you say yes, the phone may show Apple's or Google's own
+          rating sheet. A rating you leave there goes to the App Store or Google Play under their privacy policies; Daybook sees only what the store shows
+          publicly.
         </p>
 
         <h2 id="delete">How long it is kept, and deleting it</h2>
@@ -528,8 +533,8 @@
         </p>
         <p>
           Daybook does not knowingly collect information from anyone under 16. Without an account it collects nothing that names a person (the anonymous counts
-          described above are never tied to one), and accounts are for people 16 and older. If you believe someone under 16 has made an account, write to us and
-          it will be deleted.
+          and What Daybook learns described above never carry a name or email), and accounts are for people 16 and older. If you believe someone under 16 has
+          made an account, write to us and it will be deleted.
         </p>
 
         <h2>Changes</h2>

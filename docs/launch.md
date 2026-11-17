@@ -268,6 +268,10 @@ fix-only build can leave it out. The store's What's New box (step 6) says the sa
     - Sensitive Info (already there for accounts): add **Analytics**; linked stays **Yes**; tracking **No**. (Faith, the habit.)
     - Purchases, **Purchase History** (already there): add **Analytics**; linked stays **Yes**; tracking **No**.
     - Then Publish. Nothing here is Apple Health data, and the label says nothing about HealthKit.
+    - **Since November 17, 2026 (the account key, core `events.ts`):** a signed-in person's events carry a key made from their
+      account, so before the next build goes to review change these to linked: Identifiers, **Device ID**: linked **Yes**;
+      Usage Data, **Product Interaction**: linked **Yes** (already Yes since Friends); Diagnostics, **Other Diagnostic Data**:
+      linked **Yes**. Tracking stays **No** everywhere: nothing leaves Daybook or is joined with other companies' data.
   - **Friends (beta), from 1.3.5** (core `friends.ts`, privacy page "Friends (beta)"). Friends needs an account, and what it keeps
     is kept under that account and shown to the friends the person added, so it is linked. Make these answers in App Store
     Connect, App Privacy, Edit, before 1.3.5 goes to review:
@@ -545,6 +549,12 @@ totals in the run's summary; Claude runs it and reads the result. Each half says
    ```
 
    Then delete the .p8 from Downloads.
+
+1b. **Leaving your own phones out (the usage report, November 17, 2026).** On each phone and browser you test on, open More and
+hold your finger on the version line at the bottom for two seconds: "Tester phone: left out of the stats" shows under it, and
+that phone, its whole history and any account signed in on it are left out of every number. Hold again to undo. A phone you
+cannot reach any more can be listed instead: put its install id or account key (32 characters each) in the repository
+variable, separated by spaces: `gh variable set STATS_TESTERS --body "key1 key2"`.
 
 2. **Daybook's own counts.** Run the bootstrap once more (it adds the read-only `daybook-stats` role, which can read the
    anonymous totals and nothing else), and give the workflow its name:

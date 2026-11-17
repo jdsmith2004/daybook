@@ -27,6 +27,7 @@ import { Dock } from '@/components/scene';
 import { SheetFrame } from '@/components/sheet';
 import { LinkText } from '@/components/today';
 import { Button, Card, Icon, T } from '@/components/ui';
+import { track } from '@/lib/events';
 import { buzz } from '@/lib/feel';
 import { Toggle } from '@/components/settings-ui';
 import { registerPush, useFriendsReady } from '@/lib/friends';
@@ -92,6 +93,7 @@ export default function FriendAdd() {
     setBusy(null);
     if (!r.ok) return setErr(r.msg);
     const code = String(r.body.code);
+    track('friend_invite', { what: how === 'link' ? 'link' : 'code' });
     setShown(code);
     const text = how === 'link' ? inviteText(nm, inviteLink(site(), code), code) : codeText(nm, code);
     buzz('tap');

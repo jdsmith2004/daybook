@@ -376,7 +376,7 @@ function LessonScreen() {
     count('lesson_done');
     count('ld_' + L.id);
     took.current = Math.round((Date.now() - opened.current) / 1000);
-    track('lesson_done', { lesson: L.id, secs: took.current });
+    track('lesson_done', { lesson: L.id, secs: took.current, len });
     finished.current = true;
     buzz(a ? 'save' : 'lit');
   };

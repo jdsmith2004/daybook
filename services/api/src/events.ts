@@ -28,9 +28,14 @@ const json = (statusCode: number, body: unknown): Res => ({
 });
 
 /** the lines for one batch: newline-separated JSON, one event each, props as a JSON string (Athena reads them with
-    json_extract) */
+    json_extract). The account key and the tester mark go inside the props string as "ak" and "tst", so the table that
+    Athena reads (infra/bootstrap) needs no new column, and every line from before them still reads (they are simply absent). */
 export function eventLines(day: string, b: NonNullable<ReturnType<typeof eventsClean>>): string {
-  return b.e.map((e) => JSON.stringify({ day, i: b.i, pf: b.p, v: b.v, k: e.k, n: e.n, d: e.d, h: e.h, p: JSON.stringify(e.p || {}) })).join('\n') + '\n';
+  const who = { ...(b.a ? { ak: b.a } : {}), ...(b.t ? { tst: true } : {}) };
+  return (
+    b.e.map((e) => JSON.stringify({ day, i: b.i, pf: b.p, v: b.v, k: e.k, n: e.n, d: e.d, h: e.h, p: JSON.stringify({ ...(e.p || {}), ...who }) })).join('\n') +
+    '\n'
+  );
 }
 
 export function makeEventsHandler(sink: Sink, cap: Cap, clock: () => number = Date.now) {

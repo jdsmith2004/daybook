@@ -6,7 +6,9 @@
    How the rows are read:
    - One row is one event: dt (the UTC day it arrived), i (the install id), pf, v, k (its place in that phone's stream), n,
      d (days since install), h (local hour), p (props as JSON; the server adds ak, the account key, and tst, a tester's phone).
-   - A batch the phone sent twice (a lost answer) would count twice, so rows are kept once per install id and k.
+   - A batch the phone sent twice (a lost answer) would count twice, so a row is kept once per install id, k, name, day and
+     hour. Not k alone: a browser with two tabs open, or a save lost as the app closed, can give two different events the
+     same k (the cross-check found 9 such on November 17, 2026).
    - The day an event happened is the install day plus d. The install day is the earliest dt minus d over the phone's rows
      (an event can only arrive on or after the day it happened). This is the day every window below uses, never dt.
    - Who: a phone is a tester's when any of its rows says tst, or its install id or account key is in the testers list; an
@@ -73,7 +75,7 @@ export function prepare(rows, { testers = [] } = {}) {
   let dupes = 0;
   const evs = [];
   for (const r of rows) {
-    const key = r.i + '#' + r.k;
+    const key = [r.i, r.k, r.n, r.d, r.h].join('#');
     if (seen.has(key)) {
       dupes++;
       continue;
@@ -164,7 +166,7 @@ export function buildReport(rows, o = {}) {
     `- **Testers, left out of everything below:** ${plural(tPhones.length, 'phone')} (${plural(new Set(tPhones.filter((p) => p.ak).map((p) => p.ak)).size, 'account')}), ` +
       `${by.T.length} events.`,
   );
-  if (dupes) out.push(`- ${dupes} of ${raw} rows were the same event sent twice (a lost answer), and are counted once.`);
+  if (dupes) out.push(`- ${dupes} of ${raw} rows were the same event arriving twice (a lost answer, or two tabs open), and are counted once.`);
   out.push('');
 
   /* ---------- actives ---------- */

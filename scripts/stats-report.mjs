@@ -78,7 +78,7 @@ async function main() {
   try {
     const { evs, phones, raw } = prepare(rows, { testers });
     const [t] = await rowsOf(
-      `SELECT count(*) AS n, count(DISTINCT i) AS phones, count(DISTINCT concat(i, '#', cast(k AS varchar))) AS uniq FROM events WHERE dt >= '${FROM}'`,
+      `SELECT count(*) AS n, count(DISTINCT i) AS phones, count(DISTINCT concat(i, '#', cast(k AS varchar), '#', n, '#', cast(d AS varchar), '#', cast(h AS varchar))) AS uniq FROM events WHERE dt >= '${FROM}'`,
     );
     check('Rows in the window', raw, t.n);
     check('Events, each counted once', evs.length, t.uniq);
@@ -88,8 +88,8 @@ async function main() {
     const W30 = dayAdd(today, -29);
     const [a] = await rowsOf(`
       WITH x AS (SELECT i, min(date_add('day', -d, date(dt))) AS inst FROM events WHERE dt >= '${FROM}' GROUP BY i),
-        e AS (SELECT DISTINCT e.i, e.k, e.n, json_extract_scalar(e.p, '$.outcome') AS outcome, date_add('day', e.d, x.inst) AS day
-          FROM events e JOIN x ON e.i = x.i WHERE e.dt >= '${FROM}')
+        e AS (SELECT e.i, e.k, e.n, e.d, e.h, arbitrary(json_extract_scalar(e.p, '$.outcome')) AS outcome, date_add('day', e.d, x.inst) AS day
+          FROM events e JOIN x ON e.i = x.i WHERE e.dt >= '${FROM}' GROUP BY e.i, e.k, e.n, e.d, e.h, x.inst)
       SELECT count(DISTINCT CASE WHEN day >= date '${W7}' AND day <= date '${today}' THEN i END) AS act7,
         count(DISTINCT CASE WHEN day >= date '${W30}' AND day <= date '${today}' THEN i END) AS act30,
         count_if(n = 'sos_open' AND day >= date '${W30}') AS sos30,
@@ -104,7 +104,9 @@ async function main() {
     check('SOS urge passed, last 30 days', inW(W30).filter((e) => e.n === 'sos_end' && e.p.outcome === 'rode').length, a.rode30);
     check('Lessons finished, last 30 days', inW(W30).filter((e) => e.n === 'lesson_done').length, a.ld30);
     check('Slips, last 30 days', inW(W30).filter((e) => e.n === 'slip').length, a.slip30);
-    const byName = await rowsOf(`SELECT n, count(DISTINCT concat(i, '#', cast(k AS varchar))) AS c FROM events WHERE dt >= '${FROM}' GROUP BY n`);
+    const byName = await rowsOf(
+      `SELECT n, count(DISTINCT concat(i, '#', cast(k AS varchar), '#', cast(d AS varchar), '#', cast(h AS varchar))) AS c FROM events WHERE dt >= '${FROM}' GROUP BY n`,
+    );
     const mine = {};
     for (const e of evs) mine[e.n] = (mine[e.n] || 0) + 1;
     const off = byName.filter((r) => String(mine[r.n] || 0) !== r.c);

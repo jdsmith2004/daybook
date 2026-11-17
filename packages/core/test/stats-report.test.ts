@@ -62,6 +62,12 @@ describe('the usage report', () => {
     expect(phones.get(P6).inst).toBe('2026-11-13');
   });
 
+  it('keeps two different events that share a place in the stream (two tabs open)', () => {
+    const a = row('2026-11-12', P3, 'open', 0);
+    const b = { ...a, n: 'screen' };
+    expect(prepare([a, b, { ...a }], {}).evs.length).toBe(2);
+  });
+
   it('a listed install id or key makes a tester', () => {
     const { phones } = prepare(rows, { testers: [P3, AK1] });
     expect([phones.get(P1).group, phones.get(P2).group, phones.get(P3).group]).toEqual(['T', 'T', 'T']);
@@ -72,7 +78,7 @@ describe('the usage report', () => {
     expect(md).toMatch(/\*\*Accounts:\*\* 2 \(1 account with the account key, on 2 phones; 1 phone with an account from before the key/);
     expect(md).toMatch(/\*\*Phones with no account:\*\* 1\./);
     expect(md).toMatch(/Testers, left out of everything below:\*\* 2 phones \(1 account\), 3 events/);
-    expect(md).toMatch(/1 of 17 rows were the same event sent twice/);
+    expect(md).toMatch(/1 of 17 rows were the same event arriving twice/);
     /* SOS: the tester's open is not counted, the other phone's is */
     expect(md).toMatch(/\| \*\*No account\*\* \| 1 \(by 1 phone\) \| 0 of 1 \(0%\)/);
     /* two slips on one day are one slip day, and the person was back the next day */

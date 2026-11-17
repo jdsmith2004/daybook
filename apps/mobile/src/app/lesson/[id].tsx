@@ -140,7 +140,15 @@ interface Got {
 /* the lesson preview exists only in the demo build (EXPO_PUBLIC_SHOTS=1), whose log is a made-up person kept in memory */
 const PREVIEW_ON = process.env.EXPO_PUBLIC_SHOTS === '1';
 
-export default function LessonScreen() {
+/* Next, Up next, Again and the morning set open the next lesson with router.replace on this same route, which can keep this screen's
+   state: a length chosen in the lesson before would carry over and the ask would never show. Keyed, every lesson starts fresh and asks
+   its length first (the owner, November 17, 2026: "it should ask EVERY TIME"). */
+export default function LessonRoute() {
+  const { id, at } = useLocalSearchParams<{ id: string; at?: string }>();
+  return <LessonScreen key={String(id) + ':' + String(at)} />;
+}
+
+function LessonScreen() {
   const {
     id,
     at,

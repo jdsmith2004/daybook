@@ -12,14 +12,14 @@ const text = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../.
 describe('the lesson length ask', () => {
   it('starts unanswered for any lesson with a short cut, outside the demo preview', () => {
     expect(text).toMatch(/useState\(\(\) => preview \|\| !\(found && lessonHasQuick\(found\)\)\)/);
-    expect(text).toMatch(/!chose && !care \? 'len'/);
+    expect(text).toMatch(/!chose \? 'len'/);
   });
   it('restarts the screen for each lesson, so a length chosen before never carries over', () => {
     expect(text).toMatch(/export default function LessonRoute\(\)[\s\S]*<LessonScreen key=\{String\(id\)/);
   });
-  it('a care lesson, which skips the ask, offers the other length on its first card', () => {
-    expect(text).toMatch(/const swap = care && ix === 0 && lessonHasQuick\(L\)/);
-    expect(text).toMatch(/'Make it 5 minutes'/);
+  it('asks at the start after a slip too, and a lesson never stops being care halfway, so the ask cannot show at the end', () => {
+    expect(text).toMatch(/: !chose \? 'len'/);
+    expect(text).toMatch(/if \(careAt\.current == null\) careAt\.current =/);
   });
   it('has a short cut for most lessons, so the ask shows', () => {
     expect(LESSONS.filter(lessonHasQuick).length).toBeGreaterThan(LESSONS.length / 2);

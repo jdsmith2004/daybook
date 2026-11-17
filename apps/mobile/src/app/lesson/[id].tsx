@@ -210,6 +210,7 @@ function LessonScreen() {
   /* every lesson asks its length first, wherever it starts (the owner, November 14, 2026: "It should also ask them 2 or 5 minutes when
      they do the lesson anywhere. Always."); only a lesson with no short cut, which has one length, goes straight in */
   const [chose, setChose] = useState(() => preview || !(found && lessonHasQuick(found)));
+  const careAt = useRef<boolean | null>(null);
   /* how a card without a question landed with the person (two answers, or the line they will try), by card */
   const [ans, setAns] = useState<Record<number, number>>({});
   /* a turn card's reply has landed */
@@ -296,7 +297,10 @@ function LessonScreen() {
   /* ?at=care: a door from a hard moment (Rekindle, the second slip in a week): it opens in full, and never asks for an account
      (never after a slip). It comes back to where it was opened. */
   /* the morning after a slip, the day's lesson comes from the after-a-hard-night list (core lessonWalk hook): care, never gated */
-  const care = at === 'care' || (w.hook === 'slip' && w.today === L);
+  /* fixed as the lesson opens: finishing the morning-after lesson moves Today on to another one, which must not turn this one back
+     into an ordinary lesson halfway (it did, and the length ask then showed at the end; the owner, November 17, 2026) */
+  if (careAt.current == null) careAt.current = at === 'care' || (w.hook === 'slip' && w.today === L);
+  const care = careAt.current;
   if (gate !== 'open' && !care && !preview && !(at === 'all' && done.has(L.id))) return <PathGate L={L} w={w} gate={gate} />;
   /* a lesson that opens with an account goes straight to the account sheet, and opens by itself after signing up */
   if (!care && !preview && !lessonOpen(L, done, account, st)) return <Redirect href={{ pathname: '/account', params: { why: 'lesson', then: L.id } }} />;
@@ -306,7 +310,7 @@ function LessonScreen() {
   /* the step before this one, asked about once more as its first lesson opens (never after a slip) */
   const askK = care || askedBack ? -1 : deedAskBack(L, snap.days, st, tk);
   /* one way in: with nothing to ask before the step, the lesson opens on its first card */
-  const stg: Stage = deedPv && dk >= 0 ? (deedA == null ? 'deed' : 'practiced') : !chose && !care ? 'len' : stage === 'cover' && askK < 0 ? 'run' : stage;
+  const stg: Stage = deedPv && dk >= 0 ? (deedA == null ? 'deed' : 'practiced') : !chose ? 'len' : stage === 'cover' && askK < 0 ? 'run' : stage;
   /* the cards; the old Done card is gone: after the last card comes Put it to work, the step's deed, then one finish page */
   const seq = lessonSeq(L, len).filter((x): x is Extract<SeqItem, { t: 'card' }> => x.t === 'card');
   const pr0 = lessonPractice(L, st);
@@ -601,17 +605,11 @@ function LessonScreen() {
     /* the first card says which lesson this is: there is no cover any more */
     /* a lesson that can stir up something heavy says where help is, on its last card */
     const help = ix === seq.length - 1 && !pr0 && heavy ? <Help988 /> : null;
-    /* a care lesson (the day after a slip, Rekindle) goes straight in without the length ask, at the length picked most; its first
-       card offers the other one (the owner, November 17, 2026: "just guess and maybe include an option to switch to 5 minutes") */
-    const swap = care && ix === 0 && lessonHasQuick(L) ? (len === 'q' ? 'f' : 'q') : null;
     const head =
       ix === 0 ? (
-        <>
-          <T v="small" tone="muted">
-            {(n ? 'Lesson ' + n + ' · ' : '') + L.title}
-          </T>
-          {swap ? <Quiet label={swap === 'f' ? 'Make it 5 minutes' : 'Make it 2 minutes'} onPress={() => setLen(swap)} /> : null}
-        </>
+        <T v="small" tone="muted">
+          {(n ? 'Lesson ' + n + ' · ' : '') + L.title}
+        </T>
       ) : null;
     /* once the card is answered, the bar slides up with a word of praise and the way on */
     const ok = (say?: string, moreOn = true) =>

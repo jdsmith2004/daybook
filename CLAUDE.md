@@ -209,6 +209,11 @@ need, without letting the screen turn into a list of features.
     is given, and it must open on the changed screen, never on setup.
   - A screen that needs an account, a friend or a server answer gets a demo state in `src/shots` (as `/friends?demo=1` does
     for Friends), built by the chat that builds the screen, so the link shows it filled in.
+  - **Never give the live site as a preview link (the owner, November 18, 2026: "you always give em a link and it just takes me to
+    onboarding and i can't preview it bro").** The live site is the real app with no demo person: the owner uses Daybook in the
+    phone app, so the site has none of their data in any browser, and it always opens on setup. `?demo=` does nothing there. Until
+    the site serves the demo build (planned: `/demo/` on the site), the preview link is the local one only, said as "on this Mac",
+    and the report says plainly that there is no phone link yet. Say "it is live" for a deploy, but never as a link to look at.
 - **Merge to main, then archive; the iPhone check is TestFlight from main (the owner, November 13, 2026: "i want the chats
   to merge to main then archive alot of these chats keep not merging to main bc it's not tested on iphone, we will test it on
   iphone by making a build from main and publishing it to testflight").** A chat whose work is done (tests pass, QA on the web

@@ -280,16 +280,18 @@ export function hoursBack(days: Days, st: Settings, tk: DayKey): number | null {
   return h >= 1 ? obRnd(h) : null;
 }
 
-/** one true line from the log under "who you are becoming" on Today: the last urge ridden out in two weeks, as a moment ("You rode
-    out an urge Tuesday at 9:30 PM."), and the count of them all. When one was ridden out today, Today so far already shows it, so
-    the line says who that makes them. Null with none in two weeks. */
+/** the proof under "who you are becoming" on Today: the count of urges ridden out, said big (n), and under it when the last one was,
+    while it was in the last two weeks (t: "The last one Tuesday at 9:30 PM."). When one was ridden out today, Today so far already
+    shows it, so the small line says who that makes them. Null with none in two weeks. */
 export function rodeProof(days: Days, st: Settings, tk: DayKey): { t: string; n: string } | null {
   const all = eventsOf(days).filter((e) => e.outcome === 'rode' && e.key <= tk);
   if (!all.length) return null;
-  const n = all.length === 1 ? 'Your first.' : all.length + ' times now.';
+  const first = all.length === 1;
+  const n = first ? 'Your first urge ridden out' : all.length + ' urges ridden out';
   const last = all[all.length - 1];
-  if (last.key === tk) return { t: 'You are someone who rides out urges:', n };
+  if (last.key === tk) return { n, t: 'You are someone who rides out urges.' };
   if (last.key < addDays(tk, -13)) return null;
-  const when = last.key === addDays(tk, -1) ? 'yesterday' : fmtDate(last.key, { weekday: 'long' });
-  return { t: 'You rode out an urge ' + when + (last.time ? ' at ' + eventRow(last, st).time : '') + '.', n };
+  const day = last.key === addDays(tk, -1) ? 'yesterday' : fmtDate(last.key, { weekday: 'long' });
+  const when = day + (last.time ? ' at ' + eventRow(last, st).time : '');
+  return { n, t: first ? when[0].toUpperCase() + when.slice(1) + '.' : 'The last one ' + when + '.' };
 }

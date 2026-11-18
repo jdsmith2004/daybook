@@ -75,12 +75,13 @@ describe('how close the hard hours are', () => {
 describe('the line under who you are becoming', () => {
   it('the last urge ridden out, as a moment, and the count', () => {
     const d = nights(null);
-    expect(rodeProof(d, st, '2026-10-14')).toEqual({ t: 'You rode out an urge yesterday at 9:30 PM.', n: '7 times now.' });
-    expect(rodeProof(d, st, '2026-10-15')!.t).toBe('You rode out an urge Tuesday at 9:30 PM.');
+    expect(rodeProof(d, st, '2026-10-14')).toEqual({ n: '7 urges ridden out', t: 'The last one yesterday at 9:30 PM.' });
+    expect(rodeProof(d, st, '2026-10-15')!.t).toBe('The last one Tuesday at 9:30 PM.');
   });
   it('one today is in Today so far already, so it says who that makes them', () => {
     const d = ev({}, '2026-10-14', 'rode', '13:10');
-    expect(rodeProof(d, st, '2026-10-14')).toEqual({ t: 'You are someone who rides out urges:', n: 'Your first.' });
+    expect(rodeProof(d, st, '2026-10-14')).toEqual({ n: 'Your first urge ridden out', t: 'You are someone who rides out urges.' });
+    expect(rodeProof(ev({}, '2026-10-12', 'rode', '13:10'), st, '2026-10-14')).toEqual({ n: 'Your first urge ridden out', t: 'Monday at 1:10 PM.' });
   });
   it('quiet with none in two weeks, and slips never count', () => {
     expect(rodeProof(ev({}, '2026-09-20', 'rode', '13:10'), st, '2026-10-14')).toBeNull();

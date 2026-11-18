@@ -44,6 +44,7 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
      not how long (so "How long does it usually last?" is still to ask, core lasts-ask.ts), never asked whether they like Daybook, last
      saw What's new at 1.3.4 (mode.ts), and Squeeze set to "In my seat" from before that switch was taken out */
   const update = q === 'update';
+  const slipday = q === 'slipday';
   const MONTH_SLIPS = [day(DEMO.day, -17), day(DEMO.day, -9)];
   const URGE_AT = ['21:40', '22:15', '14:30', '23:05', '10:20', '22:50'];
   const URGE_WHY = ['late', 'stress', 'bored', 'tired', 'scroll', 'late'];
@@ -126,7 +127,17 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   /* this morning is already set (last night free, tonight's reason and time), as a person who opens Daybook every morning has it, so the
      pictures open on Today and not on the morning page over it */
   /* (not for the lighting's key moments: their morning is left open, so Free of it lights the flame) */
-  if (!late.length) days = setTonight(answerNight(days, sn, tk, 'free', at), sn, tk, { r: st.reasons[0]!, nt: '22:30' }, at).days;
+  if (!late.length)
+    days = setTonight(answerNight(days, sn, tk, 'free', at), sn, tk, { rs: slipday ? [st.becoming, ...st.reasons] : [st.reasons[0]!], nt: '22:30' }, at).days;
+  /* ?demo=slipday: the owner's own Today of November 18, 2026: an urge ridden out early and a slip this morning, and three things tonight
+     is for, the becoming sentence among them (Today so far, and the sentence said once) */
+  if (slipday) {
+    const t0 = days[tk] || normDay({ d: tk }, tk);
+    days = {
+      ...days,
+      [tk]: { ...t0, events: [...t0.events, { ...ev('07:40', 'rode', 'scroll'), m: 6 }, { ...ev('10:26', 'slipped', 'bored'), id: 'slipnow' }] },
+    };
+  }
   const out: Record<string, string> = { 'daybook:settings': JSON.stringify(st) };
   for (const k in days) out['daybook:days/' + k] = JSON.stringify(days[k]);
   /* a few journal entries over the last week and a half, each started with a feeling, one with only the feeling */

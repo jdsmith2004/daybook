@@ -3,11 +3,14 @@
    and a dot for now, the way Apple's sleep schedule draws a stretch of time as a shape. The plan comes back in the person's own words,
    in the cream bubbles the lessons speak in. A night card stays a night card in both themes, the way Weather keeps its sky.
    Before the hard hours are known: the same arc drawn empty, titled, so it is plain what will fill it (docs/design-standards.md, "Show
-   it, do not say it"). With no plan: one bubble with blanks where the person's when and then go, which opens Walk it through. */
+   it, do not say it"). With no plan: one bubble with blanks where the person's when and then go, which opens Walk it through.
+   Since November 18, 2026 the card is the whole evening: what tonight is for opens it (`top`, today-below.tsx), under a few stars,
+   then the hard hours and the plan. Anything inside takes the night colors (NightContext), so its choices sit right on the dusk. */
 import { riskDay, riskPlanLabel, riskWhen, talkPlanNow, type DayKey, type Snapshot } from '@daybook/core';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
+import type { ReactNode } from 'react';
 import Svg, { Circle, Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { Blank } from '@/components/blank';
@@ -15,10 +18,10 @@ import { SVG_HIDE } from '@/components/shapes';
 import { Text } from '@/components/text';
 import { Icon } from '@/components/ui';
 import { buzz } from '@/lib/feel';
-import { font } from '@/lib/theme';
+import { font, NightContext } from '@/lib/theme';
 
 /* the card's own night, the same in both themes */
-const N = {
+export const N = {
   dusk: ['#231E5E', '#3B2468', '#5A2C5E'] as const,
   ember: '#F0906C',
   cream: '#FFF6E8',
@@ -29,6 +32,23 @@ const N = {
   gold: '#FFD25A',
   track: 'rgba(185,173,255,0.24)',
 };
+
+/** a small four-point star in the hard hours' gold: what tonight is for, and the sky of the card */
+export function Star({ size = 12, color = N.gold }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...SVG_HIDE}>
+      <Path d="M12 0C13 9 15 11 24 12 15 13 13 15 12 24 11 15 9 13 0 12 9 11 11 9 12 0z" fill={color} />
+    </Svg>
+  );
+}
+
+/* a few far stars at the top of the card's sky, still: it is night there, not a light show */
+const SKY = [
+  { r: 38, t: 18, s: 3, o: 0.55 },
+  { r: 84, t: 46, s: 2, o: 0.45 },
+  { r: 22, t: 74, s: 2, o: 0.35 },
+  { r: 132, t: 22, s: 2, o: 0.3 },
+];
 
 const go = (pathname: string, params?: Record<string, string>) => {
   buzz('tap');
@@ -41,10 +61,12 @@ const FROM = 18;
 const SPAN = 8;
 function Arc({ start, now, w }: { start: number | null; now: number; w: number }) {
   /* room above the arc, so its glow fades out before the edge of the drawing */
-  const PAD = 28;
+  const PAD = 56;
+  /* and room at the sides, for the glow when the hard hours sit at either end */
+  const SIDE = 44;
   const k = w / 300;
   const H = 158 * k + PAD;
-  const cx = w / 2;
+  const cx = w / 2 + SIDE;
   const cy = 146 * k + PAD;
   const R = 128 * k;
   const sw = 10;
@@ -64,14 +86,14 @@ function Arc({ start, now, w }: { start: number | null; now: number; w: number }
   const [nx, ny] = pt(h);
   const [gx, gy] = pt(s0 + 1);
   return (
-    <Svg width={w} height={H} {...SVG_HIDE}>
+    <Svg width={w + SIDE * 2} height={H} {...SVG_HIDE}>
       <Defs>
-        <RadialGradient id="tnGlow" cx={gx} cy={gy} r={52} gradientUnits="userSpaceOnUse">
+        <RadialGradient id="tnGlow" cx={gx} cy={gy} r={50} gradientUnits="userSpaceOnUse">
           <Stop offset="0" stopColor={N.gold} stopOpacity={0.35} />
           <Stop offset="1" stopColor={N.gold} stopOpacity={0} />
         </RadialGradient>
       </Defs>
-      {start == null ? null : <Rect width={w} height={H} fill="url(#tnGlow)" />}
+      {start == null ? null : <Rect width={w + SIDE * 2} height={H} fill="url(#tnGlow)" />}
       <Path d={arc(FROM, FROM + SPAN)} stroke={N.track} strokeWidth={sw} strokeLinecap="round" fill="none" />
       {start == null ? null : <Path d={arc(s0, s0 + 2)} stroke={N.gold} strokeWidth={sw} strokeLinecap="round" fill="none" />}
       {h >= FROM && h <= FROM + SPAN ? <Circle cx={nx} cy={ny} r={7} fill={N.ink} stroke={N.creamInk} strokeWidth={3} /> : null}
@@ -97,12 +119,15 @@ export function TonightCard({
   now,
   lines,
   more,
+  top,
 }: {
   snap: Snapshot;
   tk: DayKey;
   now: number;
   lines: { when: string; then: string }[];
   more: boolean;
+  /** what opens the card: what tonight is for */
+  top?: ReactNode;
 }) {
   const st = snap.settings!;
   const r = riskDay(snap.days, st, tk, now);
@@ -121,8 +146,19 @@ export function TonightCard({
         </Defs>
         <Rect width="100%" height="100%" fill="url(#tnEmber)" />
       </Svg>
+      {SKY.map((x, i) => (
+        <View
+          key={i}
+          style={{ position: 'absolute', right: x.r, top: x.t, width: x.s, height: x.s, borderRadius: x.s, backgroundColor: N.ink, opacity: x.o }}
+        />
+      ))}
+      <NightContext.Provider value={true}>{top}</NightContext.Provider>
       {r ? (
-        <View style={s.arcBox} accessible accessibilityLabel={'Hard hours, ' + r.win.label + (near ? ', ' + near : '')}>
+        <View
+          pointerEvents="none"
+          style={[s.arcBox, top ? s.arcUnder : null]}
+          accessible
+          accessibilityLabel={'Hard hours, ' + r.win.label + (near ? ', ' + near : '')}>
           <Arc start={r.win.start} now={now} w={244} />
           <View style={s.arcIn}>
             <Text style={[s.small, { color: N.lav }]}>{'Hard hours' + (near ? ' · ' + near : '')}</Text>
@@ -130,7 +166,11 @@ export function TonightCard({
           </View>
         </View>
       ) : (
-        <View style={s.arcBox} accessible accessibilityLabel="Hard hours, not known yet. They show here once the log has a few urges.">
+        <View
+          pointerEvents="none"
+          style={[s.arcBox, top ? s.arcUnder : null]}
+          accessible
+          accessibilityLabel="Hard hours, not known yet. They show here once the log has a few urges.">
           <Arc start={null} now={now} w={244} />
           <View style={s.arcIn}>
             <Text style={[s.small, { color: N.lav }]}>Hard hours</Text>
@@ -193,8 +233,10 @@ export function TonightCard({
 
 const s = StyleSheet.create({
   wrap: { borderRadius: 24, overflow: 'hidden' },
-  arcBox: { alignItems: 'center', height: 160 },
-  arcIn: { position: 'absolute', top: 88, alignItems: 'center' },
+  arcBox: { alignItems: 'center', height: 188 },
+  /* under what tonight is for: the arc's glow room overlaps the words' bottom edge, so the two read as one sky */
+  arcUnder: { marginTop: -28 },
+  arcIn: { position: 'absolute', top: 116, alignItems: 'center' },
   small: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
   big: { fontFamily: font.display, fontSize: 28, lineHeight: 34 },
   bigLong: { fontSize: 22, lineHeight: 28, marginTop: 3, marginBottom: 3 },

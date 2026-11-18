@@ -1,28 +1,24 @@
 /* The one next step on Today (core pickMoment, moment.ts), under the flame in the same card (hero.tsx): whatever the
    moment is, it is the only thing asking for a tap. Most moments are the same big bright card as the next stop on the line
    (your-day.tsx NextCard: the first week, a first pattern, days away, a part unlocked), the whole card one
-   button (Your day, below, names the rest of the day). The day of a slip keeps its full card, with its words of care; the moments with their own choices (a talk-through, a counting note,
+   button (Your day, below, names the rest of the day). The day of a slip has no card (core moment.ts); the moments with their own choices (a talk-through, a counting note,
    a word about reminders, Day 1) keep their cards. Under it, one quiet line names the next moment when
    two overlap. */
 import { type Moment, type UnlockId, type MomentPick, type Snapshot, type StopTile } from '@daybook/core';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { NudgeCard } from '@/components/nudge-card';
 import { TalkCard } from '@/components/talk-card';
 import { TellStartCard } from '@/components/tell-start';
-import { Text } from '@/components/text';
 import { CountNotes } from '@/components/today';
-import { PauseBanner, useLogActions } from '@/components/today-log';
-import { Card, Icon, T } from '@/components/ui';
-import { lookOf, NextCard, openStop } from '@/components/your-day';
+import { PauseBanner } from '@/components/today-log';
+import { T } from '@/components/ui';
+import { NextCard, openStop } from '@/components/your-day';
 import { buzz } from '@/lib/feel';
-import { openCare } from '@/lib/nav';
-import { useSos } from '@/lib/sos';
 import { useUnlockMark } from '@/lib/unlock';
-import { font, nightInk, skies, useTheme } from '@/lib/theme';
+import { font } from '@/lib/theme';
 
 export function MomentCard({ pick, snap, tk, now }: { pick: MomentPick; snap: Snapshot; tk: string; now: number }) {
   return (
@@ -38,7 +34,6 @@ export function MomentCard({ pick, snap, tk, now }: { pick: MomentPick; snap: Sn
 }
 
 function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; now: number }) {
-  const { didSmall } = useLogActions();
   switch (m.k) {
     case 'pause':
       return <PauseBanner />;
@@ -51,18 +46,6 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
       return <CountNotes snap={snap} tk={tk} />;
     case 'nudge':
       return <NudgeCard snap={snap} tk={tk} />;
-    case 'slip-day':
-      return (
-        <Tile
-          m={m}
-          sky="sun"
-          onPress={() => {
-            didSmall(tk, true);
-            if (m.door) openCare(m.door);
-          }}
-          onAlt={() => didSmall(tk)}
-        />
-      );
     case 'calm':
       return <Band m={m} onPress={() => openStop(m.go as StopTile['go'], m.v)} />;
     case 'first-week':
@@ -104,109 +87,7 @@ function Band({ m, onPress }: { m: Moment; onPress: () => void }) {
   );
 }
 
-/* the day of a slip: its full card, with its words of care and its one button */
-function Tile({ m, sky, onPress, onAlt }: { m: Moment; sky: StopTile['sky']; onPress: () => void; onAlt?: () => void }) {
-  const c = useTheme();
-  const L = lookOf(sky, c);
-  const deep = c.scheme === 'dark' || sky === 'night';
-  const ink = deep ? nightInk.ink : c.ink;
-  const soft = deep ? '#E6DEFF' : c.muted;
-  const eb = sky === 'night' ? '#FFE27A' : L.ink;
-  const [a, b] = skies[c.scheme][sky];
-  const btn = { bg: L.btn, ink: L.onBtn };
-  return (
-    <View style={s.tile} accessibilityRole="summary">
-      <LinearGradient colors={[a, b]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      <Deco sky={sky} />
-      <Text style={[s.eb, { color: eb }, (sky === 'sun' || sky === 'night') && s.ebRoom]}>{m.eb}</Text>
-      <Text style={[s.head, { color: ink }, s.headRoom]} accessibilityRole="header">
-        {m.h}
-      </Text>
-      {m.p ? <Text style={[s.body, { color: soft }]}>{m.p}</Text> : null}
-      {m.btn ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={m.btn + ': ' + m.h}
-          onPress={() => {
-            buzz('tap');
-            onPress();
-          }}
-          style={({ pressed }) => [
-            s.btn,
-            {
-              backgroundColor: btn.bg,
-              shadowColor: 'rgba(0,0,0,0.28)',
-              transform: [{ translateY: pressed ? 3 : 0 }],
-              shadowOffset: { width: 0, height: pressed ? 1 : 4 },
-            },
-          ]}>
-          <Text style={[s.btnT, { color: btn.ink }]}>{m.btn}</Text>
-        </Pressable>
-      ) : null}
-      {m.alt && onAlt ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            buzz('tap');
-            onAlt();
-          }}
-          hitSlop={8}
-          style={s.alt}>
-          <Text style={[s.altT, { color: soft }]}>{m.alt}</Text>
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
-
-/* a little of each moment's sky in the corner: the sun coming up, a moon and stars, or a soft glow */
-function Deco({ sky }: { sky: StopTile['sky'] }) {
-  const c = useTheme();
-  if (sky === 'sun')
-    return (
-      <View style={s.deco} pointerEvents="none">
-        <View style={[s.glow, { backgroundColor: 'rgba(255,200,50,0.28)' }]} />
-        <View style={[s.ball, { backgroundColor: c.sun }]} />
-      </View>
-    );
-  if (sky === 'night')
-    return (
-      <View style={s.deco} pointerEvents="none">
-        {[
-          [18, 26, 3],
-          [64, 12, 2],
-          [40, 58, 2],
-          [84, 50, 3],
-        ].map(([x, y, r], i) => (
-          <View key={i} style={{ position: 'absolute', left: x, top: y, width: r, height: r, borderRadius: r, backgroundColor: '#FFF6D8', opacity: 0.85 }} />
-        ))}
-        <View style={{ position: 'absolute', right: 22, top: 18 }}>
-          <Icon name="moon" size={34} color="#FFE27A" />
-        </View>
-      </View>
-    );
-  return (
-    <View style={s.deco} pointerEvents="none">
-      <View style={[s.glow, { backgroundColor: 'rgba(255,255,255,0.12)' }]} />
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
-  tile: { borderRadius: 20, padding: 16, gap: 8, overflow: 'hidden' },
-  deco: { position: 'absolute', right: 0, top: 0, width: 130, height: 110 },
-  glow: { position: 'absolute', right: -34, top: -38, width: 132, height: 132, borderRadius: 66 },
-  ball: { position: 'absolute', right: -6, top: -10, width: 72, height: 72, borderRadius: 36 },
-  eb: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18 },
-  /* room for the sun or the moon in the corner */
-  ebRoom: { paddingRight: 70 },
-  head: { fontFamily: font.display, fontSize: 28, lineHeight: 31 },
-  headRoom: { paddingRight: 56 },
-  body: { fontFamily: font.bodyMedium, fontSize: 15, lineHeight: 21 },
-  btn: { minHeight: 54, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginTop: 4, shadowOpacity: 1, shadowRadius: 0, elevation: 2 },
-  btnT: { fontFamily: font.bodyBold, fontSize: 17 },
-  alt: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
-  altT: { fontFamily: font.bodySemi, fontSize: 15, textDecorationLine: 'underline' },
   more: { paddingHorizontal: 16 },
   band: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 84, paddingVertical: 12, paddingLeft: 16, paddingRight: 14, borderRadius: 20 },
   bandT: { fontFamily: font.display, fontSize: 20, lineHeight: 25 },

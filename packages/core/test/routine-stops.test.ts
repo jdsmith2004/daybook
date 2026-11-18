@@ -35,11 +35,11 @@ describe('the any-time stops', () => {
     expect(stopTiles({}, on, tk, at(12), jn).tiles.find((x) => x.k === 'journal')).toMatchObject({ done: true, line: 'Written today' });
     expect(keys({}, st, 12, jn)).toContain('journal');
   });
-  it('the night of a slip leaves only what was done, with the wind-down', () => {
+  it('the night of a slip keeps every stop, the journal too (the owner, November 18, 2026)', () => {
     const on = { ...st, routine: { ...st.routine, journal: true } };
     const d = addEvent({}, tk, 'slipped', '20:00', {}, 1).days;
-    expect(keys(d, on, 22)).toEqual(['night']);
-    expect(keys(d, on, 15)).toContain('journal');
+    expect(keys(d, on, 22)).toEqual(keys({}, on, 22));
+    expect(keys(d, on, 22)).toContain('journal');
   });
   it('the big card is never an any-time stop', () => {
     const on = { ...st, routine: { ...st.routine, journal: true, reach: true } };

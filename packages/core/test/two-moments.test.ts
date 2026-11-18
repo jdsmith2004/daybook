@@ -93,9 +93,9 @@ describe('the morning on the line', () => {
   it('has no morning before the first day after setup', () => {
     expect(stopTiles({}, st, '2026-10-01', at(8, 0, '2026-10-01')).tiles.map((t) => t.k)).not.toContain('morning');
   });
-  it('the night of a slip drops a morning not done, as it drops the rest', () => {
+  it('the night of a slip keeps the morning on the line, as every other stop (the owner, November 18, 2026)', () => {
     const d = addEvent({}, tk, 'slipped', '20:00', {}, 1).days;
-    expect(keys(d, 22)).not.toContain('morning');
+    expect(keys(d, 22)).toEqual(keys({}, 22));
   });
   it('the last stop is Good night', () => {
     const t = stopTiles({}, st, tk, at(12)).tiles.find((x) => x.k === 'night')!;

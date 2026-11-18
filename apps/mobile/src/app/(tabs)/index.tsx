@@ -16,7 +16,7 @@ import {
   lastsShown,
   accountNudge,
   litToday,
-  awayDue,
+  awayBack,
   awayStart,
   dayFeelDue,
   dayFeelQuiet,
@@ -152,10 +152,11 @@ export default function Today() {
     if (back) update((s0) => ({ ...s0, days: srDone(s0.days, back.k, back.ev.id, tk) }));
   }, [ready, st, snap.days, tk, apply, update, syncing, synced]);
 
-  /* back after days away (core awayDue): Welcome back opens once, and once more the next day if it was closed unanswered;
-     after that the gap waits as a quiet row (BackRow). Kept in this device's memory, never synced. */
+  /* back after days away (core awayBack: real days with the app unopened, never nights not told by someone here every day): Welcome
+     back opens once, and once more the next day if it was closed unanswered; after that the gap waits as the days-away card. Kept in
+     this device's memory, never synced. */
   const sos = useSos();
-  const due = st && !syncing ? awayDue(snap.days, st, tk) : null;
+  const due = st && !syncing ? awayBack(snap.days, st, tk) : null;
   const asked = (sos.mem.backAsk && typeof sos.mem.backAsk === 'object' ? sos.mem.backAsk : null) as { from: string; n: number; d: string } | null;
   const askAgain = !!due && (!asked || asked.from !== due.from || (asked.n < 2 && asked.d !== tk));
   /* the Mithras import (lib/mithras.ts) comes first: Welcome back waits until it is done and its moment has closed */
@@ -526,16 +527,15 @@ export default function Today() {
         {night ? (
           /* after the night hour, under the care row, Phone to bed leads (WP5, mockup m3), and the rest of Today stays under it: the person's own words, tonight's
              reason, the hard hours and the plan (the owner, November 13, 2026: "I don't like the main screen just being empty like that").
-             What waits for the day (the line of stops, its lesson, the asks) is left for the morning. On the night of a slip, its own card
-             leads instead (its Go to bed is the same act): bringing the person back is the job then. */
+             What waits for the day (the line of stops, its lesson, the asks) is left for the morning. The night of a slip is the same night
+             (the owner, November 18, 2026: no card of its own, nothing reordered). */
           <>
             {/* the care row always sits at the top, right under the flame, as on the day page (the owner, November 13, 2026: "already
                 hapened and walk it through are always on the top") */}
             <WaitingPlan snap={snap} tk={tk} now={now} />
             <LogLink walk={!walkWaits} />
-            {pick.card.k === 'slip-day' ? (
-              <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />
-            ) : nightTile ? (
+            {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
+            {nightTile ? (
               <StopCard
                 m={
                   bedAt

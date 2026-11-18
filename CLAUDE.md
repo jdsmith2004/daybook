@@ -42,6 +42,15 @@ need, without letting the screen turn into a list of features.
   says so. Nothing asks about the count after a slip and nothing rescues it (core `hero.ts`, `runLedger`).
   New people start on gentle (or step down when it happens daily), and coming back from step down never lands on strict by
   itself, so strict is only ever a person's own choice (the owner, October 30, 2026; core `obMode`, `countBack`).
+- **Today does not get pop-ups (the owner, November 18, 2026: "There are so many pop-ups, and they all are visually terrible and
+  don't really add to the app ... I'm just getting really, really annoyed with these pop-ups because they don't add value and you keep
+  adding them", and "I do not like it switching up the order at all").** Only three kinds of thing may interrupt Today, as a card or a
+  page that opens by itself: something the person started (a pause, a talk-through they chose to wait on), a real earned celebration
+  (a new flame form or level), and the required asks (the rating ask, the tip ask, the account ask). Everything else is a line on the
+  day's spine or nothing. The spine (Morning, Lesson, Check-in, Good night) and its order are the same every day, slip or not: no card
+  replaces a stop after a slip, and nothing drops off the line on the night of one. Welcome back opens only after real days with the
+  app unopened (core `awayBack`), never for someone who opens it every day and slips. A new `MomentKind` (core `moment.ts`) needs the
+  owner's yes, and `packages/core/test/no-popups.test.ts` fails until it is listed there.
 - **Earned things stay earned.** Points, levels, badges and awards are never taken away, including when rules or lessons
   change. Graduation (planned, see docs/plan.md) is a permanent award and a celebration; it does not change Today.
 - **Never lock care.** SOS and its tools, Already happened, Planning a slip?, logging, Rekindle, the plan and Today work

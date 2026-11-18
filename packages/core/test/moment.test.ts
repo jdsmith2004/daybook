@@ -68,20 +68,13 @@ describe('a slip, and the day after', () => {
   const d = slip({}, '2026-10-21');
   /* Day 1 October 18: the slip ends a 3-day run, so there is no run question */
   const short = normSettings({ ...st, day1: '2026-10-18' });
-  it('the night of it: one small thing, and the card goes once it is done', () => {
-    const card = pickMoment(d, st, {}, '2026-10-21', at(21, 23, 30)).card;
-    expect(card).toMatchObject({ k: 'slip-day', h: 'Logged. That took honesty.', go: 'small', alt: 'I did something else' });
-    /* one of Daybook's own doors, and nothing from outside it */
-    expect(card.door).toMatchObject({ go: 'tool', id: 'bed' });
-    expect(card.btn).toBe(card.door!.label);
-    expect(card.p).not.toMatch(/water|step outside|text/i);
-    expect(pickMoment(d, st, {}, '2026-10-21', at(21, 14)).card.door).toMatchObject({ go: 'journal' });
-    const done = withDay(
-      d,
-      '2026-10-21',
-      changeDay(d['2026-10-21'], '2026-10-21', (x) => x.events.forEach((e) => (e.recovered = true)), 2),
-    );
-    expect(kinds(done, '2026-10-21', at(21, 23, 40))).not.toContain('slip-day');
+  it("the day of a slip has no card of its own: the card is the day's next stop, as on any day (the owner, November 18, 2026)", () => {
+    for (const h of [9, 14, 20, 23]) {
+      const tk = '2026-10-21';
+      const slipped = moments(d, st, {}, tk, at(21, h, 30)).map((m) => m.k);
+      const calm = moments({}, st, {}, tk, at(21, h, 30)).map((m) => m.k);
+      expect(slipped).toEqual(calm);
+    }
   });
   it('no "morning after" card: the day after opens on its next stop, morning or evening', () => {
     for (const h of [8, 17]) {
@@ -119,7 +112,7 @@ describe('"and one more" clears once the sunrise check is done that day (bug, Oc
     const again = slip(d, '2026-10-23', '12:00');
     expect(sunriseDue(again, s0, '2026-10-23')).toBeNull();
     const all = moments(again, s0, {}, '2026-10-23', at(23, 13));
-    expect(all.map((m) => m.k)).toEqual(['slip-day', 'calm']);
+    expect(all.map((m) => m.k)).toEqual(['calm']);
     expect(all.map((m) => m.one).join(' ')).not.toMatch(/sunrise/);
   });
   it('while a run the old rule covers waits, coming back marks the check, and no card is named', () => {

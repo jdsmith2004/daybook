@@ -268,7 +268,7 @@ describe('the tracking week counts in the record (D14)', () => {
     const d = core.addEvent({}, day(13), 'slipped', '23:00', {}, at(13, 23)).days;
     expect(core.computeMetrics(d, dan, day(14)).longest).toBe(12);
     expect(core.noSlipDays(d, dan, day(14))).toBe(12);
-    expect(core.heroSlipLine(d, dan, day(13), at(13, 23, 30))).toBe('Tonight is logged. Your 12 days are on your record.');
+    expect(core.heroSlipLine(d, dan, day(13), at(13, 23, 30))).toBe('Tonight is logged. That took honesty. Your 12 days are on your record.');
     /* a log this version never opened counts from Day 1, as it did (the frozen fixtures) */
     const before = core.normSettings({ start: day(1), day1: day(8), countFrom: day(8), cleanMode: 'strict' });
     expect(core.computeMetrics(d, before, day(14)).longest).toBe(5);

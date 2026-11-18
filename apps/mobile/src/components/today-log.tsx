@@ -1,6 +1,6 @@
 /* Today, after logging: SOS with Already happened and Walk it through (LogLink), the plan talked through that waits under them
    (WaitingPlan), the pause banner, and the actions a card can ask for. Words from @daybook/core. */
-import { changeDay, clockOf, fmtClock, talkPlanNow, withDay, type Snapshot } from '@daybook/core';
+import { clockOf, fmtClock, talkPlanNow, type Snapshot } from '@daybook/core';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, useWindowDimensions, View, type ViewInstance } from 'react-native';
 import { Text } from '@/components/text';
@@ -10,27 +10,8 @@ import { buzz } from '@/lib/feel';
 import { openCare } from '@/lib/nav';
 import { useNow } from '@/lib/now';
 import { useSos } from '@/lib/sos';
-import { count } from '@/lib/pulse';
-import { track } from '@/lib/events';
-import { useStore } from '@/lib/store';
 import { font, useTheme } from '@/lib/theme';
 import { useSpot } from '@/lib/tour';
-
-/* the one small thing after a slip (the slip-day card on Today): it marks the day's slips as recovered */
-export function useLogActions() {
-  const { update, say } = useStore();
-  const didSmall = (k: string, quiet = false) => {
-    update((s) => {
-      const day = changeDay(s.days[k], k, (d) => d.events.forEach((x) => x.outcome === 'slipped' && (x.recovered = true)));
-      return { ...s, days: withDay(s.days, k, day) };
-    });
-    buzz('save');
-    count('rk_small');
-    track('rekindle', { step: 'small' });
-    if (!quiet) say('Good. That is the move.');
-  };
-  return { didSmall };
-}
 
 /* the two quiet buttons under the next step: it already happened (log it, with no shame), or it keeps coming back or is being
    planned (Walk it through, on the trail: it took the place of Planning a slip, the owner, November 4, 2026). Each says in a second

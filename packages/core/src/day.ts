@@ -229,9 +229,9 @@ export function setupNight(days: Days, st: Settings, tk: DayKey): boolean {
 /* ---------- lessons first ---------- */
 /** the day's stops (legacy rhythm), with today's lesson the open one until it is done (docs/plan.md, "Lessons first", C1), or
     until the night opens: from then the wind-down is the open one, and an unread lesson steps aside and says "Still open" (the
-    owner, October 31, 2026). A check-in or wind-down that has started meanwhile still says "Open now". On the night of a slip, what is
-    not done of the lesson and the check-in is gone until tomorrow, and only the wind-down is left; what was done stays on the line.
-    The legacy rhythm itself stays as it was (the golden tests read it). */
+    owner, October 31, 2026). A check-in or wind-down that has started meanwhile still says "Open now". The night of a slip is the same
+    as any night: nothing leaves the line and nothing moves (the owner, November 18, 2026: "I do not like it switching up the order at
+    all"). The legacy rhythm itself stays as it was (the golden tests read it). */
 /** the longest a night can run from the time it opens, however far off the new day is */
 const NIGHT_LONGEST_MIN = 9 * 60;
 export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): ReturnType<typeof rhythm> {
@@ -242,7 +242,6 @@ export function dayRhythm(days: Days, st: Settings, tk: DayKey, nowMs: number): 
   const nowLocal = new Date(nowMs);
   const nowRel = (((nowLocal.getHours() * 60 + nowLocal.getMinutes() - rollMin) % 1440) + 1440) % 1440;
   if (night && night.started && nowRel - night.startRel < NIGHT_LONGEST_MIN) {
-    if (sumDay(days[tk]).slipped) return { ...r, stops: r.stops.filter((x) => x.done || x.k === 'night'), cur: night.done ? null : 'night' };
     if (!night.done && !setupNight(days, st, tk)) return r;
   }
   const ls = r.stops.find((x) => x.k === 'lesson');
@@ -295,7 +294,7 @@ const low = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
    the big card, so the next step is still the lesson, the check-in or the wind-down. Done when the day holds one, and a done one
    stays on the line even when switched off, the way a done lesson does. */
 const ANY_TIME = ['reach', 'journal'] as const;
-function anyTimeTiles(days: Days, st: Settings, tk: DayKey, journal: Journal | undefined, slipNight: boolean): StopTile[] {
+function anyTimeTiles(days: Days, st: Settings, tk: DayKey, journal: Journal | undefined): StopTile[] {
   const d = days[tk];
   const p = d?.p;
   const w = winsOf(days, tk, st);
@@ -305,8 +304,7 @@ function anyTimeTiles(days: Days, st: Settings, tk: DayKey, journal: Journal | u
     reach: { ic: 'chat', title: 'Reached out', open: 'Text, call, or talk to a person', did: 'Reached someone today', btn: 'I reached out' },
     journal: { ic: 'heart', title: 'Journal', open: 'A few words about the day', did: 'Written today', btn: 'Write' },
   };
-  /* the night of a slip leaves only the wind-down open (dayRhythm); what was done stays */
-  return ANY_TIME.filter((k) => done[k] || (!slipNight && routineOn(st, p, k))).map((k) => ({
+  return ANY_TIME.filter((k) => done[k] || routineOn(st, p, k)).map((k) => ({
     k,
     state: done[k] ? ('done' as const) : ('later' as const),
     done: done[k],
@@ -460,11 +458,8 @@ export function stopTiles(
   const all = [...tiles];
   /* the day's first moment: the morning (morning-set.ts), first on the line */
   const mt = morningTile(days, st, tk, nowMs);
-  const night = r.stops.find((x) => x.k === 'night');
-  const slipNight = !!night && !!night.started && sumDay(days[tk]).slipped > 0;
-  all.splice(at < 0 ? all.length : at, 0, ...anyTimeTiles(days, st, tk, journal, slipNight));
-  /* the night of a slip leaves only what was done, the morning too */
-  if (mt && (mt.done || !slipNight)) all.unshift(mt);
+  all.splice(at < 0 ? all.length : at, 0, ...anyTimeTiles(days, st, tk, journal));
+  if (mt) all.unshift(mt);
   /* while the fire burns low, the step that is open now says what it does (flame-low.ts) */
   if (fireLow(days, st, tk, nowMs).step) for (const t of all) if (t.k === r.cur && !t.done && (t.state === 'now' || t.state === 'due')) t.eyebrow = LOW_LEAD;
   return { tiles: all, cur: r.cur, done: all.filter((t) => t.done).length };

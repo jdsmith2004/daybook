@@ -44,7 +44,7 @@ describe('strict: the days in a row', () => {
   it('a slip at day 40 puts it to 0 too, and the 39 days stay on the record', () => {
     const d = slip({}, 40);
     expect(hero(d, strict, 40, 23).n).toBe('0');
-    expect(core.heroSlipLine(d, strict, day(40), ms(40, 23))).toBe('Tonight is logged. Your 39 days are on your record.');
+    expect(core.heroSlipLine(d, strict, day(40), ms(40, 23))).toBe('Tonight is logged. That took honesty. Your 39 days are on your record.');
     const m = core.computeMetrics(d, strict, day(41));
     expect(m.longest).toBe(39);
     expect(core.myNumbers(d, strict, day(41), ms(41, 9))[2]).toMatchObject({ l: 'Longest run', b: '39' });
@@ -52,15 +52,15 @@ describe('strict: the days in a row', () => {
   });
   it('the line on the day of a slip, in one day and in the morning', () => {
     const d = slip({}, 2, '09:00');
-    expect(core.heroSlipLine(d, strict, day(2), ms(2, 9, 30))).toBe('This morning is logged. Your 1 day is on your record.');
-    expect(core.heroSlipLine(slip({}, 1), strict, day(1), ms(1, 23))).toBeNull();
+    expect(core.heroSlipLine(d, strict, day(2), ms(2, 9, 30))).toBe('This morning is logged. That took honesty. Your 1 day is on your record.');
+    expect(core.heroSlipLine(slip({}, 1), strict, day(1), ms(1, 23))).toBe('Tonight is logged. That took honesty.');
     expect(core.heroSlipLine({}, strict, day(5), ms(5, 9))).toBeNull();
   });
   it('the second slip in a week puts it to 0 again, and asks nothing', () => {
     let d = slip({}, 20);
     d = slip(d, 23);
     expect(hero(d, strict, 23, 23).n).toBe('0');
-    expect(core.heroSlipLine(d, strict, day(23), ms(23, 23))).toBe('Tonight is logged. Your 2 days are on your record.');
+    expect(core.heroSlipLine(d, strict, day(23), ms(23, 23))).toBe('Tonight is logged. That took honesty. Your 2 days are on your record.');
     expect(hero(d, strict, 24).n).toBe('1');
     expect(core.computeMetrics(d, strict, day(24)).longest).toBe(19);
   });
@@ -98,7 +98,7 @@ describe('gentle: the days that hold', () => {
   it('at day 40: the count toward graduation loses one, and the line says the days stay', () => {
     const d = slip({}, 40);
     expect(hero(d, gentle, 40, 23)).toMatchObject({ eb: 'Toward graduation', n: '39', unit: 'of 90' });
-    expect(core.heroSlipLine(d, gentle, day(40), ms(40, 23))).toBe('Tonight is logged. Your 39 days stay yours.');
+    expect(core.heroSlipLine(d, gentle, day(40), ms(40, 23))).toBe('Tonight is logged. That took honesty. Your 39 days stay yours.');
     expect(hero(d, gentle, 41).n).toBe('39');
     expect(hero(d, gentle, 42).n).toBe('40');
   });
@@ -113,12 +113,12 @@ describe('gentle: the days that hold', () => {
 });
 
 describe('step down: hours since the slip and the best stretch', () => {
-  it('is unchanged, and the slip gets no line', () => {
+  it('is unchanged, and the slip gets the honesty alone', () => {
     const d = slip(slip({}, 3), 10);
     const h = hero(d, step, 11, 9);
     expect([h.eb, h.n, h.unit]).toEqual(['This stretch', '11', 'hours']);
     expect(h.chip).toMatch(/^best 7 d$/);
-    expect(core.heroSlipLine(d, step, day(10), ms(10, 23))).toBeNull();
+    expect(core.heroSlipLine(d, step, day(10), ms(10, 23))).toBe('Tonight is logged. That took honesty.');
   });
 });
 

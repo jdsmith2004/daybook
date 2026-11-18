@@ -70,9 +70,13 @@ describe('one next step', () => {
     expect(mon?.intro).toBeUndefined();
     expect(one(told('2026-10-20'), '2026-10-20', at(20, 10)).tiles.some((t) => t.k === 'sunday')).toBe(false);
   });
-  it('a slip day: its own card leads Today and the line has no big card under it', () => {
+  it("a slip day: the card is the day's next stop, as on any day (the owner, November 18, 2026)", () => {
     const d = addEvent(told('2026-10-20'), '2026-10-20', 'slipped', '09:00', {}, 1).days;
-    expect(pickMoment(d, st, {}, '2026-10-20', at(20, 11)).card.k).toBe('slip-day');
+    const pick = (x: typeof d) => {
+      const c = pickMoment(x, st, {}, '2026-10-20', at(20, 11)).card;
+      return [c.k, c.h, c.go, c.v, c.btn];
+    };
+    expect(pick(d)).toEqual(pick(told('2026-10-20')));
   });
   it('the night page: after the night hour, Good night is the one step', () => {
     const d = day('2026-10-20', { ms: { at: at(1, 6), set: at(1, 6) }, ls: [LESSONS[0].id] });

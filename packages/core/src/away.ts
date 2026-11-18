@@ -255,6 +255,24 @@ export function awayDue(days: Days, st: Settings, tk: DayKey): { from: DayKey; t
   return { from, to: g.to, n, max: Math.min(n, AWAY_MAX), ...(g.away === false ? { away: false as const } : {}) };
 }
 
+/** Welcome back, opened by itself: only after real days with the app unopened (a gap with nothing in its days, not even an open).
+    Nights not told by someone who opened Daybook every day (truth.ts) are never "coming back": they stay hollow on the calendar,
+    where Fill in asks about them, and the morning asks about last night (the owner, November 18, 2026: "if I use the app every single
+    day and I just slip a lot and it's like, hey, welcome back. You came back. It just gets freaking annoying because I always come
+    back"). null when there is nothing to open. */
+export function awayBack(days: Days, st: Settings, tk: DayKey): ReturnType<typeof awayDue> {
+  const due = awayDue(days, st, tk);
+  if (!due) return null;
+  /* more than QUIET_GRACE days in a row with nothing in them, not even an open: the night before leaving is usually not told, so
+     a day the app was opened can begin the gap and it is still time away */
+  let run = 0;
+  for (let k = due.from; k <= due.to; k = addDays(k, 1)) {
+    run = presentDay(days[k]) ? 0 : run + 1;
+    if (run > QUIET_GRACE) return due;
+  }
+  return null;
+}
+
 /** the answers with this one added (the caller saves it with changeSettings): n slips while away, from 0 */
 export function withAway(st: Settings, gap: { from: DayKey; to: DayKey }, n: number, on?: DayKey): AwayEntry[] {
   const rest = awayOf(st).filter((x) => x.to < gap.from || x.from > gap.to);

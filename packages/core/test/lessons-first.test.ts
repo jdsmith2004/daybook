@@ -67,40 +67,23 @@ describe('today’s lesson is Next up until it is done or the night opens', () =
     expect(core.stopTiles(off, st, tk, at(tk + 'T23:00')).cur).toBe('lesson');
   });
 
-  describe('the night of a slip', () => {
+  describe('the night of a slip is the same as any night (the owner, November 18, 2026: "I do not like it switching up the order at all")', () => {
     const slipped = (d: Days): Days => core.withDay(d, tk, { ...d[tk], status: 'clean', events: [{ id: 's', t: '20:00', outcome: 'slipped' }] } as never);
+    const line = (d: Days, t: string) => core.stopTiles(d, st, tk, at(tk + t));
+    const keys = (d: Days, t: string) => line(d, t).tiles.map((x) => [x.k, x.done, x.cur]);
 
-    it('leaves only the wind-down', () => {
-      const d = core.stopTiles(slipped({}), st, tk, at(tk + 'T22:30'));
-      expect(d.tiles.filter(timed).map((x) => x.k)).toEqual(['night']);
-      expect(d.cur).toBe('night');
-    });
-
-    it('leaves the whole day open before the night', () => {
-      expect(
-        core
-          .stopTiles(slipped({}), st, tk, at(tk + 'T21:00'))
-          .tiles.filter(timed)
-          .map((x) => x.k),
-      ).toEqual(['lesson', 'evening', 'night']);
+    it('keeps every stop on the line, in the same order, at every hour', () => {
+      for (const t of ['T09:00', 'T15:00', 'T21:00', 'T22:30', 'T23:30']) {
+        expect(keys(slipped({}), t)).toEqual(keys({}, t));
+        expect(line(slipped({}), t).cur).toBe(line({}, t).cur);
+      }
     });
 
     it('keeps what was done on the line and takes nothing earned', () => {
       const read = finish({}, tk, tk + 'T12:00');
       const before = core.gameCompute(slipped(read), st, {}, tk).pts;
-      const d = core.stopTiles(slipped(read), st, tk, at(tk + 'T22:30'));
-      expect(d.tiles.filter(timed).map((x) => [x.k, x.done])).toEqual([
-        ['lesson', true],
-        ['night', false],
-      ]);
+      expect(keys(slipped(read), 'T22:30')).toEqual(keys(read, 'T22:30'));
       expect(core.gameCompute(slipped(read), st, {}, tk).pts).toBe(before);
-    });
-
-    it('after Goodnight, it says rest and does not say everything is done', () => {
-      const down = core.phoneAway(slipped({}), tk, '22:30', at(tk + 'T22:30'), st);
-      expect(core.stopTiles(down, st, tk, at(tk + 'T22:40')).cur).toBe(null);
-      const last = core.moments(down, st, {}, tk, at(tk + 'T22:40')).at(-1)!;
-      expect([last.k, last.h]).toEqual(['done', 'Rest well.']);
     });
   });
 

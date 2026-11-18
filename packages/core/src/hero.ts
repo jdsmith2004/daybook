@@ -152,15 +152,22 @@ export function heroNumber(days: Days, st: Settings, tk: DayKey, nowMs: number):
   return out(week ? 'Tracking week' : st.day1 ? 'Tracking, before your count' : 'Just tracking', 'Day ' + p.n, week ? 'of 7' : '', d1);
 }
 
-/** the day of a slip: one quiet line under the number, so the slip is never read as missed, and what stays is said.
-    Strict: the days before it are on the record. Gentle: the days that hold stay. Null otherwise. */
+/** the day of a slip: one quiet line under the care row, so the slip is never read as missed, that logging it took honesty, and
+    what stays. Strict: the days before it are on the record. Gentle: the days that hold stay. Step down, or no days yet: the
+    honesty alone. Null on a day with no slip. */
 export function heroSlipLine(days: Days, st: Settings, tk: DayKey, nowMs: number): string | null {
-  if (st.cleanMode === 'step' || !st.day1 || tk < st.day1) return null;
+  if (!st.day1 || tk < st.day1) return null;
   const slips = (days[tk]?.events || []).filter((e) => e.outcome === 'slipped');
   if (!slips.length) return null;
   const strict = st.cleanMode !== 'gentle';
-  const n = strict ? (tk > (recordFrom(st) || st.day1) ? runLedger(days, st, addDays(tk, -1)).cur : 0) : Number(heroNumber(days, st, tk, nowMs)?.n);
-  if (!(n > 0)) return null;
+  const n =
+    st.cleanMode === 'step'
+      ? 0
+      : strict
+        ? tk > (recordFrom(st) || st.day1)
+          ? runLedger(days, st, addDays(tk, -1)).cur
+          : 0
+        : Number(heroNumber(days, st, tk, nowMs)?.n);
   /* the latest slip's hour, in the log day's order (an hour after midnight comes after the evening) */
   const hours = slips
     .map((e) => e.time)
@@ -169,6 +176,9 @@ export function heroSlipLine(days: Days, st: Settings, tk: DayKey, nowMs: number
   const rolled = (x: number) => (x < st.rollover ? x + 24 : x);
   const hour = hours.length ? hours.sort((a, b) => rolled(a) - rolled(b)).slice(-1)[0] : new Date(nowMs).getHours();
   const when = hour < st.rollover || hour >= 17 ? 'Tonight' : hour < 12 ? 'This morning' : 'Today';
-  if (strict) return when + ' is logged. Your ' + n + (n === 1 ? ' day is' : ' days are') + ' on your record.';
-  return when + ' is logged. Your ' + n + (n === 1 ? ' day stays' : ' days stay') + ' yours.';
+  /* the slip-day card said this until November 18, 2026; the owner: "we already told them, like, logged that took honesty" */
+  const head = when + ' is logged. That took honesty.';
+  if (!(n > 0)) return head;
+  if (strict) return head + ' Your ' + n + (n === 1 ? ' day is' : ' days are') + ' on your record.';
+  return head + ' Your ' + n + (n === 1 ? ' day stays' : ' days stay') + ' yours.';
 }

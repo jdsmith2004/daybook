@@ -6,12 +6,12 @@
        says the hours in the Tonight card under Your day (tonight-card.tsx)
     3. there is no "morning after" card (the owner, October 24, 2026): coming back is the sunrise check, and Today marks it
        by itself (sunriseDue, srDone). The count asks nothing after a slip (the owner, October 30, 2026).
-    4. the day of a slip, after it: one small thing
+    4. the day of a slip: no card (the owner, November 18, 2026). The spine stays as it is every day.
     5. a talk-through due: decide now, it passed, look back
     7. days away not known: fill them in
     8. the Sunday review, Sunday and Monday, is a step on the line (next-step.ts), so it is the calm day's card
     9. one-time moments: first week done, Day 1 tell the safe person, a counting note, a paused reminder, the first pattern
-   10. a calm day: the day's next stop; everything done: "All done. Rest well." ("Rest well." alone on the night of a slip)
+   10. a calm day: the day's next stop; everything done: "All done. Rest well."
    11. the five questions again, every 30 days (recheck.ts), with the north star after them (north.ts; alone, as "One question", when
        the five are not due or not for this habit): low on purpose, so they wait behind the day's next stop as "and one
        more", and are the card once the day's stops are done. They never push the lesson off the flame.
@@ -20,7 +20,7 @@
    When two moments overlap, the second waits as a one-line "and one more" under the card, and becomes the card as soon as
    the first is done. The asks (account, tip, counts) are never the card. What lives only on this device (a pause, the
    days-away row, the reminders) comes in as `dev`. Checked by test/moment.test.ts. */
-import { diffDays, runLedger, sumDay } from './legacy/core.js';
+import { diffDays, runLedger } from './legacy/core.js';
 import { GRAD_DAYS, GRAD_WINDOW, todayMeasure } from './graduate';
 import { fireLow, LOW_LEAD } from './flame-low';
 import { heroNumber } from './hero';
@@ -29,10 +29,7 @@ import { type StopGo } from './day';
 import { todayLine } from './next-step';
 import { safeName, tellStartDue } from './rekindle';
 import { firstPattern } from './risk';
-import { slipNext } from './slip';
-import { urNight } from './sos';
 import { isSunday, SUN_GOALS, sunGoalNow } from './sunday';
-import type { CareDoor } from './talk';
 import { talkDueNow } from './talk-log';
 import { stepOffer } from './view';
 import { UNLOCK_WORDS, type UnlockId } from './unlock';
@@ -42,7 +39,6 @@ import type { DayKey, Days, Reviews, Settings } from './types';
 
 export type MomentKind =
   | 'pause'
-  | 'slip-day'
   | 'talk'
   | 'away'
   | 'sunday'
@@ -58,7 +54,7 @@ export type MomentKind =
   | 'done';
 
 /** what the card's main button does: a stop of the day, or one of the moments' own doors */
-export type MomentGo = StopGo | 'pause' | 'small' | 'talk' | 'back' | 'review' | 'week' | 'pattern' | 'recheck' | 'unlock';
+export type MomentGo = StopGo | 'pause' | 'talk' | 'back' | 'review' | 'week' | 'pattern' | 'recheck' | 'unlock';
 
 export interface Moment {
   k: MomentKind;
@@ -73,9 +69,6 @@ export interface Moment {
   v?: string;
   /** the name used in "and one more", when this moment waits behind another */
   one: string;
-  /** the day of a slip: what the main button opens, and the quiet way to say something else was done */
-  door?: CareDoor;
-  alt?: string;
 }
 
 export interface MomentPick {
@@ -113,23 +106,9 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   /* 1. a pause in progress */
   if (dev.pause) m('pause', 'A pause', 'Your pause', 'One tap back to it.', 'Resume', 'pause', 'your pause');
 
-  /* 4. the day of a slip */
-  const today = days[tk];
-  const open = (today?.events || []).filter((e) => e.outcome === 'slipped' && !e.recovered);
-  if (sumDay(today).slipped && open.length) {
-    const door = slipNext(open[open.length - 1].fa, urNight(new Date(now).getHours()), (st.reasons || []).length > 0);
-    m(
-      'slip-day',
-      'After a slip',
-      'Logged. That took honesty.',
-      'What you built stays. One small thing for the next hour.',
-      door.label,
-      'small',
-      'one small thing',
-    );
-    out[out.length - 1].door = door;
-    out[out.length - 1].alt = 'I did something else';
-  }
+  /* 4. the day of a slip has no card of its own (the owner, November 18, 2026: "I do not like it switching up the order at all"):
+     the day's spine is the same slip or not, and the line under the care row says it was logged and that it took honesty
+     (hero.ts heroSlipLine) */
 
   /* 5. a talk-through due; and a comeback that still has steps */
   const t = talkDueNow(days, st, tk, now);
@@ -196,9 +175,6 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
   }
   if (cur) return out;
   if (dev.nudge && dev.nudge.k !== 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
-  else if (sumDay(today).slipped && d.tiles.length)
-    /* the night of a slip: what was left of the day went quiet (day.ts dayRhythm), so it does not say everything is done */
-    m('done', 'Tonight', 'Rest well.', 'You came back to this tonight. That is the part that lasts.', null, null, 'the day');
   else
     m(
       'done',

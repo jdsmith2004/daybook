@@ -146,21 +146,23 @@ describe('the line under the number on the day of a slip', () => {
   const ms = (h: number) => new Date(2026, 9, 20, h, 50).getTime();
   it('strict: the number is 0, and the line says the slip is logged and the days are on the record', () => {
     expect(heroNumber(slipAt('22:40'), st, K, ms(23))!.n).toBe('0');
-    expect(heroSlipLine(slipAt('22:40'), st, K, ms(23))).toBe('Tonight is logged. Your 12 days are on your record.');
-    expect(heroSlipLine(slipAt('09:10'), st, K, ms(9))).toBe('This morning is logged. Your 12 days are on your record.');
-    expect(heroSlipLine(slipAt('14:00'), st, K, ms(14))).toBe('Today is logged. Your 12 days are on your record.');
+    expect(heroSlipLine(slipAt('22:40'), st, K, ms(23))).toBe('Tonight is logged. That took honesty. Your 12 days are on your record.');
+    expect(heroSlipLine(slipAt('09:10'), st, K, ms(9))).toBe('This morning is logged. That took honesty. Your 12 days are on your record.');
+    expect(heroSlipLine(slipAt('14:00'), st, K, ms(14))).toBe('Today is logged. That took honesty. Your 12 days are on your record.');
     /* after midnight, the same log day: still tonight */
-    expect(heroSlipLine(slipAt('01:20'), st, K, new Date(2026, 9, 21, 1, 30).getTime())).toBe('Tonight is logged. Your 12 days are on your record.');
+    expect(heroSlipLine(slipAt('01:20'), st, K, new Date(2026, 9, 21, 1, 30).getTime())).toBe(
+      'Tonight is logged. That took honesty. Your 12 days are on your record.',
+    );
   });
   it('gentle: the number holds, and the days stay', () => {
     expect(heroNumber(slipAt('22:40'), g, K, ms(23))!.n).toBe('7');
-    expect(heroSlipLine(slipAt('22:40'), g, K, ms(23))).toBe('Tonight is logged. Your 7 days stay yours.');
+    expect(heroSlipLine(slipAt('22:40'), g, K, ms(23))).toBe('Tonight is logged. That took honesty. Your 7 days stay yours.');
   });
-  it('no line on a day with no slip, or stepping down', () => {
+  it('no line on a day with no slip; stepping down, the honesty alone', () => {
     expect(heroSlipLine({}, st, K, ms(23))).toBeNull();
-    expect(
-      heroSlipLine(slipAt('22:40'), normSettings({ start: '2026-10-01', day1: '2026-10-08', cleanMode: 'step', stepAt: '2026-10-08' }), K, ms(23)),
-    ).toBeNull();
+    expect(heroSlipLine(slipAt('22:40'), normSettings({ start: '2026-10-01', day1: '2026-10-08', cleanMode: 'step', stepAt: '2026-10-08' }), K, ms(23))).toBe(
+      'Tonight is logged. That took honesty.',
+    );
   });
   it('has no contractions', () => {
     for (const s of [st, g]) expect(heroSlipLine(slipAt('22:40'), s, K, ms(23))).not.toMatch(/n[’']t\b|[’'](re|ll|ve|m|d|s)\b/i);

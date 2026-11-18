@@ -10,7 +10,7 @@
    (core tipMoment), but never on the day the person came back, nor in the hours after an SOS or a slip
    (lib/quiet-asks.ts). A mistaken log taken back with Undo takes its waiting celebration with it (lib/store.tsx). A level
    reached on the day of a slip waits for the next day (core checkNew), and then says it was earned then. */
-import { celSpendsLevel, celSplit, celTitle, type CelItem } from '@daybook/core';
+import { celSpendsDay, celSplit, celTitle, type CelItem } from '@daybook/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePathname } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
@@ -21,8 +21,8 @@ import { NATIVE } from '@/lib/motion';
 import { useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 
-/* the day a plain level last had its own moment, on this phone: one a day, the rest are a toast (core celSplit) */
-const LEVEL_DAY = 'daybook.levelDay';
+/* the day a badge last had its own moment, on this phone: one a day, the rest are a toast, as plain levels always are (core celSplit) */
+const LEVEL_DAY = 'daybook.badgeDay';
 let levelDay: string | null = null;
 AsyncStorage.getItem(LEVEL_DAY)
   .then((v) => {
@@ -130,7 +130,7 @@ export function CelebrateHost() {
     setQueue([]);
     if (toast) sayRef.current(toast);
     if (!sheet.length) return;
-    if (celSpendsLevel(sheet)) {
+    if (celSpendsDay(sheet)) {
       levelDay = tk;
       AsyncStorage.setItem(LEVEL_DAY, tk).catch(() => undefined);
     }

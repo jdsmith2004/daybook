@@ -122,9 +122,9 @@ describe('Good night', () => {
     expect(row[6]).toEqual({ k: tk, d: 'T', m: 'free' });
     expect(row[5].m).toBe('none');
   });
-  it('after a slip, it says they came back', () => {
+  it('the night of a slip has the same words as any night (the pop-ups audit, C13)', () => {
     const d = addEvent({}, tk, 'slipped', '20:00', {}, 1).days;
-    expect(goodNightWords({ days: d, st, tk }).doneSub).toMatch(/came back/);
+    expect(goodNightWords({ days: d, st, tk }).doneSub).toBe(goodNightWords({ days: {}, st, tk }).doneSub);
   });
   it('the good-night text never says why', () => {
     const t = goodNightText('Dana');

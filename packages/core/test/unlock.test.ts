@@ -136,10 +136,10 @@ describe('the first week', () => {
 });
 
 describe('on Today', () => {
-  it('waits behind the lesson as After this', () => {
+  it('is a quiet line under the day, never the card (the pop-ups audit)', () => {
     const open = pickMoment({}, st, {}, day(2), new Date(day(2) + 'T12:00').getTime(), { unlock: 'bed' });
     expect(open.card.k).not.toBe('unlock');
-    expect(open.more?.k).toBe('unlock');
+    expect(open.line?.k).toBe('unlock');
   });
   it('speaks plainly, with no contractions, and says Unlocked (the owner, November 13, 2026: "there\'s no unlock for the sos and lessons")', () => {
     for (const w of Object.values(UNLOCK_WORDS)) for (const t of Object.values(w).flat()) expect(t).not.toMatch(/[a-z]['’][a-z]/i);

@@ -74,7 +74,14 @@ export interface MomentPick {
   card: Moment;
   /** the next moment, waiting behind the card (never the calm day: Your day names the rest of the day) */
   more: Moment | null;
+  /** one quiet line under the day (LINE_KINDS): a word that matters but never takes the card from the day's next stop */
+  line: Moment | null;
 }
+
+/** the moments that are a quiet line on Today, never the card (the owner, November 18, 2026: "There are so many pop-ups ... they don't
+    add value"; the pop-ups audit, Line): a counting note, a word about reminders, a first pattern, the month's questions, a new part */
+export const LINE_KINDS: readonly MomentKind[] = ['count-note', 'step-offer', 'nudge', 'first-pattern', 'recheck', 'unlock'];
+const isLine = (m: Moment) => LINE_KINDS.includes(m.k);
 
 /** what only this device knows */
 export interface MomentDev {
@@ -109,7 +116,9 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
 
   /* 5. a talk-through due; and a comeback that still has steps */
   const t = talkDueNow(days, st, tk, now);
-  if (t && (t.due === 'decide' || t.due === 'passed' || t.due === 'look')) {
+  /* "Did your plan hold?" (a changed plan's look back) is never a card: the morning's "How was last night?" answers it (talk-log.ts
+     settleByMorning; the owner, November 18, 2026, the pop-ups audit, E2). A choice the person put off still comes, since they set it */
+  if (t && (t.due === 'decide' || t.due === 'passed' || (t.due === 'look' && t.talk.p !== 'change'))) {
     const w =
       t.due === 'decide'
         ? ['Time to decide.', 'You chose to wait. Now choose, with your eyes open.', 'Decide now']
@@ -162,29 +171,32 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
     m('unlock', w.eb, w.h, '', 'See it', 'unlock', 'one new thing', dev.unlock);
   }
   if (cur) return out;
+  /* a word about reminders is a line (LINE_KINDS), so the day still says it is done */
   if (dev.nudge && dev.nudge.k !== 'paused') m('nudge', 'Reminders', dev.nudge.h, dev.nudge.p, null, null, 'a word about reminders');
-  else
-    m(
-      'done',
-      d.tiles.length ? 'All done' : 'Today',
-      d.tiles.length ? 'All done. Rest well.' : 'A day of your own.',
-      d.tiles.length ? 'Every part of today is done. That is who you are now: someone who shows up.' : 'Nothing is planned for today. SOS is one tap.',
-      null,
-      null,
-      'the day',
-    );
+  m(
+    'done',
+    d.tiles.length ? 'All done' : 'Today',
+    d.tiles.length ? 'All done. Rest well.' : 'A day of your own.',
+    d.tiles.length ? 'Every part of today is done. That is who you are now: someone who shows up.' : 'Nothing is planned for today. SOS is one tap.',
+    null,
+    null,
+    'the day',
+  );
   return out;
 }
 
 /** the one card, the one waiting behind it, and the rest of the day */
 export function pickMoment(days: Days, st: Settings, reviews: Reviews, tk: DayKey, now: number, dev: MomentDev = {}): MomentPick {
-  const all = moments(days, st, reviews, tk, now, dev);
+  const every = moments(days, st, reviews, tk, now, dev);
+  const all = every.filter((m) => !isLine(m));
+  const line = every.find(isLine) ?? null;
   /* while the fire burns low, the next thing to do says what it does (flame-low.ts) */
-  const card = all[0] && all[0].btn && all[0].k !== 'pause' && fireLow(days, st, tk, now).step ? { ...all[0], eb: LOW_LEAD } : all[0];
+  const first = all[0] ?? line!;
+  const card = first && first.btn && first.k !== 'pause' && fireLow(days, st, tk, now).step ? { ...first, eb: LOW_LEAD } : first;
   const second = all[1];
   const more = second && second.k !== 'calm' && second.k !== 'done' ? second : null;
   /* no "Then: …" line under the card: Your day already lists the rest (the owner, October 23, 2026) */
-  return { card, more };
+  return { card, more, line: card === line ? null : line };
 }
 
 /* ---------- the standing row: one number, one line, and a quieter note ----------

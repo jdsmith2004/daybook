@@ -105,11 +105,11 @@ describe('plans whose moment is not last night', () => {
     expect(talkById(after, 'ev')!.talk.a!.mn).toBe(1);
     expect(talkDueNow(after, st, TK, MORNING + 60000)).toBeNull();
   });
-  it('a plan for the afternoon is not covered by "last night", so its look back still opens', () => {
+  it('a plan for the afternoon is answered by the morning too, so it is never asked twice (the pop-ups audit, E2)', () => {
     const days = one(change('pm', at('2026-11-10T13:00:00'), { mo: 'soon', at: at('2026-11-10T14:00:00') }));
     const after = answerNight(days, st, TK, 'free', MORNING);
-    expect(talkById(after, 'pm')!.talk.a).toBeNull();
-    expect(talkDueNow(after, st, TK, MORNING + 60000)!.due).toBe('look');
+    expect(talkById(after, 'pm')!.talk.a!.mn).toBe(1);
+    expect(talkDueNow(after, st, TK, MORNING + 60000)).toBeNull();
   });
   it('After work (5:30 PM) is last night', () => {
     const days = one(change('aw', at('2026-11-10T08:00:00'), { mo: 'after', at: at('2026-11-10T17:30:00') }));
@@ -125,9 +125,9 @@ describe('plans whose moment is not last night', () => {
     expect(talkById(after, 'tn')!.talk.a).toBeNull();
     expect(talkDueNow(after, st, TK, MORNING + 60000)!.due).toBe('plan');
   });
-  it('a plan for the afternoon is asked about even while the morning is still to answer', () => {
+  it('while the morning is still to answer, Today waits for it about an afternoon plan too', () => {
     const days = one(change('pm2', at('2026-11-10T13:00:00'), { mo: 'soon', at: at('2026-11-10T14:00:00') }));
-    expect(talkDueNow(days, st, TK, MORNING)!.due).toBe('look');
+    expect(talkDueNow(days, st, TK, MORNING)).toBeNull();
   });
   it('a plan for next time, made after a slip, is answered the morning after its moment comes round', () => {
     const k = '2026-11-09';

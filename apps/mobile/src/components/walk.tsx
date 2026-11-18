@@ -36,6 +36,8 @@ import {
   talkHardMoment,
   talkClock,
   saveTalk,
+  talkPlanLine,
+  talksOf,
   talkHeld,
   talkHeldTag,
   talkMomentsNow,
@@ -148,6 +150,15 @@ export function Walk({
   const faith = useMemo(() => walkFaith(snap.settings), [snap.settings]);
   const open = walkOpen(faith);
   const [part, setPart] = useState<Part>('open');
+  /* walked before (two walks or more, the last with a plan): it opens offering the same plan, one tap from saving it again, and the
+     whole walk is still there (the owner, November 18, 2026: "when we do a slip plan, those are kind of annoying"; the pop-ups audit, E3) */
+  const again = useMemo(() => {
+    const walks = talksOf(snap.days).filter((x) => !!x.talk.wk);
+    const last = walks.filter((x) => x.talk.p === 'change' && (x.talk.m.length > 0 || !!x.talk.mx?.length)).pop()?.talk;
+    return walks.length >= 2 && last ? last : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const [quick, setQuick] = useState(false);
   const [dir, setDir] = useState<-1 | 1>(1);
   const [round, setRound] = useState(1);
   /* Why: one small button in one spot on every page, low on the right, just above the answers (WhyAt). It turns the flame's
@@ -196,7 +207,8 @@ export function Walk({
   const [moves, setMoves] = useState<TalkMove[]>([]);
   const [moveOwn, setMoveOwn] = useState('');
   const [ownMove, setOwnMove] = useState(false);
-  const [remind, setRemind] = useState(remindersOffered);
+  /* no note at the moment unless the person asks for one (the pop-ups audit, E4): the plan waits on Today either way */
+  const [remind, setRemind] = useState(false);
   const [mo, setMo] = useState<string | null>(null);
 
   const L = walkLine(line);
@@ -285,6 +297,11 @@ export function Walk({
     if (part === 'hold' && ownHold) return setOwnHold(false);
     if (part === 'plan' && ownMove) return setOwnMove(false);
     if (part === 'line' && ownLine) return setOwnLine(false);
+    if (part === 'plan' && quick) {
+      setQuick(false);
+      setDir(-1);
+      return setPart('open');
+    }
     const i = ORDER.indexOf(part);
     if (i <= 0) return;
     /* a skipped beat is skipped going back too */
@@ -312,10 +329,32 @@ export function Walk({
         </Text>
       </Rise>
     );
-    middle = <Coach level={level} big say={WALK_COACH.open.say + (open.faith ? '\n\n' + open.faith : '')} beat="open" />;
+    middle = (
+      <Coach
+        level={level}
+        big
+        say={
+          again && round === 1
+            ? 'You have walked this before. Last time your plan was: ' + talkPlanLine(again)
+            : WALK_COACH.open.say + (open.faith ? '\n\n' + open.faith : '')
+        }
+        beat="open"
+      />
+    );
     dock = (
       <>
-        <Button label="Walk me through it" onPress={() => go('strength')} />
+        {again && round === 1 ? (
+          <Button
+            label="Same plan as last time"
+            onPress={() => {
+              setMoves(again.m as TalkMove[]);
+              setMoveOwn(again.mx?.[0] || '');
+              setQuick(true);
+              go('plan');
+            }}
+          />
+        ) : null}
+        <Button label="Walk me through it" kind={again && round === 1 ? 'ghost' : undefined} onPress={() => go('strength')} />
         <View style={s.center}>
           <Link label="I know where I am" tone="muted" onPress={onMap} />
         </View>

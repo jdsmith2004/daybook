@@ -180,12 +180,12 @@ describe('the night and the wind-down', () => {
     expect(core.phoneNights(d)).toBe(2);
     expect(core.bedWords(d, st, '2026-10-15', '23:10').line).toBe('Down at 11:10 PM. That is 2 nights.');
   });
-  it('the last words are the person’s own sentence, and after a slip today that they came back to this', () => {
+  it('the last words are the person’s own sentence, on the night of a slip too (the owner, November 18, 2026; the pop-ups audit, C13)', () => {
     const me = { ...st, becoming: 'I am someone who keeps my word.' };
     expect(core.bedWords({}, me, '2026-10-15', '').own).toBe('I am someone who keeps my word.');
     expect(core.bedWords({}, { ...st, becoming: '' }, '2026-10-15', '').own).toBe('Rest well. Tomorrow is a fresh day.');
     const slip = core.addEvent({}, '2026-10-15', 'slipped', '20:00', {}).days;
-    expect(core.bedWords(slip, me, '2026-10-15', '').own).toBe('You came back to this tonight. That is the part that lasts.');
+    expect(core.bedWords(slip, me, '2026-10-15', '').own).toBe('I am someone who keeps my word.');
   });
   it('past the screens-off time, the wind-down says Good night still counts', () => {
     expect(core.windWhen(st, 43)).toContain('in 43 min');

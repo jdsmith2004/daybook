@@ -69,7 +69,8 @@ it('it comes after the day’s next stop, so the lesson stays the card', () => {
   const at = new Date(2026, 9, 28, 10, 0).getTime();
   const pick = core.pickMoment({}, st, {}, '2026-10-28', at, { recheck: true });
   expect(pick.card.k).toBe('calm');
-  expect(pick.more?.k).toBe('recheck');
+  expect(pick.more).toBeNull();
+  expect(pick.line?.k).toBe('recheck');
   expect(core.pickMoment({}, st, {}, '2026-10-28', at, {}).more).toBeNull();
 });
 

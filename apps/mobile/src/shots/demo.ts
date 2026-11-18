@@ -8,6 +8,9 @@ import {
   PATH_STEPS,
   keepHard,
   logicalKey,
+  newTalk,
+  saveTalk,
+  walkTalk,
   normDay,
   normSettings,
   riskToKeep,
@@ -142,6 +145,19 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
       [tk]: { ...t0, events: [...t0.events, { ...ev('07:40', 'rode', 'scroll'), m: 6 }, { ...ev('10:26', 'slipped', 'bored'), id: 'slipnow' }] },
     };
   }
+  /* ?demo=walked: Walk it through twice this week, the last with a plan, so a third walk opens on "Same plan as last time"
+     (components/walk.tsx) */
+  if (q === 'walked')
+    for (const [n, h] of [
+      [-5, 21],
+      [-2, 22],
+    ] as const) {
+      const k = day(DEMO.day, n);
+      const t = new Date(`${k}T${h}:10:00`).getTime();
+      const w = { n0: 6, n1: 3, holds: [], holdOwn: '', where: null, feel: null, line: null, lineOwn: '', answer: '', explain: '', need: null, at: null };
+      const plan = { moves: ['walk' as const], moveOwn: 'Ten pushups', mo: 'late', moAt: t + 2 * 3600_000 };
+      days = saveTalk(days, k, { ...walkTalk(newTalk(t), { ...w, ...plan }), a: { went: false, t: t + 9 * 3600_000, f: [], g: null, c: [], mn: 1 } }, t);
+    }
   const out: Record<string, string> = { 'daybook:settings': JSON.stringify(st) };
   for (const k in days) out['daybook:days/' + k] = JSON.stringify(days[k]);
   /* a few journal entries over the last week and a half, each started with a feeling, one with only the feeling */

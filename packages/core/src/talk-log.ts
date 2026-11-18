@@ -251,11 +251,14 @@ const momentOf = (t: Talk): number => (t.p === 'change' ? talkMomentAt(t) : t.p 
 function lastNight(days: Days, tk: DayKey, now: number): { k: DayKey; talk: Talk }[] {
   const [y, m, d] = addDays(tk, -1).split('-').map(Number);
   const from = new Date(y, m - 1, d, TALK_NIGHT_FROM).getTime();
+  /* a changed plan for any time yesterday is the morning's too, so "Did your plan hold?" is never asked on Today after the morning
+     was told (the pop-ups audit, E2: a plan for the afternoon was asked about twice) */
+  const dayFrom = new Date(y, m - 1, d, NIGHT_TO).getTime();
   const to = Math.min(now, new Date(y, m - 1, d + 1, NIGHT_TO).getTime());
   return talksOf(days).filter(({ talk }) => {
     if (!talk.p || talk.t >= to) return false;
     const mo = momentOf(talk);
-    return mo >= from && mo < to;
+    return mo >= (talk.p === 'change' ? dayFrom : from) && mo < to;
   });
 }
 const NIGHT_TO = 4;

@@ -18,11 +18,8 @@ import {
   litToday,
   awayBack,
   awayStart,
-  dayFeelDue,
-  dayFeelQuiet,
   markOpen,
   tipAsk,
-  urLastAt,
   careLastAt,
   autoCount,
   bpsDue,
@@ -47,7 +44,6 @@ import {
   srDone,
   standRow,
   sunriseDue,
-  morningDue,
   nightPage,
   skyPhase,
   fmtClock,
@@ -69,8 +65,8 @@ import { FeedbackTop } from '@/components/feedback-top';
 import { TIP_URL, TipCard } from '@/components/support';
 import { HomeScreenCard } from '@/components/home-screen';
 import { MomentCard } from '@/components/moment-card';
+import { MomentLine, QuietLine } from '@/components/moment-line';
 import { NightWinCard } from '@/components/night-win';
-import { NotifyBanner } from '@/components/notify-banner';
 import { PullTroubleStrip } from '@/components/pull-trouble';
 import { Hero, skyInk } from '@/components/hero';
 import { Screen } from '@/components/screen';
@@ -82,12 +78,10 @@ import { StopCard, YourDay } from '@/components/your-day';
 import { FirstTour, tourSteps, walkSteps } from '@/components/tour';
 import { buzz } from '@/lib/feel';
 import { markTourDone, markWalkOpen, takeTour, tourDue, useSpot, walkLocked } from '@/lib/tour';
-import { spendFirstOpen, useFirstOpen } from '@/lib/day-open';
 import { sheetOnTop, useHoldsBar } from '@/lib/nav';
-import { whatsNewPending } from '@/lib/whats-new';
 import { track } from '@/lib/events';
-import { celebrationSheetAt, noteSheet, useCelebrating } from '@/components/celebrate';
-import { DayFeelPop } from '@/components/day-feel-pop';
+import { useNewLine } from '@/lib/whats-new';
+import { useCelebrating } from '@/components/celebrate';
 import { WelcomeBack } from '@/components/welcome-back';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
@@ -105,11 +99,6 @@ import { font, useTheme } from '@/lib/theme';
 
 /** when this copy of the app started (the first sync after it is what lets Today mark the day opened) */
 const LAUNCH = Date.now();
-
-/** the day the morning set was last opened from Today in this run of the app */
-let morningOpened = '';
-/** the one-time asks wait this long after a sheet or What's new opened, so one open never carries two */
-const LASTS_AFTER_SHEET = 30 * 60_000;
 
 export default function Today() {
   const c = useTheme();
@@ -166,12 +155,6 @@ export default function Today() {
   const miPending = useMithrasPending();
   const miOpen = useMithrasOpen();
 
-  /* How are you feeling today? (core day-feel.ts, lib/day-open.ts): on the day's first open only, and only over Today:
-     once Today is the screen in front, with no sheet on it and nothing else about to open (Welcome back, graduation).
-     Never after a slip (one logged today, or a Rekindle open), never in an open that used SOS or a pause, never in the
-     hard hours or once the wind-down has started (core dayFeelQuiet), and not on the day the person came back, when
-     enough has opened already. It opens once: after that, or when this open cannot ask, it waits for tomorrow. */
-  const firstOpen = useFirstOpen();
   const focused = useIsFocused();
   const holdsBar = useHoldsBar();
   const focusRef = useRef(focused);
@@ -200,8 +183,6 @@ export default function Today() {
     }, 450);
     return () => clearTimeout(t);
   }, [miNow, focused]);
-  /* "How are you feeling today?": a small card at the bottom of Today on the day's first open (day-feel-pop.tsx) */
-  const [askFeel, setAskFeel] = useState(false);
   /* a celebration sheet ends it: there is never both on one open (the owner, October 30, 2026) */
   const celebrating = useCelebrating();
   /* the first look at Today (components/tour.tsx), once, after setup: it waits for a calm, settled Today */
@@ -211,50 +192,11 @@ export default function Today() {
     if (focused && takeTour()) setAgain(true);
   }, [focused]);
   const tourWaits = tourDue(sos.mem) || again;
-  useEffect(() => {
-    if (celebrating && askFeel) setAskFeel(false);
-  }, [celebrating, askFeel]);
-  const sosUsed = !!firstOpen && (!!sos.ur || !!sos.timer || (urLastAt(sos.mem) ?? 0) >= firstOpen.at);
   const gradNow = !!st && gradInfo(snap.days, st, tk).ready;
   const backNow = (!!due && askAgain) || backOpen;
   const cameBack = useCameBack();
-  const feelQuiet = !!st && dayFeelQuiet(snap.days, st, tk, now);
-  /* the morning set (core morning-set.ts, app/morning.tsx): in the morning, until set or closed today, over Today only, once the
-     log has settled and nothing else is opening (Welcome back, graduation). Not on the day the person came back, when enough has
-     opened already, and not while SOS is open. It comes before "How are you feeling today?", which it answers. */
-  const morningNow = !!st && !syncing && !cameBack && !sos.ur && !sos.timer && morningDue(snap.days, st, tk, now);
-  useEffect(() => {
-    if (!ready || !morningNow || !focused || backNow || gradNow || celebrating || miNow) return;
-    const t = setTimeout(() => {
-      if (!focusRef.current || sheetOnTop() || morningOpened === tk) return;
-      /* once per day in this run of the app: a page left by a back press does not come straight back (the X skips it for good) */
-      morningOpened = tk;
-      router.push('/morning');
-    }, 400);
-    return () => clearTimeout(t);
-  }, [ready, morningNow, focused, backNow, gradNow, celebrating, miNow, tk]);
-  useEffect(() => {
-    if (!firstOpen || !ready) return;
-    if (firstOpen.k < tk || sosUsed || feelQuiet || cameBack || celebrating || tourWaits || celebrationSheetAt() >= firstOpen.at) {
-      spendFirstOpen();
-      return;
-    }
-    /* wait for the log to settle (a slip or an answer from another device comes in with sync) */
-    if (firstOpen.k !== tk || syncing || !st) return;
-    if (!dayFeelDue(snap.days, st, tk)) {
-      spendFirstOpen();
-      return;
-    }
-    if (!focused || backNow || gradNow || morningNow) return;
-    const t = setTimeout(() => {
-      if (!focusRef.current || sheetOnTop()) return;
-      spendFirstOpen();
-      /* the one-time asks wait for a later open (they read this like a sheet) */
-      noteSheet();
-      setAskFeel(true);
-    }, 700);
-    return () => clearTimeout(t);
-  }, [firstOpen, ready, tk, sosUsed, syncing, st, snap.days, focused, backNow, gradNow, feelQuiet, cameBack, celebrating, morningNow, tourWaits]);
+  /* the morning set (core morning-set.ts, app/morning.tsx) never opens by itself: it is the first stop on the day's line, the big card
+     while it is open (the owner, November 18, 2026: "There are so many pop-ups ... they don't really add to the app"; the pop-ups audit) */
 
   /* graduation: recorded once, the first time it is earned, and then its celebration opens */
   useEffect(() => {
@@ -322,13 +264,7 @@ export default function Today() {
   const [touring, setTouring] = useState(false);
   /* asked for again from More, it plays now: only an SOS, a pause or a sync holds it */
   const tourNow =
-    ready &&
-    !!st &&
-    !syncing &&
-    focused &&
-    !sos.ur &&
-    !sos.timer &&
-    (again || (tourWaits && !quiet && !backNow && !gradNow && !morningNow && !celebrating && !miNow));
+    ready && !!st && !syncing && focused && !sos.ur && !sos.timer && (again || (tourWaits && !quiet && !backNow && !gradNow && !celebrating && !miNow));
   useEffect(() => {
     if (!tourNow || touring) return;
     const t = setTimeout(() => {
@@ -355,7 +291,6 @@ export default function Today() {
     !quiet &&
     !backNow &&
     !gradNow &&
-    !morningNow &&
     !celebrating &&
     !sos.ur &&
     !sos.timer &&
@@ -371,46 +306,6 @@ export default function Today() {
     }, 900);
     return () => clearTimeout(t);
   }, [walkNow, walkOpen]);
-  /* "How long does it usually last?" (core lasts-ask.ts, app/lasts.tsx): once, for a person who set up before setup asked it, so Time
-     given back can count for them. Over Today only, after a settle, when nothing else is opening or waiting (What's new first, then
-     Welcome back, graduation, the morning, the tour, Walk it through, "How are you feeling today?", a celebration), never in the quiet
-     hours, and never on a day another ask was shown (core lastsAskDue: the tip card marks its day as it shows, so it wins today and
-     this waits). Marked as it opens, so it comes only once. */
-  const lastsNow =
-    ready &&
-    !!st &&
-    !!g &&
-    !syncing &&
-    focused &&
-    !quiet &&
-    !backNow &&
-    !gradNow &&
-    !morningNow &&
-    !celebrating &&
-    !miNow &&
-    !tourWaits &&
-    !touring &&
-    !walkNow &&
-    !walkOpen &&
-    !askFeel &&
-    !sos.ur &&
-    !sos.timer &&
-    lastsAskDue(snap.days, st, tk, { now, sos: careLastAt(sos.mem) });
-  useEffect(() => {
-    if (!lastsNow) return;
-    const t = setTimeout(() => {
-      if (!focusRef.current || sheetOnTop() || whatsNewPending() || Date.now() - celebrationSheetAt() < LASTS_AFTER_SHEET) return;
-      const cur = snap.settings;
-      if (!cur || !lastsAskFor(cur)) return;
-      apply(lastsShown(cur, tk));
-      /* "How are you feeling today?" never comes on the same open (it treats this like a sheet) */
-      noteSheet();
-      track('ask', { what: 'lasts' });
-      router.push('/lasts');
-    }, 1200);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastsNow, tk]);
   /* the sky runs under the clock: the clock takes the sky's ink until the page has scrolled past it */
   const [past, setPast] = useState(false);
   /* the line under Your day sits behind the iPhone's glass tab bar until the page moves, so it waits until then */
@@ -420,6 +315,7 @@ export default function Today() {
   const lead = useSosLeadOn();
   /* a part unlocked (core unlock.ts; its card keeps it as seen, moment-card.tsx) */
   const unlock = useUnlock();
+  const newLine = useNewLine();
 
   if (!st || !g) return <Welcome />;
   const pick = pickMoment(snap.days, st, snap.reviews, tk, now, {
@@ -432,14 +328,11 @@ export default function Today() {
     unlock,
   });
   /* no asks on the day the person came back, or in the hours after an SOS or a slip (lib/quiet-asks.ts) */
-  /* "How long does it usually last?" is due (core lasts-ask.ts): it is this open's one ask, so the account and tip cards wait for it */
-  const lastsDue = lastsAskDue(snap.days, st, tk, { now, sos: careLastAt(sos.mem) });
-  const ask = quiet || lastsDue ? null : accountAsk(snap.days, st, tk, g.level.n, account);
+  const ask = quiet ? null : accountAsk(snap.days, st, tk, g.level.n, account);
   /* the button beside Ideas glows with a line every few days after a good moment, never on a day the card already asks (core accountNudge) */
   const nudgeNow = ask ? null : accountNudge(snap.days, st, tk, !!account, quiet);
   /* the day the flame was lit in full is that moment's, so the tip waits a day too (the account card and nudge wait in core) */
-  const tip =
-    !quiet && !lastsDue && !litToday(snap.days, st, tk) && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: careLastAt(sos.mem) });
+  const tip = !quiet && !litToday(snap.days, st, tk) && tipAsk(snap.days, st, tk, new Date(now).getHours(), ask, TIP_URL, { now, sos: careLastAt(sos.mem) });
   /* one quiet line under the next step: the week's goal from Sunday (today's entries are in Today so far, under it) */
   const note = standRow(snap.days, st, snap.reviews, tk, now, g.level.name, nights)?.note;
   /* the quiet lines under the next step take their room from the sky */
@@ -462,10 +355,9 @@ export default function Today() {
   /* the day: the care row, then the day's line and what waits under it */
   const dayPage = (
     <>
-      <WaitingPlan snap={snap} tk={tk} now={now} />
       <LogLink walk={!walkWaits} />
+      <WaitingPlan snap={snap} tk={tk} now={now} />
       {nudgeNow ? <AccountNudge nudge={nudgeNow} locked={lessonsLocked(lessonPathFor(st), lessonsDone(snap.days), false, st)} /> : null}
-      <NotifyBanner />
       <PullTroubleStrip />
       {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
       {calm || done ? null : <MomentCard pick={{ ...pick, more: null }} snap={snap} tk={tk} now={now} />}
@@ -483,6 +375,23 @@ export default function Today() {
         hero={calm ? pick.card : null}
         foot={[note ? note + '.' : '', pick.more ? 'After this: ' + pick.more.one + '.' : ''].filter(Boolean).join(' ')}
       />
+      {/* a word that matters but never takes the card: one quiet line under the day (core LINE_KINDS) */}
+      {pick.line ? <MomentLine m={pick.line} snap={snap} tk={tk} /> : null}
+      {/* What's new after an update: a line for a week, never a page that opens by itself (lib/whats-new.ts) */}
+      {newLine ? <QuietLine eb={'New in ' + newLine.v} h="See what is new" onPress={newLine.open} /> : null}
+      {/* "How long does it usually last?" (core lasts-ask.ts): a line, never a page that opens by itself (the pop-ups audit, A5),
+          until it is answered; not on a day another ask is shown */}
+      {!quiet && !ask && !tip && lastsAskDue(snap.days, st, tk, { now, sos: careLastAt(sos.mem) }) && lastsAskFor(st) ? (
+        <QuietLine
+          eb="One question"
+          h="How long does an urge usually last?"
+          onPress={() => {
+            apply(lastsShown(st, tk));
+            track('ask', { what: 'lasts' });
+            router.push('/lasts');
+          }}
+        />
+      ) : null}
       <TodayBelow snap={snap} tk={tk} now={now} />
       <SyncStrip />
       <NightWinCard snap={snap} tk={tk} />
@@ -534,8 +443,8 @@ export default function Today() {
           <>
             {/* the care row always sits at the top, right under the flame, as on the day page (the owner, November 13, 2026: "already
                 hapened and walk it through are always on the top") */}
-            <WaitingPlan snap={snap} tk={tk} now={now} />
             <LogLink walk={!walkWaits} />
+            <WaitingPlan snap={snap} tk={tk} now={now} />
             {slipLine ? <Text style={[s.line, { color: c.muted }]}>{slipLine}</Text> : null}
             {nightTile ? (
               <StopCard
@@ -547,7 +456,6 @@ export default function Today() {
                 t={nightTile}
               />
             ) : null}
-            <NotifyBanner />
             {/* Screen Time not working: said here too, since the night is when it matters (WP2) */}
             <PullTroubleStrip />
             <TodayBelow snap={snap} tk={tk} now={now} />
@@ -561,7 +469,6 @@ export default function Today() {
             2026: "i can't see the thing ... bc it's blocked": on a short Today the page could not move, and the bubble sat on it) */}
         {touring || walkOpen ? <View style={{ height: TOUR_ROOM }} /> : null}
       </Screen>
-      {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
       {backOpen && g ? <WelcomeBackHere level={Math.max(1, g.level.n)} snap={snap} tk={tk} account={!!account} onDone={() => setBackOpen(false)} /> : null}
       {walkOpen && g && !touring ? (
         <FirstTour

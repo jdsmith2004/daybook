@@ -199,3 +199,21 @@ describe('the standing row', () => {
     expect(r.line).toMatch(/^this stretch · best \d+ d · a Campfire$/);
   });
 });
+
+describe('the quiet lines (the owner, November 18, 2026: "There are so many pop-ups"; the pop-ups audit)', () => {
+  it('a word about reminders, the five questions and a new part are a line, never the card', () => {
+    const s0 = st;
+    const nudge = { k: 'paused' as const, h: 'Reminders are paused', p: '' };
+    for (const dev of [{ nudge }, { recheck: true }, { unlock: 'bed' as const }]) {
+      const p = pickMoment(told('2026-10-20'), s0, {}, '2026-10-20', at(20, 10), dev);
+      expect(p.card.k).toBe('calm');
+      expect(p.line).not.toBeNull();
+    }
+  });
+  it('a day that is done still says so, with the word about reminders as its line', () => {
+    const off = normSettings({ ...st, routine: { morning: false, lesson: false, calm: false, reach: false, checkin: false, wind: false } });
+    const p = pickMoment({}, off, {}, '2026-10-20', at(20, 21), { nudge: { k: 'off', h: 'Reminders are off', p: '' } });
+    expect(p.card.k).toBe('done');
+    expect(p.line?.k).toBe('nudge');
+  });
+});

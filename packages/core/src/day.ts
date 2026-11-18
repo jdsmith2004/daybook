@@ -527,15 +527,16 @@ export function goodnightOpens(st: Pick<Settings, 'screensOff' | 'rollover'>, at
 export function phoneNights(days: Days): number {
   return Object.values(days).filter((d) => !!d?.p?.po).length;
 }
-/** the words once the flame is asleep: the phone-away time and the nights so far, then the person's own sentence about who they are becoming. After a
-    slip today, the first thing is that they are still here. */
+/** the words once the flame is asleep: the phone-away time and the nights so far, then the person's own sentence about who they are becoming, on
+    the night of a slip too. */
 export function bedWords(days: Days, st: Pick<Settings, 'becoming'> | null, tk: DayKey, at: string): { line: string; own: string } {
   const n = phoneNights(days);
   const when = at ? `Down at ${fmtClock(at)}. ` : '';
   /* SOS "Go to bed" after the new day has started: the bed is still the right move, and it is not a night on the count (phoneAway) */
   const line = days[tk]?.p?.po ? when + (n <= 1 ? 'That is your first night.' : `That is ${n} nights.`) : when.trim();
   const own = String(st?.becoming || '').trim();
-  if (sumDay(days[tk]).slipped) return { line, own: 'You came back to this tonight. That is the part that lasts.' };
+  /* the night of a slip says the person's own sentence too, as any night does (the owner, November 18, 2026: "I always come back";
+     the pop-ups audit, C13) */
   return { line, own: own || 'Rest well. Tomorrow is a fresh day.' };
 }
 /** Good night: the phone goes away at `at` (p.po). With the settings, it is also screens off on time that night when it

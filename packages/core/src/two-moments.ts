@@ -80,17 +80,13 @@ export function goodNightWords(o: { days: Days; st: Settings; tk: DayKey; faith?
   own: string;
 } {
   const n = bedNights(o.days);
-  const slipped = sumDay(o.days[o.tk]).slipped > 0;
   const own = String(o.st.becoming || '').trim();
   return {
     title: 'Phone to bed.',
     sub: 'Phone on its charger, away from your bed.',
     doneTitle: 'Good night.',
-    doneSub: slipped
-      ? 'You came back to this tonight. That is the part that lasts.'
-      : n <= 1
-        ? 'Your first night put to bed. This is the part that lasts.'
-        : `${n} nights put to bed. This is the part that lasts.`,
+    /* the same words on the night of a slip (the pop-ups audit, C13) */
+    doneSub: n <= 1 ? 'Your first night put to bed. This is the part that lasts.' : `${n} nights put to bed. This is the part that lasts.`,
     own: (o.faith || '').trim() || own,
   };
 }

@@ -77,6 +77,31 @@ data "aws_cloudfront_origin_request_policy" "api" {
   name = "Managed-AllViewerExceptHostHeader"
 }
 
+/* The demo at /demo/ (the Deploy workflow builds it: the app on a made-up person, kept in memory only), so a preview link opens on a
+   phone with no setup. The app has one page, so any path under /demo/ with no file (like /demo/sos) is the demo's page, as any
+   other path is the real app's (the error pages below); /demo itself goes to /demo/. It runs only on /demo requests, at the edge,
+   and costs nothing at this size (2 million a month are free). */
+resource "aws_cloudfront_function" "demo" {
+  name    = "daybook-demo"
+  runtime = "cloudfront-js-2.0"
+  comment = "Daybook demo: its deep links open its own page"
+  publish = true
+  code    = <<-EOT
+    function handler(event) {
+      var r = event.request;
+      if (r.uri === '/demo') {
+        var q = Object.keys(r.querystring).map(function (k) {
+          var v = r.querystring[k];
+          return encodeURIComponent(k) + (v.value === '' ? '' : '=' + encodeURIComponent(v.value));
+        }).join('&');
+        return { statusCode: 301, statusDescription: 'Moved Permanently', headers: { location: { value: '/demo/' + (q ? '?' + q : '') } } };
+      }
+      if (r.uri.indexOf('/demo/') === 0 && r.uri.split('/').pop().indexOf('.') < 0) r.uri = '/demo/index.html';
+      return r;
+    }
+  EOT
+}
+
 resource "aws_cloudfront_distribution" "web" {
   enabled             = true
   comment             = "Daybook web app"
@@ -141,6 +166,22 @@ resource "aws_cloudfront_distribution" "web" {
       cache_policy_id            = data.aws_cloudfront_cache_policy.none.id
       origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.api.id
       response_headers_policy_id = aws_cloudfront_response_headers_policy.web.id
+    }
+  }
+
+  # the demo: the app's files, as below, with its deep links sent to its own page (the demo function above)
+  ordered_cache_behavior {
+    path_pattern               = "/demo*"
+    target_origin_id           = "web"
+    viewer_protocol_policy     = "redirect-to-https"
+    allowed_methods            = ["GET", "HEAD"]
+    cached_methods             = ["GET", "HEAD"]
+    compress                   = true
+    cache_policy_id            = data.aws_cloudfront_cache_policy.optimized.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.web.id
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.demo.arn
     }
   }
 

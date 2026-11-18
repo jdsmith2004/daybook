@@ -74,13 +74,30 @@ if (typeof window !== 'undefined') {
   }
   globalThis.Date = DemoDate as unknown as DateConstructor;
 
-  /* no network beyond this page's own files */
+  /* no network beyond this page's own files. On the live site the demo (/demo/) shares its address with the real app, and the sync
+     API, the pulse and the events sit at that same address (infra/app/web.tf), so a request there is refused too, and so is anything
+     that is not a plain read: the demo can never sign in, sync, count or send an event, even from the live site */
+  const API = /^\/(sync|pulse|events)(\/|$)/;
   const realFetch = window.fetch.bind(window);
   window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
     const href = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    if (new URL(href, window.location.href).origin !== window.location.origin) return Promise.reject(new TypeError('Screenshot mode: no network'));
+    const url = new URL(href, window.location.href);
+    const method = (init?.method || (typeof input === 'object' && 'method' in input ? input.method : 'GET')).toUpperCase();
+    if (url.origin !== window.location.origin || API.test(url.pathname) || (method !== 'GET' && method !== 'HEAD'))
+      return Promise.reject(new TypeError('Screenshot mode: no network'));
     return realFetch(input, init);
   };
+  /* and the other ways a page can send: none of them is used by the app, so they are shut rather than checked */
+  if (navigator.sendBeacon) navigator.sendBeacon = () => false;
+  const RealXHR = window.XMLHttpRequest;
+  if (RealXHR)
+    window.XMLHttpRequest = class extends RealXHR {
+      open(method: string, url: string | URL, ...rest: unknown[]) {
+        const u = new URL(String(url), window.location.href);
+        if (u.origin !== window.location.origin || API.test(u.pathname) || !/^(GET|HEAD)$/i.test(method)) throw new TypeError('Screenshot mode: no network');
+        return (super.open as (...a: unknown[]) => void)(method, url, ...rest);
+      }
+    } as typeof XMLHttpRequest;
 
   /* the preview (npm run preview, EXPO_PUBLIC_PREVIEW=1) is for seeing the app as a person does, so it keeps full motion unless ?motion=0 */
   const motion = process.env.EXPO_PUBLIC_PREVIEW === '1' ? q.get('motion') !== '0' : q.get('motion') === '1';

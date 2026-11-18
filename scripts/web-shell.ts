@@ -2,6 +2,8 @@
    almost immediately, and then it can load all that other stuff in the background as they're using it"). Run on the folder that
    `expo export --platform web` made, after the export (the Deploy workflow and npm run preview do):
      node --no-warnings --import ./scripts/ts-resolve.mjs scripts/web-shell.ts apps/mobile/dist
+   An export made with EXPO_BASE_URL (the demo at /demo/ on the live site) passes the same base after the folder: its files sit at the
+   folder's root, but the page asks for them under the base.
    It changes only index.html, in three ways:
    - the first picture is in the page itself: the flame asleep on the launch night, the same drawing as the opening scene's first
      frame (core launchFlameSvg, components/launch.tsx), so it shows before any code has arrived. The app takes it away on its first real
@@ -16,7 +18,9 @@ import { join, relative, sep } from 'node:path';
 import { LAUNCH_BG, LAUNCH_W, launchFlameSvg } from '../packages/core/src/big-layers.ts';
 
 const dir = process.argv[2];
-if (!dir) throw new Error('Usage: web-shell.ts <export folder>');
+if (!dir) throw new Error('Usage: web-shell.ts <export folder> [base, like /demo]');
+const base = (process.argv[3] || '').replace(/\/+$/, '');
+if (base && !/^\/[\w-]+$/.test(base)) throw new Error('web-shell: the base is one folder, like /demo');
 const page = join(dir, 'index.html');
 let html = readFileSync(page, 'utf8');
 if (html.includes('id="shell"')) {
@@ -25,17 +29,18 @@ if (html.includes('id="shell"')) {
 }
 
 const files = (d: string): string[] => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? files(join(d, f)) : [join(d, f)]));
-const all = files(dir).map((f) => '/' + relative(dir, f).split(sep).join('/'));
+/* every file as the page asks for it, under the base */
+const all = files(dir).map((f) => base + '/' + relative(dir, f).split(sep).join('/'));
 /* the fonts the app waits for before its first frame: the ones the root layout loads (useFonts in apps/mobile src/app/_layout.tsx) */
 const layout = readFileSync(join(import.meta.dirname, '../apps/mobile/src/app/_layout.tsx'), 'utf8');
 const wanted = new Set([...layout.matchAll(/^import \{ (\w+) \} from '@expo-google-fonts\//gm)].map((m) => m[1]));
-const fonts = all.filter((f) => f.startsWith('/assets/') && f.endsWith('.ttf') && wanted.has(f.split('/').pop()!.split('.')[0]));
+const fonts = all.filter((f) => f.startsWith(base + '/assets/') && f.endsWith('.ttf') && wanted.has(f.split('/').pop()!.split('.')[0]));
 /* The code a screen needs, read from the entry: Expo Router's table of routes names each screen's module ("./(tabs)/index.tsx":
    ...d[N]...), and the entry's map of chunks (d.paths, Expo's granular chunks) lists the files each module needs. Without these the
    page asks for a screen's files only once the entry (about 1.3 MB) has arrived and run, one wait after another. */
 const named = [...html.matchAll(/src="([^"]+\.js)"/g)].map((m) => m[1]);
 const entry = named.find((f) => /\/index-[0-9a-f]+\.js$/.test(f));
-const code = entry ? readFileSync(join(dir, entry), 'utf8') : '';
+const code = entry ? readFileSync(join(dir, entry.slice(base.length)), 'utf8') : '';
 function routeFiles(route: string): string[] {
   const at = code.indexOf(JSON.stringify(route) + ':{');
   if (at < 0) return [];
@@ -57,12 +62,12 @@ const today = [...new Set([...routeFiles('./(tabs)/_layout.tsx'), ...routeFiles(
 if (!today.length) console.warn("web-shell: Today's files were not found, so they are not asked for early on Today");
 /* every other chunk is fetched later, once the app has drawn and the phone is idle */
 const now = new Set([...named, ...early]);
-const later = all.filter((f) => f.startsWith('/_expo/static/js/web/') && f.endsWith('.js') && !now.has(f));
+const later = all.filter((f) => f.startsWith(base + '/_expo/static/js/web/') && f.endsWith('.js') && !now.has(f));
 
 const half = LAUNCH_W / 2;
 const head = [
   ...early.map((f) => `<link rel="preload" href="${f}" as="script">`),
-  `<script>if(location.pathname.replace(/\\/+$/,'')===''){${JSON.stringify(today)}.forEach(function(u){var l=document.createElement('link');l.rel='preload';l.as='script';l.href=u;document.head.appendChild(l)})}</script>`,
+  `<script>if(location.pathname.replace(/\\/+$/,'')===${JSON.stringify(base)}){${JSON.stringify(today)}.forEach(function(u){var l=document.createElement('link');l.rel='preload';l.as='script';l.href=u;document.head.appendChild(l)})}</script>`,
   ...fonts.map((f) => `<link rel="preload" href="${f}" as="font" type="font/ttf" crossorigin>`),
   `<style>#shell{position:fixed;inset:0;background:${LAUNCH_BG};z-index:1}` +
     `#shell svg{position:absolute;left:50%;top:50%;width:${LAUNCH_W}px;height:${LAUNCH_W}px;margin:-${half}px 0 0 -${half}px}` +

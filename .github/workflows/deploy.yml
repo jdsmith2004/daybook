@@ -172,6 +172,19 @@ jobs:
         run: npx expo export --platform web --output-dir dist
       # the page's own first picture, the fonts asked for at once, and the other screens fetched when idle (scripts/web-shell.ts)
       - run: node --no-warnings --import ./scripts/ts-resolve.mjs scripts/web-shell.ts apps/mobile/dist
+      # the demo at /demo/: the same app on the made-up person, kept in memory only (src/shots/mode.ts), so a preview link opens on the
+      # phone with no setup. It is built with no sync, pulse, events or sign-in address at all, and mode.ts refuses every request to the
+      # API besides. CloudFront sends its deep links to its own page (infra/app/web.tf, the demo function).
+      - name: The demo
+        working-directory: apps/mobile
+        run: |
+          env -u EXPO_PUBLIC_SYNC_URL -u EXPO_PUBLIC_PULSE_URL -u EXPO_PUBLIC_EVENTS_URL -u EXPO_PUBLIC_AUTH_DOMAIN -u EXPO_PUBLIC_CLIENT_ID \
+            -u EXPO_PUBLIC_APPLE_SERVICES_ID EXPO_PUBLIC_SHOTS=1 EXPO_PUBLIC_PREVIEW=1 EXPO_BASE_URL=/demo \
+            npx expo export --platform web --output-dir dist-demo
+          node --no-warnings --import ../../scripts/ts-resolve.mjs ../../scripts/web-shell.ts dist-demo /demo
+          # the site's own pages for search engines stay at the root only
+          rm -f dist-demo/robots.txt dist-demo/sitemap.xml dist-demo/google*.html
+          mv dist-demo dist/demo
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: web
@@ -216,11 +229,14 @@ jobs:
           aws s3 sync . "s3://$WEB_BUCKET" --exclude index.html --exclude metadata.json --exclude favicon.ico \
             --exclude support.html --exclude privacy.html --exclude terms.html --exclude about.html --exclude testers.html --exclude tipped.html --exclude tipped.js --exclude llms.txt --exclude robots.txt --exclude sitemap.xml --exclude site.css --exclude site-icon.png \
             --exclude manifest.json --exclude apple-touch-icon.png --exclude icon-192.png --exclude icon-512.png --exclude "guides/*" \
-            --cache-control "public,max-age=31536000,immutable"
+            --exclude demo/index.html --cache-control "public,max-age=31536000,immutable"
           for f in metadata.json favicon.ico support.html privacy.html terms.html about.html testers.html tipped.html tipped.js llms.txt robots.txt sitemap.xml site.css site-icon.png manifest.json apple-touch-icon.png icon-192.png icon-512.png index.html; do
             if [ -f "$f" ]; then aws s3 cp "$f" "s3://$WEB_BUCKET/$f" --cache-control "no-cache"; fi
           done
           if [ -d guides ]; then aws s3 sync guides "s3://$WEB_BUCKET/guides" --cache-control "no-cache"; fi
+          # the demo's page, last of all, always checked for a newer copy. It needs no invalidation: a no-cache page is kept at the edge
+          # for the cache policy's minimum (one second), so no deploy path is spent on it
+          if [ -f demo/index.html ]; then aws s3 cp demo/index.html "s3://$WEB_BUCKET/demo/index.html" --cache-control "no-cache"; fi
           aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/" "/index.html" > /dev/null
           echo "### Deployed: $WEB_URL" >> "$GITHUB_STEP_SUMMARY"
           # what a phone build needs to sync (apps/mobile/.env.example). These are public: the web app carries them too.

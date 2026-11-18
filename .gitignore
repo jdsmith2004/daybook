@@ -5,6 +5,7 @@ node_modules/
 dist/
 apps/mobile/dist-shots/
 apps/mobile/dist-preview/
+apps/mobile/dist-demo/
 apps/mobile/dist-shots-ios/
 apps/mobile/dist-story/
 story-shots/

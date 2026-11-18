@@ -44,6 +44,8 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
      not how long (so "How long does it usually last?" is still to ask, core lasts-ask.ts), never asked whether they like Daybook, last
      saw What's new at 1.3.4 (mode.ts), and Squeeze set to "In my seat" from before that switch was taken out */
   const update = q === 'update';
+  /* ?demo=away: back after five days with the app unopened, so Welcome back rises over Today (components/welcome-back.tsx) */
+  const away = q === 'away';
   const slipday = q === 'slipday';
   const MONTH_SLIPS = [day(DEMO.day, -17), day(DEMO.day, -9)];
   const URGE_AT = ['21:40', '22:15', '14:30', '23:05', '10:20', '22:50'];
@@ -60,6 +62,7 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     u: 1792194562327,
     ...(hard ? { cleanMode: 'step', stepAt: start } : {}),
     ...(grad ? { gradAt: '2026-10-04' } : {}),
+    ...(away ? { awayFrom: start } : {}),
     ...(update
       ? { onb: { n: 1, at: new Date('2026-09-08T20:00:00').getTime(), a: { habit: 'porn', freq: 'f2', when: ['late'], for: ['love'] }, hist: [] } }
       : {}),
@@ -82,6 +85,7 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   for (let i = 0; ; i++) {
     const d = day(start, i);
     if (d >= DEMO.day) break;
+    if (away && d >= day(DEMO.day, -5)) continue;
     const events = [];
     if (month) {
       if (i % 2 === 0) events.push(ev(URGE_AT[i % 6]!, 'rode', URGE_WHY[(i / 2) % 6]!));

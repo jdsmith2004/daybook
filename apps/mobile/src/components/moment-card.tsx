@@ -1,6 +1,6 @@
 /* The one next step on Today (core pickMoment, moment.ts), under the flame in the same card (hero.tsx): whatever the
    moment is, it is the only thing asking for a tap. Most moments are the same big bright card as the next stop on the line
-   (your-day.tsx NextCard: the first week, a first pattern, days away, a part unlocked), the whole card one
+   (your-day.tsx NextCard: the first week, a first pattern, a part unlocked), the whole card one
    button (Your day, below, names the rest of the day). The day of a slip has no card (core moment.ts); the moments with their own choices (a talk-through, a counting note,
    a word about reminders, Day 1) keep their cards. Under it, one quiet line names the next moment when
    two overlap. */
@@ -52,8 +52,6 @@ function TheCard({ m, snap, tk, now }: { m: Moment; snap: Snapshot; tk: string; 
       return <Band m={m} onPress={() => router.push('/week')} />;
     case 'first-pattern':
       return <Band m={m} onPress={() => router.navigate({ pathname: '/pattern', params: { pane: 'patterns' } })} />;
-    case 'away':
-      return <Band m={m} onPress={() => router.push('/back')} />;
     case 'recheck':
       return <Band m={m} onPress={() => router.push(m.v === 'free' ? { pathname: '/recheck', params: { only: 'free' } } : '/recheck')} />;
     case 'unlock':

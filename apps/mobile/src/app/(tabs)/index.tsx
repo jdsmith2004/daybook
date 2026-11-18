@@ -53,6 +53,7 @@ import {
   fmtClock,
   stopTiles,
   lessonStop,
+  type Snapshot,
   todayLine,
 } from '@daybook/core';
 import { router, useFocusEffect, useIsFocused } from 'expo-router';
@@ -87,6 +88,7 @@ import { whatsNewPending } from '@/lib/whats-new';
 import { track } from '@/lib/events';
 import { celebrationSheetAt, noteSheet, useCelebrating } from '@/components/celebrate';
 import { DayFeelPop } from '@/components/day-feel-pop';
+import { WelcomeBack } from '@/components/welcome-back';
 import { useNudgeLog, useReminderPrefs } from '@/lib/prefs';
 import { remindersOffered } from '@/lib/reminders';
 import { useSos } from '@/lib/sos';
@@ -153,12 +155,13 @@ export default function Today() {
   }, [ready, st, snap.days, tk, apply, update, syncing, synced]);
 
   /* back after days away (core awayBack: real days with the app unopened, never nights not told by someone here every day): Welcome
-     back opens once, and once more the next day if it was closed unanswered; after that the gap waits as the days-away card. Kept in
-     this device's memory, never synced. */
+     back rises as a light sheet over Today once for that time away, and never again for it (components/welcome-back.tsx; the owner,
+     November 18, 2026: "it needs to go away like quickly"). Kept in this device's memory, never synced. */
   const sos = useSos();
   const due = st && !syncing ? awayBack(snap.days, st, tk) : null;
   const asked = (sos.mem.backAsk && typeof sos.mem.backAsk === 'object' ? sos.mem.backAsk : null) as { from: string; n: number; d: string } | null;
-  const askAgain = !!due && (!asked || asked.from !== due.from || (asked.n < 2 && asked.d !== tk));
+  const askAgain = !!due && (!asked || asked.from !== due.from);
+  const [backOpen, setBackOpen] = useState(false);
   /* the Mithras import (lib/mithras.ts) comes first: Welcome back waits until it is done and its moment has closed */
   const miPending = useMithrasPending();
   const miOpen = useMithrasOpen();
@@ -180,8 +183,8 @@ export default function Today() {
     if (!ready || !due || !askAgain || miPending || miOpen || !focused) return;
     const t = setTimeout(() => {
       if (!focusRef.current || sheetOnTop()) return;
-      sos.setMem((m) => ({ ...m, backAsk: { from: due.from, n: asked && asked.from === due.from ? asked.n + 1 : 1, d: tk } }));
-      router.push('/back');
+      sos.setMem((m) => ({ ...m, backAsk: { from: due.from, n: 2, d: tk } }));
+      setBackOpen(true);
     }, 450);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -213,7 +216,7 @@ export default function Today() {
   }, [celebrating, askFeel]);
   const sosUsed = !!firstOpen && (!!sos.ur || !!sos.timer || (urLastAt(sos.mem) ?? 0) >= firstOpen.at);
   const gradNow = !!st && gradInfo(snap.days, st, tk).ready;
-  const backNow = !!due && askAgain;
+  const backNow = (!!due && askAgain) || backOpen;
   const cameBack = useCameBack();
   const feelQuiet = !!st && dayFeelQuiet(snap.days, st, tk, now);
   /* the morning set (core morning-set.ts, app/morning.tsx): in the morning, until set or closed today, over Today only, once the
@@ -421,7 +424,6 @@ export default function Today() {
   if (!st || !g) return <Welcome />;
   const pick = pickMoment(snap.days, st, snap.reviews, tk, now, {
     pause: !!sos.timer,
-    back: due && !askAgain ? due.n : null,
     nudge,
     patternDay: patDay || (pat ? tk : null),
     account: !!account,
@@ -560,6 +562,7 @@ export default function Today() {
         {touring || walkOpen ? <View style={{ height: TOUR_ROOM }} /> : null}
       </Screen>
       {askFeel && !celebrating ? <DayFeelPop onDone={() => setAskFeel(false)} /> : null}
+      {backOpen && g ? <WelcomeBackHere level={Math.max(1, g.level.n)} snap={snap} tk={tk} account={!!account} onDone={() => setBackOpen(false)} /> : null}
       {walkOpen && g && !touring ? (
         <FirstTour
           steps={walkSteps()}
@@ -597,6 +600,14 @@ export default function Today() {
       ) : null}
     </View>
   );
+}
+
+/* Welcome back's one button opens today's lesson: the one on the line, or a re-read; none when today's is read already */
+function WelcomeBackHere({ level, snap, tk, account, onDone }: { level: number; snap: Snapshot; tk: string; account: boolean; onDone: () => void }) {
+  const st = snap.settings!;
+  const ls = lessonStop(snap.days, st, tk, account);
+  const id = ls.kind === 'review' || (ls.kind === 'next' && !ls.locked) ? ls.L.id : null;
+  return <WelcomeBack level={level} lesson={!!id} onDone={onDone} onStart={() => id && router.push({ pathname: '/lesson/[id]', params: { id, pick: '1' } })} />;
 }
 
 /** how long away from Today before it goes back to the flame */

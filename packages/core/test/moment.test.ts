@@ -153,10 +153,6 @@ describe('the order', () => {
     /* the day's next step is never "and one more": the line under the card names it */
     expect(p.more).toBeNull();
   });
-  it('days away not known: the fill-in, once Welcome back was closed', () => {
-    expect(pickMoment({}, st, {}, '2026-10-20', at(20, 10), { back: 5 }).card).toMatchObject({ k: 'away', h: '5 days not known yet', go: 'back' });
-    expect(pickMoment({}, st, {}, '2026-10-20', at(20, 10), { back: 1 }).card.h).toBe('1 day not known yet');
-  });
   it('the calm day is always the last, and never "and one more"', () => {
     const all = kinds({}, '2026-10-18', at(18, 10));
     expect(all[all.length - 1]).toBe('calm');

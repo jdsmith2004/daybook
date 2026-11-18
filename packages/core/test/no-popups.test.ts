@@ -16,7 +16,6 @@ const ALLOWED: Record<string, string> = {
   calm: "the spine itself: the day's next stop",
   done: 'the spine itself: the day is done',
   /* under review in the pop-up audit (November 18, 2026); the owner picks keep, a line on the spine, or remove */
-  away: 'audit: days away not known yet, the fill-in after Welcome back was closed twice',
   sunday: 'audit: kept in the type; the Sunday review is a step on the spine (next-step.ts)',
   'first-week': 'audit: the first week looked back on',
   'tell-start': 'audit: Day 1, tell the safe person',
@@ -40,6 +39,8 @@ describe('Today does not get pop-ups', () => {
   });
   it('the day of a slip has no card of its own (removed November 18, 2026)', () => {
     expect(kinds).not.toContain('slip-day');
+    /* nor do days away (removed November 18, 2026: Welcome back is a light sheet, once) */
+    expect(kinds).not.toContain('away');
     expect(ALLOWED).not.toHaveProperty('slip-day');
   });
 });

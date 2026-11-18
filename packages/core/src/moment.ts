@@ -8,7 +8,7 @@
        by itself (sunriseDue, srDone). The count asks nothing after a slip (the owner, October 30, 2026).
     4. the day of a slip: no card (the owner, November 18, 2026). The spine stays as it is every day.
     5. a talk-through due: decide now, it passed, look back
-    7. days away not known: fill them in
+    7. days away not known: no card; Welcome back rises once over Today, and the calendar fills them in
     8. the Sunday review, Sunday and Monday, is a step on the line (next-step.ts), so it is the calm day's card
     9. one-time moments: first week done, Day 1 tell the safe person, a counting note, a paused reminder, the first pattern
    10. a calm day: the day's next stop; everything done: "All done. Rest well."
@@ -40,7 +40,6 @@ import type { DayKey, Days, Reviews, Settings } from './types';
 export type MomentKind =
   | 'pause'
   | 'talk'
-  | 'away'
   | 'sunday'
   | 'first-week'
   | 'tell-start'
@@ -54,7 +53,7 @@ export type MomentKind =
   | 'done';
 
 /** what the card's main button does: a stop of the day, or one of the moments' own doors */
-export type MomentGo = StopGo | 'pause' | 'talk' | 'back' | 'review' | 'week' | 'pattern' | 'recheck' | 'unlock';
+export type MomentGo = StopGo | 'pause' | 'talk' | 'review' | 'week' | 'pattern' | 'recheck' | 'unlock';
 
 export interface Moment {
   k: MomentKind;
@@ -81,8 +80,6 @@ export interface MomentPick {
 export interface MomentDev {
   /** a pause (the 10-minute tool) running or just finished */
   pause?: boolean;
-  /** days away not known (core awayDue), once Welcome back has been closed twice: the fill-in (Welcome back itself opens on its own) */
-  back?: number | null;
   /** the reminders' one word (core nudgeCard), on a phone that can remind */
   nudge?: { k: 'paused' | 'backup' | 'time' | 'off'; h: string; p: string } | null;
   /** the first day the first pattern was shown as the card: it is the card on that day only */
@@ -121,17 +118,8 @@ export function moments(days: Days, st: Settings, reviews: Reviews, tk: DayKey, 
           : ['Look back.', 'One minute. Honest is what counts.', 'Look back'];
     m('talk', 'Talk it through', w[0], w[1], w[2], 'talk', t.due === 'look' ? 'a look back' : 'a choice to make', t.talk.id);
   }
-  /* 7. days away not known */
-  if (dev.back)
-    m(
-      'away',
-      'While you were away',
-      dev.back + (dev.back === 1 ? ' day' : ' days') + ' not known yet',
-      'A few taps fill them in. Nothing is guessed.',
-      'Fill in',
-      'back',
-      'the days away',
-    );
+  /* 7. days away not known: no card (the owner, November 18, 2026: "no like permanent pop-ups"). Welcome back rises once, and the
+     calendar's Fill in asks about the days */
 
   /* 8. the Sunday review is a step on the line now, not a card of its own (next-step.ts): it is the calm day's next step below */
 

@@ -5,6 +5,7 @@
 import { LUNITS_MORE, SRC_MORE } from '../lesson-sources';
 import { CATALOG, HABIT_IDS, NIGHT_IDS } from '../lesson-catalog';
 import { DEED_PTS, deedCount, normDeeds } from '../steps';
+import { normHave } from '../lesson-have';
 import { normCreed } from '../faith';
 import { normMorning } from '../morning-norm';
 import { normHabit } from '../habit';
@@ -304,6 +305,8 @@ function normLearn(l){
  if(Object.keys(back).length)out.back=back;
  /* did, later, asked: the steps' deeds (steps.ts), each kept only when there is one */
  Object.assign(out,normDeeds(o));
+ /* have: what the person said they already do (lesson-have.ts), kept only when there is one */
+ Object.assign(out,normHave(o));
  /* deep: Deep lessons turned on in Settings; lens: how often each length was picked (setup.ts lessonLen), each kept only when there is one */
  if(o.deep===true)out.deep=true;
  const lens={};['q','f','d'].forEach(k=>{const n=Math.floor(Number(o.lens&&o.lens[k]));if(n>0)lens[k]=Math.min(n,99999)});

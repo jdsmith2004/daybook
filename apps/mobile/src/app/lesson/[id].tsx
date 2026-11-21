@@ -68,6 +68,10 @@ import {
   srcNote,
   lessonDue,
   morningDue,
+  HAVE,
+  haveOf,
+  hasHave,
+  lessonHave,
 } from '@daybook/core';
 import {
   cardArt,
@@ -210,6 +214,8 @@ function LessonScreen() {
   /* every lesson asks its length first, wherever it starts (the owner, November 14, 2026: "It should also ask them 2 or 5 minutes when
      they do the lesson anywhere. Always."); only a lesson with no short cut, which has one length, goes straight in */
   const [chose, setChose] = useState(() => preview || !(found && lessonHasQuick(found)));
+  /* "I already do this" (core lesson-have.ts): the link was tapped, and the two answers show in its place */
+  const [haveAsk, setHaveAsk] = useState(false);
   const careAt = useRef<boolean | null>(null);
   /* how a card without a question landed with the person (two answers, or the line they will try), by card */
   const [ans, setAns] = useState<Record<number, number>>({});
@@ -524,6 +530,19 @@ function LessonScreen() {
       setChose(true);
     };
     const cur = lessonLen(st);
+    /* "I already do this" (the owner, November 21, 2026): a lesson about one thing a person may already do says so on its first
+       page; a yes moves it to the end of the path, open to read, with nothing earned, and opens the next lesson */
+    const hk = haveOf(L.id);
+    const haveOn = !!hk && !care && !preview && !done.has(L.id) && !hasHave(st, hk);
+    const skipHave = () => {
+      if (!hk) return;
+      const st1 = lessonHave(st, hk);
+      apply({ st: st1 });
+      const nx = lessonWalk(snap.days, st1, tk, account).today;
+      say('This one can wait. It is at the end of your path, open any time.');
+      if (nx && nx.id !== L.id && lessonOpen(nx, done, account, st1)) router.replace({ pathname: '/lesson/[id]', params: { id: nx.id } });
+      else closeAll();
+    };
     body = (
       <>
         <T v="small" tone="muted">
@@ -534,44 +553,54 @@ function LessonScreen() {
         </T>
         <T style={s.p}>{L.ask || L.tag}</T>
         <FlameSlot size={SHORT ? 240 : 310} min={120} />
-        <Dock>
-          <View style={{ gap: 12 }} accessibilityLabel="Pick a length">
-            <LenBtn
-              on={cur === 'q'}
-              title="Short"
-              mins="about 2 min"
-              sub={
-                L.form
-                  ? 'The story, the line that sticks, what to do'
-                  : L.v === 3
-                    ? 'The turn, what to do, one check'
-                    : L.v === 2
-                      ? 'The answer, what to do, one check'
-                      : 'The main idea, then one question'
-              }
-              onPress={() => choose('q')}
-            />
-            <LenBtn
-              on={cur === 'f'}
-              title="Long"
-              mins="about 5 min"
-              sub={
-                L.form
-                  ? 'More of the story, and why it works'
-                  : L.v === 3
-                    ? 'Adds a question and what is behind the turn'
-                    : L.v === 2
-                      ? 'Adds a guess and the science behind it'
-                      : 'Adds the evidence and why it works'
-              }
-              onPress={() => choose('f')}
-            />
-            {/* Deep, the 10-minute lesson, shows here only for a person who turned it on in Settings */}
-            {deepOn(st) ? (
-              <LenBtn on={cur === 'd'} title="Deep" mins="about 10 min" sub="Adds the rest of the story and a second look" onPress={() => choose('d')} />
-            ) : null}
-          </View>
-        </Dock>
+        {haveOn && haveAsk ? (
+          <Dock>
+            <View style={{ gap: 12 }}>
+              <DeedBtn title="Skip this lesson" sub="It waits at the end of your path. Your next lesson opens." onPress={skipHave} />
+              <DeedBtn title="Read it anyway" sub="Back to Short or Long." onPress={() => setHaveAsk(false)} />
+            </View>
+          </Dock>
+        ) : (
+          <Dock>
+            <View style={{ gap: 12 }} accessibilityLabel="Pick a length">
+              <LenBtn
+                on={cur === 'q'}
+                title="Short"
+                mins="about 2 min"
+                sub={
+                  L.form
+                    ? 'The story, the line that sticks, what to do'
+                    : L.v === 3
+                      ? 'The turn, what to do, one check'
+                      : L.v === 2
+                        ? 'The answer, what to do, one check'
+                        : 'The main idea, then one question'
+                }
+                onPress={() => choose('q')}
+              />
+              <LenBtn
+                on={cur === 'f'}
+                title="Long"
+                mins="about 5 min"
+                sub={
+                  L.form
+                    ? 'More of the story, and why it works'
+                    : L.v === 3
+                      ? 'Adds a question and what is behind the turn'
+                      : L.v === 2
+                        ? 'Adds a guess and the science behind it'
+                        : 'Adds the evidence and why it works'
+                }
+                onPress={() => choose('f')}
+              />
+              {/* Deep, the 10-minute lesson, shows here only for a person who turned it on in Settings */}
+              {deepOn(st) ? (
+                <LenBtn on={cur === 'd'} title="Deep" mins="about 10 min" sub="Adds the rest of the story and a second look" onPress={() => choose('d')} />
+              ) : null}
+            </View>
+            {haveOn && hk ? <Quiet label={HAVE[hk].link} onPress={() => setHaveAsk(true)} /> : null}
+          </Dock>
+        )}
       </>
     );
   } else if (stg === 'cover') {

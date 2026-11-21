@@ -201,6 +201,8 @@ export interface Settings {
     did?: Record<string, DayKey>;
     later?: Record<string, DayKey>;
     asked?: Record<string, 1>;
+    /** what the person said they already do ("I already do this", lesson-have.ts): those lessons step aside. Left out when empty. */
+    have?: Partial<Record<'phone', 1>>;
   };
   words: string[];
   menu: string[];

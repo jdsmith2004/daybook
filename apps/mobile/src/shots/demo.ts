@@ -50,6 +50,9 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
   /* ?demo=away: back after five days with the app unopened, so Welcome back rises over Today (components/welcome-back.tsx) */
   const away = q === 'away';
   const slipday = q === 'slipday';
+  /* ?demo=phone: a person on the night track (most days, late) with the first three lessons read, so "Where the phone sleeps" is Up
+     next and its first page offers "My phone already sleeps outside my room" (core lesson-have.ts) */
+  const phone = q === 'phone';
   const MONTH_SLIPS = [day(DEMO.day, -17), day(DEMO.day, -9)];
   const URGE_AT = ['21:40', '22:15', '14:30', '23:05', '10:20', '22:50'];
   const URGE_WHY = ['late', 'stress', 'bored', 'tired', 'scroll', 'late'];
@@ -66,12 +69,15 @@ export function demoStorage(at: number, theme: 'light' | 'dark' | 'auto' = 'ligh
     ...(hard ? { cleanMode: 'step', stepAt: start } : {}),
     ...(grad ? { gradAt: '2026-10-04' } : {}),
     ...(away ? { awayFrom: start } : {}),
+    ...(phone
+      ? { onb: { n: 1, at: new Date('2026-09-08T20:00:00').getTime(), a: { habit: 'porn', freq: 'f3', when: ['late'], for: ['love'] }, hist: [] } }
+      : {}),
     ...(update
       ? { onb: { n: 1, at: new Date('2026-09-08T20:00:00').getTime(), a: { habit: 'porn', freq: 'f2', when: ['late'], for: ['love'] }, hist: [] } }
       : {}),
   };
   const o: Record<string, unknown> = { 'daybook:settings': st };
-  const lessons = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l13', 'l14'];
+  const lessons = phone ? ['l1', 'l54', 'l34'] : ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'l10', 'l11', 'l12', 'l13', 'l14'];
   /* a lesson looked at again on four days this week, so the ring of lesson days is part lit */
   const RECENT = ['2026-10-12', '2026-10-13', '2026-10-15', '2026-10-16'];
   let id = 0;

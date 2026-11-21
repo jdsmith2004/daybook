@@ -9,6 +9,7 @@ import { habitOf, type Habit } from './habit';
 import { HABIT_OPENS, HABIT_OWN, PORN_ONLY_IDS } from './lesson-catalog';
 import { changeDay, withDay } from './mutate';
 import { changeSettings } from './actions';
+import { haveSig, haveSkips } from './lesson-have';
 import { morningOf } from './morning-set';
 import { blankP } from './legacy/core.js';
 import type { DayKey, Days, Play, Settings } from './types';
@@ -395,18 +396,18 @@ export function lessonPathMine(days: Days | null | undefined, st: Settings | nul
   const plan = lessonPathFor(st);
   if (!days) return plan;
   const order = lessonsInOrder(days);
-  const sig = order.map((x) => x.L.id).join(' ');
+  const sig = order.map((x) => x.L.id).join(' ') + '|' + haveSig(st);
   const c = MINE.get(days);
   if (c && c.plan === plan && c.sig === sig) return c.path;
-  const path = minePath(order, plan);
+  const path = minePath(order, plan, st);
   MINE.set(days, { plan, sig, path });
   return path;
 }
-function minePath(order: { L: Lesson }[], plan: Lesson[]): Lesson[] {
+function minePath(order: { L: Lesson }[], plan: Lesson[], st: Settings | null | undefined): Lesson[] {
   const on = new Set(plan);
   const fin = order.map((x) => own(x.L)).filter((L) => on.has(L));
   const done = new Set(fin.map((L) => L.id));
-  const passed = godPassed(plan, done);
+  const passed = passedOn(plan, done, st);
   /* walked in the planned order, with nothing passed: the plan itself, so its lands and front track hold as they are */
   if (!passed.size && fin.every((L, i) => plan[i] === L)) return plan;
   const list = [...fin, ...plan.filter((L) => !done.has(L.id) && !passed.has(L.id)), ...plan.filter((L) => passed.has(L.id))];
@@ -537,8 +538,17 @@ export interface LessonWalk {
   today: Lesson | null;
   /** the moment that brought today's lesson, or null when it is the path's own */
   hook: LessonHook | null;
+  /** lessons the person said they already do (lesson-have.ts), not finished: in passed, and never Up next */
+  skip: Set<string>;
 }
-const stopsAt = (L: Lesson, done: Set<string>, early: Set<string>, reached: Set<string>) => !done.has(L.id) || (early.has(L.id) && !reached.has(L.id));
+const stopsAt = (L: Lesson, done: Set<string>, early: Set<string>, reached: Set<string>, skip?: Set<string>) =>
+  !(skip && skip.has(L.id)) && (!done.has(L.id) || (early.has(L.id) && !reached.has(L.id)));
+/** the lessons on the plan the person said they already do and has not finished (lesson-have.ts) */
+const haveSkipped = (path: Lesson[], done: Set<string>, st: Settings | null | undefined): Set<string> =>
+  new Set(path.filter((L) => !done.has(L.id) && haveSkips(st, L.id)).map((L) => L.id));
+/** what waits at the end of the path, open in full: God lessons walked past, and the lessons the person already does */
+const passedOn = (path: Lesson[], done: Set<string>, st: Settings | null | undefined): Set<string> =>
+  new Set([...godPassed(path, done), ...haveSkipped(path, done, st)]);
 /** the God lessons a person has walked past: unfinished, with a lesson after them on the path already finished */
 function godPassed(path: Lesson[], done: Set<string>): Set<string> {
   const out = new Set<string>();
@@ -566,11 +576,13 @@ function walkCore(days: Days, st: Settings | null | undefined): LessonWalk {
   const reached = lessonsReached(st);
   const path = lessonPathMine(days, st);
   /* walked past on the plan: waiting at the end of the path, open in full */
-  const passed = godPassed(lessonPathFor(st), done);
-  const at = path.findIndex((L) => !done.has(L.id));
+  const plan = lessonPathFor(st);
+  const skip = haveSkipped(plan, done, st);
+  const passed = passedOn(plan, done, st);
+  const at = path.findIndex((L) => !done.has(L.id) && !skip.has(L.id));
   const next = at < 0 ? null : path[at];
   const walked = new Set(path.filter((L) => done.has(L.id)).map((L) => L.id));
-  return { done, early, reached, walked, next, back: false, path, passed, today: null, hook: null };
+  return { done, early, reached, walked, next, back: false, path, passed, today: null, hook: null, skip };
 }
 /** a walk from finished lessons only, with nothing read early: for a map or a test that has no record */
 export function walkOf(done: Set<string>, st?: Settings | null): LessonWalk {
@@ -579,11 +591,13 @@ export function walkOf(done: Set<string>, st?: Settings | null): LessonWalk {
   const path = minePath(
     plan.filter((L) => done.has(L.id)).map((L) => ({ L })),
     plan,
+    st,
   );
-  const passed = godPassed(plan, done);
-  const next = path.find((L) => !done.has(L.id)) || null;
+  const skip = haveSkipped(plan, done, st);
+  const passed = passedOn(plan, done, st);
+  const next = path.find((L) => !done.has(L.id) && !skip.has(L.id)) || null;
   const walked = new Set(path.filter((L) => done.has(L.id)).map((L) => L.id));
-  return { done, early: new Set(), reached: new Set(), walked, next, back: false, path, passed, today: null, hook: null };
+  return { done, early: new Set(), reached: new Set(), walked, next, back: false, path, passed, today: null, hook: null, skip };
 }
 /** "N of M done": the path, plus any lesson finished off it, which stays counted (a faith lesson read from Learn) */
 export function lessonCount(w: LessonWalk): { done: number; of: number } {
@@ -622,7 +636,7 @@ export function nextAfter(L0: Lesson, w: LessonWalk): Lesson | null {
   const L = own(L0);
   if (w.next !== L) return w.next;
   const path = w.path;
-  return path.slice(path.indexOf(L) + 1).find((x) => stopsAt(x, w.done, w.early, w.reached)) || null;
+  return path.slice(path.indexOf(L) + 1).find((x) => stopsAt(x, w.done, w.early, w.reached, w.skip)) || null;
 }
 /** "Keep going" on a welcome back: the path moves past a lesson read early. A plain marker in the settings: no points,
     no lesson day, nothing counted twice. */

@@ -22,6 +22,7 @@ export * from './trail';
 export * from './talk';
 export * from './talk-log';
 export * from './walk';
+export * from './lesson-have';
 export * from './feelings';
 export * from './day-feel';
 export * from './morning-set';

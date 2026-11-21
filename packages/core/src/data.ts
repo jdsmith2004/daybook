@@ -108,6 +108,9 @@ export function keepEarned(win: Settings, lose: Settings): Settings {
   if (Object.keys(later).length) out.learn.later = later;
   const asked = { ...(lose.learn.asked || {}), ...(out.learn.asked || {}) };
   if (Object.keys(asked).length) out.learn.asked = asked;
+  /* "I already do this" said on either side stays said */
+  const have = { ...(lose.learn.have || {}), ...(out.learn.have || {}) };
+  if (Object.keys(have).length) out.learn.have = have;
   /* a written answer (saved-answers.ts) is never lost to the other copy: both sides' are kept */
   const own = joinOwn(out.own, lose.own);
   if (own) out.own = own;
